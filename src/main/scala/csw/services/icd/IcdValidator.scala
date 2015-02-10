@@ -1,12 +1,15 @@
 package csw.services.icd
 
-import java.io.{ FileNotFoundException, File }
+import java.io._
+import java.net.URI
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.github.fge.jackson.JsonLoader
+import com.github.fge.jsonschema.core.load.configuration.LoadingConfiguration
+import com.github.fge.jsonschema.core.load.download.URIDownloader
 import com.github.fge.jsonschema.core.report.ProcessingReport
-import com.github.fge.jsonschema.main.{ JsonSchema, JsonSchemaFactory }
-import com.typesafe.config.{ Config, ConfigResolveOptions, ConfigFactory, ConfigRenderOptions }
+import com.github.fge.jsonschema.main.{JsonSchema, JsonSchemaFactory}
+import com.typesafe.config.{Config, ConfigResolveOptions, ConfigFactory, ConfigRenderOptions}
 
 import scala.io.Source
 
@@ -31,16 +34,15 @@ object IcdValidator {
     }
   }
 
+  val jsonOptions = ConfigRenderOptions.defaults().setComments(false).setOriginComments(false)
+
   /**
    * Returns a string with the contents of the given config, converted to JSON.
    * @param config the config to convert
    * @return the config contents in JSON format
    */
   def toJson(config: Config): String = {
-    val jsonOptions = ConfigRenderOptions.defaults().setComments(false).setOriginComments(false)
-    val s = config.root.render(jsonOptions)
-    // println(s"\n\n$s\n\n")
-    s
+    config.root.render(jsonOptions)
   }
 
   /**
@@ -51,6 +53,20 @@ object IcdValidator {
    */
   case class Problem(severity: String, message: String, json: String)
 
+  // Adds a custom URI scheme, so that config:/... loads the config file as a resource
+  // and converts it to JSON. In this way you can use "$ref": "config:/myfile.conf"
+  // to refer to external JSON schemas in HOCON format.
+  private case object ConfigDownloader extends URIDownloader {
+    override def fetch(uri: URI): InputStream = {
+      val config = ConfigFactory.parseResources(uri.getPath.substring(1))
+      if (config == null) throw new IOException(s"Resource not found: ${uri.getPath}")
+      new ByteArrayInputStream(toJson(config).getBytes)
+    }
+  }
+
+  private val cfg = LoadingConfiguration.newBuilder.addScheme("config", ConfigDownloader).freeze
+  private val factory = JsonSchemaFactory.newBuilder.setLoadingConfiguration(cfg).freeze
+
   /**
    * Validates the given input file using the given JSON schema file
    * JSON files are recognized by the file suffix .json.
@@ -59,7 +75,6 @@ object IcdValidator {
    * @return a list of problems, if any were found
    */
   def validate(inputFile: File, schemaFile: File): List[Problem] = {
-    val factory = JsonSchemaFactory.byDefault
     val jsonSchema = JsonLoader.fromString(toJson(schemaFile))
     val schema = factory.getJsonSchema(jsonSchema)
     val jsonInput = JsonLoader.fromString(toJson(inputFile))
@@ -73,7 +88,6 @@ object IcdValidator {
    * @return a list of problems, if any were found
    */
   def validate(inputConfig: Config, schemaConfig: Config): List[Problem] = {
-    val factory = JsonSchemaFactory.byDefault
     val jsonSchema = JsonLoader.fromString(toJson(schemaConfig))
     val schema = factory.getJsonSchema(jsonSchema)
     val jsonInput = JsonLoader.fromString(toJson(inputConfig))
@@ -85,7 +99,9 @@ object IcdValidator {
     try {
       validateResult(schema.validate(jsonInput, true))
     } catch {
-      case e: Exception ⇒ List(Problem("fatal", e.toString, ""))
+      case e: Exception ⇒
+        e.printStackTrace()
+        List(Problem("fatal", e.toString, ""))
     }
   }
 
@@ -94,7 +110,7 @@ object IcdValidator {
     import scala.collection.JavaConverters._
     val result = for (msg ← report.asScala)
     yield Problem(msg.getLogLevel.toString, msg.getMessage,
-      toJson(ConfigFactory.parseString(msg.asJson().toString)))
+        toJson(ConfigFactory.parseString(msg.asJson().toString)))
     result.toList
   }
 }
