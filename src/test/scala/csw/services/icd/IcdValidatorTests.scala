@@ -26,10 +26,11 @@ class IcdValidatorTests extends FunSuite {
   test("Test ICD validation") {
     checkResult(validate(icdGood1, icdSchema))
 
-//    val problems = validate(icdBad1, icdSchema)
-//    assert(problems.length == 1)
-//    for (problem ← problems) {
-//      println(s"${problem.severity}: ${problem.message}")
-//    }
+    val problems = validate(icdBad1, icdSchema)
+    assert(problems.length == 1)
+////    for (problem ← problems) {
+////      println(s"${problem.severity}: ${problem.message}\n")
+////      println(problem.json)
+////    }
   }
 }
