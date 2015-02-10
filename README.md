@@ -7,17 +7,19 @@ however the schema descriptions as well as the ICDs themselves may also be writt
 the simpler [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md) format,
 or more exactly, the [Typesafe config](https://github.com/typesafehub/config) format.
 
-The schema config files make use of the `include` feature to reference other schemas.
-This is a typesafe config feature and is used to avoid having large, complicated schema files.
-
-The JSON Schema `$ref` feature is then used to refer to the included definitions. For example:
+The JSON Schema `$ref` feature is used to refer to resource files containing JSON schema definitions.
+A custom URI is defined here that allows you to refer to HOCON format config files,
+which are automatically converted to JSON:
+For example:
 
 ```
-    "$ref" = "#/definitions/publish"
+    "$ref" = "config:/publish-schema.conf"
 ```
 
-refers to the definitions/publish section, which included the publish schema.
+refers to resources/publish-schema.conf.
 
+See [json-schema-validator](https://github.com/fge/json-schema-validator/wiki/Features) for other
+URI schemes that are supported.
 
 icd Command
 ===========
