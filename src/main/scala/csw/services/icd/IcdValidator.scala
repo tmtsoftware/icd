@@ -47,8 +47,9 @@ object IcdValidator {
    * Describes any validation problems found
    * @param severity a string describing the error severity: fatal, error, warning, etc.
    * @param message describes the problem
+   * @param json additional information about the problem in JSON format
    */
-  case class Problem(severity: String, message: String)
+  case class Problem(severity: String, message: String, json: String)
 
   /**
    * Validates the given input file using the given JSON schema file
@@ -84,18 +85,16 @@ object IcdValidator {
     try {
       validateResult(schema.validate(jsonInput, true))
     } catch {
-      case e: Exception ⇒ List(Problem("fatal", e.toString))
+      case e: Exception ⇒ List(Problem("fatal", e.toString, ""))
     }
   }
 
   // Packages the validation results for return to caller
   private def validateResult(report: ProcessingReport): List[Problem] = {
-    if (report.isSuccess) {
-      Nil
-    } else {
-      import scala.collection.JavaConverters._
-      val result = for (msg ← report.asScala) yield Problem(msg.getLogLevel.toString, msg.getMessage)
-      result.toList
-    }
+    import scala.collection.JavaConverters._
+    val result = for (msg ← report.asScala)
+    yield Problem(msg.getLogLevel.toString, msg.getMessage,
+      toJson(ConfigFactory.parseString(msg.asJson().toString)))
+    result.toList
   }
 }

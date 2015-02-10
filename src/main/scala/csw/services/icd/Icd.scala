@@ -45,21 +45,21 @@ object Icd extends App {
 
   private def run(options: Options): Unit = {
     // Save input or schema file as JSON to output file
-    options.outputFile map {
-      outputFile ⇒
-        val x = options.inputFile match {
-          case Some(inputFile) ⇒ saveAsJson(inputFile, outputFile)
-          case None ⇒ options.schemaFile map {
-            schemaFile ⇒ saveAsJson(schemaFile, outputFile)
-          }
+    for (outputFile ← options.outputFile) {
+      options.inputFile match {
+        case Some(inputFile) ⇒ saveAsJson(inputFile, outputFile)
+        case None ⇒ options.schemaFile map {
+          schemaFile ⇒ saveAsJson(schemaFile, outputFile)
         }
+      }
     }
 
     // Validate input file, if given
     for (inputFile ← options.inputFile; schemaFile ← options.schemaFile) {
       val problems = validate(inputFile, schemaFile)
       for (problem ← problems) {
-        println(s"${problem.severity}: ${problem.message}")
+        println(s"${problem.severity}: ${problem.message}\n")
+        println(problem.json)
       }
     }
   }
