@@ -1,21 +1,17 @@
 package csw.services.icd
 
-import com.typesafe.config.{ConfigResolveOptions, ConfigFactory}
+import com.typesafe.config.{Config, ConfigResolveOptions, ConfigFactory}
 import csw.services.icd.IcdValidator._
 import org.scalatest.FunSuite
 
 /**
- *
+ * Tests ICD schema validation
  */
 class IcdValidatorTests extends FunSuite {
 
-  val icdSchema = ConfigFactory.parseResources("icd-schema.conf").resolve(ConfigResolveOptions.noSystem())
-  val icdGood1 = ConfigFactory.parseResources("icd-good1.conf").resolve(ConfigResolveOptions.noSystem())
-  val icdBad1 = ConfigFactory.parseResources("icd-bad1.conf").resolve(ConfigResolveOptions.noSystem())
-
-  val publishSchema = ConfigFactory.parseResources("publish-schema.conf").resolve(ConfigResolveOptions.noSystem())
-  val publishGood1 = ConfigFactory.parseResources("publish-good1.conf").resolve(ConfigResolveOptions.noSystem())
-  val publishBad1 = ConfigFactory.parseResources("publish-bad1.conf").resolve(ConfigResolveOptions.noSystem())
+  def getConfig(name: String): Config = {
+    ConfigFactory.parseResources(name).resolve(ConfigResolveOptions.noSystem())
+  }
 
   def printResult(result: List[Problem]): Unit = {
     for (problem ← result) {
@@ -31,16 +27,19 @@ class IcdValidatorTests extends FunSuite {
     }
   }
 
-  test("Test publish ICD validation") {
-    // test valid files
-    checkResult(validate(icdGood1, icdSchema))
-    checkResult(validate(publishGood1, publishSchema))
-
-    // test files with errors
-    val problems1 = validate(icdBad1, icdSchema)
+  def runTest(good: Config, bad: Config, schema: Config):Unit = {
+    checkResult(validate(good, schema))
+    val problems1 = validate(bad, schema)
     assert(problems1.length != 0)
+  }
 
-    val problems2 = validate(publishBad1, publishSchema)
-    assert(problems2.length != 0)
+  def runTest(good: String, bad: String, schema: String): Unit = {
+    runTest(getConfig(good), getConfig(bad), getConfig(schema))
+  }
+
+  test("Test ICD validation") {
+    runTest("icd-good1.conf", "icd-bad1.conf", "icd-schema.conf")
+    runTest("publish-good1.conf", "publish-bad1.conf", "publish-schema.conf")
+    runTest("command-good1.conf", "command-bad1.conf", "command-schema.conf")
   }
 }
