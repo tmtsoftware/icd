@@ -9,9 +9,9 @@ import org.scalatest.FunSuite
  */
 class IcdValidatorTests extends FunSuite {
 
-  val icdSchema = ConfigFactory.parseResources("icd-schema.conf").resolve(ConfigResolveOptions.noSystem())
-  val icdGood1 = ConfigFactory.parseResources("icd-good1.conf").resolve(ConfigResolveOptions.noSystem())
-  val icdBad1 = ConfigFactory.parseResources("icd-bad1.conf").resolve(ConfigResolveOptions.noSystem())
+  val publishSchema = ConfigFactory.parseResources("publish-schema.conf").resolve(ConfigResolveOptions.noSystem())
+  val publishGood1 = ConfigFactory.parseResources("publish-good1.conf").resolve(ConfigResolveOptions.noSystem())
+  val publishBad1 = ConfigFactory.parseResources("publish-bad1.conf").resolve(ConfigResolveOptions.noSystem())
 
   def checkResult(result: List[Problem]): Unit = {
     if (result.nonEmpty) {
@@ -23,10 +23,10 @@ class IcdValidatorTests extends FunSuite {
     }
   }
 
-  test("Test ICD validation") {
-    checkResult(validate(icdGood1, icdSchema))
+  test("Test publish ICD validation") {
+    checkResult(validate(publishGood1, publishSchema))
 
-//    val problems = validate(icdBad1, icdSchema)
+//    val problems = validate(publishBad1, publishSchema)
 //    assert(problems.length == 1)
 //    for (problem ← problems) {
 //      println(s"${problem.severity}: ${problem.message}\n")
