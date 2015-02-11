@@ -51,4 +51,15 @@ error: instance value ("Nope") not found in enum (possible values: ["Yes","No"])
 In the first case, no errors were found. In the second case, the error is displayed.
 
 
+Scala API
+=========
+
+There are two versions of `IcdValidator.validate`. One takes an input file and a schema file to use to
+validate it. The other takes an input Config and a schema Config object (for example, from a resource config file).
+The files can be in HOCON or JSON format. HOCON formatted files are automatically converted to JSON.
+
+The result of calling validate is a list of Problems. Each Problem includes an error level (warning, error, etc.),
+a string message and an additional string in JSON format that includes more details about the error.
+
+If the document is valid, the list of problems should be empty.
 
