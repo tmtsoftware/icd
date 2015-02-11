@@ -41,5 +41,6 @@ class IcdValidatorTests extends FunSuite {
     runTest("icd-good1.conf", "icd-bad1.conf", "icd-schema.conf")
     runTest("publish-good1.conf", "publish-bad1.conf", "publish-schema.conf")
     runTest("command-good1.conf", "command-bad1.conf", "command-schema.conf")
+    runTest("component-good1.conf", "component-bad1.conf", "component-schema.conf")
   }
 }
