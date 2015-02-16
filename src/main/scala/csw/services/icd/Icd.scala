@@ -1,6 +1,6 @@
 package csw.services.icd
 
-import java.io.{File, FileOutputStream}
+import java.io.{ File, FileOutputStream }
 
 /**
  * An ICD validator application
@@ -10,7 +10,7 @@ object Icd extends App {
 
   /**
    * Command line options: [--validate <dir> --in <inputFile> --schema <jsonSchema> --out <outputFile>]
-   * (Options may be abbreviated to a single letter: -v, -i, -s, -o, etc.)
+   * (Some options may be abbreviated to a single letter: -i, -s, -o)
    */
   case class Options(validateDir: File = new File("."),
                      inputFile: Option[File] = None, schemaFile: Option[File] = None, outputFile: Option[File] = None)
@@ -18,7 +18,7 @@ object Icd extends App {
   private val parser = new scopt.OptionParser[Options]("icd") {
     head("icd", System.getProperty("CSW_VERSION"))
 
-    opt[File]('v', "validate") valueName "<dir>" action { (x, c) ⇒
+    opt[File]("validate") valueName "<dir>" action { (x, c) ⇒ // Note: -v is already taken by the shell script!
       c.copy(validateDir = x)
     } text "Validates set of files in dir (default: current dir): icd-model.conf, component-model.conf, command-model.conf, publish-model.conf, subscribe-model.conf"
 
@@ -80,7 +80,7 @@ object Icd extends App {
   }
 
   private def errorCount(problems: List[Problem]): Int = {
-    problems.count(p => p.severity == "error" || p.severity == "fatal")
+    problems.count(p ⇒ p.severity == "error" || p.severity == "fatal")
   }
 
   private def printProblems(problems: List[Problem]): Unit = {

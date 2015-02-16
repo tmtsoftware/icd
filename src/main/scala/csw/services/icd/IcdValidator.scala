@@ -8,8 +8,8 @@ import com.github.fge.jackson.JsonLoader
 import com.github.fge.jsonschema.core.load.configuration.LoadingConfiguration
 import com.github.fge.jsonschema.core.load.download.URIDownloader
 import com.github.fge.jsonschema.core.report.ProcessingReport
-import com.github.fge.jsonschema.main.{JsonSchema, JsonSchemaFactory}
-import com.typesafe.config.{Config, ConfigResolveOptions, ConfigFactory, ConfigRenderOptions}
+import com.github.fge.jsonschema.main.{ JsonSchema, JsonSchemaFactory }
+import com.typesafe.config.{ Config, ConfigResolveOptions, ConfigFactory, ConfigRenderOptions }
 
 import scala.io.Source
 
@@ -77,8 +77,7 @@ object IcdValidator {
     StdName("component-model.conf", "component-schema.conf"),
     StdName("publish-model.conf", "publish-schema.conf"),
     StdName("subscribe-model.conf", "subscribe-schema.conf"),
-    StdName("command-model.conf", "command-schema.conf")
-  )
+    StdName("command-model.conf", "command-schema.conf"))
 
   /**
    * Validates all files with the standard names (stdNames) in the given directory.
@@ -88,7 +87,7 @@ object IcdValidator {
     if (!dir.isDirectory) {
       List(Problem("error", s"$dir does not exist"))
     } else {
-      val result = for (stdName <- stdNames) yield {
+      val result = for (stdName ← stdNames) yield {
         val inputFile = new File(dir, stdName.name)
         if (!inputFile.exists()) {
           List(Problem("warning", s"${stdName.name} is missing"))
@@ -148,8 +147,8 @@ object IcdValidator {
   private def validateResult(report: ProcessingReport): List[Problem] = {
     import scala.collection.JavaConverters._
     val result = for (msg ← report.asScala)
-    yield Problem(msg.getLogLevel.toString, msg.getMessage,
-        toJson(ConfigFactory.parseString(msg.asJson().toString)))
+      yield Problem(msg.getLogLevel.toString, msg.getMessage,
+      toJson(ConfigFactory.parseString(msg.asJson().toString)))
     result.toList
   }
 
