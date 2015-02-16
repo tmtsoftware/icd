@@ -1,7 +1,7 @@
 #Interface Control Document <br> WFOS-ESW
 
  Version | Subsystem | WBS Id
- ---|
+ ---|---|---
 2014-11-21 | WFOS | TMT.INS.INST.WFOS.SWE
 
 
@@ -12,7 +12,7 @@ This is the metadata description of the WFOS filter Assembly
 
 
 Component Type | Uses Time | Uses Events | Uses Configurations | Uses Properties
----|
+---|---|---|---|---
 Assembly | no | no | no | no
 
 
