@@ -32,7 +32,7 @@ Name|Description|Type|Units
 ---|---|---|---
 a1|single value with min/max|integer (-2 ≤ i ≤ 22)|m
 a2|array of float|array of numbers (length = 5)|mm
-a3|enum choice|One of (red, green, blue)
+a3|enum choice|String: ("red", "green", "blue")
 
 ####1.1.2 Attributes for status2
 
@@ -47,7 +47,7 @@ Name|Description|Type|Units
 ---|---|---|---
 a1|single value with min/max|integer (-2 ≤ i ≤ 22)|m
 a2|array of float|array of numbers (length = 5)|mm
-a3|enum choice|One of (red, green, blue)
+a3|enum choice|String: ("red", "green", "blue")
 
 
 
@@ -64,7 +64,7 @@ Name|Description|Type|Units
 ---|---|---|---
 a1|single value with min/max|integer (-2 ≤ i ≤ 22)|m
 a2|array of float|array of numbers (length = 5)|mm
-a3|enum choice|One of (red, green, blue)
+a3|enum choice|String: ("red", "green", "blue")
 
 ####1.3.2 Attributes for status2
 
@@ -86,7 +86,7 @@ alarm2|Second alarm|major|Yes
 ###1.5 Health
 
 Name|Description|Value Type|Default|Rate|Max Rate|Archive|Archive Rate
----|---|---|---
+---|---|---|---|---|---|---|---
 health1|First health item|One of (good, ill, bad, unknown)|good|0|100|Yes|10
 health2|Second health item|One of (good, ill, bad, unknown)|good|1|10|No|1
 
@@ -158,7 +158,7 @@ Name|Description|Type|Units
 ---|---|---|---
 a1|single value with min/max|integer (-2 ≤ i ≤ 22)|m
 arg2|array of float|array of numbers (length = 5)|mm
-arg3|enum choice|One of (red, green, blue)|
+arg3|enum choice|String: ("red", "green", "blue")|
 arg4|A string value|string|
 
 
