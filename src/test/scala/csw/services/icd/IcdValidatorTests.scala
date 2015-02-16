@@ -1,5 +1,7 @@
 package csw.services.icd
 
+import java.io.File
+
 import com.typesafe.config.{Config, ConfigResolveOptions, ConfigFactory}
 import csw.services.icd.IcdValidator._
 import org.scalatest.FunSuite
@@ -38,10 +40,14 @@ class IcdValidatorTests extends FunSuite {
   }
 
   test("Test ICD validation") {
-    runTest("icd-good1.conf", "icd-bad1.conf", "icd-schema.conf")
-    runTest("publish-good1.conf", "publish-bad1.conf", "publish-schema.conf")
-    runTest("subscribe-good1.conf", "subscribe-bad1.conf", "subscribe-schema.conf")
-    runTest("command-good1.conf", "command-bad1.conf", "command-schema.conf")
-    runTest("component-good1.conf", "component-bad1.conf", "component-schema.conf")
+    runTest("icd-model.conf", "icd-model-bad1.conf", "icd-schema.conf")
+    runTest("publish-model.conf", "publish-model-bad1.conf", "publish-schema.conf")
+    runTest("subscribe-model.conf", "subscribe-model-bad1.conf", "subscribe-schema.conf")
+    runTest("command-model.conf", "command-model-bad1.conf", "command-schema.conf")
+    runTest("component-model.conf", "component-model-bad1.conf", "component-schema.conf")
+  }
+
+  test("Test validation of directory containing standard file names") {
+    checkResult(validate(new File("src/test/resources")))
   }
 }
