@@ -23,14 +23,14 @@ Assembly | no | no | no | no
 ###1.1 Telemetry
 
 Name|Rate|Max Rate|Archive|Archive Rate
----|---|---|---|---|---
+---|---|---|---|---
 status1|0|100|Yes|10
 status2|10|10|No|
 
 ####1.1.1 Attributes for status1
 
 Name|Description|Type|Default|Units
----|---|---|---
+---|---|---|---|---
 a1|single value with min/max|integer (-2 ≤ i ≤ 22)||m
 a2|array of float|array[number] (length = 5)||mm
 a3|enum choice|String: ("red", "green", "blue")|"blue"
@@ -38,14 +38,14 @@ a3|enum choice|String: ("red", "green", "blue")|"blue"
 ####1.1.2 Attributes for status2
 
 Name|Description|Type|Default|Units
----|---|---|---
+---|---|---|---|---
 a4|single value with min/max|integer (-2 ≤ i ≤ 22)|10|m
 
 
 ###1.2 Events
 
 Name|Description|Type|Default|Units
----|---|---|---
+---|---|---|---|---
 a1|single value with min/max|integer (-2 ≤ i ≤ 22)||m
 a2|array of float|array[number] (length = 5)||mm
 a3|enum choice|String: ("red", "green", "blue")|"green"
@@ -55,14 +55,14 @@ a3|enum choice|String: ("red", "green", "blue")|"green"
 ###1.3 Event Streams
 
 Name|Rate|Max Rate|Archive|Archive Rate
----|---|---|---|---|---
+---|---|---|---|---|---|---
 status1|0|100|Yes|10
 status2|10|10|No|
 
 ####1.3.1 Attributes for status1
 
 Name|Description|Type|Default|Units
----|---|---|---
+---|---|---|---|---
 a1|single value with min/max|integer (-2 ≤ i ≤ 22)||m
 a2|array of float|array[number] (length = 5)||mm
 a3|enum choice|String: ("red", "green", "blue")|"red"
@@ -70,7 +70,7 @@ a3|enum choice|String: ("red", "green", "blue")|"red"
 ####1.3.2 Attributes for status2
 
 Name|Description|Type|Default|Units
----|---|---|---
+---|---|---|---|---
 a4|single value with min/max|integer (-2 ≤ i ≤ 22)|3|m
 
 
@@ -87,7 +87,7 @@ alarm2|Second alarm|major|Yes
 ###1.5 Health
 
 Name|Description|Value Type|Default|Rate|Max Rate|Archive|Archive Rate
----|---|---|---|---|---|---|---
+---|---|---|---|---|---|---|---|---
 health1|First health item|string ("good", "ill", "bad", "unknown")|good|0|100|Yes|10
 health2|Second health item|string ("good", "ill", "bad", "unknown")|good|1|10|No|1
 
@@ -156,7 +156,7 @@ TCS|elevation|10|10
 ####3.1.1.1 *Cmd1* Arguments
 
 Name|Description|Type|Default|Units
----|---|---|---
+---|---|---|---|---
 a1|single value with min/max|integer (-2 ≤ i ≤ 22)|5|m
 arg2|array of float|array[number] (length = 5)||mm
 arg3|enum choice|String: ("red", "green", "blue")|"green"|
@@ -176,6 +176,6 @@ arg4|A string value|string|"bob"|
 ####3.2.1.1 *CreateSetup* Arguments
 
 Name|Description|Type|Default|Units
----|---|---|---
+---|---|---|---|---
 podVoltage|voltage to be used by crate during ops|integer (5 ≤ i ≤ 25)|10|
 dwellTime|time between request and start of activity|number|1|seconds
