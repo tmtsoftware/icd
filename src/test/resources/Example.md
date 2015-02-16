@@ -21,14 +21,14 @@ Assembly | no | no | no | no
 ###1.1 Telemetry
 
 Name|Rate|Max Rate|Archive|Archive Rate|Attributes
----|
-status1|0|100|Yes|10|[see below][Attributes for status1]
-status2|10|10|No||[see below][1.1.2]
+---|---|---|---|---|---
+status1|0|100|Yes|10|[see below](1.1.1 Attributes for status1)
+status2|10|10|No||[see below](1.1.2 Attributes for status2)
 
 ####1.1.1 Attributes for status1
 
 Name|Description|Type|Units
----|
+---|---|---|---
 a1|single value with min/max|integer (-2 ≤ i ≤ 22)|m
 a2|array of float|array of numbers (length = 5)|mm
 a3|enum choice|enum[red, green, blue]
@@ -36,7 +36,7 @@ a3|enum choice|enum[red, green, blue]
 ####1.1.2 Attributes for status2
 
 Name|Description|Type|Units
----|
+---|---|---|---
 a1|single value with min/max|integer (-2 ≤ i ≤ 22)|m
 a2|array of float|array of numbers (length = 5)|mm
 a3|enum choice|enum[red, green, blue]
