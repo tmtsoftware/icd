@@ -32,7 +32,7 @@ status2|10|10|No|
 Name|Description|Type|Default|Units
 ---|---|---|---|---
 a1|single value with min/max|integer (-2 ≤ i ≤ 22)||m
-a2|array of float|array[number] (length = 5)||mm
+a2|array of float|array of numbers (length = 5)||mm
 a3|enum choice|String: ("red", "green", "blue")|"blue"
 
 ####1.1.2 Attributes for status2
@@ -47,7 +47,7 @@ a4|single value with min/max|integer (-2 ≤ i ≤ 22)|10|m
 Name|Description|Type|Default|Units
 ---|---|---|---|---
 a1|single value with min/max|integer (-2 ≤ i ≤ 22)||m
-a2|array of float|array[number] (length = 5)||mm
+a2|array of float|array of numbers (length = 5)||mm
 a3|enum choice|String: ("red", "green", "blue")|"green"
 
 
@@ -64,7 +64,7 @@ status2|10|10|No|
 Name|Description|Type|Default|Units
 ---|---|---|---|---
 a1|single value with min/max|integer (-2 ≤ i ≤ 22)||m
-a2|array of float|array[number] (length = 5)||mm
+a2|array of float|array of numbers (length = 5)||mm
 a3|enum choice|String: ("red", "green", "blue")|"red"
 
 ####1.3.2 Attributes for status2
@@ -158,7 +158,7 @@ TCS|elevation|10|10
 Name|Description|Type|Default|Units
 ---|---|---|---|---
 a1|single value with min/max|integer (-2 ≤ i ≤ 22)|5|m
-arg2|array of float|array[number] (length = 5)||mm
+arg2|array of float|array of numbers (length = 5)||mm
 arg3|enum choice|String: ("red", "green", "blue")|"green"|
 arg4|A string value|string|"bob"|
 
