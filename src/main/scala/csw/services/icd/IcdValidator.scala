@@ -45,14 +45,6 @@ object IcdValidator {
     config.root.render(jsonOptions)
   }
 
-  /**
-   * Describes any validation problems found
-   * @param severity a string describing the error severity: fatal, error, warning, etc.
-   * @param message describes the problem
-   * @param json additional information about the problem in JSON format
-   */
-  case class Problem(severity: String, message: String, json: String = "")
-
   // Adds a custom URI scheme, so that config:/... loads the config file as a resource
   // and converts it to JSON. In this way you can use "$ref": "config:/myfile.conf"
   // to refer to external JSON schemas in HOCON format.
@@ -67,23 +59,12 @@ object IcdValidator {
   private val cfg = LoadingConfiguration.newBuilder.addScheme("config", ConfigDownloader).freeze
   private val factory = JsonSchemaFactory.newBuilder.setLoadingConfiguration(cfg).freeze
 
-  private case class StdName(name: String, schema: String)
-
-  /**
-   * Standard file names expected for a complete ICD
-   */
-  private val stdNames = List(
-    StdName("icd-model.conf", "icd-schema.conf"),
-    StdName("component-model.conf", "component-schema.conf"),
-    StdName("publish-model.conf", "publish-schema.conf"),
-    StdName("subscribe-model.conf", "subscribe-schema.conf"),
-    StdName("command-model.conf", "command-schema.conf"))
-
   /**
    * Validates all files with the standard names (stdNames) in the given directory.
    * @param dir the directory containing the standard set of ICD files (default: current dir)
    */
   def validate(dir: File = new File(".")): List[Problem] = {
+    import StdName._
     if (!dir.isDirectory) {
       List(Problem("error", s"$dir does not exist"))
     } else {
@@ -156,9 +137,10 @@ object IcdValidator {
    * Parses the set of standard ICD files (see stdNames) and saves a document describing them
    * to the given file in a format determined by the file's suffix, which should be one of
    * (md, html, pdf).
+   * @param dir the directory containing the standard ICD files
    * @param file the file in which to save the document
    */
-  def saveToFile(file: File): Unit = {
-
+  def saveToFile(dir: File, file: File): Unit = {
+    IcdParser(dir).saveToFile(file)
   }
 }

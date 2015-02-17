@@ -73,7 +73,7 @@ object Icd extends App {
       printProblems(problems)
       for (outputFile ← options.outputFile) {
         if (errorCount(problems) == 0 && !outputFile.getName.endsWith(".json")) {
-          saveToFile(outputFile)
+          saveToFile(options.validateDir, outputFile)
         }
       }
     }
