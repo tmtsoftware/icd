@@ -12,7 +12,7 @@ object AlarmModel {
     val name = config.as[Option[String]]("name").getOrElse("")
     val description = config.as[Option[String]]("description").getOrElse("")
     val severity = config.as[Option[String]]("severity").getOrElse("none")
-    val archive = config.as[Option[String]]("archive").getOrElse("Yes")
+    val archive = config.as[Option[Boolean]]("archive").getOrElse(true)
 
     AlarmModel(name = name,
       description = description,
@@ -24,5 +24,5 @@ object AlarmModel {
 case class AlarmModel(name: String,
                       description: String,
                       severity: String,
-                      archive: String) extends IcdModelBase
+                      archive: Boolean) extends IcdModelBase
 

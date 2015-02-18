@@ -8,20 +8,21 @@ import com.typesafe.config.Config
 object ComponentModel {
   def apply(config: Config): ComponentModel = {
     ComponentModel(
-      componentType = config.getString("componentType"),
-      description = config.getString("description"),
       name = config.getString("name"),
-      usesConfigurations = config.getString("usesConfigurations"),
-      usesEvents = config.getString("usesEvents"),
-      usesProperties = config.getString("usesProperties"),
-      usesTime = config.getString("usesTime"))
+      description = config.getString("description"),
+      usesTime = config.getBoolean("usesTime"),
+      usesEvents = config.getBoolean("usesEvents"),
+      usesConfigurations = config.getBoolean("usesConfigurations"),
+      usesProperties = config.getBoolean("usesProperties"),
+      componentType = config.getString("componentType")
+    )
   }
 }
 
-case class ComponentModel(componentType: String,
+case class ComponentModel(name: String,
                           description: String,
-                          name: String,
-                          usesConfigurations: String,
-                          usesEvents: String,
-                          usesProperties: String,
-                          usesTime: String) extends IcdModelBase
+                          usesTime: Boolean,
+                          usesEvents: Boolean,
+                          usesProperties: Boolean,
+                          usesConfigurations: Boolean,
+                          componentType: String) extends IcdModelBase

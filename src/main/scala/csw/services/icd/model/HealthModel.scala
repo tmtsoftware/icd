@@ -13,7 +13,7 @@ object HealthModel {
     val name = config.as[Option[String]]("name").getOrElse("")
     val description = config.as[Option[String]]("description").getOrElse("")
     val rate = config.as[Option[Double]]("rate").getOrElse(0.0)
-    val archive = config.as[Option[String]]("archive").getOrElse("No")
+    val archive = config.as[Option[Boolean]]("archive").getOrElse(false)
     val archiveRate = config.as[Option[Double]]("archiveRate").getOrElse(0.0)
     val maxRate = config.as[Option[Double]]("maxRate").getOrElse(0.0)
     val valueType = JsonSchemaModel(config.getConfig("valueType"))
@@ -31,7 +31,7 @@ object HealthModel {
 case class HealthModel(name: String,
                        description: String,
                        rate: Double,
-                       archive: String,
+                       archive: Boolean,
                        archiveRate: Double,
                        maxRate: Double,
                        valueType: JsonSchemaModel) extends IcdModelBase

@@ -14,7 +14,7 @@ object TelemetryModel {
     val name = config.as[Option[String]]("name").getOrElse("")
     val description = config.as[Option[String]]("description").getOrElse("")
     val rate = config.as[Option[Double]]("rate").getOrElse(0.0)
-    val archive = config.as[Option[String]]("archive").getOrElse("No")
+    val archive = config.as[Option[Boolean]]("archive").getOrElse(false)
     val archiveRate = config.as[Option[Double]]("archiveRate").getOrElse(0.0)
     val maxRate = config.as[Option[Double]]("maxRate").getOrElse(0.0)
     val attributesList = for (conf ← config.as[Option[List[Config]]]("attributes").getOrElse(Nil)) yield JsonSchemaModel(conf)
@@ -32,7 +32,7 @@ object TelemetryModel {
 case class TelemetryModel(name: String,
                           description: String,
                           rate: Double,
-                          archive: String,
+                          archive: Boolean,
                           archiveRate: Double,
                           maxRate: Double,
                           attributesList: List[JsonSchemaModel]) extends IcdModelBase
