@@ -1,10 +1,10 @@
-package csw.services.icd
+package csw.services.icd.model
 
 import com.typesafe.config.Config
 
-
-// ---
-
+/**
+ * See resources/icd-schema.conf
+ */
 object IcdModel {
   def apply(config: Config): IcdModel = {
     val conf = config.getConfig("icd")
@@ -12,7 +12,7 @@ object IcdModel {
       modelVersion = conf.getString("modelVersion"),
       name = conf.getString("name"),
       subsystem = conf.getString("subsystem"),
-      version = conf.getDouble("version"),
+      version = conf.getInt("version"),
       wbsId = conf.getString("wbsId"))
   }
 }
@@ -20,9 +20,8 @@ object IcdModel {
 case class IcdModel(modelVersion: String,
                     name: String,
                     subsystem: String,
-                    version: Double,
+                    version: Int,
                     wbsId: String) extends IcdModelBase
 
 // ---
-
 

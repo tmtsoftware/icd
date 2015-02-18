@@ -2,7 +2,7 @@ package csw.services.icd
 
 import java.io.File
 
-import com.typesafe.config.{Config, ConfigResolveOptions, ConfigFactory}
+import com.typesafe.config.{ Config, ConfigResolveOptions, ConfigFactory }
 import csw.services.icd.IcdValidator._
 import org.scalatest.FunSuite
 
@@ -11,6 +11,8 @@ import org.scalatest.FunSuite
  */
 class IcdValidatorTests extends FunSuite {
 
+  val testDir = new File("src/test/resources")
+
   def getConfig(name: String): Config = {
     ConfigFactory.parseResources(name).resolve(ConfigResolveOptions.noSystem())
   }
@@ -18,7 +20,6 @@ class IcdValidatorTests extends FunSuite {
   def printResult(result: List[Problem]): Unit = {
     for (problem ← result) {
       println(s"${problem.severity}: ${problem.message}\n")
-      println(problem.json)
     }
   }
 
@@ -29,7 +30,7 @@ class IcdValidatorTests extends FunSuite {
     }
   }
 
-  def runTest(good: Config, bad: Config, schema: Config):Unit = {
+  def runTest(good: Config, bad: Config, schema: Config): Unit = {
     checkResult(validate(good, schema))
     val problems1 = validate(bad, schema)
     assert(problems1.length != 0)
@@ -38,6 +39,8 @@ class IcdValidatorTests extends FunSuite {
   def runTest(good: String, bad: String, schema: String): Unit = {
     runTest(getConfig(good), getConfig(bad), getConfig(schema))
   }
+
+  // ---
 
   test("Test ICD validation") {
     runTest("icd-model.conf", "icd-model-bad1.conf", "icd-schema.conf")
@@ -48,6 +51,15 @@ class IcdValidatorTests extends FunSuite {
   }
 
   test("Test validation of directory containing standard file names") {
-    checkResult(validate(new File("src/test/resources")))
+    checkResult(validate(testDir))
+  }
+
+  test("Test the parser") {
+    val parser = IcdParser(testDir)
+    val icdModel = parser.icdModel.get
+    assert(icdModel.modelVersion == "1.1")
+    assert(icdModel.name == "WFOS-ESW")
+    assert(icdModel.version == 20141121)
+    assert(icdModel.wbsId == "TMT.INS.INST.WFOS.SWE")
   }
 }

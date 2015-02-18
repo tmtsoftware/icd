@@ -61,12 +61,13 @@ def test(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test")
 // dependencies
 val scopt = "com.github.scopt" %% "scopt" % "3.3.0"
 val jsonSchemaValidator = "com.github.fge" % "json-schema-validator" % "2.2.6"
+val ficus = "net.ceedubs" %% "ficus" % "1.1.2"
 val typesafeConfig = "com.typesafe" % "config" % "1.2.1"
 val scalaTest = "org.scalatest" %% "scalatest" % "2.1.5"
 
 lazy val icd = (project in file("."))
   .settings(packageSettings("CSW ICD support", "Used to validate ICDs"): _*)
   .settings(libraryDependencies ++=
-  compile(jsonSchemaValidator, scopt, typesafeConfig) ++
+  compile(jsonSchemaValidator, scopt, typesafeConfig, ficus) ++
     test(scalaTest)
   )

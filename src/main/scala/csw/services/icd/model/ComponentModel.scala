@@ -1,7 +1,10 @@
-package csw.services.icd
+package csw.services.icd.model
 
 import com.typesafe.config.Config
 
+/**
+ * See resources/component-schema.conf
+ */
 object ComponentModel {
   def apply(config: Config): ComponentModel = {
     ComponentModel(
@@ -11,8 +14,7 @@ object ComponentModel {
       usesConfigurations = config.getString("usesConfigurations"),
       usesEvents = config.getString("usesEvents"),
       usesProperties = config.getString("usesProperties"),
-      usesTime = config.getString("usesTime")
-    )
+      usesTime = config.getString("usesTime"))
   }
 }
 

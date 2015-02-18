@@ -2,7 +2,8 @@ package csw.services.icd
 
 import java.io.File
 
-import com.typesafe.config.{ConfigResolveOptions, ConfigFactory, Config}
+import com.typesafe.config.{ ConfigResolveOptions, ConfigFactory, Config }
+import csw.services.icd.model._
 
 /**
  * Parses the standard ICD files in the given directory
@@ -11,32 +12,17 @@ case class IcdParser(dir: File) {
 
   import StdName._
 
-//  case class IcdModel(config: Option[Config]) extends IcdModelBase {
-//
-//  }
-//
-//  case class ComponentModel(config: Option[Config]) extends IcdModelBase
-//  case class PublishModel(config: Option[Config]) extends IcdModelBase
-//  case class SubscribeModel(config: Option[Config]) extends IcdModelBase
-//  case class CommandModel(config: Option[Config]) extends IcdModelBase
-//
-//  val models = List(
-//    IcdModel(getConfig(dir, icdFileNames.name)),
-//    ComponentModel(getConfig(dir, componentFileNames.name)),
-//    PublishModel(getConfig(dir, publishFileNames.name)),
-//    SubscribeModel(getConfig(dir, subscribeFileNames.name)),
-//    CommandModel(getConfig(dir, commandFileNames.name))
-//  )
+  val icdModel = getConfig(icdFileNames.name).map(IcdModel(_))
+  val componentModel = getConfig(componentFileNames.name).map(ComponentModel(_))
+  val publishModel = getConfig(publishFileNames.name).map(PublishModel(_))
+  val subscribeModel = getConfig(subscribeFileNames.name).map(SubscribeModel(_))
+  val commandModel = getConfig(commandFileNames.name).map(CommandModel(_))
 
-  // List of models for the configs that were found (ignoring any missing ones)
-  val models = List(
-    getConfig(dir, icdFileNames.name).map(IcdModel(_)),
-    getConfig(dir, componentFileNames.name).map(ComponentModel(_))
-  ).flatten
-
+  // List of models for the files that were found
+  val models = List(icdModel, componentModel, publishModel, subscribeModel, commandModel).flatten
 
   // Gets the Config object corresponding to the given standard ICD file in the given dir
-  private def getConfig(dir: File, name: String): Option[Config] = {
+  private def getConfig(name: String): Option[Config] = {
     val inputFile = new File(dir, name)
     if (inputFile.exists()) {
       Some(ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem()))
@@ -49,7 +35,7 @@ case class IcdParser(dir: File) {
    * @param file the file to save the ICD document in
    */
   def saveToFile(file: File): Unit = {
-    for(model <- models) {
+    for (model ← models) {
       model.save() // XXX TODO
     }
   }

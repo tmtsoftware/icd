@@ -120,7 +120,7 @@ object IcdValidator {
     } catch {
       case e: Exception ⇒
         e.printStackTrace()
-        List(Problem("fatal", e.toString, ""))
+        List(Problem("fatal", e.toString))
     }
   }
 
@@ -128,8 +128,7 @@ object IcdValidator {
   private def validateResult(report: ProcessingReport): List[Problem] = {
     import scala.collection.JavaConverters._
     val result = for (msg ← report.asScala)
-      yield Problem(msg.getLogLevel.toString, msg.getMessage,
-      toJson(ConfigFactory.parseString(msg.asJson().toString)))
+      yield Problem(msg.getLogLevel.toString, msg.toString)
     result.toList
   }
 
