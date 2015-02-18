@@ -7,9 +7,9 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.github.fge.jackson.JsonLoader
 import com.github.fge.jsonschema.core.load.configuration.LoadingConfiguration
 import com.github.fge.jsonschema.core.load.download.URIDownloader
-import com.github.fge.jsonschema.core.report.ProcessingReport
-import com.github.fge.jsonschema.main.{ JsonSchema, JsonSchemaFactory }
-import com.typesafe.config.{ Config, ConfigResolveOptions, ConfigFactory, ConfigRenderOptions }
+import com.github.fge.jsonschema.core.report.{ProcessingMessage, ProcessingReport}
+import com.github.fge.jsonschema.main.{JsonSchema, JsonSchemaFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions, ConfigResolveOptions}
 
 import scala.io.Source
 
@@ -64,7 +64,7 @@ object IcdValidator {
    * @param dir the directory containing the standard set of ICD files (default: current dir)
    */
   def validate(dir: File = new File(".")): List[Problem] = {
-    import StdName._
+    import csw.services.icd.StdName._
     if (!dir.isDirectory) {
       List(Problem("error", s"$dir does not exist"))
     } else {
@@ -97,7 +97,7 @@ object IcdValidator {
     val jsonSchema = JsonLoader.fromString(toJson(schemaFile))
     val schema = factory.getJsonSchema(jsonSchema)
     val jsonInput = JsonLoader.fromString(toJson(inputFile))
-    validate(schema, jsonInput)
+    validate(schema, jsonInput, inputFile.getName)
   }
 
   /**
@@ -110,13 +110,14 @@ object IcdValidator {
     val jsonSchema = JsonLoader.fromString(toJson(schemaConfig))
     val schema = factory.getJsonSchema(jsonSchema)
     val jsonInput = JsonLoader.fromString(toJson(inputConfig))
-    validate(schema, jsonInput)
+    validate(schema, jsonInput, inputConfig.origin().filename())
   }
 
   // Runs the validation and handles any internal exceptions
-  private def validate(schema: JsonSchema, jsonInput: JsonNode): List[Problem] = {
+  // 'source' is the name of the input file for use in error messages.
+  private def validate(schema: JsonSchema, jsonInput: JsonNode, source: String): List[Problem] = {
     try {
-      validateResult(schema.validate(jsonInput, true))
+      validateResult(schema.validate(jsonInput, true), source)
     } catch {
       case e: Exception ⇒
         e.printStackTrace()
@@ -124,12 +125,43 @@ object IcdValidator {
     }
   }
 
-  // Packages the validation results for return to caller
-  private def validateResult(report: ProcessingReport): List[Problem] = {
+  // Packages the validation results for return to caller.
+  // 'source' is the name of the input file for use in error messages.
+  private def validateResult(report: ProcessingReport, source: String): List[Problem] = {
     import scala.collection.JavaConverters._
     val result = for (msg ← report.asScala)
-      yield Problem(msg.getLogLevel.toString, msg.toString)
+    yield Problem(msg.getLogLevel.toString, formatMsg(msg, source))
     result.toList
+  }
+
+  // Formats the error message for display to user.
+  // 'source' is the name of the original input file.
+  private def formatMsg(msg: ProcessingMessage, source: String): String = {
+    import scala.collection.JavaConversions._
+    val file = new File(source).getName
+
+    // val jsonStr = toJson(ConfigFactory.parseString(msg.asJson().toString))
+    // s"$file: $jsonStr"
+
+    // try to get a nicely formatted error message that includes the necessary info
+    val json = msg.asJson()
+    val pointer = json.get("instance").get("pointer").asText()
+    val loc = if (pointer.isEmpty) s"$file" else s"$file, at path: $pointer"
+    val schemaUri = json.get("schema").get("loadingURI").asText()
+    val schemaPointer = json.get("schema").get("pointer").asText()
+    val schemaStr = if (schemaUri == "#") "" else s" (schema: $schemaUri:$schemaPointer)"
+
+    // try to get additional messages from the reports section
+    val reports = json.get("reports")
+    val messages = if (reports == null) ""
+    else {
+      val reportElems = for (r <- reports.elements().toList) yield r
+      val msgElems = (for (r <- reports) yield r.elements().toList).flatten
+      val msgTexts = for (e <- msgElems) yield e.get("message").asText()
+      "\n" + msgTexts.mkString("\n")
+    }
+
+    s"$loc: ${msg.getLogLevel.toString}: ${msg.getMessage}$schemaStr$messages"
   }
 
   /**

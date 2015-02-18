@@ -19,7 +19,7 @@ class IcdValidatorTests extends FunSuite {
 
   def printResult(result: List[Problem]): Unit = {
     for (problem ← result) {
-      println(s"${problem.severity}: ${problem.message}\n")
+      println(problem.message + "\n")
     }
   }
 
@@ -133,5 +133,7 @@ class IcdValidatorTests extends FunSuite {
     assert(a1.getInt("minimum") == -2)
     assert(a1.getInt("maximum") == 22)
     assert(a1.getString("units") == "m")
+
+    // ... XXX TODO
   }
 }

@@ -62,4 +62,3 @@ The result of calling validate is a list of Problems. Each Problem includes an e
 a string message and an additional string in JSON format that includes more details about the error.
 
 If the document is valid, the list of problems should be empty.
-
