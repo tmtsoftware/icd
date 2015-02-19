@@ -9,5 +9,9 @@ import com.typesafe.config.Config
  * just contains the raw config object.
  */
 case class JsonSchemaModel(config: Config) extends IcdModelBase {
-
+  import net.ceedubs.ficus.Ficus._
+  val name = config.as[Option[String]]("name").getOrElse("")
+  val description = config.as[Option[String]]("description").getOrElse("")
+  val typeOpt = config.as[Option[String]]("type")
+  val enumOpt = config.as[Option[List[String]]]("enum")
 }

@@ -6,17 +6,18 @@ import com.typesafe.config.Config
  * See resources/component-schema.conf
  */
 object ComponentModel {
-  def apply(config: Config): ComponentModel = {
+  import net.ceedubs.ficus.Ficus._
+
+  def apply(config: Config): ComponentModel =
     ComponentModel(
-      name = config.getString("name"),
-      description = config.getString("description"),
-      usesTime = config.getBoolean("usesTime"),
-      usesEvents = config.getBoolean("usesEvents"),
-      usesConfigurations = config.getBoolean("usesConfigurations"),
-      usesProperties = config.getBoolean("usesProperties"),
-      componentType = config.getString("componentType")
+      name = config.as[String]("name"),
+      description = config.as[String]("description"),
+      usesTime = config.as[Option[Boolean]]("usesTime").getOrElse(false),
+      usesEvents = config.as[Option[Boolean]]("usesEvents").getOrElse(false),
+      usesConfigurations = config.as[Option[Boolean]]("usesConfigurations").getOrElse(false),
+      usesProperties = config.as[Option[Boolean]]("usesProperties").getOrElse(false),
+      componentType = config.as[String]("componentType")
     )
-  }
 }
 
 case class ComponentModel(name: String,

@@ -8,25 +8,21 @@ import EventStreamModel.EventStreamModel
  */
 object PublishModel {
 
-  def apply(config: Config): PublishModel = {
-    import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.Ficus._
 
+  def apply(config: Config): PublishModel = {
     val publishConfig = config.getConfig("publish")
 
     def getItems[A](name: String, f: Config ⇒ A): List[A] =
       for (conf ← publishConfig.as[Option[List[Config]]](name).getOrElse(Nil)) yield f(conf)
 
-    val telemetryList = getItems("telemetry", TelemetryModel(_))
-    val eventList = getItems("events", JsonSchemaModel)
-    val eventStreamList = getItems("eventStreams", EventStreamModel(_))
-    val alarmList = getItems("alarms", AlarmModel(_))
-    val healthList = getItems("health", HealthModel(_))
-
-    PublishModel(telemetryList = telemetryList,
-      eventList = eventList,
-      eventStreamList = eventStreamList,
-      alarmList = alarmList,
-      healthList = healthList)
+    PublishModel(
+      telemetryList = getItems("telemetry", TelemetryModel(_)),
+      eventList = getItems("events", JsonSchemaModel),
+      eventStreamList = getItems("eventStreams", EventStreamModel(_)),
+      alarmList = getItems("alarms", AlarmModel(_)),
+      healthList = getItems("health", HealthModel(_))
+    )
   }
 }
 

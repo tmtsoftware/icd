@@ -8,23 +8,20 @@ import net.ceedubs.ficus.Ficus._
  */
 object HealthModel {
 
+  import net.ceedubs.ficus.Ficus._
+
   def apply(config: Config): HealthModel = {
     // XXX TODO: define default values in schema and/or here? parse schema?
-    val name = config.as[Option[String]]("name").getOrElse("")
-    val description = config.as[Option[String]]("description").getOrElse("")
-    val rate = config.as[Option[Double]]("rate").getOrElse(0.0)
-    val archive = config.as[Option[Boolean]]("archive").getOrElse(false)
-    val archiveRate = config.as[Option[Double]]("archiveRate").getOrElse(0.0)
-    val maxRate = config.as[Option[Double]]("maxRate").getOrElse(0.0)
-    val valueType = JsonSchemaModel(config.getConfig("valueType"))
 
-    HealthModel(name = name,
-      description = description,
-      rate = rate,
-      archive = archive,
-      archiveRate = archiveRate,
-      maxRate = maxRate,
-      valueType = valueType)
+    HealthModel(
+      name = config.as[String]("name"),
+      description = config.as[String]("description"),
+      rate = config.as[Option[Double]]("rate").getOrElse(0.0),
+      archive = config.as[Option[Boolean]]("archive").getOrElse(true),
+      archiveRate = config.as[Option[Double]]("archiveRate").getOrElse(0.0),
+      maxRate = config.as[Option[Double]]("maxRate").getOrElse(0.0),
+      valueType = JsonSchemaModel(config.getConfig("valueType"))
+    )
   }
 }
 

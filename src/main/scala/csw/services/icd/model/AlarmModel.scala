@@ -1,24 +1,21 @@
 package csw.services.icd.model
 
 import com.typesafe.config.Config
-import net.ceedubs.ficus.Ficus._
 
 /**
  * See resources/alarm-schema.conf
  */
 object AlarmModel {
 
-  def apply(config: Config): AlarmModel = {
-    val name = config.as[Option[String]]("name").getOrElse("")
-    val description = config.as[Option[String]]("description").getOrElse("")
-    val severity = config.as[Option[String]]("severity").getOrElse("none")
-    val archive = config.as[Option[Boolean]]("archive").getOrElse(true)
+  import net.ceedubs.ficus.Ficus._
 
-    AlarmModel(name = name,
-      description = description,
-      severity = severity,
-      archive = archive)
-  }
+  def apply(config: Config): AlarmModel =
+    AlarmModel(
+      name = config.as[String]("name"),
+      description = config.as[String]("description"),
+      severity = config.as[Option[String]]("severity").getOrElse("none"),
+      archive = config.as[Option[Boolean]]("archive").getOrElse(true)
+    )
 }
 
 case class AlarmModel(name: String,

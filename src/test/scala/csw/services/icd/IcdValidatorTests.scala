@@ -57,12 +57,21 @@ class IcdValidatorTests extends FunSuite {
   test("Test the parser") {
     val parser = IcdParser(testDir)
 
+    checkIcdModel(parser)
+    checkComponentModel(parser)
+    checkPublishModel(parser)
+    checkCommandModel(parser)
+  }
+
+  def checkIcdModel(parser: IcdParser): Unit = {
     val icdModel = parser.icdModel.get
     assert(icdModel.modelVersion == "1.1")
     assert(icdModel.name == "WFOS-ESW")
     assert(icdModel.version == 20141121)
     assert(icdModel.wbsId == "TMT.INS.INST.WFOS.SWE")
+  }
 
+  def checkComponentModel(parser: IcdParser): Unit = {
     val componentModel = parser.componentModel.get
     assert(componentModel.name == "filter")
     assert(!componentModel.usesTime)
@@ -71,50 +80,13 @@ class IcdValidatorTests extends FunSuite {
     assert(!componentModel.usesProperties)
     assert(componentModel.componentType == "Assembly")
     assert(componentModel.description == "This is the metadata description of the WFOS filter Assembly")
+  }
 
+  def checkPublishModel(parser: IcdParser): Unit = {
     val publishModel = parser.publishModel.get
     val telemetryList = publishModel.telemetryList
     assert(telemetryList.size == 2)
 
-    /*
-      telemetry = [
-    {
-      name = "status1"
-      description = "status1 description"
-      rate = 0
-      maxRate = 100
-      archive = Yes
-      archiveRate = 10
-      attributes = [
-        {
-          name = a1
-          description = "single value with min/max"
-          type = integer
-          minimum = -2
-          maximum = 22
-          units = m
-        }
-        {
-          name = a2
-          description = "array of float"
-          type = array
-          items = {
-            type = number
-          }
-          minItems = 5
-          maxItems = 5
-          units = mm
-        }
-        {
-          name = a3
-          description = "enum choice"
-          enum: [red, green, blue]
-          default = green
-        }
-      ]
-    }
-
-     */
     val status1 = telemetryList.head
     assert(status1.name == "status1")
     assert(status1.description == "status1 description")
@@ -126,14 +98,46 @@ class IcdValidatorTests extends FunSuite {
     val attr1 = status1.attributesList
     assert(attr1.size == 3)
 
-    val a1 = attr1(0).config
-    assert(a1.getString("name") == "a1")
-    assert(a1.getString("description") == "single value with min/max")
-    assert(a1.getString("type") == "integer")
-    assert(a1.getInt("minimum") == -2)
-    assert(a1.getInt("maximum") == 22)
-    assert(a1.getString("units") == "m")
+    val a1 = attr1(0)
+    assert(a1.name == "a1")
+    assert(a1.description == "single value with min/max")
+    assert(a1.typeOpt.get == "integer")
+    val a1Conf = a1.config
+    assert(a1Conf.getInt("minimum") == -2)
+    assert(a1Conf.getInt("maximum") == 22)
+    assert(a1Conf.getString("units") == "m")
 
-    // ... XXX TODO
+    val a2 = attr1(1)
+    assert(a2.name == "a2")
+    assert(a2.description == "array of float")
+    assert(a2.typeOpt.get == "array")
+    val a2Conf = a2.config
+    assert(a2Conf.getConfig("items").getString("type") == "number")
+    assert(a2Conf.getInt("minItems") == 5)
+    assert(a2Conf.getInt("maxItems") == 5)
+    assert(a2Conf.getString("units") == "mm")
+
+    val a3 = attr1(2)
+    assert(a3.name == "a3")
+    assert(a3.description == "enum choice")
+    assert(a3.enumOpt.get == List("red", "green", "blue"))
+    val a3Conf = a3.config
+    assert(a3Conf.getString("default") == "green")
+    // ... XXX TODO continue
   }
+
+
+  def checkCommandModel(parser: IcdParser): Unit = {
+    val commandModel = parser.commandModel.get
+    assert(commandModel.items.size == 2)
+    val item1 = commandModel.items(0)
+    assert(item1.name == "cmd1")
+    assert(item1.description == "Description of cmd1")
+    assert(item1.requirements == List("req1", "req2"))
+    assert(item1.requiredArgs == List("a1"))
+    // ... XXX TODO continue
+  }
+
+  // ... XXX TODO test other models
+
 }

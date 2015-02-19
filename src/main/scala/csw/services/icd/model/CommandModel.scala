@@ -1,29 +1,35 @@
 package csw.services.icd.model
 
 import com.typesafe.config.Config
+import net.ceedubs.ficus.Ficus._
 
 /**
  * See resources/command-schema.conf
  */
-object CommandModel {
-
-  def apply(config: Config): CommandModel = {
-    import net.ceedubs.ficus.Ficus._
-
-    val name = config.as[Option[String]]("name").getOrElse("")
-    val requirements = config.as[Option[List[String]]]("requirements").getOrElse(Nil)
-    val requiredArgs = config.as[Option[List[String]]]("requiredArgs").getOrElse(Nil)
-    val args = for (conf ← config.as[Option[List[Config]]]("args").getOrElse(Nil)) yield JsonSchemaModel(conf)
-
-    CommandModel(name = name,
-      requirements = requirements,
-      requiredArgs = requiredArgs,
-      args = args)
-  }
+object CommandItemModel {
+  def apply(config: Config): CommandItemModel =
+    CommandItemModel(
+      name = config.as[String]("name"),
+      description = config.as[String]("description"),
+      requirements = config.as[Option[List[String]]]("requirements").getOrElse(Nil),
+      requiredArgs = config.as[Option[List[String]]]("requiredArgs").getOrElse(Nil),
+      args = for (conf ← config.as[List[Config]]("args")) yield JsonSchemaModel(conf)
+    )
 }
 
-case class CommandModel(name: String,
+case class CommandItemModel(name: String,
+                        description: String,
                         requirements: List[String],
                         requiredArgs: List[String],
                         args: List[JsonSchemaModel]) extends IcdModelBase {
+}
+
+object CommandModel {
+  def apply(config: Config): CommandModel =
+    CommandModel(
+      config.as[List[Config]]("configurations").map(CommandItemModel(_))
+    )
+}
+
+case class CommandModel(items: List[CommandItemModel]) extends IcdModelBase {
 }
