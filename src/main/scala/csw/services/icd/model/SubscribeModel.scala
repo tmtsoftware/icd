@@ -27,7 +27,7 @@ case class SubscribeModel(telemetryList: List[SubscribeInfo],
                           eventList: List[SubscribeInfo],
                           eventStreamList: List[SubscribeInfo],
                           alarmList: List[SubscribeInfo],
-                          healthList: List[SubscribeInfo]) extends IcdModelBase
+                          healthList: List[SubscribeInfo])
 
 // Inner object in subscribe arrays
 object SubscribeInfo {

@@ -16,19 +16,19 @@ object HealthModel {
     HealthModel(
       name = config.as[String]("name"),
       description = config.as[String]("description"),
-      rate = config.as[Option[Double]]("rate").getOrElse(0.0),
+      rate = config.as[Option[Int]]("rate").getOrElse(0),
       archive = config.as[Option[Boolean]]("archive").getOrElse(true),
-      archiveRate = config.as[Option[Double]]("archiveRate").getOrElse(0.0),
-      maxRate = config.as[Option[Double]]("maxRate").getOrElse(0.0),
+      archiveRate = config.as[Option[Int]]("archiveRate").getOrElse(0),
+      maxRate = config.as[Option[Int]]("maxRate").getOrElse(0),
       valueType = JsonSchemaModel(config.getConfig("valueType")))
   }
 }
 
 case class HealthModel(name: String,
                        description: String,
-                       rate: Double,
+                       rate: Int,
                        archive: Boolean,
-                       archiveRate: Double,
-                       maxRate: Double,
-                       valueType: JsonSchemaModel) extends IcdModelBase
+                       archiveRate: Int,
+                       maxRate: Int,
+                       valueType: JsonSchemaModel)
 

@@ -7,9 +7,10 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.github.fge.jackson.JsonLoader
 import com.github.fge.jsonschema.core.load.configuration.LoadingConfiguration
 import com.github.fge.jsonschema.core.load.download.URIDownloader
-import com.github.fge.jsonschema.core.report.{ ProcessingMessage, ProcessingReport }
-import com.github.fge.jsonschema.main.{ JsonSchema, JsonSchemaFactory }
-import com.typesafe.config.{ Config, ConfigFactory, ConfigRenderOptions, ConfigResolveOptions }
+import com.github.fge.jsonschema.core.report.{ProcessingMessage, ProcessingReport}
+import com.github.fge.jsonschema.main.{JsonSchema, JsonSchemaFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions, ConfigResolveOptions}
+import csw.services.icd.gfm.IcdToGfm
 
 import scala.io.Source
 
@@ -130,7 +131,7 @@ object IcdValidator {
   private def validateResult(report: ProcessingReport, source: String): List[Problem] = {
     import scala.collection.JavaConverters._
     val result = for (msg ← report.asScala)
-      yield Problem(msg.getLogLevel.toString, formatMsg(msg, source))
+    yield Problem(msg.getLogLevel.toString, formatMsg(msg, source))
     result.toList
   }
 
@@ -172,6 +173,16 @@ object IcdValidator {
    * @param file the file in which to save the document
    */
   def saveToFile(dir: File, file: File): Unit = {
-    IcdParser(dir).saveToFile(file)
+    val parser = IcdParser(dir)
+    val name = file.getName
+    val suffix = name.substring(name.lastIndexOf('.') + 1)
+    if (suffix == "md") {
+      // convert model to markdown
+      val out = new FileOutputStream(file)
+      out.write(IcdToGfm(parser).toString.getBytes)
+    } else {
+      // XXX TODO: convert md to html, pdf
+      println(s"Unsupported output format: $suffix")
+    }
   }
 }

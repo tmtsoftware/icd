@@ -20,7 +20,7 @@ case class CommandItemModel(name: String,
                             description: String,
                             requirements: List[String],
                             requiredArgs: List[String],
-                            args: List[JsonSchemaModel]) extends IcdModelBase {
+                            args: List[JsonSchemaModel]) {
 }
 
 object CommandModel {
@@ -29,5 +29,5 @@ object CommandModel {
       config.as[List[Config]]("configurations").map(CommandItemModel(_)))
 }
 
-case class CommandModel(items: List[CommandItemModel]) extends IcdModelBase {
+case class CommandModel(items: List[CommandItemModel]) {
 }

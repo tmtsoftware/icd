@@ -24,7 +24,7 @@ case class IcdModel(modelVersion: String,
                     description: String,
                     subsystem: String,
                     version: Int,
-                    wbsId: String) extends IcdModelBase
+                    wbsId: String)
 
 // ---
 

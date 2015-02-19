@@ -25,4 +25,4 @@ case class ComponentModel(name: String,
                           usesEvents: Boolean,
                           usesProperties: Boolean,
                           usesConfigurations: Boolean,
-                          componentType: String) extends IcdModelBase
+                          componentType: String)

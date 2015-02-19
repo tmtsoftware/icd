@@ -29,4 +29,4 @@ case class PublishModel(telemetryList: List[TelemetryModel],
                         eventList: List[JsonSchemaModel],
                         eventStreamList: List[EventStreamModel],
                         alarmList: List[AlarmModel],
-                        healthList: List[HealthModel]) extends IcdModelBase
+                        healthList: List[HealthModel])

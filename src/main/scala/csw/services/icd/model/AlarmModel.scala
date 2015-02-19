@@ -20,5 +20,5 @@ object AlarmModel {
 case class AlarmModel(name: String,
                       description: String,
                       severity: String,
-                      archive: Boolean) extends IcdModelBase
+                      archive: Boolean)
 
