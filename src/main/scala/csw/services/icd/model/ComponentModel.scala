@@ -16,8 +16,7 @@ object ComponentModel {
       usesEvents = config.as[Option[Boolean]]("usesEvents").getOrElse(false),
       usesConfigurations = config.as[Option[Boolean]]("usesConfigurations").getOrElse(false),
       usesProperties = config.as[Option[Boolean]]("usesProperties").getOrElse(false),
-      componentType = config.as[String]("componentType")
-    )
+      componentType = config.as[String]("componentType"))
 }
 
 case class ComponentModel(name: String,

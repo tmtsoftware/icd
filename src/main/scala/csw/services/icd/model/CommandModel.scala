@@ -13,22 +13,20 @@ object CommandItemModel {
       description = config.as[String]("description"),
       requirements = config.as[Option[List[String]]]("requirements").getOrElse(Nil),
       requiredArgs = config.as[Option[List[String]]]("requiredArgs").getOrElse(Nil),
-      args = for (conf ← config.as[List[Config]]("args")) yield JsonSchemaModel(conf)
-    )
+      args = for (conf ← config.as[List[Config]]("args")) yield JsonSchemaModel(conf))
 }
 
 case class CommandItemModel(name: String,
-                        description: String,
-                        requirements: List[String],
-                        requiredArgs: List[String],
-                        args: List[JsonSchemaModel]) extends IcdModelBase {
+                            description: String,
+                            requirements: List[String],
+                            requiredArgs: List[String],
+                            args: List[JsonSchemaModel]) extends IcdModelBase {
 }
 
 object CommandModel {
   def apply(config: Config): CommandModel =
     CommandModel(
-      config.as[List[Config]]("configurations").map(CommandItemModel(_))
-    )
+      config.as[List[Config]]("configurations").map(CommandItemModel(_)))
 }
 
 case class CommandModel(items: List[CommandItemModel]) extends IcdModelBase {

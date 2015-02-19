@@ -4,11 +4,11 @@ ICD Validation
 This project contains classes and resources for validating ICDs.
 The validation is based on [JSON Schema](http://json-schema.org/),
 however the schema descriptions as well as the ICDs themselves may also be written in
-the simpler [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md) format,
-or more exactly, the [Typesafe config](https://github.com/typesafehub/config) format.
+the simpler [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md) format
+(see also [Typesafe config](https://github.com/typesafehub/config)).
 
 The JSON Schema `$ref` feature is used to refer to resource files containing JSON schema definitions.
-A custom URI is defined here that allows you to refer to HOCON format config files,
+A custom URI handler is defined here that allows you to refer to HOCON format config files,
 which are automatically converted to JSON:
 For example:
 
@@ -25,40 +25,39 @@ icd Command
 ===========
 
 The icd command is generated in target/universal/stage/bin.
+Normal usage is to run the icd command in a directory containing these files:
+
+* icd-model.conf
+* component-model.conf
+* command-model.conf
+* publish-model.conf
+* subscribe-model.conf
+
+Example files can be found in src/test/resources.
+
+Additional command line options are defined:
 
 ```
 Usage: icd [options]
 
+  --validate <dir>
+        Validates set of files in dir (default: current dir): icd-model.conf, component-model.conf, command-model.conf, publish-model.conf, subscribe-model.conf
   -i <inputFile> | --in <inputFile>
-        Input file to be verified, assumed to be in HOCON (*.conf) or JSON (*.json) format
-
+        Single input file to be verified, assumed to be in HOCON (*.conf) or JSON (*.json) format
   -s <jsonSchemaFile> | --schema <jsonSchemaFile>
-        JSON schema file to use to validate the input, assumed to be in HOCON (*.conf) or JSON (*.json) format
-
-  -o <jsonOutputFile> | --out <jsonOutputFile>
-        Save the input file (or the schema file, if no input file was given) in JSON format (for testing)
+        JSON schema file to use to validate the single input, assumed to be in HOCON (*.conf) or JSON (*.json) format
+  -o <outputFile> | --out <outputFile>
+        Saves the ICD (or single input or schema file) to the given file in a format based on the file's suffix (md, html, pdf, json)
 ```
-
-For example, cd to the directory containing the icd command (csw/icd/target/universal/stage/bin):
-
-```
--> ./icd -i ../../../../src/test/resources/icd-good1.conf -s ../../../../src/main/resources/icd-schema.conf
-
--> ./icd -i ../../../../src/test/resources/icd-bad1.conf -s ../../../../src/main/resources/icd-schema.conf
-error: instance value ("Nope") not found in enum (possible values: ["Yes","No"])
-```
-
-In the first case, no errors were found. In the second case, the error is displayed.
 
 
 Scala API
 =========
 
-There are two versions of `IcdValidator.validate`. One takes an input file and a schema file to use to
-validate it. The other takes an input Config and a schema Config object (for example, from a resource config file).
-The files can be in HOCON or JSON format. HOCON formatted files are automatically converted to JSON.
+The [IcdValidator](src/main/scala/csw/services/icd/IcdValidator.scala) class defines a number of
+_validate_ methods that take as arguments files, Config objects or directories containing files to validate.
 
 The result of calling validate is a list of Problems. Each Problem includes an error level (warning, error, etc.),
-a string message and an additional string in JSON format that includes more details about the error.
+and a string message.
 
 If the document is valid, the list of problems should be empty.

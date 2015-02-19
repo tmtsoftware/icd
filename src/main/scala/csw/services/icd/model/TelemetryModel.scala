@@ -18,8 +18,7 @@ object TelemetryModel {
       archive = config.as[Option[Boolean]]("archive").getOrElse(false),
       archiveRate = config.as[Option[Double]]("archiveRate").getOrElse(0.0),
       maxRate = config.as[Option[Double]]("maxRate").getOrElse(0.0),
-      attributesList = for (conf ← config.as[Option[List[Config]]]("attributes").getOrElse(Nil)) yield JsonSchemaModel(conf)
-    )
+      attributesList = for (conf ← config.as[Option[List[Config]]]("attributes").getOrElse(Nil)) yield JsonSchemaModel(conf))
 }
 
 case class TelemetryModel(name: String,

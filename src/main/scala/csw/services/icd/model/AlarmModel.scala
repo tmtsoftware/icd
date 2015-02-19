@@ -14,8 +14,7 @@ object AlarmModel {
       name = config.as[String]("name"),
       description = config.as[String]("description"),
       severity = config.as[Option[String]]("severity").getOrElse("none"),
-      archive = config.as[Option[Boolean]]("archive").getOrElse(true)
-    )
+      archive = config.as[Option[Boolean]]("archive").getOrElse(true))
 }
 
 case class AlarmModel(name: String,

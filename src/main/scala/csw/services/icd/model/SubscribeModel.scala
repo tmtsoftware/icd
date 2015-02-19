@@ -8,7 +8,6 @@ import net.ceedubs.ficus.Ficus._
  */
 object SubscribeModel {
 
-
   def apply(config: Config): SubscribeModel = {
     val subscribeConfig = config.getConfig("subscribe")
 
@@ -20,8 +19,7 @@ object SubscribeModel {
       eventList = getItems("events"),
       eventStreamList = getItems("eventStreams"),
       alarmList = getItems("alarms"),
-      healthList = getItems("health")
-    )
+      healthList = getItems("health"))
   }
 }
 
@@ -31,7 +29,6 @@ case class SubscribeModel(telemetryList: List[SubscribeInfo],
                           alarmList: List[SubscribeInfo],
                           healthList: List[SubscribeInfo]) extends IcdModelBase
 
-
 // Inner object in subscribe arrays
 object SubscribeInfo {
 
@@ -40,8 +37,7 @@ object SubscribeInfo {
       subsystem = config.as[Option[String]]("subsystem").getOrElse(""),
       name = config.as[Option[String]]("name").getOrElse(""),
       requiredRate = config.as[Option[Int]]("requiredRate").getOrElse(0),
-      maxRate = config.as[Option[Int]]("maxRate").getOrElse(0)
-    )
+      maxRate = config.as[Option[Int]]("maxRate").getOrElse(0))
 }
 
 case class SubscribeInfo(subsystem: String, name: String, requiredRate: Int, maxRate: Int)

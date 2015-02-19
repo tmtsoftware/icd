@@ -21,8 +21,7 @@ object PublishModel {
       eventList = getItems("events", JsonSchemaModel),
       eventStreamList = getItems("eventStreams", EventStreamModel(_)),
       alarmList = getItems("alarms", AlarmModel(_)),
-      healthList = getItems("health", HealthModel(_))
-    )
+      healthList = getItems("health", HealthModel(_)))
   }
 }
 

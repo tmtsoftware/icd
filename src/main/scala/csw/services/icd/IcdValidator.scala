@@ -7,9 +7,9 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.github.fge.jackson.JsonLoader
 import com.github.fge.jsonschema.core.load.configuration.LoadingConfiguration
 import com.github.fge.jsonschema.core.load.download.URIDownloader
-import com.github.fge.jsonschema.core.report.{ProcessingMessage, ProcessingReport}
-import com.github.fge.jsonschema.main.{JsonSchema, JsonSchemaFactory}
-import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions, ConfigResolveOptions}
+import com.github.fge.jsonschema.core.report.{ ProcessingMessage, ProcessingReport }
+import com.github.fge.jsonschema.main.{ JsonSchema, JsonSchemaFactory }
+import com.typesafe.config.{ Config, ConfigFactory, ConfigRenderOptions, ConfigResolveOptions }
 
 import scala.io.Source
 
@@ -130,7 +130,7 @@ object IcdValidator {
   private def validateResult(report: ProcessingReport, source: String): List[Problem] = {
     import scala.collection.JavaConverters._
     val result = for (msg ← report.asScala)
-    yield Problem(msg.getLogLevel.toString, formatMsg(msg, source))
+      yield Problem(msg.getLogLevel.toString, formatMsg(msg, source))
     result.toList
   }
 
@@ -155,9 +155,9 @@ object IcdValidator {
     val reports = json.get("reports")
     val messages = if (reports == null) ""
     else {
-      val reportElems = for (r <- reports.elements().toList) yield r
-      val msgElems = (for (r <- reports) yield r.elements().toList).flatten
-      val msgTexts = for (e <- msgElems) yield e.get("message").asText()
+      val reportElems = for (r ← reports.elements().toList) yield r
+      val msgElems = (for (r ← reports) yield r.elements().toList).flatten
+      val msgTexts = for (e ← msgElems) yield e.get("message").asText()
       "\n" + msgTexts.mkString("\n")
     }
 

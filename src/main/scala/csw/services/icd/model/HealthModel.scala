@@ -20,8 +20,7 @@ object HealthModel {
       archive = config.as[Option[Boolean]]("archive").getOrElse(true),
       archiveRate = config.as[Option[Double]]("archiveRate").getOrElse(0.0),
       maxRate = config.as[Option[Double]]("maxRate").getOrElse(0.0),
-      valueType = JsonSchemaModel(config.getConfig("valueType"))
-    )
+      valueType = JsonSchemaModel(config.getConfig("valueType")))
   }
 }
 
