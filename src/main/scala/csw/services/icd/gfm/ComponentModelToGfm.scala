@@ -17,7 +17,5 @@ case class ComponentModelToGfm(m: ComponentModel) {
       |---|---|---|---|---
       |${m.componentType} | ${m.usesTime} | ${m.usesEvents} | ${m.usesConfigurations} | ${m.usesProperties}
       |
-      |---
-      |
     """.stripMargin
 }

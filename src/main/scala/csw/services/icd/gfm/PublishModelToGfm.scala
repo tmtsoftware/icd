@@ -18,28 +18,4 @@ case class PublishModelToGfm(m: PublishModel, level: Level) {
   )
 
   val gfm = head + parts.mkString("\n\n")
-
-//  val gfm =
-//    s"""
-//        |
-//        |###1.4 Alarms
-//        |
-//        |Name|Description|Severity|Archive
-//        |---|---|---|---
-//        |alarm1|First alarm|minor|Yes
-//        |alarm2|Second alarm|major|Yes
-//        |
-//        |
-//        |
-//        |###1.5 Health
-//        |
-//        |Name|Description|Value Type|Default|Rate|Max Rate|Archive|Archive Rate
-//        |---|---|---|---|---|---|---|---|---
-//        |health1|First health item|string ("good", "ill", "bad", "unknown")|good|0|100|Yes|10
-//        |health2|Second health item|string ("good", "ill", "bad", "unknown")|good|1|10|No|1
-//        |
-//        |
-//        |---
-//        |
-//    """.stripMargin
 }

@@ -17,6 +17,5 @@ case class IcdModelToGfm(m: IcdModel) {
       |
       |${m.description}
       |
-      |---
     """.stripMargin
 }

@@ -142,7 +142,7 @@ class IcdValidatorTests extends FunSuite {
     val item1 = commandModel.items(0)
     assert(item1.name == "cmd1")
     assert(item1.description == "Description of cmd1")
-    assert(item1.requirements == List("req1", "req2"))
+    assert(item1.requirements == List("First requirement for cmd1", "Second requirement for cmd1"))
     assert(item1.requiredArgs == List("a1"))
     // ... XXX TODO continue
   }
