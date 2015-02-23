@@ -8,11 +8,13 @@ import csw.services.icd.model._
  */
 case class IcdToGfm(p: IcdParser) {
 
+  val level = Level()
+
   // Ignore missing parts for now...
   val parts = List(
     p.icdModel.map(IcdModelToGfm(_).gfm),
     p.componentModel.map(ComponentModelToGfm(_).gfm),
-    p.publishModel.map(PublishModelToGfm(_).gfm),
+    p.publishModel.map(PublishModelToGfm(_, level).gfm),
     p.subscribeModel.map(toGfm),
     p.commandModel.map(toGfm)
   ).flatten
