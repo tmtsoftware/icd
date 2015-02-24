@@ -5,7 +5,7 @@ import csw.services.icd.model._
 private case class SubscribeInfoToGfm(list: List[SubscribeInfo], level: Level, title: String) {
 
   private def itemToGfm(m: SubscribeInfo): String = {
-    s"${m.subsystem}|${m.name}|${m.requiredRate}|${m.maxRate}"
+    s"${m.subsystem} | ${m.name} | ${m.requiredRate} | ${m.maxRate} |"
   }
 
   private val head =

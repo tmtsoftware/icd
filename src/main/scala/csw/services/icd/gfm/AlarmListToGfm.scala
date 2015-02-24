@@ -8,7 +8,7 @@ import csw.services.icd.model.AlarmModel
 case class AlarmListToGfm(list: List[AlarmModel], level: Level) {
 
   private def itemToGfm(m: AlarmModel): String = {
-    s"${m.name}|${m.description}|${m.severity}|${m.archive}"
+    s"${m.name} | ${m.description} | ${m.severity} | ${m.archive} |"
   }
 
   private val head =

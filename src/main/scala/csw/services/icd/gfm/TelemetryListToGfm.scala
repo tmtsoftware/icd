@@ -8,7 +8,7 @@ import csw.services.icd.model._
 case class TelemetryListToGfm(list: List[TelemetryModel], level: Level, title: String = "Telemetry") {
 
   private def itemToGfm(m: TelemetryModel): String = {
-    s"${m.name}|${m.description}|${m.rate}|${m.maxRate}|${m.archive}|${m.archiveRate}"
+    s"${m.name} | ${m.description} | ${m.rate} | ${m.maxRate} | ${m.archive} | ${m.archiveRate} |"
   }
 
   private val head =

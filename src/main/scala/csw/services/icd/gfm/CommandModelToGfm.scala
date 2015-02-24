@@ -30,7 +30,7 @@ case class CommandItemToGfm(m: CommandItemModel, level: Level) {
        |---|---|---|---|---\n""".stripMargin
 
   private val argsTableBody = (
-    for (a ← m.args) yield s"${a.name}|${a.description}|${a.typeStr}|${a.defaultValue}|${a.units}").mkString("\n")
+    for (a ← m.args) yield s"${a.name} | ${a.description} | ${a.typeStr} | ${a.defaultValue} | ${a.units} |").mkString("\n")
 
   private val argsTable = s"$argsTableHead$argsTableBody"
 

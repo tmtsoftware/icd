@@ -8,7 +8,7 @@ import csw.services.icd.model.HealthModel
 case class HealthListToGfm(list: List[HealthModel], level: Level) {
 
   private def itemToGfm(m: HealthModel): String = {
-    s"${m.name}|${m.description}|${m.rate}|${m.archive}|${m.archiveRate}|${m.maxRate}|${m.valueType.typeStr}"
+    s"${m.name} | ${m.description} | ${m.rate} | ${m.archive} | ${m.archiveRate} | ${m.maxRate} | ${m.valueType.typeStr} |"
   }
 
   private val head =

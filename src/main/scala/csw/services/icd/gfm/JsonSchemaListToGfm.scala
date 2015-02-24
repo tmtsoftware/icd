@@ -12,7 +12,7 @@ case class JsonSchemaListToGfm(list: List[JsonSchemaModel]) {
         |""".stripMargin
 
   private def toGfm(m: JsonSchemaModel): String =
-    s"${m.name}|${m.description}|${m.typeStr}|${m.defaultValue}|${m.units}"
+    s"${m.name} | ${m.description} | ${m.typeStr} | ${m.defaultValue} | ${m.units} |"
 
   val gfm = head + list.map(toGfm).mkString("\n")
 }
