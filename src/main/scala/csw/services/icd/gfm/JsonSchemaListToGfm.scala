@@ -9,7 +9,7 @@ case class JsonSchemaListToGfm(list: List[JsonSchemaModel]) {
   private val head = s"""
         |Name|Description|Type|Default|Units
         |---|---|---|---|---
-        | """.stripMargin
+        |""".stripMargin
 
   private def toGfm(m: JsonSchemaModel): String =
     s"${m.name}|${m.description}|${m.typeStr}|${m.defaultValue}|${m.units}"

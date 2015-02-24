@@ -26,14 +26,13 @@ private case class SubscribeInfoToGfm(list: List[SubscribeInfo], level: Level, t
  */
 case class SubscribeModelToGfm(m: SubscribeModel, level: Level) {
   private val head = s"##${level(1)} Subscribe\n"
-  private val counter = (0 to 5).iterator
+  private implicit val counter = (0 to 5).iterator
   private val parts = List(
-    SubscribeInfoToGfm(m.telemetryList, level.inc2(counter.next()), "Telemetry").gfm,
-    SubscribeInfoToGfm(m.eventList, level.inc2(counter.next()), "Events").gfm,
-    SubscribeInfoToGfm(m.eventStreamList, level.inc2(counter.next()), "Event Streams").gfm,
-    SubscribeInfoToGfm(m.alarmList, level.inc2(counter.next()), "Alarms").gfm,
-    SubscribeInfoToGfm(m.healthList, level.inc2(counter.next()), "Health").gfm
-  )
+    SubscribeInfoToGfm(m.telemetryList, level.inc2(), "Telemetry").gfm,
+    SubscribeInfoToGfm(m.eventList, level.inc2(), "Events").gfm,
+    SubscribeInfoToGfm(m.eventStreamList, level.inc2(), "Event Streams").gfm,
+    SubscribeInfoToGfm(m.alarmList, level.inc2(), "Alarms").gfm,
+    SubscribeInfoToGfm(m.healthList, level.inc2(), "Health").gfm)
 
   val gfm = head + parts.mkString("\n\n")
 }

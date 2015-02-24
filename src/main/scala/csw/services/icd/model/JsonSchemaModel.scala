@@ -35,8 +35,8 @@ case class JsonSchemaModel(config: Config) {
   def typeStr: String = {
     if (typeOpt.isDefined) {
       typeOpt.get match {
-        case "array" => arrayTypeStr
-        case x => x
+        case "array" ⇒ arrayTypeStr
+        case x       ⇒ x
       }
     } else if (enumOpt.isDefined) {
       "String: (" + enumOpt.get.mkString(", ") + ")"

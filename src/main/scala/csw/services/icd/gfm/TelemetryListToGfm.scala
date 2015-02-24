@@ -16,8 +16,7 @@ case class TelemetryListToGfm(list: List[TelemetryModel], level: Level, title: S
        |###${level(2)} $title
         |
         |Name|Description|Rate|Max Rate|Archive|Archive Rate
-        |---|---|---|---|---|---
-        |""".stripMargin
+        |---|---|---|---|---|--- |\n""".stripMargin
 
   private val table = list.map(itemToGfm).mkString("\n")
 
@@ -29,7 +28,7 @@ case class TelemetryListToGfm(list: List[TelemetryModel], level: Level, title: S
     attributeHead(m.name, level) + JsonSchemaListToGfm(m.attributesList).gfm
 
   private val attributes = list.zipWithIndex.map {
-    case (t, i) => attributesToGfm(t, level.inc3(i))
+    case (t, i) ⇒ attributesToGfm(t, level.inc3(i))
   }.mkString("\n")
 
   val gfm = s"$head$table$attributes"
