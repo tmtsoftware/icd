@@ -8,7 +8,7 @@ the simpler [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md) 
 (see also [Typesafe config](https://github.com/typesafehub/config)).
 
 The JSON Schema `$ref` feature is used to refer to resource files containing JSON schema definitions.
-A custom URI handler is defined here that allows you to refer to HOCON format config files,
+A custom URI handler is defined here that allows you to refer to HOCON format config files from src/main/resources,
 which are automatically converted to JSON:
 For example:
 
@@ -47,8 +47,10 @@ Usage: icd [options]
   -s <jsonSchemaFile> | --schema <jsonSchemaFile>
         JSON schema file to use to validate the single input, assumed to be in HOCON (*.conf) or JSON (*.json) format
   -o <outputFile> | --out <outputFile>
-        Saves the ICD (or single input or schema file) to the given file in a format based on the file's suffix (md, html, pdf, json)
+        Saves the ICD to the given file in a format based on the file's suffix (md, html, pdf)
 ```
+
+Note that for testing you can also convert a single input or schema file to JSON format by combining -i or -s with -o file.json.
 
 
 Scala API

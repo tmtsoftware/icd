@@ -23,5 +23,5 @@ case class IcdToGfm(p: IcdParser) {
   /**
    * The "GitHub Flavored Markdown" or GFM for the model as a string
    */
-  val gfm = parts.mkString("\n\n---\n\n")
+  val gfm = parts.mkString("\n\n")
 }

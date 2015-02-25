@@ -1,5 +1,5 @@
 
-#Interface Control Document <br> WFOS-ESW
+#Interface Control Document: WFOS-ESW
 
  Version | Subsystem | WBS Id
  ---|---|---

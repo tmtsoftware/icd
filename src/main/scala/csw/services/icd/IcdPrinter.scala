@@ -1,9 +1,8 @@
 package csw.services.icd
 
-import java.io.{ FileOutputStream, File }
+import java.io.{ ByteArrayInputStream, File, FileInputStream, FileOutputStream }
 
 import csw.services.icd.gfm.IcdToGfm
-import org.pegdown.{ Extensions, PegDownProcessor }
 
 /**
  * Saves the ICD as a document
@@ -25,39 +24,64 @@ object IcdPrinter {
    */
   def saveToFile(dir: File, file: File): Unit = {
     val parser = IcdParser(dir)
-    val name = file.getName
-    val suffix = name.substring(name.lastIndexOf('.') + 1)
-    if (suffix == "md") {
-      // convert model to markdown
-      val out = new FileOutputStream(file)
-      out.write(IcdToGfm(parser).gfm.getBytes)
-      out.close()
-    } else if (suffix == "html") {
+
+    file.getName.split('.').drop(1).lastOption match {
+      case Some("md")   ⇒ saveAsGfm()
+      case Some("html") ⇒ saveAsHtml()
+      case Some("pdf")  ⇒ saveAsPdf()
+      case _            ⇒ println(s"Unsupported output format: Expected *.md. *.html or *.pdf")
+    }
+
+    def getAsGfm: String = IcdToGfm(parser).gfm
+
+    def getAsHtml: String = {
+      import org.pegdown.{ Extensions, PegDownProcessor }
+
       val pd = new PegDownProcessor(Extensions.TABLES)
-      val out = new FileOutputStream(file)
       val title = parser.icdModel.map(_.name).getOrElse("ICD")
       val body = pd.markdownToHtml(IcdToGfm(parser).gfm)
       val css = getCss
-      val html =
-        s"""
-           |<html>
-           | <head>
-           |  <title>$title</title>
-           |  <style type='text/css'>
-           |$css
-           |  </style>
-           | </head>
-           |<body>
-           |$body
-           |</body>
-           |</html>
+      s"""
+         |<html>
+         |<head>
+         |<title>$title</title>
+                         |<style type='text/css'>
+                         |$css
+          |</style>
+          |</head>
+          |<body>
+          |$body
+          |</body>
+          |</html>
          """.stripMargin
-
-      out.write(html.getBytes)
-      out.close()
-    } else {
-      // XXX TODO: convert md to html, pdf
-      println(s"Unsupported output format: $suffix")
     }
+
+    def saveAsGfm(): Unit = {
+      // convert model to markdown
+      val out = new FileOutputStream(file)
+      out.write(getAsGfm.getBytes)
+      out.close()
+    }
+
+    def saveAsHtml(): Unit = {
+      val out = new FileOutputStream(file)
+      out.write(getAsHtml.getBytes)
+      out.close()
+    }
+
+    def saveAsPdf(): Unit = {
+      import com.itextpdf.text.Document
+      import com.itextpdf.text.pdf.PdfWriter
+      import com.itextpdf.tool.xml.XMLWorkerHelper
+
+      val document = new Document()
+      val out = new FileOutputStream(file)
+      val writer = PdfWriter.getInstance(document, out)
+      document.open()
+      XMLWorkerHelper.getInstance().parseXHtml(writer, document, new ByteArrayInputStream(getAsHtml.getBytes))
+      document.close()
+      out.close()
+    }
+
   }
 }

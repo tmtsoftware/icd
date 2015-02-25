@@ -9,7 +9,7 @@ case class IcdModelToGfm(m: IcdModel) {
 
   val gfm =
     s"""
-      |#Interface Control Document <br> ${m.name}
+      |#Interface Control Document: ${m.name}
       |
       | Version | Subsystem | WBS Id
       | ---|---|---

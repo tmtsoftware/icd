@@ -65,10 +65,11 @@ val ficus = "net.ceedubs" %% "ficus" % "1.1.2"
 val typesafeConfig = "com.typesafe" % "config" % "1.2.1"
 val scalaTest = "org.scalatest" %% "scalatest" % "2.1.5"
 val pegdown = "org.pegdown" % "pegdown" % "1.4.2"
+val xmlworker = "com.itextpdf.tool" % "xmlworker" % "5.5.5"
 
 lazy val icd = (project in file("."))
   .settings(packageSettings("CSW ICD support", "Used to validate ICDs"): _*)
   .settings(libraryDependencies ++=
-  compile(jsonSchemaValidator, scopt, typesafeConfig, ficus, pegdown) ++
+  compile(jsonSchemaValidator, scopt, typesafeConfig, ficus, pegdown, xmlworker) ++
     test(scalaTest)
   )
