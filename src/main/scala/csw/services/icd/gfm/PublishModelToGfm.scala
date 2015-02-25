@@ -8,6 +8,7 @@ import csw.services.icd.model._
 case class PublishModelToGfm(m: PublishModel, level: Level) {
 
   private val head = s"##${level(1)} Publish\n"
+  private val desc = s"\n${m.description}\n"
   private implicit val counter = (0 to 5).iterator
   private val parts = List(
     TelemetryListToGfm(m.telemetryList, level.inc2()).gfm,
@@ -16,5 +17,5 @@ case class PublishModelToGfm(m: PublishModel, level: Level) {
     AlarmListToGfm(m.alarmList, level.inc2()).gfm,
     HealthListToGfm(m.healthList, level.inc2()).gfm)
 
-  val gfm = head + parts.mkString("\n\n")
+  val gfm = head + desc + parts.mkString("\n\n")
 }

@@ -17,6 +17,7 @@ object PublishModel {
       for (conf ← publishConfig.as[Option[List[Config]]](name).getOrElse(Nil)) yield f(conf)
 
     PublishModel(
+      description = publishConfig.as[Option[String]]("description").getOrElse(""),
       telemetryList = getItems("telemetry", TelemetryModel(_)),
       eventList = getItems("events", JsonSchemaModel),
       eventStreamList = getItems("eventStreams", EventStreamModel(_)),
@@ -25,7 +26,8 @@ object PublishModel {
   }
 }
 
-case class PublishModel(telemetryList: List[TelemetryModel],
+case class PublishModel(description: String,
+                        telemetryList: List[TelemetryModel],
                         eventList: List[JsonSchemaModel],
                         eventStreamList: List[EventStreamModel],
                         alarmList: List[AlarmModel],
