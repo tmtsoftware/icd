@@ -5,7 +5,7 @@ import csw.services.icd.model.ComponentModel
 /**
  * Converts a ComponentModel instance to a GFM formatted string
  */
-case class ComponentModelToGfm(m: ComponentModel) {
+case class ComponentModelToGfm(m: ComponentModel) extends Gfm {
   val gfm =
     s"""
       |##Component: ${m.name}

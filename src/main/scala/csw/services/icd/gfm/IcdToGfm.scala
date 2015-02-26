@@ -6,7 +6,7 @@ import csw.services.icd.model._
 /**
  * Converts an ICD model to "GitHub Flavored Markdown" or GFM.
  */
-case class IcdToGfm(p: IcdParser) {
+case class IcdToGfm(p: IcdParser) extends Gfm {
 
   val level = Level()
 

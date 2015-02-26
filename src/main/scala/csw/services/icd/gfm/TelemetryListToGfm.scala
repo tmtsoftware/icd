@@ -5,7 +5,7 @@ import csw.services.icd.model._
 /**
  * Converts a TelemetryModel instance (or EventStreamModel, which is the same) to a GFM formatted string
  */
-case class TelemetryListToGfm(list: List[TelemetryModel], level: Level, title: String = "Telemetry") {
+case class TelemetryListToGfm(list: List[TelemetryModel], level: Level, title: String = "Telemetry") extends Gfm {
   private val head = s"###${level(2)} $title\n"
   private val body = list.zipWithIndex.map {
     case (m, i) ⇒ TelemetryModelToGfm(m, level.inc3(i), title).gfm
@@ -13,7 +13,7 @@ case class TelemetryListToGfm(list: List[TelemetryModel], level: Level, title: S
   val gfm = s"$head\n$body"
 }
 
-private case class TelemetryModelToGfm(m: TelemetryModel, level: Level, title: String) {
+private case class TelemetryModelToGfm(m: TelemetryModel, level: Level, title: String) extends Gfm {
   val attr = JsonSchemaListToGfm(m.attributesList).gfm
   val gfm = s"""####${level(3)} $title: ${m.name}
       |

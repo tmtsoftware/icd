@@ -2,7 +2,7 @@ package csw.services.icd.gfm
 
 import csw.services.icd.model._
 
-private case class SubscribeInfoToGfm(list: List[SubscribeInfo], level: Level, title: String) {
+private case class SubscribeInfoToGfm(list: List[SubscribeInfo], level: Level, title: String) extends Gfm {
 
   private def itemToGfm(m: SubscribeInfo): String = {
     s"${m.subsystem} | ${m.name} | ${m.requiredRate} | ${m.maxRate} |"
@@ -24,7 +24,7 @@ private case class SubscribeInfoToGfm(list: List[SubscribeInfo], level: Level, t
 /**
  * Converts a SubscribeModel instance to a GFM formatted string
  */
-case class SubscribeModelToGfm(m: SubscribeModel, level: Level) {
+case class SubscribeModelToGfm(m: SubscribeModel, level: Level) extends Gfm {
   private val head = s"##${level(1)} Subscribe\n"
   private implicit val counter = (0 to 5).iterator
   private val parts = List(

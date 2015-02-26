@@ -5,7 +5,7 @@ import csw.services.icd.model.{ CommandItemModel, CommandModel }
 /**
  * Converts a ComponentModel instance to a GFM formatted string
  */
-case class CommandModelToGfm(m: CommandModel, level: Level) {
+case class CommandModelToGfm(m: CommandModel, level: Level) extends Gfm {
   private val head = s"##${level(1)} Commands\n"
 
   private val body = m.items.zipWithIndex.map {
@@ -15,7 +15,7 @@ case class CommandModelToGfm(m: CommandModel, level: Level) {
   val gfm = s"$head$body"
 }
 
-case class CommandItemToGfm(m: CommandItemModel, level: Level) {
+case class CommandItemToGfm(m: CommandItemModel, level: Level) extends Gfm {
   private val head = s"\n##${level(2)} Configuration: *${m.name}*\n"
 
   private val requirementsHead = s"\n###${level(3)} *${m.name}* Requirements\n"
@@ -30,9 +30,9 @@ case class CommandItemToGfm(m: CommandItemModel, level: Level) {
        |---|---|---|---|---\n""".stripMargin
 
   private val argsTableBody = (
-    for (a ← m.args) yield s"${a.name} | ${a.description} | ${a.typeStr} | ${a.defaultValue} | ${a.units} |").mkString("\n")
+    for (a ← m.args) yield s"${a.name} | ${t(a.description)} | ${a.typeStr} | ${a.defaultValue} | ${a.units} |").mkString("\n")
 
   private val argsTable = s"$argsTableHead$argsTableBody"
 
-  def gfm = List(head, requirementsHead, requirements, argsHead, argsTable).mkString("\n")
+  val gfm = List(head, requirementsHead, requirements, argsHead, argsTable).mkString("\n")
 }

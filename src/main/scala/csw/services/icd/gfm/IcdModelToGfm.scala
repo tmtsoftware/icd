@@ -5,7 +5,7 @@ import csw.services.icd.model.IcdModel
 /**
  * Converts an IcdModel instance to a GFM formatted string
  */
-case class IcdModelToGfm(m: IcdModel) {
+case class IcdModelToGfm(m: IcdModel) extends Gfm {
 
   val gfm =
     s"""

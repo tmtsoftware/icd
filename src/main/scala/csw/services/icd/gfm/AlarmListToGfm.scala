@@ -5,10 +5,10 @@ import csw.services.icd.model.AlarmModel
 /**
  * Converts a list of alarm descriptions to a GFM formatted string
  */
-case class AlarmListToGfm(list: List[AlarmModel], level: Level) {
+case class AlarmListToGfm(list: List[AlarmModel], level: Level) extends Gfm {
 
   private def itemToGfm(m: AlarmModel): String = {
-    s"${m.name} | ${m.description} | ${m.severity} | ${m.archive} |"
+    s"${m.name} | ${t(m.description)} | ${m.severity} | ${m.archive} |"
   }
 
   private val head =

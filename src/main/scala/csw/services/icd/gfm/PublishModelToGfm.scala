@@ -5,7 +5,7 @@ import csw.services.icd.model._
 /**
  * Converts a PublishModel instance to a GFM formatted string
  */
-case class PublishModelToGfm(m: PublishModel, level: Level) {
+case class PublishModelToGfm(m: PublishModel, level: Level) extends Gfm {
 
   private val head = s"##${level(1)} Publish\n"
   private val desc = s"\n${m.description}\n"

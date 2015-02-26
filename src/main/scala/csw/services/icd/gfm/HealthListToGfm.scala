@@ -5,10 +5,10 @@ import csw.services.icd.model.HealthModel
 /**
  * Converts a list of Health descriptions to a GFM formatted string
  */
-case class HealthListToGfm(list: List[HealthModel], level: Level) {
+case class HealthListToGfm(list: List[HealthModel], level: Level) extends Gfm {
 
   private def itemToGfm(m: HealthModel): String = {
-    s"${m.name} | ${m.description} | ${m.rate} | ${m.archive} | ${m.archiveRate} | ${m.maxRate} | ${m.valueType.typeStr} |"
+    s"${m.name} | ${t(m.description)} | ${m.rate} | ${m.archive} | ${m.archiveRate} | ${m.maxRate} | ${m.valueType.typeStr} |"
   }
 
   private val head =
