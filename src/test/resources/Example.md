@@ -19,24 +19,48 @@ Assembly | no | no | no | no
 
 ##1 Publish
 
+Optional description...
 
 ###1.1 Telemetry
 
-Name|Rate|Max Rate|Archive|Archive Rate
----|---|---|---|---
-status1|0|100|Yes|10
-status2|10|10|No|
+Optional description...?
 
-####1.1.1 Attributes for status1
+####1.1.1 Telemetry: status1
 
+Status1 description...
+(This description can be multiple lines and contain *GFM markup*.)
+
+Name|Value
+---|---
+Rate|0
+Max Rate|100
+Archive|Yes
+Archive Rate|10
+
+
+#### Attributes for status1
 Name|Description|Type|Default|Units
 ---|---|---|---|---
 a1|single value with min/max|integer (-2 ≤ i ≤ 22)||m
 a2|array of float|array of numbers (length = 5)||mm
 a3|enum choice|String: ("red", "green", "blue")|"blue"
 
-####1.1.2 Attributes for status2
 
+####1.1.2 Telemetry: status2
+
+Status2 description...
+(This description can be multiple lines and contain *GFM markup*.)
+
+
+Name|Value
+---|---
+Rate|10
+Max Rate|10
+Archive|No
+Archive Rate|10
+
+
+##### Attributes for status2
 Name|Description|Type|Default|Units
 ---|---|---|---|---
 a4|single value with min/max|integer (-2 ≤ i ≤ 22)|10|m
