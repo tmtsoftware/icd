@@ -7,6 +7,8 @@ import csw.services.icd.model.HealthModel
  */
 case class HealthListToGfm(list: List[HealthModel], level: Level) extends Gfm {
 
+  import Gfm._
+
   private val head = mkHeading(level, 2, "Health")
 
   private val table = mkTable(

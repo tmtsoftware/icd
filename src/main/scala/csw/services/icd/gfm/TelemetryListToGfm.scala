@@ -1,6 +1,7 @@
 package csw.services.icd.gfm
 
 import csw.services.icd.model._
+import Gfm._
 
 /**
  * Converts a TelemetryModel instance (or EventStreamModel, which is the same) to a GFM formatted string

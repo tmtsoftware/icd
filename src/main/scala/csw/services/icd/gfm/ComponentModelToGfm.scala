@@ -7,6 +7,8 @@ import csw.services.icd.model.ComponentModel
  */
 case class ComponentModelToGfm(m: ComponentModel) extends Gfm {
 
+  import Gfm._
+
   private val head = mkHeading(1, s"Component: ${m.name}")
 
   private val desc = mkParagraph(m.description)

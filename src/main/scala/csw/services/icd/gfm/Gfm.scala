@@ -5,9 +5,14 @@ package csw.services.icd.gfm
  * (Github flavored markdown: https://help.github.com/articles/github-flavored-markdown/)
  */
 trait Gfm {
-
+  /**
+   * Returns a string in GFM markdown format
+   */
   val gfm: String
+}
 
+// GFM utils
+object Gfm {
   /**
    * Returns a numbered markdown heading with the given level and depth
    */
@@ -39,18 +44,14 @@ trait Gfm {
    */
   def mkList(list: List[String]): String = (for (item ← list) yield s"* $item").mkString("\n") + "\n\n"
 
-  /**
-   * Strips "|" and "\n" from the given string (since that would break the GFM table format)
-   * @param s string that goes in a GFM table cell
-   * @return the new string
-   */
-  def t(s: String): String = {
+  // Strips "|" and "\n" from the given string (since that would break the GFM table format)
+  private def strip(s: String): String = {
     if (s.contains("|") || s.contains("\n")) {
       println(s"Warning: text appearing in tables may not contain newlines or '|', at: '$s'")
       s.filter(c ⇒ c != '|' && c != '\n')
     } else s
   }
 
-  // Strip special markdown table chars ("|" and "\n") from strings
-  private def strip(list: List[String]): List[String] = list.map(t)
+  // Strip special markdown table chars ("|" and "\n") from strings in list
+  private def strip(list: List[String]): List[String] = list.map(strip)
 }

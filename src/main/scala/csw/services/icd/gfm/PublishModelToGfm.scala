@@ -7,6 +7,8 @@ import csw.services.icd.model._
  */
 case class PublishModelToGfm(m: PublishModel, level: Level) extends Gfm {
 
+  import Gfm._
+
   private val head = mkHeading(level, 1, "Publish")
 
   private val desc = mkParagraph(m.description)

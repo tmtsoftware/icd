@@ -1,6 +1,7 @@
 package csw.services.icd.gfm
 
 import csw.services.icd.model.{ CommandItemModel, CommandModel }
+import Gfm._
 
 /**
  * Converts a ComponentModel instance to a GFM formatted string

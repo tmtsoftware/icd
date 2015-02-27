@@ -7,6 +7,8 @@ import csw.services.icd.model.AlarmModel
  */
 case class AlarmListToGfm(list: List[AlarmModel], level: Level) extends Gfm {
 
+  import Gfm._
+
   private val head = mkHeading(level, 2, "Alarms")
 
   private val table = mkTable(
