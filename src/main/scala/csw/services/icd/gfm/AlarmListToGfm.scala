@@ -7,19 +7,11 @@ import csw.services.icd.model.AlarmModel
  */
 case class AlarmListToGfm(list: List[AlarmModel], level: Level) extends Gfm {
 
-  private def itemToGfm(m: AlarmModel): String = {
-    s"${m.name} | ${t(m.description)} | ${m.severity} | ${m.archive} |"
-  }
+  private val head = mkHeading(level, 2, "Alarms")
 
-  private val head =
-    s"""
-       |###${level(2)} Alarms
-                        |
-                        |Name|Description|Severity|Archive
-                        |---|---|---|---
-                        |""".stripMargin
+  private val table = mkTable(
+    List("Name", "Description", "Severity", "Archive"),
+    list.map(m ⇒ List(m.name, m.description, m.severity, m.archive.toString)))
 
-  private val table = list.map(itemToGfm).mkString("\n")
-
-  val gfm = s"$head$table"
+  val gfm = s"$head\n$table"
 }

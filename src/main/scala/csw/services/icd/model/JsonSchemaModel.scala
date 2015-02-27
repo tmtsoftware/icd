@@ -18,7 +18,7 @@ case class JsonSchemaModel(config: Config) {
   val enumOpt = config.as[Option[List[String]]]("enum")
   val units = config.as[Option[String]]("units").getOrElse("")
 
-  val defaultValue = if (config.hasPath("default")) config.getAnyRef("default") else ""
+  val defaultValue = if (config.hasPath("default")) config.getAnyRef("default").toString else ""
 
   // XXX TODO: Add number range, array bounds (make typeStr() recursive?)
   //        integer (-2 ≤ i ≤ 22)

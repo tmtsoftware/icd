@@ -7,19 +7,12 @@ import csw.services.icd.model.HealthModel
  */
 case class HealthListToGfm(list: List[HealthModel], level: Level) extends Gfm {
 
-  private def itemToGfm(m: HealthModel): String = {
-    s"${m.name} | ${t(m.description)} | ${m.rate} | ${m.archive} | ${m.archiveRate} | ${m.maxRate} | ${m.valueType.typeStr} |"
-  }
+  private val head = mkHeading(level, 2, "Health")
 
-  private val head =
-    s"""
-       |###${level(2)} Health
-                        |
-                        |Name|Description|Rate|Archive|Archive Rate|Max Rate|Value Type
-                        |---|---|---|---|---|---|---
-                        |""".stripMargin
+  private val table = mkTable(
+    List("Name", "Description", "Rate", "Archive", "Archive Rate", "Max Rate", "Value Type"),
+    list.map(m ⇒ List(m.name, m.description, m.rate.toString, m.archive.toString,
+      m.archiveRate.toString, m.maxRate.toString, m.valueType.typeStr)))
 
-  private val table = list.map(itemToGfm).mkString("\n")
-
-  val gfm = s"$head$table"
+  val gfm = s"$head\n$table"
 }

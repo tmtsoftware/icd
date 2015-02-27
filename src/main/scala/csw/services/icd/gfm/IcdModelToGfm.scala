@@ -7,15 +7,11 @@ import csw.services.icd.model.IcdModel
  */
 case class IcdModelToGfm(m: IcdModel) extends Gfm {
 
-  val gfm =
-    s"""
-      |#Interface Control Document: ${m.name}
-      |
-      | Version | Subsystem | WBS Id
-      | ---|---|---
-      |${m.version} | ${m.subsystem} | ${m.wbsId}
-      |
-      |${m.description}
-      |
-    """.stripMargin
+  private val head = mkHeading(0, s"Interface Control Document: ${m.name}")
+
+  private val table = mkTable(
+    List("Version", "Subsystem", "WBS Id"),
+    List(List(m.version.toString, m.subsystem, m.wbsId)))
+
+  val gfm = s"$head\n$table"
 }

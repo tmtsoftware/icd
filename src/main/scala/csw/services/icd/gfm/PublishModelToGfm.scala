@@ -7,9 +7,12 @@ import csw.services.icd.model._
  */
 case class PublishModelToGfm(m: PublishModel, level: Level) extends Gfm {
 
-  private val head = s"##${level(1)} Publish\n"
-  private val desc = s"\n${m.description}\n"
+  private val head = mkHeading(level, 1, "Publish")
+
+  private val desc = mkParagraph(m.description)
+
   private implicit val counter = (0 to 5).iterator
+
   private val parts = List(
     TelemetryListToGfm(m.telemetryList, level.inc2()).gfm,
     EventListToGfm(m.eventList, level.inc2()).gfm,

@@ -6,29 +6,32 @@ import csw.services.icd.model._
  * Converts a TelemetryModel instance (or EventStreamModel, which is the same) to a GFM formatted string
  */
 case class TelemetryListToGfm(list: List[TelemetryModel], level: Level, title: String = "Telemetry") extends Gfm {
-  private val head = s"###${level(2)} $title\n"
+  private val head = mkHeading(level, 2, title)
+
   private val body = list.zipWithIndex.map {
     case (m, i) ⇒ TelemetryModelToGfm(m, level.inc3(i), title).gfm
   }.mkString("\n")
+
   val gfm = s"$head\n$body"
 }
 
 private case class TelemetryModelToGfm(m: TelemetryModel, level: Level, title: String) extends Gfm {
-  val attr = JsonSchemaListToGfm(m.attributesList).gfm
-  val gfm = s"""####${level(3)} $title: ${m.name}
-      |
-      |${m.description}
-      |
-      |Name|Value
-      |---|---
-      |Rate | ${m.rate}
-      |Max Rate | ${m.maxRate}
-      |Archive | ${m.archive}
-      |Archive Rate | ${m.archiveRate}
-      |
-      |#####${level(4)} Attributes for ${m.name}
-      |
-      |$attr
-      |
-      |""".stripMargin
+
+  private val head = mkHeading(level, 2, s"$title: ${m.name}")
+
+  private val desc = mkParagraph(m.description)
+
+  private val table = mkTable(
+    List("Name", "Value"),
+    List(
+      List("Rate", m.rate.toString),
+      List("Max Rate", m.maxRate.toString),
+      List("Archive", m.archive.toString),
+      List("Archive Rate", m.archiveRate.toString)))
+
+  private val attrHead = mkHeading(level, 4, s"Attributes for ${m.name}")
+
+  private val attr = JsonSchemaListToGfm(m.attributesList).gfm
+
+  val gfm = s"$head\n$desc\n$table\n$attrHead\n$attr"
 }
