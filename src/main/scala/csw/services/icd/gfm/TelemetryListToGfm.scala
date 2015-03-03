@@ -18,17 +18,17 @@ case class TelemetryListToGfm(list: List[TelemetryModel], level: Level, title: S
 
 private case class TelemetryModelToGfm(m: TelemetryModel, level: Level, title: String) extends Gfm {
 
-  private val head = mkHeading(level, 2, s"$title: ${m.name}")
+  private val head = mkHeading(level, 3, s"$title: ${m.name}")
 
   private val desc = mkParagraph(m.description)
 
   private val table = mkTable(
     List("Name", "Value"),
     List(
-      List("Rate", m.rate.toString),
-      List("Max Rate", m.maxRate.toString),
+      List("Rate", m.rate.toString + "Hz"),
+      List("Max Rate", m.maxRate.toString + "Hz"),
       List("Archive", m.archive.toString),
-      List("Archive Rate", m.archiveRate.toString)))
+      List("Archive Rate", m.archiveRate.toString + "Hz")).filter(_(1) != "0Hz"))
 
   private val attrHead = mkHeading(level, 4, s"Attributes for ${m.name}")
 

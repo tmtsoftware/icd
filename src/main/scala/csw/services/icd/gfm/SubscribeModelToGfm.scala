@@ -20,6 +20,8 @@ private case class SubscribeInfoToGfm(list: List[SubscribeInfo], level: Level, t
 case class SubscribeModelToGfm(m: SubscribeModel, level: Level) extends Gfm {
   private val head = mkHeading(level, 1, "Subscribe")
 
+  private val desc = mkParagraph(m.description)
+
   private implicit val counter = (0 to 5).iterator
 
   private val parts = List(
@@ -29,5 +31,5 @@ case class SubscribeModelToGfm(m: SubscribeModel, level: Level) extends Gfm {
     SubscribeInfoToGfm(m.alarmList, level.inc2(), "Alarms").gfm,
     SubscribeInfoToGfm(m.healthList, level.inc2(), "Health").gfm)
 
-  val gfm = head + parts.mkString("\n\n")
+  val gfm = head + desc + parts.mkString("\n\n")
 }

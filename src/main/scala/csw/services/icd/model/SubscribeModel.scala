@@ -15,6 +15,7 @@ object SubscribeModel {
       for (conf ← subscribeConfig.as[Option[List[Config]]](name).getOrElse(Nil)) yield SubscribeInfo(conf)
 
     SubscribeModel(
+      description = subscribeConfig.as[Option[String]]("description").getOrElse(""),
       telemetryList = getItems("telemetry"),
       eventList = getItems("events"),
       eventStreamList = getItems("eventStreams"),
@@ -23,7 +24,8 @@ object SubscribeModel {
   }
 }
 
-case class SubscribeModel(telemetryList: List[SubscribeInfo],
+case class SubscribeModel(description: String,
+                          telemetryList: List[SubscribeInfo],
                           eventList: List[SubscribeInfo],
                           eventStreamList: List[SubscribeInfo],
                           alarmList: List[SubscribeInfo],

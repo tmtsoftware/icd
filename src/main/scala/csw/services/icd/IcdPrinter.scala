@@ -2,6 +2,7 @@ package csw.services.icd
 
 import java.io.{ ByteArrayInputStream, File, FileInputStream, FileOutputStream }
 
+import com.itextpdf.text.PageSize
 import csw.services.icd.gfm.IcdToGfm
 
 /**
@@ -74,7 +75,7 @@ object IcdPrinter {
       import com.itextpdf.text.pdf.PdfWriter
       import com.itextpdf.tool.xml.XMLWorkerHelper
 
-      val document = new Document()
+      val document = new Document(PageSize.LETTER)
       val out = new FileOutputStream(file)
       val writer = PdfWriter.getInstance(document, out)
       document.open()

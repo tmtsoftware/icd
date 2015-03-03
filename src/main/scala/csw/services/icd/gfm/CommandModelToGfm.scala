@@ -9,15 +9,19 @@ import Gfm._
 case class CommandModelToGfm(m: CommandModel, level: Level) extends Gfm {
   private val head = mkHeading(level, 1, "Commands")
 
+  private val desc = mkParagraph(m.description)
+
   private val body = m.items.zipWithIndex.map {
     case (t, i) ⇒ CommandItemToGfm(t, level.inc2(i)).gfm
   }.mkString("\n")
 
-  val gfm = s"$head$body"
+  val gfm = s"$head\n$desc\n$body"
 }
 
 private case class CommandItemToGfm(m: CommandItemModel, level: Level) extends Gfm {
   private val head = mkHeading(level, 2, s"Configuration: *${m.name}*")
+
+  private val desc = mkParagraph(m.description)
 
   private val requirementsHead = mkHeading(level, 3, s"*${m.name}* Requirements")
 
@@ -29,5 +33,5 @@ private case class CommandItemToGfm(m: CommandItemModel, level: Level) extends G
     List("Name", "Description", "Type", "Default", "Units"),
     m.args.map(a ⇒ List(a.name, a.description, a.typeStr, a.defaultValue, a.units)))
 
-  val gfm = List(head, requirementsHead, requirements, argsHead, argsTable).mkString("\n")
+  val gfm = List(head, desc, requirementsHead, requirements, argsHead, argsTable).mkString("\n")
 }
