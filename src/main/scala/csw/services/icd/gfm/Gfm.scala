@@ -33,7 +33,7 @@ object Gfm {
    * Returns a markdown table with the given column headings and list of rows
    */
   def mkTable(head: List[String], rows: List[List[String]]): String = {
-    if (rows.isEmpty) ""
+    if (rows.isEmpty) "n/a"
     else {
       val (newHead, newRows) = compact(head, rows)
       val hs = strip(newHead).mkString(" | ")
