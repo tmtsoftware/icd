@@ -1,6 +1,6 @@
 package csw.services.icd
 
-import java.io.{FileOutputStream, File}
+import java.io.{ FileOutputStream, File }
 
 import com.typesafe.config.{ Config, ConfigFactory, ConfigResolveOptions }
 import csw.services.icd.IcdValidator._
