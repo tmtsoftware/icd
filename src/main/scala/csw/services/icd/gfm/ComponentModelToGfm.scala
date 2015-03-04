@@ -5,11 +5,11 @@ import csw.services.icd.model.ComponentModel
 /**
  * Converts a ComponentModel instance to a GFM formatted string
  */
-case class ComponentModelToGfm(m: ComponentModel) extends Gfm {
+case class ComponentModelToGfm(m: ComponentModel, level: Level) extends Gfm {
 
   import Gfm._
 
-  private val head = mkHeading(1, s"Component: ${m.name}")
+  private val head = mkHeading(level, 1, s"Component: ${m.name}")
 
   private val desc = mkParagraph(m.description)
 

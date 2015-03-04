@@ -15,7 +15,7 @@ case class IcdToGfm(p: IcdParser) extends Gfm {
   // Ignore missing parts for now...
   val parts = List(
     p.icdModel.map(IcdModelToGfm(_).gfm),
-    p.componentModel.map(ComponentModelToGfm(_).gfm),
+    p.componentModel.map(ComponentModelToGfm(_, level.inc1()).gfm),
     p.publishModel.map(PublishModelToGfm(_, level.inc1()).gfm),
     p.subscribeModel.map(SubscribeModelToGfm(_, level.inc1()).gfm),
     p.commandModel.map(CommandModelToGfm(_, level.inc1()).gfm)).flatten

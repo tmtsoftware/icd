@@ -15,5 +15,7 @@ case class IcdModelToGfm(m: IcdModel) extends Gfm {
     List("Version", "Subsystem", "WBS Id"),
     List(List(m.version.toString, m.subsystem, m.wbsId)))
 
-  val gfm = s"$head\n$table"
+  private val desc = mkParagraph(m.description)
+
+  val gfm = s"$head\n$desc\n$table"
 }
