@@ -33,11 +33,14 @@ object Gfm {
    * Returns a markdown table with the given column headings and list of rows
    */
   def mkTable(head: List[String], rows: List[List[String]]): String = {
-    val (newHead, newRows) = compact(head, rows)
-    val hs = strip(newHead).mkString(" | ")
-    val sep = "---|" * newHead.size
-    val rs = newRows.map(strip(_).mkString(" | ")).mkString(" |\n")
-    s"$hs\n$sep\n$rs |\n\n"
+    if (rows.isEmpty) ""
+    else {
+      val (newHead, newRows) = compact(head, rows)
+      val hs = strip(newHead).mkString(" | ")
+      val sep = "---|" * newHead.size
+      val rs = newRows.map(strip(_).mkString(" | ")).mkString(" |\n")
+      s"$hs\n$sep\n$rs |\n\n"
+    }
   }
 
   // Removes any columns that do not contain any values
