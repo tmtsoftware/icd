@@ -23,7 +23,8 @@ private case class CommandItemToGfm(m: CommandItemModel, level: Level) extends G
 
   private val desc = mkParagraph(m.description)
 
-  private val requirementsHead = mkHeading(level, 3, s"*${m.name}* Requirements")
+  private val requirementsHead =
+    if (m.requirements.isEmpty) "" else mkHeading(level, 3, s"*${m.name}* Requirements")
 
   private val requirements = mkList(m.requirements)
 

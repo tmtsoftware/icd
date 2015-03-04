@@ -13,7 +13,7 @@ object TelemetryModel {
   def apply(config: Config): TelemetryModel =
     TelemetryModel(
       name = config.as[String]("name"),
-      description = config.as[String]("description"),
+      description = config.as[Option[String]]("description").getOrElse(""),
       rate = config.as[Option[Int]]("rate").getOrElse(0),
       archive = config.as[Option[Boolean]]("archive").getOrElse(false),
       archiveRate = config.as[Option[Int]]("archiveRate").getOrElse(0),
