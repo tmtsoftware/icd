@@ -12,6 +12,7 @@ object ComponentModel {
     ComponentModel(
       name = config.as[String]("name"),
       description = config.as[String]("description"),
+      prefix = config.as[String]("prefix"),
       usesTime = config.as[Option[Boolean]]("usesTime").getOrElse(false),
       usesEvents = config.as[Option[Boolean]]("usesEvents").getOrElse(false),
       usesConfigurations = config.as[Option[Boolean]]("usesConfigurations").getOrElse(false),
@@ -21,6 +22,7 @@ object ComponentModel {
 
 case class ComponentModel(name: String,
                           description: String,
+                          prefix: String,
                           usesTime: Boolean,
                           usesEvents: Boolean,
                           usesProperties: Boolean,

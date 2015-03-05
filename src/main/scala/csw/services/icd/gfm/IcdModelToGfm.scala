@@ -9,7 +9,7 @@ case class IcdModelToGfm(m: IcdModel) extends Gfm {
 
   import Gfm._
 
-  private val head = mkHeading(0, s"Interface Control Document: ${m.name}")
+  private val head = mkHeading(0, s"Interface Control Document\n${m.name}")
 
   private val table = mkTable(
     List("Version", "Subsystem", "WBS Id"),

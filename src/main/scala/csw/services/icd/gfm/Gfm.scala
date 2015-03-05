@@ -23,8 +23,9 @@ object Gfm {
   /**
    * Returns a markdown heading with the given level
    */
-  def mkHeading(depth: Int, name: String): String = {
-    s"\n${"#" * (depth + 1)}$name\n"
+  def mkHeading(depth: Int, text: String): String = {
+    // Allow multi-line headings
+    (for (s ← text.split("\n")) yield s"${"#" * (depth + 1)}$s").mkString("\n")
   }
 
   def mkParagraph(text: String) = s"${paragraphFilter(text)}\n"
