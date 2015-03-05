@@ -6,19 +6,18 @@ import csw.services.icd.model._
 /**
  * Converts an ICD model to "GitHub Flavored Markdown" or GFM.
  */
-case class IcdToGfm(p: IcdParser) extends Gfm {
+case class IcdToGfm(p: IcdParser, level: Level = Level()) extends Gfm {
 
-  val level = Level()
-
+  // Used to increment the level below
   private implicit val counter = (0 to 5).iterator
 
   // Ignore missing parts for now...
   val parts = List(
-    p.icdModel.map(IcdModelToGfm(_).gfm),
-    p.componentModel.map(ComponentModelToGfm(_, level.inc1()).gfm),
-    p.publishModel.map(PublishModelToGfm(_, level.inc1()).gfm),
-    p.subscribeModel.map(SubscribeModelToGfm(_, level.inc1()).gfm),
-    p.commandModel.map(CommandModelToGfm(_, level.inc1()).gfm)).flatten
+    p.icdModel.map(IcdModelToGfm(_, level).gfm),
+    p.componentModel.map(ComponentModelToGfm(_, level.inc2()).gfm),
+    p.publishModel.map(PublishModelToGfm(_, level.inc2()).gfm),
+    p.subscribeModel.map(SubscribeModelToGfm(_, level.inc2()).gfm),
+    p.commandModel.map(CommandModelToGfm(_, level.inc2()).gfm)).flatten
 
   /**
    * The "GitHub Flavored Markdown" or GFM for the model as a string

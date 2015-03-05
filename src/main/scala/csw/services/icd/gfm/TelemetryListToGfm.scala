@@ -7,10 +7,10 @@ import Gfm._
  * Converts a TelemetryModel instance (or EventStreamModel, which is the same) to a GFM formatted string
  */
 case class TelemetryListToGfm(list: List[TelemetryModel], level: Level, title: String = "Telemetry") extends Gfm {
-  private val head = mkHeading(level, 2, title)
+  private val head = mkHeading(level, 3, title)
 
   private val body = list.zipWithIndex.map {
-    case (m, i) ⇒ TelemetryModelToGfm(m, level.inc3(i), title).gfm
+    case (m, i) ⇒ TelemetryModelToGfm(m, level.inc4(i), title).gfm
   }.mkString("\n")
 
   val gfm = s"$head\n$body"
@@ -18,7 +18,7 @@ case class TelemetryListToGfm(list: List[TelemetryModel], level: Level, title: S
 
 private case class TelemetryModelToGfm(m: TelemetryModel, level: Level, title: String) extends Gfm {
 
-  private val head = mkHeading(level, 3, s"$title: ${m.name}")
+  private val head = mkHeading(level, 4, s"$title: ${m.name}")
 
   private val desc = mkParagraph(m.description)
 

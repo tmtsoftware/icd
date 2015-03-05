@@ -9,7 +9,7 @@ case class HealthListToGfm(list: List[HealthModel], level: Level) extends Gfm {
 
   import Gfm._
 
-  private val head = mkHeading(level, 2, "Health")
+  private val head = mkHeading(level, 3, "Health")
 
   private val table = mkTable(
     List("Name", "Description", "Rate", "Archive", "Archive Rate", "Max Rate", "Value Type"),

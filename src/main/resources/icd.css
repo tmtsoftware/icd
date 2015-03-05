@@ -83,9 +83,9 @@ hr {
     padding: 0;
 }
 
-p {
+/*p {*/
     /*margin: 15px 0;*/
-}
+/*}*/
 
 pre, code {
     font: 12px 'Bitstream Vera Sans Mono', 'Courier', monospace;
@@ -139,7 +139,7 @@ table {
     border-collapse: collapse;
     margin-left: 16px;
     margin-right: 20px;
-    margin-top: 16px;
+    /*margin-top: 6px;*/
     padding: 0;
     table-layout: fixed;
     word-wrap: break-word;
@@ -175,14 +175,14 @@ table th {
     white-space: nowrap;
 }
 
-ul, ol {
-    margin: 15px 0;
-}
+/*ul, ol {*/
+    /*margin: 15px 0;*/
+/*}*/
 
-ul li, ol li {
-    margin-top: 7px;
-    margin-bottom: 7px;
-}
+/*ul li, ol li {*/
+    /*margin-top: 7px;*/
+    /*margin-bottom: 7px;*/
+/*}*/
 
 .shadow {
     -webkit-box-shadow: 0 5px 15px #000;

@@ -85,7 +85,7 @@ object Icd extends App {
 
   private def printProblems(problems: List[Problem]): Unit = {
     for (problem ← problems) {
-      println(problem.message + "\n")
+      println(s"${problem.severity}: ${problem.message}")
     }
   }
 

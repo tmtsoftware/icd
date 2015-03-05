@@ -16,16 +16,15 @@ object Gfm {
   /**
    * Returns a numbered markdown heading with the given level and depth
    */
-  def mkHeading(level: Level, depth: Int, name: String): String = {
-    s"\n${"#" * (depth + 1)}${level(depth)} $name\n"
+  def mkHeading(level: Level, depth: Int, text: String): String = {
+    s"\n${"#" * (depth + 1)}${level(depth)} $text\n"
   }
 
   /**
    * Returns a markdown heading with the given level
    */
   def mkHeading(depth: Int, text: String): String = {
-    // Allow multi-line headings
-    (for (s ← text.split("\n")) yield s"${"#" * (depth + 1)}$s").mkString("\n")
+    s"\n${"#" * (depth + 1)}$text\n"
   }
 
   def mkParagraph(text: String) = s"${paragraphFilter(text)}\n"
