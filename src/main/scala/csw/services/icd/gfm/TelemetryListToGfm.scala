@@ -9,9 +9,12 @@ import Gfm._
 case class TelemetryListToGfm(list: List[TelemetryModel], level: Level, title: String = "Telemetry") extends Gfm {
   private val head = mkHeading(level, 3, title)
 
-  private val body = list.zipWithIndex.map {
-    case (m, i) ⇒ TelemetryModelToGfm(m, level.inc4(i), title).gfm
-  }.mkString("\n")
+  private val body =
+    if (list.isEmpty) "n/a"
+    else
+      list.zipWithIndex.map {
+        case (m, i) ⇒ TelemetryModelToGfm(m, level.inc4(i), title).gfm
+      }.mkString("\n")
 
   val gfm = s"$head\n$body"
 }

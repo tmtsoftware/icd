@@ -140,7 +140,7 @@ object IcdValidator {
   // 'source' is the name of the original input file.
   private def formatMsg(msg: ProcessingMessage, source: String): String = {
     import scala.collection.JavaConversions._
-    val file = new File(source).getName
+    val file = new File(source).getPath
 
     // val jsonStr = toJson(ConfigFactory.parseString(msg.asJson().toString))
     // s"$file: $jsonStr"
