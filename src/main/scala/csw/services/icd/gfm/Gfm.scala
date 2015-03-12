@@ -13,21 +13,37 @@ trait Gfm {
 
 // GFM utils
 object Gfm {
+
+  /**
+   * Returns the link target name for the given heading text
+   */
+  def headingTargetName(text: String): String =
+    text.toLowerCase.filter(c ⇒ c.isLetterOrDigit || c.isWhitespace || c == '.').map {
+      case c if c.isWhitespace ⇒ '-'
+      case c                   ⇒ c
+    }
+
   /**
    * Returns a numbered markdown heading with the given level and depth
    */
   def mkHeading(level: Level, depth: Int, text: String): String = {
-    s"\n${"#" * (depth + 1)}${level(depth)} $text\n"
+    val heading = s"${level(depth)} $text"
+    val targetName = headingTargetName(heading)
+    val target = s"<a name='$targetName'></a>"
+    s"\n${"#" * (depth + 1)} $target$heading\n"
   }
 
-  /**
-   * Returns a markdown heading with the given level
-   */
-  def mkHeading(depth: Int, text: String): String = {
-    s"\n${"#" * (depth + 1)}$text\n"
-  }
+  //  /**
+  //   * Returns a markdown heading with the given level
+  //   */
+  //  def mkHeading(depth: Int, text: String): String = {
+  //    s"\n${"#" * (depth + 1)}$text\n"
+  //  }
 
   def mkParagraph(text: String) = s"${paragraphFilter(text)}\n"
+
+  def bold(text: String) = s"**$text**"
+  def italic(text: String) = s"*$text*"
 
   /**
    * Returns a markdown table with the given column headings and list of rows

@@ -3,7 +3,7 @@ package csw.services.icd
 import java.io._
 
 import com.itextpdf.text.PageSize
-import csw.services.icd.gfm.{ Level, IcdToGfm }
+import csw.services.icd.gfm.{ Gfm, Level, IcdToGfm }
 
 /**
  * Saves the ICD as a document
@@ -14,14 +14,6 @@ object IcdPrinter {
     val stream = getClass.getResourceAsStream("/icd.css")
     val lines = scala.io.Source.fromInputStream(stream).getLines()
     lines.mkString("\n")
-  }
-
-  // Gets a recursive list of subdirectories containing ICDs
-  private def subDirs(dir: File): List[File] = {
-    val dirs = for {
-      d ← dir.listFiles.filter(d ⇒ d.isDirectory && d.listFiles().contains(new File(d, "icd-model.conf"))).toList
-    } yield d :: subDirs(d)
-    dirs.flatten
   }
 
   /**
@@ -36,8 +28,6 @@ object IcdPrinter {
     implicit val counter = Iterator.from(0)
     val level = Level()
 
-    val title = "#Interface Control Document\n\n"
-
     // get one parser object for each subdirectory containing an ICD
     val parsers = (dir :: subDirs(dir)).map(IcdParser)
 
@@ -50,13 +40,37 @@ object IcdPrinter {
       }
     }
 
-    def getAsGfm: String = title + parsers.map(IcdToGfm(_, level.inc1()).gfm).mkString("\n\n")
+    // Returns a Gfm link to the given Gfm heading for the TOC. For example:
+    // * [3.2 Publish](3.2-publish)
+    // Note that whitespace is converted to '-', special chars are ignored, and text is converted to lower case in the target.
+    def mkGfmLink(heading: String): String = {
+      val indent = "\t" * (heading.takeWhile(_ == '#').length - 2)
+      val s = heading.dropWhile(_ == '#')
+      // XXX could also parse target from <a> element
+      val text = s.substring(s.lastIndexOf("</a>") + 4)
+      val target = "#" + Gfm.headingTargetName(text)
+      s"$indent* [$text]($target)"
+    }
+
+    // Returns a TOC for the given GFM body
+    def gfmToToc(body: String): String = {
+      val links = for (line ← body.lines if line.startsWith("#")) yield mkGfmLink(line)
+      links.toList.mkString("\n")
+    }
+
+    // Gets the GFM (Github flavored markdown) for the document
+    def getAsGfm: String = {
+      val title = "#Interface Control Document\n#" + parsers.head.icdModel.map(_.name).getOrElse("")
+      val body = parsers.map(IcdToGfm(_, level.inc1()).gfm).mkString("\n\n")
+      val toc = gfmToToc(body)
+      s"$title\n$toc\n$body\n"
+    }
 
     def getAsHtml: String = {
       import org.pegdown.{ Extensions, PegDownProcessor }
 
-      val pd = new PegDownProcessor(Extensions.TABLES)
-      val title = parsers(0).icdModel.map(_.name).getOrElse("ICD")
+      val pd = new PegDownProcessor(Extensions.TABLES | Extensions.AUTOLINKS)
+      val title = parsers.head.icdModel.map(_.name).getOrElse("ICD")
       val body = pd.markdownToHtml(getAsGfm)
       val css = getCss
       s"""
@@ -74,6 +88,7 @@ object IcdPrinter {
          """.stripMargin
     }
 
+    // Saves the document in GFM (Github flavored markdown) format
     def saveAsGfm(): Unit = {
       // convert model to markdown
       val out = new FileOutputStream(file)

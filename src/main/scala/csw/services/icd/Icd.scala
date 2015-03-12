@@ -69,7 +69,7 @@ object Icd extends App {
 
     // Validate the standard set of ICD files in the given (or current) dir
     if (options.inputFile.isEmpty && options.schemaFile.isEmpty) {
-      val problems = validate(options.validateDir)
+      val problems = validateRecursive(options.validateDir)
       printProblems(problems)
       for (outputFile ← options.outputFile) {
         if (errorCount(problems) == 0 && !outputFile.getName.endsWith(".json")) {

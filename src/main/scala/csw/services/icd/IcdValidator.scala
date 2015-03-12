@@ -61,6 +61,16 @@ object IcdValidator {
   private val factory = JsonSchemaFactory.newBuilder.setLoadingConfiguration(cfg).freeze
 
   /**
+   * Validates all the files with the standard names (stdNames) in the given directory and recursively
+   * in its subdirectories.
+   * @param dir the top level directory containing one or more of the the standard set of ICD files
+   *            and any number of subdirectories containing ICD files
+   */
+  def validateRecursive(dir: File = new File(".")): List[Problem] = {
+    (dir :: subDirs(dir)).map(validate).flatten
+  }
+
+  /**
    * Validates all files with the standard names (stdNames) in the given directory.
    * @param dir the directory containing the standard set of ICD files (default: current dir)
    */

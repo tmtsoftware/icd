@@ -19,21 +19,17 @@ case class CommandModelToGfm(m: CommandModel, level: Level) extends Gfm {
 }
 
 private case class CommandItemToGfm(m: CommandItemModel, level: Level) extends Gfm {
-  private val head = mkHeading(level, 3, s"Configuration: *${m.name}*")
+  private val head = mkHeading(level, 3, s"Configuration: ${m.name}")
 
   private val desc = mkParagraph(m.description)
 
-  private val requirementsHead =
-    if (m.requirements.isEmpty) "" else mkHeading(level, 4, s"*${m.name}* Requirements")
+  private val requirements = mkParagraph(bold("Requirements:") + " " + m.requirements.mkString(", "))
 
-  private val requirements = mkList(m.requirements)
-
-  //  private val argsHead = mkHeading(level.inc4(1), 4, s"*${m.name}* Arguments")
-  private val argsHead = "Arguments\n"
+  private val argsHead = mkParagraph(bold("Arguments:"))
 
   private val argsTable = mkTable(
     List("Name", "Description", "Type", "Default", "Units"),
     m.args.map(a ⇒ List(a.name, a.description, a.typeStr, a.defaultValue, a.units)))
 
-  val gfm = List(head, desc, requirementsHead, requirements, argsHead, argsTable).mkString("\n")
+  val gfm = List(head, requirements, desc, argsHead, argsTable).mkString("\n")
 }

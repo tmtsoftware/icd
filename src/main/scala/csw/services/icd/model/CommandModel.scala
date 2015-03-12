@@ -13,7 +13,7 @@ object CommandItemModel {
       description = config.as[String]("description"),
       requirements = config.as[Option[List[String]]]("requirements").getOrElse(Nil),
       requiredArgs = config.as[Option[List[String]]]("requiredArgs").getOrElse(Nil),
-      args = for (conf ← config.as[List[Config]]("args")) yield JsonSchemaModel(conf))
+      args = for (conf ← config.as[Option[List[Config]]]("args").getOrElse(Nil)) yield JsonSchemaModel(conf))
 }
 
 case class CommandItemModel(name: String,
