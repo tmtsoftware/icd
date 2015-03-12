@@ -2,7 +2,6 @@ package csw.services.icd
 
 import java.io._
 
-import com.itextpdf.text.PageSize
 import csw.services.icd.gfm.{ Gfm, Level, IcdToGfm }
 
 /**
@@ -55,7 +54,7 @@ object IcdPrinter {
     // Returns a TOC for the given GFM body
     def gfmToToc(body: String): String = {
       val links = for (line ← body.lines if line.startsWith("#")) yield mkGfmLink(line)
-      links.toList.mkString("\n")
+      "## Table of Contents\n\n" + links.toList.mkString("\n")
     }
 
     // Gets the GFM (Github flavored markdown) for the document
@@ -63,7 +62,7 @@ object IcdPrinter {
       val title = "#Interface Control Document\n#" + parsers.head.icdModel.map(_.name).getOrElse("")
       val body = parsers.map(IcdToGfm(_, level.inc1()).gfm).mkString("\n\n")
       val toc = gfmToToc(body)
-      s"$title\n$toc\n$body\n"
+      s"$title\n\n$toc\n\n$body\n"
     }
 
     def getAsHtml: String = {
@@ -103,13 +102,34 @@ object IcdPrinter {
     }
 
     def saveAsPdf(): Unit = {
-      import com.itextpdf.text.Document
-      import com.itextpdf.text.pdf.PdfWriter
       import com.itextpdf.tool.xml.XMLWorkerHelper
+      import com.itextpdf.text._
+      import com.itextpdf.text.pdf._
+
+      // Adds page number to al the pages except the first.
+      object PageStamper extends PdfPageEventHelper {
+        override def onEndPage(writer: PdfWriter, document: Document) {
+          try {
+            val pageSize = document.getPageSize
+            val x = pageSize.getRight(40)
+            val y = pageSize.getBottom(30)
+            val rect = new Rectangle(x, y, x + 40, y - 30)
+            val directContent = writer.getDirectContent
+            directContent.setColorFill(BaseColor.GRAY)
+            directContent.setFontAndSize(BaseFont.createFont(), 10) // XXX not working?
+            ColumnText.showTextAligned(directContent,
+              Element.ALIGN_CENTER, new Phrase(s"${writer.getPageNumber}"),
+              (rect.getLeft + rect.getRight) / 2, rect.getBottom - 18, 0)
+          } catch {
+            case e: Throwable ⇒ e.printStackTrace()
+          }
+        }
+      }
 
       val document = new Document(PageSize.LETTER)
       val out = new FileOutputStream(file)
       val writer = PdfWriter.getInstance(document, out)
+      writer.setPageEvent(PageStamper)
       document.open()
       XMLWorkerHelper.getInstance().parseXHtml(writer, document, new ByteArrayInputStream(getAsHtml.getBytes))
       document.close()
