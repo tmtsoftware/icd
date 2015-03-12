@@ -114,10 +114,11 @@ object IcdPrinter {
             val x = pageSize.getRight(40)
             val y = pageSize.getBottom(30)
             val rect = new Rectangle(x, y, x + 40, y - 30)
-            val directContent = writer.getDirectContent
-            directContent.setColorFill(BaseColor.GRAY)
-            directContent.setFontAndSize(BaseFont.createFont(), 10) // XXX not working?
-            ColumnText.showTextAligned(directContent,
+            val dc = writer.getDirectContent
+            dc.setColorFill(BaseColor.GRAY)
+//            val font = BaseFont.createFont(BaseFont.HELVETICA, "utf8", false)
+//            dc.setFontAndSize(font, 10) // XXX not working?
+            ColumnText.showTextAligned(dc,
               Element.ALIGN_CENTER, new Phrase(s"${writer.getPageNumber}"),
               (rect.getLeft + rect.getRight) / 2, rect.getBottom - 18, 0)
           } catch {
