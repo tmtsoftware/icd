@@ -116,8 +116,8 @@ object IcdPrinter {
             val rect = new Rectangle(x, y, x + 40, y - 30)
             val dc = writer.getDirectContent
             dc.setColorFill(BaseColor.GRAY)
-//            val font = BaseFont.createFont(BaseFont.HELVETICA, "utf8", false)
-//            dc.setFontAndSize(font, 10) // XXX not working?
+            //            val font = BaseFont.createFont(BaseFont.HELVETICA, "utf8", false)
+            //            dc.setFontAndSize(font, 10) // XXX not working?
             ColumnText.showTextAligned(dc,
               Element.ALIGN_CENTER, new Phrase(s"${writer.getPageNumber}"),
               (rect.getLeft + rect.getRight) / 2, rect.getBottom - 18, 0)
