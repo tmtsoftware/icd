@@ -60,9 +60,10 @@ object IcdPrinter {
     // Gets the GFM (Github flavored markdown) for the document
     def getAsGfm: String = {
       val title = "#Interface Control Document\n#" + parsers.head.icdModel.map(_.name).getOrElse("")
-      val body = parsers.map(IcdToGfm(_, level.inc1()).gfm).mkString("\n\n")
+      val pagebreak = "\n<div class='pagebreak'></div>\n" // new page, see pagebreak in icd.css
+      val body = parsers.map(IcdToGfm(_, level.inc1()).gfm).mkString(pagebreak)
       val toc = gfmToToc(body)
-      s"$title\n\n$toc\n\n$body\n"
+      s"$title\n$pagebreak\n$toc\n$pagebreak\n$body\n"
     }
 
     def getAsHtml: String = {
@@ -110,17 +111,27 @@ object IcdPrinter {
       object PageStamper extends PdfPageEventHelper {
         override def onEndPage(writer: PdfWriter, document: Document) {
           try {
+            val pageNumber = writer.getPageNumber
             val pageSize = document.getPageSize
             val x = pageSize.getRight(40)
             val y = pageSize.getBottom(30)
             val rect = new Rectangle(x, y, x + 40, y - 30)
             val dc = writer.getDirectContent
             dc.setColorFill(BaseColor.GRAY)
-            //            val font = BaseFont.createFont(BaseFont.HELVETICA, "utf8", false)
-            //            dc.setFontAndSize(font, 10) // XXX not working?
             ColumnText.showTextAligned(dc,
-              Element.ALIGN_CENTER, new Phrase(s"${writer.getPageNumber}"),
+              Element.ALIGN_CENTER, new Phrase(s"$pageNumber"),
               (rect.getLeft + rect.getRight) / 2, rect.getBottom - 18, 0)
+
+            // Add the TMT logo on the first page
+            if (pageNumber == 1) {
+              val url = getClass.getClassLoader.getResource("tmt.png")
+              val image = Image.getInstance(url)
+              image.setAbsolutePosition(
+                pageSize.getLeft + pageSize.getWidth / 2 - image.getWidth / 2,
+                pageSize.getBottom + pageSize.getHeight / 2 - image.getHeight / 2)
+              dc.addImage(image)
+            }
+
           } catch {
             case e: Throwable ⇒ e.printStackTrace()
           }

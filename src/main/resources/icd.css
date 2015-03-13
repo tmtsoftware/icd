@@ -190,3 +190,6 @@ table th {
     box-shadow: 0 5px 15px #000;
 }
 
+.pagebreak {
+    page-break-after: always;
+}
