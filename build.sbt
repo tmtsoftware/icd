@@ -75,7 +75,7 @@ lazy val icd = project
     test(scalaTest)
   )
 
-lazy val icddb = project
+lazy val `icd-db` = project
   .settings(packageSettings("CSW ICD database support", "Used to access ICD database"): _*)
   .settings(libraryDependencies ++=
   compile(casbah) ++
