@@ -66,10 +66,19 @@ val typesafeConfig = "com.typesafe" % "config" % "1.2.1"
 val scalaTest = "org.scalatest" %% "scalatest" % "2.1.5"
 val pegdown = "org.pegdown" % "pegdown" % "1.4.2"
 val xmlworker = "com.itextpdf.tool" % "xmlworker" % "5.5.5"
+val casbah = "org.mongodb" %% "casbah" % "2.8.0"
 
-lazy val icd = (project in file("."))
+lazy val icd = project
   .settings(packageSettings("CSW ICD support", "Used to validate ICDs"): _*)
   .settings(libraryDependencies ++=
   compile(jsonSchemaValidator, scopt, typesafeConfig, ficus, pegdown, xmlworker) ++
     test(scalaTest)
   )
+
+lazy val icddb = project
+  .settings(packageSettings("CSW ICD database support", "Used to access ICD database"): _*)
+  .settings(libraryDependencies ++=
+  compile(casbah) ++
+    test(scalaTest)
+  ) dependsOn(icd)
+
