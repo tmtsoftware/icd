@@ -22,9 +22,9 @@ See [json-schema-validator](https://github.com/fge/json-schema-validator/wiki/Fe
 URI schemes that are supported.
 
 icd Command
-===========
+-----------
 
-The icd command is generated in target/universal/stage/bin.
+The icd command is generated in target/universal/stage/bin (install.sh copies it to the install/bin directory).
 Normal usage is to run the icd command in a directory containing these files:
 
 * icd-model.conf
@@ -33,7 +33,7 @@ Normal usage is to run the icd command in a directory containing these files:
 * publish-model.conf
 * subscribe-model.conf
 
-Example files can be found in [examples](../examples) directory.
+Example files can be found in the [examples](../examples) directory.
 
 Additional command line options are defined:
 
@@ -54,7 +54,7 @@ Note that for testing you can also convert a single input or schema file to JSON
 
 
 Scala API
-=========
+---------
 
 The [IcdValidator](src/main/scala/csw/services/icd/IcdValidator.scala) class defines a number of
 _validate_ methods that take as arguments files, Config objects or directories containing files to validate.
