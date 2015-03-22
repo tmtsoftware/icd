@@ -2,7 +2,6 @@ package csw.services.icd.db
 
 import csw.services.icd.model._
 
-
 /**
  * Holds all the model classes associated with a single ICD part (directory).
  * @param query used to query the database

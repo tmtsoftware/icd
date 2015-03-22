@@ -3,7 +3,7 @@ package csw.services.icd.db
 import java.io.File
 
 import com.mongodb.casbah.MongoDB
-import csw.services.icd.{IcdParser, IcdPrinter}
+import csw.services.icd.{ IcdParser, IcdPrinter }
 
 /**
  * Save an ICD from the database to markdown (GFM), HTML or PDF.

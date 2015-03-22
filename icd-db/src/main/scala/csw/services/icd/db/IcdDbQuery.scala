@@ -3,7 +3,7 @@ package csw.services.icd.db
 import com.mongodb.casbah.MongoDB
 import com.mongodb.casbah.commons.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import com.typesafe.config.{ConfigFactory, Config}
+import com.typesafe.config.{ ConfigFactory, Config }
 import csw.services.icd.StdName._
 import csw.services.icd.model._
 import scala.language.implicitConversions
@@ -38,7 +38,7 @@ case class IcdDbQuery(db: MongoDB) {
     val paths = db.collectionNames().filter(_ != "system.indexes").map(IcdPath).toList
     val map = paths.map(p ⇒ (p.component, paths.filter(_.component == p.component).map(_.path))).toMap
     val entries = map.keys.map(key ⇒ getEntry(key, map(key))).toList
-    entries.sortBy(entry => (IcdPath(entry.name).parts.length, entry.name))
+    entries.sortBy(entry ⇒ (IcdPath(entry.name).parts.length, entry.name))
   }
 
   // Returns an IcdEntry for the given collection path
@@ -74,12 +74,11 @@ case class IcdDbQuery(db: MongoDB) {
 
   // Returns an IcdEntry object for the given component name, if found
   private def entryForComponentName(name: String): Option[IcdEntry] = {
-    val list = for (entry ← getEntries if entry.component.isDefined)
-      yield {
-        val coll = db(entry.component.get)
-        val data = coll.findOne("name" -> name)
-        if (data.isDefined) Some(entry) else None
-      }
+    val list = for (entry ← getEntries if entry.component.isDefined) yield {
+      val coll = db(entry.component.get)
+      val data = coll.findOne("name" -> name)
+      if (data.isDefined) Some(entry) else None
+    }
     list.flatten.headOption
   }
 
@@ -88,12 +87,11 @@ case class IcdDbQuery(db: MongoDB) {
    * @param query restricts the components returned (a MongoDBObject, for example)
    */
   def queryComponents(query: DBObject): List[ComponentModel] = {
-    val list = for (entry ← getEntries if entry.component.isDefined)
-      yield {
-        val coll = db(entry.component.get)
-        val data = coll.findOne(query)
-        if (data.isDefined) Some(jsonToComponentModel(data.get.toString)) else None
-      }
+    val list = for (entry ← getEntries if entry.component.isDefined) yield {
+      val coll = db(entry.component.get)
+      val data = coll.findOne(query)
+      if (data.isDefined) Some(jsonToComponentModel(data.get.toString)) else None
+    }
     list.flatten
   }
 
@@ -103,7 +101,6 @@ case class IcdDbQuery(db: MongoDB) {
    */
   def getComponents(componentType: String): List[ComponentModel] =
     queryComponents("componentType" -> componentType)
-
 
   /**
    * Returns a list of all the component names in the DB
@@ -120,9 +117,7 @@ case class IcdDbQuery(db: MongoDB) {
    */
   def getHcdNames: List[String] = getComponents("HCD").map(_.name)
 
-
   // --- Get model objects, given a component name ---
-
 
   /**
    * Returns the model object for the component with the given name
@@ -135,7 +130,7 @@ case class IcdDbQuery(db: MongoDB) {
    * Returns an object describing the "commands" defined for the named component
    */
   def getCommandModel(name: String): Option[CommandModel] = {
-    for (entry <- entryForComponentName(name) if entry.command.isDefined)
+    for (entry ← entryForComponentName(name) if entry.command.isDefined)
       yield CommandModel(getConfig(db(entry.command.get).head.toString))
   }
 
@@ -143,7 +138,7 @@ case class IcdDbQuery(db: MongoDB) {
    * Returns an object describing the items published by the named component
    */
   def getPublishModel(name: String): Option[PublishModel] = {
-    for (entry <- entryForComponentName(name) if entry.publish.isDefined)
+    for (entry ← entryForComponentName(name) if entry.publish.isDefined)
       yield PublishModel(getConfig(db(entry.publish.get).head.toString))
   }
 
@@ -151,22 +146,19 @@ case class IcdDbQuery(db: MongoDB) {
    * Returns an object describing the items subscribed to by the named component
    */
   def getSubscribeModel(name: String): Option[SubscribeModel] = {
-    for (entry <- entryForComponentName(name) if entry.subscribe.isDefined)
+    for (entry ← entryForComponentName(name) if entry.subscribe.isDefined)
       yield SubscribeModel(getConfig(db(entry.subscribe.get).head.toString))
   }
-
 
   /**
    * Returns an object describing the ICD for the named component
    */
   def getIcdModel(name: String): Option[IcdModel] = {
-    for (entry <- entryForComponentName(name) if entry.icd.isDefined)
+    for (entry ← entryForComponentName(name) if entry.icd.isDefined)
       yield IcdModel(getConfig(db(entry.icd.get).head.toString))
   }
 
-
   // ---
-
 
   /**
    * Returns a list of ICD models for the given component name,
@@ -179,15 +171,15 @@ case class IcdDbQuery(db: MongoDB) {
   def getModels(componentName: String): List[IcdModels] = {
     // Holds all the model classes associated with a single ICD entry.
     case class Models(entry: IcdEntry) extends IcdModels {
-      override val icdModel: Option[IcdModel] = entry.icd.map(s => IcdModel(getConfig(db(s).head.toString)))
-      override val publishModel: Option[PublishModel] = entry.publish.map(s => PublishModel(getConfig(db(s).head.toString)))
-      override val subscribeModel: Option[SubscribeModel] = entry.subscribe.map(s => SubscribeModel(getConfig(db(s).head.toString)))
-      override val commandModel: Option[CommandModel] = entry.command.map(s => CommandModel(getConfig(db(s).head.toString)))
-      override val componentModel: Option[ComponentModel] = entry.component.map(s => ComponentModel(getConfig(db(s).head.toString)))
+      override val icdModel: Option[IcdModel] = entry.icd.map(s ⇒ IcdModel(getConfig(db(s).head.toString)))
+      override val publishModel: Option[PublishModel] = entry.publish.map(s ⇒ PublishModel(getConfig(db(s).head.toString)))
+      override val subscribeModel: Option[SubscribeModel] = entry.subscribe.map(s ⇒ SubscribeModel(getConfig(db(s).head.toString)))
+      override val commandModel: Option[CommandModel] = entry.command.map(s ⇒ CommandModel(getConfig(db(s).head.toString)))
+      override val componentModel: Option[ComponentModel] = entry.component.map(s ⇒ ComponentModel(getConfig(db(s).head.toString)))
     }
 
     val compEntry = entryForComponentName(componentName)
-    if(compEntry.isDefined) {
+    if (compEntry.isDefined) {
       // Get the prefix for the related db sub-collections
       val prefix = compEntry.get.name + "."
       val list = for (entry ← getEntries if entry.name.startsWith(prefix)) yield new Models(entry)
