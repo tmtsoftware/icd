@@ -5,6 +5,7 @@ import java.io.{ FileOutputStream, File }
 import com.typesafe.config.{ Config, ConfigFactory, ConfigResolveOptions }
 import csw.services.icd.IcdValidator._
 import csw.services.icd.gfm.IcdToGfm
+import csw.services.icd.model.IcdModels
 import org.scalatest.FunSuite
 
 /**
@@ -67,22 +68,22 @@ class IcdValidatorTests extends FunSuite {
   }
 
   // Save a test GFM markdown file
-  def saveToGfm(parser: IcdParser): Unit = {
+  def saveToGfm(models: IcdModels): Unit = {
     val f = new FileOutputStream("test.md")
-    f.write(IcdToGfm(parser).gfm.getBytes)
+    f.write(IcdToGfm(models).gfm.getBytes)
     f.close()
   }
 
-  def checkIcdModel(parser: IcdParser): Unit = {
-    val icdModel = parser.icdModel.get
+  def checkIcdModel(models: IcdModels): Unit = {
+    val icdModel = models.icdModel.get
     assert(icdModel.modelVersion == "1.1")
     assert(icdModel.name == "wfos")
     assert(icdModel.version == 20141121)
     assert(icdModel.wbsId == "TMT.INS.INST.WFOS.SWE")
   }
 
-  def checkComponentModel(parser: IcdParser): Unit = {
-    val componentModel = parser.componentModel.get
+  def checkComponentModel(models: IcdModels): Unit = {
+    val componentModel = models.componentModel.get
     assert(componentModel.name == "filter")
     assert(!componentModel.usesTime)
     assert(componentModel.usesEvents)
@@ -92,8 +93,8 @@ class IcdValidatorTests extends FunSuite {
     assert(componentModel.description == "This is the metadata description of the WFOS filter Assembly")
   }
 
-  def checkPublishModel(parser: IcdParser): Unit = {
-    val publishModel = parser.publishModel.get
+  def checkPublishModel(models: IcdModels): Unit = {
+    val publishModel = models.publishModel.get
     val telemetryList = publishModel.telemetryList
     assert(telemetryList.size == 2)
 
@@ -108,7 +109,7 @@ class IcdValidatorTests extends FunSuite {
     val attr1 = status1.attributesList
     assert(attr1.size == 3)
 
-    val a1 = attr1(0)
+    val a1 = attr1.head
     assert(a1.name == "a1")
     assert(a1.description == "single value with min/max")
     assert(a1.typeOpt.get == "integer")
@@ -136,10 +137,10 @@ class IcdValidatorTests extends FunSuite {
     // ... XXX TODO continue
   }
 
-  def checkCommandModel(parser: IcdParser): Unit = {
+  def checkCommandModel(parser: IcdModels): Unit = {
     val commandModel = parser.commandModel.get
     assert(commandModel.items.size == 2)
-    val item1 = commandModel.items(0)
+    val item1 = commandModel.items.head
     assert(item1.name == "cmd1")
     assert(item1.description == "Description of cmd1")
     assert(item1.requirements == List("First requirement for cmd1", "Second requirement for cmd1"))

@@ -8,7 +8,7 @@ import csw.services.icd.model._
 /**
  * Parses the standard ICD files in the given directory
  */
-case class IcdParser(dir: File) {
+case class IcdParser(dir: File) extends IcdModels {
 
   import StdName._
 

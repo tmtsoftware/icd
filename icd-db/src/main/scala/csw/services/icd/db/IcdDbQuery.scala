@@ -120,20 +120,78 @@ case class IcdDbQuery(db: MongoDB) {
    */
   def getHcdNames: List[String] = getComponents("HCD").map(_.name)
 
+
+  // --- Get model objects, given a component name ---
+
+
   /**
-   * Returns the model for the component with the given name
+   * Returns the model object for the component with the given name
    */
-  def getComponent(name: String): Option[ComponentModel] = {
+  def getComponentModel(name: String): Option[ComponentModel] = {
     queryComponents("name" -> name).headOption
   }
 
-  // ---
-
   /**
-   * Returns a list of the commands defined for the named component
+   * Returns an object describing the "commands" defined for the named component
    */
-  def getCommands(name: String): Option[CommandModel] = {
+  def getCommandModel(name: String): Option[CommandModel] = {
     for (entry <- entryForComponentName(name) if entry.command.isDefined)
       yield CommandModel(getConfig(db(entry.command.get).head.toString))
+  }
+
+  /**
+   * Returns an object describing the items published by the named component
+   */
+  def getPublishModel(name: String): Option[PublishModel] = {
+    for (entry <- entryForComponentName(name) if entry.publish.isDefined)
+      yield PublishModel(getConfig(db(entry.publish.get).head.toString))
+  }
+
+  /**
+   * Returns an object describing the items subscribed to by the named component
+   */
+  def getSubscribeModel(name: String): Option[SubscribeModel] = {
+    for (entry <- entryForComponentName(name) if entry.subscribe.isDefined)
+      yield SubscribeModel(getConfig(db(entry.subscribe.get).head.toString))
+  }
+
+
+  /**
+   * Returns an object describing the ICD for the named component
+   */
+  def getIcdModel(name: String): Option[IcdModel] = {
+    for (entry <- entryForComponentName(name) if entry.icd.isDefined)
+      yield IcdModel(getConfig(db(entry.icd.get).head.toString))
+  }
+
+
+  // ---
+
+
+  /**
+   * Returns a list of ICD models for the given component name,
+   * based on the data in the database.
+   * The list includes the ICD models for the component's ICD followed
+   * by any ICD models for components that were defined in subdirectories
+   * in the original files that were ingested into the database
+   * (In this case the definitions are stored in sub-collections in the DB).
+   */
+  def getModels(componentName: String): List[IcdModels] = {
+    // Holds all the model classes associated with a single ICD entry.
+    case class Models(entry: IcdEntry) extends IcdModels {
+      override val icdModel: Option[IcdModel] = entry.icd.map(s => IcdModel(getConfig(db(s).head.toString)))
+      override val publishModel: Option[PublishModel] = entry.publish.map(s => PublishModel(getConfig(db(s).head.toString)))
+      override val subscribeModel: Option[SubscribeModel] = entry.subscribe.map(s => SubscribeModel(getConfig(db(s).head.toString)))
+      override val commandModel: Option[CommandModel] = entry.command.map(s => CommandModel(getConfig(db(s).head.toString)))
+      override val componentModel: Option[ComponentModel] = entry.component.map(s => ComponentModel(getConfig(db(s).head.toString)))
+    }
+
+    val compEntry = entryForComponentName(componentName)
+    if(compEntry.isDefined) {
+      // Get the prefix for the related db sub-collections
+      val prefix = compEntry.get.name + "."
+      val list = for (entry ← getEntries if entry.name.startsWith(prefix)) yield new Models(entry)
+      Models(compEntry.get) :: list
+    } else Nil
   }
 }
