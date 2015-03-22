@@ -33,7 +33,7 @@ Normal usage is to run the icd command in a directory containing these files:
 * publish-model.conf
 * subscribe-model.conf
 
-Example files can be found in src/test/resources.
+Example files can be found in [examples](../examples) directory.
 
 Additional command line options are defined:
 

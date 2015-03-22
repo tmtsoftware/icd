@@ -186,4 +186,22 @@ case class IcdDbQuery(db: MongoDB) {
       Models(compEntry.get) :: list
     } else Nil
   }
+
+  /**
+   * Deletes the given component hierarchy. Use with caution!
+   */
+  def dropComponent(name: String): Unit = {
+    val compEntry = entryForComponentName(name)
+    if (compEntry.isDefined) {
+      // Get the prefix for the related db sub-collections
+      val topLevelPrefix = compEntry.get.name + "."
+      val list = for (entry ← getEntries if entry.name.startsWith(topLevelPrefix)) yield entry.name
+      (compEntry.get.name :: list).foreach { prefix ⇒
+        stdSet.foreach { s ⇒
+          val collName = s"$prefix.$s"
+          if (db.collectionExists(collName)) db(collName).drop()
+        }
+      }
+    }
+  }
 }

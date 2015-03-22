@@ -6,11 +6,14 @@ import com.mongodb.casbah.Imports._
 import com.typesafe.config.{ Config, ConfigResolveOptions, ConfigFactory }
 import csw.services.icd._
 
+import scala.io.StdIn
+
 object IcdDb extends App {
 
   /**
    * Command line options: [--db <name> --host <host> --port <port>
-   * --ingest <dir> --component <name> --list [hcds|assemblies|all]  --out <outputFile>]
+   * --ingest <dir> --component <name> --list [hcds|assemblies|all]  --out <outputFile>
+   * --drop [db|component]]
    *
    * (Options may be abbreviated to a single letter: For example: -i, -l, -c, -o)
    */
@@ -20,7 +23,8 @@ object IcdDb extends App {
                      ingest: Option[File] = None,
                      list: Option[String] = None,
                      component: Option[String] = None,
-                     outputFile: Option[File] = None)
+                     outputFile: Option[File] = None,
+                     drop: Option[String] = None)
 
   // Parser for the command line options
   private val parser = new scopt.OptionParser[Options]("icd-db") {
@@ -54,6 +58,10 @@ object IcdDb extends App {
       c.copy(outputFile = Some(x))
     } text "Saves the component's ICD to the given file in a format based on the file's suffix (md, html, pdf)"
 
+    opt[String]("drop") valueName "[db|component]" action { (x, c) ⇒
+      c.copy(drop = Some(x))
+    } text "Drops the specified component or database (use with caution!)"
+
   }
 
   // Parse the command line options
@@ -74,8 +82,12 @@ object IcdDb extends App {
     val db = IcdDb(options.dbName, options.host, options.port)
 
     options.ingest.foreach(dir ⇒ db.ingest(dir.getName, dir))
+    options.list.foreach(list)
+    options.outputFile.foreach(output)
+    options.drop.foreach(drop)
 
-    options.list.foreach { componentType ⇒
+    // --list option
+    def list(componentType: String): Unit = {
       val opt = componentType.toLowerCase
       val list = if (opt.startsWith("as"))
         db.query.getAssemblyNames
@@ -85,10 +97,38 @@ object IcdDb extends App {
       for (name ← list) println(name)
     }
 
-    options.outputFile.foreach { file ⇒
+    // --output option
+    def output(file: File): Unit = {
       options.component match {
         case Some(component) ⇒ IcdDbPrinter(db.query).saveToFile(component, file)
         case None            ⇒ println("Missing required component name: Please specify --component <name>")
+      }
+    }
+
+    // --drop option
+    def drop(opt: String): Unit = {
+      opt match {
+        case "db" ⇒
+          if (confirmDrop(s"Are you sure you want to drop the ${options.dbName} database?")) {
+            println(s"Dropping ${options.dbName}")
+            db.dropDatabase()
+          }
+        case "component" ⇒
+          options.component match {
+            case Some(component) ⇒
+              if (confirmDrop(s"Are you sure you want to drop $component from ${options.dbName}?")) {
+                println(s"Dropping $component from ${options.dbName}")
+                db.query.dropComponent(component)
+              }
+            case None ⇒
+              println("Missing required component name: Please specify --component <name>")
+          }
+        case x ⇒
+          println(s"Invalid drop argument $x. Expected 'db' or 'component' (together with --component option)")
+      }
+      def confirmDrop(msg: String): Boolean = {
+        print(s"$msg [y/n] ")
+        StdIn.readLine().toLowerCase == "y"
       }
     }
   }
@@ -153,7 +193,7 @@ case class IcdDb(dbName: String = "icds", host: String = "localhost", port: Int 
   }
 
   /**
-   * Drops this database.  Removes all data on disk.  Use with caution.
+   * Drops this database. Use with caution!
    */
   def dropDatabase(): Unit = {
     db.dropDatabase()
