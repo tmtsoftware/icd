@@ -68,6 +68,9 @@ val pegdown = "org.pegdown" % "pegdown" % "1.4.2"
 val xmlworker = "com.itextpdf.tool" % "xmlworker" % "5.5.5"
 val casbah = "org.mongodb" %% "casbah" % "2.8.0"
 
+lazy val root = (project in file(".")).
+  aggregate(icd, `icd-db`)
+
 lazy val icd = project
   .settings(packageSettings("CSW ICD support", "Used to validate ICDs"): _*)
   .settings(libraryDependencies ++=
@@ -80,5 +83,5 @@ lazy val `icd-db` = project
   .settings(libraryDependencies ++=
   compile(casbah) ++
     test(scalaTest)
-  ) dependsOn(icd)
+  ) dependsOn icd
 

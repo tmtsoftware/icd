@@ -6,6 +6,30 @@ import com.mongodb.casbah.Imports._
 import com.typesafe.config.{ Config, ConfigResolveOptions, ConfigFactory }
 import csw.services.icd._
 
+object IcdDb {
+  /**
+   * Command line options: [--injest <dir> --out <outputFile>]
+   * (Some options may be abbreviated to a single letter: -i, -o)
+   */
+  case class Options(injestDir: Option[File] = None, outputFile: Option[File] = None)
+
+  private val parser = new scopt.OptionParser[Options]("icd-db") {
+    head("icd-db", System.getProperty("CSW_VERSION"))
+
+    opt[File]('i', "injest") valueName "<dir>" action { (x, c) ⇒
+      c.copy(injestDir = Some(x))
+    } text "Directory containing ICD files to injest into the database"
+
+    opt[File]('o', "out") valueName "<outputFile>" action { (x, c) ⇒
+      c.copy(outputFile = Some(x))
+    } text "Saves the ICD to the given file in a format based on the file's suffix (md, html, pdf)"
+
+  }
+
+  // XXX TODO
+
+}
+
 /**
  * ICD Database (Mongodb) support
  */
@@ -13,6 +37,7 @@ case class IcdDb(dbName: String = "icds", host: String = "localhost", port: Int 
 
   val mongoClient = MongoClient(host, port)
   val db = mongoClient(dbName)
+  val query = IcdDbQuery(db)
 
   /**
    * Ingests all the files with the standard names (stdNames) in the given directory and recursively
@@ -22,12 +47,13 @@ case class IcdDb(dbName: String = "icds", host: String = "localhost", port: Int 
    *            and any number of subdirectories containing ICD files
    */
   def ingest(name: String, dir: File = new File(".")): List[Problem] = {
-    val problems = IcdValidator.validateRecursive(dir)
+    val problems = IcdValidator.validateRecursive(dir) // XXX TODO: enforce that dir name == component name?
     if (problems.isEmpty) {
-      (dir :: subDirs(dir)).map { subdir ⇒
+      ingestDir(name, dir)
+      for (subdir ← subDirs(dir)) {
         // build names for collections from name and subdir names, separated by "."
-        val s = if (dir == subdir) name else s"$name.${dir.toPath.relativize(subdir.toPath).toString.replaceAll("/", ".")}"
-        ingestDir(s, subdir)
+        val path = dir.toPath.relativize(subdir.toPath).toString.replaceAll("/", ".")
+        ingestDir(s"$name.$path", subdir)
       }
     }
     problems
