@@ -142,6 +142,7 @@ case class IcdDb(dbName: String = "icds", host: String = "localhost", port: Int 
   val mongoClient = MongoClient(host, port)
   val db = mongoClient(dbName)
   val query = IcdDbQuery(db)
+  val manager = IcdDbManager(db, query)
 
   /**
    * Ingests all the files with the standard names (stdNames) in the given directory and recursively
@@ -149,8 +150,9 @@ case class IcdDb(dbName: String = "icds", host: String = "localhost", port: Int 
    * @param name the name to store the ICD under (the collection name, usually the last component of the directory name)
    * @param dir the top level directory containing one or more of the the standard set of ICD files
    *            and any number of subdirectories containing ICD files
+   * @param comment optional change comment
    */
-  def ingest(name: String, dir: File = new File(".")): List[Problem] = {
+  def ingest(name: String, dir: File = new File("."), comment: String = ""): List[Problem] = {
     val problems = IcdValidator.validateRecursive(dir) // XXX TODO: enforce that dir name == component name?
     if (problems.isEmpty) {
       ingestOneDir(name, dir)
@@ -159,6 +161,7 @@ case class IcdDb(dbName: String = "icds", host: String = "localhost", port: Int 
         val path = dir.toPath.relativize(subdir.toPath).toString.replaceAll("/", ".")
         ingestOneDir(s"$name.$path", subdir)
       }
+      manager.newVersion(name, comment)
     }
     problems
   }
@@ -187,9 +190,8 @@ case class IcdDb(dbName: String = "icds", host: String = "localhost", port: Int 
    */
   private def ingestConfig(name: String, config: Config): Unit = {
     import collection.JavaConversions._
-    val coll = db(name)
     val dbObj = config.root().unwrapped().toMap.asDBObject
-    coll.insert(dbObj)
+    manager.ingest(name, dbObj)
   }
 
   /**

@@ -2,7 +2,7 @@ package csw.services.icd.db
 
 import java.io.File
 
-import org.scalatest.{ DoNotDiscover, FunSuite }
+import org.scalatest.{DoNotDiscover, FunSuite}
 
 /**
  * Tests the IcdDb class (Note: Assumes MongoDB is running)
@@ -74,6 +74,33 @@ class IcdDbTests extends FunSuite {
     assert(db.query.getComponentModel("NFIRAOS").isEmpty)
     assert(db.query.getComponentModel("ndme").isEmpty)
 
-    db.dropDatabase()
+//    db.dropDatabase()
   }
+
+//  test("Ingest and then update example ICD") {
+//    val db = IcdDb("test")
+//    db.dropDatabase() // start with a clean db for test
+//
+//    testExample(db, "examples/example1", List("Tcs"))
+//    testExample(db, "examples/example2", List("NFIRAOS"))
+//    testExample(db, "examples/example3", List("NFIRAOS"))
+//
+//    db.dropDatabase()
+//  }
+
+  def testExample(db: IcdDb, path: String, componentNames: List[String]): Unit = {
+    val problems = db.ingest("example", new File(path))
+    for (p ← problems) println(p)
+    assert(problems.isEmpty)
+
+    assert(db.query.getComponentNames == componentNames)
+
+    val components = db.query.getComponents
+    assert(components.size == componentNames.size)
+
+    // Test getting items based on the component name
+    val compModel = db.query.getComponentModel(componentNames.head).get
+    assert(compModel.name == componentNames.head)
+  }
+
 }

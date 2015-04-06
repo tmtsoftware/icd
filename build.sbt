@@ -7,7 +7,7 @@ import sbt.Keys._
 import sbt._
 
 val Version = "0.1-SNAPSHOT"
-val ScalaVersion = "2.11.5"
+val ScalaVersion = "2.11.6"
 
 def formattingPreferences: FormattingPreferences =
   FormattingPreferences()
@@ -67,21 +67,20 @@ val scalaTest = "org.scalatest" %% "scalatest" % "2.1.5"
 val pegdown = "org.pegdown" % "pegdown" % "1.4.2"
 val xmlworker = "com.itextpdf.tool" % "xmlworker" % "5.5.5"
 val casbah = "org.mongodb" %% "casbah" % "2.8.0"
-//val logback = "ch.qos.logback" % "logback-classic" % "1.1.1"
 val `slf4j-nop` = "org.slf4j" % "slf4j-nop" % "1.7.10"
 
 lazy val root = (project in file(".")).
   aggregate(icd, `icd-db`)
 
 lazy val icd = project
-  .settings(packageSettings("CSW ICD support", "Used to validate ICDs"): _*)
+  .settings(packageSettings("ICD support", "Used to validate ICDs"): _*)
   .settings(libraryDependencies ++=
   compile(jsonSchemaValidator, scopt, typesafeConfig, ficus, pegdown, xmlworker, `slf4j-nop`) ++
     test(scalaTest)
   )
 
 lazy val `icd-db` = project
-  .settings(packageSettings("CSW ICD database support", "Used to access ICD database"): _*)
+  .settings(packageSettings("ICD database support", "Used to access ICD database"): _*)
   .settings(libraryDependencies ++=
   compile(casbah) ++
     test(scalaTest)

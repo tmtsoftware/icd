@@ -25,11 +25,6 @@ case class JsonSchemaModel(config: Config) {
 
   val defaultValue = if (config.hasPath("default")) config.getAnyRef("default").toString else ""
 
-  // XXX TODO: Add number range, array bounds (make typeStr() recursive?)
-  //        integer (-2 ≤ i ≤ 22)
-  //        array of numbers (length = 5)
-  //        String: ("red", "green", "blue")
-
   // Returns a string describing an array type
   private def arrayTypeStr: String = {
     val t = config.as[Option[String]]("items.type")

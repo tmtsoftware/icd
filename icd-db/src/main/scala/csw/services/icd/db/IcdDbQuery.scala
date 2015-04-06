@@ -12,17 +12,27 @@ object IcdDbQuery {
   // Set of standard ICD model parts: icd, component, publish, subscribe, command
   val stdSet = stdNames.map(_.modelBaseName).toSet
 
-  //for working with dot separated paths
+  // True if the named collection represents an ICD model (has one of the standard names)
+  def isStdSet(name: String): Boolean =
+    stdSet.filter(s => name.endsWith(s".$s")).nonEmpty
+
+
+  // for working with dot separated paths
   case class IcdPath(path: String) {
     lazy val parts = path.split("\\.").toList
+
+    // The common path for an assembly, HCD, sequencer, etc.
     lazy val component = parts.dropRight(1).mkString(".")
+
+    // The top level ICD name
+    lazy val icd = parts.head
   }
 
   // Contains db collection names related to an ICD
   case class IcdEntry(name: String, icd: Option[String], component: Option[String],
                       publish: Option[String], subscribe: Option[String], command: Option[String])
 
-  implicit def toDbObject(query: (String, String)): DBObject = MongoDBObject(query)
+  implicit def toDbObject(query: (String, Any)): DBObject = MongoDBObject(query)
 }
 
 /**
@@ -35,9 +45,9 @@ case class IcdDbQuery(db: MongoDB) {
   // Returns a list of IcdEntry for the ICDs (based on the collection names)
   // (XXX Should the return value be cached?)
   private def getEntries: List[IcdEntry] = {
-    val paths = db.collectionNames().filter(_ != "system.indexes").map(IcdPath).toList
-    val map = paths.map(p ⇒ (p.component, paths.filter(_.component == p.component).map(_.path))).toMap
-    val entries = map.keys.map(key ⇒ getEntry(key, map(key))).toList
+    val paths = db.collectionNames().filter(isStdSet).map(IcdPath).toList
+    val compMap = paths.map(p ⇒ (p.component, paths.filter(_.component == p.component).map(_.path))).toMap
+    val entries = compMap.keys.map(key ⇒ getEntry(key, compMap(key))).toList
     entries.sortBy(entry ⇒ (IcdPath(entry.name).parts.length, entry.name))
   }
 
@@ -171,11 +181,11 @@ case class IcdDbQuery(db: MongoDB) {
   def getModels(componentName: String): List[IcdModels] = {
     // Holds all the model classes associated with a single ICD entry.
     case class Models(entry: IcdEntry) extends IcdModels {
-      override val icdModel: Option[IcdModel] = entry.icd.map(s ⇒ IcdModel(getConfig(db(s).head.toString)))
-      override val publishModel: Option[PublishModel] = entry.publish.map(s ⇒ PublishModel(getConfig(db(s).head.toString)))
-      override val subscribeModel: Option[SubscribeModel] = entry.subscribe.map(s ⇒ SubscribeModel(getConfig(db(s).head.toString)))
-      override val commandModel: Option[CommandModel] = entry.command.map(s ⇒ CommandModel(getConfig(db(s).head.toString)))
-      override val componentModel: Option[ComponentModel] = entry.component.map(s ⇒ ComponentModel(getConfig(db(s).head.toString)))
+      override val icdModel = entry.icd.map(s ⇒ IcdModel(getConfig(db(s).head.toString)))
+      override val publishModel = entry.publish.map(s ⇒ PublishModel(getConfig(db(s).head.toString)))
+      override val subscribeModel = entry.subscribe.map(s ⇒ SubscribeModel(getConfig(db(s).head.toString)))
+      override val commandModel = entry.command.map(s ⇒ CommandModel(getConfig(db(s).head.toString)))
+      override val componentModel = entry.component.map(s ⇒ ComponentModel(getConfig(db(s).head.toString)))
     }
 
     val compEntry = entryForComponentName(componentName)
