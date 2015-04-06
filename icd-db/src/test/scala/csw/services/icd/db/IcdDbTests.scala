@@ -74,19 +74,19 @@ class IcdDbTests extends FunSuite {
     assert(db.query.getComponentModel("NFIRAOS").isEmpty)
     assert(db.query.getComponentModel("ndme").isEmpty)
 
-//    db.dropDatabase()
+    db.dropDatabase()
   }
 
-//  test("Ingest and then update example ICD") {
-//    val db = IcdDb("test")
-//    db.dropDatabase() // start with a clean db for test
-//
-//    testExample(db, "examples/example1", List("Tcs"))
-//    testExample(db, "examples/example2", List("NFIRAOS"))
-//    testExample(db, "examples/example3", List("NFIRAOS"))
-//
-//    db.dropDatabase()
-//  }
+  test("Ingest and then update example ICD") {
+    val db = IcdDb("test")
+    db.dropDatabase() // start with a clean db for test
+
+    testExample(db, "examples/example1", List("Tcs"))
+    testExample(db, "examples/example2", List("NFIRAOS"))
+    testExample(db, "examples/example3", List("NFIRAOS"))
+
+    db.dropDatabase()
+  }
 
   def testExample(db: IcdDb, path: String, componentNames: List[String]): Unit = {
     val problems = db.ingest("example", new File(path))
