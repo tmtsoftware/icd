@@ -127,6 +127,11 @@ case class IcdDbQuery(db: MongoDB) {
    */
   def getHcdNames: List[String] = getComponents("HCD").map(_.name)
 
+  /**
+   * Returns a list of all top level ICDs in the database
+   */
+  def getIcdNames: List[String] = db.collectionNames().filter(isStdSet).map(IcdPath).map(_.icd).toList
+
   // --- Get model objects, given a component name ---
 
   /**

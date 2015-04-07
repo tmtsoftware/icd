@@ -3,7 +3,7 @@ package csw.services.icd.db
 import java.io.File
 
 import com.mongodb.casbah.Imports._
-import com.typesafe.config.{ Config, ConfigResolveOptions, ConfigFactory }
+import com.typesafe.config.{Config, ConfigResolveOptions, ConfigFactory}
 import csw.services.icd._
 
 import scala.io.StdIn
@@ -49,15 +49,16 @@ object IcdDb extends App {
     } text "Directory containing ICD files to ingest into the database"
 
     opt[Unit]("major") action { (_, c) =>
-      c.copy(majorVersion = true) } text "Increment the ICD's major version"
+      c.copy(majorVersion = true)
+    } text "Increment the ICD's major version"
 
     opt[String]('m', "comment") valueName "<text>" action { (x, c) ⇒
       c.copy(comment = x)
     } text "A comment describing the changes made (default: empty string)"
 
-    opt[String]('l', "list") valueName "[hcds|assemblies|all]" action { (x, c) ⇒
+    opt[String]('l', "list") valueName "[icds|assemblies|hcds|all]" action { (x, c) ⇒
       c.copy(list = Some(x))
-    } text "Prints a list of hcds, assemblies, or all components"
+    } text "Prints a list of ICDs, assemblies, HCDs or all components"
 
     opt[String]('c', "component") valueName "<name>" action { (x, c) ⇒
       c.copy(component = Some(x))
@@ -98,7 +99,9 @@ object IcdDb extends App {
     // --list option
     def list(componentType: String): Unit = {
       val opt = componentType.toLowerCase
-      val list = if (opt.startsWith("as"))
+      val list = if (opt.startsWith("i"))
+        db.query.getIcdNames
+      else if (opt.startsWith("as"))
         db.query.getAssemblyNames
       else if (opt.startsWith("h"))
         db.query.getHcdNames
@@ -110,7 +113,7 @@ object IcdDb extends App {
     def output(file: File): Unit = {
       options.component match {
         case Some(component) ⇒ IcdDbPrinter(db.query).saveToFile(component, file)
-        case None            ⇒ println("Missing required component name: Please specify --component <name>")
+        case None ⇒ println("Missing required component name: Please specify --component <name>")
       }
     }
 
@@ -181,7 +184,7 @@ case class IcdDb(dbName: String = "icds", host: String = "localhost", port: Int 
    * @param name the name of the collection in which to store this part of the ICD
    * @param dir the directory containing the standard set of ICD files
    */
-  private [db] def ingestOneDir(name: String, dir: File): Unit = {
+  private[db] def ingestOneDir(name: String, dir: File): Unit = {
     import csw.services.icd.StdName._
     for (stdName ← stdNames) yield {
       val inputFile = new File(dir, stdName.name)
@@ -198,7 +201,7 @@ case class IcdDb(dbName: String = "icds", host: String = "localhost", port: Int 
    * @param config the config to be ingested into the datasbase
    * @return a list of problems, if any were found
    */
-  private [db] def ingestConfig(name: String, config: Config): Unit = {
+  private[db] def ingestConfig(name: String, config: Config): Unit = {
     import collection.JavaConversions._
     val dbObj = config.root().unwrapped().toMap.asDBObject
     manager.ingest(name, dbObj)

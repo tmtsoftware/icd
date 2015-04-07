@@ -24,9 +24,11 @@ class IcdDbTests extends FunSuite {
     assert(db.query.getComponentNames == List("NFIRAOS", "envCtrl", "lgsWfs", "nacqNhrwfs", "ndme"))
     assert(db.query.getAssemblyNames == List("envCtrl", "lgsWfs", "nacqNhrwfs", "ndme"))
     assert(db.query.getHcdNames == List())
+    assert(db.query.getIcdNames == List("NFIRAOS"))
 
     val components = db.query.getComponents
     assert(components.size == 5)
+
 
     // Test getting items based on the component name
     val envCtrl = db.query.getComponentModel("envCtrl").get
