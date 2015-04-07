@@ -4,11 +4,15 @@ import java.util.Date
 
 import com.mongodb.{WriteConcern, DBCollection, DBObject}
 import com.mongodb.casbah.Imports._
+import org.joda.time.{DateTimeZone, DateTime}
 
 /**
  * Keeps track of previous versions of ICDs.
  */
 object IcdDbManager {
+  import com.mongodb.casbah.commons.conversions.scala._
+  RegisterJodaTimeConversionHelpers()
+
   // The version key inserted into all documents
   val versionKey = "_version"
 
@@ -27,7 +31,7 @@ case class IcdDbManager(db: MongoDB, query: IcdDbQuery) {
    * @param name name of the collection to use
    * @param obj the object to insert
    */
-  def ingest(name: String, obj: DBObject): Unit = {
+  private [db] def ingest(name: String, obj: DBObject): Unit = {
     if (db.collectionExists(name))
       update(db(name), obj)
     else
@@ -50,6 +54,8 @@ case class IcdDbManager(db: MongoDB, query: IcdDbQuery) {
     coll.insert(obj, WriteConcern.SAFE)
   }
 
+  // Name of version history collection for the given ICD root name
+  private def versionCollectionName(name: String): String = s"$name.$versionColl"
 
   /**
    * Increments the version for the named ICD.
@@ -57,9 +63,11 @@ case class IcdDbManager(db: MongoDB, query: IcdDbQuery) {
    * the user and date as well as a list of the names and versions of each of the ICD parts.
    *
    * @param name the root path name of the ICD
+   * @param comment change comment
+   * @param majorVersion if true, increment the ICD's major version
    */
-  def newVersion(name: String, comment: String): Unit = {
-    val collName = s"$name.$versionColl"
+  private [db] def newVersion(name: String, comment: String = "", majorVersion: Boolean = false): Unit = {
+    val collName = versionCollectionName(name)
 
     // Get the paths of all the ICD parts
     val paths = db.collectionNames().filter(isStdSet).map(IcdPath).filter(_.icd == name).map(_.path)
@@ -68,20 +76,19 @@ case class IcdDbManager(db: MongoDB, query: IcdDbQuery) {
     def getVersion(path: String): Int = db(path).head.get(versionKey).asInstanceOf[Int]
     val parts = paths.map(p => (p, getVersion(p))).toList.map(x => Map("name" -> x._1, "version" -> x._2).asDBObject)
 
-    // Start with "1.0" as the ICD version, then increment the minor version automatically each time
-    def incrMinorVersion(version: String): String = {
-      val ar = version.split("\\.")
-      val (maj, min) = version.splitAt(version.indexOf(".") + 1)
-      val next = min.toInt + 1
-      s"$maj$next"
+    // Start with "1.0" as the ICD version, then increment the minor version automatically each time.
+    // If the user requests a new major version, increment that and reset minor version to 0.
+    def incrVersion(version: String): String = {
+      val Array(maj,min) = version.split("\\.")
+      if (majorVersion) s"${maj.toInt+1}.0" else s"$maj.${min.toInt+1}"
     }
 
     val version = if (db.collectionExists(collName))
-      incrMinorVersion(db(collName).find().sort("_id" -> -1).one().get("version").toString)
+      incrVersion(db(collName).find().sort("_id" -> -1).one().get("version").toString)
     else "1.0"
 
-    val now = new Date()
-    val user = System.getProperty("user.name")
+    val now = new DateTime(DateTimeZone.UTC)
+    val user = System.getProperty("user.name") // XXX TODO Which user name to use for web app?
     val obj = Map(
       "version" -> version,
       "user" -> user,
@@ -89,6 +96,32 @@ case class IcdDbManager(db: MongoDB, query: IcdDbQuery) {
       "date" -> now,
       "parts" -> parts).asDBObject
     db(collName).insert(obj, WriteConcern.SAFE)
+  }
+
+
+  /**
+   * Describes a version of an ICD
+   * @param version the ICD version (major.minor)
+   * @param user the user that created the version
+   * @param comment a change comment
+   * @param date the date of the change
+   */
+  case class VersionInfo(version: String, user: String, comment: String, date: DateTime)
+
+  /**
+   * Returns a list of information about the versions of the ICD
+   * @param name the root name of the ICD
+   */
+  def getIcdVersions(name: String): List[VersionInfo] = {
+    val collName = versionCollectionName(name)
+    val result = for(obj <- db(collName).find().sort("_id" -> -1))
+      yield VersionInfo(
+        obj.get("version").toString,
+        obj.get("user").toString,
+        obj.get("comment").toString,
+        obj.get("date").asInstanceOf[DateTime].withZone(DateTimeZone.UTC)
+      )
+    result.toList
   }
 
 }

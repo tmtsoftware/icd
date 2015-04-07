@@ -12,7 +12,7 @@ object IcdDb extends App {
 
   /**
    * Command line options: [--db <name> --host <host> --port <port>
-   * --ingest <dir> --component <name> --list [hcds|assemblies|all]  --out <outputFile>
+   * --ingest <dir> --major --component <name> --list [hcds|assemblies|all]  --out <outputFile>
    * --drop [db|component]]
    *
    * (Options may be abbreviated to a single letter: For example: -i, -l, -c, -o)
@@ -21,6 +21,8 @@ object IcdDb extends App {
                      host: String = "localhost",
                      port: Int = 27017,
                      ingest: Option[File] = None,
+                     majorVersion: Boolean = false,
+                     comment: String = "",
                      list: Option[String] = None,
                      component: Option[String] = None,
                      outputFile: Option[File] = None,
@@ -45,6 +47,13 @@ object IcdDb extends App {
     opt[File]('i', "ingest") valueName "<dir>" action { (x, c) ⇒
       c.copy(ingest = Some(x))
     } text "Directory containing ICD files to ingest into the database"
+
+    opt[Unit]("major") action { (_, c) =>
+      c.copy(majorVersion = true) } text "Increment the ICD's major version"
+
+    opt[String]('m', "comment") valueName "<text>" action { (x, c) ⇒
+      c.copy(comment = x)
+    } text "A comment describing the changes made (default: empty string)"
 
     opt[String]('l', "list") valueName "[hcds|assemblies|all]" action { (x, c) ⇒
       c.copy(list = Some(x))
@@ -81,7 +90,7 @@ object IcdDb extends App {
   private def run(options: Options): Unit = {
     val db = IcdDb(options.dbName, options.host, options.port)
 
-    options.ingest.foreach(dir ⇒ db.ingest(dir.getName, dir))
+    options.ingest.foreach(dir ⇒ db.ingest(dir.getName, dir, options.comment, options.majorVersion))
     options.list.foreach(list)
     options.outputFile.foreach(output)
     options.drop.foreach(drop)
@@ -151,8 +160,9 @@ case class IcdDb(dbName: String = "icds", host: String = "localhost", port: Int 
    * @param dir the top level directory containing one or more of the the standard set of ICD files
    *            and any number of subdirectories containing ICD files
    * @param comment optional change comment
+   * @param majorVersion if true, increment the ICD's major version
    */
-  def ingest(name: String, dir: File = new File("."), comment: String = ""): List[Problem] = {
+  def ingest(name: String, dir: File = new File("."), comment: String = "", majorVersion: Boolean = false): List[Problem] = {
     val problems = IcdValidator.validateRecursive(dir) // XXX TODO: enforce that dir name == component name?
     if (problems.isEmpty) {
       ingestOneDir(name, dir)
@@ -161,7 +171,7 @@ case class IcdDb(dbName: String = "icds", host: String = "localhost", port: Int 
         val path = dir.toPath.relativize(subdir.toPath).toString.replaceAll("/", ".")
         ingestOneDir(s"$name.$path", subdir)
       }
-      manager.newVersion(name, comment)
+      manager.newVersion(name, comment, majorVersion)
     }
     problems
   }
@@ -171,7 +181,7 @@ case class IcdDb(dbName: String = "icds", host: String = "localhost", port: Int 
    * @param name the name of the collection in which to store this part of the ICD
    * @param dir the directory containing the standard set of ICD files
    */
-  private def ingestOneDir(name: String, dir: File): Unit = {
+  private [db] def ingestOneDir(name: String, dir: File): Unit = {
     import csw.services.icd.StdName._
     for (stdName ← stdNames) yield {
       val inputFile = new File(dir, stdName.name)
@@ -188,7 +198,7 @@ case class IcdDb(dbName: String = "icds", host: String = "localhost", port: Int 
    * @param config the config to be ingested into the datasbase
    * @return a list of problems, if any were found
    */
-  private def ingestConfig(name: String, config: Config): Unit = {
+  private [db] def ingestConfig(name: String, config: Config): Unit = {
     import collection.JavaConversions._
     val dbObj = config.root().unwrapped().toMap.asDBObject
     manager.ingest(name, dbObj)
@@ -200,5 +210,6 @@ case class IcdDb(dbName: String = "icds", host: String = "localhost", port: Int 
   def dropDatabase(): Unit = {
     db.dropDatabase()
   }
+
 
 }

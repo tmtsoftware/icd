@@ -2,6 +2,7 @@ package csw.services.icd.db
 
 import java.io.File
 
+import org.joda.time.DateTimeZone
 import org.scalatest.{DoNotDiscover, FunSuite}
 
 /**
@@ -81,15 +82,24 @@ class IcdDbTests extends FunSuite {
     val db = IcdDb("test")
     db.dropDatabase() // start with a clean db for test
 
-    testExample(db, "examples/example1", List("Tcs"))
-    testExample(db, "examples/example2", List("NFIRAOS"))
-    testExample(db, "examples/example3", List("NFIRAOS"))
+    testExample(db, "examples/example1", List("Tcs"), "Comment for example1", majorVersion = false)
+    testExample(db, "examples/example2", List("NFIRAOS"), "Comment for example2", majorVersion = true)
+    testExample(db, "examples/example3", List("NFIRAOS"), "Comment for example3", majorVersion = false)
 
-    db.dropDatabase()
+    val versions = db.manager.getIcdVersions("example")
+    assert(versions.size == 3)
+    assert(versions.head.version == "2.1")
+    assert(versions.head.comment == "Comment for example3")
+    assert(versions(1).version == "2.0")
+    assert(versions(1).comment == "Comment for example2")
+    assert(versions(2).version == "1.0")
+    assert(versions(2).comment == "Comment for example1")
+
+//    db.dropDatabase()
   }
 
-  def testExample(db: IcdDb, path: String, componentNames: List[String]): Unit = {
-    val problems = db.ingest("example", new File(path))
+  def testExample(db: IcdDb, path: String, componentNames: List[String], comment: String, majorVersion: Boolean): Unit = {
+    val problems = db.ingest("example", new File(path), comment, majorVersion)
     for (p ← problems) println(p)
     assert(problems.isEmpty)
 
