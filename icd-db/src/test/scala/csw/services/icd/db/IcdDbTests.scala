@@ -97,6 +97,11 @@ class IcdDbTests extends FunSuite {
     assert(versions(2).version == "1.0")
     assert(versions(2).comment == "Comment for example1")
 
+    println("\nDiff example 2.0 2.1")
+    for(diff <- db.manager.diff("example", "2.0", "2.1")) {
+      println(s"\n${diff.path}:\n${diff.patch.toString()}")
+    }
+
 //    db.dropDatabase()
   }
 

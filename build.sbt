@@ -68,6 +68,7 @@ val pegdown = "org.pegdown" % "pegdown" % "1.4.2"
 val xmlworker = "com.itextpdf.tool" % "xmlworker" % "5.5.5"
 val casbah = "org.mongodb" %% "casbah" % "2.8.0"
 val `slf4j-nop` = "org.slf4j" % "slf4j-nop" % "1.7.10"
+val diffson = "org.gnieh" %% "diffson" % "0.3"
 
 lazy val root = (project in file(".")).
   aggregate(icd, `icd-db`)
@@ -75,7 +76,7 @@ lazy val root = (project in file(".")).
 lazy val icd = project
   .settings(packageSettings("ICD support", "Used to validate ICDs"): _*)
   .settings(libraryDependencies ++=
-  compile(jsonSchemaValidator, scopt, typesafeConfig, ficus, pegdown, xmlworker, `slf4j-nop`) ++
+  compile(jsonSchemaValidator, scopt, typesafeConfig, ficus, pegdown, xmlworker, `slf4j-nop`, diffson) ++
     test(scalaTest)
   )
 

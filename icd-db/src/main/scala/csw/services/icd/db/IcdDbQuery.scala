@@ -14,8 +14,7 @@ object IcdDbQuery {
 
   // True if the named collection represents an ICD model (has one of the standard names)
   def isStdSet(name: String): Boolean =
-    stdSet.filter(s => name.endsWith(s".$s")).nonEmpty
-
+    stdSet.filter(s ⇒ name.endsWith(s".$s")).nonEmpty
 
   // for working with dot separated paths
   case class IcdPath(path: String) {

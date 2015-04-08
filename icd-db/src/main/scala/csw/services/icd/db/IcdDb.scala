@@ -3,30 +3,40 @@ package csw.services.icd.db
 import java.io.File
 
 import com.mongodb.casbah.Imports._
-import com.typesafe.config.{Config, ConfigResolveOptions, ConfigFactory}
+import com.typesafe.config.{ Config, ConfigResolveOptions, ConfigFactory }
 import csw.services.icd._
+import org.joda.time.DateTimeZone
 
 import scala.io.StdIn
 
+object IcdDbDefaults {
+  val defaultPort = 27017
+  val defaultHost = "localhost"
+  val defaultDbName = "icds"
+}
+
 object IcdDb extends App {
+  import IcdDbDefaults._
 
   /**
    * Command line options: [--db <name> --host <host> --port <port>
-   * --ingest <dir> --major --component <name> --list [hcds|assemblies|all]  --out <outputFile>
-   * --drop [db|component]]
+   * --ingest <dir> --major --component <name> --list [icds|hcds|assemblies|all]  --out <outputFile>
+   * --drop [db|component] --versions <icdName> --diff <icdName>:<version1>[,version2]]
    *
    * (Options may be abbreviated to a single letter: For example: -i, -l, -c, -o)
    */
-  case class Options(dbName: String = "icds",
-                     host: String = "localhost",
-                     port: Int = 27017,
+  case class Options(dbName: String = defaultDbName,
+                     host: String = defaultHost,
+                     port: Int = defaultPort,
                      ingest: Option[File] = None,
                      majorVersion: Boolean = false,
                      comment: String = "",
                      list: Option[String] = None,
                      component: Option[String] = None,
                      outputFile: Option[File] = None,
-                     drop: Option[String] = None)
+                     drop: Option[String] = None,
+                     versions: Option[String] = None,
+                     diff: Option[String] = None)
 
   // Parser for the command line options
   private val parser = new scopt.OptionParser[Options]("icd-db") {
@@ -48,7 +58,7 @@ object IcdDb extends App {
       c.copy(ingest = Some(x))
     } text "Directory containing ICD files to ingest into the database"
 
-    opt[Unit]("major") action { (_, c) =>
+    opt[Unit]("major") action { (_, c) ⇒
       c.copy(majorVersion = true)
     } text "Increment the ICD's major version"
 
@@ -72,6 +82,16 @@ object IcdDb extends App {
       c.copy(drop = Some(x))
     } text "Drops the specified component or database (use with caution!)"
 
+    opt[String]("versions") valueName "<icdName>" action { (x, c) ⇒
+      c.copy(versions = Some(x))
+    } text "List the version history of the given ICD"
+
+    opt[String]("diff") valueName "<icdName>:<version1>[,version2]" action { (x, c) ⇒
+      c.copy(diff = Some(x))
+    } text "For the given ICD, list the differences between <version1> and <version2> (or the current version)"
+
+    help("help")
+    version("version")
   }
 
   // Parse the command line options
@@ -95,6 +115,8 @@ object IcdDb extends App {
     options.list.foreach(list)
     options.outputFile.foreach(output)
     options.drop.foreach(drop)
+    options.versions.foreach(listVersions)
+    options.diff.foreach(diffVersions)
 
     // --list option
     def list(componentType: String): Unit = {
@@ -109,11 +131,16 @@ object IcdDb extends App {
       for (name ← list) println(name)
     }
 
+    def error(msg: String): Unit = {
+      println(msg)
+      System.exit(1)
+    }
+
     // --output option
     def output(file: File): Unit = {
       options.component match {
         case Some(component) ⇒ IcdDbPrinter(db.query).saveToFile(component, file)
-        case None ⇒ println("Missing required component name: Please specify --component <name>")
+        case None            ⇒ error("Missing required component name: Please specify --component <name>")
       }
     }
 
@@ -133,23 +160,56 @@ object IcdDb extends App {
                 db.query.dropComponent(component)
               }
             case None ⇒
-              println("Missing required component name: Please specify --component <name>")
+              error("Missing required component name: Please specify --component <name>")
           }
         case x ⇒
-          println(s"Invalid drop argument $x. Expected 'db' or 'component' (together with --component option)")
+          error(s"Invalid drop argument $x. Expected 'db' or 'component' (together with --component option)")
       }
       def confirmDrop(msg: String): Boolean = {
         print(s"$msg [y/n] ")
         StdIn.readLine().toLowerCase == "y"
       }
     }
+
+    // --versions option
+    def listVersions(name: String): Unit = {
+      for (v ← db.manager.getIcdVersions(name)) {
+        println(s"${v.version}\t${v.date.withZone(DateTimeZone.getDefault)}\t${v.comment}")
+      }
+    }
+
+    // Check that the version is in the correct format
+    def checkVersion(version: String): Unit = {
+      val versionRegex = """\d+\.\d+""".r
+      version match {
+        case versionRegex(_*) ⇒
+        case _                ⇒ error(s"Bad version format: $version, expected something like 1.0, 2.1")
+      }
+    }
+
+    // --Compare (diff) versions option. Argument format: <icdName>:v1[,v2]
+    def diffVersions(arg: String): Unit = {
+      val msg = "Expected argument format: <icdName>:v1[,v2]"
+      if (!arg.contains(":") || arg.endsWith(":") || arg.endsWith(",")) error(msg)
+      val Array(name, vStr) = arg.split(":")
+      if (vStr.isEmpty) error(msg)
+      val Array(v1, v2) =
+        if (vStr.contains(",")) vStr.split(",") else Array(vStr, db.manager.getCurrentIcdVersion(name))
+      checkVersion(v1)
+      checkVersion(v2)
+      for (diff ← db.manager.diff(name, v1, v2))
+        println(s"\n${diff.path}:\n${diff.patch.toString()}") // XXX TODO: work on the format?
+    }
+
   }
 }
 
 /**
  * ICD Database (Mongodb) support
  */
-case class IcdDb(dbName: String = "icds", host: String = "localhost", port: Int = 27017) {
+case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
+                 host: String = IcdDbDefaults.defaultHost,
+                 port: Int = IcdDbDefaults.defaultPort) {
 
   val mongoClient = MongoClient(host, port)
   val db = mongoClient(dbName)
@@ -213,6 +273,5 @@ case class IcdDb(dbName: String = "icds", host: String = "localhost", port: Int 
   def dropDatabase(): Unit = {
     db.dropDatabase()
   }
-
 
 }
