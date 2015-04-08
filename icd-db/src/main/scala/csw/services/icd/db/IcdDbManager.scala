@@ -1,9 +1,11 @@
 package csw.services.icd.db
 
-import com.mongodb.{WriteConcern, DBObject}
+import com.mongodb.{ WriteConcern, DBObject }
 import com.mongodb.casbah.Imports._
-import gnieh.diffson.{JsonPatch, JsonDiff}
-import org.joda.time.{DateTimeZone, DateTime}
+import gnieh.diffson.{ JsonPatch, JsonDiff }
+import net.liftweb.json.JsonAST.{ JNothing, JField, JValue }
+import net.liftweb.json.JsonParser
+import org.joda.time.{ DateTimeZone, DateTime }
 
 /**
  * Keeps track of previous versions of ICDs.
@@ -145,11 +147,11 @@ case class IcdDbManager(db: MongoDB, query: IcdDbQuery) {
     val now = new DateTime(DateTimeZone.UTC)
     val user = System.getProperty("user.name") // XXX TODO Which user name to use for web app?
     val obj = Map(
-        "version" -> version,
-        "user" -> user,
-        "comment" -> comment,
-        "date" -> now,
-        "parts" -> parts).asDBObject
+      "version" -> version,
+      "user" -> user,
+      "comment" -> comment,
+      "date" -> now,
+      "parts" -> parts).asDBObject
     db(collName).insert(obj, WriteConcern.SAFE)
   }
 
@@ -194,14 +196,20 @@ case class IcdDbManager(db: MongoDB, query: IcdDbQuery) {
   }
 
   // Returns the JSON for the given version of the collection path
-  private def getJson(path: String, version: Int): String = {
+  private def getJson(path: String, version: Int): JValue = {
     val coll = db(path)
     val currentVersion = coll.head(versionKey).asInstanceOf[Int]
     val v = coll.getCollection(versionColl)
-    if (version == currentVersion) {
+    val json = if (version == currentVersion) {
       coll.head.toString
     } else {
       v.find(versionKey -> version).one().toString
+    }
+    // Remove _id and _version keys before comparing, since they change each time
+    JsonParser.parse(json) remove {
+      case JField("_id", _)      ⇒ true
+      case JField("_version", _) ⇒ true
+      case _                     ⇒ false
     }
   }
 
