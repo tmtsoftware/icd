@@ -2,21 +2,26 @@ package csw.services.icd.db
 
 import java.io.File
 
-import org.joda.time.DateTimeZone
-import org.scalatest.{DoNotDiscover, FunSuite}
+import org.scalatest.{ DoNotDiscover, FunSuite }
 
 /**
  * Tests the IcdDb class (Note: Assumes MongoDB is running)
  */
-@DoNotDiscover
+//@DoNotDiscover
 class IcdDbTests extends FunSuite {
+
+  // The relative location of the the examples directory can change depending on how the test is run
+  def getTestDir(path: String): File = {
+    val dir = new File(path)
+    if (dir.exists()) dir else new File(s"../$path")
+  }
 
   test("Ingest example ICD into database, then query the DB") {
     val db = IcdDb("test")
     db.dropDatabase() // start with a clean db for test
 
     // ingest examples/NFIRAOS into the DB
-    val problems = db.ingest("NFIRAOS", new File("examples/NFIRAOS"))
+    val problems = db.ingest("NFIRAOS", getTestDir("examples/NFIRAOS"))
     for (p ← problems) println(p)
     assert(problems.isEmpty)
 
@@ -28,7 +33,6 @@ class IcdDbTests extends FunSuite {
 
     val components = db.query.getComponents
     assert(components.size == 5)
-
 
     // Test getting items based on the component name
     val envCtrl = db.query.getComponentModel("envCtrl").get
@@ -98,15 +102,16 @@ class IcdDbTests extends FunSuite {
     assert(versions(2).comment == "Comment for example1")
 
     println("\nDiff example 2.0 2.1")
-    for(diff <- db.manager.diff("example", "2.0", "2.1")) {
-      println(s"\n${diff.path}:\n${diff.patch.toString()}")
+    for (diff ← db.manager.diff("example", "2.0", "2.1")) {
+      // XXX TODO: add automatic test?
+      //      println(s"\n${diff.path}:\n${diff.patch.toString()}")
     }
 
-//    db.dropDatabase()
+    db.dropDatabase()
   }
 
   def testExample(db: IcdDb, path: String, componentNames: List[String], comment: String, majorVersion: Boolean): Unit = {
-    val problems = db.ingest("example", new File(path), comment, majorVersion)
+    val problems = db.ingest("example", getTestDir(path), comment, majorVersion)
     for (p ← problems) println(p)
     assert(problems.isEmpty)
 
