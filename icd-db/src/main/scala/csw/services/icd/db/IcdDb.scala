@@ -21,7 +21,9 @@ object IcdDb extends App {
   /**
    * Command line options: [--db <name> --host <host> --port <port>
    * --ingest <dir> --major --component <name> --list [icds|hcds|assemblies|all]  --out <outputFile>
-   * --drop [db|component] --versions <icdName> --diff <icdName>:<version1>[,version2]]
+   * --drop [db|component] --versions <icdName> --diff <icdName>:<version1>[,version2]
+   * --publishes <path>
+   * ]
    *
    * (Options may be abbreviated to a single letter: For example: -i, -l, -c, -o)
    */

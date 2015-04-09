@@ -87,3 +87,8 @@ lazy val `icd-db` = project
     test(scalaTest)
   ) dependsOn icd
 
+lazy val `icd-web` = project.enablePlugins(PlayScala)
+  .settings(defaultSettings)
+  .settings(libraryDependencies ++=
+  compile(jdbc, anorm, cache, ws)
+  ) dependsOn `icd-db`
