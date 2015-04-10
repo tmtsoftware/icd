@@ -22,7 +22,7 @@ object IcdDb extends App {
    * Command line options: [--db <name> --host <host> --port <port>
    * --ingest <dir> --major --component <name> --list [icds|hcds|assemblies|all]  --out <outputFile>
    * --drop [db|component] --versions <icdName> --diff <icdName>:<version1>[,version2]
-   * --publishes <path>
+   * --publishes <path> --subscribes <path>
    * ]
    *
    * (Options may be abbreviated to a single letter: For example: -i, -l, -c, -o)
@@ -38,7 +38,9 @@ object IcdDb extends App {
                      outputFile: Option[File] = None,
                      drop: Option[String] = None,
                      versions: Option[String] = None,
-                     diff: Option[String] = None)
+                     diff: Option[String] = None,
+                     publishes: Option[String] = None,
+                     subscribes: Option[String] = None)
 
   // Parser for the command line options
   private val parser = new scopt.OptionParser[Options]("icd-db") {
@@ -92,6 +94,14 @@ object IcdDb extends App {
       c.copy(diff = Some(x))
     } text "For the given ICD, list the differences between <version1> and <version2> (or the current version)"
 
+    opt[String]("publishes") valueName "<path>" action { (x, c) ⇒
+      c.copy(publishes = Some(x))
+    } text "Prints a list of ICD components that publish the given value (name with optional component prefix)"
+
+    opt[String]("subscribes") valueName "<path>" action { (x, c) ⇒
+      c.copy(subscribes = Some(x))
+    } text "Prints a list of ICD components that subscribe to the given value (name with optional component prefix)"
+
     help("help")
     version("version")
   }
@@ -113,12 +123,14 @@ object IcdDb extends App {
   private def run(options: Options): Unit = {
     val db = IcdDb(options.dbName, options.host, options.port)
 
-    options.ingest.foreach(dir ⇒ db.ingest(dir.getName, dir, options.comment, options.majorVersion))
+    options.ingest.foreach(dir ⇒ db.ingest(dir, None, options.comment, options.majorVersion))
     options.list.foreach(list)
     options.outputFile.foreach(output)
     options.drop.foreach(drop)
     options.versions.foreach(listVersions)
     options.diff.foreach(diffVersions)
+    options.publishes.foreach(listPublishes)
+    options.subscribes.foreach(listSubscribes)
 
     // --list option
     def list(componentType: String): Unit = {
@@ -189,7 +201,7 @@ object IcdDb extends App {
       }
     }
 
-    // --Compare (diff) versions option. Argument format: <icdName>:v1[,v2]
+    // --diff option: Compare versions option. Argument format: <icdName>:v1[,v2]
     def diffVersions(arg: String): Unit = {
       val msg = "Expected argument format: <icdName>:v1[,v2]"
       if (!arg.contains(":") || arg.endsWith(":") || arg.endsWith(",")) error(msg)
@@ -201,6 +213,14 @@ object IcdDb extends App {
       checkVersion(v2)
       for (diff ← db.manager.diff(name, v1, v2))
         println(s"\n${diff.path}:\n${diff.patch.toString()}") // XXX TODO: work on the format?
+    }
+
+    // --publishes option
+    def listPublishes(path: String): Unit = {
+    }
+
+    // --subscribes option
+    def listSubscribes(path: String): Unit = {
     }
 
   }
@@ -221,15 +241,16 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
   /**
    * Ingests all the files with the standard names (stdNames) in the given directory and recursively
    * in its subdirectories into the database.
-   * @param name the name to store the ICD under (the collection name, usually the last component of the directory name)
    * @param dir the top level directory containing one or more of the the standard set of ICD files
    *            and any number of subdirectories containing ICD files
+   * @param nameOpt optional name to store the ICD under (the collection name, usually the last component of the directory name)
    * @param comment optional change comment
    * @param majorVersion if true, increment the ICD's major version
    */
-  def ingest(name: String, dir: File = new File("."), comment: String = "", majorVersion: Boolean = false): List[Problem] = {
+  def ingest(dir: File = new File("."), nameOpt: Option[String] = None, comment: String = "", majorVersion: Boolean = false): List[Problem] = {
     val problems = IcdValidator.validateRecursive(dir) // XXX TODO: enforce that dir name == component name?
     if (problems.isEmpty) {
+      val name = nameOpt.getOrElse(dir.getAbsoluteFile.getName)
       ingestOneDir(name, dir)
       for (subdir ← subDirs(dir)) {
         // build names for collections from name and subdir names, separated by "."

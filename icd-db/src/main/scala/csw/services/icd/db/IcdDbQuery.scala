@@ -31,6 +31,55 @@ object IcdDbQuery {
   case class IcdEntry(name: String, icd: Option[String], component: Option[String],
                       publish: Option[String], subscribe: Option[String], command: Option[String])
 
+  // Types of published items
+  sealed trait PublishType
+
+  case object Telemetry extends PublishType
+
+  case object Events extends PublishType
+
+  case object EventStreams extends PublishType
+
+  case object Alarms extends PublishType
+
+  case object Health extends PublishType
+
+  /**
+   * Describes a published item
+   * @param publishType one of Telemetry, Events, Alarms, etc.
+   * @param name the name of the item being published
+   */
+  case class Published(publishType: PublishType, name: String)
+
+  /**
+   * Describes a published item along with the component that publishes it
+   */
+  case class PublishedItem(componentName: String, prefix: String, publishType: PublishType, name: String)
+
+  /**
+   * Describes what values a component publishes
+   * @param componentName component (HCD, assembly, ...) name
+   * @param prefix component prefix
+   * @param publishes list of names (without prefix) of published items (telemetry, events, alarms, etc.)
+   */
+  case class PublishInfo(componentName: String, prefix: String, publishes: List[Published])
+
+  /**
+   * Describes what values a component subscribes to
+   * @param componentName component (HCD, assembly, ...) name
+   * @param subscribesTo list of types and names (with prefix) of items the component subscribes to
+   */
+  case class SubscribeInfo(componentName: String, subscribesTo: List[Published])
+
+  /**
+   * Describes a published item
+   *
+   * @param subscribeType one of Telemetry, Events, Alarms, etc.
+   * @param name the name of the item being subscribed to
+   * @param componentName the name of the component that subscribes to the item
+   */
+  case class Subscribed(subscribeType: PublishType, name: String, componentName: String)
+
   implicit def toDbObject(query: (String, Any)): DBObject = MongoDBObject(query)
 }
 
@@ -217,5 +266,77 @@ case class IcdDbQuery(db: MongoDB) {
         }
       }
     }
+  }
+
+  /**
+   * Returns a list of items published by the given component
+   * @param name the component name
+   */
+  def getPublished(name: String): List[Published] = {
+    getPublishModel(name) match {
+      case Some(publishModel) ⇒
+        List(publishModel.telemetryList.map(i ⇒ Published(Telemetry, i.name)),
+          publishModel.eventList.map(i ⇒ Published(Events, i.name)),
+          publishModel.eventStreamList.map(i ⇒ Published(EventStreams, i.name)),
+          publishModel.alarmList.map(i ⇒ Published(Alarms, i.name)),
+          publishModel.healthList.map(i ⇒ Published(Health, i.name))).flatten
+      case None ⇒ Nil
+    }
+  }
+
+  /**
+   * Returns a list describing what each component publishes
+   */
+  def getPublishInfo: List[PublishInfo] = {
+    def getPublishInfo(name: String, prefix: String): PublishInfo =
+      PublishInfo(name, prefix, getPublished(name))
+
+    getComponents.map(c ⇒ getPublishInfo(c.name, c.prefix))
+  }
+
+  /**
+   * Returns a list describing which components publish the given value.
+   * @param path full path name of value (prefix + name)
+   */
+  def publishes(path: String): List[PublishedItem] = {
+    for {
+      i ← getPublishInfo
+      p ← i.publishes.filter(p ⇒ s"${i.prefix}.${p.name}" == path)
+    } yield PublishedItem(i.componentName, i.prefix, p.publishType, p.name)
+  }
+
+  /**
+   * Returns a list of items the given component subscribes to
+   * @param name the component name
+   */
+  def getSubscribedTo(name: String): List[Published] = {
+    getSubscribeModel(name) match {
+      case Some(subscribeModel) ⇒
+        List(subscribeModel.telemetryList.map(i ⇒ Published(Telemetry, i.name)),
+          subscribeModel.eventList.map(i ⇒ Published(Events, i.name)),
+          subscribeModel.eventStreamList.map(i ⇒ Published(EventStreams, i.name)),
+          subscribeModel.alarmList.map(i ⇒ Published(Alarms, i.name)),
+          subscribeModel.healthList.map(i ⇒ Published(Health, i.name))).flatten
+      case None ⇒ Nil
+    }
+  }
+
+  /**
+   * Returns a list describing what each component subscribes to
+   */
+  def getSubscribeInfo: List[SubscribeInfo] = {
+    def getSubscribeInfo(name: String): SubscribeInfo = SubscribeInfo(name, getSubscribedTo(name))
+    getComponents.map(c ⇒ getSubscribeInfo(c.name))
+  }
+
+  /**
+   * Returns a list describing the components that subscribe to the given value.
+   * @param path full path name of value (prefix + name)
+   */
+  def subscribes(path: String): List[Subscribed] = {
+    for {
+      i ← getSubscribeInfo
+      s ← i.subscribesTo.filter(_.name == path)
+    } yield Subscribed(s.publishType, path, i.componentName)
   }
 }

@@ -71,7 +71,7 @@ val `slf4j-nop` = "org.slf4j" % "slf4j-nop" % "1.7.10"
 val diffson = "org.gnieh" %% "diffson" % "0.3"
 
 lazy val root = (project in file(".")).
-  aggregate(icd, `icd-db`)
+  aggregate(icd, `icd-db`, `icd-web`)
 
 lazy val icd = project
   .settings(packageSettings("ICD support", "Used to validate ICDs"): _*)

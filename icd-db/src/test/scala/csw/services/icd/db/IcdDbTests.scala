@@ -2,6 +2,7 @@ package csw.services.icd.db
 
 import java.io.File
 
+import csw.services.icd.db.IcdDbQuery.{ Events, Telemetry }
 import org.scalatest.{ DoNotDiscover, FunSuite }
 
 /**
@@ -21,7 +22,7 @@ class IcdDbTests extends FunSuite {
     db.dropDatabase() // start with a clean db for test
 
     // ingest examples/NFIRAOS into the DB
-    val problems = db.ingest("NFIRAOS", getTestDir("examples/NFIRAOS"))
+    val problems = db.ingest(getTestDir("examples/NFIRAOS"))
     for (p ← problems) println(p)
     assert(problems.isEmpty)
 
@@ -69,6 +70,18 @@ class IcdDbTests extends FunSuite {
     assert(temp_ngsWfs.typeStr == "number")
     assert(temp_ngsWfs.units == "degC")
 
+    // Test publish queries
+    val published = db.query.getPublished("envCtrl").filter(_.name == "sensors")
+    assert(published.size == 1)
+    assert(published.head.publishType == Telemetry)
+
+    val sensorList = db.query.publishes("nfiraos.ncc.assembly.envCtrl.sensors")
+    assert(sensorList.size == 1)
+    assert(sensorList.head.componentName == "envCtrl")
+    assert(sensorList.head.publishType == Telemetry)
+    assert(sensorList.head.prefix == "nfiraos.ncc.assembly.envCtrl")
+    assert(sensorList.head.name == "sensors")
+
     // Test saving document from the database
     IcdDbPrinter(db.query).saveToFile(envCtrl.name, new File("envCtrl.pdf"))
     IcdDbPrinter(db.query).saveToFile("NFIRAOS", new File("NFIRAOS.pdf"))
@@ -88,10 +101,25 @@ class IcdDbTests extends FunSuite {
     val db = IcdDb("test")
     db.dropDatabase() // start with a clean db for test
 
+    // These three different directories are ingested under the same name (example), to test versioning
     testExample(db, "examples/example1", List("Tcs"), "Comment for example1", majorVersion = false)
     testExample(db, "examples/example2", List("NFIRAOS"), "Comment for example2", majorVersion = true)
     testExample(db, "examples/example3", List("NFIRAOS"), "Comment for example3", majorVersion = false)
 
+    // Test Publish/Subscribe queries
+    val subscribeInfoList = db.query.subscribes("tcs.parallacticAngle")
+    assert(subscribeInfoList.size == 1)
+    assert(subscribeInfoList.head.componentName == "NFIRAOS")
+    assert(subscribeInfoList.head.subscribeType == Telemetry)
+
+    val publishList = db.query.publishes("nfiraos.initialized")
+    assert(publishList.size == 1)
+    assert(publishList.head.componentName == "NFIRAOS")
+    assert(publishList.head.publishType == Events)
+    assert(publishList.head.prefix == "nfiraos")
+    assert(publishList.head.name == "initialized")
+
+    // Test versions
     val versions = db.manager.getIcdVersions("example")
     assert(versions.size == 3)
     assert(versions.head.version == "2.1")
@@ -101,6 +129,7 @@ class IcdDbTests extends FunSuite {
     assert(versions(2).version == "1.0")
     assert(versions(2).comment == "Comment for example1")
 
+    // Test diff
     println("\nDiff example 2.0 2.1")
     for (diff ← db.manager.diff("example", "2.0", "2.1")) {
       // XXX TODO: add automatic test?
@@ -110,8 +139,9 @@ class IcdDbTests extends FunSuite {
     db.dropDatabase()
   }
 
+  // Ingests the given dir under the name "example" (any previous version is saved in the history)
   def testExample(db: IcdDb, path: String, componentNames: List[String], comment: String, majorVersion: Boolean): Unit = {
-    val problems = db.ingest("example", getTestDir(path), comment, majorVersion)
+    val problems = db.ingest(getTestDir(path), Some("example"), comment, majorVersion)
     for (p ← problems) println(p)
     assert(problems.isEmpty)
 
