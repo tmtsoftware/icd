@@ -71,7 +71,7 @@ val `slf4j-nop` = "org.slf4j" % "slf4j-nop" % "1.7.10"
 val diffson = "org.gnieh" %% "diffson" % "0.3"
 
 lazy val root = (project in file(".")).
-  aggregate(icd, `icd-db`, `icd-web`)
+  aggregate(icd, `icd-db`)
 
 lazy val icd = project
   .settings(packageSettings("ICD support", "Used to validate ICDs"): _*)
@@ -87,8 +87,11 @@ lazy val `icd-db` = project
     test(scalaTest)
   ) dependsOn icd
 
-lazy val `icd-web` = project.enablePlugins(PlayScala)
-  .settings(defaultSettings)
-  .settings(libraryDependencies ++=
-  compile(jdbc, anorm, cache, ws)
-  ) dependsOn `icd-db`
+
+// XXX Due to bugs in Intellij Idea 14.1, adding a Play subproject interferes with compilation and testing in Idea.
+// XXX Temporarilly using separate build.sbt in icd-web.
+//lazy val `icd-web` = project.enablePlugins(PlayScala)
+//  .settings(defaultSettings)
+//  .settings(libraryDependencies ++=
+//  compile(jdbc, anorm, cache, ws)
+//  ) dependsOn `icd-db`
