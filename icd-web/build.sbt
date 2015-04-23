@@ -8,6 +8,7 @@ lazy val icdWebServer = (project in file("icd-web-server")).settings(
   scalaJSProjects := clients,
   pipelineStages := Seq(scalaJSProd, gzip),
   libraryDependencies ++= Seq(
+    "org.tmt"     %% "icd-db" % "0.1-SNAPSHOT",
     "com.vmunier" %% "play-scalajs-scripts" % "0.2.0",
     "org.webjars" % "jquery" % "1.11.1",
     "org.webjars" %% "webjars-play" % "2.3.0-3",
@@ -25,7 +26,8 @@ lazy val icdWebClient = (project in file("icd-web-client")).settings(
   unmanagedSourceDirectories in Compile := Seq((scalaSource in Compile).value),
   libraryDependencies ++= Seq(
     "org.scala-js" %%% "scalajs-dom" % "0.8.0",
-    "com.lihaoyi" %%% "scalatags" % "0.5.1"
+    "com.lihaoyi" %%% "scalatags" % "0.5.1",
+    "com.lihaoyi" %%% "upickle" % "0.2.8"
   )
 ).enablePlugins(ScalaJSPlugin, ScalaJSPlay).
   dependsOn(icdWebSharedJs)

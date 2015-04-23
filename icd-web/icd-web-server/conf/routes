@@ -5,6 +5,10 @@
 # Home page
 GET        /                     controllers.Application.index
 
+# Gets a list of top level ICD names
+GET        /icdNames             controllers.Application.icdNames
+
+
 # Map static resources from the /public folder to the /assets URL path
 GET        /assets/*file         controllers.Assets.at(path="/public", file)
 
