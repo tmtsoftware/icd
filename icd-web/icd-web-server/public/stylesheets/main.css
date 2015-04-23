@@ -104,8 +104,9 @@ body {
     border-radius: 50%;
 }
 
-.boxsizing-border {
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
+/*
+ * subsystem combobox
+ */
+#subsystem {
+    margin-left: 10px
 }

@@ -13,15 +13,22 @@ object IcdToHtml {
   }
 
   /**
+   * Returns the HTML snippet (without header or styles) for the given markdown (GFM)
+   * @param gfm the GFM markdown
+   */
+  def getAsPlainHtml(gfm: String): String = {
+    import org.pegdown.{ Extensions, PegDownProcessor }
+    val pd = new PegDownProcessor(Extensions.TABLES | Extensions.AUTOLINKS)
+    pd.markdownToHtml(gfm)
+  }
+
+  /**
    * Returns the HTML for the given markdown (GFM)
    * @param title title to use for the HTML document
    * @param gfm the GFM markdown
    */
   def getAsHtml(title: String, gfm: String): String = {
-    import org.pegdown.{ Extensions, PegDownProcessor }
-
-    val pd = new PegDownProcessor(Extensions.TABLES | Extensions.AUTOLINKS)
-    val body = pd.markdownToHtml(gfm)
+    val body = getAsPlainHtml(gfm)
     val css = getCss
     s"""
        |<html>

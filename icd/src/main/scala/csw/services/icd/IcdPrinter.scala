@@ -2,13 +2,40 @@ package csw.services.icd
 
 import java.io._
 
-import csw.services.icd.gfm.{ Gfm, Level, IcdToGfm }
+import csw.services.icd.gfm.{ Level, IcdToGfm }
 import csw.services.icd.model.IcdModels
 
 /**
  * Saves the ICD as a document
  */
 object IcdPrinter {
+
+  /**
+   * Gets the GFM (Github flavored markdown) for the document
+   * @param models list of ICD models for the different parts of the ICD
+   * @return a string in GFM format
+   */
+  def getAsGfm(models: List[IcdModels]): String = {
+    // These control the document header numbering
+    implicit val counter = Iterator.from(0)
+    val level: Level = Level()
+
+    val title = "#Interface Control Document\n#" + models.head.icdModel.map(_.name).getOrElse("")
+    val pagebreak = "\n<div class='pagebreak'></div>\n" // new page, see pagebreak in icd.css
+    val body = models.map(IcdToGfm(_, level.inc1()).gfm).mkString(pagebreak)
+    val toc = IcdToGfm.gfmToToc(body)
+    s"$title\n$pagebreak\n$toc\n$pagebreak\n$body\n"
+  }
+
+  /**
+   * Gets the HTML for the document
+   * @param models list of ICD models for the different parts of the ICD
+   * @return a string in HTML format
+   */
+  def getAsHtml(models: List[IcdModels]): String = {
+    val title = models.head.icdModel.map(_.name).getOrElse("ICD")
+    IcdToHtml.getAsHtml(title, getAsGfm(models))
+  }
 
   /**
    * Parses the set of standard ICD files (see stdNames) in the given dir and its subdirectories
@@ -26,14 +53,10 @@ object IcdPrinter {
   /**
    * Saves a document for the ICD to the given file in a format determined by the
    * file's suffix, which should be one of (md, html, pdf).
-   * @param parsers a list of objects describing the parsed ICD, one for each directory in the ICD
+   * @param models a list of objects describing the parsed ICD, one for each directory in the ICD
    * @param file the file in which to save the document
    */
-  def saveToFile(parsers: List[IcdModels], file: File): Unit = {
-    // These control the document header numbering
-    implicit val counter = Iterator.from(0)
-    val level = Level()
-
+  def saveToFile(models: List[IcdModels], file: File): Unit = {
     file.getName.split('.').drop(1).lastOption match {
       case Some("md")   ⇒ saveAsGfm()
       case Some("html") ⇒ saveAsHtml()
@@ -41,34 +64,20 @@ object IcdPrinter {
       case _            ⇒ println(s"Unsupported output format: Expected *.md. *.html or *.pdf")
     }
 
-    // Gets the GFM (Github flavored markdown) for the document
-    def getAsGfm: String = {
-      val title = "#Interface Control Document\n#" + parsers.head.icdModel.map(_.name).getOrElse("")
-      val pagebreak = "\n<div class='pagebreak'></div>\n" // new page, see pagebreak in icd.css
-      val body = parsers.map(IcdToGfm(_, level.inc1()).gfm).mkString(pagebreak)
-      val toc = IcdToGfm.gfmToToc(body)
-      s"$title\n$pagebreak\n$toc\n$pagebreak\n$body\n"
-    }
-
-    def getAsHtml: String = {
-      val title = parsers.head.icdModel.map(_.name).getOrElse("ICD")
-      IcdToHtml.getAsHtml(title, getAsGfm)
-    }
-
     // Saves the document in GFM (Github flavored markdown) format
     def saveAsGfm(): Unit = {
       val out = new FileOutputStream(file)
-      out.write(getAsGfm.getBytes)
+      out.write(getAsGfm(models).getBytes)
       out.close()
     }
 
     def saveAsHtml(): Unit = {
       val out = new FileOutputStream(file)
-      out.write(getAsHtml.getBytes)
+      out.write(getAsHtml(models).getBytes)
       out.close()
     }
 
-    def saveAsPdf(): Unit = IcdToPdf.saveAsPdf(file, getAsHtml)
+    def saveAsPdf(): Unit = IcdToPdf.saveAsPdf(file, getAsHtml(models))
 
   }
 }
