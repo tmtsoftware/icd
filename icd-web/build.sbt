@@ -7,14 +7,15 @@ lazy val icdWebServer = (project in file("icd-web-server")).settings(
   scalaVersion := scalaV,
   scalaJSProjects := clients,
   pipelineStages := Seq(scalaJSProd, gzip),
+  includeFilter in (Assets, LessKeys.less) := "*.less",
   libraryDependencies ++= Seq(
     "org.tmt"     %% "icd-db" % "0.1-SNAPSHOT",
     "com.vmunier" %% "play-scalajs-scripts" % "0.2.0",
-    "org.webjars" % "jquery" % "1.11.1",
+    "org.webjars" % "jquery" % "2.1.3",
     "org.webjars" %% "webjars-play" % "2.3.0-3",
     "org.webjars" % "bootstrap" % "3.3.4"
   )
-).enablePlugins(PlayScala).
+).enablePlugins(PlayScala, SbtWeb).
   aggregate(clients.map(projectToRef): _*).
   dependsOn(icdWebSharedJvm)
 

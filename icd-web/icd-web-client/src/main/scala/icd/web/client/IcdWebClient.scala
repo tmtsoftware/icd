@@ -15,7 +15,7 @@ object IcdWebClient extends js.JSApp {
   // Displays the HTML for the given ICD name
   def displayIcd(name: String): Unit = {
     getIcdHtml(name).map { doc =>
-      dom.document.getElementById("htmlContent").innerHTML = doc
+      dom.document.getElementById("content").innerHTML = doc
     }
   }
 
@@ -35,9 +35,11 @@ object IcdWebClient extends js.JSApp {
 
 
   // Makes the Subsystem combobox
-  def makeSubsystemDropDown(idStr: String, titleStr: String, items: List[String]) = {
+  def makeSubsystemDropDown(items: List[String]) = {
     import scalatags.JsDom.all._
 
+    val idStr = "subsystem"
+    val titleStr = "Subsystem"
     val msg = "Select a subsystem"
 
     // called when an item is selected
@@ -66,42 +68,7 @@ object IcdWebClient extends js.JSApp {
 
   // Initialize the main layout
   def init(icdNames: List[String]): Unit = {
-    import scalatags.JsDom.all._
-
-    val navbar = div(cls := "navbar navbar-inverse navbar-fixed-top", role := "navigation")(
-      div(cls := "container-fluid")(
-        div(cls := "navbar-header")(// XXX TODO add link to docs?
-          a(cls := "navbar-brand", href := "#")("ICD Database")
-        )
-      )
-    )
-
-    val subsystemDropDown = makeSubsystemDropDown("subsystem", "Subsystem", icdNames)
-
-    val sidebar = div(cls := "col-sm-3 col-md-2 sidebar")(
-      form(subsystemDropDown)
-    )
-
-    val pageHeader = h1(id := "header", cls := "page-header", "XXX Title")
-
-    val htmlContent = div(id := "htmlContent")()
-
-    val pageBody = div(id := "pageBody", cls := "container-fluid")(
-      div(cls := "row")(
-        sidebar,
-        div(cls := "col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main")(
-          pageHeader,
-          htmlContent
-        )
-      )
-    )
-
-//    val elem = dom.document.getElementById("pageBody")
-//    elem.appendChild(navbar.render)
-//    elem.appendChild(pageBody.render)
-
-    val body = dom.document.body
-    body.appendChild(navbar.render)
-    body.appendChild(pageBody.render)
+    val subsystemDropDown = makeSubsystemDropDown(icdNames)
+    dom.document.getElementById("navbarItem1").appendChild(subsystemDropDown.render)
   }
 }

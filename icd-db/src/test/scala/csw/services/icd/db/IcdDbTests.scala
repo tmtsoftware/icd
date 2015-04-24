@@ -85,15 +85,15 @@ class IcdDbTests extends FunSuite {
     IcdDbPrinter(db.query).saveToFile(envCtrl.name, new File("envCtrl.pdf"))
     IcdDbPrinter(db.query).saveToFile("NFIRAOS", new File("NFIRAOS.pdf"))
 
-    //    // Test dropping a component
-    //    db.query.dropComponent(envCtrl.name)
-    //    assert(db.query.getComponentModel("envCtrl").isEmpty)
-    //
-    //    db.query.dropComponent("NFIRAOS")
-    //    assert(db.query.getComponentModel("NFIRAOS").isEmpty)
-    //    assert(db.query.getComponentModel("ndme").isEmpty)
+    // Test dropping a component
+    db.query.dropComponent(envCtrl.name)
+    assert(db.query.getComponentModel("envCtrl").isEmpty)
 
-    //    db.dropDatabase()
+    db.query.dropComponent("NFIRAOS")
+    assert(db.query.getComponentModel("NFIRAOS").isEmpty)
+    assert(db.query.getComponentModel("ndme").isEmpty)
+
+    db.dropDatabase()
   }
 
   test("Ingest and then update example ICD") {
