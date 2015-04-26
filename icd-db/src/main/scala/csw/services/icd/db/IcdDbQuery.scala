@@ -14,7 +14,7 @@ object IcdDbQuery {
 
   // True if the named collection represents an ICD model (has one of the standard names)
   def isStdSet(name: String): Boolean =
-    stdSet.filter(s ⇒ name.endsWith(s".$s")).nonEmpty
+    stdSet.exists(s ⇒ name.endsWith(s".$s"))
 
   // for working with dot separated paths
   case class IcdPath(path: String) {
@@ -23,7 +23,7 @@ object IcdDbQuery {
     // The common path for an assembly, HCD, sequencer, etc.
     lazy val component = parts.dropRight(1).mkString(".")
 
-    // The top level ICD name
+    // The top level ICD collection name
     lazy val icd = parts.head
   }
 
@@ -178,7 +178,15 @@ case class IcdDbQuery(db: MongoDB) {
   /**
    * Returns a list of all top level ICDs in the database
    */
-  def getIcdNames: List[String] = db.collectionNames().filter(isStdSet).map(IcdPath).map(_.icd).toList
+  def getIcdNames: List[String] = {
+    // Get list of top level collection names, then get the component name for each, if defined
+    val result = for (icdColl ← db.collectionNames().filter(isStdSet).map(IcdPath).map(_.icd).toList) yield {
+      val coll = db(s"$icdColl.component")
+      val data = coll.headOption
+      if (data.isDefined) Some(jsonToComponentModel(data.get.toString).name) else None
+    }
+    result.flatten
+  }
 
   // --- Get model objects, given a component name ---
 

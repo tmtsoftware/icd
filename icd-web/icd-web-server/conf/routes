@@ -11,6 +11,10 @@ GET        /icdNames             controllers.Application.icdNames
 # Gets the HTML for an ICD
 GET        /icdHtml/:name        controllers.Application.icdHtml(name: String)
 
+# Uploads ICD files from a selected directory
+POST       /upload               controllers.FileUploadController.uploadFile
+
+
 # Map static resources from the /public folder to the /assets URL path
 GET        /assets/*file         controllers.Assets.at(path="/public", file)
 

@@ -3,14 +3,19 @@ package controllers
 import csw.services.icd.db.{IcdDbPrinter, IcdDb}
 import play.api._
 import play.api.mvc._
-import shared.SharedMessages
+import play.filters.csrf.CSRFAddToken
+import shared.Csrf
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
 object Application extends Controller {
 
-  def index = Action {
-    Ok(views.html.index(SharedMessages.itWorks))
+  def index = CSRFAddToken {
+    Action { implicit request =>
+      import play.filters.csrf.CSRF
+      val token = CSRF.getToken(request).map(t => Csrf(t.value)).getOrElse(Csrf(""))
+      Ok(views.html.index(token))
+    }
   }
 
   /**

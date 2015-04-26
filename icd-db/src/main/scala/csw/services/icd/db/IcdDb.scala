@@ -284,7 +284,7 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
    * @param config the config to be ingested into the datasbase
    * @return a list of problems, if any were found
    */
-  private[db] def ingestConfig(name: String, config: Config): Unit = {
+  def ingestConfig(name: String, config: Config): Unit = {
     import collection.JavaConversions._
     val dbObj = config.root().unwrapped().toMap.asDBObject
     manager.ingest(name, dbObj)

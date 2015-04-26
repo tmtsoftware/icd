@@ -9,6 +9,7 @@ lazy val icdWebServer = (project in file("icd-web-server")).settings(
   pipelineStages := Seq(scalaJSProd, gzip),
   includeFilter in (Assets, LessKeys.less) := "*.less",
   libraryDependencies ++= Seq(
+    filters,
     "org.tmt"     %% "icd-db" % "0.1-SNAPSHOT",
     "com.vmunier" %% "play-scalajs-scripts" % "0.2.0",
     "org.webjars" % "jquery" % "2.1.3",
