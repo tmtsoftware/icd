@@ -51,13 +51,19 @@ object Subsystem {
       sel.remove(0)
     }
     for (s <- list) {
+      println(s"XXX add subsys opn: $s")
       sel.add(option(value := s)(s).render)
     }
   }
 
+  // Updates the menu
+  def update(): Unit = {
+    getIcdNames.map(updateSubsystemOptions)
+  }
+
   // Initialize the subsystem combobox
   def init(): Unit = {
-    getIcdNames.map(updateSubsystemOptions)
+    update()
     sel.addEventListener("change", subsystemSelected _, useCapture = false)
   }
 

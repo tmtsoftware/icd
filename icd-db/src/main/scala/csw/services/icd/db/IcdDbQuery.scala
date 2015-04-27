@@ -181,7 +181,7 @@ case class IcdDbQuery(db: MongoDB) {
   def getIcdNames: List[String] = {
     // Get list of top level collection names, then get the component name for each, if defined
     val result = for (icdColl ← db.collectionNames().filter(isStdSet).map(IcdPath).map(_.icd).toList) yield {
-      val coll = db(s"$icdColl.component")
+      val coll = db(s"$icdColl.${componentFileNames.modelBaseName}")
       val data = coll.headOption
       if (data.isDefined) Some(jsonToComponentModel(data.get.toString).name) else None
     }
