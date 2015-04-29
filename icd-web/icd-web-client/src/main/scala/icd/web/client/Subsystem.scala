@@ -51,20 +51,29 @@ object Subsystem {
       sel.remove(0)
     }
     for (s <- list) {
-      println(s"XXX add subsys opn: $s")
       sel.add(option(value := s)(s).render)
     }
   }
 
   // Updates the menu
   def update(): Unit = {
+    println("XXX update the subsystem menu")
     getIcdNames.map(updateSubsystemOptions)
   }
 
   // Initialize the subsystem combobox
-  def init(): Unit = {
+  def init(wsBaseUrl: String): Unit = {
     update()
     sel.addEventListener("change", subsystemSelected _, useCapture = false)
+
+    // Called when the DB is changed, for example after an upload/ingest
+    def wsReceive(e: dom.Event) = {
+      update()
+    }
+
+    // Arrange to be notified when DB changes, so we can update the combobox with the list of ICDs
+    val socket = new dom.WebSocket(wsBaseUrl)
+    socket.onmessage = wsReceive _
   }
 
 }

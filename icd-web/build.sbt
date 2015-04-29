@@ -1,7 +1,7 @@
 import sbt.Project.projectToRef
 
 lazy val clients = Seq(icdWebClient)
-lazy val scalaV = "2.11.5"
+lazy val scalaV = "2.11.6"
 
 lazy val icdWebServer = (project in file("icd-web-server")).settings(
   scalaVersion := scalaV,

@@ -24,6 +24,7 @@ object Application extends Controller {
   def icdNames = Action {
     val db = IcdDb("test") // XXX TODO configure
     val names = db.query.getIcdNames
+    db.close()
     Ok(Json.toJson(names))
   }
 
@@ -34,6 +35,7 @@ object Application extends Controller {
   def icdHtml(name: String) = Action {
     val db = IcdDb("test") // XXX TODO configure
     val html = IcdDbPrinter(db.query).getAsPlainHtml(name)
+    db.close()
     Ok(html).as(HTML)
   }
 }

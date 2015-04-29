@@ -4,8 +4,11 @@
 @main("TMT ICD Database") {
     @playscalajs.html.scripts("icdwebclient")
     <script>
-        icd.web.client.IcdWebClient().init ("@{
-        csrfToken
-    }")
+        var settings = {
+            "csrfToken": "@{csrfToken}",
+            "wsBaseUrl": "@routes.FileUploadController.ws.webSocketURL()"
+        };
+
+        icd.web.client.IcdWebClient().init(settings);
     </script>
 }

@@ -10,29 +10,6 @@ import org.scalajs.jquery.{jQuery => $, _}
 @JSExport
 object FileUpload {
 
-  //  // Hack to access unsupported method: File.webkitRelativePath
-  //  // (This can't be defined inside the def below).
-  //  // Note that this only works on webkit browsers: Safari, Chrome.
-  //  trait WebkitFile extends org.scalajs.dom.File {
-  //    def webkitRelativePath: js.Any = js.native
-  //  }
-  //
-  //  // called when a file or directory has been selected
-  //    def fileSelected(e: dom.Event) {
-  //      val files: FileList = e.target.asInstanceOf[HTMLInputElement].files
-  //      val count = files.length
-  //      for(i <- 0 until count) {
-  //        val file = files(i).asInstanceOf[WebkitFile]
-  //        val path = file.webkitRelativePath
-  //        println(s"You selected $path")
-  ////        uploadFile(path)
-  //      }
-  //    }
-  //
-  //    $id("uploadFiles").addEventListener("change", fileSelected _, false)
-  //
-  //  }
-
   val stdList = List("icd-model.conf", "component-model.conf", "publish-model.conf",
     "subscribe-model.conf", "command-model.conf")
   // Check if file is one of the standard ICD files
@@ -59,21 +36,12 @@ object FileUpload {
     $id("uploadButton").addEventListener("click", uploadSelected _, useCapture = false)
   }
 
-
   def markup(csrfToken: String) = {
     import scalatags.JsDom.all._
 
-
-    // XXX to rename default "choose file" button:
-    // <a href="#" class="btn btn-primary" type="button"
-    // onclick="document.getElementById('fileID').click();
-    // return false;">Browse</a> <input id="fileID" type="file"
-    // style="visibility: hidden; display: none;" />
-
     div(
-//      p("Here you can select (or drag and drop) the top level directory containing the ICD to upload."),
       p("Here you can select the top level directory containing the ICD to upload."),
-      form(id := "upload", action := s"/upload", "role".attr := "form",
+      form(id := "upload", action := "/upload", "role".attr := "form",
         "method".attr := "POST", "enctype".attr := "multipart/form-data")(
           input(`type` := "hidden", name := "csrfToken", value := csrfToken),
           div(`class` := "panel panel-info")(
@@ -86,11 +54,6 @@ object FileUpload {
               div(id := "submitButton", `class` := "hide")(
                 button(`type` := "submit")("Upload Files")
               )
-//              , br,
-//              div(id := "fileDrag", `class` := "panel panel-info",
-//                style := "height: 70px; border-style: dashed; border-width: 2px;text-align: center;")(
-//                  p(style := "margin-top:20px;")("Or drop file here...")
-//                )
             )
           )
         ),
@@ -121,20 +84,6 @@ object FileUpload {
     def webkitRelativePath: String = js.native
   }
 
-//  trait WebkitEntry extends js.Object {
-//    def name: String = js.native
-//    def webkitRelativePath: String = js.native
-//    def isFile: Boolean = js.native
-//    def isDirectory: Boolean = js.native
-//  }
-  trait WebkitDataTransferItem extends js.Object {
-    def webkitGetAsEntry: WebkitFile = js.native
-  }
-  trait WebkitDataTransfer extends dom.DataTransfer {
-    def items: js.Array[WebkitDataTransferItem] = js.native
-  }
-
-
   // Called once the file upload screen has been displayed
   def ready(): Unit = {
     implicit def monkeyizeEventTarget(e: dom.EventTarget): EventTargetExt = e.asInstanceOf[EventTargetExt]
@@ -148,47 +97,20 @@ object FileUpload {
       m.innerHTML = msg + m.innerHTML
     }
 
-    def fileDragHover(e: dom.Event) = {
-      e.stopPropagation()
-      e.preventDefault()
-      if (e.`type` == "dragover") {
-        $("#fileDrag").removeClass("panel-info").addClass("panel-primary")
-      } else {
-        $("#fileDrag").removeClass("panel-primary").addClass("panel-info")
-      }
-    }
-
-
-//    var entry = e.dataTransfer.items[i].webkitGetAsEntry();
-//    if (entry.isFile) {
-//      ... // do whatever you want
-//    } else if (entry.isDirectory) {
-//      ... // do whatever you want
-//    }
 
     // Called when a file selection has been made
     def fileSelectHandler(e: dom.Event) = {
-      fileDragHover(e)
-      val files = if (e.target.files.toString != "undefined") {
-        e.target.files
-      } else {
-//        val x = e.asInstanceOf[dom.DragEvent].dataTransfer.asInstanceOf[WebkitDataTransfer].items(0).webkitGetAsEntry.webkitRelativePath
-//        println(s"XXX GOT: $x")
-        e.asInstanceOf[dom.DragEvent].dataTransfer.files
-      }
-      (0 until files.length).foreach { i =>
+      val files = e.target.files
+      val fileList = for(i <- 0 until files.length) yield files(i).asInstanceOf[WebkitFile]
+      val stdList = fileList.filter(file => isStdFile(file) || file.name.endsWith(".zip"))
+      for((file, i) <- stdList.zipWithIndex) {
         try {
-          val file = files(i).asInstanceOf[WebkitFile]
-          if (isStdFile(file)) {
-            parseFile(file)
-            uploadFile(file)
-          }
+          parseFile(file)
+          uploadFile(file, i == stdList.size - 1)
         } catch {
           case e: Throwable => println(e)
         }
       }
-      // Update the subsystem menu
-      Subsystem.update()
     }
 
     // Starts the file read
@@ -198,12 +120,16 @@ object FileUpload {
       reader.onload = (e: dom.UIEvent) => {
         output(div(p(strong(file.webkitRelativePath + ":")), pre(reader.result.toString)).toString())
       }
-      reader.readAsText(file)
+      if (file.name.endsWith(".zip"))
+        reader.readAsDataURL(file)
+      else
+        reader.readAsText(file)
     }
 
     // Starts uploading the file to the server
-    def uploadFile(file: WebkitFile) = {
+    def uploadFile(file: WebkitFile, lastFile: Boolean) = {
       val xhr = new dom.XMLHttpRequest
+      println(s"XXX uploading ${file.name}")
       if (xhr.upload != null && file.size <= maxFileSize) {
 
         xhr.upload.addEventListener("progress", (e: dom.Event) => {
@@ -222,25 +148,23 @@ object FileUpload {
           }
         }
         //start upload
-        xhr.open("POST", $id("upload").asInstanceOf[dom.raw.HTMLFormElement].action, async = true)
+        val action = if (file.name.endsWith("zip")) "/uploadZip" else "/upload"
+        println(s"XXX action = $action, file = ${file.name}, lastFile = $lastFile")
+        xhr.open("POST", action, async = true)
         xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest")
-        xhr.setRequestHeader("X-FILENAME", file.webkitRelativePath)
+        xhr.setRequestHeader("X-Last-File", lastFile.toString)
+        try {
+          xhr.setRequestHeader("X-FILENAME", file.webkitRelativePath)
+        } catch {
+          case e: Throwable => // ignore if not defined (only defined for Chrome)
+        }
         xhr.send(file)
+      } else {
+        println(s"XXX ${file.name} is too large")
       }
     }
 
-    $("#fileDrag").on("dragenter dragstart dragend dragleave dragover drag drop", (e: dom.Event) => {
-      e.preventDefault()
-    })
-
     $id("fileSelect").addEventListener("change", fileSelectHandler _, useCapture = false)
-    val xhr = new dom.XMLHttpRequest
-    if (xhr.upload != null) {
-      val fileDrag = $id("fileDrag")
-      fileDrag.addEventListener("dragover", fileDragHover _, useCapture = false)
-      fileDrag.addEventListener("dragleave", fileDragHover _, useCapture = false)
-      fileDrag.addEventListener("drop", fileSelectHandler _, useCapture = false)
-    }
   }
 }
 

@@ -15,6 +15,9 @@ import scala.scalajs.js.annotation.{JSExport, JSExportDescendentObjects}
 
 object IcdWebClient extends JSApp {
 
+  var csrfToken: String = ""
+  var wsBaseUrl: String = ""
+
   // Displays the HTML for the given ICD name
   def displayIcd(name: String): Unit = {
     getIcdHtml(name).map { doc =>
@@ -31,8 +34,11 @@ object IcdWebClient extends JSApp {
 
   // Main entry point
   @JSExport
-  def init(csrfToken: String): Unit = {
-    Subsystem.init()
+  def init(settings: js.Dynamic): Unit = {
+    csrfToken = settings.csrfToken.toString
+    wsBaseUrl = settings.wsBaseUrl.toString
+
+    Subsystem.init(wsBaseUrl)
     FileUpload.init(csrfToken)
   }
 

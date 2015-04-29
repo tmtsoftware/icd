@@ -291,6 +291,14 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
   }
 
   /**
+   * Closes all open connections.
+   * NOTE: This connection can't be reused after closing.
+   */
+  def close(): Unit = {
+    mongoClient.close()
+  }
+
+  /**
    * Drops this database. Use with caution!
    */
   def dropDatabase(): Unit = {
