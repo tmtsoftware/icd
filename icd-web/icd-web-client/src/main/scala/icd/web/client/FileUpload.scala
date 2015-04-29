@@ -129,7 +129,6 @@ object FileUpload {
     // Starts uploading the file to the server
     def uploadFile(file: WebkitFile, lastFile: Boolean) = {
       val xhr = new dom.XMLHttpRequest
-      println(s"XXX uploading ${file.name}")
       if (xhr.upload != null && file.size <= maxFileSize) {
 
         xhr.upload.addEventListener("progress", (e: dom.Event) => {
@@ -149,18 +148,17 @@ object FileUpload {
         }
         //start upload
         val action = if (file.name.endsWith("zip")) "/uploadZip" else "/upload"
-        println(s"XXX action = $action, file = ${file.name}, lastFile = $lastFile")
         xhr.open("POST", action, async = true)
         xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest")
         xhr.setRequestHeader("X-Last-File", lastFile.toString)
-        try {
+        try { // XXX TODO: try compare with "undefined" on safari
           xhr.setRequestHeader("X-FILENAME", file.webkitRelativePath)
         } catch {
           case e: Throwable => // ignore if not defined (only defined for Chrome)
         }
         xhr.send(file)
       } else {
-        println(s"XXX ${file.name} is too large")
+        dom.alert(s"${file.name} is too large")
       }
     }
 

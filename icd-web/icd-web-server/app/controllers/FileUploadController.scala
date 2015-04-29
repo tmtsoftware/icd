@@ -12,10 +12,11 @@ import play.api.mvc.{WebSocket, Result, Action, Controller}
 object FileUploadController extends Controller {
 
   val log = play.Logger.of("application") //same as play.Logger
-
+  val stdSet = StdName.stdNames.map(_.name).toSet
   val (wsEnumerator, wsChannel) = Concurrent.broadcast[String]
 
 
+  // Gets the database collection name for the given relative file path
   private def getCollectionName(path: String): String = {
     val s = path.replace('/', '.')
     s.substring(0, s.length - "-model.conf".length)
@@ -45,7 +46,6 @@ object FileUploadController extends Controller {
   // Ingest the given ICD file with the given contents into the database
   private def ingestFile(file: File, contents: String): Result = {
     // Check that the file name is one of the standard names
-    val stdSet = StdName.stdNames.map(_.name).toSet
     if (stdSet.contains(file.getName)) {
       log.info(s"file upload: $file")
       ingestConfig(ConfigFactory.parseString(contents), file.toString)
@@ -56,6 +56,7 @@ object FileUploadController extends Controller {
     }
   }
 
+  // Ingest the given config (part of an ICD) into the database
   private def ingestConfig(config: Config, path: String): Result = {
     val db = IcdDb("test") // XXX reuse or pass as param
     db.ingestConfig(getCollectionName(path), config)
@@ -63,10 +64,11 @@ object FileUploadController extends Controller {
     Ok("File uploaded")
   }
 
+  // Uploads/ingests the ICD files together in a zip file
   def uploadZipFile = Action(parse.temporaryFile) { request =>
     import scala.collection.JavaConversions._
     val zipFile = new ZipFile(request.body.file)
-    zipFile.entries().filter(_.getName.endsWith(".conf")).foreach { e =>
+    zipFile.entries().filter(f => stdSet.contains(f.getName)).foreach { e =>
       ingestConfig(
         ConfigFactory.parseReader(new InputStreamReader(zipFile.getInputStream(e))),
         e.getName)
@@ -75,6 +77,7 @@ object FileUploadController extends Controller {
     Ok(s"Files uploaded")
   }
 
+  // Websocket used to notify client when upload is complete
   def ws = WebSocket.using[String] { request =>
     (Iteratee.ignore, wsEnumerator)
   }
