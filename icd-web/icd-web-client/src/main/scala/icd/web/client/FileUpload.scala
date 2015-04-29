@@ -10,46 +10,66 @@ import org.scalajs.jquery.{jQuery => $, _}
 @JSExport
 object FileUpload {
 
+  // Id of file select input item
+  val fileSelect= "fileSelect"
+
+  // id of messages item
+  val messages = "messages"
+
+  // standard ICD file names (See StdName class in icd-db. Reuse here?)
   val stdList = List("icd-model.conf", "component-model.conf", "publish-model.conf",
     "subscribe-model.conf", "command-model.conf")
+
   // Check if file is one of the standard ICD files
-  def isStdFile(file: dom.File): Boolean = {
-    stdList.exists(file.name.endsWith)
-  }
+  def basename(file: dom.File): String =
+    if (file.name.contains('/'))
+      file.name.substring(file.name.lastIndexOf('/') + 1)
+    else file.name
+
+  def isStdFile(file: dom.File): Boolean = stdList.contains(basename(file))
 
   @JSExport
   // Initialize the upload callback
-  def init(csrfToken: String): Unit = {
+  def init(csrfToken: String, inputDirSupported: Boolean): Unit = {
 
     // Called when the Upload item is selected
     def uploadSelected(e: dom.Event) = {
       val content = $id("content")
       val children = content.childNodes
-      for (i <- 0 until children.length) {
+      for (i <- (0 until children.length).reverse) {
         content.removeChild(children(i))
       }
       $id("contentTitle").textContent = "Upload ICD"
-      $id("content").appendChild(markup(csrfToken).render)
-      ready()
+      $id("content").appendChild(markup(csrfToken, inputDirSupported).render)
+      ready(inputDirSupported)
     }
 
     $id("uploadButton").addEventListener("click", uploadSelected _, useCapture = false)
   }
 
-  def markup(csrfToken: String) = {
+  // Produce the HTML to display for the upload screen
+  def markup(csrfToken: String, inputDirSupported: Boolean) = {
     import scalatags.JsDom.all._
 
+    // Only Chrome supports uploading8 directories. For other browsers, use zip file upload
+    val dirMsg = if (inputDirSupported)
+      "Here you can select the top level directory containing the ICD to upload."
+    else
+      "Here you can select a zip file of the top level directory containing the ICD to upload."
+    val dirLabel = if (inputDirSupported) "ICD Directory" else "Zip file containing ICD Directory"
+
+    val acceptSuffix = if (inputDirSupported) "" else ".zip,application/zip"
     div(
-      p("Here you can select the top level directory containing the ICD to upload."),
+      p(dirMsg),
       form(id := "upload", action := "/upload", "role".attr := "form",
         "method".attr := "POST", "enctype".attr := "multipart/form-data")(
-          input(`type` := "hidden", name := "csrfToken", value := csrfToken),
+          input(`type` := "hidden", name := "csrfToken", value := csrfToken, accept := acceptSuffix),
           div(`class` := "panel panel-info")(
-            div(`class` := "panel-heading")(h3(`class` := "panel-title", "ICD Directory Upload")),
+            div(`class` := "panel-heading")(h3(`class` := "panel-title", "ICD Upload")),
             div(`class` := "panel-body")(
               div(
-                label(`for` := "fileSelect", "ICD Directory to upload:"),
-                input(`type` := "file", id := "fileSelect", name := "files[]", "webkitdirectory".attr:="webkitdirectory")
+                label(`for` := fileSelect, s"$dirLabel to upload:"),
+                input(`type` := "file", id := fileSelect, name := "files[]", "webkitdirectory".attr:="webkitdirectory")
               ),
               div(id := "submitButton", `class` := "hide")(
                 button(`type` := "submit")("Upload Files")
@@ -62,7 +82,7 @@ object FileUpload {
           "aria-valuemin".attr := "0", "aria-valuemax".attr := "100", style := "width: 100%", "0%")
       ),
       h4("Status Messages")(span(style := "margin-left:15px;"), span(id := "status", `class` := "label hide", "Done")),
-      div(id := "messages", `class` := "alert alert-info")
+      div(id := messages, `class` := "alert alert-info")
     )
   }
 
@@ -80,12 +100,12 @@ object FileUpload {
 
   // Add unsupported method: File.webkitRelativePath
   // Note that this only works on webkit browsers: Safari, Chrome.
-  trait WebkitFile extends org.scalajs.dom.File {
+  trait WebkitFile extends dom.File {
     def webkitRelativePath: String = js.native
   }
 
   // Called once the file upload screen has been displayed
-  def ready(): Unit = {
+  def ready(inputDirSupported: Boolean): Unit = {
     implicit def monkeyizeEventTarget(e: dom.EventTarget): EventTargetExt = e.asInstanceOf[EventTargetExt]
     implicit def monkeyizeEvent(e: dom.Event): EventExt = e.asInstanceOf[EventExt]
 
@@ -93,16 +113,27 @@ object FileUpload {
 
     // Append a message to the display
     def output(msg: String) = {
-      val m = $id("messages")
+      val m = $id(messages)
       m.innerHTML = msg + m.innerHTML
     }
 
+    def getFilePath(file: WebkitFile): String = {
+      if (inputDirSupported) file.webkitRelativePath else file.name
+    }
+
+    def isValidFile(file: dom.File): Boolean =
+      if (inputDirSupported) isStdFile(file) else file.name.endsWith(".zip")
+
+    def uploadMessage(file: WebkitFile, status: String): Unit = {
+      import scalatags.JsDom.all._
+      output(div(p(strong(s"${getFilePath(file)}: $status"))).toString())
+    }
 
     // Called when a file selection has been made
     def fileSelectHandler(e: dom.Event) = {
       val files = e.target.files
       val fileList = for(i <- 0 until files.length) yield files(i).asInstanceOf[WebkitFile]
-      val stdList = fileList.filter(file => isStdFile(file) || file.name.endsWith(".zip"))
+      val stdList = fileList.filter(isValidFile)
       for((file, i) <- stdList.zipWithIndex) {
         try {
           parseFile(file)
@@ -111,14 +142,19 @@ object FileUpload {
           case e: Throwable => println(e)
         }
       }
+
+      // list ignored files:
+      for(file <- fileList.filterNot(isValidFile))
+        uploadMessage(file, "Ignored")
     }
 
     // Starts the file read
     def parseFile(file: WebkitFile) = {
       import scalatags.JsDom.all._
+      println(s"XXX parse ${file.name}")
       val reader = new FileReader()
       reader.onload = (e: dom.UIEvent) => {
-        output(div(p(strong(file.webkitRelativePath + ":")), pre(reader.result.toString)).toString())
+        uploadMessage(file, "OK")
       }
       if (file.name.endsWith(".zip"))
         reader.readAsDataURL(file)
@@ -128,13 +164,14 @@ object FileUpload {
 
     // Starts uploading the file to the server
     def uploadFile(file: WebkitFile, lastFile: Boolean) = {
+      println(s"XXX uploadFile ${file.name}")
       val xhr = new dom.XMLHttpRequest
       if (xhr.upload != null && file.size <= maxFileSize) {
 
         xhr.upload.addEventListener("progress", (e: dom.Event) => {
           val pc = e.loaded / e.total * 100
           $("#progress").css("with", pc + "%").attr("aria-valuenow", pc.toString)
-            .html(s"${file.webkitRelativePath} ($pc %)")
+            .html(s"${getFilePath(file)} ($pc %)")
         }, useCapture = false)
 
         xhr.onreadystatechange = (e: dom.Event) => {
@@ -152,7 +189,7 @@ object FileUpload {
         xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest")
         xhr.setRequestHeader("X-Last-File", lastFile.toString)
         try { // XXX TODO: try compare with "undefined" on safari
-          xhr.setRequestHeader("X-FILENAME", file.webkitRelativePath)
+          xhr.setRequestHeader("X-FILENAME", getFilePath(file))
         } catch {
           case e: Throwable => // ignore if not defined (only defined for Chrome)
         }
@@ -162,7 +199,7 @@ object FileUpload {
       }
     }
 
-    $id("fileSelect").addEventListener("change", fileSelectHandler _, useCapture = false)
+    $id(fileSelect).addEventListener("change", fileSelectHandler _, useCapture = false)
   }
 }
 

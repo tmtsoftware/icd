@@ -1,7 +1,7 @@
 package controllers
 
 import java.io.{InputStreamReader, File}
-import java.util.zip.ZipFile
+import java.util.zip.{ZipEntry, ZipFile}
 
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd.StdName
@@ -45,6 +45,7 @@ object FileUploadController extends Controller {
 
   // Ingest the given ICD file with the given contents into the database
   private def ingestFile(file: File, contents: String): Result = {
+    log.info(s"XXX ingestFile $file")
     // Check that the file name is one of the standard names
     if (stdSet.contains(file.getName)) {
       log.info(s"file upload: $file")
@@ -58,6 +59,7 @@ object FileUploadController extends Controller {
 
   // Ingest the given config (part of an ICD) into the database
   private def ingestConfig(config: Config, path: String): Result = {
+    log.info(s"XXX ingestConfig $path")
     val db = IcdDb("test") // XXX reuse or pass as param
     db.ingestConfig(getCollectionName(path), config)
     db.close()
@@ -67,8 +69,10 @@ object FileUploadController extends Controller {
   // Uploads/ingests the ICD files together in a zip file
   def uploadZipFile = Action(parse.temporaryFile) { request =>
     import scala.collection.JavaConversions._
+    log.info(s"XXX uploadZipFile")
     val zipFile = new ZipFile(request.body.file)
-    zipFile.entries().filter(f => stdSet.contains(f.getName)).foreach { e =>
+    def isValid(f: ZipEntry) = stdSet.contains(new File(f.getName).getName)
+    zipFile.entries().filter(isValid).foreach { e =>
       ingestConfig(
         ConfigFactory.parseReader(new InputStreamReader(zipFile.getInputStream(e))),
         e.getName)

@@ -6,7 +6,8 @@
     <script>
         var settings = {
             "csrfToken": "@{csrfToken}",
-            "wsBaseUrl": "@routes.FileUploadController.ws.webSocketURL()"
+            "wsBaseUrl": "@routes.FileUploadController.ws.webSocketURL()",
+            "inputDirSupported": !!('webkitdirectory' in document.createElement('input'))
         };
 
         icd.web.client.IcdWebClient().init(settings);
