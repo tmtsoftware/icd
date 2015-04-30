@@ -12,15 +12,32 @@ import csw.services.icd.{ IcdToHtml, IcdParser, IcdPrinter }
  */
 case class IcdDbPrinter(query: IcdDbQuery) {
 
+  // XXX TODO: Use a view?
+  private def htmlNotFound(componentName: String): String =
+    s"<!DOCTYPE html></head><body><p>No ICD named $componentName was found in the database</p></body></html>"
+
   /**
-   * Returns an HTML snippet describing the ICD for the given component
+   * Returns an HTML snippet describing the ICD for the given component (without inserting CSS, header, etc.)
    * @param componentName the value of the "name" field in the top level component definition
    */
   def getAsPlainHtml(componentName: String): String = {
     val models = query.getModels(componentName)
-    if (models.nonEmpty) IcdToHtml.getAsPlainHtml(IcdPrinter.getAsGfm(models)) else {
-      s"<!DOCTYPE html></head><body><p>No ICD named $componentName was found in the database</p></body></html>"
-    }
+    if (models.nonEmpty)
+      IcdToHtml.getAsPlainHtml(IcdPrinter.getAsGfm(models))
+    else
+      htmlNotFound(componentName)
+  }
+
+  /**
+   * Returns an HTML document describing the ICD for the given component
+   * @param componentName the value of the "name" field in the top level component definition
+   */
+  def getAsHtml(componentName: String): String = {
+    val models = query.getModels(componentName)
+    if (models.nonEmpty)
+      IcdPrinter.getAsHtml(models)
+    else
+      htmlNotFound(componentName)
   }
 
   /**

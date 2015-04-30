@@ -11,6 +11,9 @@ GET        /icdNames             controllers.Application.icdNames
 # Gets the HTML for an ICD
 GET        /icdHtml/:name        controllers.Application.icdHtml(name: String)
 
+# Gets the PDF for an ICD
+GET        /icdPdf/:name        controllers.Application.icdPdf(name: String)
+
 # Uploads ICD files from a selected directory
 POST       /upload               controllers.FileUploadController.uploadFile
 

@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 @JSExport
 object Subsystem {
 
-  private def sel = $id("subsystem").asInstanceOf[HTMLSelectElement]
+  def sel = $id("subsystem").asInstanceOf[HTMLSelectElement]
   private val msg = "Select a subsystem"
 
   // Gets the list of top level ICDs from the server
@@ -39,7 +39,10 @@ object Subsystem {
       sel.remove(0)
 
     // XXX TODO: Display table with pub/sub info?, update sidebar
-    getSelectedSubsystem.foreach(s => println(s"You selected $s"))
+    getSelectedSubsystem.foreach(s => {
+      println(s"You selected $s")
+      val x = $id("viewIcdAsPdf")
+    })
   }
 
   // Update the Subsystem combobox options

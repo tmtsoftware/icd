@@ -1,16 +1,14 @@
 package icd.web.client
 
-import org.scalajs.dom.{FileList, Document}
-import upickle._
 import org.scalajs.dom
 import org.scalajs.dom.ext.Ajax
-import org.scalajs.dom.raw.{HTMLInputElement, HTMLSelectElement}
+import org.scalajs.dom.raw.HTMLAnchorElement
 
 import scala.concurrent.Future
 import scala.scalajs.js
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js.JSApp
-import scala.scalajs.js.annotation.{JSExport, JSExportDescendentObjects}
+import scala.scalajs.js.annotation.JSExport
 
 object IcdWebClient extends JSApp {
 
@@ -22,11 +20,6 @@ object IcdWebClient extends JSApp {
     }
   }
 
-  // Displays the PDF for the given ICD name
-  def displayIcdAsPdf(name: String): Unit = {
-    // XXX TODO
-  }
-
   // Gets the HTML for the named ICD
   def getIcdHtml(name: String): Future[String] = {
     Ajax.get(Routes.icdHtml(name)).map { r =>
@@ -34,17 +27,16 @@ object IcdWebClient extends JSApp {
     }
   }
 
+//  // Gets a link to the PDF for the selected ICD
+  def getIcdPdfLink: String = Subsystem.getSelectedSubsystem match {
+    case Some(name) => Routes.icdPdf(name)
+    case None => "#"
+  }
+
   // Called when the View ICD as HTML item is selected
   def viewIcdAsHtml(e: dom.Event) = {
     for(name <- Subsystem.getSelectedSubsystem) {
       displayIcdAsHtml(name)
-    }
-  }
-
-  // Called when the View ICD as PDF item is selected
-  def viewIcdAsPdf(e: dom.Event) = {
-    for(name <- Subsystem.getSelectedSubsystem) {
-      displayIcdAsPdf(name)
     }
   }
 
@@ -59,12 +51,17 @@ object IcdWebClient extends JSApp {
     FileUpload.init(csrfToken, inputDirSupported)
 
     $id("viewIcdAsHtml").addEventListener("click", viewIcdAsHtml _, useCapture = false)
-    $id("viewIcdAsPdf").addEventListener("click", viewIcdAsPdf _, useCapture = false)
 
+    // called when a new subsystem is selected to update some links
+    def subsystemSelected(e: dom.Event): Unit = {
+      val a = $id("viewIcdAsPdf").asInstanceOf[HTMLAnchorElement]
+      a.href = getIcdPdfLink
+    }
+    Subsystem.sel.addEventListener("change", subsystemSelected _, useCapture = false)
   }
 
 
-  // Main entry point (not used)
+  // Main entry point (not used, see init() above)
   @JSExport
   def main(): Unit = {
   }

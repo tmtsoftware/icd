@@ -1,6 +1,6 @@
 package csw.services.icd
 
-import java.io.{ File, ByteArrayInputStream, FileOutputStream }
+import java.io.{ OutputStream, File, ByteArrayInputStream, FileOutputStream }
 
 /**
  * Handles converting an ICD from HTML to PDF format
@@ -47,8 +47,18 @@ object IcdToPdf {
    * @param html the input doc in HTML format
    */
   def saveAsPdf(file: File, html: String): Unit = {
-    val document = new Document(PageSize.LETTER)
     val out = new FileOutputStream(file)
+    saveAsPdf(out, html)
+    out.close()
+  }
+
+  /**
+   * Converts the given HTML to PDF and saves it in the given file.
+   * @param out the output stream in which to save the PDF
+   * @param html the input doc in HTML format
+   */
+  def saveAsPdf(out: OutputStream, html: String): Unit = {
+    val document = new Document(PageSize.LETTER)
     val writer = PdfWriter.getInstance(document, out)
     writer.setPageEvent(PageStamper)
     document.open()
