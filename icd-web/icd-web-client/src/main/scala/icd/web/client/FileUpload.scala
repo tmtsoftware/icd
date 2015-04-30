@@ -87,16 +87,18 @@ object FileUpload {
 
     val maxFileSize = 3000000l
 
-    // Append a message to the display
-    def output(msg: String) = {
-      val m = $id(messages)
-      m.innerHTML = msg + m.innerHTML
-    }
-
-    // Adds a message to the upload messages
-    def uploadMessage(file: WebkitFile, status: String): Unit = {
+    // Adds an error message to the upload messages
+    def uploadMessage(file: WebkitFile, status: String, isError: Boolean): Unit = {
       import scalatags.JsDom.all._
-      output(div(p(strong(s"${getFilePath(file)}: $status"))).toString())
+      val m = $id(messages)
+      // XXX Probably should not display stack trace to use here...
+      val msg = if (status.trim.startsWith("<!DOCTYPE html>")) {
+        status
+      } else {
+        val msg = s"${getFilePath(file)}: $status"
+        if (isError) errorDiv(msg) else warningDiv(msg)
+      }
+      m.innerHTML = msg + m.innerHTML
     }
 
     // Clears the upload messages
@@ -139,7 +141,7 @@ object FileUpload {
 
       // list ignored files:
       for(file <- invalidFiles)
-        uploadMessage(file, "Ignored")
+        uploadMessage(file, "Ignored", isError = false)
     }
 
     // Starts the file read
@@ -156,6 +158,7 @@ object FileUpload {
       if (file.name.endsWith("zip")) "/uploadZip" else "/upload"
 
     // Starts uploading the file to the server
+    // (lastFile indicates if it is the last file in the list to be uploaded.)
     def uploadFile(file: WebkitFile, lastFile: Boolean) = {
       val xhr = new dom.XMLHttpRequest
       if (xhr.upload != null && file.size <= maxFileSize) {
@@ -177,7 +180,8 @@ object FileUpload {
             val statusMsg = if (xhr.status == 200) "Success" else xhr.statusText
             statusItem.removeClass("hide").addClass(statusClass).text(statusMsg)
           }
-          if (xhr.status != 200) uploadMessage(file, xhr.responseText)
+          if (xhr.status != 200)
+            uploadMessage(file, xhr.responseText, isError = true)
         }
 
         xhr.upload.addEventListener("progress", progressListener _, useCapture = false)

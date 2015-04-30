@@ -20,8 +20,15 @@ object Subsystem {
 
   // Gets the list of top level ICDs from the server
   private def getIcdNames: Future[List[String]] = {
+    import scalatags.JsDom.all._
     Ajax.get(Routes.icdNames).map { r =>
       read[List[String]](r.responseText)
+    }.recover {
+      case ex =>
+        // Display an error message
+        $id("contentTitle").textContent = "Internal Error"
+        $id("content").innerHTML = errorDiv("Can't get the list of ICDs from the server. The database may be down.")
+        Nil
     }
   }
 
