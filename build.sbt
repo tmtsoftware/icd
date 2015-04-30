@@ -86,12 +86,3 @@ lazy val `icd-db` = project
   compile(casbah) ++
     test(scalaTest)
   ) dependsOn icd
-
-
-// XXX Due to bugs in Intellij Idea 14.1, adding a Play subproject interferes with compilation and testing in Idea.
-// XXX Temporarilly using separate build.sbt in icd-web.
-//lazy val `icd-web` = project.enablePlugins(PlayScala)
-//  .settings(defaultSettings)
-//  .settings(libraryDependencies ++=
-//  compile(jdbc, anorm, cache, ws)
-//  ) dependsOn `icd-db`

@@ -10,7 +10,6 @@ import com.github.fge.jsonschema.core.load.download.URIDownloader
 import com.github.fge.jsonschema.core.report.{ ProcessingMessage, ProcessingReport }
 import com.github.fge.jsonschema.main.{ JsonSchema, JsonSchemaFactory }
 import com.typesafe.config.{ Config, ConfigFactory, ConfigRenderOptions, ConfigResolveOptions }
-import csw.services.icd.gfm.IcdToGfm
 
 import scala.io.Source
 
@@ -67,7 +66,7 @@ object IcdValidator {
    *            and any number of subdirectories containing ICD files
    */
   def validateRecursive(dir: File = new File(".")): List[Problem] = {
-    (dir :: subDirs(dir)).map(validate).flatten
+    (dir :: subDirs(dir)).flatMap(validate)
   }
 
   /**
@@ -82,7 +81,7 @@ object IcdValidator {
       val result = for (stdName ← stdNames) yield {
         val inputFile = new File(dir, stdName.name)
         if (!inputFile.exists()) {
-          //          List(Problem("info", s"${stdName.name} is missing in $dir"))
+          // List(Problem("info", s"${stdName.name} is missing in $dir"))
           Nil
         } else {
           val inputConfig = ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())
@@ -90,7 +89,7 @@ object IcdValidator {
           if (schemaConfig == null) {
             List(Problem("error", s"Missing schema resource: ${stdName.schema}"))
           } else {
-            validate(inputConfig, schemaConfig)
+            validate(inputConfig, schemaConfig, inputFile.toString)
           }
         }
       }
@@ -114,15 +113,38 @@ object IcdValidator {
 
   /**
    * Validates the given input config using the given schema config.
+   *
    * @param inputConfig the config to be validated against the schema
-   * @param schemaConfig a config using the JSON schema syntax (but may be simplified to HOCON format)
+   * @param fileName the name of the original file that inputConfig was made from (for error messages)
    * @return a list of problems, if any were found
    */
-  def validate(inputConfig: Config, schemaConfig: Config): List[Problem] = {
+  def validate(inputConfig: Config, fileName: String): List[Problem] = {
+    val name = new File(fileName).getName
+    StdName.stdNames.find(_.name == name) match {
+      case Some(stdName) ⇒
+        val schemaConfig = ConfigFactory.parseResources(stdName.schema)
+        if (schemaConfig == null) {
+          List(Problem("error", s"Missing schema resource: ${stdName.schema}"))
+        } else {
+          validate(inputConfig, schemaConfig, fileName)
+        }
+      case None ⇒
+        List(Problem("error", s"Invalid ICD file name: $fileName"))
+    }
+  }
+
+  /**
+   * Validates the given input config using the given schema config.
+   * @param inputConfig the config to be validated against the schema
+   * @param schemaConfig a config using the JSON schema syntax (but may be simplified to HOCON format)
+   * @param inputFileName the name of the original input file (for error messages)
+   * @return a list of problems, if any were found
+   */
+  def validate(inputConfig: Config, schemaConfig: Config, inputFileName: String): List[Problem] = {
     val jsonSchema = JsonLoader.fromString(toJson(schemaConfig))
     val schema = factory.getJsonSchema(jsonSchema)
     val jsonInput = JsonLoader.fromString(toJson(inputConfig))
-    validate(schema, jsonInput, inputConfig.origin().filename())
+    validate(schema, jsonInput, inputFileName)
   }
 
   // Runs the validation and handles any internal exceptions

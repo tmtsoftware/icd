@@ -9,6 +9,7 @@ import org.scalajs.jquery.{jQuery => $, _}
 
 @JSExport
 object FileUpload {
+  import FileUtils._
 
   // Id of file select input item
   val fileSelect= "fileSelect"
@@ -20,17 +21,49 @@ object FileUpload {
   val stdList = List("icd-model.conf", "component-model.conf", "publish-model.conf",
     "subscribe-model.conf", "command-model.conf")
 
-  // Check if file is one of the standard ICD files
-  def basename(file: dom.File): String =
-    if (file.name.contains('/'))
-      file.name.substring(file.name.lastIndexOf('/') + 1)
-    else file.name
-
   def isStdFile(file: dom.File): Boolean = stdList.contains(basename(file))
 
   @JSExport
-  // Initialize the upload callback
+  // Initialize the upload page and callback
   def init(csrfToken: String, inputDirSupported: Boolean): Unit = {
+
+    // Produce the HTML to display for the upload screen
+    def markup(csrfToken: String, inputDirSupported: Boolean) = {
+      import scalatags.JsDom.all._
+
+      // Only Chrome supports uploading8 directories. For other browsers, use zip file upload
+      val dirMsg = if (inputDirSupported)
+        "Here you can select the top level directory containing the ICD to upload."
+      else
+        "Here you can select a zip file of the top level directory containing the ICD to upload."
+      val dirLabel = if (inputDirSupported) "ICD Directory" else "Zip file containing ICD Directory"
+
+      val acceptSuffix = if (inputDirSupported) "" else ".zip,application/zip"
+      div(
+        p(dirMsg),
+        form(id := "upload", action := "/upload", "role".attr := "form",
+          "method".attr := "POST", "enctype".attr := "multipart/form-data")(
+            input(`type` := "hidden", name := "csrfToken", value := csrfToken, accept := acceptSuffix),
+            div(`class` := "panel panel-info")(
+              div(`class` := "panel-body")(
+                div(
+                  label(`for` := fileSelect, s"$dirLabel to upload:"),
+                  input(`type` := "file", id := fileSelect, name := "files[]", "webkitdirectory".attr:="webkitdirectory")
+                ),
+                div(id := "submitButton", `class` := "hide")(
+                  button(`type` := "submit")("Upload Files")
+                )
+              )
+            )
+          ),
+        div(`class` := "progress")(
+          div(id := "progress", `class` := "progress-bar progress-bar-success progress-bar-striped", "role".attr := "progressbar", "aria-valuenow".attr := "0",
+            "aria-valuemin".attr := "0", "aria-valuemax".attr := "100", style := "width: 100%", "0%")
+        ),
+        h4("Status")(span(style := "margin-left:15px;"), span(id := "status", `class` := "label hide", "Done")),
+        div(id := messages, `class` := "alert alert-info")
+      )
+    }
 
     // Called when the Upload item is selected
     def uploadSelected(e: dom.Event) = {
@@ -47,63 +80,6 @@ object FileUpload {
     $id("uploadButton").addEventListener("click", uploadSelected _, useCapture = false)
   }
 
-  // Produce the HTML to display for the upload screen
-  def markup(csrfToken: String, inputDirSupported: Boolean) = {
-    import scalatags.JsDom.all._
-
-    // Only Chrome supports uploading8 directories. For other browsers, use zip file upload
-    val dirMsg = if (inputDirSupported)
-      "Here you can select the top level directory containing the ICD to upload."
-    else
-      "Here you can select a zip file of the top level directory containing the ICD to upload."
-    val dirLabel = if (inputDirSupported) "ICD Directory" else "Zip file containing ICD Directory"
-
-    val acceptSuffix = if (inputDirSupported) "" else ".zip,application/zip"
-    div(
-      p(dirMsg),
-      form(id := "upload", action := "/upload", "role".attr := "form",
-        "method".attr := "POST", "enctype".attr := "multipart/form-data")(
-          input(`type` := "hidden", name := "csrfToken", value := csrfToken, accept := acceptSuffix),
-          div(`class` := "panel panel-info")(
-            div(`class` := "panel-heading")(h3(`class` := "panel-title", "ICD Upload")),
-            div(`class` := "panel-body")(
-              div(
-                label(`for` := fileSelect, s"$dirLabel to upload:"),
-                input(`type` := "file", id := fileSelect, name := "files[]", "webkitdirectory".attr:="webkitdirectory")
-              ),
-              div(id := "submitButton", `class` := "hide")(
-                button(`type` := "submit")("Upload Files")
-              )
-            )
-          )
-        ),
-      div(`class` := "progress")(
-        div(id := "progress", `class` := "progress-bar progress-bar-success progress-bar-striped", "role".attr := "progressbar", "aria-valuenow".attr := "0",
-          "aria-valuemin".attr := "0", "aria-valuemax".attr := "100", style := "width: 100%", "0%")
-      ),
-      h4("Status Messages")(span(style := "margin-left:15px;"), span(id := "status", `class` := "label hide", "Done")),
-      div(id := messages, `class` := "alert alert-info")
-    )
-  }
-
-  // Extend js objects to add missing fields
-  // (These can't be defined inside a def).
-  trait EventTargetExt extends dom.EventTarget {
-    var files: dom.FileList = js.native
-  }
-
-  trait EventExt extends dom.Event {
-    var dataTransfer: dom.DataTransfer = js.native
-    var loaded: Int = js.native
-    var total: Int = js.native
-  }
-
-  // Add unsupported method: File.webkitRelativePath
-  // Note that this only works on webkit browsers: Safari, Chrome.
-  trait WebkitFile extends dom.File {
-    def webkitRelativePath: String = js.native
-  }
-
   // Called once the file upload screen has been displayed
   def ready(inputDirSupported: Boolean): Unit = {
     implicit def monkeyizeEventTarget(e: dom.EventTarget): EventTargetExt = e.asInstanceOf[EventTargetExt]
@@ -117,84 +93,101 @@ object FileUpload {
       m.innerHTML = msg + m.innerHTML
     }
 
-    def getFilePath(file: WebkitFile): String = {
-      if (inputDirSupported) file.webkitRelativePath else file.name
-    }
-
-    def isValidFile(file: dom.File): Boolean =
-      if (inputDirSupported) isStdFile(file) else file.name.endsWith(".zip")
-
+    // Adds a message to the upload messages
     def uploadMessage(file: WebkitFile, status: String): Unit = {
       import scalatags.JsDom.all._
       output(div(p(strong(s"${getFilePath(file)}: $status"))).toString())
     }
 
-    // Called when a file selection has been made
-    def fileSelectHandler(e: dom.Event) = {
+    // Clears the upload messages
+    def clearUploadMessages(): Unit = {
+      val m = $id(messages)
+      m.innerHTML = ""
+    }
+
+    // Gets the full path, if supported (webkit/chrome), otherwise the simple file name
+    def getFilePath(file: WebkitFile): String = {
+      if (inputDirSupported) file.webkitRelativePath else file.name
+    }
+
+    // Returns true if the file is a valid ICD file name
+    def isValidFile(file: dom.File): Boolean =
+      if (inputDirSupported) isStdFile(file) else file.name.endsWith(".zip")
+
+    // Returns a pair of lists containing the valid and invalid ICD files
+    def getIcdFiles(e: dom.Event): (Seq[WebkitFile], Seq[WebkitFile]) = {
       val files = e.target.files
       val fileList = for(i <- 0 until files.length) yield files(i).asInstanceOf[WebkitFile]
-      val stdList = fileList.filter(isValidFile)
-      for((file, i) <- stdList.zipWithIndex) {
+      fileList.partition(isValidFile)
+    }
+
+    val statusItem = $("#status")
+
+    // Called when a file selection has been made
+    def fileSelectHandler(e: dom.Event): Unit = {
+      clearUploadMessages()
+      statusItem.removeClass("label-danger")
+      val (validFiles, invalidFiles) = getIcdFiles(e)
+      for((file, i) <- validFiles.zipWithIndex) {
         try {
           parseFile(file)
-          uploadFile(file, i == stdList.size - 1)
+          uploadFile(file, i == validFiles.size - 1)
         } catch {
           case e: Throwable => println(e)
         }
       }
 
       // list ignored files:
-      for(file <- fileList.filterNot(isValidFile))
+      for(file <- invalidFiles)
         uploadMessage(file, "Ignored")
     }
 
     // Starts the file read
     def parseFile(file: WebkitFile) = {
-      import scalatags.JsDom.all._
-      println(s"XXX parse ${file.name}")
       val reader = new FileReader()
-      reader.onload = (e: dom.UIEvent) => {
-        uploadMessage(file, "OK")
-      }
       if (file.name.endsWith(".zip"))
         reader.readAsDataURL(file)
       else
         reader.readAsText(file)
     }
 
+    // Returns the server action to use to upload the given file
+    def actionFor(file: WebkitFile): String =
+      if (file.name.endsWith("zip")) "/uploadZip" else "/upload"
+
     // Starts uploading the file to the server
     def uploadFile(file: WebkitFile, lastFile: Boolean) = {
-      println(s"XXX uploadFile ${file.name}")
       val xhr = new dom.XMLHttpRequest
       if (xhr.upload != null && file.size <= maxFileSize) {
-
-        xhr.upload.addEventListener("progress", (e: dom.Event) => {
-          val pc = e.loaded / e.total * 100
-          $("#progress").css("with", pc + "%").attr("aria-valuenow", pc.toString)
-            .html(s"${getFilePath(file)} ($pc %)")
-        }, useCapture = false)
-
-        xhr.onreadystatechange = (e: dom.Event) => {
-          if (xhr.readyState == dom.XMLHttpRequest.UNSENT) {
-            $("#status").addClass("hide")
-          } else if (xhr.readyState == dom.XMLHttpRequest.DONE) {
-            val statusClass = if (xhr.status == 200) "label-success" else "label-danger"
-            val statusMsg = if (xhr.status == 200) "Success" else "Error " + xhr.statusText
-            $("#status").removeClass("hide").addClass(statusClass).text(statusMsg)
-          }
-        }
-        //start upload
-        val action = if (file.name.endsWith("zip")) "/uploadZip" else "/upload"
-        xhr.open("POST", action, async = true)
+        xhr.open("POST", actionFor(file), async = true)
         xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest")
         xhr.setRequestHeader("X-Last-File", lastFile.toString)
-        try { // XXX TODO: try compare with "undefined" on safari
-          xhr.setRequestHeader("X-FILENAME", getFilePath(file))
-        } catch {
-          case e: Throwable => // ignore if not defined (only defined for Chrome)
+        xhr.setRequestHeader("X-FILENAME", getFilePath(file))
+
+        // Updates progress bar during upload
+        def progressListener(e: dom.Event): Unit = {
+          val pc = e.loaded / e.total * 100
+          $("#progress").css("with", pc + "%").attr("aria-valuenow", pc.toString).html(s"${getFilePath(file)} ($pc %)")
         }
+
+        // Displays status after upload complete
+        def onloadListener(e: dom.Event) = {
+          val statusClass = if (xhr.status == 200) "label-success" else "label-danger"
+          if (!statusItem.hasClass("label-danger")) {
+            val statusMsg = if (xhr.status == 200) "Success" else xhr.statusText
+            statusItem.removeClass("hide").addClass(statusClass).text(statusMsg)
+          }
+          if (xhr.status != 200) uploadMessage(file, xhr.responseText)
+        }
+
+        xhr.upload.addEventListener("progress", progressListener _, useCapture = false)
+        xhr.onload = onloadListener _
+
+
+        //start upload
+        statusItem.addClass("hide")
         xhr.send(file)
-      } else {
+      } else if (file.size > maxFileSize) {
         dom.alert(s"${file.name} is too large")
       }
     }
@@ -203,119 +196,4 @@ object FileUpload {
   }
 }
 
-class FileReader() extends dom.EventTarget {
-
-  import dom._
-
-  /**
-   * A DOMError representing the error that occurred while reading the file.
-   *
-   * MDN
-   */
-  def error: DOMError = js.native
-
-  /**
-   * A number indicating the state of the FileReader. This will be one of the State constants.
-   * EMPTY   : 0 : No data has been loaded yet.
-   * LOADING : 1 : Data is currently being loaded.
-   * DONE    : 2 : The entire read request has been completed.
-   *
-   * MDN
-   */
-  def readyState: Short = js.native
-
-  /**
-   * The file's contents. This property is only valid after the read operation is
-   * complete, and the format of the data depends on which of the methods was used to
-   * initiate the read operation.
-   *
-   * MDN
-   */
-  def result: js.Any = js.native
-
-  /**
-   * A handler for the abort event. This event is triggered each time the reading
-   * operation is aborted.
-   *
-   * MDN
-   */
-  var onabort: js.Function1[Event, _] = js.native
-
-  /**
-   * A handler for the error event. This event is triggered each time the reading
-   * operation encounter an error.
-   *
-   * MDN
-   */
-  var onerror: js.Function1[Event, _] = js.native
-
-  /**
-   * A handler for the load event. This event is triggered each time the reading
-   * operation is successfully completed.
-   *
-   * MDN
-   */
-  var onload: js.Function1[UIEvent, _] = js.native
-
-  /**
-   * A handler for the loadstart event. This event is triggered each time the reading
-   * is starting.
-   *
-   * MDN
-   */
-  var onloadstart: js.Function1[ProgressEvent, _] = js.native
-
-  /**
-   * A handler for the loadend event. This event is triggered each time the reading
-   * operation is completed (either in success or failure).
-   *
-   * MDN
-   */
-  var onloadend: js.Function1[ProgressEvent, _] = js.native
-
-  /**
-   * A handler for the progress event. This event is triggered while reading
-   * a Blob content.
-   *
-   * MDN
-   */
-  var onprogress: js.Function1[ProgressEvent, _] = js.native
-
-  /**
-   * Aborts the read operation. Upon return, the readyState will be DONE.
-   *
-   * MDN
-   */
-  def abort(): Unit = js.native
-
-  /**
-   * The readAsArrayBuffer method is used to starts reading the contents of the
-   * specified Blob or File. When the read operation is finished, the readyState
-   * becomes DONE, and the loadend is triggered. At that time, the result attribute
-   * contains an ArrayBuffer representing the file's data.
-   *
-   * MDN
-   */
-  def readAsArrayBuffer(blob: Blob): Unit = js.native
-
-  /**
-   * The readAsDataURL method is used to starts reading the contents of the specified
-   * Blob or File. When the read operation is finished, the readyState becomes DONE, and
-   * the loadend is triggered. At that time, the result attribute contains a data: URL
-   * representing the file's data as base64 encoded string.
-   *
-   * MDN
-   */
-  def readAsDataURL(blob: Blob): Unit = js.native
-
-  /**
-   * The readAsText method is used to read the contents of the specified Blob or File.
-   * When the read operation is complete, the readyState is changed to DONE, the loadend
-   * is triggered, and the result attribute contains the contents of the file as a text string.
-   *
-   * MDN
-   */
-  def readAsText(blob: Blob, encoding: String = "UTF-8"): Unit = js.native
-
-}
 

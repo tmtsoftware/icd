@@ -4,9 +4,9 @@ import java.io.{InputStreamReader, File}
 import java.util.zip.{ZipEntry, ZipFile}
 
 import com.typesafe.config.{Config, ConfigFactory}
-import csw.services.icd.StdName
+import csw.services.icd.{IcdValidator, StdName}
 import csw.services.icd.db.IcdDb
-import play.api.libs.iteratee.{Concurrent, Enumerator, Iteratee}
+import play.api.libs.iteratee.{Concurrent, Iteratee}
 import play.api.mvc.{WebSocket, Result, Action, Controller}
 
 object FileUploadController extends Controller {
@@ -49,7 +49,10 @@ object FileUploadController extends Controller {
     // Check that the file name is one of the standard names
     if (stdSet.contains(file.getName)) {
       log.info(s"file upload: $file")
-      ingestConfig(ConfigFactory.parseString(contents), file.toString)
+      ingestConfig(ConfigFactory.parseString(contents), file.toString) match {
+        case Some(msg) => NotAcceptable(msg)
+        case None => Ok("Files ingested")
+      }
     } else {
       val msg = s"${file.getName} is not a standard ICD file name"
       log.error(msg)
@@ -57,13 +60,21 @@ object FileUploadController extends Controller {
     }
   }
 
-  // Ingest the given config (part of an ICD) into the database
-  private def ingestConfig(config: Config, path: String): Result = {
+  // Ingest the given config (part of an ICD) into the database and return an error message,
+  // if there is a problem
+  private def ingestConfig(config: Config, path: String): Option[String] = {
     log.info(s"XXX ingestConfig $path")
-    val db = IcdDb("test") // XXX reuse or pass as param
-    db.ingestConfig(getCollectionName(path), config)
-    db.close()
-    Ok("File uploaded")
+    val problems = IcdValidator.validate(config, path)
+    if (problems.isEmpty) {
+      val db = IcdDb("test") // XXX reuse or pass as param
+      db.ingestConfig(getCollectionName(path), config)
+      db.close()
+      None
+    } else {
+      val msg = problems.map(_.errorMessage()).mkString("\n")
+      log.error(s"ICD schema validation error: $msg")
+      Some(msg)
+    }
   }
 
   // Uploads/ingests the ICD files together in a zip file
@@ -72,13 +83,15 @@ object FileUploadController extends Controller {
     log.info(s"XXX uploadZipFile")
     val zipFile = new ZipFile(request.body.file)
     def isValid(f: ZipEntry) = stdSet.contains(new File(f.getName).getName)
-    zipFile.entries().filter(isValid).foreach { e =>
-      ingestConfig(
-        ConfigFactory.parseReader(new InputStreamReader(zipFile.getInputStream(e))),
-        e.getName)
-    }
+    val entries = zipFile.entries().filter(isValid)
+    val results = for (e <- entries) yield ingestConfig(
+        ConfigFactory.parseReader(new InputStreamReader(zipFile.getInputStream(e))), e.getName)
     wsChannel.push("update")
-    Ok(s"Files uploaded")
+    val errors = results.flatten
+    if (errors.isEmpty)
+      Ok("Files ingested")
+    else
+      NotAcceptable(errors.map(e => s"<p>$e</p>").mkString("\n"))
   }
 
   // Websocket used to notify client when upload is complete

@@ -33,9 +33,9 @@ class IcdValidatorTests extends FunSuite {
   }
 
   def runTest(good: Config, bad: Config, schema: Config): Unit = {
-    checkResult(validate(good, schema))
-    val problems1 = validate(bad, schema)
-    assert(problems1.length != 0)
+    checkResult(validate(good, schema, good.origin().filename()))
+    val problems1 = validate(bad, schema, bad.origin().filename())
+    assert(problems1.nonEmpty)
   }
 
   def runTest(good: String, bad: String, schema: String): Unit = {
