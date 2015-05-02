@@ -17,6 +17,8 @@ object FileUpload {
   // id of messages item
   val messages = "messages"
 
+  val errorSet = Set("error", "fatal")
+
   // standard ICD file names (See StdName class in icd-db. Reuse here?)
   val stdList = List("icd-model.conf", "component-model.conf", "publish-model.conf",
     "subscribe-model.conf", "command-model.conf")
@@ -39,7 +41,7 @@ object FileUpload {
       val dirLabel = if (inputDirSupported) "ICD Directory" else "Zip file containing ICD Directory"
 
       val acceptSuffix = if (inputDirSupported) "" else ".zip,application/zip"
-      div(
+      div(cls := "container",
         p(dirMsg),
         form(id := "upload", action := "/upload", "role".attr := "form",
           "method".attr := "POST", "enctype".attr := "multipart/form-data")(
@@ -57,10 +59,16 @@ object FileUpload {
             )
           ),
         div(`class` := "progress")(
-          div(id := "progress", `class` := "progress-bar progress-bar-success progress-bar-striped", "role".attr := "progressbar", "aria-valuenow".attr := "0",
-            "aria-valuemin".attr := "0", "aria-valuemax".attr := "100", style := "width: 100%", "0%")
+          div(id := "progress", `class` := "progress-bar progress-bar-info progress-bar-striped",
+            "role".attr := "progressbar", "aria-valuenow".attr := "0", "aria-valuemin".attr := "0",
+            "aria-valuemax".attr := "100", style := "width: 100%", "0%")
         ),
-        h4("Status")(span(style := "margin-left:15px;"), span(id := "status", `class` := "label hide", "Done")),
+        h4("Status")(
+          span(style := "margin-left:15px;"),
+          span(id := "busyStatus", cls := "glyphicon glyphicon-refresh glyphicon-refresh-animate hide"),
+          span(style := "margin-left:15px;"),
+          span(id := "status", `class` := "label", "Working...")
+        ),
         div(id := messages, `class` := "alert alert-info")
       )
     }
@@ -87,22 +95,27 @@ object FileUpload {
 
     val maxFileSize = 3000000l
 
-    // Adds an error message to the upload messages
-    def uploadMessage(file: WebkitFile, status: String, isError: Boolean): Unit = {
-      import scalatags.JsDom.all._
+    var problemSet = Set[Problem]()
+
+    // Adds an error (or warning) message to the upload messages
+    def displayProblem(problem: Problem): Unit = {
       val m = $id(messages)
-      // XXX Probably should not display stack trace to use here...
-      val msg = if (status.trim.startsWith("<!DOCTYPE html>")) {
-        status
-      } else {
-        val msg = s"${getFilePath(file)}: $status"
-        if (isError) errorDiv(msg) else warningDiv(msg)
+      if (m != null && problem.message != null && !problemSet.contains(problem)) {
+        val msg = if (problem.message.trim.startsWith("<!DOCTYPE html>")) {
+          problem.message
+        } else {
+          if (errorSet.contains(problem.severity))
+            errorDiv(problem.message)
+          else
+            warningDiv(problem.message)
+        }
+        problemSet += problem
+        m.innerHTML = msg + m.innerHTML
       }
-      m.innerHTML = msg + m.innerHTML
     }
 
-    // Clears the upload messages
-    def clearUploadMessages(): Unit = {
+    // Clears the problem messages display
+    def clearProblems(): Unit = {
       val m = $id(messages)
       m.innerHTML = ""
     }
@@ -124,10 +137,11 @@ object FileUpload {
     }
 
     val statusItem = $("#status")
+    val busyStatusItem = $("#busyStatus")
 
     // Called when a file selection has been made
     def fileSelectHandler(e: dom.Event): Unit = {
-      clearUploadMessages()
+      clearProblems()
       statusItem.removeClass("label-danger")
       val (validFiles, invalidFiles) = getIcdFiles(e)
       for((file, i) <- validFiles.zipWithIndex) {
@@ -141,7 +155,7 @@ object FileUpload {
 
       // list ignored files:
       for(file <- invalidFiles)
-        uploadMessage(file, "Ignored", isError = false)
+        displayProblem(Problem("warning", s"${getFilePath(file)}: Ignored"))
     }
 
     // Starts the file read
@@ -170,26 +184,30 @@ object FileUpload {
         // Updates progress bar during upload
         def progressListener(e: dom.Event): Unit = {
           val pc = e.loaded / e.total * 100
-          $("#progress").css("with", pc + "%").attr("aria-valuenow", pc.toString).html(s"${getFilePath(file)} ($pc %)")
+          $("#progress").css("width", pc + "%").attr("aria-valuenow", pc.toString).html(s"${getFilePath(file)} ($pc %)")
         }
 
         // Displays status after upload complete
         def onloadListener(e: dom.Event) = {
+          busyStatusItem.addClass("hide")
           val statusClass = if (xhr.status == 200) "label-success" else "label-danger"
           if (!statusItem.hasClass("label-danger")) {
             val statusMsg = if (xhr.status == 200) "Success" else xhr.statusText
-            statusItem.removeClass("hide").addClass(statusClass).text(statusMsg)
+            statusItem.removeClass("label-default").addClass(statusClass).text(statusMsg)
           }
-          if (xhr.status != 200)
-            uploadMessage(file, xhr.responseText, isError = true)
+          if (xhr.status != 200) {
+            val problems = upickle.read[List[Problem]](xhr.responseText)
+            for(problem <- problems)
+              displayProblem(problem)
+          }
         }
 
         xhr.upload.addEventListener("progress", progressListener _, useCapture = false)
         xhr.onload = onloadListener _
 
-
         //start upload
-        statusItem.addClass("hide")
+        statusItem.addClass("label-default").text("Working...")
+        busyStatusItem.removeClass("hide")
         xhr.send(file)
       } else if (file.size > maxFileSize) {
         dom.alert(s"${file.name} is too large")

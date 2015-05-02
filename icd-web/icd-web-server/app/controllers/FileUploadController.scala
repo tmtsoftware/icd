@@ -5,17 +5,30 @@ import java.util.zip.{ZipEntry, ZipFile}
 
 import com.mongodb.MongoTimeoutException
 import com.typesafe.config.{Config, ConfigFactory}
-import csw.services.icd.{IcdValidator, StdName}
+import csw.services.icd.{Problem, IcdValidator, StdName}
 import csw.services.icd.db.IcdDb
+import play.Play
 import play.api.libs.iteratee.{Concurrent, Iteratee}
 import play.api.mvc.{WebSocket, Result, Action, Controller}
+import play.api.libs.json._
 
 object FileUploadController extends Controller {
 
-  val log = play.Logger.of("application") //same as play.Logger
+  val log = play.Logger.of("application")
+  //same as play.Logger
   val stdSet = StdName.stdNames.map(_.name).toSet
   val (wsEnumerator, wsChannel) = Concurrent.broadcast[String]
 
+  val databaseName = Play.application().configuration().getString("database.name")
+  val db = IcdDb(databaseName)
+
+  // Converts a Problem (returned from ICD validate method) to JSON
+  implicit val problemWrites = new Writes[Problem] {
+    def writes(problem: Problem) = Json.obj(
+      "severity" -> problem.severity,
+      "message" -> problem.message
+    )
+  }
 
   // Gets the database collection name for the given relative file path
   private def getCollectionName(path: String): String = {
@@ -36,7 +49,7 @@ object FileUploadController extends Controller {
     } else {
       val msg = "Missing X-FILENAME header"
       log.error(msg)
-      BadRequest(msg)
+      BadRequest(Json.toJson(List(Problem("error", msg))))
     }
     log.info(s"XXX last = ${request.headers.get("X-Last-File")}")
     if (request.headers.get("X-Last-File").getOrElse("") == "true")
@@ -50,40 +63,36 @@ object FileUploadController extends Controller {
     // Check that the file name is one of the standard names
     if (stdSet.contains(file.getName)) {
       log.info(s"file upload: $file")
-      try ingestConfig(ConfigFactory.parseString(contents), file.toString) match {
-        case Some(msg) => NotAcceptable(msg)
-        case None => Ok(file.toString)
-      }
-      catch handleExceptions
+      try {
+        val problems = ingestConfig(ConfigFactory.parseString(contents), file.toString)
+        if (problems.isEmpty) Ok(Json.toJson(Nil)) else NotAcceptable(Json.toJson(problems))
+      } catch handleExceptions
     } else {
-      val msg = s"${file.getName} is not a standard ICD file name"
-      log.error(msg)
-      NotAcceptable(msg)
+      val problem = Problem("error", s"${file.getName} is not a standard ICD file name")
+      NotAcceptable(Json.toJson(List(problem)))
     }
   }
 
   val handleExceptions: PartialFunction[Throwable, Result] = {
     case e: MongoTimeoutException =>
-      log.error("Database seems to be down", e)
-      ServiceUnavailable(s"Database seems to be down")
+      val msg = "Database seems to be down"
+      log.error(msg, e)
+      ServiceUnavailable(Json.toJson(List(Problem("error", msg))))
     case t: Throwable =>
-      log.error(s"Internal error", t)
-      InternalServerError(s"Internal server error")
+      val msg = "Internal error"
+      log.error(msg)
+      InternalServerError(Json.toJson(List(Problem("error", msg))))
   }
 
   // Ingest the given config (part of an ICD) into the database and return an error message,
   // if there is a problem
-  private def ingestConfig(config: Config, path: String): Option[String] = {
+  private def ingestConfig(config: Config, path: String): List[Problem] = {
     val problems = IcdValidator.validate(config, path)
     if (problems.isEmpty) {
-      val db = IcdDb("test") // XXX reuse or pass as param
       db.ingestConfig(getCollectionName(path), config)
-      db.close()
-      None
+      Nil
     } else {
-      val msg = problems.map(_.errorMessage()).mkString("\n")
-      log.error(s"ICD schema validation error: $msg")
-      Some(msg)
+      problems
     }
   }
 
@@ -100,11 +109,12 @@ object FileUploadController extends Controller {
         ingestConfig(config, e.getName)
       }
       wsChannel.push("update")
-      val errors = results.flatten
+      val errors = results.flatten.toList
+      // XXX TODO FIXME: Return a JSON object with list of error messages (Problem instances?)!
       if (errors.isEmpty)
-        Ok("Files ingested")
+        Ok(Json.toJson(Nil))
       else
-        NotAcceptable(errors.map(e => s"<p>$e</p>").mkString("\n"))
+        NotAcceptable(Json.toJson(errors))
     } catch handleExceptions
   }
 
