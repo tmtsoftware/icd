@@ -10,6 +10,12 @@ import org.scalajs.dom._
 package object client {
   def $id(s: String) = dom.document.getElementById(s)
 
+  // Sets the title and HTML content of the main section of the page
+  def setContent(title: String, content: String): Unit = {
+    $id("contentTitle").textContent = title
+    $id("content").innerHTML = content
+  }
+
   // Returns an HTML div containing the given error message
   def errorDiv(msg: String): String = {
     import scalatags.JsDom.all._
@@ -33,5 +39,15 @@ package object client {
    */
   case class Problem(severity: String, message: String) {
     def errorMessage(): String = s"$severity: $message"
+  }
+
+  /**
+   * Removes all the children from the given HTML element
+   */
+  def clearElement(elem: Element): Unit = {
+    val children = elem.childNodes
+    for (i <- (0 until children.length).reverse) {
+      elem.removeChild(children(i))
+    }
   }
 }

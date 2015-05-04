@@ -27,7 +27,8 @@ class IcdDbTests extends FunSuite {
 
     // query the DB
     assert(db.query.getComponentNames == List("NFIRAOS", "envCtrl", "lgsWfs", "nacqNhrwfs", "ndme"))
-    assert(db.query.getAssemblyNames == List("envCtrl", "lgsWfs", "nacqNhrwfs", "ndme"))
+    assert(db.query.getComponentNames("NFIRAOS") == List("envCtrl", "lgsWfs", "nacqNhrwfs", "ndme"))
+    assert(db.query.getAssemblyNames == List("NFIRAOS", "envCtrl", "lgsWfs", "nacqNhrwfs", "ndme"))
     assert(db.query.getHcdNames == List())
     assert(db.query.getIcdNames == List("NFIRAOS"))
 

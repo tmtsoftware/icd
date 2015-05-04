@@ -122,14 +122,6 @@ case class IcdDbQuery(db: MongoDB) {
     ComponentModel(getConfig(json))
   }
 
-  /**
-   * Returns a list of all component model objects, one for each component ICD in the database
-   */
-  def getComponents: List[ComponentModel] = {
-    for (entry ← getEntries if entry.component.isDefined)
-      yield jsonToComponentModel(db(entry.component.get).head.toString)
-  }
-
   // Returns an IcdEntry object for the given component name, if found
   private def entryForComponentName(name: String): Option[IcdEntry] = {
     val list = for (entry ← getEntries if entry.component.isDefined) yield {
@@ -161,9 +153,32 @@ case class IcdDbQuery(db: MongoDB) {
     queryComponents("componentType" -> componentType)
 
   /**
+   * Returns a list of all component model objects, one for each component ICD in the database
+   */
+  def getComponents: List[ComponentModel] = {
+    for (entry ← getEntries if entry.component.isDefined)
+      yield jsonToComponentModel(db(entry.component.get).head.toString)
+  }
+
+  /**
    * Returns a list of all the component names in the DB
    */
   def getComponentNames: List[String] = getComponents.map(_.name)
+
+  /**
+   * Returns a list of all the subcomponent names in the DB belonging to the given ICD
+   */
+  def getComponentNames(icdName: String): List[String] = {
+    db.collectionNames()
+      .filter(_.endsWith(componentFileNames.modelBaseName))
+      .map(IcdPath)
+      .filter(p ⇒ p.icd == icdName && p.parts.length > 2)
+      .map(_.path)
+      .map(db(_).head.toString)
+      .map(jsonToComponentModel(_).name)
+      .toList
+      .sorted
+  }
 
   /**
    * Returns a list of all the assembly ICDs in the database

@@ -15,8 +15,7 @@ object IcdWebClient extends JSApp {
   // Displays the HTML for the given ICD name
   def displayIcdAsHtml(name: String): Unit = {
     getIcdHtml(name).map { doc =>
-      $id("contentTitle").textContent = s"ICD: $name"
-      $id("content").innerHTML = doc
+      setContent(s"ICD: $name", doc)
     }
   }
 

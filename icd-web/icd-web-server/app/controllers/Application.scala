@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream
 
 import csw.services.icd.IcdToPdf
 import csw.services.icd.db.{IcdDbPrinter, IcdDb}
+import play.Play
 import play.api._
 import play.api.mvc._
 import play.filters.csrf.CSRFAddToken
@@ -12,6 +13,8 @@ import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
 object Application extends Controller {
+  val databaseName = Play.application().configuration().getString("database.name")
+  val db = IcdDb(databaseName)
 
   def index = CSRFAddToken {
     Action { implicit request =>
@@ -25,25 +28,28 @@ object Application extends Controller {
    * Gets a list of top level ICD names
    */
   def icdNames = Action {
-    val db = IcdDb("test") // XXX TODO configure
     val names = db.query.getIcdNames
-    db.close()
     Ok(Json.toJson(names))
   }
 
+  /**
+   * Gets a list of components belonging the given ICD
+   */
+  def icdComponents(name: String) = Action {
+    val names = db.query.getComponentNames(name)
+    Ok(Json.toJson(names))
+  }
+
+
   // Gets the HTML for the named ICD (without inserting any CSS)
   private def getAsPlainHtml(name: String): String = {
-    val db = IcdDb("test") // XXX TODO configure
     val html = IcdDbPrinter(db.query).getAsPlainHtml(name)
-    db.close()
     html
   }
 
   // Gets the HTML for the named ICD
   private def getAsHtml(name: String): String = {
-    val db = IcdDb("test") // XXX TODO configure
     val html = IcdDbPrinter(db.query).getAsHtml(name)
-    db.close()
     html
   }
 

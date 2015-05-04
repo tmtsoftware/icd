@@ -16,6 +16,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object Subsystem {
 
   def sel = $id("subsystem").asInstanceOf[HTMLSelectElement]
+
   private val msg = "Select a subsystem"
 
   // Gets the list of top level ICDs from the server
@@ -25,12 +26,29 @@ object Subsystem {
       read[List[String]](r.responseText)
     }.recover {
       case ex =>
-        // Display an error message
-        $id("contentTitle").textContent = "Internal Error"
-        $id("content").innerHTML = errorDiv("Can't get the list of ICDs from the server. The database may be down.")
+        displayInternalError(ex)
         Nil
     }
   }
+
+  // Gets the list of subcomponents for the selected ICD
+  private def getComponentNames(icdName: String): Future[List[String]] = {
+    import scalatags.JsDom.all._
+    Ajax.get(Routes.icdComponents(icdName)).map { r =>
+      read[List[String]](r.responseText)
+    }.recover {
+      case ex =>
+        displayInternalError(ex)
+        Nil
+    }
+  }
+
+  private def displayInternalError(ex: Throwable): Unit = {
+    // Display an error message
+    println(s"Internal error: $ex")
+    setContent("Internal Error", errorDiv("Can't get the list of ICDs from the server. The database may be down."))
+  }
+
 
   // Gets the currently selected subsystem name
   def getSelectedSubsystem: Option[String] =
@@ -45,11 +63,14 @@ object Subsystem {
     if (sel.options.length > 1 && sel.options(0).value == msg)
       sel.remove(0)
 
-    // XXX TODO: Display table with pub/sub info?, update sidebar
-    getSelectedSubsystem.foreach(s => {
-      println(s"You selected $s")
-      val x = $id("viewIcdAsPdf")
-    })
+    Sidebar.clearComponents()
+
+    getSelectedSubsystem.foreach { subsystem =>
+      Sidebar.addComponent(subsystem)
+      getComponentNames(subsystem).foreach { names =>
+        names.foreach(Sidebar.addComponent)
+      }
+    }
   }
 
   // Update the Subsystem combobox options

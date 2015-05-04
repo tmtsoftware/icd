@@ -18,9 +18,7 @@ object FileUploadController extends Controller {
   //same as play.Logger
   val stdSet = StdName.stdNames.map(_.name).toSet
   val (wsEnumerator, wsChannel) = Concurrent.broadcast[String]
-
-  val databaseName = Play.application().configuration().getString("database.name")
-  val db = IcdDb(databaseName)
+  lazy val db = Application.db
 
   // Converts a Problem (returned from ICD validate method) to JSON
   implicit val problemWrites = new Writes[Problem] {

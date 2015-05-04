@@ -3,27 +3,30 @@
 # ~~~~
 
 # Home page
-GET        /                     controllers.Application.index
+GET         /                           controllers.Application.index
 
 # Gets a list of top level ICD names
-GET        /icdNames             controllers.Application.icdNames
+GET         /icdNames                   controllers.Application.icdNames
+
+# Gets a list of components belonging to the given ICD
+GET         /icdComponents/:name        controllers.Application.icdComponents(name)
 
 # Gets the HTML for an ICD
-GET        /icdHtml/:name        controllers.Application.icdHtml(name: String)
+GET         /icdHtml/:name              controllers.Application.icdHtml(name: String)
 
 # Gets the PDF for an ICD
-GET        /icdPdf/:name        controllers.Application.icdPdf(name: String)
+GET         /icdPdf/:name               controllers.Application.icdPdf(name: String)
 
 # Uploads ICD files from a selected directory
-POST       /upload               controllers.FileUploadController.uploadFile
+POST        /upload                     controllers.FileUploadController.uploadFile
 
 # Uploads ICD files from from a zip file of the ICD directory
-POST       /uploadZip            controllers.FileUploadController.uploadZipFile
+POST        /uploadZip                  controllers.FileUploadController.uploadZipFile
 
 # Websocket to notify client when DB has changed
-GET        /ws                   controllers.FileUploadController.ws
+GET         /ws                         controllers.FileUploadController.ws
 
 # Map static resources from the /public folder to the /assets URL path
-GET        /assets/*file         controllers.Assets.at(path="/public", file)
+GET         /assets/*file               controllers.Assets.at(path="/public", file)
 
-GET        /webjars/*file        controllers.WebJarAssets.at(file)
+GET         /webjars/*file              controllers.WebJarAssets.at(file)

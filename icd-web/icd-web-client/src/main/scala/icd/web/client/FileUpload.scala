@@ -41,6 +41,7 @@ object FileUpload {
       val dirLabel = if (inputDirSupported) "ICD Directory" else "Zip file containing ICD Directory"
 
       val acceptSuffix = if (inputDirSupported) "" else ".zip,application/zip"
+
       div(cls := "container",
         p(dirMsg),
         form(id := "upload", action := "/upload", "role".attr := "form",
@@ -75,13 +76,7 @@ object FileUpload {
 
     // Called when the Upload item is selected
     def uploadSelected(e: dom.Event) = {
-      val content = $id("content")
-      val children = content.childNodes
-      for (i <- (0 until children.length).reverse) {
-        content.removeChild(children(i))
-      }
-      $id("contentTitle").textContent = "Upload ICD"
-      $id("content").appendChild(markup(csrfToken, inputDirSupported).render)
+      setContent("Upload ICD", markup(csrfToken, inputDirSupported).toString())
       ready(inputDirSupported)
     }
 
