@@ -6,8 +6,6 @@ import java.util.zip.{ZipEntry, ZipFile}
 import com.mongodb.MongoTimeoutException
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd.{Problem, IcdValidator, StdName}
-import csw.services.icd.db.IcdDb
-import play.Play
 import play.api.libs.iteratee.{Concurrent, Iteratee}
 import play.api.mvc.{WebSocket, Result, Action, Controller}
 import play.api.libs.json._

@@ -11,6 +11,9 @@ GET         /icdNames                   controllers.Application.icdNames
 # Gets a list of components belonging to the given ICD
 GET         /icdComponents/:name        controllers.Application.icdComponents(name)
 
+# Gets information about a given ICD component
+GET         /componentInfo/:name        controllers.Application.componentInfo(name)
+
 # Gets the HTML for an ICD
 GET         /icdHtml/:name              controllers.Application.icdHtml(name: String)
 

@@ -3,6 +3,7 @@ package csw.services.icd.db
 import java.io.File
 
 import csw.services.icd.db.IcdDbQuery.{ Events, Telemetry }
+import csw.services.icd.model.IcdModels
 import org.scalatest.{ DoNotDiscover, FunSuite }
 
 /**
@@ -82,6 +83,10 @@ class IcdDbTests extends FunSuite {
     assert(sensorList.head.prefix == "nfiraos.ncc.assembly.envCtrl")
     assert(sensorList.head.name == "sensors")
 
+
+    // Test accessing ICD models
+    testModels(db)
+
     // Test saving document from the database
     IcdDbPrinter(db.query).saveToFile(envCtrl.name, new File("envCtrl.pdf"))
     IcdDbPrinter(db.query).saveToFile("NFIRAOS", new File("NFIRAOS.pdf"))
@@ -137,6 +142,20 @@ class IcdDbTests extends FunSuite {
     }
 
     db.dropDatabase()
+  }
+
+
+  // Just trying out stuff...
+  def testModels(db: IcdDb): Unit = {
+    val modelsList = db.query.getModels("NFIRAOS")
+    val publishInfo = for (models <- modelsList) yield {
+      val compName = models.componentModel.get.name
+      models.publishModel.foreach { publishModel =>
+        publishModel.telemetryList.foreach { telemetryModel =>
+          println(s"$compName publishes telemetry ${telemetryModel.name}: ${telemetryModel.description}")
+        }
+      }
+    }
   }
 
   // Ingests the given dir under the name "example" (any previous version is saved in the history)

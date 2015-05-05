@@ -21,7 +21,6 @@ object Subsystem {
 
   // Gets the list of top level ICDs from the server
   private def getIcdNames: Future[List[String]] = {
-    import scalatags.JsDom.all._
     Ajax.get(Routes.icdNames).map { r =>
       read[List[String]](r.responseText)
     }.recover {
@@ -33,7 +32,6 @@ object Subsystem {
 
   // Gets the list of subcomponents for the selected ICD
   private def getComponentNames(icdName: String): Future[List[String]] = {
-    import scalatags.JsDom.all._
     Ajax.get(Routes.icdComponents(icdName)).map { r =>
       read[List[String]](r.responseText)
     }.recover {
@@ -42,13 +40,6 @@ object Subsystem {
         Nil
     }
   }
-
-  private def displayInternalError(ex: Throwable): Unit = {
-    // Display an error message
-    println(s"Internal error: $ex")
-    setContent("Internal Error", errorDiv("Can't get the list of ICDs from the server. The database may be down."))
-  }
-
 
   // Gets the currently selected subsystem name
   def getSelectedSubsystem: Option[String] =
@@ -88,7 +79,6 @@ object Subsystem {
 
   // Updates the menu
   def update(): Unit = {
-    println("XXX update the subsystem menu")
     getIcdNames.map(updateSubsystemOptions)
   }
 

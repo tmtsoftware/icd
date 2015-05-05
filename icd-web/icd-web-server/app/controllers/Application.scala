@@ -5,12 +5,10 @@ import java.io.ByteArrayOutputStream
 import csw.services.icd.IcdToPdf
 import csw.services.icd.db.{IcdDbPrinter, IcdDb}
 import play.Play
-import play.api._
 import play.api.mvc._
 import play.filters.csrf.CSRFAddToken
 import shared.Csrf
 import play.api.libs.json._
-import play.api.libs.functional.syntax._
 
 object Application extends Controller {
   val databaseName = Play.application().configuration().getString("database.name")
@@ -38,6 +36,12 @@ object Application extends Controller {
   def icdComponents(name: String) = Action {
     val names = db.query.getComponentNames(name)
     Ok(Json.toJson(names))
+  }
+
+  def componentInfo(name: String) = Action {
+    import ComponentInfo._
+    val info = ComponentInfo(db, name)
+    Ok(Json.toJson(info))
   }
 
 
