@@ -28,7 +28,7 @@ Then start the play web app with:
 
 in this directory and open http://localhost:9000/ in a browser.
 Use the *Upload* item to upload an ICD (choose examples/NFIRAOS, if you are using Chrome, otherwise 
-make a zip file of that directory and upload that).
+make a zip file of that directory and upload that. Do the same for TCS).
 
 Any validation or upload errors or warnings will be displayed in the browser window.
 

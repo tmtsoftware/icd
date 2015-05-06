@@ -54,7 +54,8 @@ object FileUpload {
               div(`class` := "panel-body")(
                 div(
                   label(`for` := fileSelect, s"$dirLabel to upload:"),
-                  input(`type` := "file", id := fileSelect, name := "files[]", "webkitdirectory".attr:="webkitdirectory")
+                  input(`type` := "file", id := fileSelect, name := "files[]", multiple := "multiple",
+                    "webkitdirectory".attr:="webkitdirectory")
                 ),
                 div(id := "submitButton", `class` := "hide")(
                   button(`type` := "submit")("Upload Files")

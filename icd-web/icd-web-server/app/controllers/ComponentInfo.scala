@@ -54,13 +54,13 @@ object ComponentInfo {
   }
 
   private def getSubscribers(db: IcdDb, prefix: String, name: String): List[SubscribeInfo] = {
-    db.query.subscribes(s"$prefix.$name").map(s => SubscribeInfo(s.componentName))
+    db.query.subscribes(s"$prefix.$name").map(s => SubscribeInfo(s.subsystem, s.componentName))
   }
 
   // JSON conversion
   implicit val SubscribeInfoWrites = new Writes[SubscribeInfo] {
     def writes(info: SubscribeInfo) = Json.obj(
-//      "subsystem" -> info.subsystem,
+      "subsystem" -> info.subsystem,
       "name" -> info.name
     )
   }

@@ -116,6 +116,8 @@ class IcdDbTests extends FunSuite {
     assert(subscribeInfoList.size == 1)
     assert(subscribeInfoList.head.componentName == "NFIRAOS")
     assert(subscribeInfoList.head.subscribeType == Telemetry)
+    assert(subscribeInfoList.head.name == "tcs.parallacticAngle")
+    assert(subscribeInfoList.head.subsystem == "TCS")
 
     val publishList = db.query.publishes("nfiraos.initialized")
     assert(publishList.size == 1)
