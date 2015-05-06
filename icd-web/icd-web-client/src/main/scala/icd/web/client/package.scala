@@ -19,6 +19,8 @@ package object client {
     this.content.innerHTML = content
   }
 
+  def clearContent(): Unit = setContent("", "")
+
   // Returns an HTML div containing the given error message
   def errorDiv(msg: String): String = {
     import scalatags.JsDom.all._

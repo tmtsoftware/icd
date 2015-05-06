@@ -59,7 +59,7 @@ object Component {
     }
 
     div(cls := "container", id := getComponentInfoId(info.name),
-      h4(info.name),
+      h2(info.name),
       p(info.description),
       table("data-toggle".attr := "table",
         thead(

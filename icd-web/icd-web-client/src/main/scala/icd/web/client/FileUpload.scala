@@ -7,6 +7,9 @@ import scala.scalajs.js.annotation.JSExport
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalajs.jquery.{jQuery => $, _}
 
+/**
+ * Handles uploading an ICD directory or zip file to the play server.
+ */
 @JSExport
 object FileUpload {
   import FileUtils._
@@ -76,6 +79,7 @@ object FileUpload {
 
     // Called when the Upload item is selected
     def uploadSelected(e: dom.Event) = {
+      Sidebar.uncheckAll()
       setContent("Upload ICD", markup(csrfToken, inputDirSupported).toString())
       ready(inputDirSupported)
     }

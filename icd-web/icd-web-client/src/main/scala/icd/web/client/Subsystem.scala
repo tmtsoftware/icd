@@ -55,6 +55,7 @@ object Subsystem {
       sel.remove(0)
 
     Sidebar.clearComponents()
+    clearContent()
 
     getSelectedSubsystem.foreach { subsystem =>
       Sidebar.addComponent(subsystem)

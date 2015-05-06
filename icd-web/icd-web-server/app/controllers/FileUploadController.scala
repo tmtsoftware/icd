@@ -12,11 +12,11 @@ import play.api.libs.json._
 
 object FileUploadController extends Controller {
 
-  val log = play.Logger.of("application")
+  private val log = play.Logger.of("application")
   //same as play.Logger
-  val stdSet = StdName.stdNames.map(_.name).toSet
-  val (wsEnumerator, wsChannel) = Concurrent.broadcast[String]
-  lazy val db = Application.db
+  private val stdSet = StdName.stdNames.map(_.name).toSet
+  private val (wsEnumerator, wsChannel) = Concurrent.broadcast[String]
+  private lazy val db = Application.db
 
   // Converts a Problem (returned from ICD validate method) to JSON
   implicit val problemWrites = new Writes[Problem] {
@@ -35,9 +35,8 @@ object FileUploadController extends Controller {
   // Server side of the upload ICD feature.
   // The uploaded file may be a single .conf file with X-FILENAME giving the relative path
   // (which is needed to determine where in the ICD it belongs).
-  // Alternatively, the file can be a zip file containing all the ICD files.
-  // XXX check content type on client and use text?
   def uploadFile = Action(parse.tolerantText) { request =>
+    println(s"XXX request id = ${request.id}, headers = ${request.headers}")
     val fileNameOpt = request.headers.get("X-FILENAME")
     val result = if (fileNameOpt.isDefined) {
       val file = new File(fileNameOpt.get)
@@ -69,7 +68,7 @@ object FileUploadController extends Controller {
     }
   }
 
-  val handleExceptions: PartialFunction[Throwable, Result] = {
+  private val handleExceptions: PartialFunction[Throwable, Result] = {
     case e: MongoTimeoutException =>
       val msg = "Database seems to be down"
       log.error(msg, e)

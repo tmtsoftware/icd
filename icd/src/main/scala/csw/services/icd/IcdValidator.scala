@@ -76,7 +76,7 @@ object IcdValidator {
   def validate(dir: File = new File(".")): List[Problem] = {
     import csw.services.icd.StdName._
     if (!dir.isDirectory) {
-      List(Problem("error", s"$dir does not exist"))
+      List(Problem("error", s"$dir does not exist or is not a directory"))
     } else {
       val result = for (stdName ← stdNames) yield {
         val inputFile = new File(dir, stdName.name)

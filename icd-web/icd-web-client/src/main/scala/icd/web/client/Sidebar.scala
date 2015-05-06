@@ -36,6 +36,12 @@ object Sidebar {
     if (checked) Component.addComponent(compName) else Component.removeComponent(compName)
   }
 
+  // Uncheck all of the checkboxes in the sidebar
+  def uncheckAll(): Unit = {
+    val nodeList = sidebarList.getElementsByTagName("input")
+    for(i <- 0 until nodeList.length) nodeList(i).asInstanceOf[HTMLInputElement].checked = false
+  }
+
   /**
    * Adds an ICD component to the sidebar
    */
