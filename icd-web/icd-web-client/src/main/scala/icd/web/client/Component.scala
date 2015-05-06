@@ -75,7 +75,7 @@ object Component {
             td(pubInfo.name),
             td(pubInfo.itemType),
             td(pubInfo.description),
-            td(pubInfo.subscribers.map(s => s"${s.subsystem}/${s.name}").mkString(", "))
+            td(pubInfo.subscribers.map(s => s"${s.name}").mkString(", "))
           )
         )
       )

@@ -19,7 +19,6 @@ case class PublishInfo(itemType: String, name: String, description: String, subs
 
 /**
  * Describes a component that subscribes to an item
- * @param subsystem the subscriber's subsystem
  * @param name the subscriber's component name
  */
-case class SubscribeInfo(subsystem: String, name: String)
+case class SubscribeInfo(name: String)

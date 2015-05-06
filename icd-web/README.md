@@ -34,7 +34,7 @@ Any validation or upload errors or warnings will be displayed in the browser win
 
 After uploading, select NFIRAOS from the Subsystem menu. Then you can use the View menu to view the ICD
 or click on one of the components in the sidebar at left to view publish/subscribe information for the component
-(*Work in progress!*).
+( __Work in progress!__ ).
 
 
 
