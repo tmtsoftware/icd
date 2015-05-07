@@ -15,13 +15,13 @@ object ComponentInfo {
     // get the models for this component and it's subcomponents
     val modelsList = db.query.getModels(compName)
     val description = getDescription(modelsList)
-    val publishInfo = for (models <- modelsList) yield {
+    val publishInfo = for (models <- modelsList.headOption) yield {
       getPublishInfo(db, models)
     }
-    val subscribeInfo = for (models <- modelsList) yield {
+    val subscribeInfo = for (models <- modelsList.headOption) yield {
       getSubscribeInfo(db, models)
     }
-    shared.ComponentInfo(compName, description, publishInfo.flatten, subscribeInfo.flatten)
+    shared.ComponentInfo(compName, description, publishInfo.toList.flatten, subscribeInfo.toList.flatten)
   }
 
   private def getDescription(modelsList: List[IcdModels]): String = {
