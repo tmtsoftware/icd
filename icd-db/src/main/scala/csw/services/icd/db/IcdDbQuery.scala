@@ -48,13 +48,17 @@ object IcdDbQuery {
    * Describes a published item
    * @param publishType one of Telemetry, Events, Alarms, etc.
    * @param name the name of the item being published
+   * @param description description of the published item
    */
-  case class Published(publishType: PublishType, name: String)
+  case class Published(publishType: PublishType, name: String, description: String)
 
   /**
    * Describes a published item along with the component that publishes it
+   * @param componentName the publishing component
+   * @param prefix the component's prefix
+   * @param item description of the published item
    */
-  case class PublishedItem(componentName: String, prefix: String, publishType: PublishType, name: String)
+  case class PublishedItem(componentName: String, prefix: String, item: Published)
 
   /**
    * Describes what values a component publishes
@@ -299,11 +303,11 @@ case class IcdDbQuery(db: MongoDB) {
   def getPublished(name: String): List[Published] = {
     getPublishModel(name) match {
       case Some(publishModel) ⇒
-        List(publishModel.telemetryList.map(i ⇒ Published(Telemetry, i.name)),
-          publishModel.eventList.map(i ⇒ Published(Events, i.name)),
-          publishModel.eventStreamList.map(i ⇒ Published(EventStreams, i.name)),
-          publishModel.alarmList.map(i ⇒ Published(Alarms, i.name)),
-          publishModel.healthList.map(i ⇒ Published(Health, i.name))).flatten
+        List(publishModel.telemetryList.map(i ⇒ Published(Telemetry, i.name, i.description)),
+          publishModel.eventList.map(i ⇒ Published(Events, i.name, i.description)),
+          publishModel.eventStreamList.map(i ⇒ Published(EventStreams, i.name, i.description)),
+          publishModel.alarmList.map(i ⇒ Published(Alarms, i.name, i.description)),
+          publishModel.healthList.map(i ⇒ Published(Health, i.name, i.description))).flatten
       case None ⇒ Nil
     }
   }
@@ -312,8 +316,8 @@ case class IcdDbQuery(db: MongoDB) {
    * Returns a list describing what each component publishes
    */
   def getPublishInfo: List[PublishInfo] = {
-    def getPublishInfo(name: String, prefix: String): PublishInfo =
-      PublishInfo(name, prefix, getPublished(name))
+    def getPublishInfo(compName: String, prefix: String): PublishInfo =
+      PublishInfo(compName, prefix, getPublished(compName))
 
     getComponents.map(c ⇒ getPublishInfo(c.name, c.prefix))
   }
@@ -326,7 +330,7 @@ case class IcdDbQuery(db: MongoDB) {
     for {
       i ← getPublishInfo
       p ← i.publishes.filter(p ⇒ s"${i.prefix}.${p.name}" == path)
-    } yield PublishedItem(i.componentName, i.prefix, p.publishType, p.name)
+    } yield PublishedItem(i.componentName, i.prefix, p)
   }
 
   /**

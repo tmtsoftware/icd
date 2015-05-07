@@ -54,14 +54,26 @@ object Component {
 
   // Action when user clicks on a subscriber link
   def clickedOnSubscriber(info: SubscribeInfo)(e: dom.Event) = {
-    println(s"XXX clickedOnSubscriber: component name = ${info.name}")
+    println(s"XXX clickedOnSubscriber: component name = ${info.compName}")
+  }
+
+  // Action when user clicks on a subscriber link
+  def clickedOnPublisher(info: SubscribeInfo)(e: dom.Event) = {
+    println(s"XXX clickedOnPublisher: component name = ${info.compName}")
   }
 
   // Makes the link for a subscriber component in the table
   def makeLinkForSubscriber(info: SubscribeInfo) = {
     import scalatags.JsDom.all._
-    a(s"${info.name} ", href := "#", onclick := clickedOnSubscriber(info) _)
+    a(s"${info.compName} ", href := "#", onclick := clickedOnSubscriber(info) _)
   }
+
+  // Makes the link for a publisher component in the table
+  def makeLinkForPublisher(info: SubscribeInfo) = {
+    import scalatags.JsDom.all._
+    a(s"${info.compName} ", href := "#", onclick := clickedOnPublisher(info) _)
+  }
+
 
   // Generates the HTML markup to display the component information
   def markupForComponent(info: ComponentInfo) = {
@@ -70,10 +82,11 @@ object Component {
     div(cls := "container", id := getComponentInfoId(info.name),
       h2(info.name),
       p(info.description),
+      h3(s"Items published by ${info.name}"),
       table("data-toggle".attr := "table",
         thead(
           tr(
-            th("Publishes"),
+            th("Name"),
             th("Type"),
             th("Description"),
             th("Subscribers")
@@ -89,7 +102,29 @@ object Component {
             )
           }
         )
+      ),
+      h3(s"Items subscribed to by ${info.name}"),
+      table("data-toggle".attr := "table",
+        thead(
+          tr(
+            th("Prefix.Name"),
+            th("Type"),
+            th("Description"),
+            th("Publisher")
+          )
+        ),
+        tbody(
+          for (subscribeInfo <- info.subscribeInfo) yield {
+            tr(
+              td(subscribeInfo.name),
+              td(subscribeInfo.itemType),
+              td(subscribeInfo.description),
+              td(makeLinkForPublisher(subscribeInfo))
+            )
+          }
+        )
       )
+
     )
   }
 }

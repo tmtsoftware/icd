@@ -1,6 +1,6 @@
 package controllers
 
-import csw.services.icd.db.IcdDb
+import csw.services.icd.db.{IcdDbQuery, IcdDb}
 import csw.services.icd.model.IcdModels
 import play.api.libs.json._
 import shared.PublishInfo
@@ -18,7 +18,10 @@ object ComponentInfo {
     val publishInfo = for (models <- modelsList) yield {
       getPublishInfo(db, models)
     }
-    shared.ComponentInfo(compName, description, publishInfo.flatten)
+    val subscribeInfo = for (models <- modelsList) yield {
+      getSubscribeInfo(db, models)
+    }
+    shared.ComponentInfo(compName, description, publishInfo.flatten, subscribeInfo.flatten)
   }
 
   private def getDescription(modelsList: List[IcdModels]): String = {
@@ -35,33 +38,57 @@ object ComponentInfo {
     val prefix = models.componentModel.get.prefix
     val result = models.publishModel.map { m =>
       m.telemetryList.map { t =>
-        PublishInfo("telemetry", t.name, t.description, getSubscribers(db, prefix, t.name))
+        PublishInfo("Telemetry", t.name, t.description, getSubscribers(db, prefix, t.name, t.description))
       } ++
         m.eventList.map { el =>
-          PublishInfo("event", el.name, el.description, getSubscribers(db, prefix, el.name))
+          PublishInfo("Event", el.name, el.description, getSubscribers(db, prefix, el.name, el.description))
         } ++
         m.eventStreamList.map { esl =>
-          PublishInfo("event stream", esl.name, esl.description, getSubscribers(db, prefix, esl.name))
+          PublishInfo("EventStream", esl.name, esl.description, getSubscribers(db, prefix, esl.name, esl.description))
         } ++
         m.alarmList.map { al =>
-          PublishInfo("alarm", al.name, al.description, getSubscribers(db, prefix, al.name))
+          PublishInfo("Alarm", al.name, al.description, getSubscribers(db, prefix, al.name, al.description))
         } ++
         m.healthList.map { hl =>
-          PublishInfo("health", hl.name, hl.description, getSubscribers(db, prefix, hl.name))
+          PublishInfo("Health", hl.name, hl.description, getSubscribers(db, prefix, hl.name, hl.description))
         }
     }
     result.toList.flatten
   }
 
-  private def getSubscribers(db: IcdDb, prefix: String, name: String): List[SubscribeInfo] = {
-    db.query.subscribes(s"$prefix.$name").map(s => SubscribeInfo(s.subsystem, s.componentName))
+  private def getSubscribers(db: IcdDb, prefix: String, name: String, desc: String): List[SubscribeInfo] = {
+    db.query.subscribes(s"$prefix.$name").map { s =>
+      SubscribeInfo(s.subscribeType.toString, s.name, desc, s.subsystem, s.componentName)
+    }
   }
+
+  private def getSubscribeInfo(db: IcdDb, models: IcdModels): List[SubscribeInfo] = {
+
+    def getInfo(itemType: String, si: csw.services.icd.model.SubscribeInfo): List[SubscribeInfo] = {
+      db.query.publishes(si.name).map { pi =>
+        SubscribeInfo(itemType, si.name, pi.item.description, si.subsystem, pi.componentName)
+      }
+    }
+
+    val result = models.subscribeModel.map { m =>
+      m.telemetryList.map(getInfo("Telemetry", _)) ++
+        m.eventList.map(getInfo("Event", _)) ++
+        m.eventStreamList.map(getInfo("EventStream", _)) ++
+        m.alarmList.map(getInfo("Alarm", _)) ++
+        m.healthList.map(getInfo("Health", _))
+    }
+    result.toList.flatten.flatten
+  }
+
 
   // JSON conversion
   implicit val SubscribeInfoWrites = new Writes[SubscribeInfo] {
     def writes(info: SubscribeInfo) = Json.obj(
+      "itemType" -> info.itemType,
+      "name" -> info.name,
+      "description" -> info.description,
       "subsystem" -> info.subsystem,
-      "name" -> info.name
+      "compName" -> info.compName
     )
   }
   implicit val PublishInfoWrites = new Writes[PublishInfo] {
@@ -76,7 +103,8 @@ object ComponentInfo {
     def writes(info: shared.ComponentInfo) = Json.obj(
       "name" -> info.name,
       "description" -> info.description,
-      "publishInfo" -> info.publishInfo
+      "publishInfo" -> info.publishInfo,
+      "subscribeInfo" -> info.subscribeInfo
     )
   }
 }
