@@ -34,6 +34,7 @@ object IcdWebClient extends JSApp {
 
   // Called when the View ICD as HTML item is selected
   def viewIcdAsHtml(e: dom.Event) = {
+    Sidebar.uncheckAll()
     for(name <- Subsystem.getSelectedSubsystem) {
       displayIcdAsHtml(name)
     }

@@ -19,6 +19,11 @@ package object client {
     this.content.innerHTML = content
   }
 
+  // Sets the title and HTML content of the main section of the page
+  def setContentTitle(title: String): Unit = {
+    contentTitle.textContent = title
+  }
+
   def clearContent(): Unit = setContent("", "")
 
   // Returns an HTML div containing the given error message

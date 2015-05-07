@@ -46,7 +46,9 @@ object Component {
     val markup = markupForComponent(info)
     if (contentTitle.textContent != titleStr) {
       clearContent()
+      setContentTitle(titleStr)
     }
+
     content.appendChild(markup.render)
   }
 
