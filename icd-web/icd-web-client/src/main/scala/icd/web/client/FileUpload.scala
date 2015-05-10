@@ -1,16 +1,18 @@
 package icd.web.client
 
 import org.scalajs.dom
+import org.scalajs.dom._
 import scala.language.implicitConversions
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExport
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalajs.jquery.{jQuery => $, _}
 
+import scalatags.JsDom.TypedTag
+
 /**
  * Handles uploading an ICD directory or zip file to the play server.
  */
-@JSExport
 object FileUpload {
   import FileUtils._
 
@@ -28,12 +30,20 @@ object FileUpload {
 
   def isStdFile(file: dom.File): Boolean = stdList.contains(basename(file))
 
-  @JSExport
+  /**
+   * Describes any validation problems found
+   * @param severity a string describing the error severity: fatal, error, warning, etc.
+   * @param message describes the problem
+   */
+  case class Problem(severity: String, message: String) {
+    def errorMessage(): String = s"$severity: $message"
+  }
+
   // Initialize the upload page and callback
   def init(csrfToken: String, inputDirSupported: Boolean): Unit = {
 
     // Produce the HTML to display for the upload screen
-    def markup(csrfToken: String, inputDirSupported: Boolean) = {
+    def uploadDialogMarkup(csrfToken: String, inputDirSupported: Boolean) = {
       import scalatags.JsDom.all._
 
       // Only Chrome supports uploading8 directories. For other browsers, use zip file upload
@@ -80,13 +90,22 @@ object FileUpload {
 
     // Called when the Upload item is selected
     def uploadSelected(e: dom.Event) = {
-      Sidebar.uncheckAll()
-      setContent("Upload ICD", markup(csrfToken, inputDirSupported).toString())
+      LeftSidebar.uncheckAll()
+      RightSidebar.uncheckAll()
+      Main.setContent("Upload ICD", uploadDialogMarkup(csrfToken, inputDirSupported).toString())
       ready(inputDirSupported)
     }
 
-    $id("uploadButton").addEventListener("click", uploadSelected _, useCapture = false)
+    // Returns the HTML markup for the navbar item
+    def markup(): TypedTag[Element] = {
+      import scalatags.JsDom.all._
+      li(a(onclick := uploadSelected _)("Upload"))
+    }
+
+    // Add the Upload item to the navbar
+    Navbar.addItem(markup())
   }
+
 
   // Called once the file upload screen has been displayed
   def ready(inputDirSupported: Boolean): Unit = {

@@ -1,4 +1,4 @@
-/* Layout based on App Template from http://www.bootply.com/new */
+/* Layout based on App Template from http://www.bootply.com/ */
 
 body {
     padding-top: 50px;
@@ -13,59 +13,83 @@ body {
     left: 0;
     display: inline-block;
 }
-#main-wrapper {
-    height: 100%;
-    overflow-y: auto;
-    padding: 50px 0 0 0;
-}
-#main {
-    position: relative;
-    height: 100%;
-    overflow-y: auto;
-    padding: 0 15px;
-}
-#sidebar-wrapper {
-    height: 100%;
-    padding: 50px 0 0 0;
-    position: fixed;
-    border-right: 1px solid gray;
-}
-#sidebar {
-    position: relative;
-    height: 100%;
-    overflow-y: auto;
-}
-#sidebar .list-group-item {
-    border-radius: 0;
-    border-left: 0;
-    border-right: 0;
-    border-top: 0;
-}
+/*#main-wrapper {*/
+    /*height: 100%;*/
+    /*overflow-y: auto;*/
+    /*padding: 50px 0 0px 0;*/
+/*}*/
+/*#main {*/
+    /*position: relative;*/
+    /*height: 100%;*/
+    /*overflow-y: auto;*/
+    /*padding: 0 15px;*/
+/*}*/
+
+
+/*#sidebar-wrapper {*/
+    /*height: 100%;*/
+    /*padding: 50px 0 0px 0;*/
+    /*/!*position: fixed;*!/*/
+    /*border-right: 1px solid gray;*/
+/*}*/
+/*#sidebar {*/
+    /*/!*position: relative;*!/*/
+    /*height: 100%;*/
+    /*overflow-y: auto;*/
+/*}*/
+/*#sidebar .list-group-item {*/
+    /*border-radius: 0;*/
+    /*border-left: 0;*/
+    /*border-right: 0;*/
+    /*border-top: 0;*/
+/*}*/
+
+
+/*#right-sidebar-wrapper {*/
+    /*height: 100%;*/
+    /*padding: 50px 0 0px 0;*/
+    /*/!*position: fixed;*!/*/
+    /*border-left: 1px solid gray;*/
+/*}*/
+/*#right-sidebar {*/
+    /*/!*position: relative;*!/*/
+    /*height: 100%;*/
+    /*overflow-y: auto;*/
+/*}*/
+/*#right-sidebar .list-group-item {*/
+    /*border-radius: 0;*/
+    /*border-left: 0;*/
+    /*border-right: 0;*/
+    /*border-top: 0;*/
+/*}*/
+
+
 @media (max-width: 992px) {
     body {
-        padding-top: 0;
+        padding-top: 0px;
     }
 }
-@media (min-width: 992px) {
-    #main-wrapper {
-        float:right;
-    }
-}
-@media (max-width: 992px) {
-    #main-wrapper {
-        padding-top: 0;
-    }
-}
-@media (max-width: 992px) {
-    #sidebar-wrapper {
-        position: static;
-        height:auto;
-        max-height: 300px;
-        border-right:0;
-    }
-}
+/*@media (min-width: 992px) {*/
+    /*#main-wrapper {*/
+        /*float:right;*/
+    /*}*/
+/*}*/
+/*@media (max-width: 992px) {*/
+    /*#main-wrapper {*/
+        /*padding-top: 0px;*/
+    /*}*/
+/*}*/
+/*@media (max-width: 992px) {*/
+    /*#sidebar-wrapper {*/
+        /*position: static;*/
+        /*height:auto;*/
+        /*max-height: 300px;*/
+        /*border-right:0;*/
+    /*}*/
+/*}*/
 
 /* -- My changes below -- */
+
 
 /* upload button */
 .btn-file {

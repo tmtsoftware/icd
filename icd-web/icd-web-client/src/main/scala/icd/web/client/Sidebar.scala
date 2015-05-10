@@ -1,16 +1,20 @@
 package icd.web.client
 
 import org.scalajs.dom
-import org.scalajs.dom.raw.{HTMLInputElement, HTMLUListElement}
-import scala.scalajs.js.annotation.JSExport
+import org.scalajs.dom.raw.{HTMLStyleElement, HTMLInputElement, HTMLUListElement}
+
+import scalacss.Defaults._
+import scalatags.JsDom.TypedTag
+import org.scalajs.dom.Element
 
 /**
  * Manages the sidebar items
  */
-@JSExport
-object Sidebar {
+trait Sidebar {
+
   // id of html list of sidebar items
-  private def sidebarList = $id("sidebar-list").asInstanceOf[HTMLUListElement]
+  val sidebarListId: String
+  lazy val sidebarList = $id(sidebarListId).asInstanceOf[HTMLUListElement]
 
   // id used for component's checkbox
   private def checkboxId(compName: String): String = s"$compName-checkbox"
@@ -18,9 +22,10 @@ object Sidebar {
   // HTML for component
   private def renderComponentCheckBox(compName: String) = {
     import scalatags.JsDom.all._
+    import scalacss.ScalatagsCss._
 
     li(
-      a(cls := "list-group-item", href := "#")(
+      a(Styles.listGroupItem, href := "#")(
         div(cls := "checkbox")(
           label(
             input(tpe := "checkbox", value := "", id := checkboxId(compName)),
@@ -39,7 +44,7 @@ object Sidebar {
   // Uncheck all of the checkboxes in the sidebar
   def uncheckAll(): Unit = {
     val nodeList = sidebarList.getElementsByTagName("input")
-    for(i <- 0 until nodeList.length) nodeList(i).asInstanceOf[HTMLInputElement].checked = false
+    for (i <- 0 until nodeList.length) nodeList(i).asInstanceOf[HTMLInputElement].checked = false
   }
 
   /**
@@ -56,4 +61,31 @@ object Sidebar {
   def clearComponents(): Unit = {
     clearElement(sidebarList)
   }
+
+  private def markup(): TypedTag[Element] = {
+    import scalatags.JsDom.all._
+    import scalacss.ScalatagsCss._
+    //Styles.render[TypedTag[HTMLStyleElement]], Styles.sidebarWrapper,
+//    Styles.sidebar
+    div(Styles.sidebarWrapper)(
+      div(Styles.sidebar)(
+        ul(id := sidebarListId, cls := "nav list-group")
+      )
+    )
+  }
+
+  /**
+   * Adds and initializes the left sidebar
+   */
+  def init(): Unit = {
+    Layout.addItem(markup())
+  }
+}
+
+object LeftSidebar extends Sidebar {
+  override val sidebarListId = "leftSidebar"
+}
+
+object RightSidebar extends Sidebar {
+  override val sidebarListId = "rightSidebar"
 }

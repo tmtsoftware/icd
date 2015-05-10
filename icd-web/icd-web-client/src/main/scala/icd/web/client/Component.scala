@@ -12,7 +12,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 /**
  * Manages the component (Assembly, HCD) display
  */
-@JSExport
 object Component {
   // Adds the component to the display
   def addComponent(compName: String): Unit = {
@@ -22,7 +21,7 @@ object Component {
       displayInfo(info)
     }.recover {
       case ex =>
-        displayInternalError(ex)
+        Main.displayInternalError(ex)
     }
   }
 
@@ -34,7 +33,7 @@ object Component {
     val elem = $id(getComponentInfoId(compName))
     try {
       // XXX How to check if elem exists?
-      content.removeChild(elem)
+      Main.content.removeChild(elem)
     } catch {
       case t: Throwable =>
     }
@@ -44,12 +43,12 @@ object Component {
   def displayInfo(info: ComponentInfo): Unit = {
     val titleStr = "Components"
     val markup = markupForComponent(info)
-    if (contentTitle.textContent != titleStr) {
-      clearContent()
-      setContentTitle(titleStr)
+    if (Main.contentTitle.textContent != titleStr) {
+      Main.clearContent()
+      Main.setContentTitle(titleStr)
     }
 
-    content.appendChild(markup.render)
+    Main.content.appendChild(markup.render)
   }
 
   // Action when user clicks on a subscriber link

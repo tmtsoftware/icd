@@ -1,23 +1,40 @@
 package icd.web.client
 
 import org.scalajs.dom
+import org.scalajs.dom._
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.HTMLSelectElement
 import upickle._
 
 import scala.concurrent.Future
-import scala.scalajs.js.annotation.JSExport
 import scala.concurrent.ExecutionContext.Implicits.global
+import scalatags.JsDom.TypedTag
 
 /**
  * Manages the subsystem combobox
  */
-@JSExport
 object Subsystem {
+  // The id of the select item
+  val selectId = "subsystem"
 
-  def sel = $id("subsystem").asInstanceOf[HTMLSelectElement]
+  // Reference the file select item in the HTML document
+  lazy val sel = $id(selectId).asInstanceOf[HTMLSelectElement]
 
   private val msg = "Select a subsystem"
+
+
+  // HTML for the subsystem combobox
+  private def markup(): TypedTag[Element] = {
+    import scalatags.JsDom.all._
+    li(
+      a(
+        label(`for` := selectId, title := "Subsystem"),
+        select(id := selectId)(
+          option(value := msg)(msg)
+        )
+      )
+    )
+  }
 
   // Gets the list of top level ICDs from the server
   private def getIcdNames: Future[List[String]] = {
@@ -25,7 +42,7 @@ object Subsystem {
       read[List[String]](r.responseText)
     }.recover {
       case ex =>
-        displayInternalError(ex)
+        Main.displayInternalError(ex)
         Nil
     }
   }
@@ -36,7 +53,7 @@ object Subsystem {
       read[List[String]](r.responseText)
     }.recover {
       case ex =>
-        displayInternalError(ex)
+        Main.displayInternalError(ex)
         Nil
     }
   }
@@ -49,24 +66,24 @@ object Subsystem {
     }
 
   // called when an item is selected
-  private def subsystemSelected(e: dom.Event) {
+  private def subsystemSelected(e: dom.Event): Unit = {
     // remove empty option
     if (sel.options.length > 1 && sel.options(0).value == msg)
       sel.remove(0)
 
-    Sidebar.clearComponents()
-    clearContent()
+    LeftSidebar.clearComponents()
+    Main.clearContent()
 
     getSelectedSubsystem.foreach { subsystem =>
-      Sidebar.addComponent(subsystem)
+      LeftSidebar.addComponent(subsystem)
       getComponentNames(subsystem).foreach { names =>
-        names.foreach(Sidebar.addComponent)
+        names.foreach(LeftSidebar.addComponent)
       }
     }
   }
 
   // Update the Subsystem combobox options
-  private def updateSubsystemOptions(items: List[String]) = {
+  private def updateSubsystemOptions(items: List[String]): Unit = {
     import scalatags.JsDom.all._
 
     val list = msg :: items
@@ -85,6 +102,7 @@ object Subsystem {
 
   // Initialize the subsystem combobox
   def init(wsBaseUrl: String): Unit = {
+    Navbar.addItem(markup())
     update()
     sel.addEventListener("change", subsystemSelected _, useCapture = false)
 
