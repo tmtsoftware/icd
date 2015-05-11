@@ -7,7 +7,7 @@ import scalatags.JsDom.all._
  */
 object Main {
   val contentTitle = h3(cls := "page-header").render
-  val content = div().render
+  val content = div(id := "content").render
 
   // Sets the title and HTML content of the main section of the page
   def setContent(title: String, content: String): Unit = {

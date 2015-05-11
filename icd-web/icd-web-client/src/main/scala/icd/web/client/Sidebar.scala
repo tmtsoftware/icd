@@ -1,27 +1,25 @@
 package icd.web.client
 
 import org.scalajs.dom
-import org.scalajs.dom.raw.{HTMLStyleElement, HTMLInputElement, HTMLUListElement}
+import org.scalajs.dom.raw.HTMLInputElement
 
-import scalacss.Defaults._
 import scalatags.JsDom.TypedTag
 import org.scalajs.dom.Element
+
+import scalatags.JsDom.all._
 
 /**
  * Manages the sidebar items
  */
 trait Sidebar {
 
-  // id of html list of sidebar items
-  val sidebarListId: String
-  lazy val sidebarList = $id(sidebarListId).asInstanceOf[HTMLUListElement]
+  val sidebarList = ul(cls := "nav list-group").render
 
   // id used for component's checkbox
   private def checkboxId(compName: String): String = s"$compName-checkbox"
 
   // HTML for component
   private def renderComponentCheckBox(compName: String) = {
-    import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
     li(
@@ -59,18 +57,16 @@ trait Sidebar {
    * Removes all the ICD components from the sidebar
    */
   def clearComponents(): Unit = {
-//    clearElement(sidebarList)
     sidebarList.innerHTML = ""
   }
 
   private def markup(): TypedTag[Element] = {
-    import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
     //Styles.render[TypedTag[HTMLStyleElement]], Styles.sidebarWrapper,
-//    Styles.sidebar
+    //    Styles.sidebar
     div(Styles.sidebarWrapper)(
       div(Styles.sidebar)(
-        ul(id := sidebarListId, cls := "nav list-group")
+        sidebarList
       )
     )
   }
@@ -83,10 +79,6 @@ trait Sidebar {
   }
 }
 
-object LeftSidebar extends Sidebar {
-  override val sidebarListId = "leftSidebar"
-}
+object LeftSidebar extends Sidebar
 
-object RightSidebar extends Sidebar {
-  override val sidebarListId = "rightSidebar"
-}
+object RightSidebar extends Sidebar
