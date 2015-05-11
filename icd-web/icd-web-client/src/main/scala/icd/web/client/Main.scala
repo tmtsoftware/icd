@@ -44,7 +44,7 @@ object Main {
     import scalacss.ScalatagsCss._
     import scalatags.JsDom.all._
     //Styles.render[TypedTag[HTMLStyleElement]], Styles.mainWrapper,
-    div(cls := "col-md-10")(
+    div(Styles.mainWrapper)(
       div(Styles.main)(
         h3(id := contentTitleId, cls := "page-header"),
         div(id := contentId)

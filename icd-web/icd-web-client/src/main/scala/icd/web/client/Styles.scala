@@ -8,6 +8,7 @@ object Styles extends StyleSheet.Inline {
   import language.postfixOps
 
   val mainWrapper = style(
+    addClassName("col-md-10"),
     height(100 %%),
     overflowY.auto,
     padding(50 px, 0 px, 0 px, 0 px)

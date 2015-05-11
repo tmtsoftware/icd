@@ -12,30 +12,6 @@ object Layout {
   val wrapperId = "wrapper"
   lazy val wrapper = $id(wrapperId)
 
-  //    <div id="wrapper">
-
-  //      <div id="sidebar-wrapper" class="col-md-1">
-  //        <div id="sidebar">
-  //          <ul id="sidebar-list" class="nav list-group"></ul>
-  //        </div>
-  //      </div>
-
-  //      <div id="main-wrapper" class="col-md-10">
-  //        <div id="main">
-  //          <h3 id="contentTitle" class="page-header"></h3>
-  //          <div id="content">
-  //          </div>
-  //        </div>
-  //      </div>
-
-  //      <div id="right-sidebar-wrapper" class="col-md-1">
-  //        <div id="right-sidebar">
-  //          <ul id="right-sidebar-list" class="nav list-group"></ul>
-  //        </div>
-  //      </div>
-
-  //    </div>
-
 
 //  private object Styles extends StyleSheet.Inline {
 //    import dsl._
