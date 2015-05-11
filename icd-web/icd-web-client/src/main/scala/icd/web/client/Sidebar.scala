@@ -59,7 +59,8 @@ trait Sidebar {
    * Removes all the ICD components from the sidebar
    */
   def clearComponents(): Unit = {
-    clearElement(sidebarList)
+//    clearElement(sidebarList)
+    sidebarList.innerHTML = ""
   }
 
   private def markup(): TypedTag[Element] = {
@@ -78,7 +79,7 @@ trait Sidebar {
    * Adds and initializes the left sidebar
    */
   def init(): Unit = {
-    Layout.addItem(markup())
+    Layout.addItem(markup().render)
   }
 }
 

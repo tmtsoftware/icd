@@ -4,8 +4,19 @@ import scalacss.Defaults._
 
 // CSS styles
 object Styles extends StyleSheet.Inline {
+
   import dsl._
   import language.postfixOps
+
+  val wrapper = style(
+    minHeight(100 %%),
+    height(100 %%),
+    width(100 %%),
+    position.absolute,
+    top(0 px),
+    left(0 px),
+    display.inlineBlock
+  )
 
   val mainWrapper = style(
     addClassName("col-md-10"),

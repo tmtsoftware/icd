@@ -1,70 +1,54 @@
 package icd.web.client
 
+import org.scalajs.dom
 import org.scalajs.dom.Element
 
 import scalatags.JsDom.TypedTag
+import scalatags.JsDom.all._
+import org.scalajs.dom.raw.Node
 
 /**
  * Manages the navbar
  */
 object Navbar {
 
-  // The HTML id of the outer navbar
-  private val navbarId = "icd-navbar"
-
-  // Reference the outer navbar
-  private lazy val navbar = $id(navbarId)
-
-  // The HTML id of the left side navbar element
-  private val leftNavbarId = "left-navbar"
-
-  // Reference the left side navbar element
-  private lazy val leftNavbar = $id(leftNavbarId)
-
-  // The HTML id of the right side navbar element
-  private val rightNavbarId = "right-navbar"
-
-  // Reference the right side navbar element
-  private lazy val rightNavbar = $id(rightNavbarId)
-
-
-  //    <ul class="nav navbar-nav pull-right">
-  //      <li class="dropdown">
-  //        <a id="nbAcctDD" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-user"></i>
-  //          Username<i class="icon-sort-down"></i></a>
-  //        <ul class="dropdown-menu pull-right">
-  //          <li><a >Log Out</a></li>
-  //        </ul>
-  //      </li>
-  //    </ul>
+  val leftNavbar = ul(cls := "nav navbar-nav").render
+  val rightNavbar = ul(cls := "nav navbar-nav pull-right").render
 
   private def markup(): TypedTag[Element] = {
-    import scalatags.JsDom.all._
-    ul(cls := "nav navbar-nav", id := leftNavbarId)
-  }
+    import scalatags.JsDom.tags2._
 
-  private def rightSideMarkup(): TypedTag[Element] = {
-    import scalatags.JsDom.all._
-    ul(cls := "nav navbar-nav pull-right", id := rightNavbarId)
+    nav(cls := "navbar navbar-default navbar-fixed-top", role := "navigation")(
+      div(cls := "navbar-header")(
+        button(`type` := "button", cls := "navbar-toggle", "data-toggle".attr := "collapse", "data-target".attr := "#icd-navbar")(
+          span(cls := "sr-only")("Toggle navigation/span"),
+          span(cls := "icon-bar"),
+          span(cls := "icon-bar"),
+          span(cls := "icon-bar")
+        ),
+        a(cls := "navbar-brand")("TMT ICD Database")
+      ),
+      div(cls := "collapse navbar-collapse")(
+        leftNavbar, rightNavbar
+      )
+    )
   }
-
 
   // Creates the navbar item
   def init(): Unit = {
-    navbar.appendChild(markup().render)
-    navbar.appendChild(rightSideMarkup().render)
+    dom.document.body.appendChild(markup().render)
   }
 
   /**
    * Adds an HTML element to the navbar.
-   * @param elem a scalatags element
+   * @param node a scalatags element
    */
-  def addItem(elem: TypedTag[Element]): Unit = leftNavbar.appendChild(elem.render)
+  def addItem(node: Node): Unit = leftNavbar.appendChild(node)
 
   /**
    * Adds an HTML element to the navbar on the right side.
-   * @param elem a scalatags element
+   * @param node a scalatags element
    */
-  def addRightSideItem(elem: TypedTag[Element]): Unit = leftNavbar.appendChild(elem.render)
+  def addRightSideItem(node: Node): Unit = rightNavbar.appendChild(node)
 
 }

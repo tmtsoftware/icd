@@ -57,6 +57,6 @@ object View {
 
 
   def init(): Unit = {
-    Navbar.addItem(markup())
+    Navbar.addItem(markup().render)
   }
 }

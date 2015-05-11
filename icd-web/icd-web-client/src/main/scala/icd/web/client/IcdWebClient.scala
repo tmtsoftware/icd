@@ -24,11 +24,14 @@ object IcdWebClient extends JSApp {
 
     dom.document.head.appendChild(Styles.render[TypedTag[HTMLStyleElement]].render)
 
+    // Top navbar and items
     Navbar.init()
     Subsystem.init(wsBaseUrl)
     View.init()
     FileUpload.init(csrfToken, inputDirSupported)
-//    Layout.init()
+
+    // Main layout
+    Layout.init()
     LeftSidebar.init()
     Main.init()
     RightSidebar.init()

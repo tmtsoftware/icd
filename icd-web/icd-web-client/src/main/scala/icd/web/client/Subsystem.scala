@@ -102,7 +102,7 @@ object Subsystem {
 
   // Initialize the subsystem combobox
   def init(wsBaseUrl: String): Unit = {
-    Navbar.addItem(markup())
+    Navbar.addItem(markup().render)
     update()
     sel.addEventListener("change", subsystemSelected _, useCapture = false)
 

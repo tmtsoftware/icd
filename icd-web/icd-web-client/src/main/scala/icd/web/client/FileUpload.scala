@@ -103,7 +103,7 @@ object FileUpload {
     }
 
     // Add the Upload item to the navbar
-    Navbar.addItem(markup())
+    Navbar.addItem(markup().render)
   }
 
 

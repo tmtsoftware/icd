@@ -1,51 +1,31 @@
 package icd.web.client
 
-import scalatags.JsDom.TypedTag
-import org.scalajs.dom.Element
+import org.scalajs.dom
+import org.scalajs.dom.raw.Node
+
+import scalacss.ScalatagsCss._
+import scalatags.JsDom.all._
 
 /**
  * Manages the main layout (below the navbar)
  */
 object Layout {
 
-  // id of the wrapper HTML div
-  val wrapperId = "wrapper"
-  lazy val wrapper = $id(wrapperId)
+  //Styles.render[TypedTag[HTMLStyleElement]], Styles.mainWrapper,
+  val wrapper = div(Styles.wrapper).render
 
-
-//  private object Styles extends StyleSheet.Inline {
-//    import dsl._
-//    import language.postfixOps
-//
-//    val wrapper = style(
-//      minHeight(100 %%),
-//      height(100 %%),
-//      width(100 %%),
-//      position.absolute,
-//      top(0 px),
-//      left(0 px),
-//      display.inlineBlock
-//    )
-//  }
-//
-//  private def markup(): TypedTag[Element] = {
-//    import scalatags.JsDom.all._
-//    import scalacss.ScalatagsCss._
-//    div(Styles.wrapper, id := wrapperId)
-//  }
-//
-//  /**
-//   * Creates the html "wrapper" that holds the items to be added
-//   */
-//  def init(): Unit = {
-//    main.appendChild(markup().render)
-//  }
+  /**
+   * Creates the html "wrapper" that holds the items to be added
+   */
+  def init(): Unit = {
+    dom.document.body.appendChild(wrapper)
+  }
 
   /**
    * Adds an HTML element to the layout.
-   * @param elem a scalatags element
+   * @param node a scalatags node
    */
-  def addItem(elem: TypedTag[Element]): Unit = {
-    wrapper.appendChild(elem.render)
+  def addItem(node: Node): Unit = {
+    wrapper.appendChild(node)
   }
 }

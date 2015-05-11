@@ -25,14 +25,5 @@ package object client {
       span(cls := "glyphicon glyphicon-warning-sign", "aria-hidden".attr := "true"),
       span(cls := "sr-only", "Warning"), s" $msg").toString()
   }
-
-  /**
-   * Removes all the children from the given HTML element
-   */
-  def clearElement(elem: Element): Unit = {
-    val children = elem.childNodes
-    for (i <- (0 until children.length).reverse) {
-      elem.removeChild(children(i))
-    }
-  }
 }
+

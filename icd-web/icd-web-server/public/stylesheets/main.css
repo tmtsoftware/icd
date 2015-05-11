@@ -4,15 +4,15 @@ body {
     padding-top: 50px;
     overflow: hidden;
 }
-#wrapper {
-    min-height: 100%;
-    height: 100%;
-    width: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-    display: inline-block;
-}
+/*#wrapper {*/
+    /*min-height: 100%;*/
+    /*height: 100%;*/
+    /*width: 100%;*/
+    /*position: absolute;*/
+    /*top: 0;*/
+    /*left: 0;*/
+    /*display: inline-block;*/
+/*}*/
 /*#main-wrapper {*/
     /*height: 100%;*/
     /*overflow-y: auto;*/
