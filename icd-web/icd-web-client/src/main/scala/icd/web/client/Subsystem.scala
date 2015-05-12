@@ -2,18 +2,23 @@ package icd.web.client
 
 import org.scalajs.dom
 import org.scalajs.dom._
-import scalatags.JsDom.TypedTag
 
 /**
  * Manages the subsystem combobox
+ * @param listener notified when the user makes a selection
+ * @param labelStr the text for the combobox label
+ * @param msg the initial message to display before the first selection is made
+ * @param removeMsg if true, remove the default msg item from the choices once a selection has been made
  */
-case class Subsystem(listener: String => Unit) {
-  private val msg = "Select a subsystem"
+case class Subsystem(listener: String => Unit,
+                     labelStr: String = "Subsystem",
+                     msg: String = "Select a subsystem",
+                     removeMsg: Boolean = true) extends Displayable {
 
   // called when an item is selected
   private def subsystemSelected(e: dom.Event): Unit = {
     // remove empty option
-    if (selectItem.options.length > 1 && selectItem.options(0).value == msg)
+    if (removeMsg && selectItem.options.length > 1 && selectItem.options(0).value == msg)
       selectItem.remove(0)
 
     getSelectedSubsystem.foreach(listener)
@@ -27,13 +32,13 @@ case class Subsystem(listener: String => Unit) {
   }
 
   // HTML for the subsystem combobox
-  def markup(): TypedTag[Element] = {
+  override def markup(): Element = {
     import scalatags.JsDom.all._
     li(
       a(
-        label("Subsystem ", selectItem)
+        label(s"$labelStr ", selectItem)
       )
-    )
+    ).render
   }
 
   // Gets the currently selected subsystem name

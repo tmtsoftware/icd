@@ -28,7 +28,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
 
   // Page components
   val subsystem = Subsystem(subsystemSelected)
-  val targetSubsystem = Subsystem(targetSubsystemSelected)
+  val targetSubsystem = Subsystem(targetSubsystemSelected, "Target", "All", removeMsg = false)
   val mainContent = MainContent()
   val components = Components(mainContent)
   val leftSidebar = Sidebar(components)
@@ -55,6 +55,8 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
 
     // Insert the components in the page
     body.appendChild(navbar)
+    navbar.addItem(subsystem)
+    navbar.addItem(targetSubsystem)
     navbar.addItem(viewMenu)
     navbar.addItem(fileUpload)
 
@@ -63,9 +65,9 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     layout.addItem(mainContent)
     layout.addItem(rightSidebar)
 
-    // Add source and target subsystem items to sidebars
-    leftSidebar.addItem(subsystem.markup().render)
-    rightSidebar.addItem(targetSubsystem.markup().render)
+//    // Add source and target subsystem items to sidebars
+//    leftSidebar.addItem(subsystem)
+//    rightSidebar.addItem(targetSubsystem)
   }
 
   // Gets the list of subcomponents for the selected subsystem
