@@ -5,14 +5,13 @@ import org.scalajs.dom.ext.Ajax
 import shared.{SubscribeInfo, ComponentInfo}
 import upickle._
 
-import scala.scalajs.js
-import scala.scalajs.js.annotation.JSExport
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * Manages the component (Assembly, HCD) display
  */
-object Component {
+case class Components(mainContent: MainContent) {
+
   // Adds the component to the display
   def addComponent(compName: String): Unit = {
     removeComponent(compName)
@@ -21,7 +20,7 @@ object Component {
       displayInfo(info)
     }.recover {
       case ex =>
-        Main.displayInternalError(ex)
+        mainContent.displayInternalError(ex)
     }
   }
 
@@ -33,7 +32,7 @@ object Component {
     val elem = $id(getComponentInfoId(compName))
     try {
       // XXX How to check if elem exists?
-      Main.content.removeChild(elem)
+      mainContent.content.removeChild(elem)
     } catch {
       case t: Throwable =>
     }
@@ -43,12 +42,12 @@ object Component {
   def displayInfo(info: ComponentInfo): Unit = {
     val titleStr = "Components"
     val markup = markupForComponent(info)
-    if (Main.contentTitle.textContent != titleStr) {
-      Main.clearContent()
-      Main.setContentTitle(titleStr)
+    if (mainContent.contentTitle.textContent != titleStr) {
+      mainContent.clearContent()
+      mainContent.setContentTitle(titleStr)
     }
 
-    Main.content.appendChild(markup.render)
+    mainContent.content.appendChild(markup.render)
   }
 
   // Action when user clicks on a subscriber link
@@ -77,12 +76,13 @@ object Component {
   // Generates the HTML markup to display the component information
   def markupForComponent(info: ComponentInfo) = {
     import scalatags.JsDom.all._
+    import scalacss.ScalatagsCss._
 
     div(cls := "container", id := getComponentInfoId(info.name),
       h2(info.name),
       p(info.description),
       h3(s"Items published by ${info.name}"),
-      table("data-toggle".attr := "table",
+      table(Styles.componentTable, "data-toggle".attr := "table",
         thead(
           tr(
             th("Name"),
@@ -103,7 +103,7 @@ object Component {
         )
       ),
       h3(s"Items subscribed to by ${info.name}"),
-      table("data-toggle".attr := "table",
+      table(Styles.componentTable, "data-toggle".attr := "table",
         thead(
           tr(
             th("Prefix.Name"),

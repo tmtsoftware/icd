@@ -8,6 +8,30 @@ object Styles extends StyleSheet.Inline {
   import dsl._
   import language.postfixOps
 
+
+  /*
+  @media (min-width: 992px) {
+    #main-wrapper {
+        float:right;
+    }
+}
+@media (max-width: 992px) {
+    #main-wrapper {
+        padding-top: 0;
+    }
+}
+@media (max-width: 992px) {
+    #sidebar-wrapper {
+        position: static;
+        height:auto;
+        max-height: 300px;
+        border-right:0;
+    }
+}
+
+   */
+
+
   val wrapper = style(
     minHeight(100 %%),
     height(100 %%),
@@ -19,7 +43,7 @@ object Styles extends StyleSheet.Inline {
   )
 
   val mainWrapper = style(
-    addClassName("col-md-10"),
+    addClassName("col-md-8"),
     height(100 %%),
     overflowY.auto,
     padding(50 px, 0 px, 0 px, 0 px)
@@ -33,7 +57,7 @@ object Styles extends StyleSheet.Inline {
   )
 
   val sidebarWrapper = style(
-    addClassName("col-md-1"),
+    addClassName("col-md-2"),
     height(100 %%),
     padding(50 px, 0 px, 0 px, 0 px),
     borderRight(1 px, solid, gray),
@@ -51,5 +75,12 @@ object Styles extends StyleSheet.Inline {
     borderLeft(0 px),
     borderRight(0 px),
     borderTop(0 px)
+  )
+
+  // Control width of tables in the information displayed for selected components
+  val componentTable = style(
+    maxWidth(80 %%)
+//    tableLayout.fixed,
+//    width(100%%)
   )
 }

@@ -1,6 +1,6 @@
 package icd.web.client
 
-import org.scalajs.dom
+import org.scalajs.dom._
 import org.scalajs.dom.raw.Node
 
 import scalacss.ScalatagsCss._
@@ -9,17 +9,12 @@ import scalatags.JsDom.all._
 /**
  * Manages the main layout (below the navbar)
  */
-object Layout {
+case class Layout() extends Displayable {
 
   //Styles.render[TypedTag[HTMLStyleElement]], Styles.mainWrapper,
   val wrapper = div(Styles.wrapper).render
 
-  /**
-   * Creates the html "wrapper" that holds the items to be added
-   */
-  def init(): Unit = {
-    dom.document.body.appendChild(wrapper)
-  }
+  override def markup(): Element = wrapper
 
   /**
    * Adds an HTML element to the layout.

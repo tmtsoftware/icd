@@ -1,9 +1,8 @@
 package icd.web.client
 
 import org.scalajs.dom
-import org.scalajs.dom.raw.HTMLInputElement
+import org.scalajs.dom.raw.{Node, HTMLInputElement}
 
-import scalatags.JsDom.TypedTag
 import org.scalajs.dom.Element
 
 import scalatags.JsDom.all._
@@ -11,7 +10,7 @@ import scalatags.JsDom.all._
 /**
  * Manages the sidebar items
  */
-trait Sidebar {
+case class Sidebar(components: Components) extends Displayable {
 
   val sidebarList = ul(cls := "nav list-group").render
 
@@ -19,9 +18,8 @@ trait Sidebar {
   private def checkboxId(compName: String): String = s"$compName-checkbox"
 
   // HTML for component
-  private def renderComponentCheckBox(compName: String) = {
+  private def componentCheckBox(compName: String) = {
     import scalacss.ScalatagsCss._
-
     li(
       a(Styles.listGroupItem, href := "#")(
         div(cls := "checkbox")(
@@ -30,13 +28,13 @@ trait Sidebar {
             compName)
         )
       )
-    ).render
+    )
   }
 
   // called when a component is selected or deselected
   private def componentSelected(compName: String)(e: dom.Event): Unit = {
     val checked = e.srcElement.asInstanceOf[HTMLInputElement].checked
-    if (checked) Component.addComponent(compName) else Component.removeComponent(compName)
+    if (checked) components.addComponent(compName) else components.removeComponent(compName)
   }
 
   // Uncheck all of the checkboxes in the sidebar
@@ -46,10 +44,18 @@ trait Sidebar {
   }
 
   /**
+   * Adds an HTML element to the sidebar.
+   * @param node a scalatags node
+   */
+  def addItem(node: Node): Unit = {
+    sidebarList.appendChild(node)
+  }
+
+  /**
    * Adds an ICD component to the sidebar
    */
   def addComponent(compName: String): Unit = {
-    sidebarList.appendChild(renderComponentCheckBox(compName))
+    addItem(componentCheckBox(compName).render)
     $id(checkboxId(compName)).addEventListener("change", componentSelected(compName) _, useCapture = false)
   }
 
@@ -57,28 +63,19 @@ trait Sidebar {
    * Removes all the ICD components from the sidebar
    */
   def clearComponents(): Unit = {
-    sidebarList.innerHTML = ""
+    //    sidebarList.innerHTML = ""
+    val nodeList = sidebarList.getElementsByTagName("input")
+    for (i <- 0 until nodeList.length) sidebarList.removeChild(nodeList(i))
   }
 
-  private def markup(): TypedTag[Element] = {
+  override def markup(): Element = {
     import scalacss.ScalatagsCss._
     //Styles.render[TypedTag[HTMLStyleElement]], Styles.sidebarWrapper,
-    //    Styles.sidebar
     div(Styles.sidebarWrapper)(
       div(Styles.sidebar)(
         sidebarList
       )
-    )
-  }
-
-  /**
-   * Adds and initializes the left sidebar
-   */
-  def init(): Unit = {
-    Layout.addItem(markup().render)
+    ).render
   }
 }
 
-object LeftSidebar extends Sidebar
-
-object RightSidebar extends Sidebar

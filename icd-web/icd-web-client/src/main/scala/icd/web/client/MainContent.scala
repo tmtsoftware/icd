@@ -5,7 +5,7 @@ import scalatags.JsDom.all._
 /**
  * Manages the main content section
  */
-object Main {
+case class MainContent() extends Displayable {
   val contentTitle = h3(cls := "page-header").render
   val content = div(id := "content").render
 
@@ -28,16 +28,12 @@ object Main {
     setContent("Internal Error", errorDiv("Internal error. The database may be down."))
   }
 
-  private def markup() = {
+  def markup() = {
     import scalacss.ScalatagsCss._
     //Styles.render[TypedTag[HTMLStyleElement]], Styles.mainWrapper,
 
     div(Styles.mainWrapper)(
       div(Styles.main)(contentTitle, content)
-    )
-  }
-
-  def init(): Unit = {
-    Layout.addItem(markup().render)
+    ).render
   }
 }

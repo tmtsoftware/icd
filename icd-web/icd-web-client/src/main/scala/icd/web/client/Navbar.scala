@@ -1,21 +1,19 @@
 package icd.web.client
 
-import org.scalajs.dom
 import org.scalajs.dom.Element
 
-import scalatags.JsDom.TypedTag
 import scalatags.JsDom.all._
 import org.scalajs.dom.raw.Node
 
 /**
  * Manages the navbar
  */
-object Navbar {
+case class Navbar() extends Displayable {
 
   val leftNavbar = ul(cls := "nav navbar-nav").render
   val rightNavbar = ul(cls := "nav navbar-nav pull-right").render
 
-  private def markup(): TypedTag[Element] = {
+  def markup(): Element = {
     import scalatags.JsDom.tags2._
 
     nav(cls := "navbar navbar-default navbar-fixed-top", role := "navigation")(
@@ -28,15 +26,10 @@ object Navbar {
         ),
         a(cls := "navbar-brand")("TMT ICD Database")
       ),
-      div(cls := "collapse navbar-collapse")(
+      div(id := "icd-navbar", cls := "collapse navbar-collapse")(
         leftNavbar, rightNavbar
       )
-    )
-  }
-
-  // Creates the navbar item
-  def init(): Unit = {
-    dom.document.body.appendChild(markup().render)
+    ).render
   }
 
   /**
