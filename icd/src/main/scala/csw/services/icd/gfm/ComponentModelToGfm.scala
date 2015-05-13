@@ -9,13 +9,13 @@ case class ComponentModelToGfm(m: ComponentModel, level: Level) extends Gfm {
 
   import Gfm._
 
-  private val head = mkHeading(level, 2, s"Component: ${m.name}")
+  private val head = mkHeading(level, 2, s"${m.componentType}: ${m.title}")
 
   private val desc = mkParagraph(m.description)
 
   private val table = mkTable(
-    List("Component Type", "Prefix", "Uses Time", "Uses Events", "Uses Configurations", "Uses Properties"),
-    List(List(m.componentType, m.prefix, m.usesTime.toString, m.usesEvents.toString, m.usesConfigurations.toString, m.usesProperties.toString)))
+    List("Subsyatem", "Name", "Prefix", "Version", "WBS ID"),
+    List(List(m.subsystem, m.name, m.prefix, m.version.toString, m.wbsId)))
 
   val gfm = s"$head\n$desc\n$table"
 }

@@ -81,7 +81,6 @@ object IcdValidator {
       val result = for (stdName ← stdNames) yield {
         val inputFile = new File(dir, stdName.name)
         if (!inputFile.exists()) {
-          // List(Problem("info", s"${stdName.name} is missing in $dir"))
           Nil
         } else {
           val inputConfig = ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())

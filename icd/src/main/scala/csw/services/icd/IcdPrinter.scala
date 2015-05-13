@@ -20,7 +20,7 @@ object IcdPrinter {
     implicit val counter = Iterator.from(0)
     val level: Level = Level()
 
-    val title = "#Interface Control Document\n#" + models.head.icdModel.map(_.name).getOrElse("")
+    val title = "#Interface Control Document\n#" + models.head.subsystemModel.map(_.title).getOrElse("")
     val pagebreak = "\n<div class='pagebreak'></div>\n" // new page, see pagebreak in icd.css
     val body = models.map(IcdToGfm(_, level.inc1()).gfm).mkString(pagebreak)
     val toc = IcdToGfm.gfmToToc(body)
@@ -33,7 +33,7 @@ object IcdPrinter {
    * @return a string in HTML format
    */
   def getAsHtml(models: List[IcdModels]): String = {
-    val title = models.head.icdModel.map(_.name).getOrElse("ICD")
+    val title = models.head.subsystemModel.map(_.title).getOrElse("ICD")
     IcdToHtml.getAsHtml(title, getAsGfm(models))
   }
 

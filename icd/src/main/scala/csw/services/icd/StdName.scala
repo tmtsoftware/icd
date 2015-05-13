@@ -6,7 +6,7 @@ import java.io.File
  * Standard file names expected for a complete ICD
  */
 object StdName {
-  val icdFileNames = StdName("icd-model.conf", "icd-schema.conf")
+  val subsystemFileNames = StdName("subsystem-model.conf", "subsystem-schema.conf")
   val componentFileNames = StdName("component-model.conf", "component-schema.conf")
   val publishFileNames = StdName("publish-model.conf", "publish-schema.conf")
   val subscribeFileNames = StdName("subscribe-model.conf", "subscribe-schema.conf")
@@ -15,7 +15,7 @@ object StdName {
   /**
    * List of standard ICD files and schemas
    */
-  val stdNames = List(icdFileNames, componentFileNames, publishFileNames, subscribeFileNames, commandFileNames)
+  val stdNames = List(subsystemFileNames, componentFileNames, publishFileNames, subscribeFileNames, commandFileNames)
 }
 
 /**
@@ -26,5 +26,8 @@ case class StdName(name: String, schema: String) {
    * Base name: For example icd, component, publish, etc.
    */
   val modelBaseName = name.substring(0, name.length - 11)
+
+  def isSubsystemModel = modelBaseName == "subsystem"
+  def isComponentModel = modelBaseName == "component"
 }
 

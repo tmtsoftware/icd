@@ -1,19 +1,19 @@
 package csw.services.icd.gfm
 
-import csw.services.icd.model.IcdModel
+import csw.services.icd.model.SubsystemModel
 
 /**
  * Converts an IcdModel instance to a GFM formatted string
  */
-case class IcdModelToGfm(m: IcdModel, level: Level) extends Gfm {
+case class IcdModelToGfm(m: SubsystemModel, level: Level) extends Gfm {
 
   import Gfm._
 
-  private val head = mkHeading(level, 1, m.name)
+  private val head = mkHeading(level, 1, m.title)
 
   private val table = mkTable(
-    List("Version", "Subsystem", "WBS Id"),
-    List(List(m.version.toString, m.subsystem, m.wbsId)))
+    List("Version"),
+    List(List(m.version.toString)))
 
   private val desc = mkParagraph(m.description)
 

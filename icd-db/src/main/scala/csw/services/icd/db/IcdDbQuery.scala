@@ -24,11 +24,11 @@ object IcdDbQuery {
     lazy val component = parts.dropRight(1).mkString(".")
 
     // The top level ICD collection name
-    lazy val icd = parts.head
+    lazy val subsystem = parts.head
   }
 
   // Contains db collection names related to an ICD
-  case class IcdEntry(name: String, icd: Option[String], component: Option[String],
+  case class IcdEntry(name: String, subsystem: Option[String], component: Option[String],
                       publish: Option[String], subscribe: Option[String], command: Option[String])
 
   // Types of published items
@@ -107,7 +107,7 @@ case class IcdDbQuery(db: MongoDB) {
   // Returns an IcdEntry for the given collection path
   private def getEntry(name: String, paths: List[String]): IcdEntry = {
     IcdEntry(name = name,
-      icd = paths.find(_.endsWith(".icd")),
+      subsystem = paths.find(_.endsWith(".subsystem")),
       component = paths.find(_.endsWith(".component")),
       publish = paths.find(_.endsWith(".publish")),
       subscribe = paths.find(_.endsWith(".subscribe")),
@@ -125,6 +125,11 @@ case class IcdDbQuery(db: MongoDB) {
   // Parses the given json and returns a componnet model object
   private def jsonToComponentModel(json: String): ComponentModel = {
     ComponentModel(getConfig(json))
+  }
+
+  // Parses the given json and returns a subsystem model object
+  private def jsonToSubsystemModel(json: String): SubsystemModel = {
+    SubsystemModel(getConfig(json))
   }
 
   // Returns an IcdEntry object for the given component name, if found
@@ -177,7 +182,7 @@ case class IcdDbQuery(db: MongoDB) {
     db.collectionNames()
       .filter(_.endsWith(componentFileNames.modelBaseName))
       .map(IcdPath)
-      .filter(p ⇒ p.icd == icdName && p.parts.length > 2)
+      .filter(p ⇒ p.subsystem == icdName && p.parts.length > 2)
       .map(_.path)
       .map(db(_).head.toString)
       .map(jsonToComponentModel(_).name)
@@ -196,16 +201,19 @@ case class IcdDbQuery(db: MongoDB) {
   def getHcdNames: List[String] = getComponents("HCD").map(_.name)
 
   /**
-   * Returns a list of all top level ICDs in the database
+   * Returns a list of all subsystem names in the database.
+   * If a subsystem-model.conf was included, it is used, otherwise the
+   * subsystem names defined by the components are used.
    */
-  def getIcdNames: List[String] = {
-    // Get list of top level collection names, then get the component name for each, if defined
-    val result = for (icdColl ← db.collectionNames().filter(isStdSet).map(IcdPath).map(_.icd).toList) yield {
-      val coll = db(s"$icdColl.${componentFileNames.modelBaseName}")
-      val data = coll.headOption
-      if (data.isDefined) Some(jsonToComponentModel(data.get.toString).name) else None
+  def getSubsystemNames: List[String] = {
+    val result = for (entry ← getEntries) yield {
+      if (entry.subsystem.isDefined) {
+        Some(jsonToSubsystemModel(db(entry.subsystem.get).head.toString).name)
+      } else if (entry.component.isDefined) {
+        Some(jsonToComponentModel(db(entry.component.get).head.toString).subsystem)
+      } else None
     }
-    result.flatten
+    result.flatten.distinct
   }
 
   // --- Get model objects, given a component name ---
@@ -242,11 +250,11 @@ case class IcdDbQuery(db: MongoDB) {
   }
 
   /**
-   * Returns an object describing the ICD for the named component
+   * Returns an object describing the ICD subsystem for the named component
    */
-  def getIcdModel(name: String): Option[IcdModel] = {
-    for (entry ← entryForComponentName(name) if entry.icd.isDefined)
-      yield IcdModel(getConfig(db(entry.icd.get).head.toString))
+  def getSubsystemModel(name: String): Option[SubsystemModel] = {
+    for (entry ← entryForComponentName(name) if entry.subsystem.isDefined)
+      yield SubsystemModel(getConfig(db(entry.subsystem.get).head.toString))
   }
 
   // ---
@@ -262,7 +270,7 @@ case class IcdDbQuery(db: MongoDB) {
   def getModels(componentName: String): List[IcdModels] = {
     // Holds all the model classes associated with a single ICD entry.
     case class Models(entry: IcdEntry) extends IcdModels {
-      override val icdModel = entry.icd.map(s ⇒ IcdModel(getConfig(db(s).head.toString)))
+      override val subsystemModel = entry.subsystem.map(s ⇒ SubsystemModel(getConfig(db(s).head.toString)))
       override val publishModel = entry.publish.map(s ⇒ PublishModel(getConfig(db(s).head.toString)))
       override val subscribeModel = entry.subscribe.map(s ⇒ SubscribeModel(getConfig(db(s).head.toString)))
       override val commandModel = entry.command.map(s ⇒ CommandModel(getConfig(db(s).head.toString)))

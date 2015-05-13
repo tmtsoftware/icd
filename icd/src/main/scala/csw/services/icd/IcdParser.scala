@@ -12,7 +12,7 @@ case class IcdParser(dir: File) extends IcdModels {
 
   import StdName._
 
-  val icdModel = getConfig(icdFileNames.name).map(IcdModel(_))
+  val subsystemModel = getConfig(subsystemFileNames.name).map(SubsystemModel(_))
   val componentModel = getConfig(componentFileNames.name).map(ComponentModel(_))
   val publishModel = getConfig(publishFileNames.name).map(PublishModel(_))
   val subscribeModel = getConfig(subscribeFileNames.name).map(SubscribeModel(_))

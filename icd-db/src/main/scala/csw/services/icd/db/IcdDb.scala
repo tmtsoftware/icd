@@ -5,6 +5,8 @@ import java.io.File
 import com.mongodb.casbah.Imports._
 import com.typesafe.config.{ Config, ConfigResolveOptions, ConfigFactory }
 import csw.services.icd._
+import csw.services.icd.db.IcdDb.StdConfig
+import csw.services.icd.model.{ ComponentModel, SubsystemModel }
 import org.joda.time.DateTimeZone
 
 import scala.io.StdIn
@@ -16,11 +18,12 @@ object IcdDbDefaults {
 }
 
 object IcdDb extends App {
+
   import IcdDbDefaults._
 
   /**
    * Command line options: [--db <name> --host <host> --port <port>
-   * --ingest <dir> --major --component <name> --list [icds|hcds|assemblies|all]  --out <outputFile>
+   * --ingest <dir> --major --component <name> --list [subsystems|hcds|assemblies|all]  --out <outputFile>
    * --drop [db|component] --versions <icdName> --diff <icdName>:<version1>[,version2]
    * --publishes <path> --subscribes <path>
    * ]
@@ -70,9 +73,9 @@ object IcdDb extends App {
       c.copy(comment = x)
     } text "A comment describing the changes made (default: empty string)"
 
-    opt[String]('l', "list") valueName "[icds|assemblies|hcds|all]" action { (x, c) ⇒
+    opt[String]('l', "list") valueName "[subsystems|assemblies|hcds|all]" action { (x, c) ⇒
       c.copy(list = Some(x))
-    } text "Prints a list of ICDs, assemblies, HCDs or all components"
+    } text "Prints a list of ICD subsystems, assemblies, HCDs or all components"
 
     opt[String]('c', "component") valueName "<name>" action { (x, c) ⇒
       c.copy(component = Some(x))
@@ -123,7 +126,7 @@ object IcdDb extends App {
   private def run(options: Options): Unit = {
     val db = IcdDb(options.dbName, options.host, options.port)
 
-    options.ingest.foreach(dir ⇒ db.ingest(dir, None, options.comment, options.majorVersion))
+    options.ingest.foreach(dir ⇒ db.ingest(dir, options.comment, options.majorVersion))
     options.list.foreach(list)
     options.outputFile.foreach(output)
     options.drop.foreach(drop)
@@ -135,8 +138,8 @@ object IcdDb extends App {
     // --list option
     def list(componentType: String): Unit = {
       val opt = componentType.toLowerCase
-      val list = if (opt.startsWith("i"))
-        db.query.getIcdNames
+      val list = if (opt.startsWith("s"))
+        db.query.getSubsystemNames
       else if (opt.startsWith("as"))
         db.query.getAssemblyNames
       else if (opt.startsWith("h"))
@@ -222,8 +225,18 @@ object IcdDb extends App {
     // --subscribes option
     def listSubscribes(path: String): Unit = {
     }
-
   }
+
+  /**
+   * Used to determine the subsystem and component name, given a set of model files.
+   * The MongoDB collection name is $subsystem.$name or $subsystem.$component.$name,
+   * where name is the value returned by StdName.modelBaseName.
+   *
+   * @param stdName indicates which of the ICD model files the config represents
+   * @param config the model file parsed into a Config
+   */
+  case class StdConfig(stdName: StdName, config: Config)
+
 }
 
 /**
@@ -243,38 +256,97 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
    * in its subdirectories into the database.
    * @param dir the top level directory containing one or more of the the standard set of ICD files
    *            and any number of subdirectories containing ICD files
-   * @param nameOpt optional name to store the ICD under (the collection name, usually the last component of the directory name)
    * @param comment optional change comment
    * @param majorVersion if true, increment the ICD's major version
    */
-  def ingest(dir: File = new File("."), nameOpt: Option[String] = None, comment: String = "", majorVersion: Boolean = false): List[Problem] = {
-    val problems = IcdValidator.validateRecursive(dir) // XXX TODO: enforce that dir name == component name?
-    if (problems.isEmpty) {
-      val name = nameOpt.getOrElse(dir.getAbsoluteFile.getName)
-      ingestOneDir(name, dir)
-      for (subdir ← subDirs(dir)) {
-        // build names for collections from name and subdir names, separated by "."
-        val path = dir.toPath.relativize(subdir.toPath).toString.replaceAll("/", ".")
-        ingestOneDir(s"$name.$path", subdir)
-      }
-      manager.newVersion(name, comment, majorVersion)
+  def ingest(dir: File = new File("."), comment: String = "", majorVersion: Boolean = false): List[Problem] = {
+    val results = (dir :: subDirs(dir)).map(ingestOneDir)
+    val problems = results.flatMap {
+      case Left(list) ⇒ list
+      case Right(_)   ⇒ None
     }
-    problems
+    if (problems.nonEmpty) {
+      problems
+    } else {
+      val names = results.flatMap {
+        case Left(_)     ⇒ None
+        case Right(name) ⇒ Some(name)
+      }
+      if (names.nonEmpty)
+        manager.newVersion(names.head, comment, majorVersion)
+      Nil
+    }
   }
 
   /**
    * Ingests all files with the standard names (stdNames) in the given directory (only) into the database.
-   * @param name the name of the collection in which to store this part of the ICD
    * @param dir the directory containing the standard set of ICD files
+   * @return on error, a list describing the problems, otherwise the base collection name
    */
-  private[db] def ingestOneDir(name: String, dir: File): Unit = {
+  private[db] def ingestOneDir(dir: File): Either[List[Problem], String] = {
     import csw.services.icd.StdName._
-    for (stdName ← stdNames) yield {
-      val inputFile = new File(dir, stdName.name)
-      if (inputFile.exists()) {
-        val inputConfig = ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())
-        ingestConfig(s"$name.${stdName.modelBaseName}", inputConfig)
+
+    val list = stdNames.flatMap {
+      stdName ⇒
+        val inputFile = new File(dir, stdName.name)
+        if (inputFile.exists())
+          Some(StdConfig(stdName,
+            ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())))
+        else None
+    }
+    ingestConfigs(list)
+  }
+
+  /**
+   * Ingests the given ICD config objects (based on the contents of one ICD directory)
+   * @param list list of ICD model files packaged as StdConfig objects
+   * @return on error, a list describing the problems, otherwise the base collection name
+   */
+  def ingestConfigs(list: List[StdConfig]): Either[List[Problem], String] = {
+    val validateResults = list.flatMap { stdConfig ⇒
+      val problems = IcdValidator.validate(stdConfig.config, stdConfig.stdName.name)
+      if (problems.nonEmpty) problems
+      else None
+    }
+    if (validateResults.nonEmpty) {
+      Left(validateResults)
+    } else {
+      getCollectionName(list) match {
+        case Some(collName) ⇒
+          ingestConfigs(collName, list)
+          Right(collName)
+        case None ⇒
+          Left(List(Problem("error",
+            s"Each ICD directory must contain ${StdName.componentFileNames.name} or ${StdName.subsystemFileNames.name}")))
       }
+    }
+  }
+
+  /**
+   * Returns the base MongoDB collection name to use for the given ICD configs.
+   * @param list list of ICD model files packaged as StdConfig objects
+   * @return the collection name, if found
+   */
+  def getCollectionName(list: List[StdConfig]): Option[String] = {
+    list.flatMap { stdConfig ⇒
+      if (stdConfig.stdName.isSubsystemModel)
+        Some(SubsystemModel(stdConfig.config).name)
+      else if (stdConfig.stdName.isComponentModel) {
+        val model = ComponentModel(stdConfig.config)
+        Some(s"${model.subsystem}.${model.name}")
+      } else None
+    }.headOption
+  }
+
+  /**
+   * Ingests the given ICD config objects (based on the contents of one ICD directory)
+   * @param name the name of the collection in which to store this part of the ICD
+   * @param list list of ICD model files packaged as StdConfig objects
+   */
+  def ingestConfigs(name: String, list: List[StdConfig]): Unit = {
+    list.foreach { stdConfig ⇒
+      val collName = s"$name.${stdConfig.stdName.modelBaseName}"
+      ingestConfig(collName, stdConfig.config)
     }
   }
 

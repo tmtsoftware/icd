@@ -13,7 +13,7 @@ case class IcdToGfm(p: IcdModels, level: Level = Level()) extends Gfm {
 
   // Ignore missing parts for now...
   val parts = List(
-    p.icdModel.map(IcdModelToGfm(_, level).gfm),
+    p.subsystemModel.map(IcdModelToGfm(_, level).gfm),
     p.componentModel.map(ComponentModelToGfm(_, level.inc2()).gfm),
     p.publishModel.map(PublishModelToGfm(_, level.inc2()).gfm),
     p.subscribeModel.map(SubscribeModelToGfm(_, level.inc2()).gfm),

@@ -23,7 +23,7 @@ case class FileUpload(csrfToken: String, inputDirSupported: Boolean,
   val errorSet = Set("error", "fatal")
 
   // standard ICD file names (See StdName class in icd-db. Reuse here?)
-  val stdList = List("icd-model.conf", "component-model.conf", "publish-model.conf",
+  val stdList = List("subsystem-model.conf", "component-model.conf", "publish-model.conf",
     "subscribe-model.conf", "command-model.conf")
 
   def isStdFile(file: dom.File): Boolean = stdList.contains(basename(file))

@@ -5,7 +5,7 @@ package csw.services.icd.model
  * (the files found in each directory of an ICD definition. Each file is optional).
  */
 trait IcdModels {
-  val icdModel: Option[IcdModel]
+  val subsystemModel: Option[SubsystemModel]
   val componentModel: Option[ComponentModel]
   val publishModel: Option[PublishModel]
   val subscribeModel: Option[SubscribeModel]

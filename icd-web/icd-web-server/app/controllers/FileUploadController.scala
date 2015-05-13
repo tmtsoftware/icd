@@ -33,7 +33,7 @@ object FileUploadController extends Controller {
   }
 
   // Server side of the upload ICD feature.
-  // The uploaded file may be a single .conf file with X-FILENAME giving the relative path
+  // The uploaded file should be a single .conf file with X-FILENAME giving the relative path
   // (which is needed to determine where in the ICD it belongs).
   def uploadFile = Action(parse.tolerantText) { request =>
     println(s"XXX request id = ${request.id}, headers = ${request.headers}")

@@ -13,7 +13,11 @@ import org.scalatest.FunSuite
  */
 class IcdValidatorTests extends FunSuite {
 
-  val testDir = new File("src/test/resources")
+  val testDir = {
+    val d1 = new File("src/test/resources")
+    val d2 = new File("icd/src/test/resources")
+    if (d1.exists) d1 else d2
+  }
 
   def getConfig(name: String): Config = {
     ConfigFactory.parseResources(name).resolve(ConfigResolveOptions.noSystem())
@@ -45,7 +49,7 @@ class IcdValidatorTests extends FunSuite {
   // ---
 
   test("Test ICD validation") {
-    runTest("icd-model.conf", "icd-model-bad1.conf", "icd-schema.conf")
+    runTest("subsystem-model.conf", "subsystem-model-bad1.conf", "subsystem-schema.conf")
     runTest("publish-model.conf", "publish-model-bad1.conf", "publish-schema.conf")
     runTest("subscribe-model.conf", "subscribe-model-bad1.conf", "subscribe-schema.conf")
     runTest("command-model.conf", "command-model-bad1.conf", "command-schema.conf")
@@ -59,7 +63,7 @@ class IcdValidatorTests extends FunSuite {
   test("Test the parser") {
     val parser = IcdParser(testDir)
 
-    checkIcdModel(parser)
+    checkSubsystemModel(parser)
     checkComponentModel(parser)
     checkPublishModel(parser)
     checkCommandModel(parser)
@@ -74,23 +78,26 @@ class IcdValidatorTests extends FunSuite {
     f.close()
   }
 
-  def checkIcdModel(models: IcdModels): Unit = {
-    val icdModel = models.icdModel.get
-    assert(icdModel.modelVersion == "1.1")
-    assert(icdModel.name == "wfos")
-    assert(icdModel.version == 20141121)
-    assert(icdModel.wbsId == "TMT.INS.INST.WFOS.SWE")
+  def checkSubsystemModel(models: IcdModels): Unit = {
+    val subsystemModel = models.subsystemModel.get
+    assert(subsystemModel.modelVersion == "1.1")
+    assert(subsystemModel.name == "WFOS")
+    assert(subsystemModel.title == "Wide-Field Optical Spectrometer (WFOS)")
+    assert(subsystemModel.version == 20141121)
+    assert(subsystemModel.description.startsWith("The Wide Field"))
   }
 
   def checkComponentModel(models: IcdModels): Unit = {
     val componentModel = models.componentModel.get
     assert(componentModel.name == "filter")
-    assert(!componentModel.usesTime)
-    assert(componentModel.usesEvents)
-    assert(componentModel.usesConfigurations)
-    assert(!componentModel.usesProperties)
+    assert(componentModel.prefix == "wfos.filter")
+    assert(componentModel.subsystem == "WFOS")
+    assert(componentModel.title == "WFOS Filter")
     assert(componentModel.componentType == "Assembly")
     assert(componentModel.description == "This is the metadata description of the WFOS filter Assembly")
+    assert(componentModel.wbsId == "TMT.INS.INST.WFOS.SWE")
+    assert(componentModel.version == 20141121)
+    assert(componentModel.modelVersion == "1.1")
   }
 
   def checkPublishModel(models: IcdModels): Unit = {

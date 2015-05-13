@@ -3,7 +3,7 @@ package csw.services.icd.db
 import com.mongodb.{ WriteConcern, DBObject }
 import com.mongodb.casbah.Imports._
 import gnieh.diffson.{ JsonPatch, JsonDiff }
-import net.liftweb.json.JsonAST.{ JNothing, JField, JValue }
+import net.liftweb.json.JsonAST.{ JField, JValue }
 import net.liftweb.json.JsonParser
 import org.joda.time.{ DateTimeZone, DateTime }
 
@@ -112,7 +112,7 @@ case class IcdDbManager(db: MongoDB, query: IcdDbQuery) {
 
   // Returns a list of all of the parts (collections) belonging to the named ICD
   private def getIcdPaths(name: String): List[String] =
-    db.collectionNames().filter(isStdSet).map(IcdPath).filter(_.icd == name).map(_.path).toList
+    db.collectionNames().filter(isStdSet).map(IcdPath).filter(_.subsystem == name).map(_.path).toList
 
   /**
    * Increments the version for the named ICD.
