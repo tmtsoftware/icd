@@ -26,7 +26,7 @@ object Application extends Controller {
    * Gets a list of top level ICD names
    */
   def icdNames = Action {
-    val names = db.query.getIcdNames
+    val names = db.query.getSubsystemNames
     Ok(Json.toJson(names))
   }
 

@@ -116,18 +116,18 @@ case class IcdDbManager(db: MongoDB, query: IcdDbQuery) {
 
   /**
    * Increments the version for the named ICD.
-   * This creates a Mongo collection named $name.v that contains the ICD version (starting with "1.0"),
+   * This creates a Mongo collection named "name.v" that contains the ICD version (starting with "1.0"),
    * the user and date as well as a list of the names and versions of each of the ICD parts.
    *
-   * @param name the root path name of the ICD
+   * @param subsystem the name of the ICD's subsystem
    * @param comment change comment
    * @param majorVersion if true, increment the ICD's major version
    */
-  private[db] def newVersion(name: String, comment: String = "", majorVersion: Boolean = false): Unit = {
-    val collName = versionCollectionName(name)
+  def newVersion(subsystem: String, comment: String = "", majorVersion: Boolean = false): Unit = {
+    val collName = versionCollectionName(subsystem)
 
     // Get the paths of all the ICD parts
-    val paths = getIcdPaths(name)
+    val paths = getIcdPaths(subsystem)
 
     // Generate a list of maps with name and version each current ICD part (to store with this version)
     def getVersion(path: String): Int = db(path).head(versionKey).asInstanceOf[Int]

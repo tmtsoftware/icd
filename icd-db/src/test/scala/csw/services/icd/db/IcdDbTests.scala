@@ -37,11 +37,11 @@ class IcdDbTests extends FunSuite {
 
     // Test getting items based on the component name
     val envCtrl = db.query.getComponentModel("envCtrl").get
-    assert(envCtrl.name == "envCtrl")
+    assert(envCtrl.component == "envCtrl")
     assert(envCtrl.componentType == "Assembly")
     assert(envCtrl.prefix == "nfiraos.ncc.assembly.envCtrl")
 
-    val commands = db.query.getCommandModel(envCtrl.name).get
+    val commands = db.query.getCommandModel(envCtrl.component).get
     assert(commands.items.size == 2)
 
     assert(commands.items.head.name == "ENVIRONMENTAL_CONTROL_INITIALIZE")
@@ -50,7 +50,7 @@ class IcdDbTests extends FunSuite {
     assert(commands.items.last.name == "ENVIRONMENTAL_CONTROL_STOP")
     assert(commands.items.last.requirements.head == "INT-NFIRAOS-AOESW-0405")
 
-    val publish = db.query.getPublishModel(envCtrl.name).get
+    val publish = db.query.getPublishModel(envCtrl.component).get
     val telemetryList = publish.telemetryList
     assert(telemetryList.size == 2)
     val logging = telemetryList.head
@@ -84,11 +84,11 @@ class IcdDbTests extends FunSuite {
     testModels(db)
 
     // Test saving document from the database
-    IcdDbPrinter(db.query).saveToFile(envCtrl.name, new File("envCtrl.pdf"))
+    IcdDbPrinter(db.query).saveToFile(envCtrl.component, new File("envCtrl.pdf"))
     IcdDbPrinter(db.query).saveToFile("NFIRAOS", new File("NFIRAOS.pdf"))
 
     // Test dropping a component
-    db.query.dropComponent(envCtrl.name)
+    db.query.dropComponent(envCtrl.component)
     assert(db.query.getComponentModel("envCtrl").isEmpty)
 
     //    db.query.dropComponent("NFIRAOS")
@@ -146,7 +146,7 @@ class IcdDbTests extends FunSuite {
   def testModels(db: IcdDb): Unit = {
     val modelsList = db.query.getModels("NFIRAOS")
     val publishInfo = for (models ← modelsList) yield {
-      val compName = models.componentModel.get.name
+      val compName = models.componentModel.get.component
       models.publishModel.foreach { publishModel ⇒
         publishModel.telemetryList.foreach { telemetryModel ⇒
           println(s"$compName publishes telemetry ${telemetryModel.name}: ${telemetryModel.description}")

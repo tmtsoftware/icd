@@ -16,6 +16,11 @@ object StdName {
    * List of standard ICD files and schemas
    */
   val stdNames = List(subsystemFileNames, componentFileNames, publishFileNames, subscribeFileNames, commandFileNames)
+
+  /**
+   * Set of standard ICD file names
+   */
+  val stdSet = stdNames.map(_.name).toSet
 }
 
 /**

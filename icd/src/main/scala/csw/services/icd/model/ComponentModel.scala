@@ -12,20 +12,20 @@ object ComponentModel {
   def apply(config: Config): ComponentModel =
     ComponentModel(
       componentType = config.as[String]("componentType"),
-      subsystem = config.getString("subsystem"),
+      subsystem = config.as[String](BaseModel.subsystemKey),
+      component = config.as[String](BaseModel.componentKey),
       prefix = config.as[String]("prefix"),
-      name = config.as[String]("name"),
-      title = config.getString("title"),
+      title = config.as[String]("title"),
       description = config.as[String]("description"),
-      modelVersion = config.getString("modelVersion"),
+      modelVersion = config.as[String]("modelVersion"),
       version = config.getInt("version"),
       wbsId = config.as[Option[String]]("wbsId").getOrElse(""))
 }
 
 case class ComponentModel(componentType: String,
                           subsystem: String,
+                          component: String,
                           prefix: String,
-                          name: String,
                           title: String,
                           description: String,
                           modelVersion: String,

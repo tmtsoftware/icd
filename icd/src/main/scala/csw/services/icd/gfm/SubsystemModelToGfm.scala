@@ -3,9 +3,9 @@ package csw.services.icd.gfm
 import csw.services.icd.model.SubsystemModel
 
 /**
- * Converts an IcdModel instance to a GFM formatted string
+ * Converts a SubsystemModel instance to a GFM formatted string
  */
-case class IcdModelToGfm(m: SubsystemModel, level: Level) extends Gfm {
+case class SubsystemModelToGfm(m: SubsystemModel, level: Level) extends Gfm {
 
   import Gfm._
 

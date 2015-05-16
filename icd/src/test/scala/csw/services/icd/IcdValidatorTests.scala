@@ -89,7 +89,7 @@ class IcdValidatorTests extends FunSuite {
 
   def checkComponentModel(models: IcdModels): Unit = {
     val componentModel = models.componentModel.get
-    assert(componentModel.name == "filter")
+    assert(componentModel.component == "filter")
     assert(componentModel.prefix == "wfos.filter")
     assert(componentModel.subsystem == "WFOS")
     assert(componentModel.title == "WFOS Filter")

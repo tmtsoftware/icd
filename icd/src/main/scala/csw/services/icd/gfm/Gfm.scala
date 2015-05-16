@@ -33,13 +33,6 @@ object Gfm {
     s"\n${"#" * (depth + 1)} $target$heading\n"
   }
 
-  //  /**
-  //   * Returns a markdown heading with the given level
-  //   */
-  //  def mkHeading(depth: Int, text: String): String = {
-  //    s"\n${"#" * (depth + 1)}$text\n"
-  //  }
-
   def mkParagraph(text: String) = s"${paragraphFilter(text)}\n"
 
   def bold(text: String) = s"**$text**"

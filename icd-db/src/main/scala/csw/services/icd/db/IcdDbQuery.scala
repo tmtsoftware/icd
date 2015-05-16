@@ -136,6 +136,17 @@ case class IcdDbQuery(db: MongoDB) {
   private def entryForComponentName(name: String): Option[IcdEntry] = {
     val list = for (entry ← getEntries if entry.component.isDefined) yield {
       val coll = db(entry.component.get)
+      val data = coll.findOne(BaseModel.componentKey -> name)
+      if (data.isDefined) Some(entry) else None
+    }
+    list.flatten.headOption
+  }
+
+  // Returns an IcdEntry object for the given subsystem name, if found
+  // XXX FIXME TODO: If the subsystem-model.conf file is not required, need to add some code
+  private def entryForSubsystemName(name: String): Option[IcdEntry] = {
+    val list = for (entry ← getEntries if entry.subsystem.isDefined) yield {
+      val coll = db(entry.subsystem.get)
       val data = coll.findOne("name" -> name)
       if (data.isDefined) Some(entry) else None
     }
@@ -173,7 +184,7 @@ case class IcdDbQuery(db: MongoDB) {
   /**
    * Returns a list of all the component names in the DB
    */
-  def getComponentNames: List[String] = getComponents.map(_.name)
+  def getComponentNames: List[String] = getComponents.map(_.component)
 
   /**
    * Returns a list of all the subcomponent names in the DB belonging to the given ICD
@@ -185,7 +196,7 @@ case class IcdDbQuery(db: MongoDB) {
       .filter(p ⇒ p.subsystem == icdName && p.parts.length > 2)
       .map(_.path)
       .map(db(_).head.toString)
-      .map(jsonToComponentModel(_).name)
+      .map(jsonToComponentModel(_).component)
       .toList
       .sorted
   }
@@ -193,12 +204,12 @@ case class IcdDbQuery(db: MongoDB) {
   /**
    * Returns a list of all the assembly ICDs in the database
    */
-  def getAssemblyNames: List[String] = getComponents("Assembly").map(_.name)
+  def getAssemblyNames: List[String] = getComponents("Assembly").map(_.component)
 
   /**
    * Returns a list of all the assembly ICDs in the database
    */
-  def getHcdNames: List[String] = getComponents("HCD").map(_.name)
+  def getHcdNames: List[String] = getComponents("HCD").map(_.component)
 
   /**
    * Returns a list of all subsystem names in the database.
@@ -222,7 +233,7 @@ case class IcdDbQuery(db: MongoDB) {
    * Returns the model object for the component with the given name
    */
   def getComponentModel(name: String): Option[ComponentModel] = {
-    queryComponents("name" -> name).headOption
+    queryComponents(BaseModel.componentKey -> name).headOption
   }
 
   /**
@@ -260,14 +271,14 @@ case class IcdDbQuery(db: MongoDB) {
   // ---
 
   /**
-   * Returns a list of ICD models for the given component name,
+   * Returns a list of ICD models for the given subsystem or component name,
    * based on the data in the database.
-   * The list includes the ICD models for the component's ICD followed
+   * The list includes the ICD models for the subsystem, followed
    * by any ICD models for components that were defined in subdirectories
    * in the original files that were ingested into the database
    * (In this case the definitions are stored in sub-collections in the DB).
    */
-  def getModels(componentName: String): List[IcdModels] = {
+  def getModels(name: String): List[IcdModels] = {
     // Holds all the model classes associated with a single ICD entry.
     case class Models(entry: IcdEntry) extends IcdModels {
       override val subsystemModel = entry.subsystem.map(s ⇒ SubsystemModel(getConfig(db(s).head.toString)))
@@ -277,12 +288,12 @@ case class IcdDbQuery(db: MongoDB) {
       override val componentModel = entry.component.map(s ⇒ ComponentModel(getConfig(db(s).head.toString)))
     }
 
-    val compEntry = entryForComponentName(componentName)
-    if (compEntry.isDefined) {
+    val e = entryForSubsystemName(name).orElse(entryForComponentName(name))
+    if (e.isDefined) {
       // Get the prefix for the related db sub-collections
-      val prefix = compEntry.get.name + "."
+      val prefix = e.get.name + "."
       val list = for (entry ← getEntries if entry.name.startsWith(prefix)) yield new Models(entry)
-      Models(compEntry.get) :: list
+      Models(e.get) :: list
     } else Nil
   }
 
@@ -327,7 +338,7 @@ case class IcdDbQuery(db: MongoDB) {
     def getPublishInfo(compName: String, prefix: String): PublishInfo =
       PublishInfo(compName, prefix, getPublished(compName))
 
-    getComponents.map(c ⇒ getPublishInfo(c.name, c.prefix))
+    getComponents.map(c ⇒ getPublishInfo(c.component, c.prefix))
   }
 
   /**
@@ -366,7 +377,7 @@ case class IcdDbQuery(db: MongoDB) {
    * Returns a list describing what each component subscribes to
    */
   def getSubscribeInfo: List[SubscribeInfo] = {
-    getComponents.map(c ⇒ getSubscribeInfo(c.name))
+    getComponents.map(c ⇒ getSubscribeInfo(c.component))
   }
 
   /**

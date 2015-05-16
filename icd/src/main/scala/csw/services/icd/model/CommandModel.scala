@@ -26,9 +26,14 @@ case class CommandItemModel(name: String,
 object CommandModel {
   def apply(config: Config): CommandModel =
     CommandModel(
-      config.as[Option[String]]("description").getOrElse(""),
-      config.as[List[Config]]("configurations").map(CommandItemModel(_)))
+      subsystem = config.getString(BaseModel.subsystemKey),
+      component = config.as[String](BaseModel.componentKey),
+      description = config.as[Option[String]]("description").getOrElse(""),
+      items = config.as[List[Config]]("configurations").map(CommandItemModel(_)))
 }
 
-case class CommandModel(description: String, items: List[CommandItemModel]) {
+case class CommandModel(subsystem: String,
+                        component: String,
+                        description: String,
+                        items: List[CommandItemModel]) {
 }

@@ -54,7 +54,7 @@ object Icd extends App {
       if (outputFile.getName.endsWith(".json")) {
         options.inputFile match {
           case Some(inputFile) ⇒ saveAsJson(inputFile, outputFile)
-          case None ⇒ options.schemaFile map {
+          case None ⇒ options.schemaFile foreach {
             schemaFile ⇒ saveAsJson(schemaFile, outputFile)
           }
         }
