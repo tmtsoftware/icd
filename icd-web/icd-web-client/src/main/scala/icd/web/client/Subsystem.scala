@@ -13,7 +13,32 @@ import org.scalajs.dom._
 case class Subsystem(listener: String => Unit,
                      labelStr: String = "Subsystem",
                      msg: String = "Select a subsystem",
-                     removeMsg: Boolean = true) extends Displayable {
+                     removeMsg: Boolean = true,
+                     showFilterCheckbox: Boolean = false) extends Displayable {
+
+  // Optional filter checkbox, if subsystem should act as a filter
+  private val filterCb = {
+    import scalatags.JsDom.all._
+    input(tpe := "checkbox", value := "", checked := true).render
+  }
+
+  val selectItem = {
+    import scalatags.JsDom.all._
+    select(onchange := subsystemSelected _)(
+      option(value := msg)(msg)
+    ).render
+  }
+
+  /**
+   * Returns true if the filter checkbox is showing and selected
+   * @return
+   */
+  def isFilterSelected: Boolean = showFilterCheckbox && filterCb.checked
+
+  /**
+   * Returns true if the combobox is displaying the default item (i.e.: the initial item, no selection)
+   */
+  def isDefault: Boolean = !removeMsg && selectItem.selectedIndex == 0
 
   // called when an item is selected
   private def subsystemSelected(e: dom.Event): Unit = {
@@ -24,21 +49,18 @@ case class Subsystem(listener: String => Unit,
     getSelectedSubsystem.foreach(listener)
   }
 
-  val selectItem = {
-    import scalatags.JsDom.all._
-    select(onchange := subsystemSelected _)(
-      option(value := msg)(msg)
-    ).render
-  }
-
   // HTML for the subsystem combobox
   override def markup(): Element = {
     import scalatags.JsDom.all._
-    li(
-      a(
-        label(s"$labelStr ", selectItem)
-      )
-    ).render
+    if (showFilterCheckbox) {
+      div()(
+        label(s"$labelStr", " ", selectItem),
+        "  ",
+        label(filterCb, " ", "Filter")
+      ).render
+    } else {
+      label(s"$labelStr", " ", selectItem).render
+    }
   }
 
   // Gets the currently selected subsystem name

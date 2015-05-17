@@ -28,11 +28,11 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
 
   // Page components
   val subsystem = Subsystem(subsystemSelected)
-  val targetSubsystem = Subsystem(targetSubsystemSelected, "Target", "All", removeMsg = false)
+  val targetSubsystem = Subsystem(targetSubsystemSelected, "Target", "All", removeMsg = false, showFilterCheckbox = true)
   val mainContent = MainContent()
   val components = Components(mainContent)
-  val leftSidebar = Sidebar(components)
-  val rightSidebar = Sidebar(components)
+  val leftSidebar = Sidebar(subsystem, componentSelected)
+  val rightSidebar = Sidebar(targetSubsystem, targetComponentSelected)
 
   val fileUpload = FileUpload(csrfToken = csrfToken, inputDirSupported = inputDirSupported,
     leftSidebar = leftSidebar, rightSidebar = rightSidebar, mainContent = mainContent)
@@ -55,8 +55,6 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
 
     // Insert the components in the page
     body.appendChild(navbar)
-    navbar.addItem(subsystem)
-    navbar.addItem(targetSubsystem)
     navbar.addItem(viewMenu)
     navbar.addItem(fileUpload)
 
@@ -64,11 +62,36 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     layout.addItem(leftSidebar)
     layout.addItem(mainContent)
     layout.addItem(rightSidebar)
-
-//    // Add source and target subsystem items to sidebars
-//    leftSidebar.addItem(subsystem)
-//    rightSidebar.addItem(targetSubsystem)
   }
+
+  /**
+   * Called when a component in the left sidebar is checked or unchecked
+   * @param componentName the component name
+   * @param checked true if the checkbox is checked
+   */
+  private def componentSelected(componentName: String, checked: Boolean): Unit = {
+    val filter = if (targetSubsystem.isFilterSelected && !targetSubsystem.isDefault)
+      Some(rightSidebar.getSelectedComponents) else None
+    if (checked)
+      components.addComponent(componentName, filter)
+    else
+      components.removeComponent(componentName)
+  }
+
+  /**
+   * Called when a component in the right sidebar is checked or unchecked
+   * @param componentName the component name
+   * @param checked true if the checkbox is checked
+   */
+  private def targetComponentSelected(componentName: String, checked: Boolean): Unit = {
+    // XXX TODO FIXME
+    if (targetSubsystem.isFilterSelected) {
+
+    } else {
+      if (checked) components.addComponent(componentName, None) else components.removeComponent(componentName)
+    }
+  }
+
 
   // Gets the list of subcomponents for the selected subsystem
   private def getComponentNames(subsystem: String): Future[List[String]] = {
@@ -93,6 +116,13 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     rightSidebar.clearComponents()
     getComponentNames(subsystem).foreach { names =>
       names.foreach(rightSidebar.addComponent)
+    }
+
+    // XXX TODO FIXME
+    if (targetSubsystem.isFilterSelected) {
+
+    } else {
+
     }
   }
 

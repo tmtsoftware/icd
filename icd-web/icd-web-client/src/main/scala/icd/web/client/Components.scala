@@ -12,11 +12,16 @@ import scala.concurrent.ExecutionContext.Implicits.global
  */
 case class Components(mainContent: MainContent) {
 
-  // Adds the component to the display
-  def addComponent(compName: String): Unit = {
+  /**
+   * Adds a component to the display
+   * @param compName the name of the component
+   * @param filter an optional list of target component names to use to filter the
+   *               display (restrict to only those target components)
+   */
+  def addComponent(compName: String, filter: Option[List[String]]): Unit = {
     removeComponent(compName)
     Ajax.get(Routes.componentInfo(compName)).map { r =>
-      val info = read[ComponentInfo](r.responseText)
+      val info = applyFilter(filter, read[ComponentInfo](r.responseText))
       displayInfo(info)
     }.recover {
       case ex =>
@@ -24,7 +29,19 @@ case class Components(mainContent: MainContent) {
     }
   }
 
-  // Id if component info for given component name
+  // Filter out any components not in the filter, if the filter is defined
+  private def applyFilter(filter: Option[List[String]], info: ComponentInfo): ComponentInfo = {
+    filter match {
+      case Some(names) =>
+        println(s"XXX filter names = $names")
+        val publishInfo = info.publishInfo.filter(p => p.subscribers.exists(s => names.contains(s.compName)))
+        val subscribeInfo = info.subscribeInfo.filter(s => names.contains(s.compName))
+        ComponentInfo(info.name, info.description, publishInfo, subscribeInfo)
+      case None => info
+    }
+  }
+
+  // Id of component info for given component name
   private def getComponentInfoId(compName: String) = s"$compName-info"
 
   // Removes the component display
