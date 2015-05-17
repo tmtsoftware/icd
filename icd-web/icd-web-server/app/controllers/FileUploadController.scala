@@ -14,8 +14,6 @@ import play.api.libs.json._
 object FileUploadController extends Controller {
 
   private val log = play.Logger.of("application")
-  //same as play.Logger
-  private val (wsEnumerator, wsChannel) = Concurrent.broadcast[String]
   private lazy val db = Application.db
 
   // Converts a Problem (returned from ICD validate method) to JSON
@@ -40,8 +38,10 @@ object FileUploadController extends Controller {
       log.error(msg)
       BadRequest(Json.toJson(List(Problem("error", msg))))
     }
-    if (lastFile)
+    if (lastFile) {
+      val (wsEnumerator, wsChannel) = Concurrent.broadcast[String]
       wsChannel.push("update")
+    }
     result
   }
 
@@ -93,6 +93,7 @@ object FileUploadController extends Controller {
     try {
       val list = StdConfig.get(new ZipFile(request.body.file))
       val problems = list.flatMap(db.ingestConfig)
+      val (wsEnumerator, wsChannel) = Concurrent.broadcast[String]
       wsChannel.push("update")
 
       // Check the subsystem names
@@ -119,6 +120,7 @@ object FileUploadController extends Controller {
 
   // Websocket used to notify client when upload is complete
   def ws = WebSocket.using[String] { request =>
+    val (wsEnumerator, wsChannel) = Concurrent.broadcast[String]
     (Iteratee.ignore, wsEnumerator)
   }
 }
