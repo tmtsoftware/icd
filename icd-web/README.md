@@ -36,6 +36,13 @@ After uploading, select NFIRAOS from the Subsystem menu. Then you can use the Vi
 or click on one of the components in the sidebar at left to view publish/subscribe information for the component
 ( __Work in progress!__ ).
 
+Install
+-------
+
+Use the install.sh script in the parent directory to install everything into ../../install/.
+After that, you can use the `icdwebserver` command to start the web app on the server.
+
+
 
 
 
