@@ -16,14 +16,20 @@ object IcdPrinter {
    * @return a string in GFM format
    */
   def getAsGfm(models: List[IcdModels]): String = {
+
     // These control the document header numbering
     implicit val counter = Iterator.from(0)
     val level: Level = Level()
 
-    val title = "#Interface Control Document\n#" + models.head.subsystemModel.map(_.title).getOrElse("")
+    val includesSubsystem = models.head.subsystemModel.isDefined
+    val subtitle = if (includesSubsystem)
+      models.head.subsystemModel.get.title
+    else
+      models.head.componentModel.get.subsystem
+    val title = "#Interface Control Document\n#" + subtitle
     val pagebreak = "\n<div class='pagebreak'></div>\n" // new page, see pagebreak in icd.css
     val body = models.map(IcdToGfm(_, level.inc1()).gfm).mkString(pagebreak)
-    val toc = IcdToGfm.gfmToToc(body)
+    val toc = IcdToGfm.gfmToToc(body, includesSubsystem)
     s"$title\n$pagebreak\n$toc\n$pagebreak\n$body\n"
   }
 

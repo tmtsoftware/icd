@@ -9,7 +9,7 @@ case class ComponentModelToGfm(m: ComponentModel, level: Level) extends Gfm {
 
   import Gfm._
 
-  private val head = mkHeading(level, 2, s"${m.componentType}: ${m.title}")
+  private val head = mkHeading(level, 2, m.title)
 
   private val desc = mkParagraph(m.description)
 

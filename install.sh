@@ -5,7 +5,9 @@
 dir=../install
 
 test -d $dir || mkdir -p $dir/{bin,lib,conf}
-sbt stage "project icd-web" stage
+sbt publish-local stage
 for i in bin lib ; do cp -f */target/universal/stage/$i/* $dir/$i/; done
+(cd icd-web; sbt stage)
+for i in bin lib ; do cp -f icd-web/icd-web-server/target/universal/stage/$i/* $dir/$i/; done
 rm -f $dir/bin/*.log.* $dir/bin/*.bat
 

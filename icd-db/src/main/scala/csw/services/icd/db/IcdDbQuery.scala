@@ -273,7 +273,7 @@ case class IcdDbQuery(db: MongoDB) {
   /**
    * Returns a list of ICD models for the given subsystem or component name,
    * based on the data in the database.
-   * The list includes the ICD models for the subsystem, followed
+   * The list includes the ICD model for the subsystem, followed
    * by any ICD models for components that were defined in subdirectories
    * in the original files that were ingested into the database
    * (In this case the definitions are stored in sub-collections in the DB).
