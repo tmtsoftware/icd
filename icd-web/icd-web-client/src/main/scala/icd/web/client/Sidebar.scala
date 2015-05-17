@@ -63,9 +63,9 @@ case class Sidebar(components: Components) extends Displayable {
    * Removes all the ICD components from the sidebar
    */
   def clearComponents(): Unit = {
-    //    sidebarList.innerHTML = ""
-    val nodeList = sidebarList.getElementsByTagName("input")
-    for (i <- 0 until nodeList.length) sidebarList.removeChild(nodeList(i))
+    sidebarList.innerHTML = ""
+    //    val nodeList = sidebarList.getElementsByTagName("input")
+    //    for (i <- 0 until nodeList.length) sidebarList.removeChild(nodeList(i))
   }
 
   override def markup(): Element = {

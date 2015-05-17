@@ -65,9 +65,10 @@ object ComponentInfo {
   private def getSubscribeInfo(db: IcdDb, models: IcdModels): List[SubscribeInfo] = {
 
     def getInfo(itemType: String, si: csw.services.icd.model.SubscribeInfo): List[SubscribeInfo] = {
-      db.query.publishes(si.name).map { pi =>
+      val info = db.query.publishes(si.name).map { pi =>
         SubscribeInfo(itemType, si.name, pi.item.description, si.subsystem, pi.componentName)
       }
+      if (info.nonEmpty) info else List(SubscribeInfo(itemType, si.name, "", si.subsystem, ""))
     }
 
     val result = models.subscribeModel.map { m =>

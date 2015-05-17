@@ -146,10 +146,14 @@ class IcdDbTests extends FunSuite {
   def testModels(db: IcdDb): Unit = {
     val modelsList = db.query.getModels("NFIRAOS")
     val publishInfo = for (models ← modelsList) yield {
-      val compName = models.componentModel.get.component
       models.publishModel.foreach { publishModel ⇒
         publishModel.telemetryList.foreach { telemetryModel ⇒
-          println(s"$compName publishes telemetry ${telemetryModel.name}: ${telemetryModel.description}")
+          println(s"${publishModel.component} publishes telemetry ${telemetryModel.name}: ${telemetryModel.description}")
+        }
+      }
+      models.subscribeModel.foreach { subscribeModel ⇒
+        subscribeModel.telemetryList.foreach { telemetryModel ⇒
+          println(s"${subscribeModel.component} subscribes to telemetry ${telemetryModel.name} from ${telemetryModel.subsystem}")
         }
       }
     }
