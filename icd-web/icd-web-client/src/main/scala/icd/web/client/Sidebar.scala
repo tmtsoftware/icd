@@ -26,7 +26,7 @@ case class Sidebar(subsystem: Subsystem, listener: (String, Boolean) => Unit) ex
       a(Styles.listGroupItem)(
         div(cls := "checkbox")(
           label(
-            input(tpe := "checkbox", value := compName, onchange := listener),
+            input(tpe := "checkbox", value := compName, checked := true, onchange := listener),
             compName)
         )
       )

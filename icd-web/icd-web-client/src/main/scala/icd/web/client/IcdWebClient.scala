@@ -65,17 +65,34 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   }
 
   /**
+   * Returns a list of the component names selected in the target sidebar, if the Filter checkbox is checked
+   * and "All" is not selected in the target subsystem combobox
+   */
+  def getFilter = if (targetSubsystem.isFilterSelected && !targetSubsystem.isDefault)
+    Some(rightSidebar.getSelectedComponents)
+  else None
+
+  /**
    * Called when a component in the left sidebar is checked or unchecked
    * @param componentName the component name
    * @param checked true if the checkbox is checked
    */
   private def componentSelected(componentName: String, checked: Boolean): Unit = {
-    val filter = if (targetSubsystem.isFilterSelected && !targetSubsystem.isDefault)
-      Some(rightSidebar.getSelectedComponents) else None
+    val filter = getFilter
     if (checked)
       components.addComponent(componentName, filter)
     else
       components.removeComponent(componentName)
+  }
+
+
+  private def updateComponentDisplay(): Unit = {
+    val filter = getFilter
+    mainContent.clearContent()
+    leftSidebar.getSelectedComponents.foreach(components.addComponent(_, filter))
+    if (!targetSubsystem.isFilterSelected) {
+      rightSidebar.getSelectedComponents.foreach(components.addComponent(_, None))
+    }
   }
 
   /**
@@ -84,14 +101,15 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
    * @param checked true if the checkbox is checked
    */
   private def targetComponentSelected(componentName: String, checked: Boolean): Unit = {
-    // XXX TODO FIXME
     if (targetSubsystem.isFilterSelected) {
-
+      updateComponentDisplay()
     } else {
-      if (checked) components.addComponent(componentName, None) else components.removeComponent(componentName)
+      if (checked)
+        components.addComponent(componentName, None)
+      else
+        components.removeComponent(componentName)
     }
   }
-
 
   // Gets the list of subcomponents for the selected subsystem
   private def getComponentNames(subsystem: String): Future[List[String]] = {
@@ -104,28 +122,28 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     }
   }
 
-  private def subsystemSelected(subsystem: String): Unit = {
+  // Called when the source (left) subsystem combobox selection is changed
+  private def subsystemSelected(subsystemOpt: Option[String], notUsed: Boolean): Unit = {
     leftSidebar.clearComponents()
     mainContent.clearContent()
-    getComponentNames(subsystem).foreach { names =>
-      names.foreach(leftSidebar.addComponent)
+    subsystemOpt.foreach { subsystem =>
+      getComponentNames(subsystem).foreach { names =>
+        names.foreach(leftSidebar.addComponent)
+        updateComponentDisplay()
+      }
     }
   }
 
-  private def targetSubsystemSelected(subsystem: String): Unit = {
+  // Called when the target (right) subsystem combobox selection is changed
+  private def targetSubsystemSelected(subsystemOpt: Option[String], filterChecked: Boolean): Unit = {
     rightSidebar.clearComponents()
-    getComponentNames(subsystem).foreach { names =>
-      names.foreach(rightSidebar.addComponent)
-    }
-
-    // XXX TODO FIXME
-    if (targetSubsystem.isFilterSelected) {
-
-    } else {
-
+    subsystemOpt.foreach { subsystem =>
+      getComponentNames(subsystem).foreach { names =>
+        names.foreach(rightSidebar.addComponent)
+        updateComponentDisplay()
+      }
     }
   }
-
 }
 
 /**

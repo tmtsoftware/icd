@@ -19,9 +19,9 @@ case class Components(mainContent: MainContent) {
    *               display (restrict to only those target components)
    */
   def addComponent(compName: String, filter: Option[List[String]]): Unit = {
-    removeComponent(compName)
     Ajax.get(Routes.componentInfo(compName)).map { r =>
       val info = applyFilter(filter, read[ComponentInfo](r.responseText))
+      removeComponent(compName)
       displayInfo(info)
     }.recover {
       case ex =>
@@ -33,7 +33,6 @@ case class Components(mainContent: MainContent) {
   private def applyFilter(filter: Option[List[String]], info: ComponentInfo): ComponentInfo = {
     filter match {
       case Some(names) =>
-        println(s"XXX filter names = $names")
         val publishInfo = info.publishInfo.filter(p => p.subscribers.exists(s => names.contains(s.compName)))
         val subscribeInfo = info.subscribeInfo.filter(s => names.contains(s.compName))
         ComponentInfo(info.name, info.description, publishInfo, subscribeInfo)
@@ -57,14 +56,15 @@ case class Components(mainContent: MainContent) {
 
   // Displays the information for a component, appending to the other selected components, if any.
   private def displayInfo(info: ComponentInfo): Unit = {
-    val titleStr = "Components"
-    val markup = markupForComponent(info)
-    if (mainContent.contentTitle.textContent != titleStr) {
-      mainContent.clearContent()
-      mainContent.setContentTitle(titleStr)
+    if (info.publishInfo.nonEmpty || info.subscribeInfo.nonEmpty) {
+      val titleStr = "Components"
+      val markup = markupForComponent(info)
+      if (mainContent.contentTitle.textContent != titleStr) {
+        mainContent.clearContent()
+        mainContent.setContentTitle(titleStr)
+      }
+      mainContent.content.appendChild(markup.render)
     }
-
-    mainContent.content.appendChild(markup.render)
   }
 
   // Action when user clicks on a subscriber link
@@ -95,9 +95,9 @@ case class Components(mainContent: MainContent) {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
-    div(cls := "container", id := getComponentInfoId(info.name),
-      h2(info.name),
-      p(info.description),
+    // Only display non-empty tables
+    val pubDiv = if (info.publishInfo.isEmpty) div()
+    else div(
       h3(s"Items published by ${info.name}"),
       table(Styles.componentTable, "data-toggle".attr := "table",
         thead(
@@ -118,7 +118,11 @@ case class Components(mainContent: MainContent) {
             )
           }
         )
-      ),
+      )
+    )
+
+    val subDiv = if (info.subscribeInfo.isEmpty) div()
+    else div(
       h3(s"Items subscribed to by ${info.name}"),
       table(Styles.componentTable, "data-toggle".attr := "table",
         thead(
@@ -140,7 +144,13 @@ case class Components(mainContent: MainContent) {
           }
         )
       )
+    )
 
+    div(cls := "container", id := getComponentInfoId(info.name))(
+      h2(info.name),
+      p(info.description),
+      pubDiv,
+      subDiv
     )
   }
 }

@@ -33,7 +33,8 @@ case class MainContent() extends Displayable {
     //Styles.render[TypedTag[HTMLStyleElement]], Styles.mainWrapper,
 
     div(Styles.mainWrapper)(
-      div(Styles.main)(contentTitle, content)
+      div(Styles.main)(contentTitle, content),
+      div(p(" ")) // space at bottom
     ).render
   }
 }

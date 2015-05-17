@@ -5,12 +5,12 @@ import org.scalajs.dom._
 
 /**
  * Manages the subsystem combobox
- * @param listener notified when the user makes a selection
+ * @param listener notified when the user makes a selection or changes the filter checkbox
  * @param labelStr the text for the combobox label
  * @param msg the initial message to display before the first selection is made
  * @param removeMsg if true, remove the default msg item from the choices once a selection has been made
  */
-case class Subsystem(listener: String => Unit,
+case class Subsystem(listener: (Option[String], Boolean) => Unit,
                      labelStr: String = "Subsystem",
                      msg: String = "Select a subsystem",
                      removeMsg: Boolean = true,
@@ -19,7 +19,7 @@ case class Subsystem(listener: String => Unit,
   // Optional filter checkbox, if subsystem should act as a filter
   private val filterCb = {
     import scalatags.JsDom.all._
-    input(tpe := "checkbox", value := "", checked := true).render
+    input(tpe := "checkbox", value := "", checked := true, onchange := subsystemSelected _).render
   }
 
   val selectItem = {
@@ -46,7 +46,7 @@ case class Subsystem(listener: String => Unit,
     if (removeMsg && selectItem.options.length > 1 && selectItem.options(0).value == msg)
       selectItem.remove(0)
 
-    getSelectedSubsystem.foreach(listener)
+    listener(getSelectedSubsystem, isFilterSelected)
   }
 
   // HTML for the subsystem combobox
