@@ -29,9 +29,10 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
 
   // Page components
   private val subsystem = Subsystem(subsystemSelected)
-  private val targetSubsystem = Subsystem(targetSubsystemSelected, "Target", "All", removeMsg = false, showFilterCheckbox = true)
+  private val targetSubsystem = Subsystem(targetSubsystemSelected,
+    labelStr = "Target", msg = "All", removeMsg = false, showFilterCheckbox = true)
   private val mainContent = MainContent()
-  private val components = Components(mainContent)
+  private val components = Components(mainContent, componentLinkSelected())
   private val leftSidebar = Sidebar(subsystem, componentSelected)
   private val rightSidebar = Sidebar(targetSubsystem, targetComponentSelected)
 
@@ -47,6 +48,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
 
   SubsystemNames(mainContent, wsBaseUrl, subsystemListeners)
   dom.window.onpopstate = popState _
+  pushState(viewType = ComponentView)
   doLayout()
 
 
@@ -96,39 +98,50 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   }
 
   /**
+   * Called when a component is selected in one of the publisher/subscriber/command tables.
+   * @param componentName the component name
+   */
+  private def componentLinkSelected(saveHistory: Boolean = true)(componentName: String): Unit = {
+    components.setComponent(componentName)
+    if (saveHistory) pushState(viewType = ComponentLinkView, linkComponent = Some(componentName))
+  }
+
+
+  /**
    * Push the current app state for the browser history
    */
-  private def pushState(viewType: ViewType): Unit = {
+  private def pushState(viewType: ViewType, linkComponent: Option[String] = None): Unit = {
     val hist = BrowserHistory(
       subsystem.getSelectedSubsystem,
       targetSubsystem.getSelectedSubsystem,
       leftSidebar.getSelectedComponents,
       rightSidebar.getSelectedComponents,
       filterChecked = targetSubsystem.isFilterSelected,
-      viewType = viewType
+      viewType = viewType,
+      linkComponent = linkComponent
     )
     hist.pushState()
-    println(s"XXX pushState $hist")
   }
 
   /**
    * Called when the user presses the Back button in the browser
    */
   private def popState(e: PopStateEvent): Unit = {
-    e.preventDefault()
-    val hist = BrowserHistory.popState(e)
-    println(s"XXX popState $hist")
-    subsystem.setSelectedSubsystem(hist.sourceSubsystem)
-    targetSubsystem.setFilterSelected(hist.filterChecked)
-    targetSubsystem.setSelectedSubsystem(hist.targetSubsystem)
-    leftSidebar.setSelectedComponents(hist.sourceComponents)
-    rightSidebar.setSelectedComponents(hist.targetComponents)
+    BrowserHistory.popState(e).foreach { hist =>
+      e.preventDefault()
+      subsystem.setSelectedSubsystem(hist.sourceSubsystem)
+      targetSubsystem.setFilterSelected(hist.filterChecked)
+      targetSubsystem.setSelectedSubsystem(hist.targetSubsystem)
+      leftSidebar.setSelectedComponents(hist.sourceComponents)
+      rightSidebar.setSelectedComponents(hist.targetComponents)
 
-    hist.viewType match {
-      case UploadView => uploadSelected(saveHistory = false)()
-      case HtmlView => viewIcdAsHtml(saveHistory = false)()
-      case PdfView => viewIcdAsPdf(saveHistory = false)()
-      case ComponentView => updateComponentDisplay()
+      hist.viewType match {
+        case UploadView => uploadSelected(saveHistory = false)()
+        case HtmlView => viewIcdAsHtml(saveHistory = false)()
+        case PdfView => viewIcdAsPdf(saveHistory = false)()
+        case ComponentView => updateComponentDisplay()
+        case ComponentLinkView => hist.linkComponent.foreach(componentLinkSelected(saveHistory = false))
+      }
     }
   }
 

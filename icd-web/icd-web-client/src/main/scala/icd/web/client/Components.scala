@@ -9,11 +9,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * Manages the component (Assembly, HCD) display
+ * @param mainContent used to display information about selected components
+ * @param listener called when the user clicks on a component link in the (subscriber, publisher, etc)
  */
-case class Components(mainContent: MainContent) {
+case class Components(mainContent: MainContent, listener: String => Unit) {
 
   /**
-   * Adds a component to the display
+   * Adds (appends) a component to the display
    * @param compName the name of the component
    * @param filter an optional list of target component names to use to filter the
    *               display (restrict to only those target components)
@@ -22,7 +24,22 @@ case class Components(mainContent: MainContent) {
     Ajax.get(Routes.componentInfo(compName)).map { r =>
       val info = applyFilter(filter, read[ComponentInfo](r.responseText))
       removeComponent(compName)
-      displayInfo(info)
+      displayInfo(info, filter.isDefined)
+    }.recover {
+      case ex =>
+        mainContent.displayInternalError(ex)
+    }
+  }
+
+  /**
+   * Displays only the given component's information, ignoring any filter
+   * @param compName the name of the component
+   */
+  def setComponent(compName: String): Unit = {
+    Ajax.get(Routes.componentInfo(compName)).map { r =>
+      val info = read[ComponentInfo](r.responseText)
+      mainContent.clearContent()
+      displayInfo(info, false)
     }.recover {
       case ex =>
         mainContent.displayInternalError(ex)
@@ -55,9 +72,9 @@ case class Components(mainContent: MainContent) {
   }
 
   // Displays the information for a component, appending to the other selected components, if any.
-  private def displayInfo(info: ComponentInfo): Unit = {
+  private def displayInfo(info: ComponentInfo, filtered: Boolean): Unit = {
     if (info.publishInfo.nonEmpty || info.subscribeInfo.nonEmpty) {
-      val titleStr = "Components"
+      val titleStr = "Components" + (if (filtered) " (filtered)" else "")
       val markup = markupForComponent(info)
       if (mainContent.contentTitle.textContent != titleStr) {
         mainContent.clearContent()
@@ -70,11 +87,13 @@ case class Components(mainContent: MainContent) {
   // Action when user clicks on a subscriber link
   private def clickedOnSubscriber(info: SubscribeInfo)(e: dom.Event) = {
     println(s"XXX clickedOnSubscriber: component name = ${info.compName}")
+    listener(info.compName)
   }
 
   // Action when user clicks on a subscriber link
   private def clickedOnPublisher(info: SubscribeInfo)(e: dom.Event) = {
     println(s"XXX clickedOnPublisher: component name = ${info.compName}")
+    listener(info.compName)
   }
 
   // Makes the link for a subscriber component in the table
