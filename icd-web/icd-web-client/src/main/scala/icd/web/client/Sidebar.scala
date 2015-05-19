@@ -19,14 +19,14 @@ case class Sidebar(subsystem: Subsystem, listener: (String, Boolean) => Unit) ex
   val sidebarList = ul(cls := "nav list-group").render
 
   // HTML for component
-  private def componentCheckBox(compName: String, listener: dom.Event => Unit) = {
+  private def componentCheckBox(compName: String, checkboxListener: dom.Event => Unit) = {
     import scalacss.ScalatagsCss._
 
     li(
       a(Styles.listGroupItem)(
         div(cls := "checkbox")(
           label(
-            input(tpe := "checkbox", value := compName, checked := true, onchange := listener),
+            input(tpe := "checkbox", value := compName, checked := true, onchange := checkboxListener),
             compName)
         )
       )
@@ -45,9 +45,22 @@ case class Sidebar(subsystem: Subsystem, listener: (String, Boolean) => Unit) ex
     result.toList.flatten
   }
 
+  /**
+   * Sets the list of checked components in the sidebar
+   */
+  def setSelectedComponents(components: List[String]): Unit = {
+    val set = components.toSet
+    val nodeList = sidebarList.getElementsByTagName("input")
+    for (i <- 0 until nodeList.length) {
+      val elem = nodeList(i).asInstanceOf[HTMLInputElement]
+      val checked = set.contains(elem.value)
+      if (elem.checked != checked) elem.checked = checked
+    }
+  }
+
   // called when a component is selected or deselected
   private def componentSelected(compName: String)(e: dom.Event): Unit = {
-    val checked = e.srcElement.asInstanceOf[HTMLInputElement].checked
+    val checked = e.target.asInstanceOf[HTMLInputElement].checked
     listener(compName, checked)
   }
 

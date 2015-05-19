@@ -1,6 +1,7 @@
 package icd.web.client
 
 import org.scalajs.dom
+import org.scalajs.dom.PopStateEvent
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.HTMLStyleElement
 import upickle._
@@ -23,30 +24,31 @@ import scala.concurrent.ExecutionContext.Implicits.global
  */
 case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported: Boolean) {
 
-  val head = dom.document.head
-  val body = dom.document.body
+  private val head = dom.document.head
+  private val body = dom.document.body
 
   // Page components
-  val subsystem = Subsystem(subsystemSelected)
-  val targetSubsystem = Subsystem(targetSubsystemSelected, "Target", "All", removeMsg = false, showFilterCheckbox = true)
-  val mainContent = MainContent()
-  val components = Components(mainContent)
-  val leftSidebar = Sidebar(subsystem, componentSelected)
-  val rightSidebar = Sidebar(targetSubsystem, targetComponentSelected)
+  private val subsystem = Subsystem(subsystemSelected)
+  private val targetSubsystem = Subsystem(targetSubsystemSelected, "Target", "All", removeMsg = false, showFilterCheckbox = true)
+  private val mainContent = MainContent()
+  private val components = Components(mainContent)
+  private val leftSidebar = Sidebar(subsystem, componentSelected)
+  private val rightSidebar = Sidebar(targetSubsystem, targetComponentSelected)
 
-  val fileUpload = FileUpload(csrfToken = csrfToken, inputDirSupported = inputDirSupported,
-    leftSidebar = leftSidebar, rightSidebar = rightSidebar, mainContent = mainContent)
+  private val fileUpload = FileUpload(csrfToken, inputDirSupported = inputDirSupported, uploadSelected())
+  private val fileUploadDialog = FileUploadDialog(csrfToken, inputDirSupported)
 
-  val viewMenu = ViewMenu(subsystem = subsystem, mainContent = mainContent,
-    leftSidebar = leftSidebar, rightSidebar = rightSidebar)
+  private val viewMenu = ViewMenu(viewIcdAsHtml = viewIcdAsHtml(), viewIcdAsPdf = viewIcdAsPdf())
 
-  val navbar = Navbar()
-  val layout = Layout()
+  private val navbar = Navbar()
+  private val layout = Layout()
 
-  val subsystemListeners = List(subsystem.updateSubsystemOptions _, targetSubsystem.updateSubsystemOptions _)
-  val subsystemNames = SubsystemNames(mainContent, wsBaseUrl, subsystemListeners)
+  private val subsystemListeners = List(subsystem.updateSubsystemOptions _, targetSubsystem.updateSubsystemOptions _)
 
+  SubsystemNames(mainContent, wsBaseUrl, subsystemListeners)
+  dom.window.onpopstate = popState _
   doLayout()
+
 
   // Layout the components on the page
   private def doLayout(): Unit = {
@@ -64,11 +66,17 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     layout.addItem(rightSidebar)
   }
 
+  // Called when the Upload item is selected
+  private def uploadSelected(saveHistory: Boolean = true)(): Unit = {
+    mainContent.setContent("Upload ICD", fileUploadDialog)
+    if (saveHistory) pushState(viewType = UploadView)
+  }
+
   /**
    * Returns a list of the component names selected in the target sidebar, if the Filter checkbox is checked
    * and "All" is not selected in the target subsystem combobox
    */
-  def getFilter = if (targetSubsystem.isFilterSelected && !targetSubsystem.isDefault)
+  private def getFilter = if (targetSubsystem.isFilterSelected && !targetSubsystem.isDefault)
     Some(rightSidebar.getSelectedComponents)
   else None
 
@@ -83,9 +91,50 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
       components.addComponent(componentName, filter)
     else
       components.removeComponent(componentName)
+
+    pushState(viewType = ComponentView)
   }
 
+  /**
+   * Push the current app state for the browser history
+   */
+  private def pushState(viewType: ViewType): Unit = {
+    val hist = BrowserHistory(
+      subsystem.getSelectedSubsystem,
+      targetSubsystem.getSelectedSubsystem,
+      leftSidebar.getSelectedComponents,
+      rightSidebar.getSelectedComponents,
+      filterChecked = targetSubsystem.isFilterSelected,
+      viewType = viewType
+    )
+    hist.pushState()
+    println(s"XXX pushState $hist")
+  }
 
+  /**
+   * Called when the user presses the Back button in the browser
+   */
+  private def popState(e: PopStateEvent): Unit = {
+    e.preventDefault()
+    val hist = BrowserHistory.popState(e)
+    println(s"XXX popState $hist")
+    subsystem.setSelectedSubsystem(hist.sourceSubsystem)
+    targetSubsystem.setFilterSelected(hist.filterChecked)
+    targetSubsystem.setSelectedSubsystem(hist.targetSubsystem)
+    leftSidebar.setSelectedComponents(hist.sourceComponents)
+    rightSidebar.setSelectedComponents(hist.targetComponents)
+
+    hist.viewType match {
+      case UploadView => uploadSelected(saveHistory = false)()
+      case HtmlView => viewIcdAsHtml(saveHistory = false)()
+      case PdfView => viewIcdAsPdf(saveHistory = false)()
+      case ComponentView => updateComponentDisplay()
+    }
+  }
+
+  /**
+   * Updates the main display to match the selected components
+   */
   private def updateComponentDisplay(): Unit = {
     val filter = getFilter
     mainContent.clearContent()
@@ -127,9 +176,10 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     leftSidebar.clearComponents()
     mainContent.clearContent()
     subsystemOpt.foreach { subsystem =>
-      getComponentNames(subsystem).foreach { names =>
+      getComponentNames(subsystem).foreach { names => // Future!
         names.foreach(leftSidebar.addComponent)
         updateComponentDisplay()
+        pushState(viewType = ComponentView)
       }
     }
   }
@@ -138,10 +188,41 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private def targetSubsystemSelected(subsystemOpt: Option[String], filterChecked: Boolean): Unit = {
     rightSidebar.clearComponents()
     subsystemOpt.foreach { subsystem =>
-      getComponentNames(subsystem).foreach { names =>
+      getComponentNames(subsystem).foreach { names => // Future!
         names.foreach(rightSidebar.addComponent)
         updateComponentDisplay()
+        pushState(viewType = ComponentView)
       }
+    }
+  }
+
+  // Called when the View ICD as HTML item is selected
+  private def viewIcdAsHtml(saveHistory: Boolean = true)() = {
+    // Displays the HTML for the given ICD name
+    def displayIcdAsHtml(name: String): Unit = {
+      getIcdHtml(name).map { doc =>
+        mainContent.setContent(s"ICD: $name", doc)
+        if (saveHistory) pushState(viewType = HtmlView)
+      }
+    }
+
+    // Gets the HTML for the named ICD
+    def getIcdHtml(name: String): Future[String] = {
+      Ajax.get(Routes.icdHtml(name)).map { r =>
+        r.responseText
+      }
+    }
+
+    for (name <- subsystem.getSelectedSubsystem) {
+      displayIcdAsHtml(name)
+    }
+  }
+
+  // Called when the View ICD as PDF item is selected
+  private def viewIcdAsPdf(saveHistory: Boolean = true)() = {
+    for (name <- subsystem.getSelectedSubsystem) {
+      dom.window.location.assign(Routes.icdPdf(name))
+      if (saveHistory) pushState(viewType = PdfView)
     }
   }
 }

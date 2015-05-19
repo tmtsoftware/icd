@@ -36,6 +36,13 @@ case class Subsystem(listener: (Option[String], Boolean) => Unit,
   def isFilterSelected: Boolean = showFilterCheckbox && filterCb.checked
 
   /**
+   * Sets the state of the filter checkbox
+   */
+  def setFilterSelected(checked: Boolean): Unit = {
+    if (checked != isFilterSelected) filterCb.checked = checked
+  }
+
+  /**
    * Returns true if the combobox is displaying the default item (i.e.: the initial item, no selection)
    */
   def isDefault: Boolean = !removeMsg && selectItem.selectedIndex == 0
@@ -63,13 +70,26 @@ case class Subsystem(listener: (Option[String], Boolean) => Unit,
     }
   }
 
-  // Gets the currently selected subsystem name
+  /**
+   * Gets the currently selected subsystem name
+   */
   def getSelectedSubsystem: Option[String] =
     selectItem.value match {
       case `msg` => None
       case subsystemName => Some(subsystemName)
     }
 
+  /**
+   * Sets the selected subsystem
+   */
+  def setSelectedSubsystem(nameOpt: Option[String]): Unit =
+    if (nameOpt != getSelectedSubsystem) {
+      nameOpt match {
+        case Some(s) => selectItem.value = s
+        case None => if (!removeMsg) selectItem.value = msg
+      }
+      listener(getSelectedSubsystem, isFilterSelected)
+    }
 
   // Update the Subsystem combobox options
   def updateSubsystemOptions(items: List[String]): Unit = {

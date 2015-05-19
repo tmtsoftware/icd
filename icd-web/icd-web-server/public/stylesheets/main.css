@@ -5,11 +5,11 @@ body {
     overflow: hidden;
 }
 
-@media (max-width: 992px) {
-    body {
-        padding-top: 0;
-    }
-}
+/*@media (max-width: 992px) {*/
+    /*body {*/
+        /*padding-top: 0;*/
+    /*}*/
+/*}*/
 
 /* upload button */
 .btn-file {

@@ -8,30 +8,6 @@ object Styles extends StyleSheet.Inline {
   import dsl._
   import language.postfixOps
 
-
-  /*
-  @media (min-width: 992px) {
-    #main-wrapper {
-        float:right;
-    }
-}
-@media (max-width: 992px) {
-    #main-wrapper {
-        padding-top: 0;
-    }
-}
-@media (max-width: 992px) {
-    #sidebar-wrapper {
-        position: static;
-        height:auto;
-        max-height: 300px;
-        border-right:0;
-    }
-}
-
-   */
-
-
   val wrapper = style(
     minHeight(100 %%),
     height(100 %%),
@@ -80,7 +56,11 @@ object Styles extends StyleSheet.Inline {
   // Control width of tables in the information displayed for selected components
   val componentTable = style(
     maxWidth(80 %%)
-//    tableLayout.fixed,
-//    width(100%%)
+  )
+
+  val fileUploadMessages = style(
+    padding(0 px, 10 px),
+    margin(1 em, 0 em),
+    border(1 px, solid, gray)
   )
 }
