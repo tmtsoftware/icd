@@ -22,6 +22,15 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
   private val stdList = List("subsystem-model.conf", "component-model.conf", "publish-model.conf",
     "subscribe-model.conf", "command-model.conf")
 
+  // Displays upload button
+  private val inputItem = {
+    import scalatags.JsDom.all._
+    input(`type` := "file", name := "files[]", multiple := "multiple",
+      "webkitdirectory".attr := "webkitdirectory",
+      onclick := fileSelectReset _,
+      onchange := fileSelectHandler _).render
+  }
+
   // True if the file is one of the standard ICD files
   private def isStdFile(file: dom.File): Boolean = stdList.contains(basename(file))
 
@@ -71,6 +80,14 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
 
   def statusItem = $("#status")
   def busyStatusItem = $("#busyStatus")
+
+  // Called when user clicks on input item.
+  // Reset the value (Otherwise you can't upload the same file twice,
+  // since it won't fire the change event)
+  def fileSelectReset(e: dom.Event): Unit = {
+    clearProblems()
+    inputItem.value = ""
+  }
 
   // Called when a file selection has been made
   def fileSelectHandler(e: dom.Event): Unit = {
@@ -168,9 +185,7 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
           div(`class` := "panel panel-info")(
             div(`class` := "panel-body")(
               div(
-                label(s"$dirLabel to upload:")(
-                  input(`type` := "file", name := "files[]", multiple := "multiple",
-                    "webkitdirectory".attr := "webkitdirectory", onchange := fileSelectHandler _))),
+                label(s"$dirLabel to upload:")(inputItem)),
               div(id := "submitButton", `class` := "hide")(
                 button(`type` := "submit")("Upload Files"))))),
       div(`class` := "progress")(
