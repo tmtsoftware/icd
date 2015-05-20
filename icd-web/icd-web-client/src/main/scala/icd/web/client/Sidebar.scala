@@ -1,7 +1,7 @@
 package icd.web.client
 
 import org.scalajs.dom
-import org.scalajs.dom.raw.{Node, HTMLInputElement}
+import org.scalajs.dom.raw.{ Node, HTMLInputElement }
 
 import org.scalajs.dom.Element
 
@@ -14,12 +14,12 @@ import scalatags.JsDom.all._
  * @param listener called with the component name and checkbox state
  *                 when one of the component checkboxes is checked or unchecked
  */
-case class Sidebar(subsystem: Subsystem, listener: (String, Boolean) => Unit) extends Displayable {
+case class Sidebar(subsystem: Subsystem, listener: (String, Boolean) ⇒ Unit) extends Displayable {
 
   val sidebarList = ul(cls := "nav list-group").render
 
   // HTML for component
-  private def componentCheckBox(compName: String, checkboxListener: dom.Event => Unit) = {
+  private def componentCheckBox(compName: String, checkboxListener: dom.Event ⇒ Unit) = {
     import scalacss.ScalatagsCss._
 
     li(
@@ -27,10 +27,7 @@ case class Sidebar(subsystem: Subsystem, listener: (String, Boolean) => Unit) ex
         div(cls := "checkbox")(
           label(
             input(tpe := "checkbox", value := compName, checked := true, onchange := checkboxListener),
-            compName)
-        )
-      )
-    )
+            compName))))
   }
 
   /**
@@ -38,7 +35,7 @@ case class Sidebar(subsystem: Subsystem, listener: (String, Boolean) => Unit) ex
    */
   def getSelectedComponents: List[String] = {
     val nodeList = sidebarList.getElementsByTagName("input")
-    val result = for (i <- 0 until nodeList.length) yield {
+    val result = for (i ← 0 until nodeList.length) yield {
       val elem = nodeList(i).asInstanceOf[HTMLInputElement]
       if (elem.checked) Some(elem.value) else None
     }
@@ -51,7 +48,7 @@ case class Sidebar(subsystem: Subsystem, listener: (String, Boolean) => Unit) ex
   def setSelectedComponents(components: List[String]): Unit = {
     val set = components.toSet
     val nodeList = sidebarList.getElementsByTagName("input")
-    for (i <- 0 until nodeList.length) {
+    for (i ← 0 until nodeList.length) {
       val elem = nodeList(i).asInstanceOf[HTMLInputElement]
       val checked = set.contains(elem.value)
       if (elem.checked != checked) elem.checked = checked
@@ -67,7 +64,7 @@ case class Sidebar(subsystem: Subsystem, listener: (String, Boolean) => Unit) ex
   // Uncheck all of the checkboxes in the sidebar
   def uncheckAll(): Unit = {
     val nodeList = sidebarList.getElementsByTagName("input")
-    for (i <- 0 until nodeList.length) nodeList(i).asInstanceOf[HTMLInputElement].checked = false
+    for (i ← 0 until nodeList.length) nodeList(i).asInstanceOf[HTMLInputElement].checked = false
   }
 
   /**
@@ -100,15 +97,9 @@ case class Sidebar(subsystem: Subsystem, listener: (String, Boolean) => Unit) ex
         li(
           a(Styles.listGroupItem)(
             div()(
-              subsystem.markup()
-            )
-          )
-        )
-      ),
+              subsystem.markup())))),
       div(Styles.sidebar)(
-        sidebarList
-      )
-    ).render
+        sidebarList)).render
   }
 }
 

@@ -3,7 +3,7 @@ package controllers
 import java.io.ByteArrayOutputStream
 
 import csw.services.icd.IcdToPdf
-import csw.services.icd.db.{IcdDbPrinter, IcdDb}
+import csw.services.icd.db.{ IcdDbPrinter, IcdDb }
 import play.Play
 import play.api.mvc._
 import play.filters.csrf.CSRFAddToken
@@ -15,9 +15,9 @@ object Application extends Controller {
   val db = IcdDb(databaseName)
 
   def index = CSRFAddToken {
-    Action { implicit request =>
+    Action { implicit request ⇒
       import play.filters.csrf.CSRF
-      val token = CSRF.getToken(request).map(t => Csrf(t.value)).getOrElse(Csrf(""))
+      val token = CSRF.getToken(request).map(t ⇒ Csrf(t.value)).getOrElse(Csrf(""))
       Ok(views.html.index(token))
     }
   }
@@ -39,11 +39,11 @@ object Application extends Controller {
   }
 
   def componentInfo(name: String) = Action {
-    import ComponentInfo._
+    import upickle._
     val info = ComponentInfo(db, name)
-    Ok(Json.toJson(info))
+    val json = write(info)
+    Ok(json).as(JSON)
   }
-
 
   // Gets the HTML for the named ICD (without inserting any CSS)
   private def getAsPlainHtml(name: String): String = {

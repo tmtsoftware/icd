@@ -183,11 +183,13 @@ case class IcdDbQuery(db: MongoDB) {
 
   /**
    * Returns a list of all the component names in the DB
+   * XXX TODO FIXME (Can simplify after changes made in ingesting)
    */
   def getComponentNames: List[String] = getComponents.map(_.component)
 
   /**
    * Returns a list of all the subcomponent names in the DB belonging to the given ICD
+   * XXX TODO FIXME (Can simplify after changes made in ingesting)
    */
   def getComponentNames(icdName: String): List[String] = {
     db.collectionNames()
@@ -232,16 +234,43 @@ case class IcdDbQuery(db: MongoDB) {
   /**
    * Returns the model object for the component with the given name
    */
-  def getComponentModel(name: String): Option[ComponentModel] = {
-    queryComponents(BaseModel.componentKey -> name).headOption
+  def getComponentModel(component: String): Option[ComponentModel] = {
+    queryComponents(BaseModel.componentKey -> component).headOption
   }
 
   /**
    * Returns an object describing the "commands" defined for the named component
    */
-  def getCommandModel(name: String): Option[CommandModel] = {
-    for (entry ← entryForComponentName(name) if entry.command.isDefined)
+  def getCommandModel(component: String): Option[CommandModel] = {
+    for (entry ← entryForComponentName(component) if entry.command.isDefined)
       yield CommandModel(getConfig(db(entry.command.get).head.toString))
+  }
+
+  /**
+   * Returns an object describing the "commands" defined for the named component in the named subsystem
+   */
+  def getCommandModel(subsystem: String, component: String): Option[CommandModel] = {
+    // XXX TODO: Use the subsystem and component name to more efficiently get to the command model
+    getCommandModel(component)
+  }
+
+  /**
+   * Returns an object describing the named command, defined for the named component in the named subsystem
+   */
+  def getCommand(subsystem: String, component: String, commandName: String): Option[ReceiveCommandModel] = {
+    getCommandModel(subsystem, component).flatMap(_.receive.find(_.name == commandName))
+  }
+
+  /**
+   * Returns a list of the names of components that send the given command to the given component/subsystem
+   */
+  def getCommandSenders(subsystem: String, component: String, commandName: String): List[ComponentModel] = {
+    for {
+      componentModel ← getComponents
+      commandModel ← getCommandModel(componentModel.subsystem, componentModel.component)
+      sendCommandModel ← commandModel.send.find(s ⇒
+        s.subsystem == subsystem && s.component == component && s.name == commandName)
+    } yield componentModel
   }
 
   /**

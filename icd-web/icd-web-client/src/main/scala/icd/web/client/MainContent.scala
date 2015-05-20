@@ -44,6 +44,6 @@ case class MainContent() extends Displayable {
     div(Styles.mainWrapper)(
       div(Styles.main)(contentTitle, content),
       div(p(" ")) // space at bottom
-    ).render
+      ).render
   }
 }

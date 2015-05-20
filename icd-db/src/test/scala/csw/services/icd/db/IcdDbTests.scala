@@ -2,8 +2,8 @@ package csw.services.icd.db
 
 import java.io.File
 
-import csw.services.icd.db.IcdDbQuery.{ Events, Telemetry }
-import org.scalatest.{ DoNotDiscover, FunSuite }
+import csw.services.icd.db.IcdDbQuery.{Events, Telemetry}
+import org.scalatest.{DoNotDiscover, FunSuite}
 
 /**
  * Tests the IcdDb class (Note: Assumes MongoDB is running)
@@ -26,29 +26,29 @@ class IcdDbTests extends FunSuite {
     assert(problems.isEmpty)
 
     // query the DB
-    assert(db.query.getComponentNames == List("envCtrl", "lgsWfs", "nacqNhrwfs", "ndme"))
-    assert(db.query.getComponentNames("NFIRAOS") == List("envCtrl", "lgsWfs", "nacqNhrwfs", "ndme"))
-    assert(db.query.getAssemblyNames == List("envCtrl", "lgsWfs", "nacqNhrwfs", "ndme"))
+    assert(db.query.getComponentNames == List("envCtrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
+    assert(db.query.getComponentNames("NFIRAOS") == List("envCtrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
+    assert(db.query.getAssemblyNames == List("envCtrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
     assert(db.query.getHcdNames == List())
     assert(db.query.getSubsystemNames == List("NFIRAOS"))
 
     val components = db.query.getComponents
-    assert(components.size == 4)
+    assert(components.size == 5)
 
     // Test getting items based on the component name
     val envCtrl = db.query.getComponentModel("envCtrl").get
     assert(envCtrl.component == "envCtrl")
     assert(envCtrl.componentType == "Assembly")
-    assert(envCtrl.prefix == "nfiraos.ncc.assembly.envCtrl")
+    assert(envCtrl.prefix == "nfiraos.ncc.envCtrl")
 
     val commands = db.query.getCommandModel(envCtrl.component).get
-    assert(commands.items.size == 2)
+    assert(commands.receive.size == 2)
 
-    assert(commands.items.head.name == "ENVIRONMENTAL_CONTROL_INITIALIZE")
-    assert(commands.items.head.requirements.head == "INT-NFIRAOS-AOESW-0400")
+    assert(commands.receive.head.name == "ENVIRONMENTAL_CONTROL_INITIALIZE")
+    assert(commands.receive.head.requirements.head == "INT-NFIRAOS-AOESW-0400")
 
-    assert(commands.items.last.name == "ENVIRONMENTAL_CONTROL_STOP")
-    assert(commands.items.last.requirements.head == "INT-NFIRAOS-AOESW-0405")
+    assert(commands.receive.last.name == "ENVIRONMENTAL_CONTROL_STOP")
+    assert(commands.receive.last.requirements.head == "INT-NFIRAOS-AOESW-0405")
 
     val publish = db.query.getPublishModel(envCtrl.component).get
     val telemetryList = publish.telemetryList
@@ -73,11 +73,11 @@ class IcdDbTests extends FunSuite {
     assert(published.size == 1)
     assert(published.head.publishType == Telemetry)
 
-    val sensorList = db.query.publishes("nfiraos.ncc.assembly.envCtrl.sensors")
+    val sensorList = db.query.publishes("nfiraos.ncc.envCtrl.sensors")
     assert(sensorList.size == 1)
     assert(sensorList.head.componentName == "envCtrl")
     assert(sensorList.head.item.publishType == Telemetry)
-    assert(sensorList.head.prefix == "nfiraos.ncc.assembly.envCtrl")
+    assert(sensorList.head.prefix == "nfiraos.ncc.envCtrl")
     assert(sensorList.head.item.name == "sensors")
 
     // Test accessing ICD models
@@ -98,6 +98,7 @@ class IcdDbTests extends FunSuite {
     db.dropDatabase()
   }
 
+  // XXX TODO: Restore test after changes
   //  test("Ingest and then update example ICD") {
   //    val db = IcdDb("test")
   //    db.dropDatabase() // start with a clean db for test
@@ -142,18 +143,30 @@ class IcdDbTests extends FunSuite {
   //    db.dropDatabase()
   //  }
 
-  // Just trying out stuff...
+  // XXX TODO: Turn this into a test
   def testModels(db: IcdDb): Unit = {
     val modelsList = db.query.getModels("NFIRAOS")
     val publishInfo = for (models ← modelsList) yield {
       models.publishModel.foreach { publishModel ⇒
         publishModel.telemetryList.foreach { telemetryModel ⇒
-          println(s"${publishModel.component} publishes telemetry ${telemetryModel.name}: ${telemetryModel.description}")
+          // println(s"${publishModel.component} publishes telemetry ${telemetryModel.name}: ${telemetryModel.description}")
         }
       }
       models.subscribeModel.foreach { subscribeModel ⇒
         subscribeModel.telemetryList.foreach { telemetryModel ⇒
-          println(s"${subscribeModel.component} subscribes to telemetry ${telemetryModel.name} from ${telemetryModel.subsystem}")
+          // println(s"${subscribeModel.component} subscribes to telemetry ${telemetryModel.name} from ${telemetryModel.subsystem}")
+        }
+      }
+    }
+
+    modelsList.foreach { models =>
+      models.commandModel.foreach { commandModel =>
+        commandModel.receive.foreach { receiveCommandModel =>
+          val opt = db.query.getCommand(commandModel.subsystem, commandModel.component, receiveCommandModel.name)
+          assert(opt.get == receiveCommandModel)
+          val senders = db.query.getCommandSenders(commandModel.subsystem, commandModel.component, receiveCommandModel.name)
+            .map(_.component)
+//          println(s"XXX The following components call ${commandModel.subsystem}/${commandModel.component}/${receiveCommandModel.name}: $senders")
         }
       }
     }

@@ -17,4 +17,3 @@ object Displayable {
   implicit def toElement(d: Displayable): Element = d.markup()
 }
 
-

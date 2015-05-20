@@ -1,11 +1,8 @@
 package controllers
 
-import csw.services.icd.db.{IcdDbQuery, IcdDb}
+import csw.services.icd.db.IcdDb
 import csw.services.icd.model.IcdModels
-import play.api.libs.json._
-import shared.PublishInfo
-import shared.SubscribeInfo
-
+import shared.{ OtherComponent, CommandInfo, PublishInfo, SubscribeInfo }
 
 object ComponentInfo {
   /**
@@ -15,63 +12,96 @@ object ComponentInfo {
     // get the models for this component and it's subcomponents
     val modelsList = db.query.getModels(compName)
     val description = getDescription(modelsList)
-    val publishInfo = for (models <- modelsList.headOption) yield {
+    val publishInfo = for (models ← modelsList.headOption) yield {
       getPublishInfo(db, models)
     }
-    val subscribeInfo = for (models <- modelsList.headOption) yield {
+    val subscribeInfo = for (models ← modelsList.headOption) yield {
       getSubscribeInfo(db, models)
     }
-    shared.ComponentInfo(compName, description, publishInfo.toList.flatten, subscribeInfo.toList.flatten)
+    val commandsReceived = for (models ← modelsList.headOption) yield {
+      getCommandsReceived(db, models)
+    }
+    val commandsSent = for (models ← modelsList.headOption) yield {
+      getCommandsSent(db, models)
+    }
+
+    shared.ComponentInfo(compName, description,
+      publishInfo.toList.flatten,
+      subscribeInfo.toList.flatten,
+      commandsReceived.getOrElse(Nil),
+      commandsSent.getOrElse(Nil))
   }
 
+  /**
+   * Gets the component description, or an empty string if not found
+   * @param modelsList list of model sets for the subsystem or component
+   */
   private def getDescription(modelsList: List[IcdModels]): String = {
     if (modelsList.isEmpty) ""
     else {
       modelsList.head.componentModel match {
-        case Some(model) => model.description
-        case None => ""
+        case Some(model) ⇒ model.description
+        case None        ⇒ ""
       }
     }
   }
 
+  /**
+   * Gets information about the items published by a component
+   * @param db database handle
+   * @param models the model objects for the component
+   */
   private def getPublishInfo(db: IcdDb, models: IcdModels): List[PublishInfo] = {
     val prefix = models.componentModel.get.prefix
-    val result = models.publishModel.map { m =>
-      m.telemetryList.map { t =>
+    val result = models.publishModel.map { m ⇒
+      m.telemetryList.map { t ⇒
         PublishInfo("Telemetry", t.name, t.description, getSubscribers(db, prefix, t.name, t.description))
       } ++
-        m.eventList.map { el =>
+        m.eventList.map { el ⇒
           PublishInfo("Event", el.name, el.description, getSubscribers(db, prefix, el.name, el.description))
         } ++
-        m.eventStreamList.map { esl =>
+        m.eventStreamList.map { esl ⇒
           PublishInfo("EventStream", esl.name, esl.description, getSubscribers(db, prefix, esl.name, esl.description))
         } ++
-        m.alarmList.map { al =>
+        m.alarmList.map { al ⇒
           PublishInfo("Alarm", al.name, al.description, getSubscribers(db, prefix, al.name, al.description))
         } ++
-        m.healthList.map { hl =>
+        m.healthList.map { hl ⇒
           PublishInfo("Health", hl.name, hl.description, getSubscribers(db, prefix, hl.name, hl.description))
         }
     }
     result.toList.flatten
   }
 
+  /**
+   * Gets information about who subscribes to the given published items
+   * @param db database handle
+   * @param prefix component's prefix
+   * @param name simple name of the published item
+   * @param desc description of the item
+   * @return
+   */
   private def getSubscribers(db: IcdDb, prefix: String, name: String, desc: String): List[SubscribeInfo] = {
-    db.query.subscribes(s"$prefix.$name").map { s =>
+    db.query.subscribes(s"$prefix.$name").map { s ⇒
       SubscribeInfo(s.subscribeType.toString, s.name, desc, s.subsystem, s.componentName)
     }
   }
 
+  /**
+   * Gets a list of items the component subscribes to, along with the publisher of each item
+   * @param db the database handle
+   * @param models the model objects for the component
+   */
   private def getSubscribeInfo(db: IcdDb, models: IcdModels): List[SubscribeInfo] = {
 
     def getInfo(itemType: String, si: csw.services.icd.model.SubscribeInfo): List[SubscribeInfo] = {
-      val info = db.query.publishes(si.name).map { pi =>
+      val info = db.query.publishes(si.name).map { pi ⇒
         SubscribeInfo(itemType, si.name, pi.item.description, si.subsystem, pi.componentName)
       }
       if (info.nonEmpty) info else List(SubscribeInfo(itemType, si.name, "", si.subsystem, ""))
     }
 
-    val result = models.subscribeModel.map { m =>
+    val result = models.subscribeModel.map { m ⇒
       m.telemetryList.map(getInfo("Telemetry", _)) ++
         m.eventList.map(getInfo("Event", _)) ++
         m.eventStreamList.map(getInfo("EventStream", _)) ++
@@ -81,32 +111,39 @@ object ComponentInfo {
     result.toList.flatten.flatten
   }
 
+  /**
+   * Gets a list of commands received by the component, including information about which components
+   * send each command.
+   * @param db database handle
+   * @param models model objects for component
+   */
+  private def getCommandsReceived(db: IcdDb, models: IcdModels): List[CommandInfo] = {
+    for {
+      cmd ← models.commandModel.toList
+      received ← cmd.receive
+    } yield {
+      val senders = db.query.getCommandSenders(cmd.subsystem, cmd.component, received.name).map(comp ⇒
+        OtherComponent(comp.subsystem, comp.component))
+      CommandInfo(received.name, received.description, senders)
+    }
+  }
 
-  // JSON conversion
-  implicit val SubscribeInfoWrites = new Writes[SubscribeInfo] {
-    def writes(info: SubscribeInfo) = Json.obj(
-      "itemType" -> info.itemType,
-      "name" -> info.name,
-      "description" -> info.description,
-      "subsystem" -> info.subsystem,
-      "compName" -> info.compName
-    )
-  }
-  implicit val PublishInfoWrites = new Writes[PublishInfo] {
-    def writes(info: PublishInfo) = Json.obj(
-      "itemType" -> info.itemType,
-      "name" -> info.name,
-      "description" -> info.description,
-      "subscribers" -> info.subscribers
-    )
-  }
-  implicit val ComponentInfoWrites = new Writes[shared.ComponentInfo] {
-    def writes(info: shared.ComponentInfo) = Json.obj(
-      "name" -> info.name,
-      "description" -> info.description,
-      "publishInfo" -> info.publishInfo,
-      "subscribeInfo" -> info.subscribeInfo
-    )
+  /**
+   * Gets a list of commands sent by the component, including information about the components
+   * that receive each command.
+   * @param db database handle
+   * @param models model objects for component
+   */
+  private def getCommandsSent(db: IcdDb, models: IcdModels): List[CommandInfo] = {
+    val result = for {
+      cmd ← models.commandModel.toList
+      sent ← cmd.send
+    } yield {
+      db.query.getCommand(sent.subsystem, sent.component, sent.name).map { r ⇒
+        CommandInfo(sent.name, r.description, List(OtherComponent(sent.subsystem, sent.component)))
+      }
+    }
+    result.flatten
   }
 }
 

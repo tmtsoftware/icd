@@ -39,7 +39,7 @@ case class BrowserHistory(sourceSubsystem: Option[String], targetSubsystem: Opti
                           filterChecked: Boolean, linkComponent: Option[String],
                           viewType: ViewType) {
 
-   // Pushes the current application history state
+  // Pushes the current application history state
   def pushState(): Unit = {
     val json = write(this)
     dom.history.pushState(json, dom.document.title, dom.document.documentURI)

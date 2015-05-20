@@ -146,8 +146,8 @@ class IcdValidatorTests extends FunSuite {
 
   def checkCommandModel(parser: IcdModels): Unit = {
     val commandModel = parser.commandModel.get
-    assert(commandModel.items.size == 2)
-    val item1 = commandModel.items.head
+    assert(commandModel.receive.size == 2)
+    val item1 = commandModel.receive.head
     assert(item1.name == "cmd1")
     assert(item1.description == "Description of cmd1")
     assert(item1.requirements == List("First requirement for cmd1", "Second requirement for cmd1"))

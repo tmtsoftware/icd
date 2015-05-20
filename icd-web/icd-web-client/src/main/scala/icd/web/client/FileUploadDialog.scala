@@ -4,7 +4,7 @@ import icd.web.client.FileUtils._
 import org.scalajs.dom
 import org.scalajs.dom._
 import scala.language.implicitConversions
-import org.scalajs.jquery.{jQuery => $, _}
+import org.scalajs.jquery.{ jQuery ⇒ $, _ }
 
 /**
  * Displays the page for uploading ICD files and directories
@@ -65,7 +65,7 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
   // Returns a pair of lists containing the valid and invalid ICD files
   def getIcdFiles(e: dom.Event): (Seq[WebkitFile], Seq[WebkitFile]) = {
     val files = e.target.files
-    val fileList = for (i <- 0 until files.length) yield files(i).asInstanceOf[WebkitFile]
+    val fileList = for (i ← 0 until files.length) yield files(i).asInstanceOf[WebkitFile]
     fileList.partition(isValidFile)
   }
 
@@ -77,17 +77,17 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
     clearProblems()
     statusItem.removeClass("label-danger")
     val (validFiles, invalidFiles) = getIcdFiles(e)
-    for ((file, i) <- validFiles.zipWithIndex) {
+    for ((file, i) ← validFiles.zipWithIndex) {
       try {
         parseFile(file)
         uploadFile(file, i == validFiles.size - 1)
       } catch {
-        case e: Throwable => println(e)
+        case e: Throwable ⇒ println(e)
       }
     }
 
     // list ignored files:
-    for (file <- invalidFiles)
+    for (file ← invalidFiles)
       displayProblem(Problem("warning", s"${getFilePath(file)}: Ignored"))
   }
 
@@ -130,7 +130,7 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
         }
         if (xhr.status != 200) {
           val problems = upickle.read[List[Problem]](xhr.responseText)
-          for (problem <- problems)
+          for (problem ← problems)
             displayProblem(problem)
         }
       }
@@ -170,27 +170,18 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
               div(
                 label(s"$dirLabel to upload:")(
                   input(`type` := "file", name := "files[]", multiple := "multiple",
-                    "webkitdirectory".attr := "webkitdirectory", onchange := fileSelectHandler _)
-                )
-              ),
+                    "webkitdirectory".attr := "webkitdirectory", onchange := fileSelectHandler _))),
               div(id := "submitButton", `class` := "hide")(
-                button(`type` := "submit")("Upload Files")
-              )
-            )
-          )
-        ),
+                button(`type` := "submit")("Upload Files"))))),
       div(`class` := "progress")(
         div(id := "progress", `class` := "progress-bar progress-bar-info progress-bar-striped",
           "role".attr := "progressbar", "aria-valuenow".attr := "0", "aria-valuemin".attr := "0",
-          "aria-valuemax".attr := "100", style := "width: 100%", "0%")
-      ),
+          "aria-valuemax".attr := "100", style := "width: 100%", "0%")),
       h4("Status")(
         span(style := "margin-left:15px;"),
         span(id := "busyStatus", cls := "glyphicon glyphicon-refresh glyphicon-refresh-animate hide"),
         span(style := "margin-left:15px;"),
-        span(id := "status", `class` := "label", "Working...")
-      ),
-      messagesItem
-    ).render
+        span(id := "status", `class` := "label", "Working...")),
+      messagesItem).render
   }
 }

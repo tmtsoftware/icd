@@ -10,7 +10,7 @@ import org.scalajs.dom._
  * @param msg the initial message to display before the first selection is made
  * @param removeMsg if true, remove the default msg item from the choices once a selection has been made
  */
-case class Subsystem(listener: (Option[String], Boolean) => Unit,
+case class Subsystem(listener: (Option[String], Boolean) ⇒ Unit,
                      labelStr: String = "Subsystem",
                      msg: String = "Select a subsystem",
                      removeMsg: Boolean = true,
@@ -25,8 +25,7 @@ case class Subsystem(listener: (Option[String], Boolean) => Unit,
   val selectItem = {
     import scalatags.JsDom.all._
     select(onchange := subsystemSelected _)(
-      option(value := msg)(msg)
-    ).render
+      option(value := msg)(msg)).render
   }
 
   /**
@@ -63,8 +62,7 @@ case class Subsystem(listener: (Option[String], Boolean) => Unit,
       div()(
         label(s"$labelStr", " ", selectItem),
         "  ",
-        label(filterCb, " ", "Filter")
-      ).render
+        label(filterCb, " ", "Filter")).render
     } else {
       label(s"$labelStr", " ", selectItem).render
     }
@@ -75,32 +73,38 @@ case class Subsystem(listener: (Option[String], Boolean) => Unit,
    */
   def getSelectedSubsystem: Option[String] =
     selectItem.value match {
-      case `msg` => None
-      case subsystemName => Some(subsystemName)
+      case `msg`         ⇒ None
+      case ""            ⇒ None
+      case subsystemName ⇒ Some(subsystemName)
     }
 
   /**
    * Sets the selected subsystem
    */
-  def setSelectedSubsystem(nameOpt: Option[String]): Unit =
+  def setSelectedSubsystem(nameOpt: Option[String], notifyListener: Boolean = true): Unit =
     if (nameOpt != getSelectedSubsystem) {
       nameOpt match {
-        case Some(s) => selectItem.value = s
-        case None => if (!removeMsg) selectItem.value = msg
+        case Some(s) ⇒ selectItem.value = s
+        case None    ⇒ if (!removeMsg) selectItem.value = msg
       }
-      listener(getSelectedSubsystem, isFilterSelected)
+      if (notifyListener) listener(getSelectedSubsystem, isFilterSelected)
     }
 
   // Update the Subsystem combobox options
   def updateSubsystemOptions(items: List[String]): Unit = {
     import scalatags.JsDom.all._
 
-    val list = msg :: items
+    val selected = getSelectedSubsystem
+    val list = selected match {
+      case Some(subsystem) ⇒ items
+      case None            ⇒ msg :: items
+    }
     while (selectItem.options.length != 0) {
       selectItem.remove(0)
     }
-    for (s <- list) {
+    for (s ← list) {
       selectItem.add(option(value := s)(s).render)
     }
+    setSelectedSubsystem(selected, notifyListener = false)
   }
 }

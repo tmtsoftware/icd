@@ -4,30 +4,30 @@ import java.io.File
 import java.util.zip.ZipFile
 
 import com.mongodb.MongoTimeoutException
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{ ConfigException, Config, ConfigFactory }
 import csw.services.icd.db.StdConfig
-import csw.services.icd.{Problem, StdName}
-import play.api.libs.iteratee.{Concurrent, Iteratee}
-import play.api.mvc.{WebSocket, Result, Action, Controller}
+import csw.services.icd.{ Problem, StdName }
+import play.api.libs.iteratee.{ Concurrent, Iteratee }
+import play.api.mvc.{ WebSocket, Result, Action, Controller }
 import play.api.libs.json._
 
 object FileUploadController extends Controller {
 
   private val log = play.Logger.of("application")
   private lazy val db = Application.db
+  val (wsEnumerator, wsChannel) = Concurrent.broadcast[String]
 
   // Converts a Problem (returned from ICD validate method) to JSON
   implicit val problemWrites = new Writes[Problem] {
     def writes(problem: Problem) = Json.obj(
       "severity" -> problem.severity,
-      "message" -> problem.message
-    )
+      "message" -> problem.message)
   }
 
   // Server side of the upload ICD feature.
   // The uploaded file should be a single .conf file with X-FILENAME giving the relative path
   // (which is needed to determine where in the ICD it belongs).
-  def uploadFile = Action(parse.tolerantText) { request =>
+  def uploadFile = Action(parse.tolerantText) { request ⇒
     val fileNameOpt = request.headers.get("X-FILENAME")
     val lastFile = request.headers.get("X-Last-File").getOrElse("") == "true"
     val result = if (fileNameOpt.isDefined) {
@@ -39,7 +39,6 @@ object FileUploadController extends Controller {
       BadRequest(Json.toJson(List(Problem("error", msg))))
     }
     if (lastFile) {
-      val (wsEnumerator, wsChannel) = Concurrent.broadcast[String]
       wsChannel.push("update")
     }
     result
@@ -54,7 +53,7 @@ object FileUploadController extends Controller {
         val config = ConfigFactory.parseString(contents)
         val problems = ingestConfig(config, file.toString, lastFile)
         if (problems.isEmpty) Ok(Json.toJson(Nil)) else NotAcceptable(Json.toJson(problems))
-      } catch handleExceptions
+      } catch handleExceptions(Some(file.toString))
     } else {
       val problem = Problem("error", s"${file.getName} is not a standard ICD file name")
       NotAcceptable(Json.toJson(List(problem)))
@@ -77,27 +76,32 @@ object FileUploadController extends Controller {
     problems
   }
 
-  private val handleExceptions: PartialFunction[Throwable, Result] = {
-    case e: MongoTimeoutException =>
+  private def handleExceptions(fileNameOpt: Option[String]): PartialFunction[Throwable, Result] = {
+    case e: MongoTimeoutException ⇒
       val msg = "Database seems to be down"
       log.error(msg, e)
       ServiceUnavailable(Json.toJson(List(Problem("error", msg))))
-    case t: Throwable =>
+    case e: ConfigException ⇒
+      val file = fileNameOpt.getOrElse("")
+      val msg = s"$file: ${e.getMessage}"
+      log.error(msg, e)
+      NotAcceptable(Json.toJson(List(Problem("error", msg))))
+    case t: Throwable ⇒
       val msg = "Internal error"
-      log.error(msg)
+      log.error(msg, t)
       InternalServerError(Json.toJson(List(Problem("error", msg))))
   }
 
   // Uploads/ingests the ICD files together in a zip file
-  def uploadZipFile = Action(parse.temporaryFile) { request =>
+  def uploadZipFile = Action(parse.temporaryFile) { request ⇒
     try {
+      // XXX TODO: Return config parse errors in StdConfig.get with file names!
       val list = StdConfig.get(new ZipFile(request.body.file))
       val problems = list.flatMap(db.ingestConfig)
-      val (wsEnumerator, wsChannel) = Concurrent.broadcast[String]
       wsChannel.push("update")
 
       // Check the subsystem names
-      val subsystems = list.map(stdConfig => db.getSubsystemName(stdConfig)).distinct
+      val subsystems = list.map(stdConfig ⇒ db.getSubsystemName(stdConfig)).distinct
       val errors = if (subsystems.length != 1)
         problems ::: db.multipleSubsystemsError(subsystems)
       else problems
@@ -115,12 +119,11 @@ object FileUploadController extends Controller {
       else
         NotAcceptable(Json.toJson(errors))
 
-    } catch handleExceptions
+    } catch handleExceptions(None)
   }
 
   // Websocket used to notify client when upload is complete
-  def ws = WebSocket.using[String] { request =>
-    val (wsEnumerator, wsChannel) = Concurrent.broadcast[String]
+  def ws = WebSocket.using[String] { request ⇒
     (Iteratee.ignore, wsEnumerator)
   }
 }

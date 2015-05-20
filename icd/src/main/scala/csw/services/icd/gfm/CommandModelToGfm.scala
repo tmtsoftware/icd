@@ -1,6 +1,6 @@
 package csw.services.icd.gfm
 
-import csw.services.icd.model.{ CommandItemModel, CommandModel }
+import csw.services.icd.model.{ ReceiveCommandModel, SendCommandModel, CommandModel }
 import Gfm._
 
 /**
@@ -11,14 +11,16 @@ case class CommandModelToGfm(m: CommandModel, level: Level) extends Gfm {
 
   private val desc = mkParagraph(m.description)
 
-  private val body = m.items.zipWithIndex.map {
-    case (t, i) ⇒ CommandItemToGfm(t, level.inc3(i)).gfm
+  private val receive = m.receive.zipWithIndex.map {
+    case (t, i) ⇒ ReceiveCommandModelToGfm(t, level.inc3(i)).gfm
   }.mkString("\n")
 
-  val gfm = s"$head\n$desc\n$body"
+  private val send = SendCommandModelToGfm(m.send, level.inc3(m.receive.length)).gfm
+
+  val gfm = s"$head\n$desc\n$receive\n$send"
 }
 
-private case class CommandItemToGfm(m: CommandItemModel, level: Level) extends Gfm {
+private case class ReceiveCommandModelToGfm(m: ReceiveCommandModel, level: Level) extends Gfm {
   private val head = mkHeading(level, 3, s"Configuration: ${m.name}")
 
   private val desc = mkParagraph(m.description)
@@ -33,3 +35,14 @@ private case class CommandItemToGfm(m: CommandItemModel, level: Level) extends G
 
   val gfm = List(head, requirements, desc, argsHead, argsTable).mkString("\n")
 }
+
+private case class SendCommandModelToGfm(list: List[SendCommandModel], level: Level) extends Gfm {
+  private val head = mkHeading(level, 3, "Configurations Sent to Other Components")
+
+  private val table = mkTable(
+    List("Name", "Component", "Subsystem"),
+    list.map(m ⇒ List(m.name, m.component, m.subsystem)))
+
+  val gfm = List(head, table).mkString("\n")
+}
+

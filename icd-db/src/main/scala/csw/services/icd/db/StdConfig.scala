@@ -21,6 +21,7 @@ object StdConfig {
 
   /**
    * Returns a list for StdConfig objects, one for each ICD file in the given directory
+   * XXX TODO: Return config parse errors in StdConfig.get with file names
    */
   def get(dir: File): List[StdConfig] = {
     stdNames.flatMap {

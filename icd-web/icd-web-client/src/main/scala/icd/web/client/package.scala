@@ -3,7 +3,6 @@ package icd.web
 import org.scalajs.dom
 import org.scalajs.dom._
 
-
 /**
  * Common definitions
  */

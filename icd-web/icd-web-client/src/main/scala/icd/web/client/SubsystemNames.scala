@@ -10,7 +10,7 @@ import SubsystemNames._
 
 object SubsystemNames {
   // Type of a listener for changes in the list of subsystem names
-  type Listener = List[String] => Unit
+  type Listener = List[String] ⇒ Unit
 }
 
 /**
@@ -26,13 +26,12 @@ case class SubsystemNames(mainContent: MainContent, wsBaseUrl: String, listeners
   val socket = new dom.WebSocket(wsBaseUrl)
   socket.onmessage = wsReceive _
 
-
   // Gets the list of top level ICDs from the server
   private def getSubsystemNames: Future[List[String]] = {
-    Ajax.get(Routes.icdNames).map { r =>
+    Ajax.get(Routes.icdNames).map { r ⇒
       read[List[String]](r.responseText)
     }.recover {
-      case ex =>
+      case ex ⇒
         mainContent.displayInternalError(ex)
         Nil
     }
@@ -49,6 +48,7 @@ case class SubsystemNames(mainContent: MainContent, wsBaseUrl: String, listeners
 
   // Called when the DB is changed, for example after an upload/ingest
   private def wsReceive(e: dom.Event) = {
+    println(s"XXX Received ws subsystem update")
     update()
   }
 
