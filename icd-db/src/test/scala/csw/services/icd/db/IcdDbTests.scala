@@ -2,8 +2,8 @@ package csw.services.icd.db
 
 import java.io.File
 
-import csw.services.icd.db.IcdDbQuery.{Events, Telemetry}
-import org.scalatest.{DoNotDiscover, FunSuite}
+import csw.services.icd.db.IcdDbQuery.{ Events, Telemetry }
+import org.scalatest.{ DoNotDiscover, FunSuite }
 
 /**
  * Tests the IcdDb class (Note: Assumes MongoDB is running)
@@ -69,11 +69,12 @@ class IcdDbTests extends FunSuite {
     assert(temp_ngsWfs.units == "degC")
 
     // Test publish queries
-    val published = db.query.getPublished("envCtrl").filter(_.name == "sensors")
+    val published = db.query.getPublished("envCtrl").filter(p ⇒
+      p.name == "sensors" && p.publishType == Telemetry)
     assert(published.size == 1)
     assert(published.head.publishType == Telemetry)
 
-    val sensorList = db.query.publishes("nfiraos.ncc.envCtrl.sensors")
+    val sensorList = db.query.publishes("nfiraos.ncc.envCtrl.sensors", Telemetry)
     assert(sensorList.size == 1)
     assert(sensorList.head.componentName == "envCtrl")
     assert(sensorList.head.item.publishType == Telemetry)
@@ -159,14 +160,14 @@ class IcdDbTests extends FunSuite {
       }
     }
 
-    modelsList.foreach { models =>
-      models.commandModel.foreach { commandModel =>
-        commandModel.receive.foreach { receiveCommandModel =>
+    modelsList.foreach { models ⇒
+      models.commandModel.foreach { commandModel ⇒
+        commandModel.receive.foreach { receiveCommandModel ⇒
           val opt = db.query.getCommand(commandModel.subsystem, commandModel.component, receiveCommandModel.name)
           assert(opt.get == receiveCommandModel)
           val senders = db.query.getCommandSenders(commandModel.subsystem, commandModel.component, receiveCommandModel.name)
             .map(_.component)
-//          println(s"XXX The following components call ${commandModel.subsystem}/${commandModel.component}/${receiveCommandModel.name}: $senders")
+          //          println(s"XXX The following components call ${commandModel.subsystem}/${commandModel.component}/${receiveCommandModel.name}: $senders")
         }
       }
     }

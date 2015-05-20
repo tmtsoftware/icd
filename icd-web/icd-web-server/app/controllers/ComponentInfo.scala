@@ -1,6 +1,7 @@
 package controllers
 
 import csw.services.icd.db.IcdDb
+import csw.services.icd.db.IcdDbQuery.{ Health, Alarms, Events, EventStreams, Telemetry, PublishType }
 import csw.services.icd.model.IcdModels
 import shared.{ OtherComponent, CommandInfo, PublishInfo, SubscribeInfo }
 
@@ -55,19 +56,19 @@ object ComponentInfo {
     val prefix = models.componentModel.get.prefix
     val result = models.publishModel.map { m ⇒
       m.telemetryList.map { t ⇒
-        PublishInfo("Telemetry", t.name, t.description, getSubscribers(db, prefix, t.name, t.description))
+        PublishInfo("Telemetry", t.name, t.description, getSubscribers(db, prefix, t.name, t.description, Telemetry))
       } ++
         m.eventList.map { el ⇒
-          PublishInfo("Event", el.name, el.description, getSubscribers(db, prefix, el.name, el.description))
+          PublishInfo("Event", el.name, el.description, getSubscribers(db, prefix, el.name, el.description, Events))
         } ++
         m.eventStreamList.map { esl ⇒
-          PublishInfo("EventStream", esl.name, esl.description, getSubscribers(db, prefix, esl.name, esl.description))
+          PublishInfo("EventStream", esl.name, esl.description, getSubscribers(db, prefix, esl.name, esl.description, EventStreams))
         } ++
         m.alarmList.map { al ⇒
-          PublishInfo("Alarm", al.name, al.description, getSubscribers(db, prefix, al.name, al.description))
+          PublishInfo("Alarm", al.name, al.description, getSubscribers(db, prefix, al.name, al.description, Alarms))
         } ++
         m.healthList.map { hl ⇒
-          PublishInfo("Health", hl.name, hl.description, getSubscribers(db, prefix, hl.name, hl.description))
+          PublishInfo("Health", hl.name, hl.description, getSubscribers(db, prefix, hl.name, hl.description, Health))
         }
     }
     result.toList.flatten
@@ -79,10 +80,11 @@ object ComponentInfo {
    * @param prefix component's prefix
    * @param name simple name of the published item
    * @param desc description of the item
-   * @return
+   * @param subscribeType telemetry, alarm, etc...
    */
-  private def getSubscribers(db: IcdDb, prefix: String, name: String, desc: String): List[SubscribeInfo] = {
-    db.query.subscribes(s"$prefix.$name").map { s ⇒
+  private def getSubscribers(db: IcdDb, prefix: String, name: String, desc: String,
+                             subscribeType: PublishType): List[SubscribeInfo] = {
+    db.query.subscribes(s"$prefix.$name", subscribeType).map { s ⇒
       SubscribeInfo(s.subscribeType.toString, s.name, desc, s.subsystem, s.componentName)
     }
   }
@@ -94,19 +96,19 @@ object ComponentInfo {
    */
   private def getSubscribeInfo(db: IcdDb, models: IcdModels): List[SubscribeInfo] = {
 
-    def getInfo(itemType: String, si: csw.services.icd.model.SubscribeInfo): List[SubscribeInfo] = {
-      val info = db.query.publishes(si.name).map { pi ⇒
-        SubscribeInfo(itemType, si.name, pi.item.description, si.subsystem, pi.componentName)
+    def getInfo(publishType: PublishType, si: csw.services.icd.model.SubscribeInfo): List[SubscribeInfo] = {
+      val info = db.query.publishes(si.name, publishType).map { pi ⇒
+        SubscribeInfo(publishType.toString, si.name, pi.item.description, si.subsystem, pi.componentName)
       }
-      if (info.nonEmpty) info else List(SubscribeInfo(itemType, si.name, "", si.subsystem, ""))
+      if (info.nonEmpty) info else List(SubscribeInfo(publishType.toString, si.name, "", si.subsystem, ""))
     }
 
     val result = models.subscribeModel.map { m ⇒
-      m.telemetryList.map(getInfo("Telemetry", _)) ++
-        m.eventList.map(getInfo("Event", _)) ++
-        m.eventStreamList.map(getInfo("EventStream", _)) ++
-        m.alarmList.map(getInfo("Alarm", _)) ++
-        m.healthList.map(getInfo("Health", _))
+      m.telemetryList.map(getInfo(Telemetry, _)) ++
+        m.eventList.map(getInfo(Events, _)) ++
+        m.eventStreamList.map(getInfo(EventStreams, _)) ++
+        m.alarmList.map(getInfo(Alarms, _)) ++
+        m.healthList.map(getInfo(Health, _))
     }
     result.toList.flatten.flatten
   }

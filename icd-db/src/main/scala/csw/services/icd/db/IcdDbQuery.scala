@@ -373,11 +373,12 @@ case class IcdDbQuery(db: MongoDB) {
   /**
    * Returns a list describing which components publish the given value.
    * @param path full path name of value (prefix + name)
+   * @param publishType telemetry, alarm, etc...
    */
-  def publishes(path: String): List[PublishedItem] = {
+  def publishes(path: String, publishType: PublishType): List[PublishedItem] = {
     for {
       i ← getPublishInfo
-      p ← i.publishes.filter(p ⇒ s"${i.prefix}.${p.name}" == path)
+      p ← i.publishes.filter(p ⇒ s"${i.prefix}.${p.name}" == path && publishType == p.publishType)
     } yield PublishedItem(i.componentName, i.prefix, p)
   }
 
@@ -412,11 +413,12 @@ case class IcdDbQuery(db: MongoDB) {
   /**
    * Returns a list describing the components that subscribe to the given value.
    * @param path full path name of value (prefix + name)
+   * @param subscribeType telemetry, alarm, etc...
    */
-  def subscribes(path: String): List[Subscribed] = {
+  def subscribes(path: String, subscribeType: PublishType): List[Subscribed] = {
     for {
       i ← getSubscribeInfo
-      s ← i.subscribesTo.filter(_.name == path)
+      s ← i.subscribesTo.filter(sub ⇒ sub.name == path && sub.subscribeType == subscribeType)
     } yield s
   }
 }
