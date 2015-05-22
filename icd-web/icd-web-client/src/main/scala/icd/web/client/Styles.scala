@@ -8,7 +8,7 @@ object Styles extends StyleSheet.Inline {
   import dsl._
   import language.postfixOps
 
-  val wrapper = style(
+  val layout = style(
     minHeight(100 %%),
     height(100 %%),
     width(100 %%),
@@ -17,7 +17,7 @@ object Styles extends StyleSheet.Inline {
     left(0 px),
     display.inlineBlock)
 
-  val mainWrapper = style(
+  val mainContent = style(
     addClassName("col-md-8"),
     height(100 %%),
     overflowY.auto,
@@ -52,7 +52,24 @@ object Styles extends StyleSheet.Inline {
     maxWidth(80 %%))
 
   val fileUploadMessages = style(
+    addClassName("alert alert-info"),
     padding(0 px, 10 px),
     margin(1 em, 0 em),
     border(1 px, solid, gray))
+
+  val commentBox = style(
+    padding(10 px, 0 px),
+    margin(1 em, 0 em))
+
+  val versionHistory = style(
+    addClassNames("footer"),
+    position.absolute,
+    overflowY.auto,
+    left(0 px),
+    bottom(0 px),
+    width(100 %%),
+    height(15 %%),
+    backgroundColor("#f5f5f5"),
+    padding(5 px, 10 px, 0 px, 10 px),
+    borderTop(1 px, solid, gray))
 }

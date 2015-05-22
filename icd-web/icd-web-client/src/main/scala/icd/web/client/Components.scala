@@ -39,7 +39,7 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
     Ajax.get(Routes.componentInfo(compName)).map { r ⇒
       val info = read[ComponentInfo](r.responseText)
       mainContent.clearContent()
-      mainContent.contentTitle.scrollTop = 0
+      mainContent.scrollToTop()
       displayInfo(info, filtered = false)
     }.recover {
       case ex ⇒
@@ -80,7 +80,7 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
     val elem = $id(getComponentInfoId(compName))
     try {
       // XXX How to check if elem exists?
-      mainContent.content.removeChild(elem)
+      mainContent.removeElement(elem)
     } catch {
       case t: Throwable ⇒
     }
@@ -95,12 +95,12 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
     if (info.publishInfo.nonEmpty || info.subscribeInfo.nonEmpty || info.commandsReceived.nonEmpty || info.commandsSent.nonEmpty) {
       val titleStr = "Components" + (if (filtered) " (filtered)" else "")
       val markup = markupForComponent(info)
-      if (mainContent.contentTitle.textContent != titleStr) {
+      if (mainContent.getTitle != titleStr) {
         mainContent.clearContent()
-        mainContent.setContentTitle(titleStr)
+        mainContent.setTitle(titleStr)
       }
       val element = markup.render
-      mainContent.content.appendChild(element)
+      mainContent.appendElement(element)
     }
   }
 

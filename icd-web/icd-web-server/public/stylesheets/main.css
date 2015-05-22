@@ -1,17 +1,15 @@
 /* Layout based on App Template from http://www.bootply.com/ */
 
+/* XXX TODO move to scala.js code */
+
 body {
     padding-top: 50px;
     overflow: hidden;
+    /* Margin bottom by footer height */
+    margin-bottom: 60px;
 }
 
-/*@media (max-width: 992px) {*/
-    /*body {*/
-        /*padding-top: 0;*/
-    /*}*/
-/*}*/
-
-/* upload button */
+/* upload button (XXX NOT USED?) */
 .btn-file {
     position: relative;
     overflow: hidden;

@@ -47,6 +47,8 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private val subsystemListeners = List(subsystem.updateSubsystemOptions _, targetSubsystem.updateSubsystemOptions _)
   private val subsystemNameUpdater = SubsystemNames(mainContent, wsBaseUrl, subsystemListeners)
 
+  private val versionHistory = VersionHistory(mainContent)
+
   dom.window.onpopstate = popState _
   pushState(viewType = ComponentView)
   doLayout()
@@ -65,6 +67,8 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     layout.addItem(leftSidebar)
     layout.addItem(mainContent)
     layout.addItem(rightSidebar)
+
+    body.appendChild(versionHistory)
   }
 
   // Called when the Upload item is selected
@@ -191,6 +195,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
         updateComponentDisplay()
         pushState(viewType = ComponentView)
       }
+      versionHistory.setSubsystem(subsystem)
     }
   }
 

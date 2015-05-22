@@ -24,13 +24,28 @@ object StdConfig {
    * XXX TODO: Return config parse errors in StdConfig.get with file names
    */
   def get(dir: File): List[StdConfig] = {
-    stdNames.flatMap {
-      stdName ⇒
-        val inputFile = new File(dir, stdName.name)
-        if (inputFile.exists())
-          Some(StdConfig(stdName,
-            ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())))
+    stdNames.flatMap { stdName ⇒
+      val inputFile = new File(dir, stdName.name)
+      if (inputFile.exists())
+        Some(StdConfig(stdName, ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())))
+      else None
+    }
+  }
+
+  /**
+   * Returns a list of StdConfig objects using the content of the given inputFile and the given fileName,
+   * if fileName is one of the standard ICD file names (or a zip file containing standard files).
+   */
+  def get(inputFile: File, fileName: String): List[StdConfig] = {
+    val name = new File(fileName).getName
+    if (name.endsWith(".zip"))
+      get(new ZipFile(inputFile))
+    else {
+      stdNames.flatMap { stdName ⇒
+        if (name == stdName.name)
+          Some(StdConfig(stdName, ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())))
         else None
+      }
     }
   }
 

@@ -20,11 +20,11 @@ GET         /icdHtml/:name              controllers.Application.icdHtml(name: St
 # Gets the PDF for an ICD
 GET         /icdPdf/:name               controllers.Application.icdPdf(name: String)
 
-# Uploads ICD files from a selected directory
-POST        /upload                     controllers.FileUploadController.uploadFile
+# Gets the PDF for an ICD
+GET         /versions/:name             controllers.Application.getVersions(name: String)
 
-# Uploads ICD files from from a zip file of the ICD directory
-POST        /uploadZip                  controllers.FileUploadController.uploadZipFile
+# Uploads ICD files from a selected directory, all at once as multipart/formdata
+POST        /uploadFiles                controllers.FileUploadController.uploadFiles
 
 # Websocket to notify client when DB has changed
 GET         /ws                         controllers.FileUploadController.ws

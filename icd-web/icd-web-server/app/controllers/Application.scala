@@ -7,7 +7,7 @@ import csw.services.icd.db.{ IcdDbPrinter, IcdDb }
 import play.Play
 import play.api.mvc._
 import play.filters.csrf.CSRFAddToken
-import shared.Csrf
+import shared.{ IcdVersionInfo, Csrf }
 import play.api.libs.json._
 
 object Application extends Controller {
@@ -76,4 +76,15 @@ object Application extends Controller {
     Ok(bytes).as("application/pdf")
   }
 
+  /**
+   * Returns a list of the versions of the given ICD
+   * @param name
+   * @return
+   */
+  def getVersions(name: String) = Action {
+    import upickle._
+    val versions = db.manager.getIcdVersions(name).map(v ⇒
+      IcdVersionInfo(v.version, v.user, v.comment, v.date.toString))
+    Ok(write(versions)).as(JSON)
+  }
 }

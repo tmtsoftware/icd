@@ -4,6 +4,12 @@ ICD Database
 This project provides the ICD database interface and command line application, based on MongoDB.
 It is assumed that the MongoDB server is running on the given (or default) host and port.
 
+To start the MongoDB server, you can run a command like this:
+
+    mongod -dbpath $db
+    
+where $db is the directory containing the database.
+
 icd-db Command
 --------------
 

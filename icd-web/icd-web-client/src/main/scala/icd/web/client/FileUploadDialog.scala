@@ -12,6 +12,7 @@ import org.scalajs.jquery.{ jQuery ⇒ $, _ }
 case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) extends Displayable {
 
   implicit def monkeyizeEventTarget(e: dom.EventTarget): EventTargetExt = e.asInstanceOf[EventTargetExt]
+
   implicit def monkeyizeEvent(e: dom.Event): EventExt = e.asInstanceOf[EventExt]
 
   private val maxFileSize = 3000000l
@@ -31,6 +32,12 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
       onchange := fileSelectHandler _).render
   }
 
+  // Upload comment box
+  private val commentBox = {
+    import scalatags.JsDom.all._
+    textarea(cls := "form-control", name := "comments", rows := 5, cols := 60).render
+  }
+
   // True if the file is one of the standard ICD files
   private def isStdFile(file: dom.File): Boolean = stdList.contains(basename(file))
 
@@ -38,7 +45,7 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
   val messagesItem = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
-    div(Styles.fileUploadMessages, `class` := "alert alert-info").render
+    div(Styles.fileUploadMessages).render
   }
 
   // Adds an error (or warning) message to the upload messages
@@ -79,6 +86,7 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
   }
 
   def statusItem = $("#status")
+
   def busyStatusItem = $("#busyStatus")
 
   // Called when user clicks on input item.
@@ -94,78 +102,57 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
     clearProblems()
     statusItem.removeClass("label-danger")
     val (validFiles, invalidFiles) = getIcdFiles(e)
-    for ((file, i) ← validFiles.zipWithIndex) {
-      try {
-        parseFile(file)
-        uploadFile(file, i == validFiles.size - 1)
-      } catch {
-        case e: Throwable ⇒ println(e)
-      }
-    }
+    uploadFiles(validFiles.toList)
 
     // list ignored files:
     for (file ← invalidFiles)
       displayProblem(Problem("warning", s"${getFilePath(file)}: Ignored"))
   }
 
-  // Starts the file read
-  def parseFile(file: WebkitFile) = {
-    val reader = new FileReader()
-    if (file.name.endsWith(".zip"))
-      reader.readAsDataURL(file)
-    else
-      reader.readAsText(file)
-  }
-
-  // Returns the server action to use to upload the given file
-  def actionFor(file: WebkitFile): String =
-    if (file.name.endsWith("zip")) "/uploadZip" else "/upload"
-
-  // Starts uploading the file to the server
-  // (lastFile indicates if it is the last file in the list to be uploaded.)
-  def uploadFile(file: WebkitFile, lastFile: Boolean) = {
-    val xhr = new dom.XMLHttpRequest
-    if (xhr.upload != null && file.size <= maxFileSize) {
-      xhr.open("POST", actionFor(file), async = true)
-      xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest")
-      xhr.setRequestHeader("X-Last-File", lastFile.toString)
-      xhr.setRequestHeader("X-FILENAME", getFilePath(file))
-
-      // Updates progress bar during upload
-      def progressListener(e: dom.Event): Unit = {
-        val pc = e.loaded / e.total * 100
-        $("#progress").css("width", pc + "%").attr("aria-valuenow", pc.toString).html(s"${getFilePath(file)} ($pc %)")
-      }
-
-      // Displays status after upload complete
-      def onloadListener(e: dom.Event) = {
-        busyStatusItem.addClass("hide")
-        val statusClass = if (xhr.status == 200) "label-success" else "label-danger"
-        if (!statusItem.hasClass("label-danger")) {
-          val statusMsg = if (xhr.status == 200) "Success" else xhr.statusText
-          statusItem.removeClass("label-default").addClass(statusClass).text(statusMsg)
-        }
-        if (xhr.status != 200) {
-          val problems = upickle.read[List[Problem]](xhr.responseText)
-          for (problem ← problems)
-            displayProblem(problem)
-        }
-      }
-
-      xhr.upload.addEventListener("progress", progressListener _, useCapture = false)
-      xhr.onload = onloadListener _
-
-      //start upload
-      statusItem.addClass("label-default").text("Working...")
-      busyStatusItem.removeClass("hide")
-      xhr.send(file)
-    } else if (file.size > maxFileSize) {
-      dom.alert(s"${file.name} is too large")
+  // Starts uploading the selected files (or files in selected directory) to the server
+  def uploadFiles(files: List[WebkitFile]) = {
+    val formData = new FormData()
+    for (file ← files if isValidFile(file)) {
+      formData.append(getFilePath(file), file)
     }
+    formData.append("comment", commentBox.value)
+
+    val xhr = new dom.XMLHttpRequest
+    xhr.open("POST", Routes.uploadFiles, async = true)
+
+    // Updates progress bar during upload
+    def progressListener(e: dom.Event): Unit = {
+      val pc = e.loaded / e.total * 100
+      $("#progress").css("width", pc + "%").attr("aria-valuenow", pc.toString).html(s"$pc %")
+    }
+
+    // Displays status after upload complete
+    def onloadListener(e: dom.Event) = {
+      busyStatusItem.addClass("hide")
+      val statusClass = if (xhr.status == 200) "label-success" else "label-danger"
+      if (!statusItem.hasClass("label-danger")) {
+        val statusMsg = if (xhr.status == 200) "Success" else xhr.statusText
+        statusItem.removeClass("label-default").addClass(statusClass).text(statusMsg)
+      }
+      if (xhr.status != 200) {
+        val problems = upickle.read[List[Problem]](xhr.responseText)
+        for (problem ← problems)
+          displayProblem(problem)
+      }
+    }
+
+    xhr.upload.addEventListener("progress", progressListener _, useCapture = false)
+    xhr.onload = onloadListener _
+
+    //start upload
+    statusItem.addClass("label-default").text("Working...")
+    busyStatusItem.removeClass("hide")
+    xhr.send(formData)
   }
 
   // Produce the HTML to display for the upload screen
   override def markup(): Element = {
+    import scalacss.ScalatagsCss._
     import scalatags.JsDom.all._
 
     // Only Chrome supports uploading8 directories. For other browsers, use zip file upload
@@ -182,21 +169,21 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
       form(id := "upload", action := "/upload", "role".attr := "form",
         "method".attr := "POST", "enctype".attr := "multipart/form-data")(
           input(`type` := "hidden", name := "csrfToken", value := csrfToken, accept := acceptSuffix),
-          div(`class` := "panel panel-info")(
-            div(`class` := "panel-body")(
-              div(
-                label(s"$dirLabel to upload:")(inputItem)),
-              div(id := "submitButton", `class` := "hide")(
+          div(cls := "panel panel-info")(
+            div(cls := "panel-body")(
+              div(label(s"$dirLabel to upload:")(inputItem)),
+              div(Styles.commentBox, label("Comments")(commentBox)),
+              div(cls := "hide")(
                 button(`type` := "submit")("Upload Files"))))),
-      div(`class` := "progress")(
-        div(id := "progress", `class` := "progress-bar progress-bar-info progress-bar-striped",
+      div(cls := "progress")(
+        div(id := "progress", cls := "progress-bar progress-bar-info progress-bar-striped",
           "role".attr := "progressbar", "aria-valuenow".attr := "0", "aria-valuemin".attr := "0",
           "aria-valuemax".attr := "100", style := "width: 100%", "0%")),
       h4("Status")(
         span(style := "margin-left:15px;"),
         span(id := "busyStatus", cls := "glyphicon glyphicon-refresh glyphicon-refresh-animate hide"),
         span(style := "margin-left:15px;"),
-        span(id := "status", `class` := "label", "Working...")),
+        span(id := "status", cls := "label", "Working...")),
       messagesItem).render
   }
 }
