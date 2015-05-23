@@ -74,31 +74,24 @@ Here is a listing of the collections present after running this ingest command:
 MongoDB shell version: 3.0.0
 connecting to: icds
 > show collections
-NFIRAOS.command
-NFIRAOS.component
+NFIRAOS.subsystem
 NFIRAOS.envCtrl.command
 NFIRAOS.envCtrl.component
-NFIRAOS.envCtrl.icd
 NFIRAOS.envCtrl.publish
-NFIRAOS.icd
 NFIRAOS.lgsWfs.component
-NFIRAOS.lgsWfs.icd
 NFIRAOS.lgsWfs.publish
 NFIRAOS.nacqNhrwfs.command
 NFIRAOS.nacqNhrwfs.component
-NFIRAOS.nacqNhrwfs.icd
 NFIRAOS.nacqNhrwfs.publish
 NFIRAOS.ndme.command
 NFIRAOS.ndme.component
-NFIRAOS.ndme.icd
 NFIRAOS.ndme.publish
-NFIRAOS.publish
 system.indexes
 
 ```
 
-The code then looks for collections with names ending in .icd, .component, .publish, .subscribe, or .command.
-Queries can be run on all component, icd or command collections, etc.
+The code then looks for collections with names ending in .subsystem, .component, .publish, .subscribe, or .command.
+Queries can be run on all collections.
 When detailed information is needed, the JSON in a collection is parsed into the same model classes used to
 create the PDF document. Creating documents from the database works in the same way as creating them from files.
 The JSON is parsed into model classes and then the document is generated from the model.

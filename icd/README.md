@@ -25,15 +25,19 @@ icd Command
 -----------
 
 The icd command is generated in target/universal/stage/bin (install.sh copies it to the install/bin directory).
-Normal usage is to run the icd command in a directory containing these files:
+Normal usage is to run the icd command in a directory containing these files (or subdirectories, see below):
 
-* icd-model.conf
 * component-model.conf
 * command-model.conf
 * publish-model.conf
 * subscribe-model.conf
 
-Example files can be found in the [examples](../examples) directory.
+Normally, all the components for a subsystem are grouped together as subdirectories of a single subsystem directory,
+which should contain this file, describing the subsystem:
+
+* subsystem-model.conf
+
+Example ICDs can be found in the [examples](../examples) directory.
 
 Additional command line options are defined:
 
@@ -41,7 +45,7 @@ Additional command line options are defined:
 Usage: icd [options]
 
   --validate <dir>
-        Validates set of files in dir (default: current dir): icd-model.conf, component-model.conf, command-model.conf, publish-model.conf, subscribe-model.conf
+        Validates set of files in dir (default: current dir): subsystem-model.conf, component-model.conf, command-model.conf, publish-model.conf, subscribe-model.conf
   -i <inputFile> | --in <inputFile>
         Single input file to be verified, assumed to be in HOCON (*.conf) or JSON (*.json) format
   -s <jsonSchemaFile> | --schema <jsonSchemaFile>

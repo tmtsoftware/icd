@@ -1,5 +1,18 @@
-ICD Projects
-============
+ICD - Interface Control Document Management
+===========================================
+
+This project contains support for validating, storing, managing, 
+searching and viewing ICDs (Interface Control Documents between TMT subsystems or components).
+The validation is based on [JSON Schema](http://json-schema.org/),
+however the schema descriptions as well as the ICDs themselves may also be written in
+the simpler [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md) format.
+
+ICDs are stored in a MongoDB database, which also keeps track of any changes made.
+Two command line applications ([icd](icd) and [icd-db](icd-db)) and a web app ([icd-web](icd-web)) 
+are provided for ingesting the ICDs from files, querying and viewing the data.
+
+ICD Subprojects
+---------------
 
 There are currently three ICD subprojects (icd-web has a separate build):
 
