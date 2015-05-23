@@ -59,15 +59,15 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     head.appendChild(Styles.render[TypedTag[HTMLStyleElement]].render)
 
     // Insert the components in the page
-    body.appendChild(navbar)
     navbar.addItem(viewMenu)
     navbar.addItem(fileUpload)
 
-    body.appendChild(layout)
     layout.addItem(leftSidebar)
     layout.addItem(mainContent)
     layout.addItem(rightSidebar)
 
+    body.appendChild(navbar)
+    body.appendChild(layout)
     body.appendChild(versionHistory)
   }
 

@@ -5,7 +5,8 @@ import org.scalajs.dom.{ Element, Node }
 import scalatags.JsDom.all._
 
 /**
- * Manages the main content section
+ * Manages the main content section, which displays information on the
+ * selected subsystem and components
  */
 case class MainContent() extends Displayable {
   private val contentTitle = h3(cls := "page-header").render

@@ -11,7 +11,6 @@ import scalatags.JsDom.all._
  */
 case class Layout() extends Displayable {
 
-  //Styles.render[TypedTag[HTMLStyleElement]], Styles.mainWrapper,
   val wrapper = div(Styles.layout).render
 
   override def markup(): Element = wrapper

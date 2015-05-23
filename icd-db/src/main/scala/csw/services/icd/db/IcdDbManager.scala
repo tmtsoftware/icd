@@ -145,7 +145,7 @@ case class IcdDbManager(db: MongoDB, query: IcdDbQuery) {
     else "1.0"
 
     val now = new DateTime(DateTimeZone.UTC)
-    val user = System.getProperty("user.name") // XXX TODO Which user name to use for web app?
+    val user = System.getProperty("user.name") // XXX TODO Which user name to use for web app? (Need user login...)
     val obj = Map(
       "version" -> version,
       "user" -> user,
