@@ -81,14 +81,15 @@ case class Subsystem(listener: (Option[String], Boolean) ⇒ Unit,
   /**
    * Sets the selected subsystem
    */
-  def setSelectedSubsystem(nameOpt: Option[String], notifyListener: Boolean = true): Unit =
-    if (nameOpt != getSelectedSubsystem) {
-      nameOpt match {
-        case Some(s) ⇒ selectItem.value = s
-        case None    ⇒ if (!removeMsg) selectItem.value = msg
-      }
-      if (notifyListener) listener(getSelectedSubsystem, isFilterSelected)
+  def setSelectedSubsystem(nameOpt: Option[String], notifyListener: Boolean = true): Unit = {
+    //    if (nameOpt != getSelectedSubsystem) {
+    nameOpt match {
+      case Some(s) ⇒ selectItem.value = s
+      case None    ⇒ if (!removeMsg) selectItem.value = msg
     }
+    if (notifyListener) listener(getSelectedSubsystem, isFilterSelected)
+    //    }
+  }
 
   // Update the Subsystem combobox options
   def updateSubsystemOptions(items: List[String]): Unit = {
@@ -105,6 +106,6 @@ case class Subsystem(listener: (Option[String], Boolean) ⇒ Unit,
     for (s ← list) {
       selectItem.add(option(value := s)(s).render)
     }
-    setSelectedSubsystem(selected, notifyListener = false)
+    setSelectedSubsystem(selected, notifyListener = true)
   }
 }

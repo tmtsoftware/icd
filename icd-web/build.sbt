@@ -31,6 +31,7 @@ lazy val icdWebServer = (project in file("icd-web-server")).settings(
     "com.vmunier" %% "play-scalajs-scripts" % "0.2.0",
     "com.lihaoyi" %%% "upickle" % "0.2.8",
     "org.webjars" % "jquery" % "2.1.3",
+    "org.webjars" % "jquery-ui" % "1.11.4",
     "org.webjars" %% "webjars-play" % "2.3.0-3",
     "org.webjars" % "bootstrap" % "3.3.4",
     "org.webjars.bower" % "bootstrap-table" % "1.7.0"
@@ -47,7 +48,7 @@ lazy val icdWebClient = (project in file("icd-web-client")).settings(
   sourceMapsDirectories += icdWebSharedJs.base / "..",
   unmanagedSourceDirectories in Compile := Seq((scalaSource in Compile).value),
   libraryDependencies ++= Seq(
-    "org.scala-js" %%% "scalajs-dom" % "0.8.0",
+    "org.scala-js" %%% "scalajs-dom" % "0.8.1",
     "com.lihaoyi" %%% "scalatags" % "0.5.2",
     "com.lihaoyi" %%% "upickle" % "0.2.8",
     "be.doeraene" %%% "scalajs-jquery" % "0.8.0",

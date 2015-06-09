@@ -225,6 +225,9 @@ object IcdDb extends App {
     def listSubscribes(path: String): Unit = {
     }
   }
+
+  //  // Holds the names of the subsystem and components that were ingested
+  //  case class IcdInfo(subsystemName: String, componentNames: List[String])
 }
 
 /**
@@ -233,6 +236,8 @@ object IcdDb extends App {
 case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
                  host: String = IcdDbDefaults.defaultHost,
                  port: Int = IcdDbDefaults.defaultPort) {
+
+  //  import IcdDb.IcdInfo
 
   val mongoClient = MongoClient(host, port)
   val db = mongoClient(dbName)
@@ -251,7 +256,7 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
    * @param majorVersion if true, increment the ICD's major version
    */
   def ingest(dir: File = new File("."), comment: String = "", majorVersion: Boolean = false): List[Problem] = {
-    val results = (dir :: subDirs(dir)).map(ingestOneDir)
+    val results = (dir :: subDirs(dir)).map(ingestOneDir(_, comment, majorVersion))
     val problems = results.flatMap {
       case Left(list) ⇒ list
       case Right(_)   ⇒ None
@@ -275,16 +280,23 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
   /**
    * Ingests all files with the standard names (stdNames) in the given directory (only) into the database.
    * @param dir the directory containing the standard set of ICD files
+   * @param comment optional change comment
+   * @param majorVersion if true, increment the ICD's major version
    * @return on error, a list describing the problems, otherwise name of the subsystem for the ICD
    */
-  private[db] def ingestOneDir(dir: File): Either[List[Problem], String] = {
+  private[db] def ingestOneDir(dir: File, comment: String, majorVersion: Boolean): Either[List[Problem], String] = {
     val list = StdConfig.get(dir)
     val subsystems = list.map(getSubsystemName).distinct
     if (subsystems.length != 1) {
       Left(multipleSubsystemsError(subsystems))
     } else {
       val problems = ingestConfigs(list)
-      if (problems.nonEmpty) Left(problems) else Right(subsystems.head)
+      if (problems.nonEmpty) {
+        Left(problems)
+      } else {
+        manager.newVersion(list, comment, majorVersion)
+        Right(subsystems.head)
+      }
     }
   }
 
@@ -293,7 +305,10 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
    * @param list list of ICD model files packaged as StdConfig objects
    * @return a list describing the problems, if any
    */
-  def ingestConfigs(list: List[StdConfig]): List[Problem] = {
+  private def ingestConfigs(list: List[StdConfig]): List[Problem] = {
+
+    // XXX TODO: Should validate all configs first, rather than do partial update?
+
     list.flatMap(ingestConfig)
   }
 

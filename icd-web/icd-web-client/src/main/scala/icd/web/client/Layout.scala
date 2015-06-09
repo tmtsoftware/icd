@@ -6,12 +6,20 @@ import org.scalajs.dom.raw.Node
 import scalacss.ScalatagsCss._
 import scalatags.JsDom.all._
 
+//import scala.scalajs.js
+//import org.scalajs.jquery.{ jQuery ⇒ $, _ }
+//import JQueryUi._
+
 /**
  * Manages the main layout (below the navbar)
  */
 case class Layout() extends Displayable {
 
   val wrapper = div(Styles.layout).render
+
+  //  $(wrapper).resizable(js.Dynamic.literal {
+  //    "handles" -> "e,s,w"
+  //  })
 
   override def markup(): Element = wrapper
 

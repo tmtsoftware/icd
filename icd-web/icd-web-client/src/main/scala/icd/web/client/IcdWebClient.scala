@@ -190,12 +190,13 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     leftSidebar.clearComponents()
     mainContent.clearContent()
     subsystemOpt.foreach { subsystem ⇒
+      versionHistory.setSubsystem(subsystem)
       getComponentNames(subsystem).foreach { names ⇒ // Future!
         names.foreach(leftSidebar.addComponent)
         updateComponentDisplay()
         pushState(viewType = ComponentView)
+        names.foreach(versionHistory.addComponent)
       }
-      versionHistory.setSubsystem(subsystem)
     }
   }
 

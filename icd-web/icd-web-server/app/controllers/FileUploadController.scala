@@ -21,7 +21,6 @@ object FileUploadController extends Controller {
     try {
       // XXX TODO: Return config parse errors in StdConfig.get with file names!
       val list = files.flatMap(filePart ⇒ StdConfig.get(filePart.ref.file, filePart.filename))
-
       val comment = request.body.asFormUrlEncoded.getOrElse("comment", List("")).head
       val majorVersion = false // XXX TODO
       ingestConfigs(list, comment, majorVersion)
@@ -51,22 +50,23 @@ object FileUploadController extends Controller {
   private def ingestConfigs(list: List[StdConfig], comment: String, majorVersion: Boolean = false): Result = {
     import upickle._
     val problems = list.flatMap(db.ingestConfig)
-    wsChannel.push("update")
 
     // Check the subsystem names
     val subsystems = list.map(stdConfig ⇒ db.getSubsystemName(stdConfig)).distinct
+
     val errors = if (subsystems.length != 1)
       problems ::: db.multipleSubsystemsError(subsystems)
     else problems
 
-    if (problems.isEmpty && subsystems.nonEmpty) {
-      db.manager.newVersion(subsystems.head, comment, majorVersion)
-    }
+    db.manager.newVersion(list, comment, majorVersion)
+    db.manager.newVersion(subsystems.head, comment, majorVersion)
+    wsChannel.push("update")
 
-    if (errors.isEmpty)
+    if (errors.isEmpty) {
       Ok.as(JSON)
-    else
+    } else {
       NotAcceptable(write(errors)).as(JSON)
+    }
   }
 
   // Websocket used to notify client when upload is complete

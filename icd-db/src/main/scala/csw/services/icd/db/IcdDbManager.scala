@@ -2,8 +2,9 @@ package csw.services.icd.db
 
 import com.mongodb.{ WriteConcern, DBObject }
 import com.mongodb.casbah.Imports._
+import csw.services.icd.model.BaseModel
 import gnieh.diffson.{ JsonPatch, JsonDiff }
-import net.liftweb.json.JsonAST.{ JField, JValue }
+import net.liftweb.json.JsonAST.{ JNothing, JObject, JField, JValue }
 import net.liftweb.json.JsonParser
 import org.joda.time.{ DateTimeZone, DateTime }
 
@@ -18,6 +19,9 @@ object IcdDbManager {
 
   // The version key inserted into all documents
   val versionKey = "_version"
+
+  // The id key inserted into all documents
+  val idKey = "_id"
 
   // The name of the sub-collection containing the previous versions or version information
   val versionColl = "v"
@@ -93,11 +97,18 @@ case class IcdDbManager(db: MongoDB, query: IcdDbQuery) {
   // Updates an object in an existing collection
   private def update(coll: MongoCollection, obj: DBObject): Unit = {
     val currentVersion = coll.head(versionKey).asInstanceOf[Int]
-    val v = coll.getCollection(versionColl)
-    v.insert(coll.head, WriteConcern.SAFE)
-    coll.remove(coll.head)
     obj.put(versionKey, currentVersion + 1)
-    coll.insert(obj, WriteConcern.SAFE)
+    obj.put(idKey, JNothing)
+    diff(coll, obj) match {
+      case None ⇒
+        obj.remove(idKey)
+      case Some(VersionDiff(path, patch)) ⇒
+        obj.remove(idKey)
+        val v = coll.getCollection(versionColl)
+        v.insert(coll.head, WriteConcern.SAFE)
+        coll.remove(coll.head)
+        coll.insert(obj, WriteConcern.SAFE)
+    }
   }
 
   // Name of version history collection for the given ICD root name
@@ -108,7 +119,7 @@ case class IcdDbManager(db: MongoDB, query: IcdDbQuery) {
    * @param name the root name of the ICD
    */
   def getCurrentIcdVersion(name: String): String =
-    db(versionCollectionName(name)).find().sort("_id" -> -1).one().get("version").toString
+    db(versionCollectionName(name)).find().sort(idKey -> -1).one().get("version").toString
 
   // Returns a list of all of the parts (collections) belonging to the named ICD
   private def getIcdPaths(name: String): List[String] =
@@ -119,19 +130,26 @@ case class IcdDbManager(db: MongoDB, query: IcdDbQuery) {
    * This creates a Mongo collection named "name.v" that contains the ICD version (starting with "1.0"),
    * the user and date as well as a list of the names and versions of each of the ICD parts.
    *
-   * @param subsystem the name of the ICD's subsystem
+   * @param name the name of ICD component or subsystem
    * @param comment change comment
    * @param majorVersion if true, increment the ICD's major version
    */
-  def newVersion(subsystem: String, comment: String = "", majorVersion: Boolean = false): Unit = {
-    val collName = versionCollectionName(subsystem)
+  def newVersion(name: String, comment: String, majorVersion: Boolean): Unit = {
+
+    // XXX TODO: Only insert new version if there were changes!
+
+    val collName = versionCollectionName(name)
 
     // Get the paths of all the ICD parts
-    val paths = getIcdPaths(subsystem)
+    val paths = getIcdPaths(name)
 
     // Generate a list of maps with name and version each current ICD part (to store with this version)
-    def getVersion(path: String): Int = db(path).head(versionKey).asInstanceOf[Int]
+    def getVersion(path: String): Int = {
+      db(path).head(versionKey).asInstanceOf[Int]
+    }
     val parts = paths.map(p ⇒ (p, getVersion(p))).map(x ⇒ Map("name" -> x._1, "version" -> x._2).asDBObject)
+
+//    if (db.collectionExists(collName)) ... XXX TODO check if parts is different than what is in collname
 
     // Start with "1.0" as the ICD version, then increment the minor version automatically each time.
     // If the user requests a new major version, increment that and reset minor version to 0.
@@ -141,7 +159,7 @@ case class IcdDbManager(db: MongoDB, query: IcdDbQuery) {
     }
 
     val version = if (db.collectionExists(collName))
-      incrVersion(db(collName).find().sort("_id" -> -1).one().get("version").toString)
+      incrVersion(getCurrentIcdVersion(name))
     else "1.0"
 
     val now = new DateTime(DateTimeZone.UTC)
@@ -156,12 +174,41 @@ case class IcdDbManager(db: MongoDB, query: IcdDbQuery) {
   }
 
   /**
+   * Returns the list of unique component names found in the given list.
+   * @param list list of ICD model files packaged as StdConfig object
+   * @return the list of component names found
+   */
+  private def getComponentNames(list: List[StdConfig]): List[String] = {
+    list.flatMap { stdConfig ⇒
+      if (stdConfig.stdName.isSubsystemModel)
+        None
+      else
+        Some(BaseModel(stdConfig.config).component)
+    }.distinct
+  }
+
+  // XXX TODO move version related stuff to different class
+
+  /**
+   * Increments the version for the components in the list.
+   * This creates a Mongo collection named "name.v" that contains the ICD version (starting with "1.0"),
+   * the user and date as well as a list of the names and versions of each of the ICD parts.
+   *
+   * @param list list of standard ICD config files
+   * @param comment change comment
+   * @param majorVersion if true, increment the ICD's major version
+   */
+  def newVersion(list: List[StdConfig], comment: String, majorVersion: Boolean): Unit = {
+    getComponentNames(list).foreach(newVersion(_, comment, majorVersion))
+  }
+
+  /**
    * Returns a list of information about the versions of the ICD
    * @param name the root name of the ICD
    */
   def getIcdVersions(name: String): List[VersionInfo] = {
     val collName = versionCollectionName(name)
-    val result = for (obj ← db(collName).find().sort("_id" -> -1)) yield VersionInfo(obj)
+    val result = for (obj ← db(collName).find().sort(idKey -> -1)) yield VersionInfo(obj)
     result.toList
   }
 
@@ -195,28 +242,38 @@ case class IcdDbManager(db: MongoDB, query: IcdDbQuery) {
     }
   }
 
+  // Parse string to JSON and Remove _id and _version keys for comparing, since they change each time
+  private def parseNoVersionOrId(json: String): JValue = {
+    JsonParser.parse(json).replace(idKey :: Nil, JNothing).replace(versionKey :: Nil, JNothing)
+  }
+
   // Returns the JSON for the given version of the collection path
   private def getJson(path: String, version: Int): JValue = {
     val coll = db(path)
     val currentVersion = coll.head(versionKey).asInstanceOf[Int]
     val v = coll.getCollection(versionColl)
-    val json = if (version == currentVersion) {
+    val jsonStr = if (version == currentVersion) {
       coll.head.toString
     } else {
       v.find(versionKey -> version).one().toString
     }
-    // Remove _id and _version keys before comparing, since they change each time
-    JsonParser.parse(json) remove {
-      case JField("_id", _)      ⇒ true
-      case JField("_version", _) ⇒ true
-      case _                     ⇒ false
-    }
+    parseNoVersionOrId(jsonStr)
   }
 
   // Returns the diff of the given versions of the given collection path, if they are different
   private def diffPart(path: String, v1: Int, v2: Int): Option[VersionDiff] = {
-    val json1 = getJson(path, v1)
-    val json2 = getJson(path, v2)
+    diffJson(path, getJson(path, v1), getJson(path, v2))
+  }
+
+  // Compares the two json values, returning None if equal, otherwise some VersionDiff
+  private def diffJson(path: String, json1: JValue, json2: JValue): Option[VersionDiff] = {
     if (json1 == json2) None else Some(VersionDiff(path, JsonDiff.diff(json1, json2)))
+  }
+
+  // Compares the given object with the current version in the collection
+  private def diff(coll: MongoCollection, obj: DBObject): Option[VersionDiff] = {
+    val json1 = parseNoVersionOrId(coll.head.toString)
+    val json2 = parseNoVersionOrId(obj.toString)
+    diffJson(coll.name, json1, json2)
   }
 }

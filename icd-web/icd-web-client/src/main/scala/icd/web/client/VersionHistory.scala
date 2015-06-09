@@ -12,15 +12,16 @@ import scalatags.JsDom.all._
  * Manages the main content section
  */
 case class VersionHistory(mainContent: MainContent) extends Displayable {
-  private val contentTitle = p(strong("Version History")).render
+  //  private val contentTitle = p(strong("Version History")).render
 
   private val contentDiv = div(id := "versionHistory").render
 
   // Returns the markup for displaying a table of version information
-  private def markupVersionInfo(list: List[IcdVersionInfo]) = {
+  private def markupVersionInfo(name: String, isSubsystem: Boolean, list: List[IcdVersionInfo]) = {
     import scalacss.ScalatagsCss._
     if (list.isEmpty) div().render
     else div(
+      p(strong(s"Version History for ${if (isSubsystem) "subsystem" else "component"} $name")),
       table(Styles.componentTable, "data-toggle".attr := "table",
         thead(
           tr(
@@ -51,9 +52,16 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
 
   def setSubsystem(subsystem: String): Unit = {
     getVersionInfo(subsystem).foreach { list ⇒
-      contentTitle.innerHTML = p(strong(s"Version History for $subsystem")).toString()
+      //      contentTitle.innerHTML = p(strong(s"Version History for $subsystem")).toString()
       contentDiv.innerHTML = ""
-      contentDiv.appendChild(markupVersionInfo(list))
+      contentDiv.appendChild(markupVersionInfo(subsystem, isSubsystem = true, list))
+    }
+  }
+
+  def addComponent(component: String): Unit = {
+    println(s"Version add comp $component")
+    getVersionInfo(component).foreach { list ⇒
+      contentDiv.appendChild(markupVersionInfo(component, isSubsystem = false, list))
     }
   }
 
@@ -61,6 +69,7 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
     import scalacss.ScalatagsCss._
 
     footer(Styles.versionHistory)(
-      div()(contentTitle, contentDiv)).render
+      div()(
+        contentDiv)).render
   }
 }
