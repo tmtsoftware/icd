@@ -20,13 +20,18 @@ case class Sidebar(listener: (String, Boolean) ⇒ Unit) extends Displayable {
   // HTML for component
   private def componentCheckBox(compName: String, checkboxListener: dom.Event ⇒ Unit) = {
     import scalacss.ScalatagsCss._
-
+    val compId = Components.getComponentInfoId(compName)
     li(
       a(Styles.listGroupItem)(
         div(cls := "checkbox")(
           label(
-            input(tpe := "checkbox", value := compName, checked := true, onchange := checkboxListener),
-            compName))))
+            input(
+              title := s"Toggle the display of $compName",
+              tpe := "checkbox",
+              value := compName,
+              checked := true,
+              onchange := checkboxListener),
+            a(title := s"Scroll to $compName", href := s"#$compId", compName)))))
   }
 
   /**

@@ -1,7 +1,6 @@
 package icd.web.client
 
-import org.scalajs.dom.html.Div
-import org.scalajs.dom.{ Element, Node }
+import org.scalajs.dom.Element
 
 import scalatags.JsDom.all._
 
@@ -24,10 +23,10 @@ case class MainContent() extends Displayable {
   }
 
   // Sets the title and HTML content of the main section of the page
-  def setContent(title: String, node: Node): Unit = {
+  def setContent(title: String, displayable: Displayable): Unit = {
     contentTitle.textContent = title
     contentDiv.innerHTML = ""
-    contentDiv.appendChild(node)
+    contentDiv.appendChild(displayable.markup())
   }
 
   // Sets the title of the main section of the page

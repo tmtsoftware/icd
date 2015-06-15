@@ -9,12 +9,19 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{ Failure, Success }
 
+object Components {
+  // Id of component info for given component name
+  def getComponentInfoId(compName: String) = s"$compName-info"
+}
+
 /**
  * Manages the component (Assembly, HCD) display
  * @param mainContent used to display information about selected components
  * @param listener called when the user clicks on a component link in the (subscriber, publisher, etc)
  */
 case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
+
+  import Components._
 
   /**
    * Adds (appends) a list of components to the display, in the order that they are given in the list.
@@ -97,9 +104,6 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
     }
   }
 
-  // Id of component info for given component name
-  private def getComponentInfoId(compName: String) = s"$compName-info"
-
   // Removes the component display
   def removeComponentInfo(compName: String): Unit = {
     val elem = $id(getComponentInfoId(compName))
@@ -138,13 +142,15 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
 
     // Action when user clicks on a subscriber link
     def clickedOnSubscriber(info: SubscribeInfo)(e: dom.Event) = {
-      println(s"XXX clickedOnSubscriber: component name = ${info.compName}")
       listener(info.compName)
     }
 
     // Makes the link for a subscriber component in the table
     def makeLinkForSubscriber(info: SubscribeInfo) = {
-      a(s"${info.compName} ", href := "#", onclick := clickedOnSubscriber(info) _)
+      a(title := s"Show API for ${info.compName}",
+        s"${info.compName} ",
+        href := "#",
+        onclick := clickedOnSubscriber(info) _)
     }
 
     // Only display non-empty tables
@@ -180,7 +186,10 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
 
     // Makes the link for a publisher component in the table
     def makeLinkForPublisher(info: SubscribeInfo) = {
-      a(s"${info.compName} ", href := "#", onclick := clickedOnPublisher(info) _)
+      a(title := s"Show API for ${info.compName}",
+        s"${info.compName} ",
+        href := "#",
+        onclick := clickedOnPublisher(info) _)
     }
 
     if (subInfo.isEmpty) div()

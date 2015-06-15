@@ -24,10 +24,10 @@ case class Layout() extends Displayable {
   override def markup(): Element = wrapper
 
   /**
-   * Adds an HTML element to the layout.
-   * @param node a scalatags node
+   * Adds an item to the layout.
+   * @param displayable the item to be added
    */
-  def addItem(node: Node): Unit = {
-    wrapper.appendChild(node)
+  def addItem(displayable: Displayable): Unit = {
+    wrapper.appendChild(displayable.markup())
   }
 }

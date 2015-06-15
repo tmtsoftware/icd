@@ -29,15 +29,15 @@ case class Navbar() extends Displayable {
   }
 
   /**
-   * Adds an HTML element to the navbar.
-   * @param node a scalatags element
+   * Adds an item to the navbar.
+   * @param displayable the item to be added
    */
-  def addItem(node: Node): Unit = leftNavbar.appendChild(node)
+  def addItem(displayable: Displayable): Unit = leftNavbar.appendChild(displayable.markup())
 
   /**
-   * Adds an HTML element to the navbar on the right side.
-   * @param node a scalatags element
+   * Adds an item to the navbar on the right side.
+   * @param displayable the item to be added
    */
-  def addRightSideItem(node: Node): Unit = rightNavbar.appendChild(node)
+  def addRightSideItem(displayable: Displayable): Unit = rightNavbar.appendChild(displayable.markup())
 
 }

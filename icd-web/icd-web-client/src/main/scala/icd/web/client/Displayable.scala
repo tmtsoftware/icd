@@ -13,7 +13,7 @@ trait Displayable {
   def markup(): Element
 }
 
-object Displayable {
-  implicit def toElement(d: Displayable): Element = d.markup()
-}
+//object Displayable {
+//  implicit def toElement(d: Displayable): Element = d.markup()
+//}
 

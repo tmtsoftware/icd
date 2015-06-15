@@ -68,8 +68,8 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     layout.addItem(leftSidebar)
     layout.addItem(mainContent)
 
-    body.appendChild(navbar)
-    body.appendChild(layout)
+    body.appendChild(navbar.markup())
+    body.appendChild(layout.markup())
   }
 
   // Called when the Upload item is selected
