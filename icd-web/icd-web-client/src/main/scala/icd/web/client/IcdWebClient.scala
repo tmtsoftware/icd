@@ -28,11 +28,11 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private val body = dom.document.body
 
   // Page components
-  private val subsystem = Subsystem(subsystemSelected)
-  private val targetSubsystem = Subsystem(targetSubsystemSelected, labelStr = "Target", msg = "All", removeMsg = false)
+  private val subsystem = Subsystem(SourceSubsystemListener)
+  private val targetSubsystem = Subsystem(TargetSubsystemListener, labelStr = "Target", msg = "All", removeMsg = false)
   private val mainContent = MainContent()
   private val components = Components(mainContent, componentLinkSelected())
-  private val leftSidebar = Sidebar(componentSelected)
+  private val sidebar = Sidebar(LeftSidebarListener)
 
   private val fileUpload = FileUpload(csrfToken, inputDirSupported = inputDirSupported, uploadSelected())
   private val fileUploadDialog = FileUploadDialog(csrfToken, inputDirSupported)
@@ -46,7 +46,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private val layout = Layout()
 
   private val subsystemListeners = List(subsystem.updateSubsystemOptions _, targetSubsystem.updateSubsystemOptions _)
-  private val subsystemNameUpdater = SubsystemNames(mainContent, wsBaseUrl, subsystemListeners)
+  SubsystemNames(mainContent, wsBaseUrl, subsystemListeners)
 
   private val versionHistory = VersionHistory(mainContent)
 
@@ -65,7 +65,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     navbar.addItem(viewMenu)
     navbar.addItem(fileUpload)
 
-    layout.addItem(leftSidebar)
+    layout.addItem(sidebar)
     layout.addItem(mainContent)
 
     body.appendChild(navbar.markup())
@@ -90,21 +90,19 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     }
   }
 
-  /**
-   * Called when a component in the left sidebar is checked or unchecked
-   * @param componentName the component name
-   * @param checked true if the checkbox is checked
-   */
-  private def componentSelected(componentName: String, checked: Boolean): Unit = {
-    getFilter.map { filter ⇒
-      if (checked)
-        components.addComponent(componentName, filter,
-          subsystem.getSelectedSubsystem.get, targetSubsystem.getSelectedSubsystem)
-      else
-        components.removeComponentInfo(componentName)
+  object LeftSidebarListener extends SidebarListener {
+    override def componentSelected(componentName: String, checked: Boolean): Unit = {
+      getFilter.map { filter ⇒
+        if (checked)
+          components.addComponent(componentName, filter,
+            subsystem.getSelectedSubsystem.get, targetSubsystem.getSelectedSubsystem)
+        else
+          components.removeComponentInfo(componentName)
 
-      pushState(viewType = ComponentView)
+        pushState(viewType = ComponentView)
+      }
     }
+
   }
 
   /**
@@ -120,10 +118,11 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
    * Push the current app state for the browser history
    */
   private def pushState(viewType: ViewType, linkComponent: Option[String] = None): Unit = {
+    println(s"XXX pushState")
     val hist = BrowserHistory(
       subsystem.getSelectedSubsystem,
       targetSubsystem.getSelectedSubsystem,
-      leftSidebar.getSelectedComponents,
+      sidebar.getSelectedComponents,
       viewType = viewType,
       linkComponent = linkComponent)
     hist.pushState()
@@ -135,29 +134,32 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private def popState(e: PopStateEvent): Unit = {
     BrowserHistory.popState(e).foreach { hist ⇒
       e.preventDefault()
-      subsystem.setSelectedSubsystem(hist.sourceSubsystem)
-      targetSubsystem.setSelectedSubsystem(hist.targetSubsystem)
-      leftSidebar.setSelectedComponents(hist.sourceComponents)
-
-      hist.viewType match {
-        case UploadView        ⇒ uploadSelected(saveHistory = false)()
-        case HtmlView          ⇒ viewIcdAsHtml(saveHistory = false)()
-        case PdfView           ⇒ viewIcdAsPdf(saveHistory = false)()
-        case ComponentView     ⇒ updateComponentDisplay()
-        case ComponentLinkView ⇒ hist.linkComponent.foreach(componentLinkSelected(saveHistory = false))
+      for {
+        _ ← subsystem.setSelectedSubsystem(hist.sourceSubsystem, saveHistory = false)
+        _ ← targetSubsystem.setSelectedSubsystem(hist.targetSubsystem, saveHistory = false)
+      } {
+        sidebar.setSelectedComponents(hist.sourceComponents)
+        hist.viewType match {
+          case UploadView        ⇒ uploadSelected(saveHistory = false)()
+          case HtmlView          ⇒ viewIcdAsHtml(saveHistory = false)()
+          case PdfView           ⇒ viewIcdAsPdf(saveHistory = false)()
+          case ComponentView     ⇒ updateComponentDisplay()
+          case ComponentLinkView ⇒ hist.linkComponent.foreach(componentLinkSelected(saveHistory = false))
+        }
       }
     }
   }
 
   /**
    * Updates the main display to match the selected components
+   * @return a future indicating when the changes are done
    */
-  private def updateComponentDisplay(): Unit = {
-    getFilter.map { filter ⇒
+  private def updateComponentDisplay(): Future[Unit] = {
+    getFilter.flatMap { filter ⇒
       mainContent.clearContent()
       val sub = subsystem.getSelectedSubsystem.get
       val targetOpt = targetSubsystem.getSelectedSubsystem
-      components.addComponents(leftSidebar.getSelectedComponents, filter, sub, targetOpt)
+      components.addComponents(sidebar.getSelectedComponents, filter, sub, targetOpt)
     }
   }
 
@@ -172,23 +174,32 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     }
   }
 
-  // Called when the source (left) subsystem combobox selection is changed
-  private def subsystemSelected(subsystemOpt: Option[String]): Unit = {
-    leftSidebar.clearComponents()
-    mainContent.clearContent()
-    subsystemOpt.foreach { subsystem ⇒
-      getComponentNames(subsystem).foreach { names ⇒ // Future!
-        names.foreach(leftSidebar.addComponent)
-        updateComponentDisplay()
-        pushState(viewType = ComponentView)
+  private object SourceSubsystemListener extends SubsystemListener {
+    // Called when the source (left) subsystem combobox selection is changed
+    override def subsystemSelected(subsystemOpt: Option[String], saveHistory: Boolean): Future[Unit] = {
+      sidebar.clearComponents()
+      mainContent.clearContent()
+      subsystemOpt match {
+        case Some(selectedSubsystem) ⇒
+          getComponentNames(selectedSubsystem).flatMap { names ⇒ // Future!
+            names.foreach(sidebar.addComponent)
+            updateComponentDisplay().map { _ ⇒
+              if (saveHistory) pushState(viewType = ComponentView)
+            }
+          }
+        case None ⇒ Future.successful()
       }
     }
+
   }
 
-  // Called when the target subsystem combobox selection is changed
-  private def targetSubsystemSelected(subsystemOpt: Option[String]): Unit = {
-    updateComponentDisplay()
-    pushState(viewType = ComponentView)
+  private object TargetSubsystemListener extends SubsystemListener {
+    // Called when the target subsystem combobox selection is changed
+    override def subsystemSelected(subsystemOpt: Option[String], saveHistory: Boolean): Future[Unit] = {
+      updateComponentDisplay().map { _ ⇒
+        if (saveHistory) pushState(viewType = ComponentView)
+      }
+    }
   }
 
   // Called when the View ICD as HTML item is selected

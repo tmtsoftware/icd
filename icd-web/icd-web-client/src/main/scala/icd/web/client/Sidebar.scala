@@ -5,7 +5,17 @@ import org.scalajs.dom.raw.{ Node, HTMLInputElement }
 
 import org.scalajs.dom.Element
 
+import scala.concurrent.Future
 import scalatags.JsDom.all._
+
+trait SidebarListener {
+  /**
+   * Called when a component in the sidebar is checked or unchecked
+   * @param componentName the component name
+   * @param checked true if the checkbox is checked
+   */
+  def componentSelected(componentName: String, checked: Boolean): Unit
+}
 
 /**
  * Manages the sidebar items
@@ -13,7 +23,7 @@ import scalatags.JsDom.all._
  * @param listener called with the component name and checkbox state
  *                 when one of the component checkboxes is checked or unchecked
  */
-case class Sidebar(listener: (String, Boolean) ⇒ Unit) extends Displayable {
+case class Sidebar(listener: SidebarListener) extends Displayable {
 
   val sidebarList = ul(cls := "nav list-group").render
 
@@ -50,19 +60,20 @@ case class Sidebar(listener: (String, Boolean) ⇒ Unit) extends Displayable {
    * Sets the list of checked components in the sidebar
    */
   def setSelectedComponents(components: List[String]): Unit = {
+    import org.scalajs.dom.ext._
     val set = components.toSet
-    val nodeList = sidebarList.getElementsByTagName("input")
-    for (i ← 0 until nodeList.length) {
-      val elem = nodeList(i).asInstanceOf[HTMLInputElement]
-      val checked = set.contains(elem.value)
-      if (elem.checked != checked) elem.checked = checked
+    for (elem ← sidebarList.getElementsByTagName("input").toList) {
+      val checkbox = elem.asInstanceOf[HTMLInputElement]
+      val checked = set.contains(checkbox.value)
+      if (checkbox.checked != checked) checkbox.checked = checked
     }
   }
 
   // called when a component is selected or deselected
   private def componentSelected(compName: String)(e: dom.Event): Unit = {
+    println(s"XXX Sidebar.componentSelected $compName")
     val checked = e.target.asInstanceOf[HTMLInputElement].checked
-    listener(compName, checked)
+    listener.componentSelected(compName, checked)
   }
 
   // Uncheck all of the checkboxes in the sidebar

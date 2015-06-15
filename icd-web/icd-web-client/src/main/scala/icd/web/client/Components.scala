@@ -32,15 +32,20 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
    * @param targetSubsystem the target subsystem, if one was selected (if filtered is true)
    */
   def addComponents(compNames: List[String], filter: Option[List[String]],
-                    subsystem: String, targetSubsystem: Option[String]): Unit = {
+                    subsystem: String, targetSubsystem: Option[String]): Future[Unit] = {
     val titleStr = if (filter.isDefined) s"Interface from $subsystem to ${targetSubsystem.get}" else s"API for $subsystem"
     // Note: Want to keep the original order of components in the display
-    Future.sequence(for (compName ← compNames) yield Ajax.get(Routes.componentInfo(compName)).map { r ⇒ // Future!
-      applyFilter(filter, read[ComponentInfo](r.responseText))
-    }).onComplete {
+    val f = Future.sequence {
+      for (compName ← compNames) yield Ajax.get(Routes.componentInfo(compName)).map { r ⇒
+        applyFilter(filter, read[ComponentInfo](r.responseText))
+      }
+    }
+    f.onComplete {
       case Success(infoList) ⇒ infoList.foreach(displayComponentInfo(_, titleStr))
       case Failure(ex)       ⇒ mainContent.displayInternalError(ex)
     }
+    // Return Future[Unit] to indicate when done
+    f.map(_ ⇒ ())
   }
 
   /**

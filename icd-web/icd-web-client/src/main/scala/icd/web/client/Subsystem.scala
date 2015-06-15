@@ -3,6 +3,21 @@ package icd.web.client
 import org.scalajs.dom
 import org.scalajs.dom._
 
+import scala.concurrent.Future
+
+/**
+ * Type of a listener for changes in the selected subsystem
+ */
+trait SubsystemListener {
+  /**
+   * Called when a subsystem is selected
+   * @param subsystemOpt the selected subsystem, or None if the default option is selected
+   * @param saveHistory if true, push the browser history state, otherwise not
+   * @return a future indicating when changes are done
+   */
+  def subsystemSelected(subsystemOpt: Option[String], saveHistory: Boolean = true): Future[Unit]
+}
+
 /**
  * Manages the subsystem combobox
  * @param listener notified when the user makes a selection or changes the filter checkbox
@@ -10,16 +25,10 @@ import org.scalajs.dom._
  * @param msg the initial message to display before the first selection is made
  * @param removeMsg if true, remove the default msg item from the choices once a selection has been made
  */
-case class Subsystem(listener: (Option[String]) ⇒ Unit,
+case class Subsystem(listener: SubsystemListener,
                      labelStr: String = "Subsystem",
                      msg: String = "Select a subsystem",
                      removeMsg: Boolean = true) extends Displayable {
-
-  // Optional filter checkbox, if subsystem should act as a filter
-  private val filterCb = {
-    import scalatags.JsDom.all._
-    input(tpe := "checkbox", value := "", checked := true, onchange := subsystemSelected _).render
-  }
 
   val selectItem = {
     import scalatags.JsDom.all._
@@ -38,7 +47,7 @@ case class Subsystem(listener: (Option[String]) ⇒ Unit,
     if (removeMsg && selectItem.options.length > 1 && selectItem.options(0).value == msg)
       selectItem.remove(0)
 
-    listener(getSelectedSubsystem)
+    listener.subsystemSelected(getSelectedSubsystem)
   }
 
   // HTML for the subsystem combobox
@@ -58,14 +67,23 @@ case class Subsystem(listener: (Option[String]) ⇒ Unit,
     }
 
   /**
-   * Sets the selected subsystem
+   * Sets the selected subsystem.
+   * @return a future indicating when any event handlers have completed
    */
-  def setSelectedSubsystem(nameOpt: Option[String], notifyListener: Boolean = true): Unit = {
-    nameOpt match {
-      case Some(s) ⇒ selectItem.value = s
-      case None    ⇒ if (!removeMsg) selectItem.value = msg
+  def setSelectedSubsystem(nameOpt: Option[String],
+                           notifyListener: Boolean = true,
+                           saveHistory: Boolean = true): Future[Unit] = {
+    if (nameOpt == getSelectedSubsystem)
+      Future.successful()
+    else {
+      nameOpt match {
+        case Some(s) ⇒ selectItem.value = s
+        case None    ⇒ if (!removeMsg) selectItem.value = msg
+      }
+      if (notifyListener)
+        listener.subsystemSelected(getSelectedSubsystem, saveHistory)
+      else Future.successful()
     }
-    if (notifyListener) listener(getSelectedSubsystem)
   }
 
   // Update the Subsystem combobox options

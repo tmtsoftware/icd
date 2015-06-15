@@ -8,7 +8,7 @@ import upickle._
 // Note: Needs to be outside of object, due to scala.js restrictions
 sealed trait ViewType
 
-// Viewing components based on checkboxes in sidebars
+// Viewing components based on checkbox state in sidebar
 case object ComponentView extends ViewType
 
 // Viewing component from a publisher/subscriber/command link
@@ -17,10 +17,10 @@ case object ComponentLinkView extends ViewType
 // Uploading ICD
 case object UploadView extends ViewType
 
-// Result of View menu => View ICD as HTML
+// Result of View menu => Static API as HTML Document
 case object HtmlView extends ViewType
 
-// Result of View menu => View ICD as PDF
+// Result of View menu => Static API as PDF Document
 case object PdfView extends ViewType
 
 /**
@@ -36,7 +36,7 @@ case class BrowserHistory(sourceSubsystem: Option[String], targetSubsystem: Opti
                           sourceComponents: List[String], linkComponent: Option[String],
                           viewType: ViewType) {
 
-  // Pushes the current application history state
+  // Pushes the current application history state (Note that the title is ignored in some browsers)
   def pushState(): Unit = {
     val json = write(this)
     dom.history.pushState(json, dom.document.title, dom.document.documentURI)
