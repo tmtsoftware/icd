@@ -1,5 +1,6 @@
 package icd.web.client
 
+import org.scalajs.dom.html.Div
 import org.scalajs.dom.{ Element, Node }
 
 import scalatags.JsDom.all._
@@ -10,7 +11,11 @@ import scalatags.JsDom.all._
  */
 case class MainContent() extends Displayable {
   private val contentTitle = h3(cls := "page-header").render
-  private val contentDiv = div(id := "content").render
+
+  private val contentDiv = {
+    import scalacss.ScalatagsCss._
+    div(Styles.contentDiv, id := "content").render
+  }
 
   // Sets the title and HTML content of the main section of the page
   def setContent(title: String, content: String): Unit = {
@@ -41,6 +46,9 @@ case class MainContent() extends Displayable {
 
   // Removes the element from the content
   def removeElement(element: Element): Unit = contentDiv.removeChild(element)
+
+  // Replace the old element with the new one
+  def replaceElement(oldElement: Element, newElement: Element) = contentDiv.replaceChild(newElement, oldElement)
 
   // Displays an error message for the exception
   def displayInternalError(ex: Throwable): Unit = {

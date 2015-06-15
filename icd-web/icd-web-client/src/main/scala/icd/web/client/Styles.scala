@@ -24,7 +24,7 @@ object Styles extends StyleSheet.Inline {
   val mainContent = style(
     //    resize.both,
     //    overflow.auto,
-    addClassName("col-md-8"),
+    addClassName("col-md-11"),
     height(100 %%),
     overflowY.auto,
     padding(50 px, 0 px, 0 px, 0 px))
@@ -35,10 +35,13 @@ object Styles extends StyleSheet.Inline {
     overflowY.auto,
     padding(0 px, 15 px))
 
+  val contentDiv = style(
+    float.left)
+
   val sidebarWrapper = style(
     //    resize.both,
     //    overflow.auto,
-    addClassName("col-md-2"),
+    addClassName("col-md-1"),
     height(100 %%),
     padding(50 px, 0 px, 0 px, 0 px),
     borderRight(1 px, solid, gray),

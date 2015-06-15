@@ -10,11 +10,10 @@ import scalatags.JsDom.all._
 /**
  * Manages the sidebar items
  *
- * @param subsystem the subsystem combobox item to display at top
  * @param listener called with the component name and checkbox state
  *                 when one of the component checkboxes is checked or unchecked
  */
-case class Sidebar(subsystem: Subsystem, listener: (String, Boolean) ⇒ Unit) extends Displayable {
+case class Sidebar(listener: (String, Boolean) ⇒ Unit) extends Displayable {
 
   val sidebarList = ul(cls := "nav list-group").render
 
@@ -93,11 +92,6 @@ case class Sidebar(subsystem: Subsystem, listener: (String, Boolean) ⇒ Unit) e
   override def markup(): Element = {
     import scalacss.ScalatagsCss._
     div(Styles.sidebarWrapper)(
-      ul(cls := "nav list-group")(
-        li(
-          a(Styles.listGroupItem)(
-            div()(
-              subsystem.markup())))),
       div(Styles.sidebar)(
         sidebarList)).render
   }

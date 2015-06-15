@@ -10,11 +10,10 @@ import org.scalajs.dom._
  * @param msg the initial message to display before the first selection is made
  * @param removeMsg if true, remove the default msg item from the choices once a selection has been made
  */
-case class Subsystem(listener: (Option[String], Boolean) ⇒ Unit,
+case class Subsystem(listener: (Option[String]) ⇒ Unit,
                      labelStr: String = "Subsystem",
                      msg: String = "Select a subsystem",
-                     removeMsg: Boolean = true,
-                     showFilterCheckbox: Boolean = false) extends Displayable {
+                     removeMsg: Boolean = true) extends Displayable {
 
   // Optional filter checkbox, if subsystem should act as a filter
   private val filterCb = {
@@ -29,19 +28,6 @@ case class Subsystem(listener: (Option[String], Boolean) ⇒ Unit,
   }
 
   /**
-   * Returns true if the filter checkbox is showing and selected
-   * @return
-   */
-  def isFilterSelected: Boolean = showFilterCheckbox && filterCb.checked
-
-  /**
-   * Sets the state of the filter checkbox
-   */
-  def setFilterSelected(checked: Boolean): Unit = {
-    if (checked != isFilterSelected) filterCb.checked = checked
-  }
-
-  /**
    * Returns true if the combobox is displaying the default item (i.e.: the initial item, no selection)
    */
   def isDefault: Boolean = !removeMsg && selectItem.selectedIndex == 0
@@ -52,20 +38,13 @@ case class Subsystem(listener: (Option[String], Boolean) ⇒ Unit,
     if (removeMsg && selectItem.options.length > 1 && selectItem.options(0).value == msg)
       selectItem.remove(0)
 
-    listener(getSelectedSubsystem, isFilterSelected)
+    listener(getSelectedSubsystem)
   }
 
   // HTML for the subsystem combobox
   override def markup(): Element = {
     import scalatags.JsDom.all._
-    if (showFilterCheckbox) {
-      div()(
-        label(s"$labelStr", " ", selectItem),
-        "  ",
-        label(filterCb, " ", "Filter")).render
-    } else {
-      label(s"$labelStr", " ", selectItem).render
-    }
+    li(a(label(s"$labelStr", " ", selectItem))).render
   }
 
   /**
@@ -82,13 +61,11 @@ case class Subsystem(listener: (Option[String], Boolean) ⇒ Unit,
    * Sets the selected subsystem
    */
   def setSelectedSubsystem(nameOpt: Option[String], notifyListener: Boolean = true): Unit = {
-    //    if (nameOpt != getSelectedSubsystem) {
     nameOpt match {
       case Some(s) ⇒ selectItem.value = s
       case None    ⇒ if (!removeMsg) selectItem.value = msg
     }
-    if (notifyListener) listener(getSelectedSubsystem, isFilterSelected)
-    //    }
+    if (notifyListener) listener(getSelectedSubsystem)
   }
 
   // Update the Subsystem combobox options

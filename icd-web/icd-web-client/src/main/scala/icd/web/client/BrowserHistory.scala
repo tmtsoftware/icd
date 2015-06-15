@@ -28,15 +28,12 @@ case object PdfView extends ViewType
  *
  * @param sourceSubsystem subsystem selected in the left box
  * @param targetSubsystem subsystem selected in the right box
- * @param sourceComponents left (source) components whose checkboxes are checked
- * @param targetComponents right (target) components whose checkboxes are checked
- * @param filterChecked true if filter checkbox is checked
+ * @param sourceComponents source subsystem components whose checkboxes are checked
  * @param linkComponent set to the name of the component displayed via a subscriber/publisher/command link
  * @param viewType indicates the type of data being displayed
  */
 case class BrowserHistory(sourceSubsystem: Option[String], targetSubsystem: Option[String],
-                          sourceComponents: List[String], targetComponents: List[String],
-                          filterChecked: Boolean, linkComponent: Option[String],
+                          sourceComponents: List[String], linkComponent: Option[String],
                           viewType: ViewType) {
 
   // Pushes the current application history state

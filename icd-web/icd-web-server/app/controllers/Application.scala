@@ -83,7 +83,7 @@ object Application extends Controller {
    */
   def getVersions(name: String) = Action {
     import upickle._
-    val versions = db.manager.getIcdVersions(name).map(v ⇒
+    val versions = db.versionManager.getIcdVersions(name).map(v ⇒
       IcdVersionInfo(v.version, v.user, v.comment, v.date.toString))
     Ok(write(versions)).as(JSON)
   }

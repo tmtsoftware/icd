@@ -6,6 +6,8 @@ import shared._
 import upickle._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.util.{ Failure, Success }
 
 /**
  * Manages the component (Assembly, HCD) display
@@ -15,16 +17,39 @@ import scala.concurrent.ExecutionContext.Implicits.global
 case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
 
   /**
+   * Adds (appends) a list of components to the display, in the order that they are given in the list.
+   * @param compNames the names of the components
+   * @param filter an optional list of target component names to use to filter the
+   *               display (restrict to only those target components)
+   * @param subsystem the selected subsystem
+   * @param targetSubsystem the target subsystem, if one was selected (if filtered is true)
+   */
+  def addComponents(compNames: List[String], filter: Option[List[String]],
+                    subsystem: String, targetSubsystem: Option[String]): Unit = {
+    val titleStr = if (filter.isDefined) s"Interface from $subsystem to ${targetSubsystem.get}" else s"API for $subsystem"
+    // Note: Want to keep the original order of components in the display
+    Future.sequence(for (compName ← compNames) yield Ajax.get(Routes.componentInfo(compName)).map { r ⇒ // Future!
+      applyFilter(filter, read[ComponentInfo](r.responseText))
+    }).onComplete {
+      case Success(infoList) ⇒ infoList.foreach(displayComponentInfo(_, titleStr))
+      case Failure(ex)       ⇒ mainContent.displayInternalError(ex)
+    }
+  }
+
+  /**
    * Adds (appends) a component to the display
    * @param compName the name of the component
    * @param filter an optional list of target component names to use to filter the
    *               display (restrict to only those target components)
+   * @param subsystem the selected subsystem
+   * @param targetSubsystem the target subsystem, if one was selected (if filtered is true)
    */
-  def addComponent(compName: String, filter: Option[List[String]]): Unit = {
-    Ajax.get(Routes.componentInfo(compName)).map { r ⇒
+  def addComponent(compName: String, filter: Option[List[String]],
+                   subsystem: String, targetSubsystem: Option[String]): Unit = {
+    val titleStr = if (filter.isDefined) s"Interface from $subsystem to ${targetSubsystem.get}" else s"API for $subsystem"
+    Ajax.get(Routes.componentInfo(compName)).map { r ⇒ // Future!
       val info = applyFilter(filter, read[ComponentInfo](r.responseText))
-      removeComponent(compName)
-      displayInfo(info, filtered = filter.isDefined)
+      displayComponentInfo(info, titleStr)
     }.recover {
       case ex ⇒
         mainContent.displayInternalError(ex)
@@ -40,7 +65,7 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
       val info = read[ComponentInfo](r.responseText)
       mainContent.clearContent()
       mainContent.scrollToTop()
-      displayInfo(info, filtered = false)
+      displayComponentInfo(info, s"Component: $compName")
     }.recover {
       case ex ⇒
         mainContent.displayInternalError(ex)
@@ -76,31 +101,33 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
   private def getComponentInfoId(compName: String) = s"$compName-info"
 
   // Removes the component display
-  def removeComponent(compName: String): Unit = {
+  def removeComponentInfo(compName: String): Unit = {
     val elem = $id(getComponentInfoId(compName))
-    try {
-      // XXX How to check if elem exists?
-      mainContent.removeElement(elem)
-    } catch {
-      case t: Throwable ⇒
+    if (elem != null) {
+      // remove inner content so we can reuse the div and keep the position on the page
+      elem.innerHTML = ""
     }
   }
 
   /**
    * Displays the information for a component, appending to the other selected components, if any.
    * @param info contains the information to display
-   * @param filtered true if the filter button is checked
+   * @param titleStr The main title to be displayed at the top of the page (for all selected components)
    */
-  private def displayInfo(info: ComponentInfo, filtered: Boolean): Unit = {
+  private def displayComponentInfo(info: ComponentInfo, titleStr: String): Unit = {
     if (info.publishInfo.nonEmpty || info.subscribeInfo.nonEmpty || info.commandsReceived.nonEmpty || info.commandsSent.nonEmpty) {
-      val titleStr = "Components" + (if (filtered) " (filtered)" else "")
-      val markup = markupForComponent(info)
+      val markup = markupForComponent(info).render
       if (mainContent.getTitle != titleStr) {
         mainContent.clearContent()
         mainContent.setTitle(titleStr)
       }
-      val element = markup.render
-      mainContent.appendElement(element)
+      val oldElement = $id(getComponentInfoId(info.name))
+      if (oldElement == null) {
+        mainContent.appendElement(markup)
+      } else {
+        // Use existing div, so the component's position stays the same
+        mainContent.replaceElement(oldElement, markup)
+      }
     }
   }
 
@@ -256,4 +283,5 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
       receivedCommandsMarkup(info.name, info.commandsReceived),
       sentCommandsMarkup(info.name, info.commandsSent))
   }
+
 }

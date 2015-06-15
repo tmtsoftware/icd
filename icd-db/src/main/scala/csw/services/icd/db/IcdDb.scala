@@ -189,7 +189,7 @@ object IcdDb extends App {
 
     // --versions option
     def listVersions(name: String): Unit = {
-      for (v ← db.manager.getIcdVersions(name)) {
+      for (v ← db.versionManager.getIcdVersions(name)) {
         println(s"${v.version}\t${v.date.withZone(DateTimeZone.getDefault)}\t${v.comment}")
       }
     }
@@ -210,10 +210,10 @@ object IcdDb extends App {
       val Array(name, vStr) = arg.split(":")
       if (vStr.isEmpty) error(msg)
       val Array(v1, v2) =
-        if (vStr.contains(",")) vStr.split(",") else Array(vStr, db.manager.getCurrentIcdVersion(name))
+        if (vStr.contains(",")) vStr.split(",") else Array(vStr, db.versionManager.getCurrentIcdVersion(name))
       checkVersion(v1)
       checkVersion(v2)
-      for (diff ← db.manager.diff(name, v1, v2))
+      for (diff ← db.versionManager.diff(name, v1, v2))
         println(s"\n${diff.path}:\n${diff.patch.toString()}") // XXX TODO: work on the format?
     }
 
@@ -242,7 +242,8 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
   val mongoClient = MongoClient(host, port)
   val db = mongoClient(dbName)
   val query = IcdDbQuery(db)
-  val manager = IcdDbManager(db, query)
+  val versionManager = IcdVersionManager(db)
+  val manager = IcdDbManager(db, versionManager)
 
   def multipleSubsystemsError(subsystems: List[String]): List[Problem] =
     List(Problem("error", "Multiple subsystems found: " + subsystems.mkString(",")))
@@ -271,7 +272,7 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
       if (subsystems.length != 1) {
         multipleSubsystemsError(subsystems)
       } else {
-        manager.newVersion(subsystems.head, comment, majorVersion)
+        versionManager.newVersion(subsystems.head, comment, majorVersion)
         Nil
       }
     }
@@ -294,7 +295,8 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
       if (problems.nonEmpty) {
         Left(problems)
       } else {
-        manager.newVersion(list, comment, majorVersion)
+        // XXX TODO: Keep versions of components or only subsystems?
+        versionManager.newVersion(list, comment, majorVersion)
         Right(subsystems.head)
       }
     }
