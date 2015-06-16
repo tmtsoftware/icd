@@ -14,6 +14,7 @@ import scalatags.JsDom.TypedTag
 import scalacss.Defaults._
 import scalacss.ScalatagsCss._
 import scala.concurrent.ExecutionContext.Implicits.global
+import BrowserHistory._
 
 /**
  * Main class for the ICD web app.
@@ -40,18 +41,22 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private val viewMenu = ViewMenu(
     viewAsHtml = viewIcdAsHtml(),
     viewAsPdf = viewIcdAsPdf(),
-    showVersionHistory = showVersionHistory)
+    showVersionHistory = showVersionHistory())
 
   private val navbar = Navbar()
   private val layout = Layout()
 
+  private val versionHistory = VersionHistory(mainContent)
+
+  // Get the list of subsystems from the server and update the two comboboxes
   private val subsystemListeners = List(subsystem.updateSubsystemOptions _, targetSubsystem.updateSubsystemOptions _)
   SubsystemNames(mainContent, wsBaseUrl, subsystemListeners)
 
-  private val versionHistory = VersionHistory(mainContent)
-
   dom.window.onpopstate = popState _
+
+  // Note: This prevents leaving the web app with with back button
   pushState(viewType = ComponentView)
+
   doLayout()
 
   // Layout the components on the page
@@ -90,7 +95,8 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     }
   }
 
-  object LeftSidebarListener extends SidebarListener {
+  // Listener for sidebar component checkboxes
+  private object LeftSidebarListener extends SidebarListener {
     override def componentSelected(componentName: String, checked: Boolean): Unit = {
       getFilter.map { filter ⇒
         if (checked)
@@ -118,7 +124,6 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
    * Push the current app state for the browser history
    */
   private def pushState(viewType: ViewType, linkComponent: Option[String] = None): Unit = {
-    println(s"XXX pushState")
     val hist = BrowserHistory(
       subsystem.getSelectedSubsystem,
       targetSubsystem.getSelectedSubsystem,
@@ -134,6 +139,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private def popState(e: PopStateEvent): Unit = {
     BrowserHistory.popState(e).foreach { hist ⇒
       e.preventDefault()
+      // Make sure to wait for futures to complete, so things happen in the right order
       for {
         _ ← subsystem.setSelectedSubsystem(hist.sourceSubsystem, saveHistory = false)
         _ ← targetSubsystem.setSelectedSubsystem(hist.targetSubsystem, saveHistory = false)
@@ -143,6 +149,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
           case UploadView        ⇒ uploadSelected(saveHistory = false)()
           case HtmlView          ⇒ viewIcdAsHtml(saveHistory = false)()
           case PdfView           ⇒ viewIcdAsPdf(saveHistory = false)()
+          case VersionView       ⇒ showVersionHistory(saveHistory = false)()
           case ComponentView     ⇒ updateComponentDisplay()
           case ComponentLinkView ⇒ hist.linkComponent.foreach(componentLinkSelected(saveHistory = false))
         }
@@ -174,8 +181,8 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     }
   }
 
+  // Called when the source subsystem combobox selection is changed
   private object SourceSubsystemListener extends SubsystemListener {
-    // Called when the source (left) subsystem combobox selection is changed
     override def subsystemSelected(subsystemOpt: Option[String], saveHistory: Boolean): Future[Unit] = {
       sidebar.clearComponents()
       mainContent.clearContent()
@@ -193,8 +200,8 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
 
   }
 
+  // Called when the target subsystem combobox selection is changed
   private object TargetSubsystemListener extends SubsystemListener {
-    // Called when the target subsystem combobox selection is changed
     override def subsystemSelected(subsystemOpt: Option[String], saveHistory: Boolean): Future[Unit] = {
       updateComponentDisplay().map { _ ⇒
         if (saveHistory) pushState(viewType = ComponentView)
@@ -233,10 +240,11 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   }
 
   // Called when the "Show ICD Version History" menu item is selected
-  private def showVersionHistory(): Unit = {
+  private def showVersionHistory(saveHistory: Boolean = true)(): Unit = {
     for (name ← subsystem.getSelectedSubsystem) {
       versionHistory.setSubsystem(name)
       mainContent.setContent(s"Version History for $name", versionHistory)
+      if (saveHistory) pushState(viewType = VersionView)
     }
   }
 }

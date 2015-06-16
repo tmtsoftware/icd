@@ -3,25 +3,37 @@ package icd.web.client
 import org.scalajs.dom
 import org.scalajs.dom._
 import upickle._
+import BrowserHistory._
 
-// Type of a view in the application, used to restore the view
-// Note: Needs to be outside of object, due to scala.js restrictions
-sealed trait ViewType
+object BrowserHistory {
 
-// Viewing components based on checkbox state in sidebar
-case object ComponentView extends ViewType
+  // Type of a view in the application, used to restore the view
+  sealed trait ViewType
 
-// Viewing component from a publisher/subscriber/command link
-case object ComponentLinkView extends ViewType
+  // Viewing components based on checkbox states in sidebar
+  case object ComponentView extends ViewType
 
-// Uploading ICD
-case object UploadView extends ViewType
+  // Viewing a single component from a publisher/subscriber/command link
+  case object ComponentLinkView extends ViewType
 
-// Result of View menu => Static API as HTML Document
-case object HtmlView extends ViewType
+  // Uploading ICD files
+  case object UploadView extends ViewType
 
-// Result of View menu => Static API as PDF Document
-case object PdfView extends ViewType
+  // Result of View menu => Static API as HTML Document
+  case object HtmlView extends ViewType
+
+  // Result of View menu => Static API as PDF Document
+  case object PdfView extends ViewType
+
+  // Viewing the version history
+  case object VersionView extends ViewType
+
+  // Gets  BrowserHistory from the event
+  def popState(e: PopStateEvent): Option[BrowserHistory] = {
+    if (e.state == null) None
+    else Some(read[BrowserHistory](e.state.toString))
+  }
+}
 
 /**
  * Object used to keep track of browser history for back button
@@ -43,11 +55,3 @@ case class BrowserHistory(sourceSubsystem: Option[String], targetSubsystem: Opti
   }
 }
 
-object BrowserHistory {
-
-  // Gets  BrowserHistory from the event
-  def popState(e: PopStateEvent): Option[BrowserHistory] = {
-    if (e.state == null) None
-    else Some(read[BrowserHistory](e.state.toString))
-  }
-}
