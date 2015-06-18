@@ -189,7 +189,7 @@ object IcdDb extends App {
 
     // --versions option
     def listVersions(name: String): Unit = {
-      for (v ← db.versionManager.getIcdVersions(name)) {
+      for (v ← db.versionManager.getVersions(name)) {
         println(s"${v.version}\t${v.date.withZone(DateTimeZone.getDefault)}\t${v.comment}")
       }
     }
@@ -210,7 +210,7 @@ object IcdDb extends App {
       val Array(name, vStr) = arg.split(":")
       if (vStr.isEmpty) error(msg)
       val Array(v1, v2) =
-        if (vStr.contains(",")) vStr.split(",") else Array(vStr, db.versionManager.getCurrentIcdVersion(name))
+        if (vStr.contains(",")) vStr.split(",") else Array(vStr, db.versionManager.getCurrentVersion(name))
       checkVersion(v1)
       checkVersion(v2)
       for (diff ← db.versionManager.diff(name, v1, v2))

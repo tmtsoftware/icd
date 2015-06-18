@@ -3,7 +3,7 @@ package csw.services.icd
 import java.io.{ OutputStream, File, ByteArrayInputStream, FileOutputStream }
 
 /**
- * Handles converting an ICD from HTML to PDF format
+ * Handles converting an ICD API from HTML to PDF format
  */
 object IcdToPdf {
   import com.itextpdf.tool.xml.XMLWorkerHelper

@@ -3,33 +3,36 @@
 # ~~~~
 
 # Home page
-GET         /                           controllers.Application.index
+GET         /                                                   controllers.Application.index
 
-# Gets a list of top level ICD names
-GET         /icdNames                   controllers.Application.icdNames
+# Gets a list of top level subsystem names
+GET         /subsystems                                         controllers.Application.subsystemNames
 
-# Gets a list of components belonging to the given ICD
-GET         /icdComponents/:name        controllers.Application.icdComponents(name)
+# Gets a list of components belonging to the given version of the given subsystem
+GET         /components/:subsystem/:version                     controllers.Application.components(subsystem, version)
 
-# Gets information about a given ICD component
-GET         /componentInfo/:name        controllers.Application.componentInfo(name)
+# Gets information about a given component in a iven version of the given subsystem
+GET         /componentInfo/:subsystem/:version/:compName        controllers.Application.componentInfo(subsystem, version, compName)
 
-# Gets the HTML for an ICD
-GET         /icdHtml/:name              controllers.Application.icdHtml(name: String)
+# Gets the HTML for the given component
+GET         /apiAsHtml/:name                                    controllers.Application.apiAsHtml(name: String)
 
-# Gets the PDF for an ICD
-GET         /icdPdf/:name               controllers.Application.icdPdf(name: String)
+# Gets the PDF for the given component
+GET         /apiAsPdf/:name                                     controllers.Application.apiAsPdf(name: String)
 
-# Gets the PDF for an ICD
-GET         /versions/:name             controllers.Application.getVersions(name: String)
+# Gets the detailed information about the versions of a component or subsystem
+GET         /versions/:name                                     controllers.Application.getVersions(name: String)
+
+# Gets a list of version names for a component or subsystem
+GET         /versionNames/:name                                 controllers.Application.getVersionNames(name: String)
 
 # Uploads ICD files from a selected directory, all at once as multipart/formdata
-POST        /uploadFiles                controllers.FileUploadController.uploadFiles
+POST        /uploadFiles                                        controllers.FileUploadController.uploadFiles
 
 # Websocket to notify client when DB has changed
-GET         /ws                         controllers.FileUploadController.ws
+GET         /ws                                                 controllers.FileUploadController.ws
 
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file               controllers.Assets.at(path="/public", file)
+GET         /assets/*file                                       controllers.Assets.at(path="/public", file)
 
-GET         /webjars/*file              controllers.WebJarAssets.at(file)
+GET         /webjars/*file                                      controllers.WebJarAssets.at(file)

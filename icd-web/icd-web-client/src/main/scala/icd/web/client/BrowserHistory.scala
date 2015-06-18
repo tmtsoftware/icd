@@ -4,6 +4,7 @@ import org.scalajs.dom
 import org.scalajs.dom._
 import upickle._
 import BrowserHistory._
+import Subsystem._
 
 object BrowserHistory {
 
@@ -18,6 +19,9 @@ object BrowserHistory {
 
   // Uploading ICD files
   case object UploadView extends ViewType
+
+  // Publishing an API or ICD
+  case object PublishView extends ViewType
 
   // Result of View menu => Static API as HTML Document
   case object HtmlView extends ViewType
@@ -38,13 +42,13 @@ object BrowserHistory {
 /**
  * Object used to keep track of browser history for back button
  *
- * @param sourceSubsystem subsystem selected in the left box
- * @param targetSubsystem subsystem selected in the right box
+ * @param sourceSubsystem source subsystem selected in the left box
+ * @param targetSubsystem target subsystem selected in the right box
  * @param sourceComponents source subsystem components whose checkboxes are checked
  * @param linkComponent set to the name of the component displayed via a subscriber/publisher/command link
  * @param viewType indicates the type of data being displayed
  */
-case class BrowserHistory(sourceSubsystem: Option[String], targetSubsystem: Option[String],
+case class BrowserHistory(sourceSubsystem: SubsystemWithVersion, targetSubsystem: SubsystemWithVersion,
                           sourceComponents: List[String], linkComponent: Option[String],
                           viewType: ViewType) {
 

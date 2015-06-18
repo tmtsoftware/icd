@@ -6,7 +6,7 @@ import csw.services.icd.gfm.{ Level, IcdToGfm }
 import csw.services.icd.model.IcdModels
 
 /**
- * Saves the ICD as a document
+ * Saves the ICD/API as a document
  */
 object IcdPrinter {
 

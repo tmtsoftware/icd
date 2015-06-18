@@ -2,11 +2,13 @@ package csw.services.icd.db
 
 import com.mongodb.{ WriteConcern, DBObject }
 import com.mongodb.casbah.Imports._
-import csw.services.icd.model.BaseModel
+import com.typesafe.config.Config
 import gnieh.diffson.{ JsonDiff, JsonPatch }
 import net.liftweb.json.JsonAST.{ JNothing, JValue }
 import net.liftweb.json.JsonParser
 import org.joda.time.{ DateTimeZone, DateTime }
+import csw.services.icd.StdName._
+import csw.services.icd.model._
 
 /**
  * Manages Subsystem and component versioning in the database.
@@ -26,24 +28,27 @@ object IcdVersionManager {
   // The version key inserted into all documents
   val versionKey = "_version"
 
+  // The version key used for top level subsystems or components
+  val versionStrKey = "version"
+
   // The name of the sub-collection containing the previous versions or version information
   val versionColl = "v"
 
   /**
-   * Holds an ICD part (collection) path and it's version
+   * Holds a collection path for a component or subsystem and it's version
    */
   case class PartInfo(path: String, version: Int)
 
-  // Name of version history collection for the given ICD
+  // Name of version history collection for the given subsystem or component
   def versionCollectionName(name: String): String = s"$name.$versionColl"
 
   /**
-   * Describes a version of an ICD
-   * @param version the ICD version (major.minor)
+   * Describes a version of a subsystem or component
+   * @param version the subsystem or component version (major.minor)
    * @param user the user that created the version
    * @param comment a change comment
    * @param date the date of the change
-   * @param parts names and versions of the ICD parts
+   * @param parts names and versions of the subsystem or component parts
    */
   case class VersionInfo(version: String, user: String, comment: String, date: DateTime, parts: List[PartInfo]) {
     // Gets the version of the part with the given path
@@ -54,23 +59,24 @@ object IcdVersionManager {
   }
 
   object VersionInfo {
+    // Creates a VersionInfo instance from an object in the database
     def apply(obj: DBObject): VersionInfo =
       VersionInfo(
-        version = obj("version").toString,
+        version = obj(versionStrKey).toString,
         user = obj("user").toString,
         comment = obj("comment").toString,
         date = obj("date").asInstanceOf[DateTime].withZone(DateTimeZone.UTC),
         parts = for (part ← obj("parts").asInstanceOf[BasicDBList].toList) yield {
           val partObj = part.asInstanceOf[DBObject]
-          PartInfo(partObj("name").toString, partObj("version").asInstanceOf[Int])
+          PartInfo(partObj("name").toString, partObj(versionStrKey).asInstanceOf[Int])
         })
   }
 
   /**
-   * Represents the difference between two versions of an ICD part in the db
+   * Represents the difference between two versions of an subsystem or component part in the db
    * (parts have names that end with "icd", "component", "publish", "subscribe", "command")
-   * @param path the path to a part of the ICD (for example: "NFIRAOS.lgsWfs.publish")
-   * @param patch an object describing the difference for the ICD part
+   * @param path the path to a part of the subsystem or component (for example: "NFIRAOS.lgsWfs.publish")
+   * @param patch an object describing the difference for the subsystem or component part
    */
   case class VersionDiff(path: String, patch: JsonPatch)
 
@@ -82,13 +88,13 @@ case class IcdVersionManager(db: MongoDB) {
   import IcdDbQuery._
 
   /**
-   * Increments the version for the named ICD.
-   * This creates a Mongo collection named "name.v" that contains the ICD version (starting with "1.0"),
-   * the user and date as well as a list of the names and versions of each of the ICD parts.
+   * Increments the version for the named subsystem or component.
+   * This creates a Mongo collection named "name.v" that contains the subsystem or component version (starting with "1.0"),
+   * the user and date as well as a list of the names and versions of each of the subsystem or component parts.
    *
-   * @param name the name of ICD
+   * @param name the name of subsystem (or subsystem.component)
    * @param comment change comment
-   * @param majorVersion if true, increment the ICD's major version
+   * @param majorVersion if true, increment the subsystem or component's major version
    */
   def newVersion(name: String, comment: String, majorVersion: Boolean): Unit = {
 
@@ -96,18 +102,18 @@ case class IcdVersionManager(db: MongoDB) {
 
     val collName = versionCollectionName(name)
 
-    // Get the paths of all the ICD parts
-    val paths = getIcdPaths(name)
+    // Get the paths of all the subsystem or component parts
+    val paths = getPaths(name)
 
-    // Generate a list of maps with name and version each current ICD part (to store with this version)
+    // Generate a list of maps with name and version each current subsystem or component part (to store with this version)
     def getVersion(path: String): Int = {
       db(path).head(versionKey).asInstanceOf[Int]
     }
-    val parts = paths.map(p ⇒ (p, getVersion(p))).map(x ⇒ Map("name" -> x._1, "version" -> x._2).asDBObject)
+    val parts = paths.map(p ⇒ (p, getVersion(p))).map(x ⇒ Map("name" -> x._1, versionStrKey -> x._2).asDBObject)
 
     //    if (db.collectionExists(collName)) ... XXX TODO check if parts is different than what is in collname
 
-    // Start with "1.0" as the ICD version, then increment the minor version automatically each time.
+    // Start with "1.0" as the subsystem or component version, then increment the minor version automatically each time.
     // If the user requests a new major version, increment that and reset minor version to 0.
     def incrVersion(version: String): String = {
       val Array(maj, min) = version.split("\\.")
@@ -115,13 +121,13 @@ case class IcdVersionManager(db: MongoDB) {
     }
 
     val version = if (db.collectionExists(collName))
-      incrVersion(getCurrentIcdVersion(name))
+      incrVersion(getCurrentVersion(name))
     else "1.0"
 
     val now = new DateTime(DateTimeZone.UTC)
     val user = System.getProperty("user.name") // XXX TODO Which user name to use for web app? (Need user login...)
     val obj = Map(
-      "version" -> version,
+      versionStrKey -> version,
       "user" -> user,
       "comment" -> comment,
       "date" -> now,
@@ -130,8 +136,21 @@ case class IcdVersionManager(db: MongoDB) {
   }
 
   /**
+   * Increments the version for the components in the list.
+   * This creates a Mongo collection named "name.v" that contains the subsystem or component version (starting with "1.0"),
+   * the user and date as well as a list of the names and versions of each of the subsystem or component parts.
+   *
+   * @param list list of standard subsystem or component config files
+   * @param comment change comment
+   * @param majorVersion if true, increment the subsystem or component's major version
+   */
+  def newVersion(list: List[StdConfig], comment: String, majorVersion: Boolean): Unit = {
+    getComponentNames(list).foreach(newVersion(_, comment, majorVersion))
+  }
+
+  /**
    * Returns the list of unique component names found in the given list.
-   * @param list list of ICD model files packaged as StdConfig object
+   * @param list list of subsystem or component model files packaged as StdConfig object
    * @return the list of component names found
    */
   private def getComponentNames(list: List[StdConfig]): List[String] = {
@@ -143,62 +162,57 @@ case class IcdVersionManager(db: MongoDB) {
     }.distinct
   }
 
-  // XXX TODO move version related stuff to different class
-
   /**
-   * Increments the version for the components in the list.
-   * This creates a Mongo collection named "name.v" that contains the ICD version (starting with "1.0"),
-   * the user and date as well as a list of the names and versions of each of the ICD parts.
-   *
-   * @param list list of standard ICD config files
-   * @param comment change comment
-   * @param majorVersion if true, increment the ICD's major version
+   * Returns a list of information about the versions of the subsystem or component
+   * @param path the name of the subsystem (or subsystem.component)
    */
-  def newVersion(list: List[StdConfig], comment: String, majorVersion: Boolean): Unit = {
-    getComponentNames(list).foreach(newVersion(_, comment, majorVersion))
-  }
-
-  /**
-   * Returns a list of information about the versions of the ICD
-   * @param name the root name of the ICD
-   */
-  def getIcdVersions(name: String): List[VersionInfo] = {
-    val collName = versionCollectionName(name)
+  def getVersions(path: String): List[VersionInfo] = {
+    val collName = versionCollectionName(path)
     val result = for (obj ← db(collName).find().sort(idKey -> -1)) yield VersionInfo(obj)
     result.toList
   }
 
   /**
-   * Returns information about the given version of the given ICD
-   * @param name the root name of the ICD
-   * @param version the version of interest
+   * Returns a list of version names of the subsystem or component
+   * @param path the name of the subsystem (or subsystem.component)
    */
-  def getIcdVersion(name: String, version: String): Option[VersionInfo] = {
-    val collName = versionCollectionName(name)
-    db(collName).findOne("version" -> version).map(VersionInfo(_))
+  def getVersionNames(path: String): List[String] = {
+    val collName = versionCollectionName(path)
+    val result = for (obj ← db(collName).find().sort(idKey -> -1)) yield obj(versionStrKey).toString
+    result.toList
   }
 
   /**
-   * Returns the current version of the given ICD
-   * @param name the root name of the ICD
+   * Returns information about the given version of the given subsystem or component
+   * @param path the name of the subsystem (or subsystem.component)
+   * @param version the version of interest
    */
-  def getCurrentIcdVersion(name: String): String =
-    db(versionCollectionName(name)).find().sort(idKey -> -1).one().get("version").toString
-
-  // Returns a list of all of the parts (collections) belonging to the named ICD
-  private def getIcdPaths(name: String): List[String] =
-    db.collectionNames().filter(isStdSet).map(IcdPath).filter(_.subsystem == name).map(_.path).toList
+  def getVersion(path: String, version: String): Option[VersionInfo] = {
+    val collName = versionCollectionName(path)
+    db(collName).findOne(versionStrKey -> version).map(VersionInfo(_))
+  }
 
   /**
-   * Compares all of the named ICD parts and returns a list of patches describing any differences.
-   * @param name the root ICD name
+   * Returns the current version of the given subsystem or component
+   * @param path the name of the subsystem (or subsystem.component)
+   */
+  def getCurrentVersion(path: String): String =
+    db(versionCollectionName(path)).find().sort(idKey -> -1).one().get(versionStrKey).toString
+
+  // Returns a list of all of the parts (collections) belonging to the named subsystem
+  private def getPaths(subsystem: String): List[String] =
+    db.collectionNames().filter(isStdSet).map(IcdPath).filter(_.subsystem == subsystem).map(_.path).toList
+
+  /**
+   * Compares all of the named subsystem or component parts and returns a list of patches describing any differences.
+   * @param name the root subsystem or component name
    * @param v1 the first version to compare
    * @param v2 the second version to compare
-   * @return a list of diffs, one for each ICD part
+   * @return a list of diffs, one for each subsystem or component part
    */
   def diff(name: String, v1: String, v2: String): List[VersionDiff] = {
-    val v1Info = getIcdVersion(name, v1)
-    val v2Info = getIcdVersion(name, v2)
+    val v1Info = getVersion(name, v1)
+    val v2Info = getVersion(name, v2)
     if (v1Info.isEmpty || v2Info.isEmpty) Nil
     else {
       val result = for {
@@ -214,17 +228,21 @@ case class IcdVersionManager(db: MongoDB) {
     JsonParser.parse(json).replace(idKey :: Nil, JNothing).replace(versionKey :: Nil, JNothing)
   }
 
-  // Returns the JSON for the given version of the collection path
-  private def getJson(path: String, version: Int): JValue = {
+  // Returns the contents of the given version of the collection path
+  private def getVersionOf(path: String, version: Int): String = {
     val coll = db(path)
     val currentVersion = coll.head(versionKey).asInstanceOf[Int]
     val v = coll.getCollection(versionColl)
-    val jsonStr = if (version == currentVersion) {
+    if (version == currentVersion) {
       coll.head.toString
     } else {
       v.find(versionKey -> version).one().toString
     }
-    parseNoVersionOrId(jsonStr)
+  }
+
+  // Returns the JSON for the given version of the collection path
+  private def getJson(path: String, version: Int): JValue = {
+    parseNoVersionOrId(getVersionOf(path, version))
   }
 
   // Returns the diff of the given versions of the given collection path, if they are different
@@ -243,5 +261,65 @@ case class IcdVersionManager(db: MongoDB) {
     val json1 = parseNoVersionOrId(coll.head.toString)
     val json2 = parseNoVersionOrId(obj.toString)
     diffJson(coll.name, json1, json2)
+  }
+
+  /**
+   * Returns a list of all the component names in the DB belonging to the given subsystem version
+   */
+  def getComponentNames(subsystem: String, version: String): List[String] = {
+    getVersion(subsystem, version) match {
+      case Some(versionInfo) ⇒
+        versionInfo.parts.map(_.path)
+          .map(IcdPath)
+          .filter(p ⇒ p.parts.length == 3)
+          .map(_.parts.tail.head)
+          .distinct.
+          sorted
+      case None ⇒ Nil
+    }
+  }
+
+  // Returns a list of IcdEntry objects for the given parts (one part for each originally ingested file)
+  private def getEntries(parts: List[PartInfo]): List[IcdEntry] = {
+    val paths = parts.map(_.path).map(IcdPath)
+    val compMap = paths.map(p ⇒ (p.component, paths.filter(_.component == p.component).map(_.path))).toMap
+    val entries = compMap.keys.map(key ⇒ getEntry(key, compMap(key))).toList
+    entries.sortBy(entry ⇒ (IcdPath(entry.name).parts.length, entry.name))
+  }
+
+  /**
+   * Returns a list of models for the given subsystem version or component,
+   * based on the data in the database.
+   * The list includes the model for the subsystem, followed
+   * by any models for components that were defined in subdirectories
+   * in the original files that were ingested into the database
+   * (In this case the definitions are stored in sub-collections in the DB).
+   *
+   * @param subsystem the subsystem containing the component
+   * @param version the subsystem version
+   * @param compNameOpt if defined, return the models for the component, otherwise for the subsystem
+   * @return a list of IcdModels for the given version of the subsystem or component
+   */
+  def getModels(subsystem: String, version: String, compNameOpt: Option[String]): List[IcdModels] = {
+
+    // Holds all the model classes associated with a single ICD entry.
+    case class Models(versionMap: Map[String, Int], entry: IcdEntry) extends IcdModels {
+      // Parses the data from collection s (or an older version of it) and returns a Config object for it
+      private def parse(s: String): Config = getConfig(getVersionOf(s, versionMap(s)))
+
+      override val subsystemModel = entry.subsystem.map(s ⇒ SubsystemModel(parse(s)))
+      override val publishModel = entry.publish.map(s ⇒ PublishModel(parse(s)))
+      override val subscribeModel = entry.subscribe.map(s ⇒ SubscribeModel(parse(s)))
+      override val commandModel = entry.command.map(s ⇒ CommandModel(parse(s)))
+      override val componentModel = entry.component.map(s ⇒ ComponentModel(parse(s)))
+    }
+
+    getVersion(subsystem, version) match {
+      case Some(versionInfo) ⇒
+        val versionMap = versionInfo.parts.map(v ⇒ v.path -> v.version).toMap
+        val entries = getEntries(versionInfo.parts)
+        for (entry ← entries) yield Models(versionMap, entry)
+      case None ⇒ Nil
+    }
   }
 }

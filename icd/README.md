@@ -1,9 +1,14 @@
 ICD Validation
 ==============
 
-This project contains classes and resources for validating ICDs.
+This project contains classes and resources for validating APIs used by ICDs.
+
+> Note: In this project, the input files in one directory describe the API for a *component* (HCD or assembly).
+A set of component definitions under one parent directory defines the API for a *subsystem*.
+An ICD (Interface Control Document) describes the interface from a source to a target subsystem.
+
 The validation is based on [JSON Schema](http://json-schema.org/),
-however the schema descriptions as well as the ICDs themselves may also be written in
+however the schema descriptions as well as the APIs themselves may also be written in
 the simpler [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md) format
 (see also [Typesafe config](https://github.com/typesafehub/config)).
 
@@ -37,7 +42,7 @@ which should contain this file, describing the subsystem:
 
 * subsystem-model.conf
 
-Example ICDs can be found in the [examples](../examples) directory.
+Example APIs can be found in the [examples](../examples) directory.
 
 Additional command line options are defined:
 
@@ -51,7 +56,7 @@ Usage: icd [options]
   -s <jsonSchemaFile> | --schema <jsonSchemaFile>
         JSON schema file to use to validate the single input, assumed to be in HOCON (*.conf) or JSON (*.json) format
   -o <outputFile> | --out <outputFile>
-        Saves the ICD to the given file in a format based on the file's suffix (md, html, pdf)
+        Saves the API to the given file in a format based on the file's suffix (md, html, pdf)
 ```
 
 Note that for testing you can also convert a single input or schema file to JSON format by combining -i or -s with -o file.json.

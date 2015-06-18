@@ -5,7 +5,7 @@ import java.io.File
 package object icd {
 
   /**
-   * Gets a recursive list of subdirectories containing ICDs
+   * Gets a recursive list of subdirectories containing ICD files
    * @param dir the parent dir
    * @return
    */

@@ -35,7 +35,7 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
   // Upload comment box
   private val commentBox = {
     import scalatags.JsDom.all._
-    textarea(cls := "form-control", name := "comments", rows := 5, cols := 60).render
+    textarea(cls := "form-control", name := "comments", rows := 10, cols := 80).render
   }
 
   // True if the file is one of the standard ICD files

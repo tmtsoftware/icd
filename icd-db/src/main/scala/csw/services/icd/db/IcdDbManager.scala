@@ -8,8 +8,8 @@ import net.liftweb.json.JsonAST.JNothing
  * Manages ingesting objects into the database while keeping track of
  * previous versions.
  */
-object IcdDbManager {
-}
+//object IcdDbManager {
+//}
 
 case class IcdDbManager(db: MongoDB, versionManager: IcdVersionManager) {
   import IcdVersionManager._

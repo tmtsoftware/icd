@@ -9,7 +9,7 @@ import csw.services.icd.model._
 import scala.language.implicitConversions
 
 object IcdDbQuery {
-  // Set of standard ICD model parts: icd, component, publish, subscribe, command
+  // Set of standard ICD model parts: subsystem, component, publish, subscribe, command
   val stdSet = stdNames.map(_.modelBaseName).toSet
 
   // True if the named collection represents an ICD model (has one of the standard names)
@@ -23,13 +23,28 @@ object IcdDbQuery {
     // The common path for an assembly, HCD, sequencer, etc.
     lazy val component = parts.dropRight(1).mkString(".")
 
-    // The top level ICD collection name
+    // The top level subsystem collection name
     lazy val subsystem = parts.head
   }
 
   // Contains db collection names related to an ICD
   case class IcdEntry(name: String, subsystem: Option[String], component: Option[String],
                       publish: Option[String], subscribe: Option[String], command: Option[String])
+
+  // Returns an IcdEntry for the given collection path
+  def getEntry(name: String, paths: List[String]): IcdEntry = {
+    IcdEntry(name = name,
+      subsystem = paths.find(_.endsWith(".subsystem")),
+      component = paths.find(_.endsWith(".component")),
+      publish = paths.find(_.endsWith(".publish")),
+      subscribe = paths.find(_.endsWith(".subscribe")),
+      command = paths.find(_.endsWith(".command")))
+  }
+
+  // Gets a Config object from a JSON string
+  def getConfig(json: String): Config = {
+    ConfigFactory.parseString(json)
+  }
 
   // Types of published items
   sealed trait PublishType
@@ -104,22 +119,6 @@ case class IcdDbQuery(db: MongoDB) {
     entries.sortBy(entry ⇒ (IcdPath(entry.name).parts.length, entry.name))
   }
 
-  // Returns an IcdEntry for the given collection path
-  private def getEntry(name: String, paths: List[String]): IcdEntry = {
-    IcdEntry(name = name,
-      subsystem = paths.find(_.endsWith(".subsystem")),
-      component = paths.find(_.endsWith(".component")),
-      publish = paths.find(_.endsWith(".publish")),
-      subscribe = paths.find(_.endsWith(".subscribe")),
-      command = paths.find(_.endsWith(".command")))
-
-  }
-
-  // Gets a Config object from a JSON string
-  private def getConfig(json: String): Config = {
-    ConfigFactory.parseString(json)
-  }
-
   // --- Components ---
 
   // Parses the given json and returns a componnet model object
@@ -188,17 +187,16 @@ case class IcdDbQuery(db: MongoDB) {
   def getComponentNames: List[String] = getComponents.map(_.component)
 
   /**
-   * Returns a list of all the subcomponent names in the DB belonging to the given ICD
-   * XXX TODO FIXME (Can simplify after changes made in ingesting)
+   * Returns a list of all the component names in the DB belonging to the given subsystem.
+   * Note: This method assumes the current version of the subsystem.
+   * Use IcdVersionManager.getComponentNames to access any version of the subsystem.
    */
-  def getComponentNames(icdName: String): List[String] = {
+  def getComponentNames(subsystem: String): List[String] = {
     db.collectionNames()
-      .filter(_.endsWith(componentFileNames.modelBaseName))
+      .filter(name ⇒ name.startsWith(s"$subsystem.") && !name.endsWith(s".${IcdVersionManager.versionColl}"))
       .map(IcdPath)
-      .filter(p ⇒ p.subsystem == icdName && p.parts.length > 2)
-      .map(_.path)
-      .map(db(_).head.toString)
-      .map(jsonToComponentModel(_).component)
+      .filter(p ⇒ p.parts.length == 3)
+      .map(_.parts.tail.head)
       .toList
       .sorted
   }
@@ -300,12 +298,14 @@ case class IcdDbQuery(db: MongoDB) {
   // ---
 
   /**
-   * Returns a list of ICD models for the given subsystem or component name,
+   * Returns a list of models for the given subsystem or component name,
    * based on the data in the database.
-   * The list includes the ICD model for the subsystem, followed
-   * by any ICD models for components that were defined in subdirectories
+   * The list includes the model for the subsystem, followed
+   * by any models for components that were defined in subdirectories
    * in the original files that were ingested into the database
    * (In this case the definitions are stored in sub-collections in the DB).
+   *
+   * Note: Use IcdVersionManager.getModels() to access a specific version of the data.
    */
   def getModels(name: String): List[IcdModels] = {
     // Holds all the model classes associated with a single ICD entry.

@@ -3,7 +3,7 @@ package csw.services.icd
 import java.io.{ FileOutputStream, File }
 
 /**
- * Handles converting ICD from GFM to HTML
+ * Handles converting ICD API from GFM to HTML
  */
 object IcdToHtml {
   private def getCss: String = {

@@ -3,7 +3,7 @@ package csw.services.icd
 import java.io.File
 
 /**
- * Standard file names expected for a complete ICD
+ * Standard file names expected for a complete ICD API description
  */
 object StdName {
   val subsystemFileNames = StdName("subsystem-model.conf", "subsystem-schema.conf")

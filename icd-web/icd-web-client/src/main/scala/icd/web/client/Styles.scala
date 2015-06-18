@@ -85,4 +85,9 @@ object Styles extends StyleSheet.Inline {
     backgroundColor("#f5f5f5"),
     padding(5 px, 10 px, 0 px, 10 px),
     borderTop(1 px, solid, gray))
+
+  //  val subsystemWrapper = style(
+  //    display.inlineBlock,
+  //    verticalAlign.middle,
+  //    float.none)
 }

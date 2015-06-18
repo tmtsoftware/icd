@@ -14,7 +14,7 @@ import com.typesafe.config.{ Config, ConfigFactory, ConfigRenderOptions, ConfigR
 import scala.io.Source
 
 /**
- * An ICD validator
+ * An ICD API validator
  */
 object IcdValidator {
 

@@ -28,7 +28,7 @@ case class SubsystemNames(mainContent: MainContent, wsBaseUrl: String, listeners
 
   // Gets the list of top level ICDs from the server
   private def getSubsystemNames: Future[List[String]] = {
-    Ajax.get(Routes.icdNames).map { r ⇒
+    Ajax.get(Routes.subsystems).map { r ⇒
       read[List[String]](r.responseText)
     }.recover {
       case ex ⇒

@@ -3,7 +3,7 @@ package csw.services.icd
 import java.io.{ File, FileOutputStream }
 
 /**
- * An ICD validator application
+ * An ICD API validator application
  */
 object Icd extends App {
   import csw.services.icd.IcdValidator._
