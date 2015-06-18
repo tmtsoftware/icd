@@ -99,4 +99,22 @@ object Application extends Controller {
     val versions = db.versionManager.getVersionNames(name)
     Ok(write(versions)).as(JSON)
   }
+
+  /**
+   * Publishes the given version of the given subsystem
+   */
+  def publishApi(subsystem: String, version: String) = Action {
+    // XXX error handling?
+    db.versionManager.publishApi(subsystem, version)
+    Ok.as(JSON)
+  }
+
+  /**
+   * Publishes an ICD from the given version of the given subsystem to the target subsystem and version
+   */
+  def publishIcd(subsystem: String, version: String, target: String, targetVersion: String) = Action {
+    // XXX error handling?
+    db.versionManager.publishIcd(subsystem, version, target, targetVersion)
+    Ok.as(JSON)
+  }
 }

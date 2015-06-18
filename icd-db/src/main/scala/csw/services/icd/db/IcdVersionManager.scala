@@ -322,4 +322,18 @@ case class IcdVersionManager(db: MongoDB) {
       case None ⇒ Nil
     }
   }
+
+  /**
+   * Publishes the given version of the given subsystem
+   */
+  def publishApi(subsystem: String, version: String): Unit = {
+
+  }
+
+  /**
+   * Publishes an ICD from the given version of the given subsystem to the target subsystem and version
+   */
+  def publishIcd(subsystem: String, version: String, target: String, targetVersion: String): Unit = {
+
+  }
 }
