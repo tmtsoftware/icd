@@ -193,8 +193,8 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
 
   // Gets the list of subcomponents for the selected subsystem
   private def getComponentNames(sv: SubsystemWithVersion): Future[List[String]] = {
-    if (sv.subsystemOpt.isDefined && sv.versionOpt.isDefined) {
-      val path = Routes.components(sv.subsystemOpt.get, sv.versionOpt.get)
+    if (sv.subsystemOpt.isDefined) {
+      val path = Routes.components(sv.subsystemOpt.get, sv.versionOpt)
       Ajax.get(path).map { r ⇒
         read[List[String]](r.responseText)
       }.recover {
@@ -208,6 +208,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private object SourceSubsystemListener extends SubsystemListener {
     // Called when the source subsystem combobox selection is changed
     override def subsystemSelected(sv: SubsystemWithVersion, saveHistory: Boolean): Future[Unit] = {
+      println(s"XXX subsystemSelected: $sv")
       sidebar.clearComponents()
       mainContent.clearContent()
       sv.subsystemOpt match {

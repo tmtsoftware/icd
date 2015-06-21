@@ -36,17 +36,17 @@ object Application extends Controller {
   /**
    * Gets a list of components belonging to the given version of the given subsystem
    */
-  def components(subsystem: String, version: String) = Action {
-    val names = db.versionManager.getComponentNames(subsystem, version)
+  def components(subsystem: String, versionOpt: Option[String]) = Action {
+    val names = db.versionManager.getComponentNames(subsystem, versionOpt)
     Ok(Json.toJson(names))
   }
 
   /**
    * Gets information about a named component in the given version of the given subsystem
    */
-  def componentInfo(subsystem: String, version: String, name: String) = Action {
+  def componentInfo(subsystem: String, compName: String, versionOpt: Option[String]) = Action {
     import upickle._
-    val info = ComponentInfo(db, subsystem, version, name)
+    val info = ComponentInfo(db, subsystem, versionOpt, compName)
     val json = write(info)
     Ok(json).as(JSON)
   }
@@ -87,7 +87,7 @@ object Application extends Controller {
   def getVersions(name: String) = Action {
     import upickle._
     val versions = db.versionManager.getVersions(name).map(v ⇒
-      IcdVersionInfo(v.version, v.user, v.comment, v.date.toString))
+      IcdVersionInfo(v.versionOpt, v.user, v.comment, v.date.toString))
     Ok(write(versions)).as(JSON)
   }
 
@@ -103,18 +103,18 @@ object Application extends Controller {
   /**
    * Publishes the given version of the given subsystem
    */
-  def publishApi(subsystem: String, version: String) = Action {
+  def publishApi(path: String, majorVersion: Boolean, comment: String) = Action {
     // XXX error handling?
-    db.versionManager.publishApi(subsystem, version)
+    db.versionManager.publishApi(path, comment, majorVersion)
     Ok.as(JSON)
   }
 
   /**
    * Publishes an ICD from the given version of the given subsystem to the target subsystem and version
    */
-  def publishIcd(subsystem: String, version: String, target: String, targetVersion: String) = Action {
+  def publishIcd(subsystem: String, version: String, target: String, targetVersion: String, comment: String) = Action {
     // XXX error handling?
-    db.versionManager.publishIcd(subsystem, version, target, targetVersion)
+    db.versionManager.publishIcd(subsystem, version, target, targetVersion, comment)
     Ok.as(JSON)
   }
 }

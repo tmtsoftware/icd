@@ -31,6 +31,11 @@ object Subsystem {
    * @param versionOpt optional version of the subsystem (None means the latest version)
    */
   case class SubsystemWithVersion(subsystemOpt: Option[String], versionOpt: Option[String])
+
+  /**
+   * Value displayed for the unpublished working version of the subsystem
+   */
+  private val unpublishedVersion = "*"
 }
 
 /**
@@ -104,8 +109,8 @@ case class Subsystem(listener: SubsystemListener,
    */
   def getSelectedSubsystemVersion: Option[String] =
     versionItem.value match {
-      case null | "" ⇒ None
-      case version   ⇒ Some(version)
+      case "*" | null | "" ⇒ None
+      case version         ⇒ Some(version)
     }
 
   /**
@@ -192,18 +197,22 @@ case class Subsystem(listener: SubsystemListener,
 
   // Updates the version combobox with the list of available versions for the selected subsystem.
   // Returns a future indicating when done.
-  private def updateSubsystemVersionOptions(): Future[Unit] = {
+  def updateSubsystemVersionOptions(): Future[Unit] = {
     versionItem.setAttribute("hidden", "true")
     getSelectedSubsystem match {
       case Some(subsystem) ⇒
         getSubsystemVersionOptions(subsystem).map { list ⇒ // Future!
+          println(s"XXX versions = $list")
           updateSubsystemVersionOptions(list)
-          if (list.nonEmpty) {
-            versionItem.value = list.head
-            versionItem.removeAttribute("hidden")
-          }
+          versionItem.removeAttribute("hidden")
+          //          if (list.nonEmpty) versionItem.value = list.head
+          versionItem.value = unpublishedVersion
+        }.recover {
+          case ex ⇒ ex.printStackTrace()
         }
-      case None ⇒ Future.successful()
+      case None ⇒
+        println(s"XXX no subsystem selected")
+        Future.successful()
     }
   }
 
@@ -213,7 +222,8 @@ case class Subsystem(listener: SubsystemListener,
     while (versionItem.options.length != 0) {
       versionItem.remove(0)
     }
-    for (s ← versions) {
+    // Insert unpublished working version (*) as first item
+    for (s ← unpublishedVersion :: versions) {
       versionItem.add(option(value := s)(s).render)
     }
     setSelectedSubsystemVersion(versions.headOption, notifyListener = false)

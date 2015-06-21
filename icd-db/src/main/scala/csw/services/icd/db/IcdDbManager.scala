@@ -2,15 +2,11 @@ package csw.services.icd.db
 
 import com.mongodb.{ WriteConcern, DBObject }
 import com.mongodb.casbah.Imports._
-import net.liftweb.json.JsonAST.JNothing
 
 /**
  * Manages ingesting objects into the database while keeping track of
  * previous versions.
  */
-//object IcdDbManager {
-//}
-
 case class IcdDbManager(db: MongoDB, versionManager: IcdVersionManager) {
   import IcdVersionManager._
 
@@ -36,16 +32,8 @@ case class IcdDbManager(db: MongoDB, versionManager: IcdVersionManager) {
   // Updates an object in an existing collection
   private def update(coll: MongoCollection, obj: DBObject): Unit = {
     val currentVersion = coll.head(versionKey).asInstanceOf[Int]
-    obj.put(versionKey, currentVersion + 1)
-    obj.put(idKey, JNothing)
-    // compare, ignoring version and id values
-    val d = versionManager.diff(coll, obj)
-    obj.remove(idKey)
-    d.foreach { _ ⇒
-      val v = coll.getCollection(versionColl)
-      v.insert(coll.head, WriteConcern.SAFE)
-      coll.remove(coll.head)
-      coll.insert(obj, WriteConcern.SAFE)
-    }
+    obj.put(versionKey, currentVersion)
+    coll.remove(coll.head)
+    coll.insert(obj, WriteConcern.SAFE)
   }
 }

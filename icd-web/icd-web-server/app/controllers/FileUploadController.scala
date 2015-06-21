@@ -58,8 +58,8 @@ object FileUploadController extends Controller {
       problems ::: db.multipleSubsystemsError(subsystems)
     else problems
 
-    db.versionManager.newVersion(list, comment, majorVersion)
-    db.versionManager.newVersion(subsystems.head, comment, majorVersion)
+    //    db.versionManager.newVersion(list, comment, majorVersion)
+    //    db.versionManager.newVersion(subsystems.head, comment, majorVersion)
     wsChannel.push("update")
 
     if (errors.isEmpty) {

@@ -68,6 +68,8 @@ object Styles extends StyleSheet.Inline {
     margin(1 em, 0 em),
     border(1 px, solid, gray))
 
+  val publishMessages = fileUploadMessages
+
   val commentBox = style(
     padding(10 px, 0 px),
     margin(1 em, 0 em))

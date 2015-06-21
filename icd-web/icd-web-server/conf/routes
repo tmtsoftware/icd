@@ -9,31 +9,31 @@ GET         /                                                             contro
 GET         /subsystems                                                   controllers.Application.subsystemNames
 
 # Gets a list of components belonging to the given version of the given subsystem
-GET         /components/:subsystem/:version                               controllers.Application.components(subsystem, version)
+GET         /components/:subsystem                                        controllers.Application.components(subsystem, version: Option[String])
 
 # Gets information about a given component in a iven version of the given subsystem
-GET         /componentInfo/:subsystem/:version/:compName                  controllers.Application.componentInfo(subsystem, version, compName)
+GET         /componentInfo/:subsystem/:compName                           controllers.Application.componentInfo(subsystem, compName, version: Option[String])
 
 # Gets the HTML for the given component
-GET         /apiAsHtml/:name                                              controllers.Application.apiAsHtml(name: String)
+GET         /apiAsHtml/:name                                              controllers.Application.apiAsHtml(name)
 
 # Gets the PDF for the given component
-GET         /apiAsPdf/:name                                               controllers.Application.apiAsPdf(name: String)
+GET         /apiAsPdf/:name                                               controllers.Application.apiAsPdf(name)
 
 # Gets the detailed information about the versions of a component or subsystem
-GET         /versions/:name                                               controllers.Application.getVersions(name: String)
+GET         /versions/:name                                               controllers.Application.getVersions(name)
 
 # Gets a list of version names for a component or subsystem
-GET         /versionNames/:name                                           controllers.Application.getVersionNames(name: String)
+GET         /versionNames/:name                                           controllers.Application.getVersionNames(name)
 
 # Uploads ICD files from a selected directory, all at once as multipart/formdata
 POST        /uploadFiles                                                  controllers.FileUploadController.uploadFiles
 
-# Publishes an API (subsystem version)
-POST        /publishApi/:subsystem/:version                               controllers.Application.publishApi(subsystem, version)
+# Publishes an API (subsystem or subsystem.component path)
+POST        /publishApi/:path/:majorVersion                               controllers.Application.publishApi(path, majorVersion: Boolean, comment)
 
 # Publishes an ICD (subsystem -> target version combination)
-POST        /publishIcd/:subsystem/:version/:target/:targetVersion        controllers.Application.publishIcd(subsystem, version, target, targetVersion)
+POST        /publishIcd/:subsystem/:version/:target/:targetVersion        controllers.Application.publishIcd(subsystem, version, target, targetVersion, comment)
 
 # Websocket to notify client when DB has changed
 GET         /ws                                                           controllers.FileUploadController.ws

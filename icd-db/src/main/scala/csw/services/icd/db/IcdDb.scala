@@ -23,7 +23,7 @@ object IcdDb extends App {
   /**
    * Command line options: [--db <name> --host <host> --port <port>
    * --ingest <dir> --major --component <name> --list [subsystems|hcds|assemblies|all]  --out <outputFile>
-   * --drop [db|component] --versions <icdName> --diff <icdName>:<version1>[,version2]
+   * --drop [db|component] --versions <icdName> --diff <subsystem>:<version1>[,version2]
    * --publishes <path> --subscribes <path>
    * ]
    *
@@ -92,7 +92,7 @@ object IcdDb extends App {
       c.copy(versions = Some(x))
     } text "List the version history of the given ICD"
 
-    opt[String]("diff") valueName "<icdName>:<version1>[,version2]" action { (x, c) ⇒
+    opt[String]("diff") valueName "<subsystem>:<version1>[,version2]" action { (x, c) ⇒
       c.copy(diff = Some(x))
     } text "For the given ICD, list the differences between <version1> and <version2> (or the current version)"
 
@@ -125,7 +125,7 @@ object IcdDb extends App {
   private def run(options: Options): Unit = {
     val db = IcdDb(options.dbName, options.host, options.port)
 
-    options.ingest.foreach(dir ⇒ db.ingest(dir, options.comment, options.majorVersion))
+    options.ingest.foreach(dir ⇒ db.ingest(dir))
     options.list.foreach(list)
     options.outputFile.foreach(output)
     options.drop.foreach(drop)
@@ -190,27 +190,31 @@ object IcdDb extends App {
     // --versions option
     def listVersions(name: String): Unit = {
       for (v ← db.versionManager.getVersions(name)) {
-        println(s"${v.version}\t${v.date.withZone(DateTimeZone.getDefault)}\t${v.comment}")
+        println(s"${v.versionOpt}\t${v.date.withZone(DateTimeZone.getDefault)}\t${v.comment}")
       }
     }
 
     // Check that the version is in the correct format
-    def checkVersion(version: String): Unit = {
-      val versionRegex = """\d+\.\d+""".r
-      version match {
-        case versionRegex(_*) ⇒
-        case _                ⇒ error(s"Bad version format: $version, expected something like 1.0, 2.1")
+    def checkVersion(versionOpt: Option[String]): Unit = {
+      versionOpt match {
+        case Some(version) ⇒
+          val versionRegex = """\d+\.\d+""".r
+          version match {
+            case versionRegex(_*) ⇒
+            case _                ⇒ error(s"Bad version format: $version, expected something like 1.0, 2.1")
+          }
+        case None ⇒
       }
     }
 
-    // --diff option: Compare versions option. Argument format: <icdName>:v1[,v2]
+    // --diff option: Compare versions option. Argument format: <subsystem>:v1[,v2]
     def diffVersions(arg: String): Unit = {
-      val msg = "Expected argument format: <icdName>:v1[,v2]"
+      val msg = "Expected argument format: <subsystemName>:v1[,v2]"
       if (!arg.contains(":") || arg.endsWith(":") || arg.endsWith(",")) error(msg)
       val Array(name, vStr) = arg.split(":")
       if (vStr.isEmpty) error(msg)
       val Array(v1, v2) =
-        if (vStr.contains(",")) vStr.split(",") else Array(vStr, db.versionManager.getCurrentVersion(name))
+        if (vStr.contains(",")) vStr.split(",").map(Some(_)) else Array(Some(vStr), None)
       checkVersion(v1)
       checkVersion(v2)
       for (diff ← db.versionManager.diff(name, v1, v2))
@@ -253,11 +257,9 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
    * in its subdirectories into the database.
    * @param dir the top level directory containing one or more of the the standard set of ICD files
    *            and any number of subdirectories containing ICD files
-   * @param comment optional change comment
-   * @param majorVersion if true, increment the ICD's major version
    */
-  def ingest(dir: File = new File("."), comment: String = "", majorVersion: Boolean = false): List[Problem] = {
-    val results = (dir :: subDirs(dir)).map(ingestOneDir(_, comment, majorVersion))
+  def ingest(dir: File = new File(".")): List[Problem] = {
+    val results = (dir :: subDirs(dir)).map(ingestOneDir)
     val problems = results.flatMap {
       case Left(list) ⇒ list
       case Right(_)   ⇒ None
@@ -272,7 +274,8 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
       if (subsystems.length != 1) {
         multipleSubsystemsError(subsystems)
       } else {
-        versionManager.newVersion(subsystems.head, comment, majorVersion)
+        // XXX Do this on publish instead?
+        //        versionManager.newVersion(subsystems.head, comment, majorVersion)
         Nil
       }
     }
@@ -281,11 +284,9 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
   /**
    * Ingests all files with the standard names (stdNames) in the given directory (only) into the database.
    * @param dir the directory containing the standard set of ICD files
-   * @param comment optional change comment
-   * @param majorVersion if true, increment the ICD's major version
    * @return on error, a list describing the problems, otherwise name of the subsystem for the ICD
    */
-  private[db] def ingestOneDir(dir: File, comment: String, majorVersion: Boolean): Either[List[Problem], String] = {
+  private[db] def ingestOneDir(dir: File): Either[List[Problem], String] = {
     val list = StdConfig.get(dir)
     val subsystems = list.map(getSubsystemName).distinct
     if (subsystems.length != 1) {
@@ -296,7 +297,8 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
         Left(problems)
       } else {
         // XXX TODO: Keep versions of components or only subsystems?
-        versionManager.newVersion(list, comment, majorVersion)
+        // XXX Do this on publish?
+        //        versionManager.newVersion(list, comment, majorVersion)
         Right(subsystems.head)
       }
     }

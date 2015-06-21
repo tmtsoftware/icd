@@ -9,8 +9,15 @@ package icd.web.client
 object Routes {
   val subsystems = "/subsystems"
 
-  def components(subsystem: String, version: String) = s"/components/$subsystem/$version"
-  def componentInfo(subsystem: String, version: String, compName: String) = s"/componentInfo/$subsystem/$version/$compName"
+  def components(subsystem: String, versionOpt: Option[String]) = versionOpt match {
+    case Some("*") | None ⇒ s"/components/$subsystem"
+    case Some(version)    ⇒ s"/components/$subsystem?version=$version"
+  }
+
+  def componentInfo(subsystem: String, compName: String, versionOpt: Option[String]) = versionOpt match {
+    case Some("*") | None ⇒ s"/componentInfo/$subsystem/$compName"
+    case Some(version)    ⇒ s"/componentInfo/$subsystem/$compName?version=$version"
+  }
 
   def apiAsHtml(name: String) = s"/apiAsHtml/$name"
   def apiAsPdf(name: String) = s"/apiAsPdf/$name"
@@ -20,7 +27,9 @@ object Routes {
   def versions(name: String) = s"/versions/$name"
   def versionNames(name: String) = s"/versionNames/$name"
 
-  def publishApi(subsystem: String, version: String) = s"/publishApi/$subsystem/$version"
-  def publishIcd(subsystem: String, version: String, target: String, targetVersion: String) =
-    s"/publishIcd/$subsystem/$version/$target/$targetVersion"
+  def publishApi(path: String, majorVersion: Boolean, comment: String) =
+    s"/publishApi/$path/$majorVersion?comment=$comment"
+
+  def publishIcd(subsystem: String, version: String, target: String, targetVersion: String, comment: String) =
+    s"/publishIcd/$subsystem/$version/$target/$targetVersion?comment=$comment"
 }

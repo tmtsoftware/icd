@@ -112,7 +112,7 @@ case class IcdDbQuery(db: MongoDB) {
 
   // Returns a list of IcdEntry for the ICDs (based on the collection names)
   // (XXX Should the return value be cached?)
-  private def getEntries: List[IcdEntry] = {
+  private[db] def getEntries: List[IcdEntry] = {
     val paths = db.collectionNames().filter(isStdSet).map(IcdPath).toList
     val compMap = paths.map(p ⇒ (p.component, paths.filter(_.component == p.component).map(_.path))).toMap
     val entries = compMap.keys.map(key ⇒ getEntry(key, compMap(key))).toList

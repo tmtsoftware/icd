@@ -26,12 +26,12 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
 
   // Gets the title to display based on the selected source and target subsystems
   private def getTitle(subsystem: SubsystemWithVersion, targetSubsystem: SubsystemWithVersion): String = {
-    if (subsystem.subsystemOpt.isDefined && subsystem.versionOpt.isDefined) {
+    if (subsystem.subsystemOpt.isDefined) {
       val subsys = subsystem.subsystemOpt.get
-      val version = subsystem.versionOpt.get
-      if (targetSubsystem.subsystemOpt.isDefined && targetSubsystem.versionOpt.isDefined) {
+      val version = subsystem.versionOpt.getOrElse("")
+      if (targetSubsystem.subsystemOpt.isDefined) {
         val target = targetSubsystem.subsystemOpt.get
-        val targetVersion = targetSubsystem.versionOpt.get
+        val targetVersion = targetSubsystem.versionOpt.getOrElse("")
         s"Interface from $subsys $version to $target $targetVersion"
       } else s"API for $subsys $version"
     } else ""
@@ -47,15 +47,15 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
    */
   def addComponents(compNames: List[String], filter: Option[List[String]],
                     subsystem: SubsystemWithVersion, targetSubsystem: SubsystemWithVersion): Future[Unit] = {
-    if (subsystem.subsystemOpt.isEmpty || subsystem.versionOpt.isEmpty) Future.successful()
+    if (subsystem.subsystemOpt.isEmpty) Future.successful()
     else {
       val titleStr = getTitle(subsystem, targetSubsystem)
 
       // Note: Want to keep the original order of components in the display
       val f = Future.sequence {
         val subsys = subsystem.subsystemOpt.get
-        val version = subsystem.versionOpt.get
-        for (compName ← compNames) yield Ajax.get(Routes.componentInfo(subsys, version, compName)).map { r ⇒
+        val versionOpt = subsystem.versionOpt
+        for (compName ← compNames) yield Ajax.get(Routes.componentInfo(subsys, compName, versionOpt)).map { r ⇒
           applyFilter(filter, read[ComponentInfo](r.responseText))
         }
       }
@@ -79,12 +79,12 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
   def addComponent(compName: String, filter: Option[List[String]],
                    subsystem: SubsystemWithVersion,
                    targetSubsystem: SubsystemWithVersion): Unit = {
-    if (subsystem.subsystemOpt.isDefined && subsystem.versionOpt.isDefined) {
+    if (subsystem.subsystemOpt.isDefined) {
       val titleStr = getTitle(subsystem, targetSubsystem)
       val subsys = subsystem.subsystemOpt.get
-      val version = subsystem.versionOpt.get
+      val versionOpt = subsystem.versionOpt
 
-      Ajax.get(Routes.componentInfo(subsys, version, compName)).map { r ⇒ // Future!
+      Ajax.get(Routes.componentInfo(subsys, compName, versionOpt)).map { r ⇒ // Future!
         val info = applyFilter(filter, read[ComponentInfo](r.responseText))
         displayComponentInfo(info, titleStr)
       }.recover {
@@ -100,8 +100,8 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
    * @param compName the name of the component
    */
   def setComponent(sv: SubsystemWithVersion, compName: String): Unit = {
-    if (sv.subsystemOpt.isDefined && sv.versionOpt.isDefined) {
-      val path = Routes.componentInfo(sv.subsystemOpt.get, sv.versionOpt.get, compName)
+    if (sv.subsystemOpt.isDefined) {
+      val path = Routes.componentInfo(sv.subsystemOpt.get, compName, sv.versionOpt)
       Ajax.get(path).map { r ⇒
         val info = read[ComponentInfo](r.responseText)
         mainContent.clearContent()

@@ -10,13 +10,14 @@ object ComponentInfo {
    * Query the database for information about the given component
    * @param db used to access the database
    * @param subsystem the subsystem containing the component
-   * @param version the version of the subsystem to use (determines the version of the component)
+   * @param versionOpt the version of the subsystem to use (determines the version of the component):
+   *                   None for unpublished working version
    * @param compName the component name
    * @return an object containing information about the component
    */
-  def apply(db: IcdDb, subsystem: String, version: String, compName: String): shared.ComponentInfo = {
+  def apply(db: IcdDb, subsystem: String, versionOpt: Option[String], compName: String): shared.ComponentInfo = {
     // get the models for this component
-    val modelsList = db.versionManager.getModels(subsystem, version, Some(compName))
+    val modelsList = db.versionManager.getModels(subsystem, versionOpt, Some(compName))
     val description = getDescription(modelsList)
     val publishInfo = for (models ← modelsList.headOption) yield {
       getPublishInfo(db, models)

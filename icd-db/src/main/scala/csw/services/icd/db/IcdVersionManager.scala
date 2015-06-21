@@ -7,7 +7,6 @@ import gnieh.diffson.{ JsonDiff, JsonPatch }
 import net.liftweb.json.JsonAST.{ JNothing, JValue }
 import net.liftweb.json.JsonParser
 import org.joda.time.{ DateTimeZone, DateTime }
-import csw.services.icd.StdName._
 import csw.services.icd.model._
 
 /**
@@ -44,13 +43,13 @@ object IcdVersionManager {
 
   /**
    * Describes a version of a subsystem or component
-   * @param version the subsystem or component version (major.minor)
+   * @param versionOpt the subsystem or component version (major.minor), if published
    * @param user the user that created the version
    * @param comment a change comment
    * @param date the date of the change
    * @param parts names and versions of the subsystem or component parts
    */
-  case class VersionInfo(version: String, user: String, comment: String, date: DateTime, parts: List[PartInfo]) {
+  case class VersionInfo(versionOpt: Option[String], user: String, comment: String, date: DateTime, parts: List[PartInfo]) {
     // Gets the version of the part with the given path
     def getPartVersion(path: String): Option[Int] = {
       val list = for (part ← parts if part.path == path) yield part.version
@@ -62,7 +61,7 @@ object IcdVersionManager {
     // Creates a VersionInfo instance from an object in the database
     def apply(obj: DBObject): VersionInfo =
       VersionInfo(
-        version = obj(versionStrKey).toString,
+        versionOpt = Some(obj(versionStrKey).toString),
         user = obj("user").toString,
         comment = obj("comment").toString,
         date = obj("date").asInstanceOf[DateTime].withZone(DateTimeZone.UTC),
@@ -92,38 +91,29 @@ case class IcdVersionManager(db: MongoDB) {
    * This creates a Mongo collection named "name.v" that contains the subsystem or component version (starting with "1.0"),
    * the user and date as well as a list of the names and versions of each of the subsystem or component parts.
    *
-   * @param name the name of subsystem (or subsystem.component)
+   * @param subsystem the subsystem
+   * @param compNameOpt if defined, publish a new version of the component, otherwise the subsystem
+   * @param versions list of (name, version) pairs for the collections belonging to the subsystem or component
    * @param comment change comment
    * @param majorVersion if true, increment the subsystem or component's major version
    */
-  def newVersion(name: String, comment: String, majorVersion: Boolean): Unit = {
+  private def newVersion(subsystem: String, compNameOpt: Option[String], versions: List[(String, Int)],
+                         comment: String, majorVersion: Boolean): Unit = {
 
-    // XXX TODO: Only insert new version if there were changes!
-
-    val collName = versionCollectionName(name)
-
-    // Get the paths of all the subsystem or component parts
-    val paths = getPaths(name)
-
-    // Generate a list of maps with name and version each current subsystem or component part (to store with this version)
-    def getVersion(path: String): Int = {
-      db(path).head(versionKey).asInstanceOf[Int]
-    }
-    val parts = paths.map(p ⇒ (p, getVersion(p))).map(x ⇒ Map("name" -> x._1, versionStrKey -> x._2).asDBObject)
-
-    //    if (db.collectionExists(collName)) ... XXX TODO check if parts is different than what is in collname
-
+    println(s"XXX newVersion $subsystem $compNameOpt versions=$versions")
     // Start with "1.0" as the subsystem or component version, then increment the minor version automatically each time.
     // If the user requests a new major version, increment that and reset minor version to 0.
-    def incrVersion(version: String): String = {
-      val Array(maj, min) = version.split("\\.")
-      if (majorVersion) s"${maj.toInt + 1}.0" else s"$maj.${min.toInt + 1}"
+    def incrVersion(versionOpt: Option[String]): String = {
+      versionOpt match {
+        case Some(v) ⇒
+          val Array(maj, min) = v.split("\\.")
+          if (majorVersion) s"${maj.toInt + 1}.0" else s"$maj.${min.toInt + 1}"
+        case None ⇒ "1.0"
+      }
     }
 
-    val version = if (db.collectionExists(collName))
-      incrVersion(getCurrentVersion(name))
-    else "1.0"
-
+    val parts = versions.map(v ⇒ Map("name" -> v._1, versionStrKey -> v._2).asDBObject)
+    val version = incrVersion(getLatestPublishedVersion(subsystem, compNameOpt))
     val now = new DateTime(DateTimeZone.UTC)
     val user = System.getProperty("user.name") // XXX TODO Which user name to use for web app? (Need user login...)
     val obj = Map(
@@ -132,87 +122,116 @@ case class IcdVersionManager(db: MongoDB) {
       "comment" -> comment,
       "date" -> now,
       "parts" -> parts).asDBObject
-    db(collName).insert(obj, WriteConcern.SAFE)
+    val path = compNameOpt.fold(subsystem)(compName ⇒ s"$subsystem.$compName")
+    db(versionCollectionName(path)).insert(obj, WriteConcern.SAFE)
   }
 
+  //  /**
+  //   * Increments the version for the components in the list.
+  //   * This creates a Mongo collection named "name.v" that contains the subsystem or component version (starting with "1.0"),
+  //   * the user and date as well as a list of the names and versions of each of the subsystem or component parts.
+  //   *
+  //   * @param list list of standard subsystem or component config files
+  //   * @param comment change comment
+  //   * @param majorVersion if true, increment the subsystem or component's major version
+  //   */
+  //  def newVersion(list: List[StdConfig], comment: String, majorVersion: Boolean): Unit = {
+  //    getComponentNames(list).foreach(newVersion(_, comment, majorVersion))
+  //  }
+
+  //  /**
+  //   * Returns the list of unique component names found in the given list.
+  //   * @param list list of subsystem or component model files packaged as StdConfig object
+  //   * @return the list of component names found
+  //   */
+  //  private def getComponentNames(list: List[StdConfig]): List[String] = {
+  //    list.flatMap { stdConfig ⇒
+  //      if (stdConfig.stdName.isSubsystemModel)
+  //        None
+  //      else
+  //        Some(BaseModel(stdConfig.config).component)
+  //    }.distinct
+  //  }
+
   /**
-   * Increments the version for the components in the list.
-   * This creates a Mongo collection named "name.v" that contains the subsystem or component version (starting with "1.0"),
-   * the user and date as well as a list of the names and versions of each of the subsystem or component parts.
-   *
-   * @param list list of standard subsystem or component config files
-   * @param comment change comment
-   * @param majorVersion if true, increment the subsystem or component's major version
+   * Returns a list of information about the versions of the subsystem
+   * @param subsystem the name of the subsystem
    */
-  def newVersion(list: List[StdConfig], comment: String, majorVersion: Boolean): Unit = {
-    getComponentNames(list).foreach(newVersion(_, comment, majorVersion))
+  def getVersions(subsystem: String): List[VersionInfo] = {
+    val current = getVersion(subsystem, None, None).toList
+    val collName = versionCollectionName(subsystem)
+    if (db.collectionExists(collName)) {
+      val published = for (obj ← db(collName).find().sort(idKey -> -1)) yield VersionInfo(obj)
+      current ::: published.toList
+    } else current
   }
 
   /**
-   * Returns the list of unique component names found in the given list.
-   * @param list list of subsystem or component model files packaged as StdConfig object
-   * @return the list of component names found
-   */
-  private def getComponentNames(list: List[StdConfig]): List[String] = {
-    list.flatMap { stdConfig ⇒
-      if (stdConfig.stdName.isSubsystemModel)
-        None
-      else
-        Some(BaseModel(stdConfig.config).component)
-    }.distinct
-  }
-
-  /**
-   * Returns a list of information about the versions of the subsystem or component
-   * @param path the name of the subsystem (or subsystem.component)
-   */
-  def getVersions(path: String): List[VersionInfo] = {
-    val collName = versionCollectionName(path)
-    val result = for (obj ← db(collName).find().sort(idKey -> -1)) yield VersionInfo(obj)
-    result.toList
-  }
-
-  /**
-   * Returns a list of version names of the subsystem or component
+   * Returns a list of published version names of the subsystem or component
    * @param path the name of the subsystem (or subsystem.component)
    */
   def getVersionNames(path: String): List[String] = {
     val collName = versionCollectionName(path)
-    val result = for (obj ← db(collName).find().sort(idKey -> -1)) yield obj(versionStrKey).toString
-    result.toList
+    if (db.collectionExists(collName)) {
+      val result = for (obj ← db(collName).find().sort(idKey -> -1)) yield obj(versionStrKey).toString
+      result.toList
+    } else Nil
   }
 
   /**
    * Returns information about the given version of the given subsystem or component
-   * @param path the name of the subsystem (or subsystem.component)
-   * @param version the version of interest
+   * @param subsystem the name of the subsystem (XXX TODO? or subsystem.component)
+   * @param versionOpt the version of interest (None for the current, unpublished version)
+   * @param compNameOpt if defined, return the models for the component, otherwise for the subsystem
    */
-  def getVersion(path: String, version: String): Option[VersionInfo] = {
-    val collName = versionCollectionName(path)
-    db(collName).findOne(versionStrKey -> version).map(VersionInfo(_))
+  def getVersion(subsystem: String, versionOpt: Option[String], compNameOpt: Option[String]): Option[VersionInfo] = {
+    val path = compNameOpt.fold(subsystem)(compName ⇒ s"$subsystem.$compName")
+    println(s"XXX getVersion $subsystem $versionOpt $compNameOpt path = $path")
+    versionOpt match {
+      case Some(version) ⇒ // published version
+        val collName = versionCollectionName(path)
+        if (db.collectionExists(collName)) {
+          db(collName).findOne(versionStrKey -> version).map(VersionInfo(_))
+        } else {
+          println(s"XXX collection $collName does not exist")
+          None // not found
+        }
+      case None ⇒ // current, unpublished version
+        def getPartVersion(path: String): Int = db(path).head(versionKey).asInstanceOf[Int]
+        def filter(p: IcdPath) = p.subsystem == subsystem && compNameOpt.fold(true)(_ ⇒ p.component == path)
+        val paths = db.collectionNames().filter(isStdSet).map(IcdPath).filter(filter).map(_.path).toList
+        val now = new DateTime(DateTimeZone.UTC)
+        val user = System.getProperty("user.name")
+        val comment = "Working version, unpublished"
+        val parts = paths.map(p ⇒ (p, getPartVersion(p))).map(x ⇒ PartInfo(x._1, x._2))
+        println(s"XXX path = $path, paths = $paths, parts = $parts")
+        Some(VersionInfo(None, user, comment, now, parts))
+    }
   }
 
   /**
-   * Returns the current version of the given subsystem or component
-   * @param path the name of the subsystem (or subsystem.component)
+   * Returns the version name of the latest, published version of the given subsystem or component, if found
+   * @param subsystem the name of the subsystem
+   * @param compNameOpt if defined, the name of the component
    */
-  def getCurrentVersion(path: String): String =
-    db(versionCollectionName(path)).find().sort(idKey -> -1).one().get(versionStrKey).toString
-
-  // Returns a list of all of the parts (collections) belonging to the named subsystem
-  private def getPaths(subsystem: String): List[String] =
-    db.collectionNames().filter(isStdSet).map(IcdPath).filter(_.subsystem == subsystem).map(_.path).toList
+  def getLatestPublishedVersion(subsystem: String, compNameOpt: Option[String]): Option[String] = {
+    val path = compNameOpt.fold(subsystem)(compName ⇒ s"$subsystem.$compName")
+    val collName = versionCollectionName(path)
+    if (db.collectionExists(collName))
+      Some(db(collName).find().sort(idKey -> -1).one().get(versionStrKey).toString)
+    else None
+  }
 
   /**
    * Compares all of the named subsystem or component parts and returns a list of patches describing any differences.
    * @param name the root subsystem or component name
-   * @param v1 the first version to compare
-   * @param v2 the second version to compare
+   * @param v1 the first version to compare (None for the current, unpublished version)
+   * @param v2 the second version to compare (None for the current, unpublished version)
    * @return a list of diffs, one for each subsystem or component part
    */
-  def diff(name: String, v1: String, v2: String): List[VersionDiff] = {
-    val v1Info = getVersion(name, v1)
-    val v2Info = getVersion(name, v2)
+  def diff(name: String, v1: Option[String], v2: Option[String]): List[VersionDiff] = {
+    val v1Info = getVersion(name, v1, None)
+    val v2Info = getVersion(name, v2, None)
     if (v1Info.isEmpty || v2Info.isEmpty) Nil
     else {
       val result = for {
@@ -255,7 +274,7 @@ case class IcdVersionManager(db: MongoDB) {
     if (json1 == json2) None else Some(VersionDiff(path, JsonDiff.diff(json1, json2)))
   }
 
-  // Compares the given object with the current version in the collection
+  // Compares the given object with the current (head) version in the collection
   // (ignoring version and id values)
   def diff(coll: MongoCollection, obj: DBObject): Option[VersionDiff] = {
     val json1 = parseNoVersionOrId(coll.head.toString)
@@ -266,8 +285,8 @@ case class IcdVersionManager(db: MongoDB) {
   /**
    * Returns a list of all the component names in the DB belonging to the given subsystem version
    */
-  def getComponentNames(subsystem: String, version: String): List[String] = {
-    getVersion(subsystem, version) match {
+  def getComponentNames(subsystem: String, versionOpt: Option[String]): List[String] = {
+    getVersion(subsystem, versionOpt, None) match {
       case Some(versionInfo) ⇒
         versionInfo.parts.map(_.path)
           .map(IcdPath)
@@ -296,14 +315,16 @@ case class IcdVersionManager(db: MongoDB) {
    * (In this case the definitions are stored in sub-collections in the DB).
    *
    * @param subsystem the subsystem containing the component
-   * @param version the subsystem version
+   * @param versionOpt the subsystem version (None for the current, unpublished version)
    * @param compNameOpt if defined, return the models for the component, otherwise for the subsystem
    * @return a list of IcdModels for the given version of the subsystem or component
    */
-  def getModels(subsystem: String, version: String, compNameOpt: Option[String]): List[IcdModels] = {
+  def getModels(subsystem: String, versionOpt: Option[String], compNameOpt: Option[String]): List[IcdModels] = {
 
     // Holds all the model classes associated with a single ICD entry.
     case class Models(versionMap: Map[String, Int], entry: IcdEntry) extends IcdModels {
+      println(s"XXX Models: versionMap = $versionMap, entry = $entry")
+
       // Parses the data from collection s (or an older version of it) and returns a Config object for it
       private def parse(s: String): Config = getConfig(getVersionOf(s, versionMap(s)))
 
@@ -314,7 +335,7 @@ case class IcdVersionManager(db: MongoDB) {
       override val componentModel = entry.component.map(s ⇒ ComponentModel(parse(s)))
     }
 
-    getVersion(subsystem, version) match {
+    getVersion(subsystem, versionOpt, compNameOpt) match {
       case Some(versionInfo) ⇒
         val versionMap = versionInfo.parts.map(v ⇒ v.path -> v.version).toMap
         val entries = getEntries(versionInfo.parts)
@@ -324,16 +345,42 @@ case class IcdVersionManager(db: MongoDB) {
   }
 
   /**
-   * Publishes the given version of the given subsystem
+   * Publishes the given subsystem
+   * @param subsystem the name of subsystem
+   * @param comment change comment
+   * @param majorVersion if true, increment the subsystem's major version
    */
-  def publishApi(subsystem: String, version: String): Unit = {
+  def publishApi(subsystem: String, comment: String, majorVersion: Boolean = false): Unit = {
+    // Save any of the subsystem's collections that changed
+    val icdPaths = db.collectionNames().filter(isStdSet).map(IcdPath).filter(_.subsystem == subsystem)
+    val paths = icdPaths.map(_.path).toList
+    val versions = for (path ← paths) yield {
+      val coll = db(path)
+      val obj = coll.head
+      val versionCollName = versionCollectionName(path)
+      val version = obj(versionKey).asInstanceOf[Int]
+      if (!db.collectionExists(versionCollName) || diff(db(versionCollName), obj).isDefined) {
+        val v = db(versionCollName)
+        v.insert(obj, WriteConcern.SAFE)
+        obj.put(versionKey, version + 1)
+      }
+      (path, version)
+    }
 
+    newVersion(subsystem, None, versions, comment, majorVersion)
+
+    // XXX needed?
+    getComponentNames(subsystem, None).foreach { name ⇒
+      val prefix = s"$subsystem.$name."
+      val compVersions = versions.filter(p ⇒ p._1.startsWith(prefix))
+      newVersion(subsystem, Some(name), compVersions, comment, majorVersion)
+    }
   }
 
   /**
    * Publishes an ICD from the given version of the given subsystem to the target subsystem and version
    */
-  def publishIcd(subsystem: String, version: String, target: String, targetVersion: String): Unit = {
+  def publishIcd(subsystem: String, version: String, target: String, targetVersion: String, comment: String): Unit = {
 
   }
 }
