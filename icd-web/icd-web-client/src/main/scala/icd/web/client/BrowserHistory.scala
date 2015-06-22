@@ -1,5 +1,6 @@
 package icd.web.client
 
+import icd.web.client.Components.ComponentLink
 import org.scalajs.dom
 import org.scalajs.dom._
 import shared.IcdVersion
@@ -50,11 +51,11 @@ object BrowserHistory {
  * @param targetSubsystem target subsystem selected in the right box
  * @param icdOpt the ICD with version, if one was selected
  * @param sourceComponents source subsystem components whose checkboxes are checked
- * @param linkComponent set to the name of the component displayed via a subscriber/publisher/command link
+ * @param linkComponent set to the subsystem and name of the component displayed via a subscriber/publisher/command link
  * @param viewType indicates the type of data being displayed
  */
 case class BrowserHistory(sourceSubsystem: SubsystemWithVersion, targetSubsystem: SubsystemWithVersion,
-                          icdOpt: Option[IcdVersion], sourceComponents: List[String], linkComponent: Option[String],
+                          icdOpt: Option[IcdVersion], sourceComponents: List[String], linkComponent: Option[ComponentLink],
                           viewType: ViewType) {
 
   // Pushes the current application history state (Note that the title is ignored in some browsers)

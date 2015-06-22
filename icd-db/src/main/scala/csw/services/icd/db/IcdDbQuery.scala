@@ -94,11 +94,12 @@ object IcdDbQuery {
    * Describes a subscription
    *
    * @param componentName the name of the component that subscribes to the item
+   * @param subsystem the component's subsystem
    * @param subscribeType one of Telemetry, Events, Alarms, etc.
    * @param name the name of the item being subscribed to
-   * @param subsystem the subsystem to which the named item belongs
+   * @param itemSubsystem the subsystem to which the named item belongs
    */
-  case class Subscribed(componentName: String, subscribeType: PublishType, name: String, subsystem: String)
+  case class Subscribed(componentName: String, subsystem: String, subscribeType: PublishType, name: String, itemSubsystem: String)
 
   implicit def toDbObject(query: (String, Any)): DBObject = MongoDBObject(query)
 }
@@ -176,7 +177,7 @@ case class IcdDbQuery(db: MongoDB) {
     queryComponents("componentType" -> componentType)
 
   /**
-   * Returns a list of all component model objects, one for each component ICD in the database
+   * Returns a list of all component model objects, one for each component in the database
    */
   def getComponents: List[ComponentModel] = {
     for (entry ← getEntries if entry.component.isDefined)
@@ -392,11 +393,11 @@ case class IcdDbQuery(db: MongoDB) {
   def getSubscribedTo(name: String): List[Subscribed] = {
     getSubscribeModel(name) match {
       case Some(subscribeModel) ⇒
-        List(subscribeModel.telemetryList.map(i ⇒ Subscribed(name, Telemetry, i.name, i.subsystem)),
-          subscribeModel.eventList.map(i ⇒ Subscribed(name, Events, i.name, i.subsystem)),
-          subscribeModel.eventStreamList.map(i ⇒ Subscribed(name, EventStreams, i.name, i.subsystem)),
-          subscribeModel.alarmList.map(i ⇒ Subscribed(name, Alarms, i.name, i.subsystem)),
-          subscribeModel.healthList.map(i ⇒ Subscribed(name, Health, i.name, i.subsystem))).flatten
+        List(subscribeModel.telemetryList.map(i ⇒ Subscribed(name, subscribeModel.subsystem, Telemetry, i.name, i.subsystem)),
+          subscribeModel.eventList.map(i ⇒ Subscribed(name, subscribeModel.subsystem, Events, i.name, i.subsystem)),
+          subscribeModel.eventStreamList.map(i ⇒ Subscribed(name, subscribeModel.subsystem, EventStreams, i.name, i.subsystem)),
+          subscribeModel.alarmList.map(i ⇒ Subscribed(name, subscribeModel.subsystem, Alarms, i.name, i.subsystem)),
+          subscribeModel.healthList.map(i ⇒ Subscribed(name, subscribeModel.subsystem, Health, i.name, i.subsystem))).flatten
       case None ⇒ Nil
     }
   }

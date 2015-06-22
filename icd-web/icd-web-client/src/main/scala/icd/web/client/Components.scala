@@ -8,10 +8,26 @@ import upickle._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{ Failure, Success }
+import Components._
 
 object Components {
   // Id of component info for given component name
   def getComponentInfoId(compName: String) = s"$compName-info"
+
+  /**
+   * Information about a link to a component
+   * @param subsystem the component's subsystem
+   * @param compName the component name
+   */
+  case class ComponentLink(subsystem: String, compName: String)
+
+  trait ComponentListener {
+    /**
+     * Called when a link for the component is clicked
+     * @param link conatins the component's subsystem and name
+     */
+    def componentSelected(link: ComponentLink): Unit
+  }
 }
 
 /**
@@ -19,7 +35,7 @@ object Components {
  * @param mainContent used to display information about selected components
  * @param listener called when the user clicks on a component link in the (subscriber, publisher, etc)
  */
-case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
+case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   import Components._
   import Subsystem._
@@ -133,7 +149,7 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
           p.otherComponents.exists(s ⇒
             names.contains(s.compName)))
 
-        ComponentInfo(info.name, info.description, publishInfo, subscribeInfo,
+        ComponentInfo(info.subsystem, info.compName, info.description, publishInfo, subscribeInfo,
           commandsReceived, commandsSent)
       case None ⇒ info
     }
@@ -160,7 +176,7 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
         mainContent.clearContent()
         mainContent.setTitle(titleStr)
       }
-      val oldElement = $id(getComponentInfoId(info.name))
+      val oldElement = $id(getComponentInfoId(info.compName))
       if (oldElement == null) {
         mainContent.appendElement(markup)
       } else {
@@ -177,7 +193,7 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
 
     // Action when user clicks on a subscriber link
     def clickedOnSubscriber(info: SubscribeInfo)(e: dom.Event) = {
-      listener(info.compName)
+      listener.componentSelected(ComponentLink(info.subsystem, info.compName))
     }
 
     // Makes the link for a subscriber component in the table
@@ -216,7 +232,7 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
 
     // Action when user clicks on a subscriber link
     def clickedOnPublisher(info: SubscribeInfo)(e: dom.Event) = {
-      listener(info.compName)
+      listener.componentSelected(ComponentLink(info.subsystem, info.compName))
     }
 
     // Makes the link for a publisher component in the table
@@ -254,7 +270,7 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
 
     // Action when user clicks on a sender link
     def clickedOnSender(sender: OtherComponent)(e: dom.Event) = {
-      listener(sender.compName)
+      listener.componentSelected(ComponentLink(sender.subsystem, sender.compName))
     }
 
     // Makes the link for a sender component in the table
@@ -288,7 +304,7 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
 
     // Action when user clicks on a receiver link
     def clickedOnReceiver(receiver: OtherComponent)(e: dom.Event) = {
-      listener(receiver.compName)
+      listener.componentSelected(ComponentLink(receiver.subsystem, receiver.compName))
     }
 
     // Makes the link for a receiver component in the table
@@ -319,13 +335,13 @@ case class Components(mainContent: MainContent, listener: String ⇒ Unit) {
   private def markupForComponent(info: ComponentInfo) = {
     import scalatags.JsDom.all._
 
-    div(cls := "container", id := getComponentInfoId(info.name))(
-      h2(info.name),
+    div(cls := "container", id := getComponentInfoId(info.compName))(
+      h2(info.compName),
       p(info.description),
-      publishMarkup(info.name, info.publishInfo),
-      subscribeMarkup(info.name, info.subscribeInfo),
-      receivedCommandsMarkup(info.name, info.commandsReceived),
-      sentCommandsMarkup(info.name, info.commandsSent))
+      publishMarkup(info.compName, info.publishInfo),
+      subscribeMarkup(info.compName, info.subscribeInfo),
+      receivedCommandsMarkup(info.compName, info.commandsReceived),
+      sentCommandsMarkup(info.compName, info.commandsSent))
   }
 
 }

@@ -32,7 +32,7 @@ object ComponentInfo {
       getCommandsSent(db, models)
     }
 
-    shared.ComponentInfo(compName, description,
+    shared.ComponentInfo(subsystem, compName, description,
       publishInfo.toList.flatten,
       subscribeInfo.toList.flatten,
       commandsReceived.getOrElse(Nil),
@@ -106,7 +106,9 @@ object ComponentInfo {
       val info = db.query.publishes(si.name, publishType).map { pi ⇒
         SubscribeInfo(publishType.toString, si.name, pi.item.description, si.subsystem, pi.componentName)
       }
-      if (info.nonEmpty) info else List(SubscribeInfo(publishType.toString, si.name, "", si.subsystem, ""))
+      if (info.nonEmpty) info else {
+        List(SubscribeInfo(publishType.toString, si.name, "", si.subsystem, ""))
+      }
     }
 
     val result = models.subscribeModel.map { m ⇒

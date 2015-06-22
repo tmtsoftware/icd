@@ -24,17 +24,17 @@ class ApplicationSpec extends Specification {
 
   "Application" should {
 
-//    "send 404 on a bad request" in new WithApplication{
-//      route(FakeRequest(GET, "/boum")) must beNone
-//    }
-//
-//    "render the index page" in new WithApplication{
-//      val home = route(FakeRequest(GET, "/")).get
-//
-//      status(home) must equalTo(OK)
-//      contentType(home) must beSome.which(_ == "text/html")
-//      contentAsString(home) must contain ("shouts out")
-//    }
+    //    "send 404 on a bad request" in new WithApplication{
+    //      route(FakeRequest(GET, "/boum")) must beNone
+    //    }
+    //
+    //    "render the index page" in new WithApplication{
+    //      val home = route(FakeRequest(GET, "/")).get
+    //
+    //      status(home) must equalTo(OK)
+    //      contentType(home) must beSome.which(_ == "text/html")
+    //      contentAsString(home) must contain ("shouts out")
+    //    }
 
     "Get pub/sub info from database" in {
       val db = IcdDb("test")
@@ -43,16 +43,21 @@ class ApplicationSpec extends Specification {
       // ingest examples/NFIRAOS into the DB
       val problems = db.ingest(getTestDir("../examples/NFIRAOS"))
       for (p ← problems) println(p)
-      problems must be empty
 
-      val info = controllers.ComponentInfo(db, "ndme")
-      info.name must equalTo("ndme")
+      val problems2 = db.ingest(getTestDir("../examples/TCS"))
+      for (p ← problems2) println(p)
+
+      val info = controllers.ComponentInfo(db, "NFIRAOS", None, "envCtrl")
+      info.compName must equalTo("envCtrl")
       info.publishInfo must not be empty
-      info.publishInfo.foreach { pubInfo =>
-        println(s"ndme publishes ${pubInfo.name}")
+      info.publishInfo.foreach { pubInfo ⇒
+        println(s"envCtrl publishes ${pubInfo.name}")
+        pubInfo.subscribers.foreach { subInfo ⇒
+          println(s"${subInfo.compName} from ${subInfo.subsystem} subscribes to ${subInfo.name}")
+        }
       }
-      info.subscribeInfo.foreach { subInfo =>
-        println(s"ndme subscribes to ${subInfo.name} from ${subInfo.subsystem}")
+      info.subscribeInfo.foreach { subInfo ⇒
+        println(s"envCtrl subscribes to ${subInfo.name} from ${subInfo.subsystem}")
       }
       ok
     }

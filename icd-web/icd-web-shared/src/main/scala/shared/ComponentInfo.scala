@@ -2,14 +2,16 @@ package shared
 
 /**
  * ICD Component information passed to client
- * @param name component name
+ * @param subsystem subsystem name
+ * @param compName component name
  * @param description component description
  * @param publishInfo list of items published by the component
  * @param subscribeInfo list of items the component subscribes to
  * @param commandsReceived list of commands the component can receive
  * @param commandsSent list of commands the component can send
  */
-case class ComponentInfo(name: String,
+case class ComponentInfo(subsystem: String,
+                         compName: String,
                          description: String,
                          publishInfo: List[PublishInfo],
                          subscribeInfo: List[SubscribeInfo],

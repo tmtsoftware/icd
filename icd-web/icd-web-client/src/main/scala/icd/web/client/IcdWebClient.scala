@@ -18,6 +18,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import BrowserHistory._
 import Subsystem._
 import IcdChooser._
+import Components._
 
 /**
  * Main class for the ICD web app.
@@ -36,7 +37,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private val targetSubsystem = Subsystem(TargetSubsystemListener, labelStr = "Target", msg = "All", removeMsg = false)
   private val icdChooser = IcdChooser(IcdChooserListener)
   private val mainContent = MainContent()
-  private val components = Components(mainContent, componentLinkSelected())
+  private val components = Components(mainContent, ComponentLinkSelectionHandler)
   private val sidebar = Sidebar(LeftSidebarListener)
 
   private val fileUploadItem = FileUploadItem(csrfToken, inputDirSupported = inputDirSupported, uploadSelected())
@@ -131,26 +132,24 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
         pushState(viewType = ComponentView)
       }
     }
-
   }
 
   /**
    * Called when a component is selected in one of the publisher/subscriber/command tables.
-   * @param componentName the component name
    */
-  private def componentLinkSelected(saveHistory: Boolean = true)(componentName: String): Unit = {
+  private object ComponentLinkSelectionHandler extends ComponentListener {
+    def componentSelected(link: ComponentLink): Unit = {
+      val sv = SubsystemWithVersion(Some(link.subsystem), None) // XXX where to get version?
+      components.setComponent(sv, link.compName)
+      pushState(viewType = ComponentLinkView, linkComponent = Some(link))
 
-    // XXX TODO FIXME: subsystem and version should be in link (can refer to any subsystem and version)!
-    val tempSubsystem = subsystem.getSubsystemWithVersion
-
-    components.setComponent(tempSubsystem, componentName)
-    if (saveHistory) pushState(viewType = ComponentLinkView, linkComponent = Some(componentName))
+    }
   }
 
   /**
    * Push the current app state for the browser history
    */
-  private def pushState(viewType: ViewType, linkComponent: Option[String] = None): Unit = {
+  private def pushState(viewType: ViewType, linkComponent: Option[ComponentLink] = None): Unit = {
     val hist = BrowserHistory(
       subsystem.getSubsystemWithVersion,
       targetSubsystem.getSubsystemWithVersion,
@@ -175,14 +174,17 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
       } {
         val changed = sidebar.setSelectedComponents(hist.sourceComponents)
         hist.viewType match {
-          case UploadView        ⇒ uploadSelected(saveHistory = false)()
-          case PublishView       ⇒ publishItemSelected(saveHistory = false)()
-          case HtmlView          ⇒ viewIcdAsHtml(saveHistory = false)()
-          case PdfView           ⇒ viewIcdAsPdf(saveHistory = false)()
-          case VersionView       ⇒ showVersionHistory(saveHistory = false)()
-          case ComponentView     ⇒ if (changed) updateComponentDisplay()
-          case IcdView           ⇒ if (changed) updateComponentDisplay()
-          case ComponentLinkView ⇒ hist.linkComponent.foreach(componentLinkSelected(saveHistory = false))
+          case UploadView    ⇒ uploadSelected(saveHistory = false)()
+          case PublishView   ⇒ publishItemSelected(saveHistory = false)()
+          case HtmlView      ⇒ viewIcdAsHtml(saveHistory = false)()
+          case PdfView       ⇒ viewIcdAsPdf(saveHistory = false)()
+          case VersionView   ⇒ showVersionHistory(saveHistory = false)()
+          case ComponentView ⇒ if (changed) updateComponentDisplay()
+          case IcdView       ⇒ if (changed) updateComponentDisplay()
+          case ComponentLinkView ⇒ hist.linkComponent.foreach { link ⇒
+            val sv = SubsystemWithVersion(Some(link.subsystem), None) // XXX where to get version?
+            components.setComponent(sv, link.compName)
+          }
         }
       }
     }

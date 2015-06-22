@@ -11,7 +11,7 @@ GET         /subsystems                                                   contro
 # Gets a list of components belonging to the given version of the given subsystem
 GET         /components/:subsystem                                        controllers.Application.components(subsystem, version: Option[String])
 
-# Gets information about a given component in a iven version of the given subsystem
+# Gets information about a given component in a given version of the given subsystem
 GET         /componentInfo/:subsystem/:compName                           controllers.Application.componentInfo(subsystem, compName, version: Option[String])
 
 # Gets the HTML for the given component

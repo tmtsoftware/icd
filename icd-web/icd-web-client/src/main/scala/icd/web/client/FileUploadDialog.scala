@@ -151,9 +151,9 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
 
     // Only Chrome supports uploading8 directories. For other browsers, use zip file upload
     val dirMsg = if (inputDirSupported)
-      "Here you can select the top level directory containing the ICD to upload."
+      "Here you can select the top level directory containing the subsystem or component files to upload."
     else
-      "Here you can select a zip file of the top level directory containing the ICD to upload."
+      "Here you can select a zip file of the top level directory containing the subsystem or component files to upload."
     val dirLabel = if (inputDirSupported) "ICD Directory" else "Zip file containing ICD Directory"
 
     val acceptSuffix = if (inputDirSupported) "" else ".zip,application/zip"
