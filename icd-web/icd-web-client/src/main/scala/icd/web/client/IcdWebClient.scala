@@ -179,8 +179,8 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
           case HtmlView      ⇒ viewIcdAsHtml(saveHistory = false)()
           case PdfView       ⇒ viewIcdAsPdf(saveHistory = false)()
           case VersionView   ⇒ showVersionHistory(saveHistory = false)()
-          case ComponentView ⇒ if (changed) updateComponentDisplay()
-          case IcdView       ⇒ if (changed) updateComponentDisplay()
+          case ComponentView ⇒ updateComponentDisplay()
+          case IcdView       ⇒ updateComponentDisplay()
           case ComponentLinkView ⇒ hist.linkComponent.foreach { link ⇒
             val sv = SubsystemWithVersion(Some(link.subsystem), None) // XXX where to get version?
             components.setComponent(sv, link.compName)
