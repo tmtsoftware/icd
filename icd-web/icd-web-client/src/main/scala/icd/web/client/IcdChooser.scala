@@ -50,14 +50,6 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   }
 
   /**
-   * Reset to the default setting
-   */
-  def reset(): Unit = {
-    icdItem.value = emptyOptionMsg
-    versionItem.setAttribute("hidden", "true")
-  }
-
-  /**
    * Returns true if the combobox is displaying the default item (i.e.: the initial item, no selection)
    */
   def isDefault: Boolean = icdItem.selectedIndex == 0
@@ -109,7 +101,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
 
   /**
    * Sets the selected ICD and version.
-   * @param icdVersion the ICD name and version to set
+   * @param icdVersionOpt the ICD name and version to set, or None to set none
    * @param notifyListener if true, notify the listener
    * @param saveHistory if true, save the current state to the browser history
    * @return a future indicating when any event handlers have completed
@@ -120,16 +112,17 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
     import upickle._
     icdVersionOpt match {
       case Some(icdVersion) ⇒
-        if (getSelectedIcdVersion.contains(icdVersion))
-          Future.successful()
-        else {
-          icdItem.value = write(IcdName(icdVersion.subsystem, icdVersion.target)) // JSON
-          versionItem.value = write(icdVersion) // JSON
-          if (notifyListener)
-            listener.icdSelected(Some(icdVersion), saveHistory)
-          else Future.successful()
-        }
-      case None ⇒ Future.successful()
+        icdItem.value = write(IcdName(icdVersion.subsystem, icdVersion.target)) // JSON
+        versionItem.value = write(icdVersion) // JSON
+        if (notifyListener)
+          listener.icdSelected(icdVersionOpt, saveHistory)
+        else Future.successful()
+      case None ⇒
+        icdItem.value = emptyOptionMsg
+        versionItem.setAttribute("hidden", "true")
+        if (notifyListener)
+          listener.icdSelected(None, saveHistory)
+        else Future.successful()
     }
   }
 
@@ -193,14 +186,12 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
     getSelectedIcd match {
       case Some(icdName) ⇒
         getIcdVersionOptions(icdName).map { list ⇒ // Future!
-          println(s"XXX ICDs = $list")
           updateIcdVersionOptions(list)
           versionItem.removeAttribute("hidden")
         }.recover {
           case ex ⇒ ex.printStackTrace()
         }
       case None ⇒
-        println(s"XXX no ICD selected")
         Future.successful()
     }
   }

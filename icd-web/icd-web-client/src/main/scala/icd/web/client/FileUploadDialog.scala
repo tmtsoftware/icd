@@ -32,12 +32,6 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
       onchange := fileSelectHandler _).render
   }
 
-  //  // Upload comment box
-  //  private val commentBox = {
-  //    import scalatags.JsDom.all._
-  //    textarea(cls := "form-control", name := "comments", rows := 10, cols := 80).render
-  //  }
-
   // True if the file is one of the standard ICD files
   private def isStdFile(file: dom.File): Boolean = stdList.contains(basename(file))
 

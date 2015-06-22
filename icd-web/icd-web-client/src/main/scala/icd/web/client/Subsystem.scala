@@ -139,7 +139,7 @@ case class Subsystem(listener: SubsystemListener,
       (for (_ ← updateSubsystemVersionOptions()) yield {
         sv.versionOpt match {
           case Some(s) ⇒ versionItem.value = s
-          case None    ⇒ versionItem.value = ""
+          case None    ⇒ versionItem.value = unpublishedVersion
         }
       }) andThen {
         case _ ⇒
@@ -167,11 +167,11 @@ case class Subsystem(listener: SubsystemListener,
       subsystemItem.add(option(value := s)(s).render)
     }
     for (_ ← updateSubsystemVersionOptions()) {
-      // Update to latest version, if it makes sense
-      if (latest) {
-        val versionOpt = versionItem.options.headOption.map(_.value)
-        setSubsystemWithVersion(SubsystemWithVersion(selected.subsystemOpt, versionOpt))
-      } else setSubsystemWithVersion(selected)
+      //      // Update to latest version, if it makes sense
+      //      if (latest) {
+      //        val versionOpt = versionItem.options.headOption.map(_.value)
+      //        setSubsystemWithVersion(SubsystemWithVersion(selected.subsystemOpt, versionOpt))
+      //      } else setSubsystemWithVersion(selected)
     }
   }
 
@@ -187,7 +187,7 @@ case class Subsystem(listener: SubsystemListener,
     else {
       versionOpt match {
         case Some(s) ⇒ versionItem.value = s
-        case None    ⇒ versionItem.value = ""
+        case None    ⇒ versionItem.value = unpublishedVersion
       }
       if (notifyListener)
         listener.subsystemSelected(getSubsystemWithVersion, saveHistory)
@@ -202,16 +202,13 @@ case class Subsystem(listener: SubsystemListener,
     getSelectedSubsystem match {
       case Some(subsystem) ⇒
         getSubsystemVersionOptions(subsystem).map { list ⇒ // Future!
-          println(s"XXX versions = $list")
           updateSubsystemVersionOptions(list)
           versionItem.removeAttribute("hidden")
-          //          if (list.nonEmpty) versionItem.value = list.head
           versionItem.value = unpublishedVersion
         }.recover {
           case ex ⇒ ex.printStackTrace()
         }
       case None ⇒
-        println(s"XXX no subsystem selected")
         Future.successful()
     }
   }

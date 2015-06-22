@@ -58,20 +58,23 @@ case class Sidebar(listener: SidebarListener) extends Displayable {
 
   /**
    * Sets the list of checked components in the sidebar
+   * @return true if anything was changed
    */
-  def setSelectedComponents(components: List[String]): Unit = {
+  def setSelectedComponents(components: List[String]): Boolean = {
     import org.scalajs.dom.ext._
     val set = components.toSet
-    for (elem ← sidebarList.getElementsByTagName("input").toList) {
+    val changes = for (elem ← sidebarList.getElementsByTagName("input").toList) yield {
       val checkbox = elem.asInstanceOf[HTMLInputElement]
       val checked = set.contains(checkbox.value)
-      if (checkbox.checked != checked) checkbox.checked = checked
+      val changed = checkbox.checked != checked
+      if (changed) checkbox.checked = checked
+      changed
     }
+    changes.contains(true)
   }
 
   // called when a component is selected or deselected
   private def componentSelected(compName: String)(e: dom.Event): Unit = {
-    println(s"XXX Sidebar.componentSelected $compName")
     val checked = e.target.asInstanceOf[HTMLInputElement].checked
     listener.componentSelected(compName, checked)
   }

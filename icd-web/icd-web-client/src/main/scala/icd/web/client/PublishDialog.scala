@@ -31,16 +31,23 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
     textarea(cls := "form-control", name := "comments", rows := 10, cols := 80).render
   }
 
+  private val majorVersionCheckBox = {
+    import scalatags.JsDom.all._
+    input(tpe := "checkbox").render
+  }
+
   /**
    * Sets the message to display above the Publish button
    */
   private def setMessage(msg: String): Unit = messageItem.textContent = msg
 
+  // True if published source and target subsystems are selected (enable publishing the ICD)
   private def isPublishIcd(s: SubsystemWithVersion, t: SubsystemWithVersion): Boolean =
-    s.subsystemOpt.isDefined && t.subsystemOpt.isDefined && t.versionOpt.isDefined && s.versionOpt.isDefined
+    s.subsystemOpt.isDefined && s.versionOpt.isDefined && t.subsystemOpt.isDefined && t.versionOpt.isDefined
 
+  // True if an unpublished source subsystem is selected and no target (enable publishing the source API)
   private def isPublishApi(s: SubsystemWithVersion, t: SubsystemWithVersion): Boolean =
-    s.subsystemOpt.isDefined && t.subsystemOpt.isEmpty && t.versionOpt.isEmpty && s.versionOpt.isEmpty
+    s.subsystemOpt.isDefined && s.versionOpt.isEmpty && t.subsystemOpt.isEmpty
 
   /**
    * Called when the source or target subsystem was changed: Update the enabled states
@@ -76,7 +83,7 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
     statusItem.removeClass("label-danger")
     busyStatusItem.removeClass("hide")
 
-    val majorVersion = false // XXX TODO
+    val majorVersion = majorVersionCheckBox.checked
     val comment = commentBox.value
 
     val s = subsystem.getSubsystemWithVersion
@@ -114,8 +121,10 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
       messageItem,
       div(cls := "panel panel-info")(
         div(cls := "panel-body")(
-          div(publishButton),
-          div(Styles.commentBox, label("Comments")(commentBox)))),
+          div(Styles.commentBox, label("Comments")(commentBox)),
+          div(
+            div(cls := "checkbox")(label(majorVersionCheckBox, "Increment major version")),
+            publishButton))),
       h4("Status")(
         span(style := "margin-left:15px;"),
         span(id := "busyStatus", cls := "glyphicon glyphicon-refresh glyphicon-refresh-animate hide"),
