@@ -1,7 +1,7 @@
 package icd.web.client
 
 import org.scalajs.dom.ext.Ajax
-import shared.IcdVersionInfo
+import shared.VersionInfo
 import upickle._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -15,7 +15,7 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
   private val contentDiv = div(id := "versionHistory").render
 
   // Returns the markup for displaying a table of version information
-  private def markupVersionInfo(name: String, list: List[IcdVersionInfo]) = {
+  private def markupVersionInfo(name: String, list: List[VersionInfo]) = {
     import scalacss.ScalatagsCss._
     if (list.isEmpty) div().render
     else div(
@@ -38,9 +38,9 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
   }
 
   // Gets the version info from the server
-  private def getVersionInfo(subsystem: String): Future[List[IcdVersionInfo]] =
+  private def getVersionInfo(subsystem: String): Future[List[VersionInfo]] =
     Ajax.get(Routes.versions(subsystem)).map { r ⇒
-      read[List[IcdVersionInfo]](r.responseText)
+      read[List[VersionInfo]](r.responseText)
     }.recover {
       case ex ⇒
         mainContent.displayInternalError(ex)

@@ -11,7 +11,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 /**
  * Displays the page for publishing APIs or ICDs
  */
-case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem) extends Displayable {
+case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdChooser: IcdChooser) extends Displayable {
 
   // Message to display above publish button
   private val messageItem = {
@@ -76,19 +76,24 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem) exten
     statusItem.removeClass("label-danger")
     busyStatusItem.removeClass("hide")
 
+    val majorVersion = false // XXX TODO
+    val comment = commentBox.value
+
     val s = subsystem.getSubsystemWithVersion
     val t = targetSubsystem.getSubsystemWithVersion
 
     if (isPublishApi(s, t)) {
-      val majorVersion = false // XXX TODO
-      val comment = commentBox.value
       val route = Routes.publishApi(s.subsystemOpt.get, majorVersion, comment)
       Ajax.post(route).map { r ⇒
         subsystem.updateSubsystemVersionOptions()
         displayResultStatus(r)
       }
     } else if (isPublishIcd(s, t)) {
-
+      val route = Routes.publishIcd(s.subsystemOpt.get, s.versionOpt.get, t.subsystemOpt.get, t.versionOpt.get, majorVersion, comment)
+      Ajax.post(route).map { r ⇒
+        icdChooser.updateIcdOptions()
+        displayResultStatus(r)
+      }
     }
   }
 

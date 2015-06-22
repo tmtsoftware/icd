@@ -26,14 +26,20 @@ GET         /versions/:name                                               contro
 # Gets a list of version names for a component or subsystem
 GET         /versionNames/:name                                           controllers.Application.getVersionNames(name)
 
+# Gets a list of published ICD names
+GET         /icdNames                                                     controllers.Application.getIcdNames
+
+# Gets a list of version names for the ICD from subsystem to target
+GET         /icdVersionNames/:subsystem/:target                           controllers.Application.getIcdVersionNames(subsystem, target)
+
 # Uploads ICD files from a selected directory, all at once as multipart/formdata
 POST        /uploadFiles                                                  controllers.FileUploadController.uploadFiles
 
 # Publishes an API (subsystem or subsystem.component path)
-POST        /publishApi/:path/:majorVersion                               controllers.Application.publishApi(path, majorVersion: Boolean, comment)
+POST        /publishApi/:path                                             controllers.Application.publishApi(path, majorVersion: Boolean, comment)
 
 # Publishes an ICD (subsystem -> target version combination)
-POST        /publishIcd/:subsystem/:version/:target/:targetVersion        controllers.Application.publishIcd(subsystem, version, target, targetVersion, comment)
+POST        /publishIcd/:subsystem/:version/:target/:targetVersion        controllers.Application.publishIcd(subsystem, version, target, targetVersion, majorVersion: Boolean, comment)
 
 # Websocket to notify client when DB has changed
 GET         /ws                                                           controllers.FileUploadController.ws

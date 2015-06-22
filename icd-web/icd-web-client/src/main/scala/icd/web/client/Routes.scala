@@ -1,5 +1,7 @@
 package icd.web.client
 
+import shared.IcdName
+
 // XXX TODO: Pass settings from server, see ChatJS.main() for example
 
 /**
@@ -28,8 +30,13 @@ object Routes {
   def versionNames(name: String) = s"/versionNames/$name"
 
   def publishApi(path: String, majorVersion: Boolean, comment: String) =
-    s"/publishApi/$path/$majorVersion?comment=$comment"
+    s"/publishApi/$path?majorVersion=$majorVersion&comment=$comment"
 
-  def publishIcd(subsystem: String, version: String, target: String, targetVersion: String, comment: String) =
-    s"/publishIcd/$subsystem/$version/$target/$targetVersion?comment=$comment"
+  def publishIcd(subsystem: String, version: String,
+                 target: String, targetVersion: String,
+                 majorVersion: Boolean, comment: String) =
+    s"/publishIcd/$subsystem/$version/$target/$targetVersion?majorVersion=$majorVersion&comment=$comment"
+
+  val icdNames = "/icdNames"
+  def icdVersionNames(icdName: IcdName) = s"/icdVersionNames/${icdName.subsystem}/${icdName.target}"
 }

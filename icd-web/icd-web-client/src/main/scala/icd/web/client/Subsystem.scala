@@ -40,7 +40,7 @@ object Subsystem {
 
 /**
  * Manages the subsystem and related subsystem version comboboxes
- * @param listener notified when the user makes a selection or changes the filter checkbox
+ * @param listener notified when the user makes a selection
  * @param labelStr the text for the combobox label
  * @param msg the initial message to display before the first selection is made
  * @param removeMsg if true, remove the default msg item from the choices once a selection has been made
@@ -109,8 +109,8 @@ case class Subsystem(listener: SubsystemListener,
    */
   def getSelectedSubsystemVersion: Option[String] =
     versionItem.value match {
-      case "*" | null | "" ⇒ None
-      case version         ⇒ Some(version)
+      case `unpublishedVersion` | null | "" ⇒ None
+      case version                          ⇒ Some(version)
     }
 
   /**

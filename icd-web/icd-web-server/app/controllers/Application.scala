@@ -7,7 +7,7 @@ import csw.services.icd.db.{ IcdDbPrinter, IcdDb }
 import play.Play
 import play.api.mvc._
 import play.filters.csrf.CSRFAddToken
-import shared.{ IcdVersionInfo, Csrf }
+import shared.{ IcdVersion, IcdName, VersionInfo, Csrf }
 import play.api.libs.json._
 
 /**
@@ -82,21 +82,21 @@ object Application extends Controller {
   }
 
   /**
-   * Returns a detailed list of the versions of the given subsystem (or subsystem.component)
+   * Returns a detailed list of the versions of the given subsystem
    */
-  def getVersions(name: String) = Action {
+  def getVersions(subsystem: String) = Action {
     import upickle._
-    val versions = db.versionManager.getVersions(name).map(v ⇒
-      IcdVersionInfo(v.versionOpt, v.user, v.comment, v.date.toString))
+    val versions = db.versionManager.getVersions(subsystem).map(v ⇒
+      VersionInfo(v.versionOpt, v.user, v.comment, v.date.toString))
     Ok(write(versions)).as(JSON)
   }
 
   /**
-   * Returns a list of version names for the given subsystem or (subsystem.component)
+   * Returns a list of version names for the given subsystem
    */
-  def getVersionNames(name: String) = Action {
+  def getVersionNames(subsystem: String) = Action {
     import upickle._
-    val versions = db.versionManager.getVersionNames(name)
+    val versions = db.versionManager.getVersionNames(subsystem)
     Ok(write(versions)).as(JSON)
   }
 
@@ -105,16 +105,39 @@ object Application extends Controller {
    */
   def publishApi(path: String, majorVersion: Boolean, comment: String) = Action {
     // XXX error handling?
-    db.versionManager.publishApi(path, comment, majorVersion)
+    db.versionManager.publishApi(path, majorVersion, comment)
     Ok.as(JSON)
   }
 
   /**
    * Publishes an ICD from the given version of the given subsystem to the target subsystem and version
    */
-  def publishIcd(subsystem: String, version: String, target: String, targetVersion: String, comment: String) = Action {
+  def publishIcd(subsystem: String, version: String,
+                 target: String, targetVersion: String,
+                 majorVersion: Boolean, comment: String) = Action {
     // XXX error handling?
-    db.versionManager.publishIcd(subsystem, version, target, targetVersion, comment)
+    db.versionManager.publishIcd(subsystem, version, target, targetVersion, majorVersion, comment)
     Ok.as(JSON)
+  }
+
+  /**
+   * Gets a list of ICD names as pairs of (subsystem, targetSubsystem)
+   */
+  def getIcdNames = Action {
+    import upickle._
+    // convert list to use shared IcdName class
+    val list = db.versionManager.getIcdNames.map(icd ⇒ IcdName(icd.subsystem, icd.target))
+    Ok(write(list)).as(JSON)
+  }
+
+  /**
+   * Gets a list of version names for the ICD from subsystem to target subsystem
+   */
+  def getIcdVersionNames(subsystem: String, target: String) = Action {
+    import upickle._
+    // convert list to use shared IcdVersion class
+    val list = db.versionManager.getIcdVersionNames(subsystem, target)
+      .map(v ⇒ IcdVersion(v.icdVersion, subsystem, v.subsystemVersion, target, v.targetVersion))
+    Ok(write(list)).as(JSON)
   }
 }

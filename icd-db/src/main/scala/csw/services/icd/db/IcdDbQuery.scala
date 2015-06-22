@@ -105,10 +105,13 @@ object IcdDbQuery {
 
 /**
  * Support for querying the ICD database
+ * (Note: This class works on the current, unpublished versions. See IcdVersionManager for use with versions.)
  */
 case class IcdDbQuery(db: MongoDB) {
 
   import IcdDbQuery._
+
+  // XXX TODO: copy APIs to IcdVersionManager and add an optional version arg
 
   // Returns a list of IcdEntry for the ICDs (based on the collection names)
   // (XXX Should the return value be cached?)
