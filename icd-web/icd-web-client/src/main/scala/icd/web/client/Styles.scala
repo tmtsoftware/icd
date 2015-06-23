@@ -9,10 +9,6 @@ object Styles extends StyleSheet.Inline {
   import language.postfixOps
 
   val layout = style(
-    //    addClassName("resize sp ui-widget-content"), // jquery-ui
-    //    resize.both,
-    //    overflow.auto,
-    //    padding(20 px),
     minHeight(100 %%),
     height(100 %%),
     width(100 %%),
@@ -22,8 +18,6 @@ object Styles extends StyleSheet.Inline {
     display.inlineBlock)
 
   val mainContent = style(
-    //    resize.both,
-    //    overflow.auto,
     addClassName("col-md-11"),
     height(100 %%),
     overflowY.auto,
@@ -39,8 +33,6 @@ object Styles extends StyleSheet.Inline {
     float.left)
 
   val sidebarWrapper = style(
-    //    resize.both,
-    //    overflow.auto,
     addClassName("col-md-1"),
     height(100 %%),
     padding(50 px, 0 px, 0 px, 0 px),
@@ -75,8 +67,6 @@ object Styles extends StyleSheet.Inline {
     margin(1 em, 0 em))
 
   val versionHistory = style(
-    //    resize.both,
-    //    overflow.auto,
     addClassNames("footer"),
     position.absolute,
     overflowY.auto,
@@ -84,12 +74,7 @@ object Styles extends StyleSheet.Inline {
     bottom(0 px),
     width(100 %%),
     height(15 %%),
-    backgroundColor("#f5f5f5"),
+    backgroundColor(c"#f5f5f5"),
     padding(5 px, 10 px, 0 px, 10 px),
     borderTop(1 px, solid, gray))
-
-  //  val subsystemWrapper = style(
-  //    display.inlineBlock,
-  //    verticalAlign.middle,
-  //    float.none)
 }

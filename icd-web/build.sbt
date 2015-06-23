@@ -52,8 +52,8 @@ lazy val icdWebClient = (project in file("icd-web-client")).settings(
     "com.lihaoyi" %%% "scalatags" % "0.5.2",
     "com.lihaoyi" %%% "upickle" % "0.2.8",
     "be.doeraene" %%% "scalajs-jquery" % "0.8.0",
-    "com.github.japgolly.scalacss" %%% "core" % "0.2.0",
-    "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.2.0"
+    "com.github.japgolly.scalacss" %%% "core" % "0.3.0",
+    "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.3.0"
   )
 ).settings(formatSettings: _*).
   enablePlugins(ScalaJSPlugin, ScalaJSPlay).

@@ -185,14 +185,12 @@ case class IcdVersionManager(db: MongoDB) {
    */
   def getVersion(subsystem: String, versionOpt: Option[String], compNameOpt: Option[String]): Option[VersionInfo] = {
     val path = compNameOpt.fold(subsystem)(compName ⇒ s"$subsystem.$compName")
-    println(s"XXX getVersion $subsystem $versionOpt $compNameOpt path = $path")
     versionOpt match {
       case Some(version) ⇒ // published version
         val collName = versionCollectionName(path)
         if (db.collectionExists(collName)) {
           db(collName).findOne(versionStrKey -> version).map(VersionInfo(_))
         } else {
-          println(s"XXX collection $collName does not exist")
           None // not found
         }
       case None ⇒ // current, unpublished version
@@ -203,7 +201,6 @@ case class IcdVersionManager(db: MongoDB) {
         val user = System.getProperty("user.name")
         val comment = "Working version, unpublished"
         val parts = paths.map(p ⇒ (p, getPartVersion(p))).map(x ⇒ PartInfo(x._1, x._2))
-        println(s"XXX path = $path, paths = $paths, parts = $parts")
         Some(VersionInfo(None, user, comment, now, parts))
     }
   }
@@ -322,7 +319,6 @@ case class IcdVersionManager(db: MongoDB) {
 
     // Holds all the model classes associated with a single ICD entry.
     case class Models(versionMap: Map[String, Int], entry: IcdEntry) extends IcdModels {
-      println(s"XXX Models: versionMap = $versionMap, entry = $entry")
 
       // Parses the data from collection s (or an older version of it) and returns a Config object for it
       private def parse(s: String): Config = getConfig(getVersionOf(s, versionMap(s)))
@@ -337,8 +333,7 @@ case class IcdVersionManager(db: MongoDB) {
     getVersion(subsystem, versionOpt, compNameOpt) match {
       case Some(versionInfo) ⇒
         val versionMap = versionInfo.parts.map(v ⇒ v.path -> v.version).toMap
-        val entries = getEntries(versionInfo.parts)
-        for (entry ← entries) yield Models(versionMap, entry)
+        getEntries(versionInfo.parts).map(Models(versionMap, _))
       case None ⇒ Nil
     }
   }
