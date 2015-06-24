@@ -1,7 +1,7 @@
 ICD Web App
 ===========
 
-This project contains a Play/Scala.js based web app for accessing the ICD database.
+This subproject contains a Play/Scala.js based web app for accessing the ICD database.
 It also makes use of Bootstrap and Less.
 
 * The icd-web-server subproject is a Play project and provides a REST interface for the client.
@@ -27,7 +27,7 @@ Then start the play web app with:
 
     sbt run
 
-in this directory and open http://localhost:9000/ in a browser.
+in the directory containing build.sbt and open http://localhost:9000/ in a browser.
 Use the *Upload* item to upload an ICD (choose examples/NFIRAOS, if you are using Chrome, otherwise 
 make a zip file of that directory and upload that. Do the same for TCS).
 

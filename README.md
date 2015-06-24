@@ -14,11 +14,11 @@ are provided for ingesting the ICDs from files, querying and viewing the data.
 ICD Subprojects
 ---------------
 
-There are currently three ICD subprojects (icd-web has a separate build):
+There are currently these ICD subprojects:
 
 * icd - supports validating an ICD against the JSON schema as well as saving it as a Markdown, HTML or PDF document
 * icd-db - supports ingesting an ICD into a MongoDB database, querying the db and saving an ICD as a document
-* icd-web - a Play/Scala.js based web app for working with ICDs (separate build.sbt, depends on icd-db project)
+* icd-web/* - a Play/Scala.js based web app for working with ICDs (separate build.sbt, depends on icd-db project)
 
 Build and Install
 -----------------
@@ -33,11 +33,17 @@ command line options.
 
 The icdwebserver application starts the web app (by default on localhost:9000).
 
+Note that the build is set up so that the Play subproject is selected on start.
+So to run any commands (like sbt clean or sbt stage) that should apply to the other projects,
+you need to first switch to that project or the root project. For example `sbt clean "project root" clean`. 
+
 Play Project icd-web
 --------------------
 
-The icd-web project has its own build file. To test, run `sbt run` from the icd-web directory.
+To test the web server, run `sbt run` from this directory.
 Then go to http://localhost:9000 in a web browser.
+
+See [icd-web/README.md](icd-web/README.md) for more information.
 
 
 
