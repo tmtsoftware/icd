@@ -5,21 +5,10 @@ import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import sbt.Keys._
 import sbt._
+import sbt.Project.projectToRef
 
 val Version = "0.1-SNAPSHOT"
 val ScalaVersion = "2.11.6"
-
-def formattingPreferences: FormattingPreferences =
-  FormattingPreferences()
-    .setPreference(RewriteArrowSymbols, true)
-    .setPreference(AlignParameters, true)
-    .setPreference(AlignSingleLineCaseStatements, true)
-    .setPreference(DoubleIndentClassDeclaration, true)
-
-lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
-  ScalariformKeys.preferences in Compile := formattingPreferences,
-  ScalariformKeys.preferences in Test := formattingPreferences
-)
 
 val buildSettings = Seq(
   organization := "org.tmt",
@@ -35,10 +24,24 @@ val buildSettings = Seq(
   resolvers += sbtResolver.value
 )
 
-lazy val defaultSettings = buildSettings ++ formatSettings ++ Seq(
-  scalacOptions ++= Seq("-target:jvm-1.6", "-encoding", "UTF-8", "-feature", "-deprecation", "-unchecked"),
-  javacOptions ++= Seq("-source", "1.8", "-target", "1.6", "-Xlint:unchecked", "-Xlint:deprecation")
+def formattingPreferences: FormattingPreferences =
+  FormattingPreferences()
+    .setPreference(RewriteArrowSymbols, true)
+    .setPreference(AlignParameters, true)
+    .setPreference(AlignSingleLineCaseStatements, true)
+    .setPreference(DoubleIndentClassDeclaration, true)
+
+lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
+  ScalariformKeys.preferences in Compile := formattingPreferences,
+  ScalariformKeys.preferences in Test := formattingPreferences
 )
+
+lazy val defaultSettings = buildSettings ++ formatSettings ++ Seq(
+  scalacOptions ++= Seq("-target:jvm-1.8", "-encoding", "UTF-8", "-feature", "-deprecation", "-unchecked"),
+  javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint:unchecked", "-Xlint:deprecation")
+)
+
+lazy val clients = Seq(icdWebClient)
 
 def compile(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 def provided(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "provided")
@@ -56,9 +59,11 @@ val casbah = "org.mongodb" %% "casbah" % "2.8.0"
 val `slf4j-nop` = "org.slf4j" % "slf4j-nop" % "1.7.10"
 val diffson = "org.gnieh" %% "diffson" % "0.3"
 
+// Root of the multi-project build
 lazy val root = (project in file("."))
   .aggregate(icd, `icd-db`)
 
+// core project, implements validation of ICD files against JSON schema files, icd command line tool
 lazy val icd = project
   .enablePlugins(JavaAppPackaging)
   .settings(defaultSettings: _*)
@@ -67,10 +72,65 @@ lazy val icd = project
     test(scalaTest)
   )
 
+// adds MongoDB database support, ICD versioning, queries
 lazy val `icd-db` = project
   .enablePlugins(JavaAppPackaging)
   .settings(defaultSettings: _*)
   .settings(libraryDependencies ++=
   compile(casbah) ++
     test(scalaTest)
-  ) dependsOn icd
+  ) dependsOn(icd, icdWebSharedJvm)
+
+// a Play framework based web server that goes between icd-db and the web client
+lazy val icdWebServer = (project in file("icd-web/icd-web-server"))
+  .settings(defaultSettings: _*)
+  .settings(
+    scalaJSProjects := clients,
+    pipelineStages := Seq(scalaJSProd, gzip),
+    includeFilter in(Assets, LessKeys.less) := "*.less",
+    libraryDependencies ++= Seq(
+      filters,
+      "org.tmt" %% "icd-db" % "0.1-SNAPSHOT",
+      "com.vmunier" %% "play-scalajs-scripts" % "0.2.1",
+      "com.lihaoyi" %%% "upickle" % "0.2.8",
+      "org.webjars" % "jquery" % "2.1.3",
+      "org.webjars" %% "webjars-play" % "2.4.0-1",
+      "org.webjars" % "bootstrap" % "3.3.4",
+      "org.webjars.bower" % "bootstrap-table" % "1.7.0",
+      specs2 % Test
+    )
+  ).enablePlugins(PlayScala, SbtWeb)
+  .aggregate(clients.map(projectToRef): _*)
+  .dependsOn(`icd-db`)
+
+// a Scala.js based web client that talks to the Play server
+lazy val icdWebClient = (project in file("icd-web/icd-web-client")).settings(
+  scalaVersion := ScalaVersion,
+  persistLauncher := true,
+  persistLauncher in Test := false,
+  sourceMapsDirectories += icdWebSharedJs.base / "..",
+  unmanagedSourceDirectories in Compile := Seq((scalaSource in Compile).value),
+  libraryDependencies ++= Seq(
+    "org.scala-js" %%% "scalajs-dom" % "0.8.1",
+    "com.lihaoyi" %%% "scalatags" % "0.5.2",
+    "com.lihaoyi" %%% "upickle" % "0.2.8",
+    "be.doeraene" %%% "scalajs-jquery" % "0.8.0",
+    "com.github.japgolly.scalacss" %%% "core" % "0.3.0",
+    "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.3.0"
+  )
+).settings(formatSettings: _*)
+  .enablePlugins(ScalaJSPlugin, ScalaJSPlay)
+  .dependsOn(icdWebSharedJs)
+
+// contains simple case classes used for data transfer that are shared between the client and server
+lazy val icdWebShared = (crossProject.crossType(CrossType.Pure) in file("icd-web/icd-web-shared"))
+  .settings(scalaVersion := ScalaVersion)
+  .settings(formatSettings: _*)
+  .jsConfigure(_ enablePlugins ScalaJSPlay)
+  .jsSettings(sourceMapsBase := baseDirectory.value / "..")
+
+lazy val icdWebSharedJvm = icdWebShared.jvm
+lazy val icdWebSharedJs = icdWebShared.js
+
+// loads the Play project at sbt startup
+onLoad in Global := (Command.process("project icdWebServer", _: State)) compose (onLoad in Global).value
