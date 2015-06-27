@@ -9,7 +9,7 @@ import scalatags.JsDom.all._
  * selected subsystem and components
  */
 case class MainContent() extends Displayable {
-  private val contentTitle = h3(cls := "page-header").render
+  private val contentTitle = h3(cls := "page-header")().render
 
   private val contentDiv = {
     import scalacss.ScalatagsCss._
@@ -17,25 +17,37 @@ case class MainContent() extends Displayable {
   }
 
   // Sets the title and HTML content of the main section of the page
-  def setContent(title: String, content: String): Unit = {
-    contentTitle.textContent = title
+  def setContent(content: String, title: String): Unit = {
+    setTitle(title)
     this.contentDiv.innerHTML = content
   }
 
   // Sets the title and HTML content of the main section of the page
-  def setContent(title: String, displayable: Displayable): Unit = {
-    contentTitle.textContent = title
+  def setContent(displayable: Displayable, title: String): Unit = {
+    setTitle(title)
     contentDiv.innerHTML = ""
     contentDiv.appendChild(displayable.markup())
   }
 
   // Sets the title of the main section of the page
-  def setTitle(title: String): Unit = {
-    contentTitle.textContent = title
+  def setTitle(title: String, subtitleOpt: Option[String] = None): Unit = {
+    subtitleOpt match {
+      case Some(subtitle) ⇒
+        contentTitle.innerHTML = s"$title<br><small>$subtitle</small>"
+      case None ⇒
+        contentTitle.textContent = title
+    }
   }
 
-  // Gets the title of the page
-  def getTitle: String = contentTitle.textContent
+  // Gets the title of the page (excluding the subtitle, if there is one)
+  def getTitle: String = {
+    val s = contentTitle.innerHTML
+    s.indexOf("<br>") match {
+      case -1 ⇒ s
+      case n ⇒
+        s.substring(0, n)
+    }
+  }
 
   // Clear out the title and content
   def clearContent(): Unit = setContent("", "")
@@ -53,7 +65,7 @@ case class MainContent() extends Displayable {
   def displayInternalError(ex: Throwable): Unit = {
     // Display an error message
     println(s"Internal error: $ex")
-    setContent("Internal Error", errorDiv("Internal error. The database may be down."))
+    setContent(errorDiv("Internal error. The database may be down."), "Internal Error")
   }
 
   // Scroll the title to the top

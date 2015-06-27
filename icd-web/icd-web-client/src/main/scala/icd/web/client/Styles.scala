@@ -54,6 +54,10 @@ object Styles extends StyleSheet.Inline {
   val componentTable = style(
     maxWidth(80 %%))
 
+  // Used for table columns that should not wrap
+  val noWrapTableColumn = style(
+    whiteSpace.nowrap)
+
   val fileUploadMessages = style(
     addClassName("alert alert-info"),
     padding(0 px, 10 px),

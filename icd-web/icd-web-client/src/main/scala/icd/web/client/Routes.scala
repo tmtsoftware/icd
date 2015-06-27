@@ -38,5 +38,5 @@ object Routes {
     s"/publishIcd/$subsystem/$version/$target/$targetVersion?majorVersion=$majorVersion&comment=$comment"
 
   val icdNames = "/icdNames"
-  def icdVersionNames(icdName: IcdName) = s"/icdVersionNames/${icdName.subsystem}/${icdName.target}"
+  def icdVersions(icdName: IcdName) = s"/icdVersions/${icdName.subsystem}/${icdName.target}"
 }

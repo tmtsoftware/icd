@@ -131,13 +131,12 @@ object Application extends Controller {
   }
 
   /**
-   * Gets a list of version names for the ICD from subsystem to target subsystem
+   * Gets a list of versions for the ICD from subsystem to target subsystem
    */
-  def getIcdVersionNames(subsystem: String, target: String) = Action {
+  def getIcdVersions(subsystem: String, target: String) = Action {
     import upickle._
     // convert list to use shared IcdVersion class
-    val list = db.versionManager.getIcdVersionNames(subsystem, target)
-      .map(v ⇒ IcdVersion(v.icdVersion, subsystem, v.subsystemVersion, target, v.targetVersion))
+    val list = db.versionManager.getIcdVersions(subsystem, target)
     Ok(write(list)).as(JSON)
   }
 }

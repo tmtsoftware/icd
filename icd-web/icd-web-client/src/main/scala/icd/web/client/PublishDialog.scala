@@ -41,6 +41,11 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
    */
   private def setMessage(msg: String): Unit = messageItem.textContent = msg
 
+  /**
+   * Sets the text to display for the Publish button
+   */
+  private def setPublishButtonLabel(s: String): Unit = publishButton.textContent = s
+
   // True if published source and target subsystems are selected (enable publishing the ICD)
   private def isPublishIcd(s: SubsystemWithVersion, t: SubsystemWithVersion): Boolean =
     s.subsystemOpt.isDefined && s.versionOpt.isDefined && t.subsystemOpt.isDefined && t.versionOpt.isDefined
@@ -60,6 +65,7 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
       val source = s.subsystemOpt.get
       publishButton.disabled = false
       setMessage(s"Click below to publish the $source API")
+      setPublishButtonLabel("Publish API")
     } else if (isPublishIcd(s, t)) {
       val source = s.subsystemOpt.get
       publishButton.disabled = false
@@ -67,8 +73,10 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
       val targetVersion = t.versionOpt.get
       val sourceVersion = s.versionOpt.get
       setMessage(s"Click below to publish the ICD from $source $sourceVersion to $target $targetVersion")
+      setPublishButtonLabel("Publish ICD")
     } else {
       setMessage(s"Please select an unpublished (*) subsystem for the API or published source and target subsystems for an ICD")
+      setPublishButtonLabel("Publish (disabled)")
       publishButton.disabled = true
     }
   }

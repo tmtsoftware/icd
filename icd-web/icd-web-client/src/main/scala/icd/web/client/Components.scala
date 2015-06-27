@@ -28,6 +28,9 @@ object Components {
      */
     def componentSelected(link: ComponentLink): Unit
   }
+
+  // DIsplayed version for unpublished APIs
+  val unpublished = "(unpublished)"
 }
 
 /**
@@ -40,17 +43,30 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   import Components._
   import Subsystem._
 
-  // Gets the title to display based on the selected source and target subsystems
-  private def getTitle(subsystem: SubsystemWithVersion, targetSubsystem: SubsystemWithVersion): String = {
-    if (subsystem.subsystemOpt.isDefined) {
-      val subsys = subsystem.subsystemOpt.get
-      val version = subsystem.versionOpt.getOrElse("")
-      if (targetSubsystem.subsystemOpt.isDefined) {
-        val target = targetSubsystem.subsystemOpt.get
-        val targetVersion = targetSubsystem.versionOpt.getOrElse("")
-        s"Interface from $subsys $version to $target $targetVersion"
-      } else s"API for $subsys $version"
-    } else ""
+  // Gets the title and optional subtitle to display based on the selected source and target subsystems
+  private def getTitle(subsystem: SubsystemWithVersion,
+                       targetSubsystem: SubsystemWithVersion,
+                       icdOpt: Option[IcdVersion]): (String, Option[String]) = {
+    if (icdOpt.isDefined) {
+      val icd = icdOpt.get
+      val title = s"ICD from ${icd.subsystem} to ${icd.target} (version ${icd.icdVersion})"
+      val subtitle = s"Based on ${icd.subsystem} ${icd.subsystemVersion} and ${icd.target} ${icd.targetVersion}"
+      (title, Some(subtitle))
+    } else {
+      if (subsystem.subsystemOpt.isDefined) {
+        val subsys = subsystem.subsystemOpt.get
+        val version = subsystem.versionOpt.getOrElse(unpublished)
+        if (targetSubsystem.subsystemOpt.isDefined) {
+          val target = targetSubsystem.subsystemOpt.get
+          val targetVersion = targetSubsystem.versionOpt.getOrElse(unpublished)
+          val title = s"ICD from $subsys to $target $unpublished"
+          val subtitle = s"Based on $subsys $version and $target $targetVersion"
+          (title, Some(subtitle))
+        } else {
+          (s"API for $subsys $version", None)
+        }
+      } else ("", None)
+    }
   }
 
   /**
@@ -62,10 +78,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    * @param targetSubsystem the target subsystem (might not be set)
    */
   def addComponents(compNames: List[String], filter: Option[List[String]],
-                    subsystem: SubsystemWithVersion, targetSubsystem: SubsystemWithVersion): Future[Unit] = {
+                    subsystem: SubsystemWithVersion, targetSubsystem: SubsystemWithVersion,
+                    icdOpt: Option[IcdVersion]): Future[Unit] = {
     if (subsystem.subsystemOpt.isEmpty) Future.successful()
     else {
-      val titleStr = getTitle(subsystem, targetSubsystem)
+      val (titleStr, subtitleOpt) = getTitle(subsystem, targetSubsystem, icdOpt)
 
       // Note: Want to keep the original order of components in the display
       val f = Future.sequence {
@@ -76,7 +93,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         }
       }
       f.onComplete {
-        case Success(infoList) ⇒ infoList.foreach(displayComponentInfo(_, titleStr))
+        case Success(infoList) ⇒ infoList.foreach(displayComponentInfo(_, titleStr, subtitleOpt))
         case Failure(ex)       ⇒ mainContent.displayInternalError(ex)
       }
       // Return Future[Unit] to indicate when done
@@ -94,15 +111,16 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    */
   def addComponent(compName: String, filter: Option[List[String]],
                    subsystem: SubsystemWithVersion,
-                   targetSubsystem: SubsystemWithVersion): Unit = {
+                   targetSubsystem: SubsystemWithVersion,
+                   icdOpt: Option[IcdVersion]): Unit = {
     if (subsystem.subsystemOpt.isDefined) {
-      val titleStr = getTitle(subsystem, targetSubsystem)
+      val (titleStr, subtitleOpt) = getTitle(subsystem, targetSubsystem, icdOpt)
       val subsys = subsystem.subsystemOpt.get
       val versionOpt = subsystem.versionOpt
 
       Ajax.get(Routes.componentInfo(subsys, compName, versionOpt)).map { r ⇒ // Future!
         val info = applyFilter(filter, read[ComponentInfo](r.responseText))
-        displayComponentInfo(info, titleStr)
+        displayComponentInfo(info, titleStr, subtitleOpt)
       }.recover {
         case ex ⇒
           mainContent.displayInternalError(ex)
@@ -168,13 +186,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    * Displays the information for a component, appending to the other selected components, if any.
    * @param info contains the information to display
    * @param titleStr The main title to be displayed at the top of the page (for all selected components)
+   * @param subtitleOpt optional subtitle
    */
-  private def displayComponentInfo(info: ComponentInfo, titleStr: String): Unit = {
+  private def displayComponentInfo(info: ComponentInfo, titleStr: String, subtitleOpt: Option[String] = None): Unit = {
     if (info.publishInfo.nonEmpty || info.subscribeInfo.nonEmpty || info.commandsReceived.nonEmpty || info.commandsSent.nonEmpty) {
       val markup = markupForComponent(info).render
       if (mainContent.getTitle != titleStr) {
         mainContent.clearContent()
-        mainContent.setTitle(titleStr)
+        mainContent.setTitle(titleStr, subtitleOpt)
       }
       val oldElement = $id(getComponentInfoId(info.compName))
       if (oldElement == null) {

@@ -93,7 +93,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
 
   // Called when the Upload item is selected
   private def uploadSelected(saveHistory: Boolean = true)(): Unit = {
-    mainContent.setContent("Upload ICD Files", fileUploadDialog)
+    mainContent.setContent(fileUploadDialog, "Upload ICD Files")
     if (saveHistory) pushState(viewType = UploadView)
   }
 
@@ -103,7 +103,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
       "Publish ICD"
     else "Publish API"
     publishDialog.subsystemChanged()
-    mainContent.setContent(title, publishDialog)
+    mainContent.setContent(publishDialog, title)
     if (saveHistory) pushState(viewType = PublishView)
   }
 
@@ -125,7 +125,9 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
       getFilter.map { filter ⇒
         if (checked)
           components.addComponent(componentName, filter,
-            subsystem.getSubsystemWithVersion, targetSubsystem.getSubsystemWithVersion)
+            subsystem.getSubsystemWithVersion,
+            targetSubsystem.getSubsystemWithVersion,
+            icdChooser.getSelectedIcdVersion)
         else
           components.removeComponentInfo(componentName)
 
@@ -199,7 +201,8 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
       mainContent.clearContent()
       val sub = subsystem.getSubsystemWithVersion
       val targetOpt = targetSubsystem.getSubsystemWithVersion
-      components.addComponents(sidebar.getSelectedComponents, filter, sub, targetOpt)
+      val icdOpt = icdChooser.getSelectedIcdVersion
+      components.addComponents(sidebar.getSelectedComponents, filter, sub, targetOpt, icdOpt)
     }
   }
 
@@ -276,7 +279,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     // Displays the HTML for the given ICD name
     def displayIcdAsHtml(name: String): Unit = {
       getIcdHtml(name).map { doc ⇒
-        mainContent.setContent(s"API: $name", doc)
+        mainContent.setContent(doc, s"API: $name")
         if (saveHistory) pushState(viewType = HtmlView)
       }
     }
@@ -303,10 +306,18 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
 
   // Called when the "Show ICD Version History" menu item is selected
   private def showVersionHistory(saveHistory: Boolean = true)(): Unit = {
-    for (name ← subsystem.getSelectedSubsystem) {
-      versionHistory.setSubsystem(name)
-      mainContent.setContent(s"Version History for $name", versionHistory)
-      if (saveHistory) pushState(viewType = VersionView)
+    icdChooser.getSelectedIcd match {
+      case Some(icdName) ⇒
+        versionHistory.setIcd(icdName)
+        mainContent.setContent(versionHistory, s"ICD Version History: ${icdName.subsystem} to ${icdName.target}")
+        if (saveHistory) pushState(viewType = VersionView)
+      case None ⇒ subsystem.getSelectedSubsystem match {
+        case Some(name) ⇒
+          versionHistory.setSubsystem(name)
+          mainContent.setContent(versionHistory, s"Subsystem API Version History: $name")
+          if (saveHistory) pushState(viewType = VersionView)
+        case None ⇒
+      }
     }
   }
 }

@@ -23,7 +23,7 @@ case class Navbar() extends Displayable {
           span(cls := "icon-bar"),
           span(cls := "icon-bar"),
           span(cls := "icon-bar")),
-        a(cls := "navbar-brand")("TMT ICD Database")),
+        a(cls := "navbar-brand", href := "/")("TMT ICD Database")),
       div(id := "icd-navbar", cls := "collapse navbar-collapse")(
         leftNavbar, rightNavbar)).render
   }

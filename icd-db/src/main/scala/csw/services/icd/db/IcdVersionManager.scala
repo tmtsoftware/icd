@@ -8,6 +8,7 @@ import net.liftweb.json.JsonAST.{ JNothing, JValue }
 import net.liftweb.json.JsonParser
 import org.joda.time.{ DateTimeZone, DateTime }
 import csw.services.icd.model._
+import shared.{ IcdVersionInfo, IcdVersion }
 
 /**
  * Manages Subsystem and component versioning in the database.
@@ -101,10 +102,19 @@ object IcdVersionManager {
     implicit def orderingByName[A <: IcdName]: Ordering[A] = Ordering.by(e ⇒ (e.subsystem, e.target))
   }
 
-  /**
-   * An ICD version with the associated source and target subsystem versions
-   */
-  case class IcdVersion(icdVersion: String, subsystemVersion: String, targetVersion: String)
+  //  /**
+  //   * An ICD version with the associated source and target subsystem versions
+  //   */
+  //  case class IcdVersion(icdVersion: String, subsystemVersion: String, targetVersion: String)
+
+  //  /**
+  //   * An ICD version with additional history information
+  //   * @param icdVersion describes the ICD version
+  //   * @param user the user that published the version
+  //   * @param comment the publish comment
+  //   * @param date the date the ICD was published
+  //   */
+  //  case class IcdVersionInfo(icdVersion: IcdVersion, user: String, comment: String, date: DateTime)
 }
 
 case class IcdVersionManager(db: MongoDB) {
@@ -137,7 +147,6 @@ case class IcdVersionManager(db: MongoDB) {
   private def newVersion(subsystem: String, compNameOpt: Option[String], versions: List[(String, Int)],
                          comment: String, majorVersion: Boolean): Unit = {
 
-    println(s"XXX newVersion $subsystem $compNameOpt versions=$versions")
     val parts = versions.map(v ⇒ Map("name" -> v._1, versionStrKey -> v._2).asDBObject)
     val version = incrVersion(getLatestPublishedVersion(subsystem, compNameOpt), majorVersion)
     val now = new DateTime(DateTimeZone.UTC)
@@ -430,15 +439,23 @@ case class IcdVersionManager(db: MongoDB) {
    * @param subsystem the ICD's source subsystem
    * @param target the ICD's target subsystem
    */
-  def getIcdVersionNames(subsystem: String, target: String): List[IcdVersion] = {
+  def getIcdVersions(subsystem: String, target: String): List[IcdVersionInfo] = {
     if (db.collectionExists(icdCollName)) {
       db(icdCollName)
         .find(MongoDBObject(subsystemKey -> subsystem, targetKey -> target))
         .sort(idKey -> -1)
         .map { obj ⇒
-          IcdVersion(obj(versionStrKey).toString, obj(subsystemVersionKey).toString, obj(targetVersionKey).toString)
-        }
-        .toList
+          IcdVersionInfo(
+            icdVersion = IcdVersion(
+              icdVersion = obj(versionStrKey).toString,
+              subsystem = subsystem,
+              subsystemVersion = obj(subsystemVersionKey).toString,
+              target = target,
+              targetVersion = obj(targetVersionKey).toString),
+            user = obj(userKey).toString,
+            comment = obj(commentKey).toString,
+            date = obj(dateKey).asInstanceOf[DateTime].withZone(DateTimeZone.UTC).toString)
+        }.toList
     } else Nil
   }
 }
