@@ -16,7 +16,7 @@ object SubsystemNames {
 /**
  * Manages getting the list of subsystem (top level ICD) names from the server and notifying listeners
  */
-case class SubsystemNames(mainContent: MainContent, wsBaseUrl: String, listeners: List[Listener]) {
+case class SubsystemNames(mainContent: MainContent, wsBaseUrl: String, listener: Listener) {
 
   // Initialize by requesting the list of subsystem names and then listening on a websocket for
   // future updates to the list
@@ -37,18 +37,17 @@ case class SubsystemNames(mainContent: MainContent, wsBaseUrl: String, listeners
     }
   }
 
-  private def notifyListeners(items: List[String]): Unit = {
-    listeners.foreach(_(items))
+  private def notifyListener(items: List[String]): Unit = {
+    listener(items)
   }
 
   // Updates the menu
   def update(): Unit = {
-    getSubsystemNames.map(notifyListeners)
+    getSubsystemNames.map(notifyListener)
   }
 
   // Called when the DB is changed, for example after an upload/ingest
   private def wsReceive(e: dom.Event) = {
-    println(s"XXX Received ws subsystem update")
     update()
   }
 

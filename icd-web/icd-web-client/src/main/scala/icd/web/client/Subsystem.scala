@@ -99,10 +99,11 @@ case class Subsystem(listener: SubsystemListener,
     }
 
   /**
-   * Returns true if the latest subsystem version is selected
+   * Gets the list of subsystems being displayed
    */
-  def isLatestSubsystemVersionSelected: Boolean =
-    versionItem.selectedIndex == 0
+  def getSubsystems: List[String] = {
+    subsystemItem.options.map(_.value).toList
+  }
 
   /**
    * Gets the currently selected subsystem version (None for latest version)
@@ -150,12 +151,13 @@ case class Subsystem(listener: SubsystemListener,
     }
   }
 
-  // Update the Subsystem combobox options
+  /**
+   * Update the Subsystem combobox options
+   */
   def updateSubsystemOptions(items: List[String]): Unit = {
     import scalatags.JsDom.all._
 
     val selected = getSubsystemWithVersion
-    val latest = isLatestSubsystemVersionSelected
     val list = selected.subsystemOpt match {
       case Some(subsystem) ⇒ items
       case None            ⇒ msg :: items
@@ -166,12 +168,20 @@ case class Subsystem(listener: SubsystemListener,
     for (s ← list) {
       subsystemItem.add(option(value := s)(s).render)
     }
-    for (_ ← updateSubsystemVersionOptions()) {
-      //      // Update to latest version, if it makes sense
-      //      if (latest) {
-      //        val versionOpt = versionItem.options.headOption.map(_.value)
-      //        setSubsystemWithVersion(SubsystemWithVersion(selected.subsystemOpt, versionOpt))
-      //      } else setSubsystemWithVersion(selected)
+    updateSubsystemVersionOptions() // Future!
+  }
+
+  def disableOption(name: String): Unit = {
+    subsystemItem.options.find(_.value == name).foreach { option ⇒
+      //      option.setAttribute("hidden", "true")
+      option.setAttribute("disabled", "true")
+    }
+  }
+
+  def setAllOptionsEnabled(): Unit = {
+    subsystemItem.options.foreach { option ⇒
+      //      option.removeAttribute("hidden")
+      option.removeAttribute("disabled")
     }
   }
 
