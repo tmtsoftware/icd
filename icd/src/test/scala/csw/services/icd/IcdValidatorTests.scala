@@ -96,7 +96,6 @@ class IcdValidatorTests extends FunSuite {
     assert(componentModel.componentType == "Assembly")
     assert(componentModel.description == "This is the metadata description of the WFOS filter Assembly")
     assert(componentModel.wbsId == "TMT.INS.INST.WFOS.SWE")
-    assert(componentModel.version == 20141121)
     assert(componentModel.modelVersion == "1.1")
   }
 

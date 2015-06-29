@@ -18,7 +18,6 @@ object ComponentModel {
       title = config.as[String]("title"),
       description = config.as[String]("description"),
       modelVersion = config.as[String]("modelVersion"),
-      version = config.getInt("version"),
       wbsId = config.as[Option[String]]("wbsId").getOrElse(""))
 }
 
@@ -29,5 +28,4 @@ case class ComponentModel(componentType: String,
                           title: String,
                           description: String,
                           modelVersion: String,
-                          version: Int,
                           wbsId: String)

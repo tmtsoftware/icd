@@ -14,8 +14,8 @@ case class ComponentModelToGfm(m: ComponentModel, level: Level) extends Gfm {
   private val desc = mkParagraph(m.description)
 
   private val table = mkTable(
-    List("Subsyatem", "Name", "Prefix", "Version", "WBS ID"),
-    List(List(m.subsystem, m.component, m.prefix, m.version.toString, m.wbsId)))
+    List("Subsyatem", "Name", "Prefix", "WBS ID"),
+    List(List(m.subsystem, m.component, m.prefix, m.wbsId)))
 
   val gfm = s"$head\n$desc\n$table"
 }

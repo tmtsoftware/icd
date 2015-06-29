@@ -8,6 +8,9 @@ GET         /                                                             contro
 # Gets a list of top level subsystem names
 GET         /subsystems                                                   controllers.Application.subsystemNames
 
+# Gets top level information about a given version of the given subsystem
+GET         /subsystemInfo/:subsystem                                     controllers.Application.subsystemInfo(subsystem, version: Option[String])
+
 # Gets a list of components belonging to the given version of the given subsystem
 GET         /components/:subsystem                                        controllers.Application.components(subsystem, version: Option[String])
 

@@ -11,11 +11,7 @@ case class SubsystemModelToGfm(m: SubsystemModel, level: Level) extends Gfm {
 
   private val head = mkHeading(level, 1, m.title)
 
-  private val table = mkTable(
-    List("Version"),
-    List(List(m.version.toString)))
-
   private val desc = mkParagraph(m.description)
 
-  val gfm = s"$head\n$desc\n$table"
+  val gfm = s"$head\n$desc"
 }

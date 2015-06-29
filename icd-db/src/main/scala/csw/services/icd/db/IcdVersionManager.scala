@@ -188,7 +188,7 @@ case class IcdVersionManager(db: MongoDB) {
 
   /**
    * Returns information about the given version of the given subsystem or component
-   * @param subsystem the name of the subsystem (XXX TODO? or subsystem.component)
+   * @param subsystem the name of the subsystem
    * @param versionOpt the version of interest (None for the current, unpublished version)
    * @param compNameOpt if defined, return the models for the component, otherwise for the subsystem
    */
@@ -345,6 +345,17 @@ case class IcdVersionManager(db: MongoDB) {
         getEntries(versionInfo.parts).map(Models(versionMap, _))
       case None ⇒ Nil
     }
+  }
+
+  /**
+   * Returns the model for the given (or current) version of the given subsystem
+   * @param subsystem the subsystem name
+   * @param versionOpt optional version
+   * @return the subsystem model
+   */
+  def getSubsystemModel(subsystem: String, versionOpt: Option[String]): Option[SubsystemModel] = {
+    // XXX TODO: This could be optimized to not get and then discard all the subsystem component models...
+    getModels(subsystem, versionOpt, None).headOption.flatMap(_.subsystemModel)
   }
 
   /**

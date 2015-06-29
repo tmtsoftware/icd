@@ -7,7 +7,7 @@ import csw.services.icd.db.{ IcdDbPrinter, IcdDb }
 import play.Play
 import play.api.mvc._
 import play.filters.csrf.CSRFAddToken
-import shared.{ IcdVersion, IcdName, VersionInfo, Csrf }
+import shared._
 import play.api.libs.json._
 
 /**
@@ -31,6 +31,21 @@ object Application extends Controller {
   def subsystemNames = Action {
     val names = db.query.getSubsystemNames
     Ok(Json.toJson(names))
+  }
+
+  /**
+   * Gets information about a named subsystem
+   */
+  def subsystemInfo(subsystem: String, versionOpt: Option[String]) = Action {
+    import upickle._
+    db.versionManager.getSubsystemModel(subsystem, versionOpt) match {
+      case Some(model) ⇒
+        val info = SubsystemInfo(model.name, versionOpt, model.title, model.description)
+        val json = write(info)
+        Ok(json).as(JSON)
+      case None ⇒
+        NotFound
+    }
   }
 
   /**

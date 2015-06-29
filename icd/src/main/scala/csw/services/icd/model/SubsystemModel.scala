@@ -12,13 +12,11 @@ object SubsystemModel {
       name = config.getString("name"),
       title = config.getString("title"),
       description = config.getString("description"),
-      modelVersion = config.getString("modelVersion"),
-      version = config.getInt("version"))
+      modelVersion = config.getString("modelVersion"))
 }
 
 case class SubsystemModel(name: String,
                           title: String,
                           description: String,
-                          modelVersion: String,
-                          version: Int)
+                          modelVersion: String)
 

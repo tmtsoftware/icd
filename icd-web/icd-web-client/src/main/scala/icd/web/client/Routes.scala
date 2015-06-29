@@ -11,6 +11,10 @@ import shared.IcdName
 object Routes {
   val subsystems = "/subsystems"
 
+  def subsystemInfo(subsystem: String, versionOpt: Option[String]) = versionOpt match {
+    case Some("*") | None ⇒ s"/subsystemInfo/$subsystem"
+    case Some(version)    ⇒ s"/subsystemInfo/$subsystem?version=$version"
+  }
   def components(subsystem: String, versionOpt: Option[String]) = versionOpt match {
     case Some("*") | None ⇒ s"/components/$subsystem"
     case Some(version)    ⇒ s"/components/$subsystem?version=$version"

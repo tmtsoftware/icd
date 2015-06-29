@@ -291,13 +291,13 @@ case class IcdDbQuery(db: MongoDB) {
       yield SubscribeModel(getConfig(db(entry.subscribe.get).head.toString))
   }
 
-  /**
-   * Returns an object describing the ICD subsystem for the named component
-   */
-  def getSubsystemModel(name: String): Option[SubsystemModel] = {
-    for (entry ← entryForComponentName(name) if entry.subsystem.isDefined)
-      yield SubsystemModel(getConfig(db(entry.subsystem.get).head.toString))
-  }
+  //  /**
+  //   * Returns an object describing the subsystem for the named component
+  //   */
+  //  def getSubsystemModel(name: String): Option[SubsystemModel] = {
+  //    for (entry ← entryForComponentName(name) if entry.subsystem.isDefined)
+  //      yield SubsystemModel(getConfig(db(entry.subsystem.get).head.toString))
+  //  }
 
   // ---
 

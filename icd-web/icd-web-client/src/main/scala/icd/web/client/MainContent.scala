@@ -9,27 +9,42 @@ import scalatags.JsDom.all._
  * selected subsystem and components
  */
 case class MainContent() extends Displayable {
+  // Title to display
   private val contentTitle = h3(cls := "page-header")().render
 
+  // Optional description
+  private val contentDescription = p.render
+
+  // Holds the content to display
   private val contentDiv = {
     import scalacss.ScalatagsCss._
     div(Styles.contentDiv, id := "content").render
   }
 
-  // Sets the title and HTML content of the main section of the page
+  /**
+   * Sets the title and HTML content of the main section of the page
+   * @param content the content to display
+   * @param title the title to display
+   */
   def setContent(content: String, title: String): Unit = {
     setTitle(title)
     this.contentDiv.innerHTML = content
   }
 
-  // Sets the title and HTML content of the main section of the page
+  /**
+   * Sets the title and HTML content of the main section of the page
+   * @param displayable the content to display
+   * @param title the title to display
+   */
   def setContent(displayable: Displayable, title: String): Unit = {
     setTitle(title)
     contentDiv.innerHTML = ""
     contentDiv.appendChild(displayable.markup())
   }
 
-  // Sets the title of the main section of the page
+  /**
+   * Sets the title and optional subtitle of the main section of the page
+   */
   def setTitle(title: String, subtitleOpt: Option[String] = None): Unit = {
     subtitleOpt match {
       case Some(subtitle) ⇒
@@ -39,36 +54,61 @@ case class MainContent() extends Displayable {
     }
   }
 
-  // Gets the title of the page (excluding the subtitle, if there is one)
+  /**
+   * Gets the title of the page (excluding the subtitle, if there is one)
+   */
   def getTitle: String = {
     val s = contentTitle.innerHTML
     s.indexOf("<br>") match {
       case -1 ⇒ s
-      case n ⇒
-        s.substring(0, n)
+      case n  ⇒ s.substring(0, n)
     }
   }
 
-  // Clear out the title and content
+  /**
+   * Sets the optional description text below the title
+   */
+  def setDescription(s: String): Unit = {
+    contentDescription.innerHTML = s
+  }
+
+  /**
+   * Gets the description being displayed
+   */
+  def getDescription: String = contentDescription.innerHTML
+
+  /**
+   * Clear out the title and content
+   */
   def clearContent(): Unit = setContent("", "")
 
-  // Appends the element to the content
+  /**
+   * Appends the element to the content
+   */
   def appendElement(element: Element): Unit = contentDiv.appendChild(element)
 
-  // Removes the element from the content
+  /**
+   * Removes the element from the content
+   */
   def removeElement(element: Element): Unit = contentDiv.removeChild(element)
 
-  // Replace the old element with the new one
-  def replaceElement(oldElement: Element, newElement: Element) = contentDiv.replaceChild(newElement, oldElement)
+  /**
+   * Replace the old element with the new one
+   */
+  def replaceElement(oldElement: Element, newElement: Element): Unit = contentDiv.replaceChild(newElement, oldElement)
 
-  // Displays an error message for the exception
+  /**
+   * Displays an error message for the exception
+   */
   def displayInternalError(ex: Throwable): Unit = {
     // Display an error message
     println(s"Internal error: $ex")
     setContent(errorDiv("Internal error. The database may be down."), "Internal Error")
   }
 
-  // Scroll the title to the top
+  /**
+   * Scroll the title to the top
+   */
   def scrollToTop(): Unit = {
     contentTitle.scrollTop = 0
   }
@@ -76,7 +116,7 @@ case class MainContent() extends Displayable {
   def markup() = {
     import scalacss.ScalatagsCss._
     div(Styles.mainContent)(
-      div(Styles.main)(contentTitle, contentDiv),
+      div(Styles.main)(contentTitle, contentDescription, contentDiv),
       div(p(" ")) // XXX FIXME: space at bottom, use css
       ).render
   }

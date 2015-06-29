@@ -4,7 +4,7 @@ import org.scalajs.dom
 import org.scalajs.dom.PopStateEvent
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.HTMLStyleElement
-import shared.IcdVersion
+import shared.{ SubsystemInfo, IcdVersion }
 import upickle._
 
 import scala.concurrent.Future
@@ -198,7 +198,6 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
    */
   private def updateComponentDisplay(): Future[Unit] = {
     getFilter.flatMap { filter ⇒
-      mainContent.clearContent()
       val sub = subsystem.getSubsystemWithVersion
       val targetOpt = targetSubsystem.getSubsystemWithVersion
       val icdOpt = icdChooser.getSelectedIcdVersion
@@ -228,12 +227,11 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
       mainContent.clearContent()
       sv.subsystemOpt match {
         case Some(selectedSubsystem) ⇒
-          getComponentNames(sv).flatMap { names ⇒ // Future!
-            names.foreach(sidebar.addComponent)
-            updateComponentDisplay().map { _ ⇒
-              if (saveHistory) pushState(viewType = ComponentView)
-            }
-          }
+          for {
+            names ← getComponentNames(sv)
+            _ ← Future.successful { names.foreach(sidebar.addComponent) }
+            _ ← updateComponentDisplay()
+          } yield if (saveHistory) pushState(viewType = ComponentView)
         case None ⇒ Future.successful()
       }
     }
@@ -278,16 +276,18 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private def viewIcdAsHtml(saveHistory: Boolean = true)(): Unit = {
     // Displays the HTML for the given ICD name
     def displayIcdAsHtml(name: String): Unit = {
-      getIcdHtml(name).map { doc ⇒
-        mainContent.setContent(doc, s"API: $name")
-        if (saveHistory) pushState(viewType = HtmlView)
+      getIcdHtml(name).map {
+        doc ⇒
+          mainContent.setContent(doc, s"API: $name")
+          if (saveHistory) pushState(viewType = HtmlView)
       }
     }
 
     // Gets the HTML for the named ICD
     def getIcdHtml(name: String): Future[String] = {
-      Ajax.get(Routes.apiAsHtml(name)).map { r ⇒
-        r.responseText
+      Ajax.get(Routes.apiAsHtml(name)).map {
+        r ⇒
+          r.responseText
       }
     }
 
@@ -309,7 +309,11 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     icdChooser.getSelectedIcd match {
       case Some(icdName) ⇒
         versionHistory.setIcd(icdName)
-        mainContent.setContent(versionHistory, s"ICD Version History: ${icdName.subsystem} to ${icdName.target}")
+        mainContent.setContent(versionHistory, s"ICD Version History: ${
+          icdName.subsystem
+        } to ${
+          icdName.target
+        }")
         if (saveHistory) pushState(viewType = VersionView)
       case None ⇒ subsystem.getSelectedSubsystem match {
         case Some(name) ⇒

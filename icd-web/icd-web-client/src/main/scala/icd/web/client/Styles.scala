@@ -13,15 +13,15 @@ object Styles extends StyleSheet.Inline {
     height(100 %%),
     width(100 %%),
     position.absolute,
-    top(0 px),
+    top(50 px),
+    media.minWidth(750 px).maxWidth(1170 px)(top(170 px)), // fix resize problems with navbar
     left(0 px),
     display.inlineBlock)
 
   val mainContent = style(
-    addClassName("col-md-11"),
+    addClassName("col-xs-11"),
     height(100 %%),
-    overflowY.auto,
-    padding(50 px, 0 px, 0 px, 0 px))
+    overflowY.auto)
 
   val main = style(
     position.relative,
@@ -33,9 +33,8 @@ object Styles extends StyleSheet.Inline {
     float.left)
 
   val sidebarWrapper = style(
-    addClassName("col-md-1"),
+    addClassName("col-xs-1"),
     height(100 %%),
-    padding(50 px, 0 px, 0 px, 0 px),
     borderRight(1 px, solid, gray),
     borderLeft(1 px, solid, gray))
 
