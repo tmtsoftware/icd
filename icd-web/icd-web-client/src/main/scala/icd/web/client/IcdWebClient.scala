@@ -78,6 +78,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     navbar.addItem(subsystem)
     navbar.addItem(targetSubsystem)
     navbar.addItem(icdChooser)
+
     navbar.addItem(fileUploadItem)
     navbar.addItem(publishItem)
     navbar.addItem(historyItem)
@@ -242,7 +243,9 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
           targetSubsystem.disableOption(selectedSubsystem)
           for {
             names ← getComponentNames(sv)
-            _ ← Future.successful { names.foreach(sidebar.addComponent) }
+            _ ← Future.successful {
+              names.foreach(sidebar.addComponent)
+            }
             _ ← updateComponentDisplay()
           } yield if (saveHistory) pushState(viewType = ComponentView)
         case None ⇒

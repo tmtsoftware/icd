@@ -3,7 +3,6 @@ package icd.web.client
 import org.scalajs.dom.Element
 
 import scalatags.JsDom.all._
-import org.scalajs.dom.raw.Node
 
 /**
  * Manages the navbar
