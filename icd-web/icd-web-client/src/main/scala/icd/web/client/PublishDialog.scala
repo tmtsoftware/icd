@@ -16,7 +16,7 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
   // Message to display above publish button
   private val messageItem = {
     import scalatags.JsDom.all._
-    p("Click below to publish").render
+    div.render
   }
 
   // Displays upload button
@@ -28,7 +28,12 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
   // Upload comment box
   private val commentBox = {
     import scalatags.JsDom.all._
-    textarea(cls := "form-control", name := "comments", rows := 10, cols := 80).render
+    textarea(
+      cls := "form-control",
+      name := "comments",
+      rows := 10,
+      cols := 80,
+      placeholder := "Enter publish comment here...").render
   }
 
   private val majorVersionCheckBox = {
@@ -39,7 +44,10 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
   /**
    * Sets the message to display above the Publish button
    */
-  private def setMessage(msg: String): Unit = messageItem.textContent = msg
+  private def setMessage(msg: Element): Unit = {
+    messageItem.innerHTML = ""
+    messageItem.appendChild(msg)
+  }
 
   /**
    * Sets the text to display for the Publish button
@@ -58,13 +66,16 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
    * Called when the source or target subsystem was changed: Update the enabled states
    */
   def subsystemChanged(): Unit = {
+    import scalatags.JsDom.all._
     val s = subsystem.getSubsystemWithVersion
     val t = targetSubsystem.getSubsystemWithVersion
 
     if (isPublishApi(s, t)) {
       val source = s.subsystemOpt.get
       publishButton.disabled = false
-      setMessage(s"Click below to publish the $source API")
+      val x = p("").render
+      x
+      setMessage(p(s"Click below to publish the $source API").render)
       setPublishButtonLabel("Publish API")
     } else if (isPublishIcd(s, t)) {
       val source = s.subsystemOpt.get
@@ -72,10 +83,16 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
       val target = t.subsystemOpt.get
       val targetVersion = t.versionOpt.get
       val sourceVersion = s.versionOpt.get
-      setMessage(s"Click below to publish the ICD from $source $sourceVersion to $target $targetVersion")
+      setMessage(p(s"Click below to publish the ICD from $source $sourceVersion to $target $targetVersion").render)
       setPublishButtonLabel("Publish ICD")
     } else {
-      setMessage(s"Please select an unpublished (*) subsystem for the API or published source and target subsystems for an ICD")
+      setMessage(p(s"Please select an ",
+        em("unpublished"),
+        " (version = *) subsystem and the target ",
+        em("All"),
+        " to publish the API for the subsystem.",
+        br,
+        "Or select a published subsystem and target to publish the ICD from the subsystem to the target subsystem").render)
       setPublishButtonLabel("Publish (disabled)")
       publishButton.disabled = true
     }

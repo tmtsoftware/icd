@@ -4,7 +4,7 @@ import org.scalajs.dom
 import org.scalajs.dom.PopStateEvent
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.HTMLStyleElement
-import shared.{ SubsystemInfo, IcdVersion }
+import shared.IcdVersion
 import upickle._
 
 import scala.concurrent.Future
@@ -40,21 +40,19 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private val components = Components(mainContent, ComponentLinkSelectionHandler)
   private val sidebar = Sidebar(LeftSidebarListener)
 
-  private val fileUploadItem = FileUploadItem(csrfToken, inputDirSupported = inputDirSupported, uploadSelected())
+  private val fileUploadItem = NavbarItem("Upload", uploadSelected())
   private val fileUploadDialog = FileUploadDialog(csrfToken, inputDirSupported)
 
-  private val publishItem = PublishItem(publishItemSelected())
+  private val publishItem = NavbarItem("Publish", publishItemSelected())
   private val publishDialog = PublishDialog(subsystem, targetSubsystem, icdChooser)
 
-  private val viewMenu = ViewMenu(
-    //    viewAsHtml = viewIcdAsHtml(),
-    //    viewAsPdf = viewIcdAsPdf(),
-    showVersionHistory = showVersionHistory())
+  private val historyItem = NavbarItem("History", showVersionHistory())
+  private val versionHistory = VersionHistory(mainContent)
+
+  private val printItem = NavbarItem("Print", printContent)
 
   private val navbar = Navbar()
   private val layout = Layout()
-
-  private val versionHistory = VersionHistory(mainContent)
 
   // Get the list of subsystems from the server and update the two comboboxes
   private val subsystemListeners = List(
@@ -80,9 +78,10 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     navbar.addItem(subsystem)
     navbar.addItem(targetSubsystem)
     navbar.addItem(icdChooser)
-    navbar.addItem(viewMenu)
     navbar.addItem(fileUploadItem)
     navbar.addItem(publishItem)
+    navbar.addItem(historyItem)
+    navbar.addItem(printItem)
 
     layout.addItem(sidebar)
     layout.addItem(mainContent)
@@ -303,38 +302,6 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     }
   }
 
-  //  // Called when the View ICD as HTML item is selected
-  //  private def viewIcdAsHtml(saveHistory: Boolean = true)(): Unit = {
-  //    // Displays the HTML for the given ICD name
-  //    def displayIcdAsHtml(name: String): Unit = {
-  //      getIcdHtml(name).map {
-  //        doc ⇒
-  //          mainContent.setContent(doc, s"API: $name")
-  //          if (saveHistory) pushState(viewType = HtmlView)
-  //      }
-  //    }
-  //
-  //    // Gets the HTML for the named ICD
-  //    def getIcdHtml(name: String): Future[String] = {
-  //      Ajax.get(Routes.apiAsHtml(name)).map {
-  //        r ⇒
-  //          r.responseText
-  //      }
-  //    }
-  //
-  //    for (name ← subsystem.getSelectedSubsystem) {
-  //      displayIcdAsHtml(name)
-  //    }
-  //  }
-  //
-  //  // Called when the View ICD as PDF item is selected
-  //  private def viewIcdAsPdf(saveHistory: Boolean = true)(): Unit = {
-  //    for (name ← subsystem.getSelectedSubsystem) {
-  //      dom.window.location.assign(Routes.apiAsPdf(name))
-  //      if (saveHistory) pushState(viewType = PdfView)
-  //    }
-  //  }
-
   // Called when the "Show ICD Version History" menu item is selected
   private def showVersionHistory(saveHistory: Boolean = true)(): Unit = {
     icdChooser.getSelectedIcd match {
@@ -354,6 +321,11 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
         case None ⇒
       }
     }
+  }
+
+  // Opens the browser's print dialog
+  private def printContent(): Unit = {
+    dom.window.print()
   }
 }
 

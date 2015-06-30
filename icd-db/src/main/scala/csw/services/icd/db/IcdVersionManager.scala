@@ -22,19 +22,19 @@ object IcdVersionManager {
 
   RegisterJodaTimeConversionHelpers()
 
-  // The id key inserted into all documents
+  /** The id key inserted into all documents */
   val idKey = "_id"
 
-  // The version key inserted into all documents
+  /** The version key inserted into all documents */
   val versionKey = "_version"
 
-  // The version key used for top level subsystems or components
+  /** The version key used for top level subsystems or components */
   val versionStrKey = "version"
 
-  // The name of the sub-collection containing the previous versions or version information
+  /** The name of the sub-collection containing the previous versions or version information */
   val versionColl = "v"
 
-  // Name of collection with information about published ICDs
+  /** Name of collection with information about published ICDs */
   val icdCollName = "icds"
 
   val subsystemKey = "subsystem"

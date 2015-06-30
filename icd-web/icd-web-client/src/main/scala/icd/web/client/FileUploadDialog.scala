@@ -166,7 +166,6 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
           div(cls := "panel panel-info")(
             div(cls := "panel-body")(
               div(label(s"$dirLabel to upload:")(inputItem)),
-              //              div(Styles.commentBox, label("Comments")(commentBox)),
               div(cls := "hide")(
                 button(`type` := "submit")("Upload Files"))))),
       div(cls := "progress")(
