@@ -2,7 +2,7 @@ package controllers
 
 import csw.services.icd.db.IcdDb
 import csw.services.icd.db.IcdDbQuery.{ Health, Alarms, Events, EventStreams, Telemetry, PublishType }
-import csw.services.icd.model.IcdModels
+import csw.services.icd.model.{ ComponentModel, IcdModels }
 import shared.{ OtherComponent, CommandInfo, PublishInfo, SubscribeInfo }
 
 object ComponentInfo {
@@ -18,7 +18,9 @@ object ComponentInfo {
   def apply(db: IcdDb, subsystem: String, versionOpt: Option[String], compName: String): shared.ComponentInfo = {
     // get the models for this component
     val modelsList = db.versionManager.getModels(subsystem, versionOpt, Some(compName))
-    val description = getDescription(modelsList)
+    val description = getComponentField(modelsList, _.description)
+    val prefix = getComponentField(modelsList, _.prefix)
+    val wbsId = getComponentField(modelsList, _.wbsId)
     val publishInfo = for (models ← modelsList.headOption) yield {
       getPublishInfo(db, models)
     }
@@ -32,7 +34,7 @@ object ComponentInfo {
       getCommandsSent(db, models)
     }
 
-    shared.ComponentInfo(subsystem, compName, description,
+    shared.ComponentInfo(subsystem, compName, description, prefix, wbsId,
       publishInfo.toList.flatten,
       subscribeInfo.toList.flatten,
       commandsReceived.getOrElse(Nil),
@@ -40,14 +42,15 @@ object ComponentInfo {
   }
 
   /**
-   * Gets the component description, or an empty string if not found
-   * @param modelsList list of model sets for the subsystem or component
+   * Gets a string value from the component description, or an empty string if not found
+   * @param modelsList list of model sets for the component
+   * @param f function to get the value
    */
-  private def getDescription(modelsList: List[IcdModels]): String = {
+  private def getComponentField(modelsList: List[IcdModels], f: ComponentModel ⇒ String): String = {
     if (modelsList.isEmpty) ""
     else {
       modelsList.head.componentModel match {
-        case Some(model) ⇒ model.description
+        case Some(model) ⇒ f(model)
         case None        ⇒ ""
       }
     }

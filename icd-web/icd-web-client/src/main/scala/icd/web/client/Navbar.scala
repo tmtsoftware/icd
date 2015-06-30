@@ -16,7 +16,7 @@ case class Navbar() extends Displayable {
   def markup(): Element = {
     import scalatags.JsDom.tags2._
 
-    nav(cls := "navbar navbar-default navbar-fixed-top", role := "navigation")(
+    nav(cls := "navbar navbar-default navbar-fixed-top hidden-print", role := "navigation")(
       div(cls := "navbar-header")(
         button(`type` := "button", cls := "navbar-toggle", "data-toggle".attr := "collapse", "data-target".attr := "#icd-navbar")(
           span(cls := "sr-only")("Toggle navigation/span"),

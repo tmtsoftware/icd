@@ -45,13 +45,14 @@ case class MainContent() extends Displayable {
   /**
    * Sets the title and optional subtitle of the main section of the page
    */
-  def setTitle(title: String, subtitleOpt: Option[String] = None): Unit = {
+  def setTitle(title: String, subtitleOpt: Option[String] = None, descriptionOpt: Option[String] = None): Unit = {
     subtitleOpt match {
       case Some(subtitle) ⇒
         contentTitle.innerHTML = s"$title<br><small>$subtitle</small>"
       case None ⇒
         contentTitle.textContent = title
     }
+    setDescription(descriptionOpt.getOrElse(""))
   }
 
   /**

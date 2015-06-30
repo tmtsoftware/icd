@@ -14,14 +14,18 @@ object Styles extends StyleSheet.Inline {
     width(100 %%),
     position.absolute,
     top(50 px),
-    media.minWidth(750 px).maxWidth(1170 px)(top(170 px)), // fix resize problems with navbar
+    // Increase top offset in the range 750 to 1170 px,
+    // since the navbar items wrap around at that size
+    media.minWidth(750 px).maxWidth(1170 px)(top(170 px)),
+    media.print(top(0 px)),
     left(0 px),
     display.inlineBlock)
 
   val mainContent = style(
     addClassName("col-xs-11"),
     height(100 %%),
-    overflowY.auto)
+    overflowY.auto,
+    media.print(width.auto, height.auto, display.block, overflow.visible))
 
   val main = style(
     position.relative,
@@ -34,6 +38,7 @@ object Styles extends StyleSheet.Inline {
 
   val sidebarWrapper = style(
     addClassName("col-xs-1"),
+    addClassName("hidden-print"),
     height(100 %%),
     borderRight(1 px, solid, gray),
     borderLeft(1 px, solid, gray))
@@ -51,14 +56,19 @@ object Styles extends StyleSheet.Inline {
 
   // Control width of tables in the information displayed for selected components
   val componentTable = style(
-    maxWidth(80 %%))
+    maxWidth(100 %%))
 
   // Used for table columns that should not wrap
   val noWrapTableColumn = style(
     whiteSpace.nowrap)
 
+  // Used for table columns that should wrap at "."
+  val wrapTableColumn = style(
+    wordBreak.breakAll, wordWrap.breakWord)
+
   val fileUploadMessages = style(
-    addClassName("alert alert-info"),
+    addClassName("alert"),
+    addClassName("alert-info"),
     padding(0 px, 10 px),
     margin(1 em, 0 em),
     border(1 px, solid, gray))
@@ -70,7 +80,6 @@ object Styles extends StyleSheet.Inline {
     margin(1 em, 0 em))
 
   val versionHistory = style(
-    addClassNames("footer"),
     position.absolute,
     overflowY.auto,
     left(0 px),

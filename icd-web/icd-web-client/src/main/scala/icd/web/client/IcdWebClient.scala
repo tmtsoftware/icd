@@ -47,8 +47,8 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private val publishDialog = PublishDialog(subsystem, targetSubsystem, icdChooser)
 
   private val viewMenu = ViewMenu(
-    viewAsHtml = viewIcdAsHtml(),
-    viewAsPdf = viewIcdAsPdf(),
+    //    viewAsHtml = viewIcdAsHtml(),
+    //    viewAsPdf = viewIcdAsPdf(),
     showVersionHistory = showVersionHistory())
 
   private val navbar = Navbar()
@@ -189,8 +189,8 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
         hist.viewType match {
           case UploadView    ⇒ uploadSelected(saveHistory = false)()
           case PublishView   ⇒ publishItemSelected(saveHistory = false)()
-          case HtmlView      ⇒ viewIcdAsHtml(saveHistory = false)()
-          case PdfView       ⇒ viewIcdAsPdf(saveHistory = false)()
+          //          case HtmlView      ⇒ viewIcdAsHtml(saveHistory = false)()
+          //          case PdfView       ⇒ viewIcdAsPdf(saveHistory = false)()
           case VersionView   ⇒ showVersionHistory(saveHistory = false)()
           case ComponentView ⇒ updateComponentDisplay()
           case IcdView       ⇒ updateComponentDisplay()
@@ -303,37 +303,37 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     }
   }
 
-  // Called when the View ICD as HTML item is selected
-  private def viewIcdAsHtml(saveHistory: Boolean = true)(): Unit = {
-    // Displays the HTML for the given ICD name
-    def displayIcdAsHtml(name: String): Unit = {
-      getIcdHtml(name).map {
-        doc ⇒
-          mainContent.setContent(doc, s"API: $name")
-          if (saveHistory) pushState(viewType = HtmlView)
-      }
-    }
-
-    // Gets the HTML for the named ICD
-    def getIcdHtml(name: String): Future[String] = {
-      Ajax.get(Routes.apiAsHtml(name)).map {
-        r ⇒
-          r.responseText
-      }
-    }
-
-    for (name ← subsystem.getSelectedSubsystem) {
-      displayIcdAsHtml(name)
-    }
-  }
-
-  // Called when the View ICD as PDF item is selected
-  private def viewIcdAsPdf(saveHistory: Boolean = true)(): Unit = {
-    for (name ← subsystem.getSelectedSubsystem) {
-      dom.window.location.assign(Routes.apiAsPdf(name))
-      if (saveHistory) pushState(viewType = PdfView)
-    }
-  }
+  //  // Called when the View ICD as HTML item is selected
+  //  private def viewIcdAsHtml(saveHistory: Boolean = true)(): Unit = {
+  //    // Displays the HTML for the given ICD name
+  //    def displayIcdAsHtml(name: String): Unit = {
+  //      getIcdHtml(name).map {
+  //        doc ⇒
+  //          mainContent.setContent(doc, s"API: $name")
+  //          if (saveHistory) pushState(viewType = HtmlView)
+  //      }
+  //    }
+  //
+  //    // Gets the HTML for the named ICD
+  //    def getIcdHtml(name: String): Future[String] = {
+  //      Ajax.get(Routes.apiAsHtml(name)).map {
+  //        r ⇒
+  //          r.responseText
+  //      }
+  //    }
+  //
+  //    for (name ← subsystem.getSelectedSubsystem) {
+  //      displayIcdAsHtml(name)
+  //    }
+  //  }
+  //
+  //  // Called when the View ICD as PDF item is selected
+  //  private def viewIcdAsPdf(saveHistory: Boolean = true)(): Unit = {
+  //    for (name ← subsystem.getSelectedSubsystem) {
+  //      dom.window.location.assign(Routes.apiAsPdf(name))
+  //      if (saveHistory) pushState(viewType = PdfView)
+  //    }
+  //  }
 
   // Called when the "Show ICD Version History" menu item is selected
   private def showVersionHistory(saveHistory: Boolean = true)(): Unit = {

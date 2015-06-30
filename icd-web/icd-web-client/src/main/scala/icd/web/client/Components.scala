@@ -34,6 +34,7 @@ object Components {
 
   // Information displayed at top of components page
   case class TitleInfo(title: String, subtitleOpt: Option[String], descriptionOpt: Option[String])
+
 }
 
 /**
@@ -116,8 +117,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         } yield {
           val titleInfo = getTitleInfo(subsystemInfo, targetSubsystem, icdOpt)
           mainContent.clearContent()
-          mainContent.setTitle(titleInfo.title, titleInfo.subtitleOpt)
-          mainContent.setDescription(titleInfo.descriptionOpt.getOrElse(""))
+          mainContent.setTitle(titleInfo.title, titleInfo.subtitleOpt, titleInfo.descriptionOpt)
           infoList.foreach(displayComponentInfo)
         }
         f.onFailure { case ex ⇒ mainContent.displayInternalError(ex) }
@@ -188,8 +188,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           p.otherComponents.exists(s ⇒
             names.contains(s.compName)))
 
-        ComponentInfo(info.subsystem, info.compName, info.description, publishInfo, subscribeInfo,
-          commandsReceived, commandsSent)
+        ComponentInfo(info.subsystem, info.compName, info.description, info.prefix, info.wbsId,
+          publishInfo, subscribeInfo, commandsReceived, commandsSent)
       case None ⇒ info
     }
   }
@@ -289,8 +289,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             th("Publisher"))),
         tbody(
           for (s ← subInfo) yield {
+            val path = s.name.split('.')
+            val prefix = path.dropRight(1).mkString(".")
+            val name = path.last
             tr(
-              td(s.name),
+              td(prefix, br, s".$name"),
               td(s.itemType),
               td(s.description),
               td(makeLinkForPublisher(s)))
@@ -365,6 +368,26 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           })))
   }
 
+  // Generates a one line table with basic component informationdiv(
+  private def componentInfoTableMarkup(info: ComponentInfo) = {
+    import scalatags.JsDom.all._
+    import scalacss.ScalatagsCss._
+    div(
+      table(Styles.componentTable, "data-toggle".attr := "table",
+        thead(
+          tr(
+            th("Subsystem"),
+            th("Name"),
+            th("Prefix"),
+            th("WBS ID"))),
+        tbody(
+          tr(
+            td(info.subsystem),
+            td(info.compName),
+            td(info.prefix),
+            td(info.wbsId)))))
+  }
+
   // Generates the HTML markup to display the component information
   private def markupForComponent(info: ComponentInfo) = {
     import scalatags.JsDom.all._
@@ -372,6 +395,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     div(cls := "container", id := getComponentInfoId(info.compName))(
       h2(info.compName),
       p(info.description),
+      componentInfoTableMarkup(info),
       publishMarkup(info.compName, info.publishInfo),
       subscribeMarkup(info.compName, info.subscribeInfo),
       receivedCommandsMarkup(info.compName, info.commandsReceived),

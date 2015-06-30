@@ -28,12 +28,12 @@ object BrowserHistory {
   // Publishing an API or ICD
   case object PublishView extends ViewType
 
-  // Result of View menu => Static API as HTML Document
-  case object HtmlView extends ViewType
-
-  // Result of View menu => Static API as PDF Document
-  case object PdfView extends ViewType
-
+  //  // Result of View menu => Static API as HTML Document
+  //  case object HtmlView extends ViewType
+  //
+  //  // Result of View menu => Static API as PDF Document
+  //  case object PdfView extends ViewType
+  //
   // Viewing the version history
   case object VersionView extends ViewType
 

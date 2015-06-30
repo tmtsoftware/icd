@@ -5,6 +5,8 @@ package shared
  * @param subsystem subsystem name
  * @param compName component name
  * @param description component description
+ * @param prefix the component's prefix (for accessing published items)
+ * @param wbsId component's WBS id
  * @param publishInfo list of items published by the component
  * @param subscribeInfo list of items the component subscribes to
  * @param commandsReceived list of commands the component can receive
@@ -13,6 +15,8 @@ package shared
 case class ComponentInfo(subsystem: String,
                          compName: String,
                          description: String,
+                         prefix: String,
+                         wbsId: String,
                          publishInfo: List[PublishInfo],
                          subscribeInfo: List[SubscribeInfo],
                          commandsReceived: List[CommandInfo],
