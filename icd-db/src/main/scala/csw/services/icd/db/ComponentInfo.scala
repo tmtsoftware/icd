@@ -1,9 +1,8 @@
-package controllers
+package csw.services.icd.db
 
-import csw.services.icd.db.IcdDb
-import csw.services.icd.db.IcdDbQuery.{ Health, Alarms, Events, EventStreams, Telemetry, PublishType }
+import csw.services.icd.db.IcdDbQuery.{ Alarms, EventStreams, Events, Health, PublishType, Telemetry }
 import csw.services.icd.model.{ ComponentModel, IcdModels }
-import shared.{ OtherComponent, CommandInfo, PublishInfo, SubscribeInfo }
+import shared.{ CommandInfo, OtherComponent, PublishInfo, SubscribeInfo }
 
 object ComponentInfo {
   /**
@@ -21,18 +20,11 @@ object ComponentInfo {
     val description = getComponentField(modelsList, _.description)
     val prefix = getComponentField(modelsList, _.prefix)
     val wbsId = getComponentField(modelsList, _.wbsId)
-    val publishInfo = for (models ← modelsList.headOption) yield {
-      getPublishInfo(db, models)
-    }
-    val subscribeInfo = for (models ← modelsList.headOption) yield {
-      getSubscribeInfo(db, models)
-    }
-    val commandsReceived = for (models ← modelsList.headOption) yield {
-      getCommandsReceived(db, models)
-    }
-    val commandsSent = for (models ← modelsList.headOption) yield {
-      getCommandsSent(db, models)
-    }
+    val h = modelsList.headOption
+    val publishInfo = h.map(getPublishInfo(db, _))
+    val subscribeInfo = h.map(getSubscribeInfo(db, _))
+    val commandsReceived = h.map(getCommandsReceived(db, _))
+    val commandsSent = h.map(getCommandsSent(db, _))
 
     shared.ComponentInfo(subsystem, compName, description, prefix, wbsId,
       publishInfo.toList.flatten,
@@ -62,25 +54,29 @@ object ComponentInfo {
    * @param models the model objects for the component
    */
   private def getPublishInfo(db: IcdDb, models: IcdModels): List[PublishInfo] = {
-    val prefix = models.componentModel.get.prefix
-    val result = models.publishModel.map { m ⇒
-      m.telemetryList.map { t ⇒
-        PublishInfo("Telemetry", t.name, t.description, getSubscribers(db, prefix, t.name, t.description, Telemetry))
-      } ++
-        m.eventList.map { el ⇒
-          PublishInfo("Event", el.name, el.description, getSubscribers(db, prefix, el.name, el.description, Events))
-        } ++
-        m.eventStreamList.map { esl ⇒
-          PublishInfo("EventStream", esl.name, esl.description, getSubscribers(db, prefix, esl.name, esl.description, EventStreams))
-        } ++
-        m.alarmList.map { al ⇒
-          PublishInfo("Alarm", al.name, al.description, getSubscribers(db, prefix, al.name, al.description, Alarms))
-        } ++
-        m.healthList.map { hl ⇒
-          PublishInfo("Health", hl.name, hl.description, getSubscribers(db, prefix, hl.name, hl.description, Health))
+    models.componentModel match {
+      case None ⇒ Nil
+      case Some(componentModel) ⇒
+        val prefix = componentModel.prefix
+        val result = models.publishModel.map { m ⇒
+          m.telemetryList.map { t ⇒
+            PublishInfo("Telemetry", t.name, t.description, getSubscribers(db, prefix, t.name, t.description, Telemetry))
+          } ++
+            m.eventList.map { el ⇒
+              PublishInfo("Event", el.name, el.description, getSubscribers(db, prefix, el.name, el.description, Events))
+            } ++
+            m.eventStreamList.map { esl ⇒
+              PublishInfo("EventStream", esl.name, esl.description, getSubscribers(db, prefix, esl.name, esl.description, EventStreams))
+            } ++
+            m.alarmList.map { al ⇒
+              PublishInfo("Alarm", al.name, al.description, getSubscribers(db, prefix, al.name, al.description, Alarms))
+            } ++
+            m.healthList.map { hl ⇒
+              PublishInfo("Health", hl.name, hl.description, getSubscribers(db, prefix, hl.name, hl.description, Health))
+            }
         }
+        result.toList.flatten
     }
-    result.toList.flatten
   }
 
   /**

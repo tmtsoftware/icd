@@ -7,7 +7,6 @@ import upickle._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.{ Failure, Success }
 import Components._
 
 object Components {
@@ -76,15 +75,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    * @param subsystem the components' subsystem
    * @param versionOpt optional version (default: current version)
    * @param compNames list of component names
-   * @param filter list of target component names used to filter list
+   * @param targetSubsystem optional target subsystem and version
    * @return future list of objects describing the components
    */
-  private def getComponentInfo(subsystem: String, versionOpt: Option[String],
-                               compNames: List[String],
-                               filter: Option[List[String]]): Future[List[ComponentInfo]] = {
+  private def getComponentInfo(subsystem: String, versionOpt: Option[String], compNames: List[String],
+                               targetSubsystem: SubsystemWithVersion): Future[List[ComponentInfo]] = {
     Future.sequence {
-      for (compName ← compNames) yield Ajax.get(Routes.componentInfo(subsystem, compName, versionOpt)).map { r ⇒
-        applyFilter(filter, read[ComponentInfo](r.responseText))
+      for (compName ← compNames) yield Ajax.get(Routes.icdComponentInfo(subsystem, versionOpt, compName, targetSubsystem)).map { r ⇒
+        applyIcdFilter(read[ComponentInfo](r.responseText))
       }
     }
   }
@@ -100,20 +98,17 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   /**
    * Adds (appends) a list of components to the display, in the order that they are given in the list.
    * @param compNames the names of the components
-   * @param filter an optional list of target component names to use to filter the
-   *               display (restrict to only those target components)
    * @param sv the selected subsystem and version
    * @param targetSubsystem the target subsystem (might not be set)
    */
-  def addComponents(compNames: List[String], filter: Option[List[String]],
-                    sv: SubsystemWithVersion, targetSubsystem: SubsystemWithVersion,
+  def addComponents(compNames: List[String], sv: SubsystemWithVersion, targetSubsystem: SubsystemWithVersion,
                     icdOpt: Option[IcdVersion]): Future[Unit] = {
     sv.subsystemOpt match {
       case None ⇒ Future.successful()
       case Some(subsystem) ⇒
         val f = for {
           subsystemInfo ← getSubsystemInfo(subsystem, sv.versionOpt)
-          infoList ← getComponentInfo(subsystem, sv.versionOpt, compNames, filter)
+          infoList ← getComponentInfo(subsystem, sv.versionOpt, compNames, targetSubsystem)
         } yield {
           val titleInfo = getTitleInfo(subsystemInfo, targetSubsystem, icdOpt)
           mainContent.clearContent()
@@ -128,22 +123,16 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   /**
    * Adds (appends) a component to the display
    * @param compName the name of the component
-   * @param filter an optional list of target component names to use to filter the
-   *               display (restrict to only those target components)
    * @param sv the selected subsystem
    * @param targetSubsystem the target subsystem (might not be set)
    */
-  def addComponent(compName: String, filter: Option[List[String]],
-                   sv: SubsystemWithVersion,
-                   targetSubsystem: SubsystemWithVersion,
-                   icdOpt: Option[IcdVersion]): Unit = {
+  def addComponent(compName: String, sv: SubsystemWithVersion,
+                   targetSubsystem: SubsystemWithVersion): Unit = {
     sv.subsystemOpt.foreach { subsystem ⇒
-      Ajax.get(Routes.componentInfo(subsystem, compName, sv.versionOpt)).map { r ⇒ // Future!
-        val info = applyFilter(filter, read[ComponentInfo](r.responseText))
-        displayComponentInfo(info)
+      getComponentInfo(subsystem, sv.versionOpt, List(compName), targetSubsystem).map { list ⇒
+        list.foreach(displayComponentInfo)
       }.recover {
-        case ex ⇒
-          mainContent.displayInternalError(ex)
+        case ex ⇒ mainContent.displayInternalError(ex)
       }
     }
   }
@@ -155,7 +144,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    */
   def setComponent(sv: SubsystemWithVersion, compName: String): Unit = {
     if (sv.subsystemOpt.isDefined) {
-      val path = Routes.componentInfo(sv.subsystemOpt.get, compName, sv.versionOpt)
+      val path = Routes.componentInfo(sv.subsystemOpt.get, sv.versionOpt, compName)
       Ajax.get(path).map { r ⇒
         val info = read[ComponentInfo](r.responseText)
         mainContent.clearContent()
@@ -169,29 +158,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
-  // Filter out any components not in the filter, if the filter is defined
-  private def applyFilter(filter: Option[List[String]], info: ComponentInfo): ComponentInfo = {
-    filter match {
-      case Some(names) ⇒
-        val publishInfo = info.publishInfo.filter(p ⇒
-          p.subscribers.exists(s ⇒
-            names.contains(s.compName)))
-
-        val subscribeInfo = info.subscribeInfo.filter(s ⇒
-          names.contains(s.compName))
-
-        val commandsReceived = info.commandsReceived.filter(p ⇒
-          p.otherComponents.exists(s ⇒
-            names.contains(s.compName)))
-
-        val commandsSent = info.commandsSent.filter(p ⇒
-          p.otherComponents.exists(s ⇒
-            names.contains(s.compName)))
-
-        ComponentInfo(info.subsystem, info.compName, info.description, info.prefix, info.wbsId,
-          publishInfo, subscribeInfo, commandsReceived, commandsSent)
-      case None ⇒ info
-    }
+  // For ICDs, we are only interested in the interface between the two subsystems.
+  // Filter out any published commands with no subscribers,
+  // and any commands received, with no senders
+  private def applyIcdFilter(info: ComponentInfo): ComponentInfo = {
+    val publishInfo = info.publishInfo.filter(p ⇒ p.subscribers.nonEmpty)
+    val commandsReceived = info.commandsReceived.filter(p ⇒ p.otherComponents.nonEmpty)
+    ComponentInfo(info.subsystem, info.compName, info.description, info.prefix, info.wbsId,
+      publishInfo, info.subscribeInfo, commandsReceived, info.commandsSent)
   }
 
   // Removes the component display

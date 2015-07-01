@@ -55,9 +55,6 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private val layout = Layout()
 
   // Get the list of subsystems from the server and update the two comboboxes
-  private val subsystemListeners = List(
-    subsystem.updateSubsystemOptions _,
-    targetSubsystem.updateSubsystemOptions _)
   SubsystemNames(mainContent, wsBaseUrl, updateSubsystemOptions)
 
   icdChooser.updateIcdOptions()
@@ -118,44 +115,36 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     if (saveHistory) pushState(viewType = PublishView)
   }
 
-  /**
-   * Returns a list of the component names for the selected target subsystem,
-   * or None if "All" is selected in the combobox.
-   * (If a target subsystem is selected, only components that communicate with it are displayed.)
-   */
-  private def getFilter: Future[Option[List[String]]] = {
-    if (targetSubsystem.isDefault) Future.successful(None)
-    else {
-      getComponentNames(targetSubsystem.getSubsystemWithVersion).map(Some(_))
-    }
-  }
-
   // Listener for sidebar component checkboxes
   private object LeftSidebarListener extends SidebarListener {
     override def componentSelected(componentName: String, checked: Boolean): Unit = {
-      getFilter.map { filter ⇒
-        if (checked)
-          components.addComponent(componentName, filter,
-            subsystem.getSubsystemWithVersion,
-            targetSubsystem.getSubsystemWithVersion,
-            icdChooser.getSelectedIcdVersion)
-        else
-          components.removeComponentInfo(componentName)
+      if (checked)
+        components.addComponent(componentName,
+          subsystem.getSubsystemWithVersion,
+          targetSubsystem.getSubsystemWithVersion)
+      else
+        components.removeComponentInfo(componentName)
 
-        pushState(viewType = ComponentView)
-      }
+      pushState(viewType = ComponentView)
     }
   }
 
   /**
    * Called when a component is selected in one of the publisher/subscriber/command tables.
+   * If the lined subsystem is the source or target subsystem, use the component from the
+   * selected version of the subsystem, otherwise use the latest version.
    */
   private object ComponentLinkSelectionHandler extends ComponentListener {
     def componentSelected(link: ComponentLink): Unit = {
-      val sv = SubsystemWithVersion(Some(link.subsystem), None) // XXX where to get version?
+      val source = subsystem.getSubsystemWithVersion
+      val target = targetSubsystem.getSubsystemWithVersion
+      val sv = Some(link.subsystem) match {
+        case source.subsystemOpt ⇒ source
+        case target.subsystemOpt ⇒ target
+        case _                   ⇒ SubsystemWithVersion(Some(link.subsystem), None)
+      }
       components.setComponent(sv, link.compName)
       pushState(viewType = ComponentLinkView, linkComponent = Some(link))
-
     }
   }
 
@@ -189,8 +178,6 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
         hist.viewType match {
           case UploadView    ⇒ uploadSelected(saveHistory = false)()
           case PublishView   ⇒ publishItemSelected(saveHistory = false)()
-          //          case HtmlView      ⇒ viewIcdAsHtml(saveHistory = false)()
-          //          case PdfView       ⇒ viewIcdAsPdf(saveHistory = false)()
           case VersionView   ⇒ showVersionHistory(saveHistory = false)()
           case ComponentView ⇒ updateComponentDisplay()
           case IcdView       ⇒ updateComponentDisplay()
@@ -208,12 +195,10 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
    * @return a future indicating when the changes are done
    */
   private def updateComponentDisplay(): Future[Unit] = {
-    getFilter.flatMap { filter ⇒
-      val sub = subsystem.getSubsystemWithVersion
-      val targetOpt = targetSubsystem.getSubsystemWithVersion
-      val icdOpt = icdChooser.getSelectedIcdVersion
-      components.addComponents(sidebar.getSelectedComponents, filter, sub, targetOpt, icdOpt)
-    }
+    val sub = subsystem.getSubsystemWithVersion
+    val targetOpt = targetSubsystem.getSubsystemWithVersion
+    val icdOpt = icdChooser.getSelectedIcdVersion
+    components.addComponents(sidebar.getSelectedComponents, sub, targetOpt, icdOpt)
   }
 
   // Gets the list of subcomponents for the selected subsystem

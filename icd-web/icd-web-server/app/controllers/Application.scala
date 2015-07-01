@@ -3,12 +3,12 @@ package controllers
 import java.io.ByteArrayOutputStream
 
 import csw.services.icd.IcdToPdf
-import csw.services.icd.db.{ IcdDbPrinter, IcdDb }
+import csw.services.icd.db.{ IcdComponentInfo, ComponentInfo, IcdDbPrinter, IcdDb }
 import play.Play
 import play.api.mvc._
 import play.filters.csrf.CSRFAddToken
-import shared._
 import play.api.libs.json._
+import shared.{ IcdName, VersionInfo, SubsystemInfo, Csrf }
 
 /**
  * Provides the interface between the web client and the server
@@ -58,43 +58,62 @@ object Application extends Controller {
 
   /**
    * Gets information about a named component in the given version of the given subsystem
+   * @param subsystem the subsystem
+   * @param versionOpt the subsystem's version (default: current)
+   * @param compName the component name
    */
-  def componentInfo(subsystem: String, compName: String, versionOpt: Option[String]) = Action {
+  def componentInfo(subsystem: String, versionOpt: Option[String], compName: String) = Action {
     import upickle._
     val info = ComponentInfo(db, subsystem, versionOpt, compName)
     val json = write(info)
     Ok(json).as(JSON)
   }
 
-  // Gets the HTML for the named subsystem or component (without inserting any CSS)
-  private def getAsPlainHtml(name: String): String = {
-    val html = IcdDbPrinter(db.query).getAsPlainHtml(name)
-    html
-  }
-
-  // Gets the HTML for the named subsystem or component
-  private def getAsHtml(name: String): String = {
-    val html = IcdDbPrinter(db.query).getAsHtml(name)
-    html
-  }
-
   /**
-   * Returns the HTML API for the subsystem or component with the given name
+   * Gets information about a component in a given version of an ICD
+   * @param subsystem the source subsystem
+   * @param versionOpt the source subsystem's version (default: current)
+   * @param compName the source component name
+   * @param target the target subsystem
+   * @param targetVersion the target subsystem's version
    */
-  def apiAsHtml(name: String) = Action {
-    Ok(getAsPlainHtml(name)).as(HTML)
+  def icdComponentInfo(subsystem: String, versionOpt: Option[String], compName: String,
+                       target: String, targetVersion: Option[String]) = Action {
+    import upickle._
+    val info = IcdComponentInfo(db, subsystem, versionOpt, compName, target, targetVersion)
+    val json = write(info)
+    Ok(json).as(JSON)
   }
 
-  /**
-   * Returns the PDF for the API with the given name
-   * @param name the subsystem or component name
-   */
-  def apiAsPdf(name: String) = Action {
-    val out = new ByteArrayOutputStream()
-    IcdToPdf.saveAsPdf(out, getAsHtml(name))
-    val bytes = out.toByteArray
-    Ok(bytes).as("application/pdf")
-  }
+  //  // Gets the HTML for the named subsystem or component (without inserting any CSS)
+  //  private def getAsPlainHtml(name: String): String = {
+  //    val html = IcdDbPrinter(db.query).getAsPlainHtml(name)
+  //    html
+  //  }
+  //
+  //  // Gets the HTML for the named subsystem or component
+  //  private def getAsHtml(name: String): String = {
+  //    val html = IcdDbPrinter(db.query).getAsHtml(name)
+  //    html
+  //  }
+  //
+  //  /**
+  //   * Returns the HTML API for the subsystem or component with the given name
+  //   */
+  //  def apiAsHtml(name: String) = Action {
+  //    Ok(getAsPlainHtml(name)).as(HTML)
+  //  }
+  //
+  //  /**
+  //   * Returns the PDF for the API with the given name
+  //   * @param name the subsystem or component name
+  //   */
+  //  def apiAsPdf(name: String) = Action {
+  //    val out = new ByteArrayOutputStream()
+  //    IcdToPdf.saveAsPdf(out, getAsHtml(name))
+  //    val bytes = out.toByteArray
+  //    Ok(bytes).as("application/pdf")
+  //  }
 
   /**
    * Returns a detailed list of the versions of the given subsystem

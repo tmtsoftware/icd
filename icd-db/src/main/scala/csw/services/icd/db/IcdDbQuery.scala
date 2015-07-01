@@ -97,7 +97,7 @@ object IcdDbQuery {
    * @param subsystem the component's subsystem
    * @param subscribeType one of Telemetry, Events, Alarms, etc.
    * @param name the name of the item being subscribed to
-   * @param itemSubsystem the subsystem to which the named item belongs
+   * @param itemSubsystem the subsystem to which the named item belongs (the publisher's subsystem)
    */
   case class Subscribed(componentName: String, subsystem: String, subscribeType: PublishType, name: String, itemSubsystem: String)
 

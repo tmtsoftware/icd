@@ -15,13 +15,16 @@ GET         /subsystemInfo/:subsystem                                     contro
 GET         /components/:subsystem                                        controllers.Application.components(subsystem, version: Option[String])
 
 # Gets information about a given component in a given version of the given subsystem
-GET         /componentInfo/:subsystem/:compName                           controllers.Application.componentInfo(subsystem, compName, version: Option[String])
+GET         /componentInfo/:subsystem/:compName                           controllers.Application.componentInfo(subsystem, version: Option[String], compName)
 
-# Gets the HTML for the given component
-GET         /apiAsHtml/:name                                              controllers.Application.apiAsHtml(name)
+# Gets information about a component in a given version of an ICD
+GET         /icdComponentInfo/:subsystem/:compName/:target                controllers.Application.icdComponentInfo(subsystem, version: Option[String], compName, target, targetVersion: Option[String])
 
-# Gets the PDF for the given component
-GET         /apiAsPdf/:name                                               controllers.Application.apiAsPdf(name)
+## Gets the HTML for the given component
+#GET         /apiAsHtml/:name                                              controllers.Application.apiAsHtml(name)
+#
+## Gets the PDF for the given component
+#GET         /apiAsPdf/:name                                               controllers.Application.apiAsPdf(name)
 
 # Gets the detailed information about the versions of a component or subsystem
 GET         /versions/:name                                               controllers.Application.getVersions(name)

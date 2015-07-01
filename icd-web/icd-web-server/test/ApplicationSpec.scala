@@ -1,6 +1,6 @@
 import java.io.File
 
-import csw.services.icd.db.IcdDb
+import csw.services.icd.db.{ComponentInfo, IcdDb}
 import org.specs2.mutable._
 import org.specs2.runner._
 import org.junit.runner._
@@ -36,6 +36,8 @@ class ApplicationSpec extends Specification {
     //      contentAsString(home) must contain ("shouts out")
     //    }
 
+    // XXX Move this test to icd-db
+
     "Get pub/sub info from database" in {
       val db = IcdDb("test")
       db.dropDatabase() // start with a clean db for test
@@ -47,7 +49,7 @@ class ApplicationSpec extends Specification {
       val problems2 = db.ingest(getTestDir("../examples/TCS"))
       for (p ← problems2) println(p)
 
-      val info = controllers.ComponentInfo(db, "NFIRAOS", None, "envCtrl")
+      val info = ComponentInfo(db, "NFIRAOS", None, "envCtrl")
       info.compName must equalTo("envCtrl")
       info.publishInfo must not be empty
       info.publishInfo.foreach { pubInfo ⇒

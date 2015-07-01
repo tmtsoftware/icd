@@ -37,7 +37,7 @@ case class PublishInfo(itemType: String,
 /**
  * Describes a component that subscribes to an item
  * @param itemType the type of item ("telemetry", "event", etc.)
- * @param name name of the item
+ * @param name name (prefix.name) of the item
  * @param description description of the item
  * @param subsystem the subsystem that publishes the value
  * @param compName name of the component that publishes the value
