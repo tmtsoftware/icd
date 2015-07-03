@@ -1,7 +1,6 @@
 package icd.web.client
 
 import scala.scalajs.js
-import org.scalajs.jquery._
 import scala.language.implicitConversions
 
 /**

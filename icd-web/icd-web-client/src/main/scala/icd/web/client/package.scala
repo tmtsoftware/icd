@@ -1,7 +1,7 @@
 package icd.web
 
 import org.scalajs.dom
-import org.scalajs.dom._
+import scala.scalajs.js
 
 /**
  * Common definitions
@@ -23,6 +23,12 @@ package object client {
     div(cls := "alert alert-warning", role := "alert")(
       span(cls := "glyphicon glyphicon-warning-sign", "aria-hidden".attr := "true"),
       span(cls := "sr-only", "Warning"), s" $msg").toString()
+  }
+
+  // From scala-js-jquery
+  object jquery extends js.GlobalScope {
+    import icd.web.client.JQueryStatic
+    val jQuery: JQueryStatic = js.native
   }
 }
 

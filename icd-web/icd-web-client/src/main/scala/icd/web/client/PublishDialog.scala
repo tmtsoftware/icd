@@ -5,7 +5,7 @@ import org.scalajs.dom
 import org.scalajs.dom._
 import org.scalajs.dom.ext.Ajax
 import scala.language.implicitConversions
-import org.scalajs.jquery.{ jQuery ⇒ $, _ }
+import jquery.{ jQuery ⇒ $, _ }
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
@@ -73,8 +73,6 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
     if (isPublishApi(s, t)) {
       val source = s.subsystemOpt.get
       publishButton.disabled = false
-      val x = p("").render
-      x
       setMessage(p(s"Click below to publish the $source API").render)
       setPublishButtonLabel("Publish API")
     } else if (isPublishIcd(s, t)) {

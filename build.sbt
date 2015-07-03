@@ -93,6 +93,7 @@ lazy val icdWebServer = (project in file("icd-web/icd-web-server"))
       "org.tmt" %% "icd-db" % "0.1-SNAPSHOT",
       "com.vmunier" %% "play-scalajs-scripts" % "0.2.1",
       "com.lihaoyi" %%% "upickle" % "0.2.8",
+      "org.webjars" % "jquery" % "2.1.3",
       "org.webjars" % "jquery-ui" % "1.11.4",
       "org.webjars" %% "webjars-play" % "2.4.0-1",
       "org.webjars" % "bootstrap" % "3.3.4",
@@ -114,12 +115,9 @@ lazy val icdWebClient = (project in file("icd-web/icd-web-client")).settings(
     "org.scala-js" %%% "scalajs-dom" % "0.8.1",
     "com.lihaoyi" %%% "scalatags" % "0.5.2",
     "com.lihaoyi" %%% "upickle" % "0.2.8",
-    "be.doeraene" %%% "scalajs-jquery" % "0.8.0",
+    //    "be.doeraene" %%% "scalajs-jquery" % "0.8.0",
     "com.github.japgolly.scalacss" %%% "core" % "0.3.0",
     "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.3.0"
-  ),
-  jsDependencies ++= Seq(
-    "org.webjars" % "jquery-ui" % "1.11.4" / "1.11.4/jquery-ui.min.js" dependsOn "jquery.js"
   )
 ).settings(formatSettings: _*)
   .enablePlugins(ScalaJSPlugin, ScalaJSPlay)

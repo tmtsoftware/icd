@@ -39,9 +39,9 @@ object Styles extends StyleSheet.Inline {
   val sidebarWrapper = style(
     addClassName("col-xs-1"),
     addClassName("hidden-print"),
-    height(100 %%),
-    borderRight(10 px, solid, gray),
-    borderLeft(1 px, solid, gray))
+    height(100 %%) //    borderRight(0 px, solid, grey),
+    //    borderLeft(0 px, solid, grey)
+    )
 
   val sidebar = style(
     height(100 %%),

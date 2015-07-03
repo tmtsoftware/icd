@@ -230,8 +230,6 @@ object IcdDb extends App {
     }
   }
 
-  //  // Holds the names of the subsystem and components that were ingested
-  //  case class IcdInfo(subsystemName: String, componentNames: List[String])
 }
 
 /**
@@ -241,9 +239,12 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
                  host: String = IcdDbDefaults.defaultHost,
                  port: Int = IcdDbDefaults.defaultPort) {
 
-  //  import IcdDb.IcdInfo
-
   val mongoClient = MongoClient(host, port)
+  // Clean up on exit
+  sys.addShutdownHook {
+    try { mongoClient.close() }
+  }
+
   val db = mongoClient(dbName)
   val query = IcdDbQuery(db)
   val versionManager = IcdVersionManager(db)
