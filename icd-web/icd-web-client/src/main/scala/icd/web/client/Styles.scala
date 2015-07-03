@@ -40,7 +40,7 @@ object Styles extends StyleSheet.Inline {
     addClassName("col-xs-1"),
     addClassName("hidden-print"),
     height(100 %%),
-    borderRight(1 px, solid, gray),
+    borderRight(10 px, solid, gray),
     borderLeft(1 px, solid, gray))
 
   val sidebar = style(

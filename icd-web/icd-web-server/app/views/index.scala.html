@@ -1,13 +1,11 @@
 @(csrfToken: shared.Csrf)(implicit request: RequestHeader)
 
 @main("TMT ICD Database") {
-    <script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("jquery.min.js"))'></script>
-    <script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("bootstrap.min.js"))'></script>
-    <script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("bootstrap-table.min.js"))'></script>
     @playscalajs.html.scripts("icdwebclient")
+
     <script>
        var settings = {
-            "csrfToken": "@{csrfToken}",
+            "csrfToken": "@csrfToken",
             "wsBaseUrl": "@routes.FileUploadController.ws.webSocketURL()",
             "inputDirSupported": !!('webkitdirectory' in document.createElement('input'))
         };

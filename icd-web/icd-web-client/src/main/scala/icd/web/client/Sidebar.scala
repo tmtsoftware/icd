@@ -5,7 +5,6 @@ import org.scalajs.dom.raw.{ Node, HTMLInputElement }
 
 import org.scalajs.dom.Element
 
-import scala.concurrent.Future
 import scalatags.JsDom.all._
 
 trait SidebarListener {
@@ -110,7 +109,8 @@ case class Sidebar(listener: SidebarListener) extends Displayable {
   // Display the subsystem combobox at top, then the list of component checkboxes
   override def markup(): Element = {
     import scalacss.ScalatagsCss._
-    div(Styles.sidebarWrapper)(
+
+    div(Styles.sidebarWrapper, id := "sidebar")(
       div(Styles.sidebar)(
         sidebarList)).render
   }

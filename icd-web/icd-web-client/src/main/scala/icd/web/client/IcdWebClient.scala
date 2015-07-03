@@ -82,6 +82,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     navbar.addItem(printItem)
 
     layout.addItem(sidebar)
+    println(s"XXX added sidebar")
     layout.addItem(mainContent)
 
     body.appendChild(navbar.markup())
