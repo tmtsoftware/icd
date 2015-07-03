@@ -1,4 +1,4 @@
-
+// Make the sidebar resizable using jquery-ui resizable
 $(document).ready(function () {
     $("#sidebar").resizable({
         handles: 'e',
@@ -16,10 +16,8 @@ $(document).ready(function () {
             }
 
             $.each(ele.siblings(), function (idx, item) {
-
                 //ele.siblings().eq(idx).css('height',y+'px');
                 ele.siblings().eq(idx).css('width', (factor) + 'px');
-
             });
 
             if (x >= (par - 100)) {

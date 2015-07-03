@@ -1,7 +1,7 @@
+/* jquery-ui resizable generated class names */
 .ui-resizable { }
 .ui-resizable-handle { position: absolute;font-size: 1px;z-index: 99999; display: block; }
 .ui-resizable-e {
-    background-color: #f8f8f8;
     background: #f8f8f8;
     border-right: 1px solid #e7e7e7;
     border-left: 1px solid #e7e7e7;
