@@ -4,7 +4,8 @@ import icd.web.client.FileUtils._
 import org.scalajs.dom
 import org.scalajs.dom._
 import scala.language.implicitConversions
-import jquery.{ jQuery ⇒ $, _ }
+//import org.scalajs.jquery.{ jQuery ⇒ $, _ }
+import org.querki.jquery._
 
 /**
  * Displays the page for uploading ICD files and directories

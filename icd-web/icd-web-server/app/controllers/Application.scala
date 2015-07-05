@@ -14,8 +14,7 @@ import shared.{ IcdName, VersionInfo, SubsystemInfo, Csrf }
  * Provides the interface between the web client and the server
  */
 object Application extends Controller {
-  val databaseName = Play.application().configuration().getString("database.name")
-  val db = IcdDb(databaseName)
+  val db = IcdDb()
 
   def index = CSRFAddToken {
     Action { implicit request ⇒

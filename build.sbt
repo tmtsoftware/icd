@@ -56,8 +56,9 @@ val scalaTest = "org.scalatest" %% "scalatest" % "2.1.5"
 val pegdown = "org.pegdown" % "pegdown" % "1.4.2"
 val xmlworker = "com.itextpdf.tool" % "xmlworker" % "5.5.5"
 val casbah = "org.mongodb" %% "casbah" % "2.8.0"
-val `slf4j-nop` = "org.slf4j" % "slf4j-nop" % "1.7.10"
 val diffson = "org.gnieh" %% "diffson" % "0.3"
+val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2"
+val logback = "ch.qos.logback" % "logback-classic" % "1.1.1"
 
 // Root of the multi-project build
 lazy val root = (project in file("."))
@@ -68,8 +69,8 @@ lazy val icd = project
   .enablePlugins(JavaAppPackaging)
   .settings(defaultSettings: _*)
   .settings(libraryDependencies ++=
-  compile(jsonSchemaValidator, scopt, typesafeConfig, ficus, pegdown, xmlworker, `slf4j-nop`, diffson) ++
-    test(scalaTest)
+    compile(jsonSchemaValidator, scopt, typesafeConfig, ficus, pegdown, xmlworker, diffson, scalaLogging, logback) ++
+      test(scalaTest)
   )
 
 // adds MongoDB database support, ICD versioning, queries
@@ -77,9 +78,13 @@ lazy val `icd-db` = project
   .enablePlugins(JavaAppPackaging)
   .settings(defaultSettings: _*)
   .settings(libraryDependencies ++=
-  compile(casbah) ++
-    test(scalaTest)
+    compile(casbah) ++
+      test(scalaTest)
   ) dependsOn(icd, icdWebSharedJvm)
+
+
+// -- Play/ScalaJS parts below --
+
 
 // a Play framework based web server that goes between icd-db and the web client
 lazy val icdWebServer = (project in file("icd-web/icd-web-server"))
@@ -91,9 +96,8 @@ lazy val icdWebServer = (project in file("icd-web/icd-web-server"))
     libraryDependencies ++= Seq(
       filters,
       "org.tmt" %% "icd-db" % "0.1-SNAPSHOT",
-      "com.vmunier" %% "play-scalajs-scripts" % "0.2.1",
+      "com.vmunier" %% "play-scalajs-scripts" % "0.3.0",
       "com.lihaoyi" %%% "upickle" % "0.2.8",
-      "org.webjars" % "jquery" % "2.1.3",
       "org.webjars" % "jquery-ui" % "1.11.4",
       "org.webjars" %% "webjars-play" % "2.4.0-1",
       "org.webjars" % "bootstrap" % "3.3.4",
@@ -115,13 +119,21 @@ lazy val icdWebClient = (project in file("icd-web/icd-web-client")).settings(
     "org.scala-js" %%% "scalajs-dom" % "0.8.1",
     "com.lihaoyi" %%% "scalatags" % "0.5.2",
     "com.lihaoyi" %%% "upickle" % "0.2.8",
-    //    "be.doeraene" %%% "scalajs-jquery" % "0.8.0",
+    "org.querki" %%% "jquery-facade" % "0.6",
     "com.github.japgolly.scalacss" %%% "core" % "0.3.0",
     "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.3.0"
+  ),
+  skip in packageJSDependencies := false,
+  jsDependencies ++= Seq(
+    "org.webjars" % "jquery-ui" % "1.11.4" / "jquery-ui.min.js" dependsOn "jquery.js",
+    "org.webjars" % "bootstrap" % "3.3.4" / "bootstrap.min.js" dependsOn "jquery.js",
+    "org.webjars.bower" % "bootstrap-table" % "1.7.0" / "bootstrap-table.min.js",
+    ProvidedJS / "resize.js" dependsOn "jquery-ui.min.js"
   )
 ).settings(formatSettings: _*)
   .enablePlugins(ScalaJSPlugin, ScalaJSPlay)
   .dependsOn(icdWebSharedJs)
+
 
 // contains simple case classes used for data transfer that are shared between the client and server
 lazy val icdWebShared = (crossProject.crossType(CrossType.Pure) in file("icd-web/icd-web-shared"))

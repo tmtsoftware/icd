@@ -38,8 +38,10 @@ class IcdValidatorTests extends FunSuite {
 
   def runTest(good: Config, bad: Config, schema: Config): Unit = {
     checkResult(validate(good, schema, good.origin().filename()))
-    val problems1 = validate(bad, schema, bad.origin().filename())
-    assert(problems1.nonEmpty)
+    val problems = validate(bad, schema, bad.origin().filename())
+    if (problems.isEmpty) {
+      fail(s"Test failed to find the problems in ${bad.origin().filename()}")
+    }
   }
 
   def runTest(good: String, bad: String, schema: String): Unit = {
@@ -83,7 +85,6 @@ class IcdValidatorTests extends FunSuite {
     assert(subsystemModel.modelVersion == "1.1")
     assert(subsystemModel.name == "WFOS")
     assert(subsystemModel.title == "Wide-Field Optical Spectrometer (WFOS)")
-    assert(subsystemModel.version == 20141121)
     assert(subsystemModel.description.startsWith("The Wide Field"))
   }
 

@@ -3,7 +3,7 @@ package csw.services.icd.db
 import java.io.File
 
 import com.mongodb.casbah.Imports._
-import com.typesafe.config.Config
+import com.typesafe.config.{ ConfigFactory, Config }
 import csw.services.icd._
 import csw.services.icd.model.{ BaseModel, SubsystemModel }
 import org.joda.time.DateTimeZone
@@ -11,9 +11,10 @@ import org.joda.time.DateTimeZone
 import scala.io.StdIn
 
 object IcdDbDefaults {
-  val defaultPort = 27017
-  val defaultHost = "localhost"
-  val defaultDbName = "icds"
+  private val conf = ConfigFactory.load
+  val defaultPort = conf.getInt("icd.db.port")
+  val defaultHost = conf.getString("icd.db.host")
+  val defaultDbName = conf.getString("icd.db.name")
 }
 
 object IcdDb extends App {
@@ -115,7 +116,8 @@ object IcdDb extends App {
         run(options)
       } catch {
         case e: Throwable ⇒
-          println(e)
+          //          println(e)
+          e.printStackTrace()
           System.exit(1)
       }
     case None ⇒ System.exit(1)
@@ -240,10 +242,9 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
                  port: Int = IcdDbDefaults.defaultPort) {
 
   val mongoClient = MongoClient(host, port)
+
   // Clean up on exit
-  sys.addShutdownHook {
-    try { mongoClient.close() }
-  }
+  sys.addShutdownHook(mongoClient.close())
 
   val db = mongoClient(dbName)
   val query = IcdDbQuery(db)

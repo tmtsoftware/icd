@@ -25,10 +25,10 @@ package object client {
       span(cls := "sr-only", "Warning"), s" $msg").toString()
   }
 
-  // From scala-js-jquery
-  object jquery extends js.GlobalScope {
-    import icd.web.client.JQueryStatic
-    val jQuery: JQueryStatic = js.native
-  }
+  //  // From scala-js-jquery
+  //  object jquery extends js.GlobalScope {
+  //    import icd.web.client.JQueryStatic
+  //    val jQuery: JQueryStatic = js.native
+  //  }
 }
 

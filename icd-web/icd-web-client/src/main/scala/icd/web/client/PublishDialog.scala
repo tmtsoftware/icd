@@ -5,7 +5,8 @@ import org.scalajs.dom
 import org.scalajs.dom._
 import org.scalajs.dom.ext.Ajax
 import scala.language.implicitConversions
-import jquery.{ jQuery ⇒ $, _ }
+//import org.scalajs.jquery.{ jQuery ⇒ $, _ }
+import org.querki.jquery._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
