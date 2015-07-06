@@ -1,3 +1,6 @@
+// XXX Note: This file is needed here if using scalajs-jquery,
+// but for now using jquery-facade, the file goes in the client resources dir...
+
 // Make the sidebar resizable using jquery-ui resizable
 //$(document).ready(function () {
 //    $("#sidebar").resizable({
