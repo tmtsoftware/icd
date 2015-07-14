@@ -214,7 +214,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Only display non-empty tables
     if (pubInfo.isEmpty) div()
-    else div(
+    else div(Styles.componentSection,
       h3(s"Items published by $compName"),
       table(Styles.componentTable, "data-toggle".attr := "table",
         thead(
@@ -252,7 +252,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
 
     if (subInfo.isEmpty) div()
-    else div(
+    else div(Styles.componentSection,
       h3(s"Items subscribed to by $compName"),
       table(Styles.componentTable, "data-toggle".attr := "table",
         thead(
@@ -291,7 +291,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Only display non-empty tables
     if (info.isEmpty) div()
-    else div(
+    else div(Styles.componentSection,
       h3(s"Command Configurations Received by $compName"),
       table(Styles.componentTable, "data-toggle".attr := "table",
         thead(
@@ -325,7 +325,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Only display non-empty tables
     if (info.isEmpty) div()
-    else div(
+    else div(Styles.componentSection,
       h3(s"Command Configurations Sent by $compName"),
       table(Styles.componentTable, "data-toggle".attr := "table",
         thead(
@@ -365,8 +365,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   // Generates the HTML markup to display the component information
   private def markupForComponent(info: ComponentInfo) = {
     import scalatags.JsDom.all._
+    import scalacss.ScalatagsCss._
 
-    div(cls := "container", id := getComponentInfoId(info.compName))(
+    div(Styles.component, id := getComponentInfoId(info.compName))(
       h2(info.compName),
       p(info.description),
       componentInfoTableMarkup(info),

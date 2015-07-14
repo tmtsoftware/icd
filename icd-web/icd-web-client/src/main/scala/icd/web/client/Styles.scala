@@ -23,22 +23,22 @@ object Styles extends StyleSheet.Inline {
 
   val mainContent = style(
     addClassName("col-xs-11"),
-    height(100 %%),
-    overflowY.auto,
-    media.print(width.auto, height.auto, display.block, overflow.visible))
+    height(100 %%) //    media.print(width.auto, height.auto, display.block, overflow.visible)
+    )
 
   val main = style(
     position.relative,
     height(100 %%),
     overflowY.auto,
-    padding(0 px, 15 px))
+    padding(0 px, 15 px),
+    media.print(width.auto, height.auto, display.block, overflow.visible, float.none, position.static))
 
   val contentDiv = style(
-    float.left)
+    float.left,
+    media.print(float.none))
 
   val sidebarWrapper = style(
-    addClassName("col-xs-1"),
-    addClassName("hidden-print"),
+    addClassNames("col-xs-1", "hidden-print"),
     height(100 %%))
 
   val sidebar = style(
@@ -54,7 +54,7 @@ object Styles extends StyleSheet.Inline {
 
   // Control width of tables in the information displayed for selected components
   val componentTable = style(
-    maxWidth(100 %%))
+    maxWidth(90 %%))
 
   // Used for table columns that should not wrap
   val noWrapTableColumn = style(
@@ -65,8 +65,7 @@ object Styles extends StyleSheet.Inline {
     wordBreak.breakAll, wordWrap.breakWord)
 
   val fileUploadMessages = style(
-    addClassName("alert"),
-    addClassName("alert-info"),
+    addClassNames("alert", "alert-info"),
     padding(0 px, 10 px),
     margin(1 em, 0 em),
     border(1 px, solid, gray))
@@ -88,8 +87,10 @@ object Styles extends StyleSheet.Inline {
     padding(5 px, 10 px, 0 px, 10 px),
     borderTop(1 px, solid, gray))
 
-  val swapSubsystem = style(
-    fontSize(50 px),
-    paddingLeft(50 px),
-    paddingRight(50 px))
+  val component = style(
+    addClassName("container"),
+    pageBreakBefore.always)
+
+  val componentSection = style(
+    pageBreakInside.avoid)
 }
