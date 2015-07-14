@@ -1,11 +1,12 @@
 package icd.web.client
 
+import icd.web.client.Subsystem.SubsystemWithVersion
 import org.scalajs.dom
 import org.scalajs.dom._
 import org.scalajs.dom.ext.Ajax
 import shared.{ IcdVersionInfo, IcdName, IcdVersion }
 
-import scala.concurrent.Future
+import scala.concurrent.{ Promise, Future }
 import scala.concurrent.ExecutionContext.Implicits.global
 import IcdChooser._
 
@@ -84,12 +85,6 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   }
 
   /**
-   * Returns true if the latest ICD version is selected
-   */
-  def isLatestIcdVersionSelected: Boolean =
-    versionItem.selectedIndex == 1
-
-  /**
    * Gets the currently selected ICD version, or None if none is selected
    */
   def getSelectedIcdVersion: Option[IcdVersion] = {
@@ -111,7 +106,6 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
                         notifyListener: Boolean = true,
                         saveHistory: Boolean = true): Future[Unit] = {
     import upickle._
-    println(s"XXX setIcdWithVersion $icdVersionOpt")
     icdVersionOpt match {
       case Some(icdVersion) ⇒
         icdItem.value = write(IcdName(icdVersion.subsystem, icdVersion.target)) // JSON
@@ -130,12 +124,53 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
     }
   }
 
+  /**
+   * Gets the list of ICDs being displayed
+   */
+  def getIcds: List[IcdName] = {
+    import upickle._
+    icdItem.options.drop(1).map(s ⇒ read[IcdName](s.value)).toList
+  }
+
+  /**
+   * If there is an ICD matching the given subsystem and target versions, select it in the ICD chooser
+   * @param sv the source subsystem and version
+   * @param tv the target subsystem and version
+   */
+  def selectMatchingIcd(sv: SubsystemWithVersion, tv: SubsystemWithVersion): Future[Unit] = {
+    // Select none as the default, in case a matching ICD is not found
+    setIcdWithVersion(None, notifyListener = false, saveHistory = false)
+    val p = Promise[Unit]()
+    val icdNames = for {
+      subsystem ← sv.subsystemOpt
+      subsystemVersion ← sv.versionOpt
+      target ← tv.subsystemOpt
+      targetVersion ← tv.versionOpt
+      icd ← getIcds.find(i ⇒ i.subsystem == subsystem && i.target == target)
+    } yield {
+      for (icdVersionList ← getIcdVersionOptions(icd) recover { case ex ⇒ p.failure(ex); Nil }) {
+        val icdVersionOpt = icdVersionList.find(i ⇒ i.subsystemVersion == subsystemVersion && i.targetVersion == targetVersion)
+        if (icdVersionOpt.isDefined) {
+          for {
+            _ ← updateIcdVersionOptions(icdVersionList) recover { case ex ⇒ p.failure(ex) }
+            _ ← setIcdWithVersion(icdVersionOpt, notifyListener = false, saveHistory = false)
+          } p.success(())
+        } else p.success(())
+      }
+      icd
+    }
+    if (icdNames.isEmpty) Future.successful() else p.future
+  }
+
   // Update the ICD combobox options
   def updateIcdOptions(): Future[Unit] = {
+
     import upickle._
-    Ajax.get(Routes.icdNames).flatMap { r ⇒
-      val icdNames = read[List[IcdName]](r.responseText)
-      updateIcdOptions(icdNames)
+
+    Ajax.get(Routes.icdNames).flatMap {
+      r ⇒
+        val icdNames = read[List[IcdName]](r.responseText)
+        updateIcdOptions(icdNames)
     }.recover {
       case ex ⇒
         ex.printStackTrace() // XXX TODO
@@ -145,10 +180,9 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
 
   // Update the ICD combobox options
   private def updateIcdOptions(icdNames: List[IcdName]): Future[Unit] = {
+
     import scalatags.JsDom.all._
     import upickle._
-
-    println(s"XXX updateIcdOptions $icdNames")
 
     val icdVersionOpt = getSelectedIcdVersion
     while (icdItem.options.length != 0) {
@@ -160,8 +194,9 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
     }
 
     // restore selected ICD (updateIcdVersionOptions() below depends on an ICD being selected)
-    icdVersionOpt.foreach { icdVersion ⇒
-      icdItem.value = write(IcdName(icdVersion.subsystem, icdVersion.target)) // JSON
+    icdVersionOpt.foreach {
+      icdVersion ⇒
+        icdItem.value = write(IcdName(icdVersion.subsystem, icdVersion.target)) // JSON
     }
 
     // Update version options
@@ -178,8 +213,9 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   def setSelectedIcdVersion(versionOpt: Option[IcdVersion],
                             notifyListener: Boolean = true,
                             saveHistory: Boolean = true): Future[Unit] = {
+
     import upickle._
-    println(s"XXX setSelectedIcdVersion $versionOpt")
+
     val selectedVersionOpt = getSelectedIcdVersion
     if (versionOpt == selectedVersionOpt)
       Future.successful()
@@ -204,9 +240,10 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
     versionItem.setAttribute("hidden", "true")
     getSelectedIcd match {
       case Some(icdName) ⇒
-        getIcdVersionOptions(icdName).flatMap { list ⇒ // Future!
-          versionItem.removeAttribute("hidden")
-          updateIcdVersionOptions(list)
+        getIcdVersionOptions(icdName).flatMap {
+          list ⇒ // Future!
+            versionItem.removeAttribute("hidden")
+            updateIcdVersionOptions(list)
         }.recover {
           case ex ⇒ ex.printStackTrace()
         }
@@ -217,9 +254,10 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
 
   // Updates the ICD version combobox with the given list of available versions for the selected ICD
   private def updateIcdVersionOptions(versions: List[IcdVersion]): Future[Unit] = {
+
     import scalatags.JsDom.all._
     import upickle._
-    println(s"XXX updateIcdVersionOptions $versions")
+
     while (versionItem.options.length != 0) {
       versionItem.remove(0)
     }
@@ -232,9 +270,12 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
 
   // Gets the list of available versions for the given ICD
   private def getIcdVersionOptions(icdName: IcdName): Future[List[IcdVersion]] = {
+
     import upickle._
-    Ajax.get(Routes.icdVersions(icdName)).map { r ⇒
-      read[List[IcdVersionInfo]](r.responseText)
+
+    Ajax.get(Routes.icdVersions(icdName)).map {
+      r ⇒
+        read[List[IcdVersionInfo]](r.responseText)
     }.recover {
       case ex ⇒
         ex.printStackTrace() // XXX TODO

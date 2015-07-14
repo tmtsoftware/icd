@@ -12,6 +12,7 @@ import Subsystem._
  * Manages the subsystem and related subsystem version comboboxes
  */
 object Subsystem {
+
   /**
    * Type of a listener for changes in the selected subsystem
    */
@@ -42,19 +43,22 @@ object Subsystem {
  * Manages the subsystem and related subsystem version comboboxes
  * @param listener notified when the user makes a selection
  * @param labelStr the text for the combobox label
- * @param msg the initial message to display before the first selection is made
- * @param removeMsg if true, remove the default msg item from the choices once a selection has been made
+ * @param placeholderMsg the initial message to display before the first selection is made
+ * @param enablePlaceholder if true, allow selecting the placeholder item
  */
 case class Subsystem(listener: SubsystemListener,
                      labelStr: String = "Subsystem",
-                     msg: String = "Select a subsystem",
-                     removeMsg: Boolean = true) extends Displayable {
+                     placeholderMsg: String = "Select subsystem",
+                     enablePlaceholder: Boolean = false) extends Displayable {
 
   // The subsystem combobox
   private val subsystemItem = {
     import scalatags.JsDom.all._
     select(onchange := subsystemSelected _)(
-      option(value := msg)(msg)).render
+      if (enablePlaceholder)
+        option(value := placeholderMsg, selected := true)(placeholderMsg)
+      else
+        option(value := placeholderMsg, disabled := true, selected := true)(placeholderMsg)).render
   }
 
   // The subsystem version combobox
@@ -66,14 +70,10 @@ case class Subsystem(listener: SubsystemListener,
   /**
    * Returns true if the combobox is displaying the default item (i.e.: the initial item, no selection)
    */
-  def isDefault: Boolean = !removeMsg && subsystemItem.selectedIndex == 0
+  def isDefault: Boolean = subsystemItem.selectedIndex == 0
 
   // called when a subsystem is selected
   private def subsystemSelected(e: dom.Event): Unit = {
-    // remove empty option
-    if (removeMsg && subsystemItem.options.length > 1 && subsystemItem.options(0).value == msg)
-      subsystemItem.remove(0)
-
     for (_ ← updateSubsystemVersionOptions())
       listener.subsystemSelected(getSubsystemWithVersion)
   }
@@ -94,15 +94,15 @@ case class Subsystem(listener: SubsystemListener,
    */
   def getSelectedSubsystem: Option[String] =
     subsystemItem.value match {
-      case `msg`         ⇒ None
-      case subsystemName ⇒ Some(subsystemName)
+      case `placeholderMsg` ⇒ None
+      case subsystemName    ⇒ Some(subsystemName)
     }
 
   /**
    * Gets the list of subsystems being displayed
    */
   def getSubsystems: List[String] = {
-    subsystemItem.options.map(_.value).toList
+    subsystemItem.options.drop(1).map(_.value).toList
   }
 
   /**
@@ -135,7 +135,7 @@ case class Subsystem(listener: SubsystemListener,
     else {
       sv.subsystemOpt match {
         case Some(s) ⇒ subsystemItem.value = s
-        case None    ⇒ if (!removeMsg) subsystemItem.value = msg
+        case None    ⇒ subsystemItem.value = placeholderMsg
       }
       (for (_ ← updateSubsystemVersionOptions()) yield {
         sv.versionOpt match {
@@ -155,32 +155,24 @@ case class Subsystem(listener: SubsystemListener,
    * Update the Subsystem combobox options
    */
   def updateSubsystemOptions(items: List[String]): Unit = {
-    import scalatags.JsDom.all._
-
-    val selected = getSubsystemWithVersion
-    val list = selected.subsystemOpt match {
-      case Some(subsystem) ⇒ items
-      case None            ⇒ msg :: items
+    for (i ← (1 until subsystemItem.length).reverse) {
+      subsystemItem.remove(i)
     }
-    while (subsystemItem.options.length != 0) {
-      subsystemItem.remove(0)
-    }
-    for (s ← list) {
-      subsystemItem.add(option(value := s)(s).render)
+    items.foreach { str ⇒
+      import scalatags.JsDom.all._
+      subsystemItem.add(option(value := str)(str).render)
     }
     updateSubsystemVersionOptions() // Future!
   }
 
   def disableOption(name: String): Unit = {
-    subsystemItem.options.find(_.value == name).foreach { option ⇒
-      //      option.setAttribute("hidden", "true")
+    subsystemItem.options.drop(1).find(_.value == name).foreach { option ⇒
       option.setAttribute("disabled", "true")
     }
   }
 
   def setAllOptionsEnabled(): Unit = {
-    subsystemItem.options.foreach { option ⇒
-      //      option.removeAttribute("hidden")
+    subsystemItem.options.drop(1).foreach { option ⇒
       option.removeAttribute("disabled")
     }
   }

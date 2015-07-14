@@ -6,10 +6,12 @@ import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import sbt.Keys._
 import sbt._
 import sbt.Project.projectToRef
+import com.typesafe.sbt.packager.docker._
 
 val Version = "0.1-SNAPSHOT"
 val ScalaVersion = "2.11.6"
 
+// Basic settings
 val buildSettings = Seq(
   organization := "org.tmt",
   organizationName := "TMT",
@@ -24,6 +26,7 @@ val buildSettings = Seq(
   resolvers += sbtResolver.value
 )
 
+// Automatic code formatting
 def formattingPreferences: FormattingPreferences =
   FormattingPreferences()
     .setPreference(RewriteArrowSymbols, true)
@@ -36,9 +39,17 @@ lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
   ScalariformKeys.preferences in Test := formattingPreferences
 )
 
+// Using java8
 lazy val defaultSettings = buildSettings ++ formatSettings ++ Seq(
   scalacOptions ++= Seq("-target:jvm-1.8", "-encoding", "UTF-8", "-feature", "-deprecation", "-unchecked"),
   javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint:unchecked", "-Xlint:deprecation")
+)
+
+// Customize the Docker install
+lazy val dockerSettings = Seq(
+  maintainer := "TMT Software",
+  dockerExposedPorts in Docker := Seq(9000, 9443),
+  dockerBaseImage := "java:8"
 )
 
 lazy val clients = Seq(icdWebClient)
@@ -89,6 +100,7 @@ lazy val `icd-db` = project
 // a Play framework based web server that goes between icd-db and the web client
 lazy val icdWebServer = (project in file("icd-web/icd-web-server"))
   .settings(defaultSettings: _*)
+  .settings(dockerSettings: _*)
   .settings(
     scalaJSProjects := clients,
     pipelineStages := Seq(scalaJSProd, gzip),
@@ -104,7 +116,8 @@ lazy val icdWebServer = (project in file("icd-web/icd-web-server"))
       "org.webjars.bower" % "bootstrap-table" % "1.7.0",
       specs2 % Test
     )
-  ).enablePlugins(PlayScala, SbtWeb)
+  )
+  .enablePlugins(PlayScala, SbtWeb, DockerPlugin)
   .aggregate(clients.map(projectToRef): _*)
   .dependsOn(`icd-db`)
 

@@ -34,7 +34,9 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
 
   // Page components
   private val subsystem = Subsystem(SourceSubsystemListener)
-  private val targetSubsystem = Subsystem(TargetSubsystemListener, labelStr = "Target", msg = "All", removeMsg = false)
+  private val targetSubsystem = Subsystem(TargetSubsystemListener,
+    labelStr = "Target", placeholderMsg = "All", enablePlaceholder = true)
+  private val subsystemSwapper = SubsystemSwapper(swapSubsystems)
   private val icdChooser = IcdChooser(IcdChooserListener)
   private val mainContent = MainContent()
   private val components = Components(mainContent, ComponentLinkSelectionHandler)
@@ -73,6 +75,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
 
     // Insert the components in the page
     navbar.addItem(subsystem)
+    navbar.addItem(subsystemSwapper)
     navbar.addItem(targetSubsystem)
     navbar.addItem(icdChooser)
 
@@ -82,7 +85,6 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     navbar.addItem(printItem)
 
     layout.addItem(sidebar)
-    println(s"XXX added sidebar")
     layout.addItem(mainContent)
 
     body.appendChild(navbar.markup())
@@ -219,7 +221,6 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private object SourceSubsystemListener extends SubsystemListener {
     // Called when the source subsystem (or version) combobox selection is changed
     override def subsystemSelected(sv: SubsystemWithVersion, saveHistory: Boolean): Future[Unit] = {
-      icdChooser.setIcdWithVersion(None, notifyListener = false, saveHistory = false)
       sidebar.clearComponents()
       mainContent.clearContent()
       sv.subsystemOpt match {
@@ -228,6 +229,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
           targetSubsystem.setAllOptionsEnabled()
           targetSubsystem.disableOption(selectedSubsystem)
           for {
+            _ ← icdChooser.selectMatchingIcd(sv, targetSubsystem.getSubsystemWithVersion)
             names ← getComponentNames(sv)
             _ ← Future.successful {
               names.foreach(sidebar.addComponent)
@@ -252,10 +254,34 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
         case None ⇒
           subsystem.setAllOptionsEnabled()
       }
-
-      icdChooser.setIcdWithVersion(None, notifyListener = false, saveHistory = false)
-      updateComponentDisplay().map { _ ⇒
+      for {
+        _ ← icdChooser.selectMatchingIcd(subsystem.getSubsystemWithVersion, targSv)
+        _ ← updateComponentDisplay()
+      } yield {
         if (saveHistory) pushState(viewType = ComponentView)
+      }
+    }
+  }
+
+  // Swap source and target subsystems
+  private def swapSubsystems(): Unit = {
+    val sv2 = targetSubsystem.getSubsystemWithVersion
+    if (sv2.subsystemOpt.isDefined) {
+      val sv1 = subsystem.getSubsystemWithVersion
+      sidebar.clearComponents()
+      mainContent.clearContent()
+      for {
+        _ ← icdChooser.selectMatchingIcd(sv2, sv1)
+        _ ← targetSubsystem.setSubsystemWithVersion(sv1, notifyListener = false, saveHistory = false)
+        _ ← subsystem.setSubsystemWithVersion(sv2)
+      } {
+        sv1.subsystemOpt match {
+          case Some(selectedTarget) ⇒
+            subsystem.setAllOptionsEnabled()
+            subsystem.disableOption(selectedTarget)
+          case None ⇒
+            subsystem.setAllOptionsEnabled()
+        }
       }
     }
   }
