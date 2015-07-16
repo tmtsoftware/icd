@@ -1,4 +1,4 @@
-package shared
+package icd.web.shared
 
 /**
  * Describes a version of a subsystem

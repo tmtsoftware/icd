@@ -157,7 +157,7 @@ object IcdDb extends App {
     // --output option
     def output(file: File): Unit = {
       options.component match {
-        case Some(component) ⇒ IcdDbPrinter(db.query).saveToFile(component, file)
+        case Some(component) ⇒ IcdDbPrinter(db).saveToFile(component, file)
         case None            ⇒ error("Missing required component name: Please specify --component <name>")
       }
     }

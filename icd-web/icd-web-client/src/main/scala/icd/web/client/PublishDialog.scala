@@ -1,6 +1,6 @@
 package icd.web.client
 
-import icd.web.client.Subsystem.SubsystemWithVersion
+import icd.web.shared.SubsystemWithVersion
 import org.scalajs.dom
 import org.scalajs.dom._
 import org.scalajs.dom.ext.Ajax

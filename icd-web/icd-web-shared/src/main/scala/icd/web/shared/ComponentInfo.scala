@@ -1,9 +1,10 @@
-package shared
+package icd.web.shared
 
 /**
  * ICD Component information passed to client
  * @param subsystem subsystem name
  * @param compName component name
+ * @param title component title
  * @param description component description
  * @param prefix the component's prefix (for accessing published items)
  * @param wbsId component's WBS id
@@ -14,6 +15,7 @@ package shared
  */
 case class ComponentInfo(subsystem: String,
                          compName: String,
+                         title: String,
                          description: String,
                          prefix: String,
                          wbsId: String,

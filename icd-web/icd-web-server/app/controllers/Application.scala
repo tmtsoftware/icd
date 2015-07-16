@@ -3,12 +3,11 @@ package controllers
 import java.io.ByteArrayOutputStream
 
 import csw.services.icd.IcdToPdf
-import csw.services.icd.db.{ IcdComponentInfo, ComponentInfo, IcdDbPrinter, IcdDb }
-import play.Play
+import csw.services.icd.db.{ IcdDbPrinter, IcdComponentInfo, ComponentInfoHelper, IcdDb }
+import icd.web.shared.{ IcdVersion, SubsystemWithVersion, SubsystemInfo, IcdName, VersionInfo, Csrf }
 import play.api.mvc._
 import play.filters.csrf.CSRFAddToken
 import play.api.libs.json._
-import shared.{ IcdName, VersionInfo, SubsystemInfo, Csrf }
 
 /**
  * Provides the interface between the web client and the server
@@ -63,7 +62,7 @@ object Application extends Controller {
    */
   def componentInfo(subsystem: String, versionOpt: Option[String], compName: String) = Action {
     import upickle._
-    val info = ComponentInfo(db, subsystem, versionOpt, compName)
+    val info = ComponentInfoHelper(db, subsystem, versionOpt, compName)
     val json = write(info)
     Ok(json).as(JSON)
   }
@@ -74,45 +73,73 @@ object Application extends Controller {
    * @param versionOpt the source subsystem's version (default: current)
    * @param compName the source component name
    * @param target the target subsystem
-   * @param targetVersion the target subsystem's version
+   * @param targetVersionOpt the target subsystem's version
    */
   def icdComponentInfo(subsystem: String, versionOpt: Option[String], compName: String,
-                       target: String, targetVersion: Option[String]) = Action {
+                       target: String, targetVersionOpt: Option[String]) = Action {
     import upickle._
-    val info = IcdComponentInfo(db, subsystem, versionOpt, compName, target, targetVersion)
+    val info = IcdComponentInfo(db, subsystem, versionOpt, compName, target, targetVersionOpt)
     val json = write(info)
     Ok(json).as(JSON)
   }
 
-  //  // Gets the HTML for the named subsystem or component (without inserting any CSS)
-  //  private def getAsPlainHtml(name: String): String = {
-  //    val html = IcdDbPrinter(db.query).getAsPlainHtml(name)
-  //    html
-  //  }
-  //
-  //  // Gets the HTML for the named subsystem or component
-  //  private def getAsHtml(name: String): String = {
-  //    val html = IcdDbPrinter(db.query).getAsHtml(name)
-  //    html
-  //  }
-  //
-  //  /**
-  //   * Returns the HTML API for the subsystem or component with the given name
-  //   */
-  //  def apiAsHtml(name: String) = Action {
-  //    Ok(getAsPlainHtml(name)).as(HTML)
-  //  }
-  //
-  //  /**
-  //   * Returns the PDF for the API with the given name
-  //   * @param name the subsystem or component name
-  //   */
-  //  def apiAsPdf(name: String) = Action {
-  //    val out = new ByteArrayOutputStream()
-  //    IcdToPdf.saveAsPdf(out, getAsHtml(name))
-  //    val bytes = out.toByteArray
-  //    Ok(bytes).as("application/pdf")
-  //  }
+  /**
+   * Returns the PDF for the given ICD
+   * @param subsystem the source subsystem
+   * @param versionOpt the source subsystem's version (default: current)
+   * @param compNamesOpt an optional comma separated list of component names to include (default: all)
+   * @param target the target subsystem
+   * @param targetVersionOpt optional target subsystem's version (default: current)
+   * @param icdVersionOpt optional ICD version (default: current)
+   */
+  def icdAsPdf(subsystem: String, versionOpt: Option[String], compNamesOpt: Option[String],
+               target: String, targetVersionOpt: Option[String],
+               icdVersionOpt: Option[String]) = Action {
+    val out = new ByteArrayOutputStream()
+    val compNames = compNamesOpt match {
+      case Some(s) ⇒ s.split(",").toList
+      case None    ⇒ db.versionManager.getComponentNames(subsystem, versionOpt)
+    }
+    val sv = SubsystemWithVersion(Some(subsystem), versionOpt)
+    val tv = SubsystemWithVersion(Some(target), targetVersionOpt)
+    val iv = for {
+      version ← versionOpt
+      targetVersion ← targetVersionOpt
+      icdVersion ← icdVersionOpt
+    } yield IcdVersion(icdVersion, subsystem, version, target, targetVersion)
+    IcdDbPrinter(db).getAsHtml(compNames, sv, tv, iv) match {
+      case Some(html) ⇒
+        IcdToPdf.saveAsPdf(out, html)
+        val bytes = out.toByteArray
+        Ok(bytes).as("application/pdf")
+      case None ⇒
+        NotFound
+    }
+  }
+
+  /**
+   * Returns the PDF for the given subsystem API
+   * @param subsystem the source subsystem
+   * @param versionOpt the source subsystem's version (default: current)
+   * @param compNamesOpt an optional comma separated list of component names to include (default: all)
+   */
+  def apiAsPdf(subsystem: String, versionOpt: Option[String], compNamesOpt: Option[String]) = Action {
+    val out = new ByteArrayOutputStream()
+    val compNames = compNamesOpt match {
+      case Some(s) ⇒ s.split(",").toList
+      case None    ⇒ db.versionManager.getComponentNames(subsystem, versionOpt)
+    }
+    val sv = SubsystemWithVersion(Some(subsystem), versionOpt)
+    val tv = SubsystemWithVersion(None, None)
+    IcdDbPrinter(db).getAsHtml(compNames, sv, tv, None) match {
+      case Some(html) ⇒
+        IcdToPdf.saveAsPdf(out, html)
+        val bytes = out.toByteArray
+        Ok(bytes).as("application/pdf")
+      case None ⇒
+        NotFound
+    }
+  }
 
   /**
    * Returns a detailed list of the versions of the given subsystem

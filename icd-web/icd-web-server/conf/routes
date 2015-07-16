@@ -20,11 +20,11 @@ GET         /componentInfo/:subsystem/:compName                           contro
 # Gets information about a component in a given version of an ICD
 GET         /icdComponentInfo/:subsystem/:compName/:target                controllers.Application.icdComponentInfo(subsystem, version: Option[String], compName, target, targetVersion: Option[String])
 
-## Gets the HTML for the given component
-#GET         /apiAsHtml/:name                                              controllers.Application.apiAsHtml(name)
-#
-## Gets the PDF for the given component
-#GET         /apiAsPdf/:name                                               controllers.Application.apiAsPdf(name)
+# Gets the PDF for the given ICD
+GET         /icdAsPdf/:subsystem/:target                                  controllers.Application.icdAsPdf(subsystem, version: Option[String], compNames: Option[String], target, targetVersion: Option[String], icdVersion: Option[String])
+
+# Gets the PDF for the given subsystem API
+GET         /apiAsPdf/:subsystem                                          controllers.Application.apiAsPdf(subsystem, version: Option[String], compNames: Option[String])
 
 # Gets the detailed information about the versions of a component or subsystem
 GET         /versions/:name                                               controllers.Application.getVersions(name)

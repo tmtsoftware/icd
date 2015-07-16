@@ -2,9 +2,13 @@ package csw.services.icd.db
 
 import csw.services.icd.db.IcdDbQuery.{ Alarms, EventStreams, Events, Health, PublishType, Telemetry }
 import csw.services.icd.model.{ ComponentModel, IcdModels }
-import shared.{ CommandInfo, OtherComponent, PublishInfo, SubscribeInfo }
+import icd.web.shared.{ CommandInfo, OtherComponent, SubscribeInfo, PublishInfo, ComponentInfo }
 
-object ComponentInfo {
+/**
+ * Support for creating instances of the shared (scala/scala.js) ComponentInfo class.
+ * (This code can't be shared, since it accesses the database, which is on the server.)
+ */
+object ComponentInfoHelper {
   /**
    * Query the database for information about the given component
    * @param db used to access the database
@@ -14,10 +18,11 @@ object ComponentInfo {
    * @param compName the component name
    * @return an object containing information about the component
    */
-  def apply(db: IcdDb, subsystem: String, versionOpt: Option[String], compName: String): shared.ComponentInfo = {
+  def apply(db: IcdDb, subsystem: String, versionOpt: Option[String], compName: String): ComponentInfo = {
     // get the models for this component
     val modelsList = db.versionManager.getModels(subsystem, versionOpt, Some(compName))
     val description = getComponentField(modelsList, _.description)
+    val title = getComponentField(modelsList, _.title)
     val prefix = getComponentField(modelsList, _.prefix)
     val wbsId = getComponentField(modelsList, _.wbsId)
     val h = modelsList.headOption
@@ -26,7 +31,7 @@ object ComponentInfo {
     val commandsReceived = h.map(getCommandsReceived(db, _))
     val commandsSent = h.map(getCommandsSent(db, _))
 
-    shared.ComponentInfo(subsystem, compName, description, prefix, wbsId,
+    ComponentInfo(subsystem, compName, title, description, prefix, wbsId,
       publishInfo.toList.flatten,
       subscribeInfo.toList.flatten,
       commandsReceived.getOrElse(Nil),

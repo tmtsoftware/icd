@@ -6,7 +6,7 @@ import java.io.{ FileOutputStream, File }
  * Handles converting ICD API from GFM to HTML
  */
 object IcdToHtml {
-  private def getCss: String = {
+  def getCss: String = {
     val stream = getClass.getResourceAsStream("/icd.css")
     val lines = scala.io.Source.fromInputStream(stream).getLines()
     lines.mkString("\n")

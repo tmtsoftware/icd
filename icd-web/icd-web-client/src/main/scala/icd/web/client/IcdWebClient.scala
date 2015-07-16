@@ -1,10 +1,10 @@
 package icd.web.client
 
+import icd.web.shared.{ SubsystemWithVersion, IcdVersion }
 import org.scalajs.dom
 import org.scalajs.dom.PopStateEvent
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.HTMLStyleElement
-import shared.IcdVersion
 import upickle._
 
 import scala.concurrent.Future
@@ -51,7 +51,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private val historyItem = NavbarItem("History", showVersionHistory())
   private val versionHistory = VersionHistory(mainContent)
 
-  private val printItem = NavbarItem("Print", printContent)
+  private val pdfItem = NavbarItem("PDF", makePdf)
 
   private val navbar = Navbar()
   private val layout = Layout()
@@ -82,7 +82,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     navbar.addItem(fileUploadItem)
     navbar.addItem(publishItem)
     navbar.addItem(historyItem)
-    navbar.addItem(printItem)
+    navbar.addItem(pdfItem)
 
     layout.addItem(sidebar)
     layout.addItem(mainContent)
@@ -177,7 +177,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
         _ ← targetSubsystem.setSubsystemWithVersion(hist.targetSubsystem, saveHistory = false)
         _ ← icdChooser.setIcdWithVersion(hist.icdOpt, saveHistory = false)
       } {
-        val changed = sidebar.setSelectedComponents(hist.sourceComponents)
+        sidebar.setSelectedComponents(hist.sourceComponents)
         hist.viewType match {
           case UploadView    ⇒ uploadSelected(saveHistory = false)()
           case PublishView   ⇒ publishItemSelected(saveHistory = false)()
@@ -338,9 +338,17 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     }
   }
 
-  // Opens the browser's print dialog
-  private def printContent(): Unit = {
-    dom.window.print()
+  // Gets a PDF of the currently selected ICD or subsystem API
+  private def makePdf(): Unit = {
+    val sv = subsystem.getSubsystemWithVersion
+    sv.subsystemOpt.foreach { subsys ⇒
+      val compNames = sidebar.getSelectedComponents
+      val tv = targetSubsystem.getSubsystemWithVersion
+      val icdVersion = icdChooser.getSelectedIcdVersion.map(_.icdVersion)
+      val uri = Routes.icdAsPdf(subsys, sv.versionOpt, compNames, tv, icdVersion)
+      // dom.window.location.assign(uri) // opens in same window
+      dom.window.open(uri) // opens in new window or tab
+    }
   }
 }
 

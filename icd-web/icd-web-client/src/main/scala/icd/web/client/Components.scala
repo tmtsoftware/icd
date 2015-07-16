@@ -1,8 +1,8 @@
 package icd.web.client
 
+import icd.web.shared._
 import org.scalajs.dom
 import org.scalajs.dom.ext.Ajax
-import shared._
 import upickle._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -30,10 +30,6 @@ object Components {
 
   // Displayed version for unpublished APIs
   val unpublished = "(unpublished)"
-
-  // Information displayed at top of components page
-  case class TitleInfo(title: String, subtitleOpt: Option[String], descriptionOpt: Option[String])
-
 }
 
 /**
@@ -44,31 +40,6 @@ object Components {
 case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   import Components._
-  import Subsystem._
-
-  // Gets the title and optional subtitle to display based on the selected source and target subsystems
-  private def getTitleInfo(subsystemInfo: SubsystemInfo,
-                           targetSubsystem: SubsystemWithVersion,
-                           icdOpt: Option[IcdVersion]): TitleInfo = {
-    if (icdOpt.isDefined) {
-      val icd = icdOpt.get
-      val title = s"ICD from ${icd.subsystem} to ${icd.target} (version ${icd.icdVersion})"
-      val subtitle = s"Based on ${icd.subsystem} ${icd.subsystemVersion} and ${icd.target} ${icd.targetVersion}"
-      TitleInfo(title, Some(subtitle), None)
-    } else {
-      val version = subsystemInfo.versionOpt.getOrElse(unpublished)
-      if (targetSubsystem.subsystemOpt.isDefined) {
-        val target = targetSubsystem.subsystemOpt.get
-        val targetVersion = targetSubsystem.versionOpt.getOrElse(unpublished)
-        val title = s"ICD from ${subsystemInfo.subsystem} to $target $unpublished"
-        val subtitle = s"Based on ${subsystemInfo.subsystem} $version and $target $targetVersion"
-        TitleInfo(title, Some(subtitle), None)
-      } else {
-        TitleInfo(s"API for ${subsystemInfo.subsystem} $version",
-          Some(subsystemInfo.title), Some(subsystemInfo.description))
-      }
-    }
-  }
 
   /**
    * Gets information about the given components
@@ -110,7 +81,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           subsystemInfo ← getSubsystemInfo(subsystem, sv.versionOpt)
           infoList ← getComponentInfo(subsystem, sv.versionOpt, compNames, targetSubsystem)
         } yield {
-          val titleInfo = getTitleInfo(subsystemInfo, targetSubsystem, icdOpt)
+          val titleInfo = TitleInfo(subsystemInfo, targetSubsystem, icdOpt)
           mainContent.clearContent()
           mainContent.setTitle(titleInfo.title, titleInfo.subtitleOpt, titleInfo.descriptionOpt)
           infoList.foreach(displayComponentInfo)
@@ -164,7 +135,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def applyIcdFilter(info: ComponentInfo): ComponentInfo = {
     val publishInfo = info.publishInfo.filter(p ⇒ p.subscribers.nonEmpty)
     val commandsReceived = info.commandsReceived.filter(p ⇒ p.otherComponents.nonEmpty)
-    ComponentInfo(info.subsystem, info.compName, info.description, info.prefix, info.wbsId,
+    ComponentInfo(info.subsystem, info.compName, info.title, info.description, info.prefix, info.wbsId,
       publishInfo, info.subscribeInfo, commandsReceived, info.commandsSent)
   }
 

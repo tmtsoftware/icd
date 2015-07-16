@@ -1,5 +1,6 @@
 package icd.web.client
 
+import icd.web.shared.SubsystemWithVersion
 import org.scalajs.dom
 import org.scalajs.dom._
 import org.scalajs.dom.ext.Ajax
@@ -25,13 +26,6 @@ object Subsystem {
      */
     def subsystemSelected(sv: SubsystemWithVersion, saveHistory: Boolean = true): Future[Unit]
   }
-
-  /**
-   * Called when a subsystem is selected
-   * @param subsystemOpt the selected subsystem, or None if no subsystem is selected
-   * @param versionOpt optional version of the subsystem (None means the latest version)
-   */
-  case class SubsystemWithVersion(subsystemOpt: Option[String], versionOpt: Option[String])
 
   /**
    * Value displayed for the unpublished working version of the subsystem

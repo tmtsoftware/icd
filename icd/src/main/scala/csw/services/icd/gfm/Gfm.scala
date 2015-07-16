@@ -29,6 +29,7 @@ object Gfm {
   def mkHeading(level: Level, depth: Int, text: String): String = {
     val heading = s"${level(depth)} $text"
     val targetName = headingTargetName(heading)
+    // XXX TODO: Change name= to id=
     val target = s"<a name='$targetName'></a>"
     s"\n${"#" * (depth + 1)} $target$heading\n"
   }

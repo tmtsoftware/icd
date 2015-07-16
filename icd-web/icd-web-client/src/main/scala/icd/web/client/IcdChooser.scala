@@ -1,10 +1,9 @@
 package icd.web.client
 
-import icd.web.client.Subsystem.SubsystemWithVersion
+import icd.web.shared.{ SubsystemWithVersion, IcdVersionInfo, IcdVersion, IcdName }
 import org.scalajs.dom
 import org.scalajs.dom._
 import org.scalajs.dom.ext.Ajax
-import shared.{ IcdVersionInfo, IcdName, IcdVersion }
 
 import scala.concurrent.{ Promise, Future }
 import scala.concurrent.ExecutionContext.Implicits.global

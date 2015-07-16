@@ -1,4 +1,5 @@
-@(csrfToken: shared.Csrf)(implicit request: RequestHeader)
+@import icd.web.shared.Csrf
+@(csrfToken: Csrf)(implicit request: RequestHeader)
 
 @main("TMT ICD Database") {
     @playscalajs.html.scripts("icdwebclient")

@@ -4,11 +4,11 @@ import com.mongodb.{ WriteConcern, DBObject }
 import com.mongodb.casbah.Imports._
 import com.typesafe.config.Config
 import gnieh.diffson.{ JsonDiff, JsonPatch }
+import icd.web.shared.{ IcdVersionInfo, IcdVersion }
 import net.liftweb.json.JsonAST.{ JNothing, JValue }
 import net.liftweb.json.JsonParser
 import org.joda.time.{ DateTimeZone, DateTime }
 import csw.services.icd.model._
-import shared.{ IcdVersionInfo, IcdVersion }
 
 /**
  * Manages Subsystem and component versioning in the database.

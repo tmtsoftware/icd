@@ -1,12 +1,11 @@
 package icd.web.client
 
 import icd.web.client.Components.ComponentLink
+import icd.web.shared.{ SubsystemWithVersion, IcdVersion }
 import org.scalajs.dom
 import org.scalajs.dom._
-import shared.IcdVersion
 import upickle._
 import BrowserHistory._
-import Subsystem._
 
 object BrowserHistory {
 

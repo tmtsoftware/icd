@@ -1,7 +1,7 @@
 package icd.web.client
 
+import icd.web.shared.{ IcdVersionInfo, IcdName, VersionInfo }
 import org.scalajs.dom.ext.Ajax
-import shared.{ IcdVersionInfo, IcdName, VersionInfo }
 import upickle._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global

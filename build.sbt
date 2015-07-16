@@ -65,11 +65,12 @@ val ficus = "net.ceedubs" % "ficus_2.11" % "1.1.2"
 val typesafeConfig = "com.typesafe" % "config" % "1.2.1"
 val scalaTest = "org.scalatest" %% "scalatest" % "2.1.5"
 val pegdown = "org.pegdown" % "pegdown" % "1.4.2"
-val xmlworker = "com.itextpdf.tool" % "xmlworker" % "5.5.5"
+val xmlworker = "com.itextpdf.tool" % "xmlworker" % "5.5.6"
 val casbah = "org.mongodb" %% "casbah" % "2.8.0"
 val diffson = "org.gnieh" %% "diffson" % "0.3"
 val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2"
 val logback = "ch.qos.logback" % "logback-classic" % "1.1.1"
+val scalatags = "com.lihaoyi" %% "scalatags" % "0.5.2"
 
 // Root of the multi-project build
 lazy val root = (project in file("."))
@@ -89,7 +90,7 @@ lazy val `icd-db` = project
   .enablePlugins(JavaAppPackaging)
   .settings(defaultSettings: _*)
   .settings(libraryDependencies ++=
-    compile(casbah) ++
+    compile(casbah, scalatags) ++
       test(scalaTest)
   ) dependsOn(icd, icdWebSharedJvm)
 

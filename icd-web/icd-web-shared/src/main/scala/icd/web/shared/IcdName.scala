@@ -1,4 +1,4 @@
-package shared
+package icd.web.shared
 
 /**
  * An ICD from subsystem to target subsystem

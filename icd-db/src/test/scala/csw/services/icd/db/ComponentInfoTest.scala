@@ -24,7 +24,7 @@ class ComponentInfoTest extends FunSuite {
     val problems2 = db.ingest(getTestDir("../examples/TCS"))
     for (p ← problems2) println(p)
 
-    val info = ComponentInfo(db, "NFIRAOS", None, "envCtrl")
+    val info = ComponentInfoHelper(db, "NFIRAOS", None, "envCtrl")
     assert(info.compName == "envCtrl")
     assert(info.publishInfo.nonEmpty)
     info.publishInfo.foreach { pubInfo ⇒
