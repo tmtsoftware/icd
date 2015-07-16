@@ -266,6 +266,16 @@ case class IcdDbPrinter(db: IcdDb) {
   }
 
   /**
+   * Displays the subsystem title and description
+   */
+  private def makeIntro(titleInfo: TitleInfo): Text.TypedTag[String] = {
+    import scalatags.Text.all._
+    if (titleInfo.descriptionOpt.isDefined) {
+      p(titleInfo.descriptionOpt.get)
+    } else div
+  }
+
+  /**
    * Returns an HTML document describing the given components in the given subsystem.
    * If a target subsystem is given, the information is restricted to the ICD from
    * the subsystem to the target.
@@ -294,11 +304,10 @@ case class IcdDbPrinter(db: IcdDb) {
           div(cls := "pagebreakBefore"),
           h2("Table of Contents"),
           makeToc(titleInfo.title, infoList),
+          makeIntro(titleInfo),
           infoList.map(displayComponentInfo)))
     }
-    val x = markup.map(_.render)
-    println(x.get)
-    x
+    markup.map(_.render)
   }
 
   /**

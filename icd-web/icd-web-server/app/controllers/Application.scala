@@ -100,13 +100,17 @@ object Application extends Controller {
       case Some(s) ⇒ s.split(",").toList
       case None    ⇒ db.versionManager.getComponentNames(subsystem, versionOpt)
     }
-    val sv = SubsystemWithVersion(Some(subsystem), versionOpt)
-    val tv = SubsystemWithVersion(Some(target), targetVersionOpt)
-    val iv = for {
-      version ← versionOpt
-      targetVersion ← targetVersionOpt
-      icdVersion ← icdVersionOpt
-    } yield IcdVersion(icdVersion, subsystem, version, target, targetVersion)
+
+    // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
+    // if only the subsystem or target versions were given, use those (default to latest versions)
+    val iv = db.versionManager.getIcdVersions(subsystem, target).find(_.icdVersion.icdVersion == icdVersionOpt.get).map(_.icdVersion)
+    val (sv, tv) = if (iv.isDefined) {
+      val i = iv.get
+      (SubsystemWithVersion(Some(i.subsystem), Some(i.subsystemVersion)), SubsystemWithVersion(Some(i.target), Some(i.targetVersion)))
+    } else {
+      (SubsystemWithVersion(Some(subsystem), versionOpt), SubsystemWithVersion(Some(target), targetVersionOpt))
+    }
+
     IcdDbPrinter(db).getAsHtml(compNames, sv, tv, iv) match {
       case Some(html) ⇒
         IcdToPdf.saveAsPdf(out, html)
