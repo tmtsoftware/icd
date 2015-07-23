@@ -1,7 +1,0 @@
-# Usage: docker-compose up (requires docker-compose to be installed)
-web:
-  image: abrighton/icdwebserver
-  links:
-   - mongo
-redis:
-  image: mongo
