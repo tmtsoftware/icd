@@ -48,7 +48,7 @@ lazy val defaultSettings = buildSettings ++ formatSettings ++ Seq(
 // Customize the Docker install
 lazy val dockerSettings = Seq(
   maintainer := "TMT Software",
-  dockerExposedPorts in Docker := Seq(9000),
+  dockerExposedPorts := Seq(9000),
   dockerBaseImage := "java:8"
 )
 
