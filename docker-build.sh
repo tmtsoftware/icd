@@ -29,3 +29,6 @@ docker build -t $user/icdwebserver:$version .  || exit 1
 
 # Push to docker hub...
 # docker push abrighton/icdwebserver:latest
+
+# Note: For boot2docker, need to run this once the application is running to expose ports
+# VBoxManage controlvm "boot2docker-vm" natpf1 "tcp-port9000,tcp,,9000,,9000";

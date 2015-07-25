@@ -251,9 +251,6 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
   val versionManager = IcdVersionManager(db)
   val manager = IcdDbManager(db, versionManager)
 
-  def multipleSubsystemsError(subsystems: List[String]): List[Problem] =
-    List(Problem("error", "Multiple subsystems found: " + subsystems.mkString(",")))
-
   /**
    * Ingests all the files with the standard names (stdNames) in the given directory and recursively
    * in its subdirectories into the database.
@@ -262,48 +259,17 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
    */
   def ingest(dir: File = new File(".")): List[Problem] = {
     val results = (dir :: subDirs(dir)).map(ingestOneDir)
-    val problems = results.flatMap {
-      case Left(list) ⇒ list
-      case Right(_)   ⇒ None
-    }
-    if (problems.nonEmpty) {
-      problems
-    } else {
-      val subsystems = results.flatMap {
-        case Left(_)     ⇒ None
-        case Right(name) ⇒ Some(name)
-      }.distinct
-      if (subsystems.length != 1) {
-        multipleSubsystemsError(subsystems)
-      } else {
-        // XXX Do this on publish instead?
-        //        versionManager.newVersion(subsystems.head, comment, majorVersion)
-        Nil
-      }
-    }
+    results.flatten
   }
 
   /**
    * Ingests all files with the standard names (stdNames) in the given directory (only) into the database.
    * @param dir the directory containing the standard set of ICD files
-   * @return on error, a list describing the problems, otherwise name of the subsystem for the ICD
+   * @return a list describing any problems that occured
    */
-  private[db] def ingestOneDir(dir: File): Either[List[Problem], String] = {
+  private[db] def ingestOneDir(dir: File): List[Problem] = {
     val list = StdConfig.get(dir)
-    val subsystems = list.map(getSubsystemName).distinct
-    if (subsystems.length != 1) {
-      Left(multipleSubsystemsError(subsystems))
-    } else {
-      val problems = ingestConfigs(list)
-      if (problems.nonEmpty) {
-        Left(problems)
-      } else {
-        // XXX TODO: Keep versions of components or only subsystems?
-        // XXX Do this on publish?
-        //        versionManager.newVersion(list, comment, majorVersion)
-        Right(subsystems.head)
-      }
-    }
+    ingestConfigs(list)
   }
 
   /**

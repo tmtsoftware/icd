@@ -16,3 +16,5 @@ docker run -t -d -p 27017:27017 --name mongo mongo || exit 1
 # Start the application
 docker run -d -P -p 9000:9000 --name icdwebserver --link mongo abrighton/icdwebserver -Dicd.db.host=$host  || exit 1
 
+# Note: For boot2docker, need to run this once the application is running to expose ports
+# VBoxManage controlvm "boot2docker-vm" natpf1 "tcp-port9000,tcp,,9000,,9000";

@@ -384,9 +384,6 @@ case class IcdVersionManager(db: MongoDB) {
     // Add to collection of published subsystem versions
     newVersion(subsystem, None, versions, comment, majorVersion)
 
-    // XXX needed? (XXX web app uses subsystem version to get components. Always the same?)
-    // XXX Should subsystem table list component versions only? (currently lists versions of all data collections of all components)
-
     // Add to collection of published subsystem component versions
     getComponentNames(subsystem, None).foreach { name ⇒
       val prefix = s"$subsystem.$name."

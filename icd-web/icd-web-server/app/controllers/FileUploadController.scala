@@ -51,21 +51,12 @@ object FileUploadController extends Controller {
     import upickle._
     val problems = list.flatMap(db.ingestConfig)
 
-    // Check the subsystem names
-    val subsystems = list.map(stdConfig ⇒ db.getSubsystemName(stdConfig)).distinct
-
-    val errors = if (subsystems.length != 1)
-      problems ::: db.multipleSubsystemsError(subsystems)
-    else problems
-
-    //    db.versionManager.newVersion(list, comment, majorVersion)
-    //    db.versionManager.newVersion(subsystems.head, comment, majorVersion)
     wsChannel.push("update")
 
-    if (errors.isEmpty) {
+    if (problems.isEmpty) {
       Ok.as(JSON)
     } else {
-      NotAcceptable(write(errors)).as(JSON)
+      NotAcceptable(write(problems)).as(JSON)
     }
   }
 
