@@ -2,7 +2,8 @@ ICD - Interface Control Document Management
 ===========================================
 
 This project contains support for validating, storing, managing, 
-searching and viewing ICDs (Interface Control Documents between TMT subsystems or components).
+searching and viewing APIs and ICDs (Interface Control Documents between TMT subsystems).
+An ICD consists of source and target subsystem APIs.
 The validation is based on [JSON Schema](http://json-schema.org/),
 however the schema descriptions as well as the ICDs themselves may also be written in
 the simpler [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md) format.
@@ -16,9 +17,9 @@ ICD Subprojects
 
 There are currently these ICD subprojects:
 
-* icd - supports validating an ICD against the JSON schema as well as saving it as a Markdown, HTML or PDF document
-* icd-db - supports ingesting an ICD into a MongoDB database, querying the db and saving an ICD as a document
-* icd-web/* - a Play/Scala.js based web app for working with ICDs (separate build.sbt, depends on icd-db project)
+* icd - supports validating an API against the JSON schema as well as saving it as a Markdown, HTML or PDF document
+* icd-db - supports ingesting API files into a MongoDB database, querying the db and saving an API or ICD as a document
+* icd-web/* - a Play/Scala.js based web app for working with ICDs
 
 Build and Install
 -----------------
@@ -44,6 +45,20 @@ To test the web server, run `sbt run` from this directory.
 Then go to http://localhost:9000 in a web browser.
 
 See [icd-web/README.md](icd-web/README.md) for more information.
+
+Docker Install
+--------------
+
+Two Docker related scripts are provided in the top level directory.
+
+* docker-build.sh - Runs `sbt docker:stage` and `docker build` to build the docker image
+
+* docker-run.sh - Can be used to run the ICD web server inside Docker
+
+Note that both scripts should be edited to add the correct docker user.
+See comments in the scripts for more information.
+
+
 
 
 

@@ -28,14 +28,22 @@ Then start the play web app with:
     sbt run
 
 in the directory containing build.sbt and open http://localhost:9000/ in a browser.
-Use the *Upload* item to upload an ICD (choose examples/NFIRAOS, if you are using Chrome, otherwise 
+Use the *Upload* item to upload an ICD directory (choose examples/NFIRAOS, if you are using Chrome, otherwise 
 make a zip file of that directory and upload that. Do the same for TCS).
+It is also possible to upload multiple directories at once.
 
 Any validation or upload errors or warnings will be displayed in the browser window.
 
-After uploading, select NFIRAOS from the Subsystem menu. Then you can use the View menu to view the ICD
-or click on one of the components in the sidebar at left to view publish/subscribe information for the component
-( __Work in progress!__ ).
+After uploading, select NFIRAOS from the Subsystem menu to view the NFIRAOS API. 
+To view an ICD between two subsystems, select a target subsystem as well, or select an ICD
+from the ICD menu, if one has been published.
+
+Publishing APIs and ICDs
+------------------------
+
+After uploading, you have a list of unpublished APIs (version = *). Click on *Publish* to publish
+a version of the selected API. Select a version in the menu to the right to display a published API.
+In order to publish an ICD, published source and target subsystems need to be selected.
 
 Install
 -------
