@@ -101,26 +101,22 @@ object IcdVersionManager {
   object IcdName {
     implicit def orderingByName[A <: IcdName]: Ordering[A] = Ordering.by(e ⇒ (e.subsystem, e.target))
   }
-
-  //  /**
-  //   * An ICD version with the associated source and target subsystem versions
-  //   */
-  //  case class IcdVersion(icdVersion: String, subsystemVersion: String, targetVersion: String)
-
-  //  /**
-  //   * An ICD version with additional history information
-  //   * @param icdVersion describes the ICD version
-  //   * @param user the user that published the version
-  //   * @param comment the publish comment
-  //   * @param date the date the ICD was published
-  //   */
-  //  case class IcdVersionInfo(icdVersion: IcdVersion, user: String, comment: String, date: DateTime)
 }
 
-case class IcdVersionManager(db: MongoDB) {
+/**
+ * Provides access to current and previous versions of ICD collections.
+ *
+ * @param db the MongoDB handle
+ * @param query may be used to share caching of collection names (see CachedIcdDbQuery)
+ */
+case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
 
   import IcdVersionManager._
   import IcdDbQuery._
+
+  // Performance can be improved by caching these values in some cases (redefine in a subclass)
+  private[db] def collectionExists(name: String): Boolean = query.collectionExists(name)
+  private[db] def getCollectionNames: Set[String] = query.getCollectionNames
 
   // Start with "1.0" as the subsystem or component version, then increment the minor version automatically each time.
   // If the user requests a new major version, increment that and reset minor version to 0.
@@ -168,7 +164,7 @@ case class IcdVersionManager(db: MongoDB) {
   def getVersions(subsystem: String): List[VersionInfo] = {
     val current = getVersion(subsystem, None, None).toList
     val collName = versionCollectionName(subsystem)
-    if (db.collectionExists(collName)) {
+    if (collectionExists(collName)) {
       val published = for (obj ← db(collName).find().sort(idKey -> -1)) yield VersionInfo(obj)
       current ::: published.toList
     } else current
@@ -180,7 +176,7 @@ case class IcdVersionManager(db: MongoDB) {
    */
   def getVersionNames(subsystem: String): List[String] = {
     val collName = versionCollectionName(subsystem)
-    if (db.collectionExists(collName)) {
+    if (collectionExists(collName)) {
       val result = for (obj ← db(collName).find().sort(idKey -> -1)) yield obj(versionStrKey).toString
       result.toList
     } else Nil
@@ -197,7 +193,7 @@ case class IcdVersionManager(db: MongoDB) {
     versionOpt match {
       case Some(version) ⇒ // published version
         val collName = versionCollectionName(path)
-        if (db.collectionExists(collName)) {
+        if (collectionExists(collName)) {
           db(collName).findOne(versionStrKey -> version).map(VersionInfo(_))
         } else {
           None // not found
@@ -205,7 +201,7 @@ case class IcdVersionManager(db: MongoDB) {
       case None ⇒ // current, unpublished version
         def getPartVersion(path: String): Int = db(path).head(versionKey).asInstanceOf[Int]
         def filter(p: IcdPath) = p.subsystem == subsystem && compNameOpt.fold(true)(_ ⇒ p.component == path)
-        val paths = db.collectionNames().filter(isStdSet).map(IcdPath).filter(filter).map(_.path).toList
+        val paths = getCollectionNames.filter(isStdSet).map(IcdPath).filter(filter).map(_.path).toList
         val now = new DateTime(DateTimeZone.UTC)
         val user = System.getProperty("user.name")
         val comment = "Working version, unpublished"
@@ -222,7 +218,7 @@ case class IcdVersionManager(db: MongoDB) {
   def getLatestPublishedVersion(subsystem: String, compNameOpt: Option[String]): Option[String] = {
     val path = compNameOpt.fold(subsystem)(compName ⇒ s"$subsystem.$compName")
     val collName = versionCollectionName(path)
-    if (db.collectionExists(collName))
+    if (collectionExists(collName))
       Some(db(collName).find().sort(idKey -> -1).one().get(versionStrKey).toString)
     else None
   }
@@ -253,8 +249,7 @@ case class IcdVersionManager(db: MongoDB) {
   }
 
   // Returns the contents of the given version of the collection path
-  private def getVersionOf(path: String, version: Int): String = {
-    val coll = db(path)
+  private def getVersionOf(coll: MongoCollection, version: Int): String = {
     val currentVersion = coll.head(versionKey).asInstanceOf[Int]
     val v = coll.getCollection(versionColl)
     if (version == currentVersion) {
@@ -266,7 +261,7 @@ case class IcdVersionManager(db: MongoDB) {
 
   // Returns the JSON for the given version of the collection path
   private def getJson(path: String, version: Int): JValue = {
-    parseNoVersionOrId(getVersionOf(path, version))
+    parseNoVersionOrId(getVersionOf(db(path), version))
   }
 
   // Returns the diff of the given versions of the given collection path, if they are different
@@ -307,7 +302,7 @@ case class IcdVersionManager(db: MongoDB) {
   private def getEntries(parts: List[PartInfo]): List[IcdEntry] = {
     val paths = parts.map(_.path).map(IcdPath)
     val compMap = paths.map(p ⇒ (p.component, paths.filter(_.component == p.component).map(_.path))).toMap
-    val entries = compMap.keys.map(key ⇒ getEntry(key, compMap(key))).toList
+    val entries = compMap.keys.map(key ⇒ getEntry(db, key, compMap(key))).toList
     entries.sortBy(entry ⇒ (IcdPath(entry.name).parts.length, entry.name))
   }
 
@@ -330,13 +325,13 @@ case class IcdVersionManager(db: MongoDB) {
     case class Models(versionMap: Map[String, Int], entry: IcdEntry) extends IcdModels {
 
       // Parses the data from collection s (or an older version of it) and returns a Config object for it
-      private def parse(s: String): Config = getConfig(getVersionOf(s, versionMap(s)))
+      private def parse(coll: MongoCollection): Config = getConfig(getVersionOf(coll, versionMap(coll.name)))
 
-      override val subsystemModel = entry.subsystem.map(s ⇒ SubsystemModel(parse(s)))
-      override val publishModel = entry.publish.map(s ⇒ PublishModel(parse(s)))
-      override val subscribeModel = entry.subscribe.map(s ⇒ SubscribeModel(parse(s)))
-      override val commandModel = entry.command.map(s ⇒ CommandModel(parse(s)))
-      override val componentModel = entry.component.map(s ⇒ ComponentModel(parse(s)))
+      override val subsystemModel = entry.subsystem.map(coll ⇒ SubsystemModel(parse(coll)))
+      override val publishModel = entry.publish.map(coll ⇒ PublishModel(parse(coll)))
+      override val subscribeModel = entry.subscribe.map(coll ⇒ SubscribeModel(parse(coll)))
+      override val commandModel = entry.command.map(coll ⇒ CommandModel(parse(coll)))
+      override val componentModel = entry.component.map(coll ⇒ ComponentModel(parse(coll)))
     }
 
     getVersion(subsystem, versionOpt, compNameOpt) match {
@@ -366,14 +361,14 @@ case class IcdVersionManager(db: MongoDB) {
    */
   def publishApi(subsystem: String, majorVersion: Boolean, comment: String): Unit = {
     // Save any of the subsystem's collections that changed
-    val icdPaths = db.collectionNames().filter(isStdSet).map(IcdPath).filter(_.subsystem == subsystem)
+    val icdPaths = getCollectionNames.filter(isStdSet).map(IcdPath).filter(_.subsystem == subsystem)
     val paths = icdPaths.map(_.path).toList
     val versions = for (path ← paths) yield {
       val coll = db(path)
       val obj = coll.head
       val versionCollName = versionCollectionName(path)
       val version = obj(versionKey).asInstanceOf[Int]
-      if (!db.collectionExists(versionCollName) || diff(db(versionCollName), obj).isDefined) {
+      if (!collectionExists(versionCollName) || diff(db(versionCollName), obj).isDefined) {
         val v = db(versionCollName)
         v.insert(obj, WriteConcern.SAFE)
         obj.put(versionKey, version + 1)
@@ -398,7 +393,7 @@ case class IcdVersionManager(db: MongoDB) {
    * @param target the target subsystem
    */
   def getLatestPublishedIcdVersion(subsystem: String, target: String): Option[String] = {
-    if (db.collectionExists(icdCollName))
+    if (collectionExists(icdCollName))
       Some(db(icdCollName).find().sort(idKey -> -1).one().get(versionStrKey).toString)
     else None
   }
@@ -437,7 +432,7 @@ case class IcdVersionManager(db: MongoDB) {
    * Returns a list of published ICDs
    */
   def getIcdNames: List[IcdName] = {
-    if (db.collectionExists(icdCollName)) {
+    if (collectionExists(icdCollName)) {
       db(icdCollName).map(obj ⇒ IcdName(obj(subsystemKey).toString, obj(targetKey).toString)).toList.distinct.sorted
     } else Nil
   }
@@ -448,7 +443,7 @@ case class IcdVersionManager(db: MongoDB) {
    * @param target the ICD's target subsystem
    */
   def getIcdVersions(subsystem: String, target: String): List[IcdVersionInfo] = {
-    if (db.collectionExists(icdCollName)) {
+    if (collectionExists(icdCollName)) {
       db(icdCollName)
         .find(MongoDBObject(subsystemKey -> subsystem, targetKey -> target))
         .sort(idKey -> -1)

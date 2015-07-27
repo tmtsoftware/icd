@@ -4,7 +4,7 @@ import java.io.ByteArrayOutputStream
 
 import csw.services.icd.IcdToPdf
 import csw.services.icd.db.{ IcdDbPrinter, IcdComponentInfo, ComponentInfoHelper, IcdDb }
-import icd.web.shared.{ IcdVersion, SubsystemWithVersion, SubsystemInfo, IcdName, VersionInfo, Csrf }
+import icd.web.shared.{ SubsystemWithVersion, SubsystemInfo, IcdName, VersionInfo, Csrf }
 import play.api.mvc._
 import play.filters.csrf.CSRFAddToken
 import play.api.libs.json._

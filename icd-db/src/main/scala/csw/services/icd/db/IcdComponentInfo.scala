@@ -24,8 +24,9 @@ object IcdComponentInfo {
   def apply(db: IcdDb, subsystem: String, versionOpt: Option[String], compName: String,
             target: String, targetVersionOpt: Option[String]): ComponentInfo = {
     // get the models for this component
-    val modelsList = db.versionManager.getModels(subsystem, versionOpt, Some(compName))
-    val targetModelsList = db.versionManager.getModels(target, targetVersionOpt, None)
+    val versionManager = new CachedIcdVersionManager(db.db, db.query)
+    val modelsList = versionManager.getModels(subsystem, versionOpt, Some(compName))
+    val targetModelsList = versionManager.getModels(target, targetVersionOpt, None)
     val title = getComponentField(modelsList, _.title)
     val description = getComponentField(modelsList, _.description)
     val prefix = getComponentField(modelsList, _.prefix)
@@ -110,7 +111,7 @@ object IcdComponentInfo {
     targetInfo.find { subscribeInfo ⇒
       subscribeInfo.name == path && subscribeInfo.subsystem == publisherSubsystem
     }.map { _ ⇒
-      Subscribed(subscriberCompName, subscriberSubsystem, subscribeType, path, publisherSubsystem)
+      Subscribed(subscriberCompName, subscriberSubsystem, subscribeType, path)
     }
   }
 

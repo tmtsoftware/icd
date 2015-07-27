@@ -313,12 +313,13 @@ case class IcdDbPrinter(db: IcdDb) {
   /**
    * Saves a document describing the ICD for the given component to the given file,
    * in a format determined by the file's suffix, which should be one of (md, html, pdf).
-   * @param name the name of the subsystem or component to print
+   * @param subsystem the name of the subsystem (or component's subsystem) to print
+   * @param component optional name of the component to print
    * @param file the file in which to save the document (should end with .md, .html or .pdf)
    */
-  def saveToFile(name: String, file: File): Unit = {
+  def saveToFile(subsystem: String, component: Option[String], file: File): Unit = {
     // XXX TODO: FIXME use getAsHtml() above for command line
-    val models = db.query.getModels(name)
+    val models = db.query.getModels(subsystem, component)
     if (models.nonEmpty) IcdPrinter.saveToFile(models, file)
   }
 }

@@ -23,7 +23,7 @@ object IcdDb extends App {
 
   /**
    * Command line options: [--db <name> --host <host> --port <port>
-   * --ingest <dir> --major --component <name> --list [subsystems|hcds|assemblies|all]  --out <outputFile>
+   * --ingest <dir> --major --subsystem <name> --component <name> --list [subsystems|hcds|assemblies|all]  --out <outputFile>
    * --drop [db|component] --versions <icdName> --diff <subsystem>:<version1>[,version2]
    * --publishes <path> --subscribes <path>
    * ]
@@ -37,6 +37,7 @@ object IcdDb extends App {
                      majorVersion: Boolean = false,
                      comment: String = "",
                      list: Option[String] = None,
+                     subsystem: Option[String] = None,
                      component: Option[String] = None,
                      outputFile: Option[File] = None,
                      drop: Option[String] = None,
@@ -79,11 +80,15 @@ object IcdDb extends App {
 
     opt[String]('c', "component") valueName "<name>" action { (x, c) ⇒
       c.copy(component = Some(x))
-    } text "Specifies the component to be used by any following options"
+    } text "Specifies the component to be used by any following options (subsystem must also be specified)"
+
+    opt[String]('s', "subsystem") valueName "<name>" action { (x, c) ⇒
+      c.copy(subsystem = Some(x))
+    } text "Specifies the subsystem to be used by any following options"
 
     opt[File]('o', "out") valueName "<outputFile>" action { (x, c) ⇒
       c.copy(outputFile = Some(x))
-    } text "Saves the component's ICD to the given file in a format based on the file's suffix (md, html, pdf)"
+    } text "Saves the subsystem (or component) API to the given file in a format based on the file's suffix (md, html, pdf)"
 
     opt[String]("drop") valueName "[db|component]" action { (x, c) ⇒
       c.copy(drop = Some(x))
@@ -156,10 +161,8 @@ object IcdDb extends App {
 
     // --output option
     def output(file: File): Unit = {
-      options.component match {
-        case Some(component) ⇒ IcdDbPrinter(db).saveToFile(component, file)
-        case None            ⇒ error("Missing required component name: Please specify --component <name>")
-      }
+      if (options.subsystem.isEmpty) error("Missing required subsystem name: Please specify --subsystem <name>")
+      IcdDbPrinter(db).saveToFile(options.subsystem.get, options.component, file)
     }
 
     // --drop option
@@ -171,11 +174,12 @@ object IcdDb extends App {
             db.dropDatabase()
           }
         case "component" ⇒
+          if (options.subsystem.isEmpty) error("Missing required subsystem name: Please specify --subsystem <name>")
           options.component match {
             case Some(component) ⇒
               if (confirmDrop(s"Are you sure you want to drop $component from ${options.dbName}?")) {
                 println(s"Dropping $component from ${options.dbName}")
-                db.query.dropComponent(component)
+                db.query.dropComponent(options.subsystem.get, component)
               }
             case None ⇒
               error("Missing required component name: Please specify --component <name>")
@@ -248,7 +252,7 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
 
   val db = mongoClient(dbName)
   val query = IcdDbQuery(db)
-  val versionManager = IcdVersionManager(db)
+  val versionManager = IcdVersionManager(db, query)
   val manager = IcdDbManager(db, versionManager)
 
   /**

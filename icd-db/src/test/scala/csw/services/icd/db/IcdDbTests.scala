@@ -2,7 +2,7 @@ package csw.services.icd.db
 
 import java.io.File
 
-import csw.services.icd.db.IcdDbQuery.{ Events, Telemetry }
+import csw.services.icd.db.IcdDbQuery.Telemetry
 import org.scalatest.{ DoNotDiscover, FunSuite }
 
 /**
@@ -36,12 +36,12 @@ class IcdDbTests extends FunSuite {
     assert(components.size == 5)
 
     // Test getting items based on the component name
-    val envCtrl = db.query.getComponentModel("envCtrl").get
+    val envCtrl = db.query.getComponentModel("NFIRAOS", "envCtrl").get
     assert(envCtrl.component == "envCtrl")
     assert(envCtrl.componentType == "Assembly")
     assert(envCtrl.prefix == "nfiraos.ncc.envCtrl")
 
-    val commands = db.query.getCommandModel(envCtrl.component).get
+    val commands = db.query.getCommandModel(envCtrl.subsystem, envCtrl.component).get
     assert(commands.receive.size == 2)
 
     assert(commands.receive.head.name == "ENVIRONMENTAL_CONTROL_INITIALIZE")
@@ -50,7 +50,7 @@ class IcdDbTests extends FunSuite {
     assert(commands.receive.last.name == "ENVIRONMENTAL_CONTROL_STOP")
     assert(commands.receive.last.requirements.head == "INT-NFIRAOS-AOESW-0405")
 
-    val publish = db.query.getPublishModel(envCtrl.component).get
+    val publish = db.query.getPublishModel(envCtrl).get
     val telemetryList = publish.telemetryList
     assert(telemetryList.size == 2)
     val logging = telemetryList.head
@@ -69,12 +69,12 @@ class IcdDbTests extends FunSuite {
     assert(temp_ngsWfs.units == "degC")
 
     // Test publish queries
-    val published = db.query.getPublished("envCtrl").filter(p ⇒
+    val published = db.query.getPublished(envCtrl).filter(p ⇒
       p.name == "sensors" && p.publishType == Telemetry)
     assert(published.size == 1)
     assert(published.head.publishType == Telemetry)
 
-    val sensorList = db.query.publishes("nfiraos.ncc.envCtrl.sensors", Telemetry)
+    val sensorList = db.query.publishes("nfiraos.ncc.envCtrl.sensors", "NFIRAOS", Telemetry)
     assert(sensorList.size == 1)
     assert(sensorList.head.componentName == "envCtrl")
     assert(sensorList.head.item.publishType == Telemetry)
@@ -85,12 +85,12 @@ class IcdDbTests extends FunSuite {
     testModels(db)
 
     // Test saving document from the database
-    IcdDbPrinter(db).saveToFile(envCtrl.component, new File("envCtrl.pdf"))
-    IcdDbPrinter(db).saveToFile("NFIRAOS", new File("NFIRAOS.pdf"))
+    IcdDbPrinter(db).saveToFile(envCtrl.subsystem, Some(envCtrl.component), new File("envCtrl.pdf"))
+    IcdDbPrinter(db).saveToFile("NFIRAOS", None, new File("NFIRAOS.pdf"))
 
     // Test dropping a component
-    db.query.dropComponent(envCtrl.component)
-    assert(db.query.getComponentModel("envCtrl").isEmpty)
+    db.query.dropComponent(envCtrl.subsystem, envCtrl.component)
+    assert(db.query.getComponentModel("NFIRAOS", "envCtrl").isEmpty)
 
     //    db.query.dropComponent("NFIRAOS")
     //    assert(db.query.getComponentModel("NFIRAOS").isEmpty)
@@ -167,7 +167,6 @@ class IcdDbTests extends FunSuite {
           assert(opt.get == receiveCommandModel)
           val senders = db.query.getCommandSenders(commandModel.subsystem, commandModel.component, receiveCommandModel.name)
             .map(_.component)
-          //          println(s"XXX The following components call ${commandModel.subsystem}/${commandModel.component}/${receiveCommandModel.name}: $senders")
         }
       }
     }
