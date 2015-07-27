@@ -103,8 +103,6 @@ object Application extends Controller {
 
     // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
     // if only the subsystem or target versions were given, use those (default to latest versions)
-
-    // XXX None.get here on newly published ICD
     val v = icdVersionOpt.getOrElse("*")
     val iv = db.versionManager.getIcdVersions(subsystem, target).find(_.icdVersion.icdVersion == v).map(_.icdVersion)
     val (sv, tv) = if (iv.isDefined) {

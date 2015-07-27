@@ -6,6 +6,7 @@ import org.scalajs.dom.PopStateEvent
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.HTMLStyleElement
 import upickle._
+import org.querki.jquery._
 
 import scala.concurrent.Future
 import scala.scalajs.js
@@ -102,8 +103,15 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     }
   }
 
+  // Hide or show the sidebar
+  private def setSidebarVisible(show: Boolean): Unit = {
+    val s = $("#sidebar")
+    if (show) s.removeClass("hide") else s.addClass("hide")
+  }
+
   // Called when the Upload item is selected
   private def uploadSelected(saveHistory: Boolean = true)(): Unit = {
+    setSidebarVisible(false)
     mainContent.setContent(fileUploadDialog, "Upload ICD Files")
     if (saveHistory) pushState(viewType = UploadView)
   }
@@ -114,6 +122,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
       "Publish ICD"
     else "Publish API"
     publishDialog.subsystemChanged()
+    setSidebarVisible(false)
     mainContent.setContent(publishDialog, title)
     if (saveHistory) pushState(viewType = PublishView)
   }
@@ -186,11 +195,19 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
           case IcdView       ⇒ updateComponentDisplay()
           case ComponentLinkView ⇒ hist.linkComponent.foreach { link ⇒
             val sv = SubsystemWithVersion(Some(link.subsystem), None) // XXX where to get version?
+            setSidebarVisible(false)
             components.setComponent(sv, link.compName)
           }
         }
       }
     }
+  }
+
+  // Show/hide the busy cursor while the future is running
+  private def showBusyCursorWhile(f: Future[Unit]): Future[Unit] = {
+    $("*").css("cursor", "progress")
+    f.onComplete { _ ⇒ $("*").css("cursor", "default") }
+    f
   }
 
   /**
@@ -201,7 +218,10 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     val sub = subsystem.getSubsystemWithVersion
     val targetOpt = targetSubsystem.getSubsystemWithVersion
     val icdOpt = icdChooser.getSelectedIcdVersion
-    components.addComponents(sidebar.getSelectedComponents, sub, targetOpt, icdOpt)
+    setSidebarVisible(true)
+    mainContent.clearContent()
+    showBusyCursorWhile(
+      components.addComponents(sidebar.getSelectedComponents, sub, targetOpt, icdOpt))
   }
 
   // Gets the list of subcomponents for the selected subsystem
@@ -322,6 +342,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     icdChooser.getSelectedIcd match {
       case Some(icdName) ⇒
         versionHistory.setIcd(icdName)
+        setSidebarVisible(false)
         mainContent.setContent(versionHistory, s"ICD Version History: ${
           icdName.subsystem
         } to ${
@@ -331,6 +352,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
       case None ⇒ subsystem.getSelectedSubsystem match {
         case Some(name) ⇒
           versionHistory.setSubsystem(name)
+          setSidebarVisible(false)
           mainContent.setContent(versionHistory, s"Subsystem API Version History: $name")
           if (saveHistory) pushState(viewType = VersionView)
         case None ⇒
