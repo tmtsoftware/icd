@@ -1,8 +1,8 @@
 package csw.services.icd.db
 
-import java.io.File
+import java.io.{ FileOutputStream, File }
 
-import csw.services.icd.{ IcdToHtml, IcdPrinter }
+import csw.services.icd.{ IcdToPdf, IcdToHtml }
 import icd.web.shared._
 
 import scalatags.Text
@@ -312,14 +312,72 @@ case class IcdDbPrinter(db: IcdDb) {
 
   /**
    * Saves a document describing the ICD for the given component to the given file,
-   * in a format determined by the file's suffix, which should be one of (md, html, pdf).
-   * @param subsystem the name of the subsystem (or component's subsystem) to print
-   * @param component optional name of the component to print
+   * in a format determined by the file's suffix, which should be one of (html, pdf).
+   *
+   * @param subsystemStr the name of the subsystem (or component's subsystem) to print, followed by optional :version
+   * @param compNamesOpt optional names of the component to print (separated by ",")
+   * @param targetOpt optional target subsystem, followed by optional :version
+   * @param icdVersionOpt optional icd version (overrides source and target subsystem versions)
    * @param file the file in which to save the document (should end with .md, .html or .pdf)
    */
-  def saveToFile(subsystem: String, component: Option[String], file: File): Unit = {
-    // XXX TODO: FIXME use getAsHtml() above for command line
-    val models = db.query.getModels(subsystem, component)
-    if (models.nonEmpty) IcdPrinter.saveToFile(models, file)
+  def saveToFile(subsystemStr: String, compNamesOpt: Option[String],
+                 targetOpt: Option[String], icdVersionOpt: Option[String], file: File): Unit = {
+
+    // Gets the subsystem and optional version, if defined
+    def getSubsystemAndVersion(s: String): (String, Option[String]) = {
+      if (s.contains(':')) {
+        val ar = s.split(':')
+        (ar(0), Some(ar(1)))
+      } else (s, None)
+    }
+
+    def saveAsHtml(html: String): Unit = {
+      val out = new FileOutputStream(file)
+      out.write(html.getBytes)
+      out.close()
+    }
+
+    def saveAsPdf(html: String): Unit = IcdToPdf.saveAsPdf(file, html)
+
+    // ---
+
+    val (subsystem, versionOpt) = getSubsystemAndVersion(subsystemStr)
+
+    val compNames = compNamesOpt match {
+      case Some(str) ⇒ str.split(",").toList
+      case None      ⇒ db.versionManager.getComponentNames(subsystem, versionOpt)
+    }
+
+    val (subsys, targ, icdV) = targetOpt match {
+      case Some(t) ⇒ // ICD
+        val (target, targetVersionOpt) = getSubsystemAndVersion(t)
+        // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
+        // if only the subsystem or target versions were given, use those (default to latest versions)
+        val v = icdVersionOpt.getOrElse("*")
+        val iv = db.versionManager.getIcdVersions(subsystem, target).find(_.icdVersion.icdVersion == v).map(_.icdVersion)
+        val (sv, tv) = if (iv.isDefined) {
+          val i = iv.get
+          (SubsystemWithVersion(Some(i.subsystem), Some(i.subsystemVersion)), SubsystemWithVersion(Some(i.target), Some(i.targetVersion)))
+        } else {
+          (SubsystemWithVersion(Some(subsystem), versionOpt), SubsystemWithVersion(Some(target), targetVersionOpt))
+        }
+        (sv, tv, iv)
+
+      case None ⇒ // API
+        val sv = SubsystemWithVersion(Some(subsystem), versionOpt)
+        val tv = SubsystemWithVersion(None, None)
+        (sv, tv, None)
+    }
+
+    IcdDbPrinter(db).getAsHtml(compNames, subsys, targ, icdV) match {
+      case Some(html) ⇒
+        file.getName.split('.').drop(1).lastOption match {
+          case Some("html") ⇒ saveAsHtml(html)
+          case Some("pdf")  ⇒ saveAsPdf(html)
+          case _            ⇒ println(s"Unsupported output format: Expected *.html or *.pdf")
+        }
+      case None ⇒
+        println("Please specify source and optionally target subsystems to print")
+    }
   }
 }

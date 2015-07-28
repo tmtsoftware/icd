@@ -84,9 +84,9 @@ class IcdDbTests extends FunSuite {
     // Test accessing ICD models
     testModels(db)
 
-    // Test saving document from the database
-    IcdDbPrinter(db).saveToFile(envCtrl.subsystem, Some(envCtrl.component), new File("envCtrl.pdf"))
-    IcdDbPrinter(db).saveToFile("NFIRAOS", None, new File("NFIRAOS.pdf"))
+//    // Test saving document from the database
+//    IcdDbPrinter(db).saveToFile(envCtrl.subsystem, Some(envCtrl.component), new File("envCtrl.pdf"))
+//    IcdDbPrinter(db).saveToFile("NFIRAOS", None, new File("NFIRAOS.pdf"))
 
     // Test dropping a component
     db.query.dropComponent(envCtrl.subsystem, envCtrl.component)

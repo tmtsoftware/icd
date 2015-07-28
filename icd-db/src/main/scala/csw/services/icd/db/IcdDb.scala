@@ -23,7 +23,8 @@ object IcdDb extends App {
 
   /**
    * Command line options: [--db <name> --host <host> --port <port>
-   * --ingest <dir> --major --subsystem <name> --component <name> --list [subsystems|hcds|assemblies|all]  --out <outputFile>
+   * --ingest <dir> --major --subsystem <name[:version]> --target <name[:version]> --icdversion <version>
+   * --component <name> --list [subsystems|hcds|assemblies|all]  --out <outputFile>
    * --drop [db|component] --versions <icdName> --diff <subsystem>:<version1>[,version2]
    * --publishes <path> --subscribes <path>
    * ]
@@ -38,6 +39,8 @@ object IcdDb extends App {
                      comment: String = "",
                      list: Option[String] = None,
                      subsystem: Option[String] = None,
+                     target: Option[String] = None,
+                     icdVersion: Option[String] = None,
                      component: Option[String] = None,
                      outputFile: Option[File] = None,
                      drop: Option[String] = None,
@@ -82,13 +85,21 @@ object IcdDb extends App {
       c.copy(component = Some(x))
     } text "Specifies the component to be used by any following options (subsystem must also be specified)"
 
-    opt[String]('s', "subsystem") valueName "<name>" action { (x, c) ⇒
+    opt[String]('s', "subsystem") valueName "<subsystem>[:version]" action { (x, c) ⇒
       c.copy(subsystem = Some(x))
-    } text "Specifies the subsystem to be used by any following options"
+    } text "Specifies the subsystem (and optional version) to be used by any following options"
+
+    opt[String]('t', "target") valueName "<subsystem>[:version]" action { (x, c) ⇒
+      c.copy(target = Some(x))
+    } text "Specifies the target subsystem (and optional version) to be used by any following options"
+
+    opt[String]("icdversion") valueName "<icd-version>" action { (x, c) ⇒
+      c.copy(icdVersion = Some(x))
+    } text "Specifies the ICD version to be used by any following options (overrides subsystem and target versions)"
 
     opt[File]('o', "out") valueName "<outputFile>" action { (x, c) ⇒
       c.copy(outputFile = Some(x))
-    } text "Saves the subsystem (or component) API to the given file in a format based on the file's suffix (md, html, pdf)"
+    } text "Saves the selected API or ICD to the given file in a format based on the file's suffix (html, pdf)"
 
     opt[String]("drop") valueName "[db|component]" action { (x, c) ⇒
       c.copy(drop = Some(x))
@@ -162,7 +173,7 @@ object IcdDb extends App {
     // --output option
     def output(file: File): Unit = {
       if (options.subsystem.isEmpty) error("Missing required subsystem name: Please specify --subsystem <name>")
-      IcdDbPrinter(db).saveToFile(options.subsystem.get, options.component, file)
+      IcdDbPrinter(db).saveToFile(options.subsystem.get, options.component, options.target, options.icdVersion, file)
     }
 
     // --drop option
