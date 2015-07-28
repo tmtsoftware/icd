@@ -101,6 +101,7 @@ object IcdVersionManager {
   object IcdName {
     implicit def orderingByName[A <: IcdName]: Ordering[A] = Ordering.by(e ⇒ (e.subsystem, e.target))
   }
+
 }
 
 /**
@@ -116,6 +117,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
 
   // Performance can be improved by caching these values in some cases (redefine in a subclass)
   private[db] def collectionExists(name: String): Boolean = query.collectionExists(name)
+
   private[db] def getCollectionNames: Set[String] = query.getCollectionNames
 
   // Start with "1.0" as the subsystem or component version, then increment the minor version automatically each time.
@@ -393,9 +395,18 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
    * @param target the target subsystem
    */
   def getLatestPublishedIcdVersion(subsystem: String, target: String): Option[String] = {
-    if (collectionExists(icdCollName))
-      Some(db(icdCollName).find().sort(idKey -> -1).one().get(versionStrKey).toString)
-    else None
+    if (collectionExists(icdCollName)) {
+      val result = db(icdCollName).find(MongoDBObject(subsystemKey -> subsystem, targetKey -> target)).sort(idKey -> -1).one()
+      try {
+        if (result.isEmpty)
+          None
+        else
+          Some(result.get(versionStrKey).toString)
+      } catch {
+        // Seems like a casbah/mongodb bug that result.isEmpty above can throw this...
+        case e: NullPointerException ⇒ None
+      }
+    } else None
   }
 
   /**
