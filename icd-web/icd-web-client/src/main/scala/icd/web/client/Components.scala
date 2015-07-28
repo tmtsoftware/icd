@@ -51,10 +51,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    */
   private def getComponentInfo(subsystem: String, versionOpt: Option[String], compNames: List[String],
                                targetSubsystem: SubsystemWithVersion): Future[List[ComponentInfo]] = {
-    Future.sequence {
-      for (compName ← compNames) yield Ajax.get(Routes.icdComponentInfo(subsystem, versionOpt, compName, targetSubsystem)).map { r ⇒
-        applyIcdFilter(read[ComponentInfo](r.responseText))
-      }
+    Ajax.get(Routes.icdComponentInfo(subsystem, versionOpt, compNames, targetSubsystem)).map { r ⇒
+      val list = read[List[ComponentInfo]](r.responseText)
+      list.map(applyIcdFilter)
     }
   }
 
@@ -115,13 +114,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    */
   def setComponent(sv: SubsystemWithVersion, compName: String): Unit = {
     if (sv.subsystemOpt.isDefined) {
-      val path = Routes.componentInfo(sv.subsystemOpt.get, sv.versionOpt, compName)
+      val path = Routes.componentInfo(sv.subsystemOpt.get, sv.versionOpt, List(compName))
       Ajax.get(path).map { r ⇒
-        val info = read[ComponentInfo](r.responseText)
+        val infoList = read[List[ComponentInfo]](r.responseText)
         mainContent.clearContent()
         mainContent.scrollToTop()
         mainContent.setTitle(s"Component: $compName")
-        displayComponentInfo(info)
+        displayComponentInfo(infoList.head)
       }.recover {
         case ex ⇒
           mainContent.displayInternalError(ex)

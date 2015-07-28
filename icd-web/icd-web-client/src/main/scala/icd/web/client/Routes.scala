@@ -25,12 +25,15 @@ object Routes {
    * Returns the route to use to get the information for a component
    * @param subsystem the component's subsystem
    * @param versionOpt the subsystem version (or use current)
-   * @param compName the component name
+   * @param compNameList list of component names to get info about
    * @return the URL path to use
    */
-  def componentInfo(subsystem: String, versionOpt: Option[String], compName: String) = versionOpt match {
-    case Some("*") | None ⇒ s"/componentInfo/$subsystem/$compName"
-    case Some(version)    ⇒ s"/componentInfo/$subsystem/$compName?version=$version"
+  def componentInfo(subsystem: String, versionOpt: Option[String], compNameList: List[String]) = {
+    val compNames = compNameList.mkString(",")
+    versionOpt match {
+      case Some("*") | None ⇒ s"/componentInfo/$subsystem/$compNames"
+      case Some(version)    ⇒ s"/componentInfo/$subsystem/$compNames?version=$version"
+    }
   }
 
   /**
@@ -40,16 +43,17 @@ object Routes {
    *
    * @param subsystem the component's subsystem
    * @param versionOpt the subsystem version (or use current)
-   * @param compName the component name
+   * @param compNameList list of component names to get info about
    * @param targetSubsystem defines the optional target subsystem and version
    * @return the URL path to use
    */
-  def icdComponentInfo(subsystem: String, versionOpt: Option[String], compName: String,
+  def icdComponentInfo(subsystem: String, versionOpt: Option[String], compNameList: List[String],
                        targetSubsystem: SubsystemWithVersion) = {
     targetSubsystem.subsystemOpt match {
-      case None ⇒ componentInfo(subsystem, versionOpt, compName)
+      case None ⇒ componentInfo(subsystem, versionOpt, compNameList)
       case Some(target) ⇒
-        val path = s"/icdComponentInfo/$subsystem/$compName/$target"
+        val compNames = compNameList.mkString(",")
+        val path = s"/icdComponentInfo/$subsystem/$compNames/$target"
         val targetVersionOpt = targetSubsystem.versionOpt
         versionOpt match {
           case Some("*") | None ⇒

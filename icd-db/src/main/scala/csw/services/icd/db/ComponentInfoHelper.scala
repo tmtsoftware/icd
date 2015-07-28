@@ -9,24 +9,36 @@ import icd.web.shared.{ CommandInfo, OtherComponent, SubscribeInfo, PublishInfo,
  * (This code can't be shared, since it accesses the database, which is on the server.)
  */
 object ComponentInfoHelper {
+
+  /**
+   * Query the database for information about the given components
+   * @param db used to access the database
+   * @param subsystem the subsystem containing the component
+   * @param versionOpt the version of the subsystem to use (determines the version of the component):
+   *                   None for unpublished working version
+   * @param compNames list of component names to get information about
+   * @return a list of objects containing information about the components
+   */
+  def getComponentInfoList(db: IcdDb, subsystem: String, versionOpt: Option[String], compNames: List[String]): List[ComponentInfo] = {
+    // Use caching, since we need to look at all the components multiple times, in order to determine who
+    // subscribes, who calls commands, etc.
+    val query = new CachedIcdDbQuery(db.db)
+    compNames.map(getComponentInfo(query, subsystem, versionOpt, _))
+  }
+
   /**
    * Query the database for information about the given component
-   * @param db used to access the database
+   * @param query used to access the database
    * @param subsystem the subsystem containing the component
    * @param versionOpt the version of the subsystem to use (determines the version of the component):
    *                   None for unpublished working version
    * @param compName the component name
    * @return an object containing information about the component
    */
-  def apply(db: IcdDb, subsystem: String, versionOpt: Option[String], compName: String): ComponentInfo = {
+  def getComponentInfo(query: IcdDbQuery, subsystem: String, versionOpt: Option[String], compName: String): ComponentInfo = {
     // get the models for this component
-
-    // Use caching, since we need to look at all the components multiple times, in order to determine who
-    // subscribes, who calls commands, etc.
-    val query = new CachedIcdDbQuery(db.db)
-    val versionManager = new IcdVersionManager(db.db, query)
-
-    val modelsList = db.versionManager.getModels(subsystem, versionOpt, Some(compName))
+    val versionManager = IcdVersionManager(query.db, query)
+    val modelsList = versionManager.getModels(subsystem, versionOpt, Some(compName))
     val description = getComponentField(modelsList, _.description)
     val title = getComponentField(modelsList, _.title)
     val prefix = getComponentField(modelsList, _.prefix)

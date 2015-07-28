@@ -58,12 +58,13 @@ object Application extends Controller {
    * Gets information about a named component in the given version of the given subsystem
    * @param subsystem the subsystem
    * @param versionOpt the subsystem's version (default: current)
-   * @param compName the component name
+   * @param compNames component names to get info about (separated by ",")
    */
-  def componentInfo(subsystem: String, versionOpt: Option[String], compName: String) = Action {
+  def componentInfo(subsystem: String, versionOpt: Option[String], compNames: String) = Action {
     import upickle._
-    val info = ComponentInfoHelper(db, subsystem, versionOpt, compName)
-    val json = write(info)
+    val compNameList = compNames.split(",").toList
+    val infoList = ComponentInfoHelper.getComponentInfoList(db, subsystem, versionOpt, compNameList)
+    val json = write(infoList)
     Ok(json).as(JSON)
   }
 
@@ -71,15 +72,16 @@ object Application extends Controller {
    * Gets information about a component in a given version of an ICD
    * @param subsystem the source subsystem
    * @param versionOpt the source subsystem's version (default: current)
-   * @param compName the source component name
+   * @param compNames component names to get info about (separated by ",")
    * @param target the target subsystem
    * @param targetVersionOpt the target subsystem's version
    */
-  def icdComponentInfo(subsystem: String, versionOpt: Option[String], compName: String,
+  def icdComponentInfo(subsystem: String, versionOpt: Option[String], compNames: String,
                        target: String, targetVersionOpt: Option[String]) = Action {
     import upickle._
-    val info = IcdComponentInfo(db, subsystem, versionOpt, compName, target, targetVersionOpt)
-    val json = write(info)
+    val compNameList = compNames.split(",").toList
+    val infoList = IcdComponentInfo.getComponentInfoList(db, subsystem, versionOpt, compNameList, target, targetVersionOpt)
+    val json = write(infoList)
     Ok(json).as(JSON)
   }
 

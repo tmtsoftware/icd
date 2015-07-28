@@ -16,15 +16,34 @@ object IcdComponentInfo {
    * @param subsystem the subsystem containing the component
    * @param versionOpt the version of the subsystem to use (determines the version of the component):
    *                   None for unpublished working version
+   * @param compNames the component names
+   * @param target the target subsystem of the ICD
+   * @param targetVersionOpt the version of the target subsystem to use
+   * @return an object containing information about the component
+   */
+  def getComponentInfoList(db: IcdDb, subsystem: String, versionOpt: Option[String], compNames: List[String],
+                           target: String, targetVersionOpt: Option[String]): List[ComponentInfo] = {
+    // Use caching, since we need to look at all the components multiple times, in order to determine who
+    // subscribes, who calls commands, etc.
+    val query = new CachedIcdDbQuery(db.db)
+    compNames.map(getComponentInfo(query, subsystem, versionOpt, _, target, targetVersionOpt))
+  }
+
+  /**
+   * Query the database for information about the given component
+   * @param query used to access the database
+   * @param subsystem the subsystem containing the component
+   * @param versionOpt the version of the subsystem to use (determines the version of the component):
+   *                   None for unpublished working version
    * @param compName the component name
    * @param target the target subsystem of the ICD
    * @param targetVersionOpt the version of the target subsystem to use
    * @return an object containing information about the component
    */
-  def apply(db: IcdDb, subsystem: String, versionOpt: Option[String], compName: String,
-            target: String, targetVersionOpt: Option[String]): ComponentInfo = {
+  def getComponentInfo(query: IcdDbQuery, subsystem: String, versionOpt: Option[String], compName: String,
+                       target: String, targetVersionOpt: Option[String]): ComponentInfo = {
     // get the models for this component
-    val versionManager = new CachedIcdVersionManager(db.db, db.query)
+    val versionManager = new CachedIcdVersionManager(query)
     val modelsList = versionManager.getModels(subsystem, versionOpt, Some(compName))
     val targetModelsList = versionManager.getModels(target, targetVersionOpt, None)
     val title = getComponentField(modelsList, _.title)

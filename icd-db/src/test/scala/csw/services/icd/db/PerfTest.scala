@@ -4,7 +4,7 @@ package csw.services.icd.db
 object PerfTest extends App {
   val db = IcdDb("icds")
 
-  val info = ComponentInfoHelper(db, "NFIRAOS", None, "envCtrl")
+  val info = ComponentInfoHelper.getComponentInfo(new CachedIcdDbQuery(db.db), "NFIRAOS", None, "envCtrl")
   assert(info.compName == "envCtrl")
   assert(info.publishInfo.nonEmpty)
   info.publishInfo.foreach { pubInfo ⇒

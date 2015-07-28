@@ -203,9 +203,9 @@ case class IcdDbPrinter(db: IcdDb) {
   private def getComponentInfo(subsystem: String, versionOpt: Option[String], compNames: List[String],
                                targetSubsystem: SubsystemWithVersion): List[ComponentInfo] = {
     for {
-      compName ← compNames
+      info ← icdComponentInfo(subsystem, versionOpt, compNames, targetSubsystem)
     } yield {
-      applyIcdFilter(icdComponentInfo(subsystem, versionOpt, compName, targetSubsystem))
+      applyIcdFilter(info)
     }
   }
 
@@ -224,21 +224,21 @@ case class IcdDbPrinter(db: IcdDb) {
   }
 
   /**
-   * Returns information for a component.
+   * Returns information for each component.
    * If the target subsystem is defined, the information is restricted to the ICD
    * from subsystem to target, otherwise the component API is returned.
    *
    * @param subsystem the component's subsystem
    * @param versionOpt the subsystem version (or use current)
-   * @param compName the component name
+   * @param compNames the component names
    * @param targetSubsystem defines the optional target subsystem and version
-   * @return the URL path to use
+   * @return list of component info
    */
-  private def icdComponentInfo(subsystem: String, versionOpt: Option[String], compName: String,
-                               targetSubsystem: SubsystemWithVersion): ComponentInfo = {
+  private def icdComponentInfo(subsystem: String, versionOpt: Option[String], compNames: List[String],
+                               targetSubsystem: SubsystemWithVersion): List[ComponentInfo] = {
     targetSubsystem.subsystemOpt match {
-      case None         ⇒ ComponentInfoHelper(db, subsystem, versionOpt, compName)
-      case Some(target) ⇒ IcdComponentInfo(db, subsystem, versionOpt, compName, target, targetSubsystem.versionOpt)
+      case None         ⇒ ComponentInfoHelper.getComponentInfoList(db, subsystem, versionOpt, compNames)
+      case Some(target) ⇒ IcdComponentInfo.getComponentInfoList(db, subsystem, versionOpt, compNames, target, targetSubsystem.versionOpt)
     }
   }
 
