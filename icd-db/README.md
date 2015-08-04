@@ -10,6 +10,9 @@ To start the MongoDB server, you can run a command like this:
     
 where $db is the directory containing the database.
 
+The default database name used is `icds` and can be configured in src/main/resources/reference.conf
+(The test cases use a different database).
+
 icd-db Command
 --------------
 

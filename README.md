@@ -12,6 +12,17 @@ ICDs are stored in a MongoDB database, which also keeps track of any changes mad
 Two command line applications ([icd](icd) and [icd-db](icd-db)) and a web app ([icd-web](icd-web)) 
 are provided for ingesting the ICDs from files, querying and viewing the data.
 
+The applications here assume the MongoDB database is running. 
+To start the MongoDB server, you can run a command like this:
+
+    mongod -dbpath $db
+    
+where $db is the directory containing the database.
+
+The default database name used is `icds` and can be configured in icd-db/src/main/resources/reference.conf
+(or in <installDir>/conf/reference.conf).
+
+
 ICD Subprojects
 ---------------
 

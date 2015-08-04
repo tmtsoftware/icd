@@ -225,7 +225,7 @@ case class Subsystem(listener: SubsystemListener,
 
   // Gets the list of available versions for the given subsystem
   private def getSubsystemVersionOptions(subsystem: String): Future[List[String]] = {
-    import upickle._
+    import upickle.default._
     Ajax.get(Routes.versionNames(subsystem)).map { r ⇒
       read[List[String]](r.responseText)
     }.recover {

@@ -5,7 +5,7 @@ import org.scalajs.dom
 import org.scalajs.dom.PopStateEvent
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.HTMLStyleElement
-import upickle._
+import upickle.default._
 import org.querki.jquery._
 
 import scala.concurrent.Future
@@ -205,8 +205,8 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
 
   // Show/hide the busy cursor while the future is running
   private def showBusyCursorWhile(f: Future[Unit]): Future[Unit] = {
-    $("*").css("cursor", "progress")
-    f.onComplete { _ ⇒ $("*").css("cursor", "default") }
+    $("div").css("cursor", "progress")
+    f.onComplete { _ ⇒ $("div").css("cursor", "default") }
     f
   }
 

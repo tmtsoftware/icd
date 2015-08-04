@@ -35,7 +35,7 @@ object Application extends Controller {
    * Gets information about a named subsystem
    */
   def subsystemInfo(subsystem: String, versionOpt: Option[String]) = Action {
-    import upickle._
+    import upickle.default._
     db.versionManager.getSubsystemModel(subsystem, versionOpt) match {
       case Some(model) ⇒
         val info = SubsystemInfo(model.name, versionOpt, model.title, model.description)
@@ -61,7 +61,7 @@ object Application extends Controller {
    * @param compNames component names to get info about (separated by ",")
    */
   def componentInfo(subsystem: String, versionOpt: Option[String], compNames: String) = Action {
-    import upickle._
+    import upickle.default._
     val compNameList = compNames.split(",").toList
     val infoList = ComponentInfoHelper.getComponentInfoList(db, subsystem, versionOpt, compNameList)
     val json = write(infoList)
@@ -78,7 +78,7 @@ object Application extends Controller {
    */
   def icdComponentInfo(subsystem: String, versionOpt: Option[String], compNames: String,
                        target: String, targetVersionOpt: Option[String]) = Action {
-    import upickle._
+    import upickle.default._
     val compNameList = compNames.split(",").toList
     val infoList = IcdComponentInfo.getComponentInfoList(db, subsystem, versionOpt, compNameList, target, targetVersionOpt)
     val json = write(infoList)
@@ -152,7 +152,7 @@ object Application extends Controller {
    * Returns a detailed list of the versions of the given subsystem
    */
   def getVersions(subsystem: String) = Action {
-    import upickle._
+    import upickle.default._
     val versions = db.versionManager.getVersions(subsystem).map(v ⇒
       VersionInfo(v.versionOpt, v.user, v.comment, v.date.toString))
     Ok(write(versions)).as(JSON)
@@ -162,7 +162,7 @@ object Application extends Controller {
    * Returns a list of version names for the given subsystem
    */
   def getVersionNames(subsystem: String) = Action {
-    import upickle._
+    import upickle.default._
     val versions = db.versionManager.getVersionNames(subsystem)
     Ok(write(versions)).as(JSON)
   }
@@ -191,7 +191,7 @@ object Application extends Controller {
    * Gets a list of ICD names as pairs of (subsystem, targetSubsystem)
    */
   def getIcdNames = Action {
-    import upickle._
+    import upickle.default._
     // convert list to use shared IcdName class
     val list = db.versionManager.getIcdNames.map(icd ⇒ IcdName(icd.subsystem, icd.target))
     Ok(write(list)).as(JSON)
@@ -201,7 +201,7 @@ object Application extends Controller {
    * Gets a list of versions for the ICD from subsystem to target subsystem
    */
   def getIcdVersions(subsystem: String, target: String) = Action {
-    import upickle._
+    import upickle.default._
     // convert list to use shared IcdVersion class
     val list = db.versionManager.getIcdVersions(subsystem, target)
     Ok(write(list)).as(JSON)

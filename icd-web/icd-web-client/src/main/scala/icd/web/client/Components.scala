@@ -3,8 +3,7 @@ package icd.web.client
 import icd.web.shared._
 import org.scalajs.dom
 import org.scalajs.dom.ext.Ajax
-import upickle._
-
+import upickle.default._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import Components._

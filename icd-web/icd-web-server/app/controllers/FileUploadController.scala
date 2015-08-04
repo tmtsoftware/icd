@@ -16,7 +16,7 @@ object FileUploadController extends Controller {
   // Server side of the upload ICD feature.
   // Supported files: ICD files and .zip files of ICD files.
   def uploadFiles = Action(parse.multipartFormData) { request ⇒
-    import upickle._
+    import upickle.default._
     val files = request.body.files.toList
     try {
       // XXX TODO: Return config parse errors in StdConfig.get with file names!
@@ -48,7 +48,7 @@ object FileUploadController extends Controller {
    * @return the HTTP result (OK, or NotAcceptable[list of Problems in JSON format])
    */
   private def ingestConfigs(list: List[StdConfig], comment: String, majorVersion: Boolean = false): Result = {
-    import upickle._
+    import upickle.default._
     val problems = list.flatMap(db.ingestConfig)
 
     wsChannel.push("update")

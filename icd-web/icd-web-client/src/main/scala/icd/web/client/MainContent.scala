@@ -117,8 +117,6 @@ case class MainContent() extends Displayable {
   def markup() = {
     import scalacss.ScalatagsCss._
     div(Styles.mainContent)(
-      div(Styles.main)(contentTitle, contentDescription, contentDiv),
-      div(p(" ")) // XXX FIXME: space at bottom, use css
-      ).render
+      div(Styles.main)(contentTitle, contentDescription, contentDiv)).render
   }
 }

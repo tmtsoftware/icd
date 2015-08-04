@@ -4,7 +4,7 @@ import icd.web.client.Components.ComponentLink
 import icd.web.shared.{ SubsystemWithVersion, IcdVersion }
 import org.scalajs.dom
 import org.scalajs.dom._
-import upickle._
+import upickle.default._
 import BrowserHistory._
 
 object BrowserHistory {

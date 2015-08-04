@@ -9,7 +9,7 @@ import sbt.Project.projectToRef
 import com.typesafe.sbt.packager.docker._
 
 val Version = "0.1-SNAPSHOT"
-val ScalaVersion = "2.11.6"
+val ScalaVersion = "2.11.7"
 
 // Basic settings
 val buildSettings = Seq(
@@ -74,7 +74,7 @@ val scalatags = "com.lihaoyi" %% "scalatags" % "0.5.2"
 
 // Root of the multi-project build
 lazy val root = (project in file("."))
-  .aggregate(icd, `icd-db`)
+  .aggregate(icd, `icd-db`, icdWebServer)
 
 // core project, implements validation of ICD files against JSON schema files, icd command line tool
 lazy val icd = project
@@ -108,9 +108,8 @@ lazy val icdWebServer = (project in file("icd-web/icd-web-server"))
     includeFilter in(Assets, LessKeys.less) := "*.less",
     libraryDependencies ++= Seq(
       filters,
-      "org.tmt" %% "icd-db" % "0.1-SNAPSHOT",
       "com.vmunier" %% "play-scalajs-scripts" % "0.3.0",
-      "com.lihaoyi" %%% "upickle" % "0.2.8",
+      "com.lihaoyi" %%% "upickle" % "0.3.4",
       "org.webjars" % "jquery-ui" % "1.11.4",
       "org.webjars" %% "webjars-play" % "2.4.0-1",
       "org.webjars" % "bootstrap" % "3.3.4",
@@ -132,8 +131,8 @@ lazy val icdWebClient = (project in file("icd-web/icd-web-client")).settings(
   libraryDependencies ++= Seq(
     "org.scala-js" %%% "scalajs-dom" % "0.8.1",
     "com.lihaoyi" %%% "scalatags" % "0.5.2",
-    "com.lihaoyi" %%% "upickle" % "0.2.8",
-    "org.querki" %%% "jquery-facade" % "0.6", // includes jquery webjar!
+    "com.lihaoyi" %%% "upickle" % "0.3.4",
+    "org.querki" %%% "jquery-facade" % "0.7", // includes jquery webjar!
     "com.github.japgolly.scalacss" %%% "core" % "0.3.0",
     "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.3.0"
   ),

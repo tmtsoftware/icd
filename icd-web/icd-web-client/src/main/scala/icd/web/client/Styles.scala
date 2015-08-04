@@ -19,18 +19,18 @@ object Styles extends StyleSheet.Inline {
     media.minWidth(750 px).maxWidth(1170 px)(top(170 px)),
     media.print(top(0 px)),
     left(0 px),
-    display.inlineBlock)
+    display.block)
 
   val mainContent = style(
     addClassName("col-xs-11"),
-    height(100 %%) //    media.print(width.auto, height.auto, display.block, overflow.visible)
-    )
+    padding(0 px, 0 px, 0 px, 0 px),
+    height(100 %%))
 
   val main = style(
     position.relative,
     height(100 %%),
     overflowY.auto,
-    padding(0 px, 15 px),
+    padding(0 px, 0 px, 0 px, 15 px),
     media.print(width.auto, height.auto, display.block, overflow.visible, float.none, position.static))
 
   val contentDiv = style(

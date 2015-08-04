@@ -123,6 +123,7 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
 
     // Displays status after upload complete
     def onloadListener(e: dom.Event) = {
+      import upickle.default._
       busyStatusItem.addClass("hide")
       val statusClass = if (xhr.status == 200) "label-success" else "label-danger"
       if (!statusItem.hasClass("label-danger")) {
@@ -130,7 +131,7 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
         statusItem.removeClass("label-default").addClass(statusClass).text(statusMsg)
       }
       if (xhr.status != 200) {
-        val problems = upickle.read[List[Problem]](xhr.responseText)
+        val problems = read[List[Problem]](xhr.responseText)
         for (problem ← problems)
           displayProblem(problem)
       }

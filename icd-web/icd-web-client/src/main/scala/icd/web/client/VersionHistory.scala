@@ -2,7 +2,7 @@ package icd.web.client
 
 import icd.web.shared.{ IcdVersionInfo, IcdName, VersionInfo }
 import org.scalajs.dom.ext.Ajax
-import upickle._
+import upickle.default._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -77,7 +77,7 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
 
   // Gets the ICD version info from the server
   private def getIcdVersionInfo(icdName: IcdName): Future[List[IcdVersionInfo]] = {
-    import upickle._
+    import upickle.default._
     Ajax.get(Routes.icdVersions(icdName)).map { r ⇒
       read[List[IcdVersionInfo]](r.responseText)
     }.recover {

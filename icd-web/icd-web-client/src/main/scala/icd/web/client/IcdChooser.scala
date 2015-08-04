@@ -76,7 +76,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
    * Gets the currently selected ICD name
    */
   def getSelectedIcd: Option[IcdName] = {
-    import upickle._
+    import upickle.default._
     icdItem.value match {
       case `emptyOptionMsg` ⇒ None
       case json             ⇒ Some(read[IcdName](json))
@@ -87,7 +87,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
    * Gets the currently selected ICD version, or None if none is selected
    */
   def getSelectedIcdVersion: Option[IcdVersion] = {
-    import upickle._
+    import upickle.default._
     versionItem.value match {
       case `unpublishedVersion` | null | "" ⇒ None
       case json                             ⇒ Some(read[IcdVersion](json))
@@ -104,7 +104,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   def setIcdWithVersion(icdVersionOpt: Option[IcdVersion],
                         notifyListener: Boolean = true,
                         saveHistory: Boolean = true): Future[Unit] = {
-    import upickle._
+    import upickle.default._
     icdVersionOpt match {
       case Some(icdVersion) ⇒
         icdItem.value = write(IcdName(icdVersion.subsystem, icdVersion.target)) // JSON
@@ -127,7 +127,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
    * Gets the list of ICDs being displayed
    */
   def getIcds: List[IcdName] = {
-    import upickle._
+    import upickle.default._
     icdItem.options.drop(1).map(s ⇒ read[IcdName](s.value)).toList
   }
 
@@ -164,7 +164,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   // Update the ICD combobox options
   def updateIcdOptions(): Future[Unit] = {
 
-    import upickle._
+    import upickle.default._
 
     Ajax.get(Routes.icdNames).flatMap {
       r ⇒
@@ -181,7 +181,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   private def updateIcdOptions(icdNames: List[IcdName]): Future[Unit] = {
 
     import scalatags.JsDom.all._
-    import upickle._
+    import upickle.default._
 
     val icdVersionOpt = getSelectedIcdVersion
     while (icdItem.options.length != 0) {
@@ -213,7 +213,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
                             notifyListener: Boolean = true,
                             saveHistory: Boolean = true): Future[Unit] = {
 
-    import upickle._
+    import upickle.default._
 
     val selectedVersionOpt = getSelectedIcdVersion
     if (versionOpt == selectedVersionOpt)
@@ -255,7 +255,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   private def updateIcdVersionOptions(versions: List[IcdVersion]): Future[Unit] = {
 
     import scalatags.JsDom.all._
-    import upickle._
+    import upickle.default._
 
     while (versionItem.options.length != 0) {
       versionItem.remove(0)
@@ -270,7 +270,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   // Gets the list of available versions for the given ICD
   private def getIcdVersionOptions(icdName: IcdName): Future[List[IcdVersion]] = {
 
-    import upickle._
+    import upickle.default._
 
     Ajax.get(Routes.icdVersions(icdName)).map {
       r ⇒
