@@ -334,7 +334,7 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
    */
   private def getCollectionName(stdConfig: StdConfig): String = {
     val baseName = if (stdConfig.stdName.isSubsystemModel) {
-      SubsystemModel(stdConfig.config).name
+      SubsystemModel(stdConfig.config).subsystem
     } else {
       val model = BaseModel(stdConfig.config)
       s"${model.subsystem}.${model.component}"
@@ -349,7 +349,7 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
    */
   def getSubsystemName(stdConfig: StdConfig): String = {
     if (stdConfig.stdName.isSubsystemModel)
-      SubsystemModel(stdConfig.config).name
+      SubsystemModel(stdConfig.config).subsystem
     else
       BaseModel(stdConfig.config).subsystem
   }

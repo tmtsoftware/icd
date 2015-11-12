@@ -83,7 +83,7 @@ class IcdValidatorTests extends FunSuite {
   def checkSubsystemModel(models: IcdModels): Unit = {
     val subsystemModel = models.subsystemModel.get
     assert(subsystemModel.modelVersion == "1.1")
-    assert(subsystemModel.name == "WFOS")
+    assert(subsystemModel.subsystem == "WFOS")
     assert(subsystemModel.title == "Wide-Field Optical Spectrometer (WFOS)")
     assert(subsystemModel.description.startsWith("The Wide Field"))
   }

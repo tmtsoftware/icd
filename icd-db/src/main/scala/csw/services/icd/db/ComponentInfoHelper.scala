@@ -42,6 +42,7 @@ object ComponentInfoHelper {
     val description = getComponentField(modelsList, _.description)
     val title = getComponentField(modelsList, _.title)
     val prefix = getComponentField(modelsList, _.prefix)
+    val componentType = getComponentField(modelsList, _.componentType)
     val wbsId = getComponentField(modelsList, _.wbsId)
     val h = modelsList.headOption
 
@@ -50,7 +51,7 @@ object ComponentInfoHelper {
     val commandsReceived = h.map(getCommandsReceived(query, _))
     val commandsSent = h.map(getCommandsSent(query, _))
 
-    ComponentInfo(subsystem, compName, title, description, prefix, wbsId,
+    ComponentInfo(subsystem, compName, title, description, prefix, componentType, wbsId,
       publishInfo.toList.flatten,
       subscribeInfo.toList.flatten,
       commandsReceived.toList.flatten,

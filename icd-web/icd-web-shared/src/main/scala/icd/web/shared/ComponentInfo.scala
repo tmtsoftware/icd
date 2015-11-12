@@ -7,6 +7,7 @@ package icd.web.shared
  * @param title component title
  * @param description component description
  * @param prefix the component's prefix (for accessing published items)
+ * @param componentType the component's type (Assembly, HCD, Sequencer, Application, Container)
  * @param wbsId component's WBS id
  * @param publishInfo list of items published by the component
  * @param subscribeInfo list of items the component subscribes to
@@ -18,6 +19,7 @@ case class ComponentInfo(subsystem: String,
                          title: String,
                          description: String,
                          prefix: String,
+                         componentType: String,
                          wbsId: String,
                          publishInfo: List[PublishInfo],
                          subscribeInfo: List[SubscribeInfo],

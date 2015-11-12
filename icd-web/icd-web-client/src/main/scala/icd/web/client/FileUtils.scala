@@ -19,12 +19,14 @@ object FileUtils {
 
   // Extend js objects to add missing fields
   // (These can't be defined inside a def).
+  @js.native
   trait EventTargetExt extends dom.EventTarget {
     var files: dom.FileList = js.native
   }
 
   implicit def monkeyizeEventTarget(e: dom.EventTarget): EventTargetExt = e.asInstanceOf[EventTargetExt]
 
+  @js.native
   trait EventExt extends dom.Event {
     var dataTransfer: dom.DataTransfer = js.native
     var loaded: Int = js.native
@@ -35,8 +37,10 @@ object FileUtils {
 
   // Add unsupported method: File.webkitRelativePath
   // Note that this only works on webkit browsers: Safari, Chrome.
+  @js.native
   trait WebkitFile extends dom.File {
     def webkitRelativePath: String = js.native
   }
 
 }
+

@@ -49,6 +49,7 @@ object IcdComponentInfo {
     val title = getComponentField(modelsList, _.title)
     val description = getComponentField(modelsList, _.description)
     val prefix = getComponentField(modelsList, _.prefix)
+    val componentType = getComponentField(modelsList, _.componentType)
     val wbsId = getComponentField(modelsList, _.wbsId)
     val h = modelsList.headOption
     val publishInfo = h.map(getPublishInfo(subsystem, _, targetModelsList))
@@ -56,7 +57,7 @@ object IcdComponentInfo {
     val commandsReceived = h.map(getCommandsReceived(_, targetModelsList))
     val commandsSent = h.map(getCommandsSent(_, targetModelsList))
 
-    ComponentInfo(subsystem, compName, title, description, prefix, wbsId,
+    ComponentInfo(subsystem, compName, title, description, prefix, componentType, wbsId,
       publishInfo.toList.flatten,
       subscribeInfo.toList.flatten,
       commandsReceived.getOrElse(Nil),

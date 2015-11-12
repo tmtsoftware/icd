@@ -133,8 +133,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def applyIcdFilter(info: ComponentInfo): ComponentInfo = {
     val publishInfo = info.publishInfo.filter(p ⇒ p.subscribers.nonEmpty)
     val commandsReceived = info.commandsReceived.filter(p ⇒ p.otherComponents.nonEmpty)
-    ComponentInfo(info.subsystem, info.compName, info.title, info.description, info.prefix, info.wbsId,
-      publishInfo, info.subscribeInfo, commandsReceived, info.commandsSent)
+    ComponentInfo(info.subsystem, info.compName, info.title, info.description, info.prefix,
+      info.componentType, info.wbsId, publishInfo, info.subscribeInfo, commandsReceived, info.commandsSent)
   }
 
   // Removes the component display
@@ -322,12 +322,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             th("Subsystem"),
             th("Name"),
             th("Prefix"),
+            th("Type"),
             th("WBS ID"))),
         tbody(
           tr(
             td(info.subsystem),
             td(info.compName),
             td(info.prefix),
+            td(info.componentType),
             td(info.wbsId)))))
   }
 

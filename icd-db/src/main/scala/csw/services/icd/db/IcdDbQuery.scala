@@ -233,7 +233,7 @@ case class IcdDbQuery(db: MongoDB) {
   def getSubsystemNames: List[String] = {
     val result = for (entry ← getEntries) yield {
       if (entry.subsystem.isDefined) {
-        Some(jsonToSubsystemModel(entry.subsystem.get.head.toString).name)
+        Some(jsonToSubsystemModel(entry.subsystem.get.head.toString).subsystem)
       } else if (entry.component.isDefined) {
         Some(jsonToComponentModel(entry.component.get.head.toString).subsystem)
       } else None

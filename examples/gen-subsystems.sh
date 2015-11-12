@@ -3,7 +3,7 @@
 # Generate dummy subsystem data for testing
 
 # Subsystems to generate (already ahd NFIRAOS and TCS) 
-subsystems="AOESW APS CIS CLN COAT COOL CSW DMS DPS ENC ESEN ESW HNDL HQ IRIS IRMS LGSF M1CS M2 M3 MCS NSCU OSS ROAD SCMS SOSS STR SUM TINC TINS WFOS"
+subsystems="AOESW APS CIS CLN COAT COOL CSW DMS DPS ENC ESEN ESW HNDL HQ IRIS IRMS LGSF M1CS M2S M3S MCS NSCU OSS ROAD SCMS SOSS STR SUM TINC TINS WFOS"
 
 template=NFIRAOS
 t=`echo $template | awk '{print tolower($0)}'`

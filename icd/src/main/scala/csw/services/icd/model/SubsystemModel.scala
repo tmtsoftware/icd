@@ -9,13 +9,13 @@ object SubsystemModel {
 
   def apply(config: Config): SubsystemModel =
     SubsystemModel(
-      name = config.getString("name"),
+      subsystem = config.getString("subsystem"),
       title = config.getString("title"),
       description = config.getString("description"),
       modelVersion = config.getString("modelVersion"))
 }
 
-case class SubsystemModel(name: String,
+case class SubsystemModel(subsystem: String,
                           title: String,
                           description: String,
                           modelVersion: String)
