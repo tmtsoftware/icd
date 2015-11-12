@@ -22,7 +22,6 @@ Example files that can be ingested into the database for testing can be found
 in the [examples](../examples) directory.
 
 ```
-icd-db 0.1-SNAPSHOT
 Usage: icd-db [options]
 
   -d <name> | --db <name>
@@ -33,14 +32,36 @@ Usage: icd-db [options]
         The port number to use for the database (default: 27017)
   -i <dir> | --ingest <dir>
         Directory containing ICD files to ingest into the database
-  -l [hcds|assemblies|all] | --list [hcds|assemblies|all]
-        Prints a list of hcds, assemblies, or all components
+  --major
+        Increment the ICD's major version
+  -m <text> | --comment <text>
+        A comment describing the changes made (default: empty string)
+  -l [subsystems|assemblies|hcds|all] | --list [subsystems|assemblies|hcds|all]
+        Prints a list of ICD subsystems, assemblies, HCDs or all components
   -c <name> | --component <name>
-        Specifies the component to be used by any following options
+        Specifies the component to be used by any following options (subsystem must also be specified)
+  -s <subsystem>[:version] | --subsystem <subsystem>[:version]
+        Specifies the subsystem (and optional version) to be used by any following options
+  -t <subsystem>[:version] | --target <subsystem>[:version]
+        Specifies the target subsystem (and optional version) to be used by any following options
+  --icdversion <icd-version>
+        Specifies the ICD version to be used by any following options (overrides subsystem and target versions)
   -o <outputFile> | --out <outputFile>
-        Saves the component's ICD to the given file in a format based on the file's suffix (md, html, pdf)
+        Saves the selected API or ICD to the given file in a format based on the file's suffix (html, pdf)
   --drop [db|component]
         Drops the specified component or database (use with caution!)
+  --versions <icdName>
+        List the version history of the given ICD
+  --diff <subsystem>:<version1>[,version2]
+        For the given ICD, list the differences between <version1> and <version2> (or the current version)
+  --publishes <path>
+        Prints a list of ICD components that publish the given value (name with optional component prefix)
+  --subscribes <path>
+        Prints a list of ICD components that subscribe to the given value (name with optional component prefix)
+  --help
+        
+  --version
+        
 ```
 
 Example:
@@ -59,7 +80,7 @@ Example:
   lgsWfs
   nacqNhrwfs
   ndme
-> icd-db -c NFIRAOS -o NFIRAOS.pdf
+> icd-db --subsystem NFIRAOS -o NFIRAOS.pdf
 
 ```
 

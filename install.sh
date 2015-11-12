@@ -2,7 +2,7 @@
 #
 # Creates a single install directory from all the csw stage directories.
 
-dir=../install
+dir=../install_icd
 
 test -d $dir || mkdir -p $dir/{bin,lib,conf}
 sbt stage "project root" stage

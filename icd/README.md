@@ -56,7 +56,7 @@ Usage: icd [options]
   -s <jsonSchemaFile> | --schema <jsonSchemaFile>
         JSON schema file to use to validate the single input, assumed to be in HOCON (*.conf) or JSON (*.json) format
   -o <outputFile> | --out <outputFile>
-        Saves the API to the given file in a format based on the file's suffix (md, html, pdf)
+        Saves the ICD (or single input or schema file) to the given file in a format based on the file's suffix (md, html, pdf, json)
 ```
 
 Note that for testing you can also convert a single input or schema file to JSON format by combining -i or -s with -o file.json.

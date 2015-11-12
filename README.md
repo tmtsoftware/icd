@@ -35,7 +35,7 @@ There are currently these ICD subprojects:
 Build and Install
 -----------------
 
-An install.sh script is provided that builds and installs all of the subprojects into the ../install directory.
+An install.sh script is provided that builds and installs all of the subprojects into the ../install_icd directory.
 This is basically just the command `sbt stage` in each project followed by copying the products to the
 install directory. A binary is installed for each subproject, with the same name as the subproject
 (except for icd-web, where the binary produced is `icdwebserver`).

@@ -172,8 +172,8 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
                 button(`type` := "submit")("Upload Files"))))),
       div(cls := "progress")(
         div(id := "progress", cls := "progress-bar progress-bar-info progress-bar-striped",
-          "role".attr := "progressbar", "aria-valuenow".attr := "0", "aria-valuemin".attr := "0",
-          "aria-valuemax".attr := "100", style := "width: 100%", "0%")),
+          role := "progressbar", "aria-valuenow".attr := "0", "aria-valuemin".attr := "0",
+          "aria-valuemax".attr := "100", style := "width: 0%", "0%")),
       h4("Status")(
         span(style := "margin-left:15px;"),
         span(id := "busyStatus", cls := "glyphicon glyphicon-refresh glyphicon-refresh-animate hide"),
