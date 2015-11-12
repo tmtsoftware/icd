@@ -53,8 +53,8 @@ object ComponentInfoHelper {
     ComponentInfo(subsystem, compName, title, description, prefix, wbsId,
       publishInfo.toList.flatten,
       subscribeInfo.toList.flatten,
-      commandsReceived.getOrElse(Nil),
-      commandsSent.getOrElse(Nil))
+      commandsReceived.toList.flatten,
+      commandsSent.toList.flatten)
   }
 
   /**

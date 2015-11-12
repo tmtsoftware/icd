@@ -205,7 +205,8 @@ case class IcdDbPrinter(db: IcdDb) {
     for {
       info ← icdComponentInfo(subsystem, versionOpt, compNames, targetSubsystem)
     } yield {
-      applyIcdFilter(info)
+      // If there is a target subsystem, filter out any items not referenced by it
+      if (targetSubsystem.subsystemOpt.isDefined) applyIcdFilter(info) else info
     }
   }
 

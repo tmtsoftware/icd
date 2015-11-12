@@ -52,7 +52,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                                targetSubsystem: SubsystemWithVersion): Future[List[ComponentInfo]] = {
     Ajax.get(Routes.icdComponentInfo(subsystem, versionOpt, compNames, targetSubsystem)).map { r ⇒
       val list = read[List[ComponentInfo]](r.responseText)
-      list.map(applyIcdFilter)
+      if (targetSubsystem.subsystemOpt.isDefined) list.map(applyIcdFilter) else list
     }
   }
 
