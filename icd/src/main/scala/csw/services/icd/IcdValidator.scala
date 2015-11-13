@@ -111,10 +111,10 @@ object IcdValidator {
   }
 
   /**
-   * Validates the given input config using the given schema config.
+   * Validates the given input config using the standard schema for it based on the file name.
    *
    * @param inputConfig the config to be validated against the schema
-   * @param fileName the name of the original file that inputConfig was made from (for error messages)
+   * @param fileName the name of the original file that inputConfig was made from
    * @return a list of problems, if any were found
    */
   def validate(inputConfig: Config, fileName: String): List[Problem] = {
@@ -172,9 +172,6 @@ object IcdValidator {
   private def formatMsg(msg: ProcessingMessage, source: String): String = {
     import scala.collection.JavaConversions._
     val file = new File(source).getPath
-
-    // val jsonStr = toJson(ConfigFactory.parseString(msg.asJson().toString))
-    // s"$file: $jsonStr"
 
     // try to get a nicely formatted error message that includes the necessary info
     val json = msg.asJson()

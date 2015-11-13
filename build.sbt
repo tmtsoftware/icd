@@ -1,5 +1,3 @@
-import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
-
 import scalariform.formatter.preferences._
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
@@ -42,7 +40,8 @@ lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
 // Using java8
 lazy val defaultSettings = buildSettings ++ formatSettings ++ Seq(
   scalacOptions ++= Seq("-target:jvm-1.8", "-encoding", "UTF-8", "-feature", "-deprecation", "-unchecked"),
-  javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint:unchecked", "-Xlint:deprecation")
+  javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint:unchecked", "-Xlint:deprecation"),
+  bashScriptExtraDefines ++= Seq(s"addJava -DCSW_VERSION=$Version")
 )
 
 // Customize the Docker install
