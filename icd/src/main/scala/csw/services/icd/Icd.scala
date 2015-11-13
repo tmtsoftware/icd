@@ -26,16 +26,18 @@ object Icd extends App {
 
     opt[File]('i', "in") valueName "<inputFile>" action { (x, c) ⇒
       c.copy(inputFile = Some(x))
-    } text "Single input file to be verified, assumed to be in HOCON (*.conf) or JSON (*.json) format"
+    } text "Single input file to be verified, assumed to be in HOCON (*.conf) format"
 
     opt[File]('s', "schema") valueName "<jsonSchemaFile>" action { (x, c) ⇒
       c.copy(schemaFile = Some(x))
     } text s"""JSON schema file to use to validate the input file, assumed to be in HOCON (*.conf) or JSON (*.json) format
-         |    (Default uses schema based on standard input file name: One of:
-         |    ${StdName.stdSet.mkString(", ")}""".stripMargin
+         |        (Default uses schema based on input file name (${StdName.stdSet.mkString(", ")})""".stripMargin
     opt[File]('o', "out") valueName "<outputFile>" action { (x, c) ⇒
       c.copy(outputFile = Some(x))
-    } text "Saves the ICD (or single input or schema file) to the given file in a format based on the file's suffix (md, html, pdf, json)"
+    } text
+      """Saves the API doc (or single input or schema file) to the given file in a format based on
+        |        the file's suffix (md, html, pdf, json).
+        |        Only single files can be saved to JSON, only whole directories as md, html, pdf""".stripMargin
   }
 
   parser.parse(args, Options()) match {
@@ -51,20 +53,22 @@ object Icd extends App {
   }
 
   private def run(options: Options): Unit = {
-    // Save single input or schema file as JSON to output file, if specified
-    for (outputFile ← options.outputFile) {
-      if (outputFile.getName.endsWith(".json")) {
-        options.inputFile match {
-          case Some(inputFile) ⇒ saveAsJson(inputFile, outputFile)
-          case None ⇒ options.schemaFile foreach {
-            schemaFile ⇒ saveAsJson(schemaFile, outputFile)
-          }
+    options.inputFile.foreach(validateInputFile)
+    options.outputFile.foreach(output)
+
+    // Validate the standard set of ICD files in the given (or current) dir
+    if (options.inputFile.isEmpty && options.schemaFile.isEmpty) {
+      val dir = options.validateDir.getOrElse(new File("."))
+      val problems = validateDir(dir)
+      if (errorCount(problems) == 0) {
+        for (outputFile ← options.outputFile if !outputFile.getName.endsWith(".json")) {
+          IcdPrinter.saveToFile(dir, outputFile)
         }
       }
     }
 
-    // Validate single input file, if given
-    for (inputFile ← options.inputFile) {
+    // --in option - Validate single input file
+    def validateInputFile(inputFile: File): Unit = {
       val problems = if (options.schemaFile.isDefined) {
         validate(inputFile, options.schemaFile.get)
       } else {
@@ -74,27 +78,37 @@ object Icd extends App {
       printProblems(problems)
     }
 
-    // Validate the standard set of ICD files in the given (or current) dir
-    if (options.inputFile.isEmpty && options.schemaFile.isEmpty) {
-      val dir = options.validateDir.getOrElse(new File("."))
+    // --out option - Save single input or schema file as JSON to output file, if specified
+    def output(outputFile: File): Unit = {
+      if (outputFile.getName.endsWith(".json")) {
+        options.inputFile match {
+          // JSON output
+          case Some(inputFile) ⇒ saveAsJson(inputFile, outputFile)
+          case None ⇒ options.schemaFile foreach { schemaFile ⇒
+            saveAsJson(schemaFile, outputFile)
+          }
+        }
+      } else if (options.inputFile.isDefined)
+        println("Only JSON output is supported for single input files")
+    }
+
+    // Validates the files with the standard names in the given dir
+    def validateDir(dir: File): List[Problem] = {
       val problems = validateRecursive(dir)
       printProblems(problems)
-      for (outputFile ← options.outputFile) {
-        if (errorCount(problems) == 0 && !outputFile.getName.endsWith(".json")) {
-          IcdPrinter.saveToFile(dir, outputFile)
-        }
-      }
     }
+
   }
 
   private def errorCount(problems: List[Problem]): Int = {
     problems.count(p ⇒ p.severity == "error" || p.severity == "fatal")
   }
 
-  private def printProblems(problems: List[Problem]): Unit = {
+  private def printProblems(problems: List[Problem]): List[Problem] = {
     for (problem ← problems) {
       println(s"${problem.severity}: ${problem.message}")
     }
+    problems
   }
 
   private def saveAsJson(inputFile: File, outputFile: File): Unit = {

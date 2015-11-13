@@ -28,10 +28,10 @@ private case class TelemetryModelToGfm(m: TelemetryModel, level: Level, title: S
   private val table = mkTable(
     List("Name", "Value"),
     List(
-      List("Rate", m.rate.toString + "Hz"),
-      List("Max Rate", m.maxRate.toString + "Hz"),
+      List("Rate", m.rate.toString + " Hz"),
+      List("Max Rate", m.maxRate.toString + " Hz"),
       List("Archive", m.archive.toString),
-      List("Archive Rate", m.archiveRate.toString + "Hz")).filter(_(1) != "0Hz"))
+      List("Archive Rate", m.archiveRate.toString + " Hz")).filter(_(1) != "0 Hz"))
 
   private val attrHead = mkHeading(level, 4, s"Attributes for ${m.name}")
 
