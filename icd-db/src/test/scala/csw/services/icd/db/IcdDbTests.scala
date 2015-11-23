@@ -54,7 +54,7 @@ class IcdDbTests extends FunSuite {
     val telemetryList = publish.telemetryList
     assert(telemetryList.size == 2)
     val logging = telemetryList.head
-    assert(logging.name == "logging")
+    assert(logging.name == "logToFile")
     assert(!logging.archive)
 
     val sensors = telemetryList.last

@@ -4,7 +4,7 @@
 
 dir=../install_icd
 
-test -d $dir || mkdir -p $dir/{bin,lib,conf}
+test -d $dir || mkdir -p $dir/bin $dir/lib $dir/conf
 sbt stage "project root" stage
 for i in bin lib ; do cp -f */target/universal/stage/$i/* $dir/$i/; done
 for i in bin lib conf ; do cp -f icd-web/icd-web-server/target/universal/stage/$i/* $dir/$i/; done
