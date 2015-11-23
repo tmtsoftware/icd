@@ -21,7 +21,8 @@ val buildSettings = Seq(
   fork := true,
   resolvers += Resolver.typesafeRepo("releases"),
   resolvers += Resolver.sonatypeRepo("releases"),
-  resolvers += sbtResolver.value
+  resolvers += sbtResolver.value,
+  resolvers += "Scalaz Bintray Repo" at "https://dl.bintray.com/scalaz/releases"
 )
 
 // Automatic code formatting
