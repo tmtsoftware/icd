@@ -38,6 +38,9 @@ object Icd extends App {
       """Saves the API doc (or single input or schema file) to the given file in a format based on
         |        the file's suffix (md, html, pdf, json).
         |        Only single files can be saved to JSON, only whole directories as md, html, pdf""".stripMargin
+
+    help("help")
+    version("version")
   }
 
   parser.parse(args, Options()) match {

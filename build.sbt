@@ -6,7 +6,9 @@ import sbt._
 import sbt.Project.projectToRef
 import com.typesafe.sbt.packager.docker._
 
-val Version = "0.1-SNAPSHOT"
+//val Version = "0.1-SNAPSHOT"
+val Version = "0.9"
+
 val ScalaVersion = "2.11.7"
 
 // Basic settings
