@@ -114,15 +114,15 @@ class IcdValidatorTests extends FunSuite {
     assert(status1.archiveRate == 10)
 
     val attr1 = status1.attributesList
-    assert(attr1.size == 3)
+    assert(attr1.size == 4)
 
     val a1 = attr1.head
     assert(a1.name == "a1")
     assert(a1.description == "single value with min/max")
     assert(a1.typeOpt.get == "integer")
     val a1Conf = a1.config
-    assert(a1Conf.getInt("minimum") == -2)
-    assert(a1Conf.getInt("maximum") == 22)
+    assert(a1Conf.getInt("minimum") == -100)
+    assert(a1Conf.getInt("maximum") == 100)
     assert(a1Conf.getString("units") == "m")
 
     val a2 = attr1(1)

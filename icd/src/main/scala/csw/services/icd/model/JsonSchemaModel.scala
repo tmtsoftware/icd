@@ -18,10 +18,10 @@ case class JsonSchemaModel(config: Config) {
   val enumOpt = config.as[Option[List[String]]]("enum")
   val units = config.as[Option[String]]("units").getOrElse("")
 
-  val minimum = config.as[Option[String]]("minimum")
-  val maximum = config.as[Option[String]]("maximum")
-  val exclusiveMinimum = config.as[Option[Boolean]]("exclusiveMinimum").getOrElse(false)
-  val exclusiveMaximum = config.as[Option[Boolean]]("exclusiveMaximum").getOrElse(false)
+  val minimum = config.as[Option[String]]("minimum").orElse(config.as[Option[String]]("items.minimum"))
+  val maximum = config.as[Option[String]]("maximum").orElse(config.as[Option[String]]("items.maximum"))
+  val exclusiveMinimum = config.as[Option[Boolean]]("exclusiveMinimum").orElse(config.as[Option[Boolean]]("items.exclusiveMinimum")).getOrElse(false)
+  val exclusiveMaximum = config.as[Option[Boolean]]("exclusiveMaximum").orElse(config.as[Option[Boolean]]("items.exclusiveMaximum")).getOrElse(false)
 
   val defaultValue = if (config.hasPath("default")) config.getAnyRef("default").toString else ""
 
@@ -29,7 +29,11 @@ case class JsonSchemaModel(config: Config) {
   private def arrayTypeStr: String = {
     val t = config.as[Option[String]]("items.type")
     val e = config.as[Option[List[String]]]("items.enum")
-    val s = if (t.isDefined) t.get else if (e.isDefined) e.get.mkString(", ") else "?"
+    val s = if (t.isDefined) {
+      numberTypeStr(t.get)
+    } else if (e.isDefined) {
+      e.get.mkString(", ")
+    } else "?"
     s"array of $s"
   }
 
