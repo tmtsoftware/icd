@@ -72,7 +72,7 @@ val casbah = "org.mongodb" %% "casbah" % "2.8.2"
 val diffson = "org.gnieh" %% "diffson" % "0.3"
 val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2"
 val logback = "ch.qos.logback" % "logback-classic" % "1.1.1"
-val scalatags = "com.lihaoyi" %% "scalatags" % "0.5.2"
+val scalatags = "com.lihaoyi" %% "scalatags" % "0.5.3"
 
 // Root of the multi-project build
 lazy val root = (project in file("."))
@@ -83,7 +83,7 @@ lazy val icd = project
   .enablePlugins(JavaAppPackaging)
   .settings(defaultSettings: _*)
   .settings(libraryDependencies ++=
-    compile(jsonSchemaValidator, scopt, typesafeConfig, ficus, pegdown, xmlworker, diffson, scalaLogging, logback) ++
+    compile(jsonSchemaValidator, scopt, scalatags, typesafeConfig, ficus, pegdown, xmlworker, diffson, scalaLogging, logback) ++
       test(scalaTest)
   )
 
@@ -92,7 +92,7 @@ lazy val `icd-db` = project
   .enablePlugins(JavaAppPackaging)
   .settings(defaultSettings: _*)
   .settings(libraryDependencies ++=
-    compile(casbah, scalatags) ++
+    compile(casbah) ++
       test(scalaTest)
   ) dependsOn(icd, icdWebSharedJvm)
 

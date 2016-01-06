@@ -2,13 +2,15 @@ package csw.services.icd.db
 
 import java.io.{ FileOutputStream, File }
 
-import csw.services.icd.{ IcdToPdf, IcdToHtml }
+import csw.services.icd.IcdToPdf
+import csw.services.icd.html.IcdToHtml
 import icd.web.shared._
 
 import scalatags.Text
 
 /**
  * Creates an HTML or PDF document for a subsystem, component or ICD based on data from the database
+ *
  * @param db used to query the database
  */
 case class IcdDbPrinter(db: IcdDb) {
@@ -178,6 +180,7 @@ case class IcdDbPrinter(db: IcdDb) {
 
   /**
    * Displays the information for a component, appending to the other selected components, if any.
+   *
    * @param info contains the information to display
    */
   private def displayComponentInfo(info: ComponentInfo): Text.TypedTag[String] = {
@@ -196,6 +199,7 @@ case class IcdDbPrinter(db: IcdDb) {
 
   /**
    * Gets information about the given components
+   *
    * @param subsystem the components' subsystem
    * @param versionOpt optional version (default: current version)
    * @param compNames list of component names
@@ -216,6 +220,7 @@ case class IcdDbPrinter(db: IcdDb) {
    * For ICDs, we are only interested in the interface between the two subsystems.
    * Filter out any published commands with no subscribers, and any commands received,
    * with no senders
+   *
    * @param info component info to filter
    * @return the filtered info
    */
@@ -282,6 +287,7 @@ case class IcdDbPrinter(db: IcdDb) {
    * Returns an HTML document describing the given components in the given subsystem.
    * If a target subsystem is given, the information is restricted to the ICD from
    * the subsystem to the target.
+   *
    * @param compNames the names of the components
    * @param sv the selected subsystem and version
    * @param targetSubsystem the target subsystem (might not be set)

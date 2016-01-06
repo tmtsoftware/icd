@@ -36,8 +36,8 @@ object Icd extends App {
       c.copy(outputFile = Some(x))
     } text
       """Saves the API doc (or single input or schema file) to the given file in a format based on
-        |        the file's suffix (md, html, pdf, json).
-        |        Only single files can be saved to JSON, only whole directories as md, html, pdf""".stripMargin
+        |        the file's suffix (html, pdf, json).
+        |        Only single files can be saved to JSON, only whole directories as html, pdf""".stripMargin
 
     help("help")
     version("version")
