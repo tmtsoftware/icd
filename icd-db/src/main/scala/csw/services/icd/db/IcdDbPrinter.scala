@@ -3,7 +3,7 @@ package csw.services.icd.db
 import java.io.{ FileOutputStream, File }
 
 import csw.services.icd.IcdToPdf
-import csw.services.icd.html.IcdToHtml
+import csw.services.icd.html.{ HtmlMarkup, IcdToHtml }
 import icd.web.shared._
 
 import scalatags.Text
@@ -170,7 +170,7 @@ case class IcdDbPrinter(db: IcdDb) {
     import scalatags.Text.all._
     div(cls := "pagebreakBefore")(
       h2(a(name := info.compName)(info.title)),
-      p(info.description),
+      HtmlMarkup.mkParagraph(info.description),
       componentInfoTableMarkup(info),
       publishMarkup(info.compName, info.publishInfo),
       subscribeMarkup(info.compName, info.subscribeInfo),
@@ -279,7 +279,7 @@ case class IcdDbPrinter(db: IcdDb) {
   private def makeIntro(titleInfo: TitleInfo): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (titleInfo.descriptionOpt.isDefined) {
-      p(titleInfo.descriptionOpt.get)
+      HtmlMarkup.mkParagraph(titleInfo.descriptionOpt.get)
     } else div
   }
 
