@@ -55,14 +55,18 @@ object HtmlMarkup {
   private def paragraphFilter(s: String): String =
     (for (line ← s.split("\n")) yield line.trim).mkString("\n")
 
+  private def isEmpty(x: String): Boolean = Option(x).forall(_.isEmpty)
+
   /**
    * Returns the HTML snippet for the given markdown (GFM)
    * @param gfm the Git formatted markdown
    */
   def gfmToHtml(gfm: String): String = {
     import org.pegdown.{ Extensions, PegDownProcessor }
-    val pd = new PegDownProcessor(Extensions.TABLES | Extensions.AUTOLINKS)
-    pd.markdownToHtml(paragraphFilter(gfm))
+    if (isEmpty(gfm)) "" else {
+      val pd = new PegDownProcessor(Extensions.TABLES | Extensions.AUTOLINKS)
+      pd.markdownToHtml(paragraphFilter(gfm))
+    }
   }
 
   /**

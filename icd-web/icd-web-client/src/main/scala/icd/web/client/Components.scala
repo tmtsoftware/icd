@@ -14,14 +14,16 @@ object Components {
 
   /**
    * Information about a link to a component
+   *
    * @param subsystem the component's subsystem
-   * @param compName the component name
+   * @param compName  the component name
    */
   case class ComponentLink(subsystem: String, compName: String)
 
   trait ComponentListener {
     /**
      * Called when a link for the component is clicked
+     *
      * @param link conatins the component's subsystem and name
      */
     def componentSelected(link: ComponentLink): Unit
@@ -33,8 +35,9 @@ object Components {
 
 /**
  * Manages the component (Assembly, HCD) display
+ *
  * @param mainContent used to display information about selected components
- * @param listener called when the user clicks on a component link in the (subscriber, publisher, etc)
+ * @param listener    called when the user clicks on a component link in the (subscriber, publisher, etc)
  */
 case class Components(mainContent: MainContent, listener: ComponentListener) {
 
@@ -42,9 +45,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   /**
    * Gets information about the given components
-   * @param subsystem the components' subsystem
-   * @param versionOpt optional version (default: current version)
-   * @param compNames list of component names
+   *
+   * @param subsystem       the components' subsystem
+   * @param versionOpt      optional version (default: current version)
+   * @param compNames       list of component names
    * @param targetSubsystem optional target subsystem and version
    * @return future list of objects describing the components
    */
@@ -52,7 +56,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                                targetSubsystem: SubsystemWithVersion): Future[List[ComponentInfo]] = {
     Ajax.get(Routes.icdComponentInfo(subsystem, versionOpt, compNames, targetSubsystem)).map { r ⇒
       val list = read[List[ComponentInfo]](r.responseText)
-      if (targetSubsystem.subsystemOpt.isDefined) list.map(applyIcdFilter) else list
+      if (targetSubsystem.subsystemOpt.isDefined) list.map(ComponentInfo.applyIcdFilter) else list
     }
   }
 
@@ -66,8 +70,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   /**
    * Adds (appends) a list of components to the display, in the order that they are given in the list.
-   * @param compNames the names of the components
-   * @param sv the selected subsystem and version
+   *
+   * @param compNames       the names of the components
+   * @param sv              the selected subsystem and version
    * @param targetSubsystem the target subsystem (might not be set)
    */
   def addComponents(compNames: List[String], sv: SubsystemWithVersion, targetSubsystem: SubsystemWithVersion,
@@ -91,8 +96,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   /**
    * Adds (appends) a component to the display
-   * @param compName the name of the component
-   * @param sv the selected subsystem
+   *
+   * @param compName        the name of the component
+   * @param sv              the selected subsystem
    * @param targetSubsystem the target subsystem (might not be set)
    */
   def addComponent(compName: String, sv: SubsystemWithVersion,
@@ -108,7 +114,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   /**
    * Displays only the given component's information, ignoring any filter
-   * @param sv the subsystem and version to use for the component
+   *
+   * @param sv       the subsystem and version to use for the component
    * @param compName the name of the component
    */
   def setComponent(sv: SubsystemWithVersion, compName: String): Unit = {
@@ -127,16 +134,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
-  // For ICDs, we are only interested in the interface between the two subsystems.
-  // Filter out any published commands with no subscribers,
-  // and any commands received, with no senders
-  private def applyIcdFilter(info: ComponentInfo): ComponentInfo = {
-    val publishInfo = info.publishInfo.filter(p ⇒ p.subscribers.nonEmpty)
-    val commandsReceived = info.commandsReceived.filter(p ⇒ p.otherComponents.nonEmpty)
-    ComponentInfo(info.subsystem, info.compName, info.title, info.description, info.htmlDescription, info.prefix,
-      info.componentType, info.wbsId, publishInfo, info.subscribeInfo, commandsReceived, info.commandsSent)
-  }
-
   // Removes the component display
   def removeComponentInfo(compName: String): Unit = {
     val elem = $id(getComponentInfoId(compName))
@@ -148,10 +145,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   /**
    * Displays the information for a component, appending to the other selected components, if any.
+   *
    * @param info contains the information to display
    */
   private def displayComponentInfo(info: ComponentInfo): Unit = {
-    if (info.publishInfo.nonEmpty || info.subscribeInfo.nonEmpty || info.commandsReceived.nonEmpty || info.commandsSent.nonEmpty) {
+    if (info.publishes.isDefined || info.subscribes.isDefined || info.commands.isDefined) {
       val markup = markupForComponent(info).render
       val oldElement = $id(getComponentInfoId(info.compName))
       if (oldElement == null) {
@@ -164,7 +162,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Generates the HTML markup to display the component's publish information
-  private def publishMarkup(compName: String, pubInfo: List[PublishInfo]) = {
+  private def publishMarkup(compName: String, publishesOpt: Option[Publishes]) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
@@ -182,28 +180,32 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
 
     // Only display non-empty tables
-    if (pubInfo.isEmpty) div()
-    else div(Styles.componentSection,
-      h3(s"Items published by $compName"),
-      table(Styles.componentTable, "data-toggle".attr := "table",
-        thead(
-          tr(
-            th("Name"),
-            th("Type"),
-            th("Description"),
-            th("Subscribers"))),
-        tbody(
-          for (p ← pubInfo) yield {
-            tr(
-              td(p.name),
-              td(p.itemType),
-              td(p.description),
-              td(p.subscribers.map(makeLinkForSubscriber)))
-          })))
+    publishesOpt match {
+      case None ⇒ div()
+      case Some(publishes) ⇒
+        div(Styles.componentSection,
+          h3(s"Items published by $compName"),
+          raw(publishes.htmlDescription),
+          table(Styles.componentTable, "data-toggle".attr := "table",
+            thead(
+              tr(
+                th("Name"),
+                th("Type"),
+                th("Description"),
+                th("Subscribers"))),
+            tbody(
+              for (p ← publishes.publishInfo) yield {
+                tr(
+                  td(p.name),
+                  td(p.itemType),
+                  td(p.description),
+                  td(p.subscribers.map(makeLinkForSubscriber)))
+              })))
+    }
   }
 
   // Generates the HTML markup to display the component's subscribe information
-  private def subscribeMarkup(compName: String, subInfo: List[SubscribeInfo]) = {
+  private def subscribeMarkup(compName: String, subscribesOpt: Option[Subscribes]) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
@@ -220,27 +222,31 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         onclick := clickedOnPublisher(info) _)
     }
 
-    if (subInfo.isEmpty) div()
-    else div(Styles.componentSection,
-      h3(s"Items subscribed to by $compName"),
-      table(Styles.componentTable, "data-toggle".attr := "table",
-        thead(
-          tr(
-            th("Prefix.Name"),
-            th("Type"),
-            th("Description"),
-            th("Publisher"))),
-        tbody(
-          for (s ← subInfo) yield {
-            val path = s.name.split('.')
-            val prefix = path.dropRight(1).mkString(".")
-            val name = path.last
-            tr(
-              td(prefix, br, s".$name"),
-              td(s.itemType),
-              td(s.description),
-              td(makeLinkForPublisher(s)))
-          })))
+    subscribesOpt match {
+      case None ⇒ div()
+      case Some(subscribes) ⇒
+        div(Styles.componentSection,
+          h3(s"Items subscribed to by $compName"),
+          raw(subscribes.htmlDescription),
+          table(Styles.componentTable, "data-toggle".attr := "table",
+            thead(
+              tr(
+                th("Prefix.Name"),
+                th("Type"),
+                th("Description"),
+                th("Publisher"))),
+            tbody(
+              for (s ← subscribes.subscribeInfo) yield {
+                val path = s.name.split('.')
+                val prefix = path.dropRight(1).mkString(".")
+                val name = path.last
+                tr(
+                  td(prefix, br, s".$name"),
+                  td(s.itemType),
+                  td(s.description),
+                  td(makeLinkForPublisher(s)))
+              })))
+    }
   }
 
   // Generates the HTML markup to display the commands a component receives
@@ -261,7 +267,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     // Only display non-empty tables
     if (info.isEmpty) div()
     else div(Styles.componentSection,
-      h3(s"Command Configurations Received by $compName"),
+      h4(s"Command Configurations Received by $compName"),
       table(Styles.componentTable, "data-toggle".attr := "table",
         thead(
           tr(
@@ -295,7 +301,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     // Only display non-empty tables
     if (info.isEmpty) div()
     else div(Styles.componentSection,
-      h3(s"Command Configurations Sent by $compName"),
+      h4(s"Command Configurations Sent by $compName"),
       table(Styles.componentTable, "data-toggle".attr := "table",
         thead(
           tr(
@@ -309,6 +315,20 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               td(p.description),
               td(p.otherComponents.map(makeLinkForReceiver)))
           })))
+  }
+
+  // Generates the markup for the commands section (description plus received and sent)
+  private def commandsMarkup(compName: String, commandsOpt: Option[Commands]) = {
+    import scalatags.JsDom.all._
+    commandsOpt match {
+      case None ⇒ div()
+      case Some(commands) ⇒
+        div(cls := "nopagebreak")(
+          h3(s"Commands for $compName"),
+          raw(commands.htmlDescription),
+          receivedCommandsMarkup(compName, commands.commandsReceived),
+          sentCommandsMarkup(compName, commands.commandsSent))
+    }
   }
 
   // Generates a one line table with basic component informationdiv(
@@ -342,10 +362,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       h2(info.compName),
       raw(info.htmlDescription),
       componentInfoTableMarkup(info),
-      publishMarkup(info.compName, info.publishInfo),
-      subscribeMarkup(info.compName, info.subscribeInfo),
-      receivedCommandsMarkup(info.compName, info.commandsReceived),
-      sentCommandsMarkup(info.compName, info.commandsSent))
+      publishMarkup(info.compName, info.publishes),
+      subscribeMarkup(info.compName, info.subscribes),
+      commandsMarkup(info.compName, info.commands))
   }
 
 }

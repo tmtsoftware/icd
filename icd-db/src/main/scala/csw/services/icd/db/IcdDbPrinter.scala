@@ -35,28 +35,31 @@ case class IcdDbPrinter(db: IcdDb) {
   private def publishTitle(compName: String): String = s"Items published by $compName"
 
   // Generates the HTML markup to display the component's publish information
-  private def publishMarkup(compName: String, pubInfo: List[PublishInfo]): Text.TypedTag[String] = {
+  private def publishMarkup(compName: String, publishesOpt: Option[Publishes]): Text.TypedTag[String] = {
     import scalatags.Text.all._
+    publishesOpt match {
+      case None ⇒ div()
+      case Some(publishes) ⇒
+        div(cls := "nopagebreak")(
+          h3(a(name := publishId(compName))(publishTitle(compName))),
+          raw(publishes.htmlDescription),
+          table("data-toggle".attr := "table",
+            thead(
+              tr(
+                th("Name"),
+                th("Type"),
+                th("Description"),
+                th("Subscribers"))),
+            tbody(
+              for (p ← publishes.publishInfo) yield {
+                tr(
+                  td(p.name),
+                  td(p.itemType),
+                  td(p.description),
+                  td(p.subscribers.map(_.compName).mkString(", ")))
+              })))
 
-    // Only display non-empty tables
-    if (pubInfo.isEmpty) div()
-    else div(cls := "nopagebreak")(
-      h3(a(name := publishId(compName))(publishTitle(compName))),
-      table("data-toggle".attr := "table",
-        thead(
-          tr(
-            th("Name"),
-            th("Type"),
-            th("Description"),
-            th("Subscribers"))),
-        tbody(
-          for (p ← pubInfo) yield {
-            tr(
-              td(p.name),
-              td(p.itemType),
-              td(p.description),
-              td(p.subscribers.map(_.compName).mkString(", ")))
-          })))
+    }
   }
 
   private def subscribeId(compName: String): String = s"sub-$compName"
@@ -64,30 +67,33 @@ case class IcdDbPrinter(db: IcdDb) {
   private def subscribeTitle(compName: String): String = s"Items subscribed to by $compName"
 
   // Generates the HTML markup to display the component's subscribe information
-  private def subscribeMarkup(compName: String, subInfo: List[SubscribeInfo]): Text.TypedTag[String] = {
+  private def subscribeMarkup(compName: String, subscribesOpt: Option[Subscribes]): Text.TypedTag[String] = {
     import scalatags.Text.all._
-
-    if (subInfo.isEmpty) div()
-    else div(cls := "nopagebreak")(
-      h3(a(name := subscribeId(compName))(subscribeTitle(compName))),
-      table("data-toggle".attr := "table",
-        thead(
-          tr(
-            th("Prefix.Name"),
-            th("Type"),
-            th("Description"),
-            th("Publisher"))),
-        tbody(
-          for (s ← subInfo) yield {
-            val path = s.name.split('.')
-            val prefix = path.dropRight(1).mkString(".")
-            val name = path.last
-            tr(
-              td(prefix, br, s".$name"),
-              td(s.itemType),
-              td(s.description),
-              td(s.compName))
-          })))
+    subscribesOpt match {
+      case None ⇒ div()
+      case Some(subscribes) ⇒
+        div(cls := "nopagebreak")(
+          h3(a(name := subscribeId(compName))(subscribeTitle(compName))),
+          raw(subscribes.htmlDescription),
+          table("data-toggle".attr := "table",
+            thead(
+              tr(
+                th("Prefix.Name"),
+                th("Type"),
+                th("Description"),
+                th("Publisher"))),
+            tbody(
+              for (s ← subscribes.subscribeInfo) yield {
+                val path = s.name.split('.')
+                val prefix = path.dropRight(1).mkString(".")
+                val name = path.last
+                tr(
+                  td(prefix, br, s".$name"),
+                  td(s.itemType),
+                  td(s.description),
+                  td(s.compName))
+              })))
+    }
   }
 
   private def receivedCommandsId(compName: String): String = s"rec-$compName"
@@ -101,7 +107,7 @@ case class IcdDbPrinter(db: IcdDb) {
     // Only display non-empty tables
     if (info.isEmpty) div()
     else div(cls := "nopagebreak")(
-      h3(a(name := receivedCommandsId(compName))(receivedCommandsTitle(compName))),
+      h4(a(name := receivedCommandsId(compName))(receivedCommandsTitle(compName))),
       table("data-toggle".attr := "table",
         thead(
           tr(
@@ -128,7 +134,7 @@ case class IcdDbPrinter(db: IcdDb) {
     // Only display non-empty tables
     if (info.isEmpty) div()
     else div(cls := "nopagebreak")(
-      h3(a(name := sentCommandsId(compName))(sentCommandsTitle(compName))),
+      h4(a(name := sentCommandsId(compName))(sentCommandsTitle(compName))),
       table("data-toggle".attr := "table",
         thead(
           tr(
@@ -142,6 +148,24 @@ case class IcdDbPrinter(db: IcdDb) {
               td(p.description),
               td(p.otherComponents.map(_.compName).mkString(", ")))
           })))
+  }
+
+  private def commandsId(compName: String): String = s"commands-$compName"
+
+  private def commandsTitle(compName: String): String = s"Commands for $compName"
+
+  // Generates the markup for the commands section (description plus received and sent)
+  private def commandsMarkup(compName: String, commandsOpt: Option[Commands]): Text.TypedTag[String] = {
+    import scalatags.Text.all._
+    commandsOpt match {
+      case None ⇒ div()
+      case Some(commands) ⇒
+        div(cls := "nopagebreak")(
+          h3(a(name := commandsId(compName))(commandsTitle(compName))),
+          raw(commands.htmlDescription),
+          receivedCommandsMarkup(compName, commands.commandsReceived),
+          sentCommandsMarkup(compName, commands.commandsSent))
+    }
   }
 
   // Generates a one line table with basic component informationdiv(
@@ -172,10 +196,9 @@ case class IcdDbPrinter(db: IcdDb) {
       h2(a(name := info.compName)(info.title)),
       raw(info.htmlDescription),
       componentInfoTableMarkup(info),
-      publishMarkup(info.compName, info.publishInfo),
-      subscribeMarkup(info.compName, info.subscribeInfo),
-      receivedCommandsMarkup(info.compName, info.commandsReceived),
-      sentCommandsMarkup(info.compName, info.commandsSent))
+      publishMarkup(info.compName, info.publishes),
+      subscribeMarkup(info.compName, info.subscribes),
+      commandsMarkup(info.compName, info.commands))
   }
 
   /**
@@ -185,7 +208,7 @@ case class IcdDbPrinter(db: IcdDb) {
    */
   private def displayComponentInfo(info: ComponentInfo): Text.TypedTag[String] = {
     import scalatags.Text.all._
-    if (info.publishInfo.nonEmpty || info.subscribeInfo.nonEmpty || info.commandsReceived.nonEmpty || info.commandsSent.nonEmpty) {
+    if (info.publishes.isDefined || info.subscribes.isDefined || info.commands.isDefined) {
       markupForComponent(info)
     } else div()
   }
@@ -200,9 +223,9 @@ case class IcdDbPrinter(db: IcdDb) {
   /**
    * Gets information about the given components
    *
-   * @param subsystem the components' subsystem
-   * @param versionOpt optional version (default: current version)
-   * @param compNames list of component names
+   * @param subsystem       the components' subsystem
+   * @param versionOpt      optional version (default: current version)
+   * @param compNames       list of component names
    * @param targetSubsystem optional target subsystem and version
    * @return future list of objects describing the components
    */
@@ -212,23 +235,8 @@ case class IcdDbPrinter(db: IcdDb) {
       info ← icdComponentInfo(subsystem, versionOpt, compNames, targetSubsystem)
     } yield {
       // If there is a target subsystem, filter out any items not referenced by it
-      if (targetSubsystem.subsystemOpt.isDefined) applyIcdFilter(info) else info
+      if (targetSubsystem.subsystemOpt.isDefined) ComponentInfo.applyIcdFilter(info) else info
     }
-  }
-
-  /**
-   * For ICDs, we are only interested in the interface between the two subsystems.
-   * Filter out any published commands with no subscribers, and any commands received,
-   * with no senders
-   *
-   * @param info component info to filter
-   * @return the filtered info
-   */
-  private def applyIcdFilter(info: ComponentInfo): ComponentInfo = {
-    val publishInfo = info.publishInfo.filter(p ⇒ p.subscribers.nonEmpty)
-    val commandsReceived = info.commandsReceived.filter(p ⇒ p.otherComponents.nonEmpty)
-    ComponentInfo(info.subsystem, info.compName, info.title, info.description, info.htmlDescription, info.prefix,
-      info.componentType, info.wbsId, publishInfo, info.subscribeInfo, commandsReceived, info.commandsSent)
   }
 
   /**
@@ -236,9 +244,9 @@ case class IcdDbPrinter(db: IcdDb) {
    * If the target subsystem is defined, the information is restricted to the ICD
    * from subsystem to target, otherwise the component API is returned.
    *
-   * @param subsystem the component's subsystem
-   * @param versionOpt the subsystem version (or use current)
-   * @param compNames the component names
+   * @param subsystem       the component's subsystem
+   * @param versionOpt      the subsystem version (or use current)
+   * @param compNames       the component names
    * @param targetSubsystem defines the optional target subsystem and version
    * @return list of component info
    */
@@ -256,11 +264,14 @@ case class IcdDbPrinter(db: IcdDb) {
   private def makeTocEntry(info: ComponentInfo): Text.TypedTag[String] = {
     import scalatags.Text.all._
     val compName = info.compName
+    val commandsReceived = info.commands.toList.flatMap(_.commandsReceived)
+    val commandsSent = info.commands.toList.flatMap(_.commandsSent)
     val sections = List(
-      info.publishInfo.headOption.map(_ ⇒ li(a(href := "#" + publishId(compName))(publishTitle(compName)))),
-      info.subscribeInfo.headOption.map(_ ⇒ li(a(href := "#" + subscribeId(compName))(subscribeTitle(compName)))),
-      info.commandsReceived.headOption.map(_ ⇒ li(a(href := "#" + receivedCommandsId(compName))(receivedCommandsTitle(compName)))),
-      info.commandsSent.headOption.map(_ ⇒ li(a(href := "#" + sentCommandsId(compName))(sentCommandsTitle(compName))))).flatten
+      info.publishes.map(_ ⇒ li(a(href := "#" + publishId(compName))(publishTitle(compName)))),
+      info.subscribes.map(_ ⇒ li(a(href := "#" + subscribeId(compName))(subscribeTitle(compName)))),
+      info.commands.map(_ ⇒ li(a(href := "#" + commandsId(compName))(commandsTitle(compName)), ul(
+        commandsReceived.headOption.map(_ ⇒ li(a(href := "#" + receivedCommandsId(compName))(receivedCommandsTitle(compName)))),
+        commandsSent.headOption.map(_ ⇒ li(a(href := "#" + sentCommandsId(compName))(sentCommandsTitle(compName)))))))).flatten
 
     li(a(href := s"#$compName")(info.title), ul(sections))
   }
@@ -288,10 +299,10 @@ case class IcdDbPrinter(db: IcdDb) {
    * If a target subsystem is given, the information is restricted to the ICD from
    * the subsystem to the target.
    *
-   * @param compNames the names of the components
-   * @param sv the selected subsystem and version
+   * @param compNames       the names of the components
+   * @param sv              the selected subsystem and version
    * @param targetSubsystem the target subsystem (might not be set)
-   * @param icdVersionOpt optional ICD version, to be displayed in the title
+   * @param icdVersionOpt   optional ICD version, to be displayed in the title
    */
   def getAsHtml(compNames: List[String],
                 sv: SubsystemWithVersion,
@@ -323,11 +334,11 @@ case class IcdDbPrinter(db: IcdDb) {
    * Saves a document describing the ICD for the given component to the given file,
    * in a format determined by the file's suffix, which should be one of (html, pdf).
    *
-   * @param subsystemStr the name of the subsystem (or component's subsystem) to print, followed by optional :version
-   * @param compNamesOpt optional names of the component to print (separated by ",")
-   * @param targetOpt optional target subsystem, followed by optional :version
+   * @param subsystemStr  the name of the subsystem (or component's subsystem) to print, followed by optional :version
+   * @param compNamesOpt  optional names of the component to print (separated by ",")
+   * @param targetOpt     optional target subsystem, followed by optional :version
    * @param icdVersionOpt optional icd version (overrides source and target subsystem versions)
-   * @param file the file in which to save the document (should end with .md, .html or .pdf)
+   * @param file          the file in which to save the document (should end with .md, .html or .pdf)
    */
   def saveToFile(subsystemStr: String, compNamesOpt: Option[String],
                  targetOpt: Option[String], icdVersionOpt: Option[String], file: File): Unit = {

@@ -4,7 +4,7 @@ import csw.services.icd.db.IcdDbQuery.{ Published, PublishInfo, PublishedItem, S
 import csw.services.icd.html.HtmlMarkup
 import csw.services.icd.model.{ ReceiveCommandModel, ComponentModel, IcdModels }
 import icd.web
-import icd.web.shared.{ CommandInfo, OtherComponent, SubscribeInfo, ComponentInfo }
+import icd.web.shared._
 
 /**
  * Gathers information related to a component in a given version of an ICD.
@@ -14,12 +14,12 @@ object IcdComponentInfo {
   /**
    * Query the database for information about the given component
    *
-   * @param db used to access the database
-   * @param subsystem the subsystem containing the component
-   * @param versionOpt the version of the subsystem to use (determines the version of the component):
-   *                   None for unpublished working version
-   * @param compNames the component names
-   * @param target the target subsystem of the ICD
+   * @param db               used to access the database
+   * @param subsystem        the subsystem containing the component
+   * @param versionOpt       the version of the subsystem to use (determines the version of the component):
+   *                         None for unpublished working version
+   * @param compNames        the component names
+   * @param target           the target subsystem of the ICD
    * @param targetVersionOpt the version of the target subsystem to use
    * @return an object containing information about the component
    */
@@ -34,12 +34,12 @@ object IcdComponentInfo {
   /**
    * Query the database for information about the given component
    *
-   * @param query used to access the database
-   * @param subsystem the subsystem containing the component
-   * @param versionOpt the version of the subsystem to use (determines the version of the component):
-   *                   None for unpublished working version
-   * @param compName the component name
-   * @param target the target subsystem of the ICD
+   * @param query            used to access the database
+   * @param subsystem        the subsystem containing the component
+   * @param versionOpt       the version of the subsystem to use (determines the version of the component):
+   *                         None for unpublished working version
+   * @param compName         the component name
+   * @param target           the target subsystem of the ICD
    * @param targetVersionOpt the version of the target subsystem to use
    * @return an object containing information about the component
    */
@@ -55,26 +55,25 @@ object IcdComponentInfo {
     val componentType = getComponentField(modelsList, _.componentType)
     val wbsId = getComponentField(modelsList, _.wbsId)
     val h = modelsList.headOption
-    val publishInfo = h.map(getPublishInfo(subsystem, _, targetModelsList))
-    val subscribeInfo = h.map(getSubscribeInfo(_, targetModelsList))
-    val commandsReceived = h.map(getCommandsReceived(_, targetModelsList))
-    val commandsSent = h.map(getCommandsSent(_, targetModelsList))
+
+    val publishes = h.flatMap(getPublishes(subsystem, _, targetModelsList))
+    val subscribes = h.flatMap(getSubscribes(_, targetModelsList))
+    val commands = h.flatMap(getCommands(_, targetModelsList))
 
     ComponentInfo(subsystem, compName, title,
       description,
       HtmlMarkup.gfmToHtml(description),
       prefix, componentType, wbsId,
-      publishInfo.toList.flatten,
-      subscribeInfo.toList.flatten,
-      commandsReceived.getOrElse(Nil),
-      commandsSent.getOrElse(Nil))
+      publishes,
+      subscribes,
+      commands)
   }
 
   /**
    * Gets a string value from the component description, or an empty string if not found
    *
    * @param modelsList list of model sets for the component
-   * @param f function to get the value
+   * @param f          function to get the value
    */
   private def getComponentField(modelsList: List[IcdModels], f: ComponentModel ⇒ String): String = {
     if (modelsList.isEmpty) ""
@@ -89,34 +88,39 @@ object IcdComponentInfo {
   /**
    * Gets information about the items published by a component
    *
-   * @param subsystem: the source subsystem
-   * @param models the model objects for the component
+   * @param subsystem        the source subsystem
+   * @param models           the model objects for the component
    * @param targetModelsList the target model objects
    */
-  private def getPublishInfo(subsystem: String, models: IcdModels, targetModelsList: List[IcdModels]): List[web.shared.PublishInfo] = {
+  private def getPublishes(subsystem: String, models: IcdModels, targetModelsList: List[IcdModels]): Option[Publishes] = {
     models.componentModel match {
-      case None ⇒ Nil
+      case None ⇒ None
       case Some(componentModel) ⇒
         val prefix = componentModel.prefix
-        val result = models.publishModel.map { m ⇒
-          m.telemetryList.map { t ⇒
-            web.shared.PublishInfo("Telemetry", t.name, t.description,
-              getSubscribers(subsystem, prefix, t.name, t.description, Telemetry, targetModelsList))
-          } ++
-            m.eventList.map { el ⇒
-              web.shared.PublishInfo("Event", el.name, el.description,
-                getSubscribers(subsystem, prefix, el.name, el.description, Events, targetModelsList))
+        models.publishModel match {
+          case None ⇒ None
+          case Some(m) ⇒
+            val publishInfo = m.telemetryList.map { t ⇒
+              web.shared.PublishInfo("Telemetry", t.name, t.description,
+                getSubscribers(subsystem, prefix, t.name, t.description, Telemetry, targetModelsList))
             } ++
-            m.eventStreamList.map { esl ⇒
-              web.shared.PublishInfo("EventStream", esl.name, esl.description,
-                getSubscribers(subsystem, prefix, esl.name, esl.description, EventStreams, targetModelsList))
-            } ++
-            m.alarmList.map { al ⇒
-              web.shared.PublishInfo("Alarm", al.name, al.description,
-                getSubscribers(subsystem, prefix, al.name, al.description, Alarms, targetModelsList))
-            }
+              m.eventList.map { el ⇒
+                web.shared.PublishInfo("Event", el.name, el.description,
+                  getSubscribers(subsystem, prefix, el.name, el.description, Events, targetModelsList))
+              } ++
+              m.eventStreamList.map { esl ⇒
+                web.shared.PublishInfo("EventStream", esl.name, esl.description,
+                  getSubscribers(subsystem, prefix, esl.name, esl.description, EventStreams, targetModelsList))
+              } ++
+              m.alarmList.map { al ⇒
+                web.shared.PublishInfo("Alarm", al.name, al.description,
+                  getSubscribers(subsystem, prefix, al.name, al.description, Alarms, targetModelsList))
+              }
+            val desc = m.description
+            if (desc.nonEmpty || publishInfo.nonEmpty)
+              Some(Publishes(desc, HtmlMarkup.gfmToHtml(desc), publishInfo))
+            else None
         }
-        result.toList.flatten
     }
   }
 
@@ -124,10 +128,10 @@ object IcdComponentInfo {
    * Returns the object if the component subscribes to the given value.
    *
    * @param subscriberSubsystem the subscriber's subsystem
-   * @param subscriberCompName the subscriber's component name
-   * @param path full path name of value (prefix + name)
-   * @param targetInfo list of items the target subscribes to
-   * @param subscribeType telemetry, alarm, etc...
+   * @param subscriberCompName  the subscriber's component name
+   * @param path                full path name of value (prefix + name)
+   * @param targetInfo          list of items the target subscribes to
+   * @param subscribeType       telemetry, alarm, etc...
    * @return the Subscribed object, if the component is a subscriber to the given path
    */
   private def subscribes(subscriberSubsystem: String, subscriberCompName: String, publisherSubsystem: String,
@@ -143,11 +147,11 @@ object IcdComponentInfo {
   /**
    * Gets information about who subscribes to the given published items
    *
-   * @param subsystem the publisher's subsystem
-   * @param prefix component's prefix
-   * @param name simple name of the published item
-   * @param desc description of the item
-   * @param subscribeType telemetry, alarm, etc...
+   * @param subsystem        the publisher's subsystem
+   * @param prefix           component's prefix
+   * @param name             simple name of the published item
+   * @param desc             description of the item
+   * @param subscribeType    telemetry, alarm, etc...
    * @param targetModelsList the target model objects
    */
   private def getSubscribers(subsystem: String, prefix: String, name: String, desc: String, subscribeType: PublishType,
@@ -184,8 +188,8 @@ object IcdComponentInfo {
   /**
    * Returns a list describing which components publish the given value.
    *
-   * @param path full path name of value (prefix + name)
-   * @param publishType telemetry, alarm, etc...
+   * @param path             full path name of value (prefix + name)
+   * @param publishType      telemetry, alarm, etc...
    * @param targetModelsList the target model objects
    */
   private def publishes(path: String, publishType: PublishType, targetModelsList: List[IcdModels]): List[PublishedItem] = {
@@ -198,10 +202,10 @@ object IcdComponentInfo {
   /**
    * Gets a list of items the component subscribes to, along with the publisher of each item
    *
-   * @param models the model objects for the component
+   * @param models           the model objects for the component
    * @param targetModelsList the target model objects
    */
-  private def getSubscribeInfo(models: IcdModels, targetModelsList: List[IcdModels]): List[SubscribeInfo] = {
+  private def getSubscribes(models: IcdModels, targetModelsList: List[IcdModels]): Option[Subscribes] = {
     def getInfo(publishType: PublishType, si: csw.services.icd.model.SubscribeInfo): List[SubscribeInfo] = {
       val info = publishes(si.name, publishType, targetModelsList).map { pi ⇒
         web.shared.SubscribeInfo(publishType.toString, si.name, pi.item.description, si.subsystem, pi.componentName)
@@ -212,21 +216,26 @@ object IcdComponentInfo {
       }
     }
 
-    val result = models.subscribeModel.map { m ⇒
-      m.telemetryList.map(getInfo(Telemetry, _)) ++
-        m.eventList.map(getInfo(Events, _)) ++
-        m.eventStreamList.map(getInfo(EventStreams, _)) ++
-        m.alarmList.map(getInfo(Alarms, _))
+    models.subscribeModel match {
+      case None ⇒ None
+      case Some(m) ⇒
+        val subscribeInfo = m.telemetryList.map(getInfo(Telemetry, _)) ++
+          m.eventList.map(getInfo(Events, _)) ++
+          m.eventStreamList.map(getInfo(EventStreams, _)) ++
+          m.alarmList.map(getInfo(Alarms, _))
+        val desc = m.description
+        if (desc.nonEmpty || subscribeInfo.nonEmpty)
+          Some(Subscribes(desc, HtmlMarkup.gfmToHtml(desc), subscribeInfo.flatten))
+        else None
     }
-    result.toList.flatten.flatten
   }
 
   /**
    * Returns a list of the names of target components that send the given command to the given component/subsystem
    *
-   * @param subsystem the subsystem that contains the component that defines the command
-   * @param component the component that defines the command
-   * @param commandName the command name
+   * @param subsystem        the subsystem that contains the component that defines the command
+   * @param component        the component that defines the command
+   * @param commandName      the command name
    * @param targetModelsList the target model objects
    * @return
    */
@@ -245,7 +254,7 @@ object IcdComponentInfo {
    * Gets a list of commands received by the component, including information about which components
    * send each command.
    *
-   * @param models the model objects for the component
+   * @param models           the model objects for the component
    * @param targetModelsList the target model objects
    */
   private def getCommandsReceived(models: IcdModels, targetModelsList: List[IcdModels]): List[CommandInfo] = {
@@ -263,9 +272,9 @@ object IcdComponentInfo {
    * Returns an object describing a command, defined to be received by the given component in the given subsystem,
    * if found.
    *
-   * @param subsystem the subsystem that contains the component that defines the command
-   * @param component the component that defines the command
-   * @param commandName the command name
+   * @param subsystem        the subsystem that contains the component that defines the command
+   * @param component        the component that defines the command
+   * @param commandName      the command name
    * @param targetModelsList the target model objects
    */
   private def getCommand(subsystem: String, component: String, commandName: String,
@@ -284,7 +293,7 @@ object IcdComponentInfo {
    * Gets a list of commands sent by the component, including information about the components
    * that receive each command.
    *
-   * @param models the model objects for the component
+   * @param models           the model objects for the component
    * @param targetModelsList the target model objects
    */
   private def getCommandsSent(models: IcdModels, targetModelsList: List[IcdModels]): List[CommandInfo] = {
@@ -297,6 +306,25 @@ object IcdComponentInfo {
       }
     }
     result.flatten
+  }
+
+  /**
+   * Gets a list of commands sent or received by the component.
+   *
+   * @param models           the model objects for the component
+   * @param targetModelsList the target model objects
+   */
+  private def getCommands(models: IcdModels, targetModelsList: List[IcdModels]): Option[Commands] = {
+    val received = getCommandsReceived(models, targetModelsList)
+    val sent = getCommandsSent(models, targetModelsList)
+    models.commandModel match {
+      case None ⇒ None
+      case Some(m) ⇒
+        val desc = m.description
+        if (desc.nonEmpty || sent.nonEmpty || received.nonEmpty)
+          Some(Commands(desc, HtmlMarkup.gfmToHtml(desc), received, sent))
+        else None
+    }
   }
 }
 

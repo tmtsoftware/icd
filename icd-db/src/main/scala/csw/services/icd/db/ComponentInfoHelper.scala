@@ -3,7 +3,7 @@ package csw.services.icd.db
 import csw.services.icd.db.IcdDbQuery.{ Alarms, EventStreams, Events, PublishType, Telemetry }
 import csw.services.icd.html.HtmlMarkup
 import csw.services.icd.model.{ ComponentModel, IcdModels }
-import icd.web.shared.{ CommandInfo, OtherComponent, SubscribeInfo, PublishInfo, ComponentInfo }
+import icd.web.shared._
 
 /**
  * Support for creating instances of the shared (scala/scala.js) ComponentInfo class.
@@ -14,11 +14,11 @@ object ComponentInfoHelper {
   /**
    * Query the database for information about the given components
    *
-   * @param db used to access the database
-   * @param subsystem the subsystem containing the component
+   * @param db         used to access the database
+   * @param subsystem  the subsystem containing the component
    * @param versionOpt the version of the subsystem to use (determines the version of the component):
    *                   None for unpublished working version
-   * @param compNames list of component names to get information about
+   * @param compNames  list of component names to get information about
    * @return a list of objects containing information about the components
    */
   def getComponentInfoList(db: IcdDb, subsystem: String, versionOpt: Option[String], compNames: List[String]): List[ComponentInfo] = {
@@ -31,11 +31,11 @@ object ComponentInfoHelper {
   /**
    * Query the database for information about the given component
    *
-   * @param query used to access the database
-   * @param subsystem the subsystem containing the component
+   * @param query      used to access the database
+   * @param subsystem  the subsystem containing the component
    * @param versionOpt the version of the subsystem to use (determines the version of the component):
    *                   None for unpublished working version
-   * @param compName the component name
+   * @param compName   the component name
    * @return an object containing information about the component
    */
   def getComponentInfo(query: IcdDbQuery, subsystem: String, versionOpt: Option[String], compName: String): ComponentInfo = {
@@ -49,26 +49,24 @@ object ComponentInfoHelper {
     val wbsId = getComponentField(modelsList, _.wbsId)
     val h = modelsList.headOption
 
-    val publishInfo = h.map(getPublishInfo(query, _))
-    val subscribeInfo = h.map(getSubscribeInfo(query, _))
-    val commandsReceived = h.map(getCommandsReceived(query, _))
-    val commandsSent = h.map(getCommandsSent(query, _))
+    val publishes = h.flatMap(getPublishes(query, _))
+    val subscribes = h.flatMap(getSubscribes(query, _))
+    val commands = h.flatMap(getCommands(query, _))
 
     ComponentInfo(subsystem, compName, title,
       description,
       HtmlMarkup.gfmToHtml(description),
       prefix, componentType, wbsId,
-      publishInfo.toList.flatten,
-      subscribeInfo.toList.flatten,
-      commandsReceived.toList.flatten,
-      commandsSent.toList.flatten)
+      publishes,
+      subscribes,
+      commands)
   }
 
   /**
    * Gets a string value from the component description, or an empty string if not found
    *
    * @param modelsList list of model sets for the component
-   * @param f function to get the value
+   * @param f          function to get the value
    */
   private def getComponentField(modelsList: List[IcdModels], f: ComponentModel ⇒ String): String = {
     if (modelsList.isEmpty) ""
@@ -81,41 +79,46 @@ object ComponentInfoHelper {
   }
 
   /**
-   * Gets information about the items published by a component
+   * Gets information about the items published by a component, along with a reference to the subscribers to each item
    *
-   * @param query database query handle
+   * @param query  database query handle
    * @param models the model objects for the component
    */
-  private def getPublishInfo(query: IcdDbQuery, models: IcdModels): List[PublishInfo] = {
+  private def getPublishes(query: IcdDbQuery, models: IcdModels): Option[Publishes] = {
     models.componentModel match {
-      case None ⇒ Nil
+      case None ⇒ None
       case Some(componentModel) ⇒
         val prefix = componentModel.prefix
-        val result = models.publishModel.map { m ⇒
-          m.telemetryList.map { t ⇒
-            PublishInfo("Telemetry", t.name, t.description, getSubscribers(query, prefix, t.name, t.description, Telemetry))
-          } ++
-            m.eventList.map { el ⇒
-              PublishInfo("Event", el.name, el.description, getSubscribers(query, prefix, el.name, el.description, Events))
+        models.publishModel match {
+          case None ⇒ None
+          case Some(m) ⇒
+            val publishInfo = m.telemetryList.map { t ⇒
+              PublishInfo("Telemetry", t.name, t.description, getSubscribers(query, prefix, t.name, t.description, Telemetry))
             } ++
-            m.eventStreamList.map { esl ⇒
-              PublishInfo("EventStream", esl.name, esl.description, getSubscribers(query, prefix, esl.name, esl.description, EventStreams))
-            } ++
-            m.alarmList.map { al ⇒
-              PublishInfo("Alarm", al.name, al.description, getSubscribers(query, prefix, al.name, al.description, Alarms))
-            }
+              m.eventList.map { el ⇒
+                PublishInfo("Event", el.name, el.description, getSubscribers(query, prefix, el.name, el.description, Events))
+              } ++
+              m.eventStreamList.map { esl ⇒
+                PublishInfo("EventStream", esl.name, esl.description, getSubscribers(query, prefix, esl.name, esl.description, EventStreams))
+              } ++
+              m.alarmList.map { al ⇒
+                PublishInfo("Alarm", al.name, al.description, getSubscribers(query, prefix, al.name, al.description, Alarms))
+              }
+            val desc = m.description
+            if (desc.nonEmpty || publishInfo.nonEmpty)
+              Some(Publishes(desc, HtmlMarkup.gfmToHtml(desc), publishInfo))
+            else None
         }
-        result.toList.flatten
     }
   }
 
   /**
    * Gets information about who subscribes to the given published items
    *
-   * @param query database query handle
-   * @param prefix component's prefix
-   * @param name simple name of the published item
-   * @param desc description of the item
+   * @param query         database query handle
+   * @param prefix        component's prefix
+   * @param name          simple name of the published item
+   * @param desc          description of the item
    * @param subscribeType telemetry, alarm, etc...
    */
   private def getSubscribers(query: IcdDbQuery, prefix: String, name: String, desc: String,
@@ -126,36 +129,42 @@ object ComponentInfoHelper {
   }
 
   /**
-   * Gets a list of items the component subscribes to, along with the publisher of each item
+   * Gets information about the items the component subscribes to, along with the publisher of each item
    *
-   * @param query the database query handle
+   * @param query  the database query handle
    * @param models the model objects for the component
    */
-  private def getSubscribeInfo(query: IcdDbQuery, models: IcdModels): List[SubscribeInfo] = {
+  private def getSubscribes(query: IcdDbQuery, models: IcdModels): Option[Subscribes] = {
 
     def getInfo(publishType: PublishType, si: csw.services.icd.model.SubscribeInfo): List[SubscribeInfo] = {
       val info = query.publishes(si.name, si.subsystem, publishType).map { pi ⇒
         SubscribeInfo(publishType.toString, si.name, pi.item.description, si.subsystem, pi.componentName)
       }
-      if (info.nonEmpty) info else {
+      if (info.nonEmpty) info
+      else {
         List(SubscribeInfo(publishType.toString, si.name, "", si.subsystem, ""))
       }
     }
 
-    val result = models.subscribeModel.map { m ⇒
-      m.telemetryList.map(getInfo(Telemetry, _)) ++
-        m.eventList.map(getInfo(Events, _)) ++
-        m.eventStreamList.map(getInfo(EventStreams, _)) ++
-        m.alarmList.map(getInfo(Alarms, _))
+    models.subscribeModel match {
+      case None ⇒ None
+      case Some(m) ⇒
+        val subscribeInfo = m.telemetryList.map(getInfo(Telemetry, _)) ++
+          m.eventList.map(getInfo(Events, _)) ++
+          m.eventStreamList.map(getInfo(EventStreams, _)) ++
+          m.alarmList.map(getInfo(Alarms, _))
+        val desc = m.description
+        if (desc.nonEmpty || subscribeInfo.nonEmpty)
+          Some(Subscribes(desc, HtmlMarkup.gfmToHtml(desc), subscribeInfo.flatten))
+        else None
     }
-    result.toList.flatten.flatten
   }
 
   /**
    * Gets a list of commands received by the component, including information about which components
    * send each command.
    *
-   * @param query database query handle
+   * @param query  database query handle
    * @param models model objects for component
    */
   private def getCommandsReceived(query: IcdDbQuery, models: IcdModels): List[CommandInfo] = {
@@ -173,7 +182,7 @@ object ComponentInfoHelper {
    * Gets a list of commands sent by the component, including information about the components
    * that receive each command.
    *
-   * @param query database query handle
+   * @param query  database query handle
    * @param models model objects for component
    */
   private def getCommandsSent(query: IcdDbQuery, models: IcdModels): List[CommandInfo] = {
@@ -186,6 +195,25 @@ object ComponentInfoHelper {
       }
     }
     result.flatten
+  }
+
+  /**
+   * Gets a list of commands sent or received by the component
+   *
+   * @param query  database query handle
+   * @param models model objects for component
+   */
+  private def getCommands(query: IcdDbQuery, models: IcdModels): Option[Commands] = {
+    val received = getCommandsReceived(query, models)
+    val sent = getCommandsSent(query, models)
+    models.commandModel match {
+      case None ⇒ None
+      case Some(m) ⇒
+        val desc = m.description
+        if (desc.nonEmpty || sent.nonEmpty || received.nonEmpty)
+          Some(Commands(desc, HtmlMarkup.gfmToHtml(desc), received, sent))
+        else None
+    }
   }
 }
 
