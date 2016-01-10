@@ -23,8 +23,7 @@ object PublishModel {
       telemetryList = getItems("telemetry", TelemetryModel(_)),
       eventList = getItems("events", JsonSchemaModel),
       eventStreamList = getItems("eventStreams", EventStreamModel(_)),
-      alarmList = getItems("alarms", AlarmModel(_)),
-      healthList = getItems("health", HealthModel(_)))
+      alarmList = getItems("alarms", AlarmModel(_)))
   }
 }
 
@@ -34,5 +33,4 @@ case class PublishModel(subsystem: String,
                         telemetryList: List[TelemetryModel],
                         eventList: List[JsonSchemaModel],
                         eventStreamList: List[EventStreamModel],
-                        alarmList: List[AlarmModel],
-                        healthList: List[HealthModel])
+                        alarmList: List[AlarmModel])

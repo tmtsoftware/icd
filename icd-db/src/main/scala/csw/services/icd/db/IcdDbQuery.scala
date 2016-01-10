@@ -71,8 +71,6 @@ object IcdDbQuery {
 
   case object Alarms extends PublishType
 
-  case object Health extends PublishType
-
   /**
    * Describes a component in a subsystem
    */
@@ -80,6 +78,7 @@ object IcdDbQuery {
 
   /**
    * Describes a published item
+   *
    * @param publishType one of Telemetry, Events, Alarms, etc.
    * @param name the name of the item being published
    * @param description description of the published item
@@ -88,6 +87,7 @@ object IcdDbQuery {
 
   /**
    * Describes a published item along with the component that publishes it
+   *
    * @param componentName the publishing component
    * @param prefix the component's prefix
    * @param item description of the published item
@@ -96,6 +96,7 @@ object IcdDbQuery {
 
   /**
    * Describes what values a component publishes
+   *
    * @param componentName component (HCD, assembly, ...) name
    * @param prefix component prefix
    * @param publishes list of names (without prefix) of published items (telemetry, events, alarms, etc.)
@@ -104,6 +105,7 @@ object IcdDbQuery {
 
   /**
    * Describes what values a component subscribes to
+   *
    * @param component component (HCD, assembly, ...) model
    * @param subscribesTo list of types and names (with prefix) of items the component subscribes to
    */
@@ -177,6 +179,7 @@ case class IcdDbQuery(db: MongoDB) {
 
   /**
    * Returns a list of component model objects, one for each component ICD matching the given condition in the database
+   *
    * @param query restricts the components returned (a MongoDBObject, for example)
    */
   def queryComponents(query: DBObject): List[ComponentModel] = {
@@ -190,6 +193,7 @@ case class IcdDbQuery(db: MongoDB) {
 
   /**
    * Returns a list of component model objects, one for each component ICD of the given type in the database
+   *
    * @param componentType restricts the type of components returned (one of: Assembly, HCD, Sequencer, etc.)
    */
   def getComponents(componentType: String): List[ComponentModel] =
@@ -310,6 +314,7 @@ case class IcdDbQuery(db: MongoDB) {
 
   /**
    * Returns an object describing the items subscribed to by the given component
+   *
    * @param component the model for the component
    */
   def getSubscribeModel(component: ComponentModel): Option[SubscribeModel] = {
@@ -402,6 +407,7 @@ case class IcdDbQuery(db: MongoDB) {
 
   /**
    * Returns a list of items published by the given component
+   *
    * @param component the component's model
    */
   def getPublished(component: ComponentModel): List[Published] = {
@@ -410,8 +416,7 @@ case class IcdDbQuery(db: MongoDB) {
         List(publishModel.telemetryList.map(i ⇒ Published(Telemetry, i.name, i.description)),
           publishModel.eventList.map(i ⇒ Published(Events, i.name, i.description)),
           publishModel.eventStreamList.map(i ⇒ Published(EventStreams, i.name, i.description)),
-          publishModel.alarmList.map(i ⇒ Published(Alarms, i.name, i.description)),
-          publishModel.healthList.map(i ⇒ Published(Health, i.name, i.description))).flatten
+          publishModel.alarmList.map(i ⇒ Published(Alarms, i.name, i.description))).flatten
       case None ⇒ Nil
     }
   }
@@ -428,6 +433,7 @@ case class IcdDbQuery(db: MongoDB) {
 
   /**
    * Returns a list describing which components publish the given value.
+   *
    * @param path full path name of value (prefix + name)
    * @param publishType telemetry, alarm, etc...
    */
@@ -440,6 +446,7 @@ case class IcdDbQuery(db: MongoDB) {
 
   /**
    * Returns a list of items the given component subscribes to
+   *
    * @param component the component model
    */
   private def getSubscribedTo(component: ComponentModel): List[Subscribed] = {
@@ -448,8 +455,7 @@ case class IcdDbQuery(db: MongoDB) {
         List(subscribeModel.telemetryList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Telemetry, i.name)),
           subscribeModel.eventList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Events, i.name)),
           subscribeModel.eventStreamList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, EventStreams, i.name)),
-          subscribeModel.alarmList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Alarms, i.name)),
-          subscribeModel.healthList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Health, i.name))).flatten
+          subscribeModel.alarmList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Alarms, i.name))).flatten
       case None ⇒ Nil
     }
   }
@@ -468,6 +474,7 @@ case class IcdDbQuery(db: MongoDB) {
 
   /**
    * Returns a list describing the components that subscribe to the given value.
+   *
    * @param path full path name of value (prefix + name)
    * @param subscribeType telemetry, alarm, etc...
    */

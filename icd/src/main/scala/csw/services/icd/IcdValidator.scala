@@ -21,6 +21,7 @@ object IcdValidator {
   /**
    * Returns a string with the contents of the given file, converted to JSON, if it was not already.
    * JSON files are recognized by the file suffix .json.
+   *
    * @param file a file in HOCON or JSON format
    * @return the file contents in JSON format
    */
@@ -38,6 +39,7 @@ object IcdValidator {
 
   /**
    * Returns a string with the contents of the given config, converted to JSON.
+   *
    * @param config the config to convert
    * @return the config contents in JSON format
    */
@@ -62,6 +64,7 @@ object IcdValidator {
   /**
    * Validates all the files with the standard names (stdNames) in the given directory and recursively
    * in its subdirectories.
+   *
    * @param dir the top level directory containing one or more of the the standard set of ICD files
    *            and any number of subdirectories containing ICD files
    */
@@ -71,6 +74,7 @@ object IcdValidator {
 
   /**
    * Validates all files with the standard names (stdNames) in the given directory.
+   *
    * @param dir the directory containing the standard set of ICD files (default: current dir)
    */
   def validate(dir: File = new File(".")): List[Problem] = {
@@ -99,7 +103,8 @@ object IcdValidator {
   /**
    * Validates the given input file using the given JSON schema file
    * JSON files are recognized by the file suffix .json.
-   * @param inputFile a file in HOCON or JSON format
+   *
+   * @param inputFile  a file in HOCON or JSON format
    * @param schemaFile a JSON schema file in HOCON or JSON format
    * @return a list of problems, if any were found
    */
@@ -114,7 +119,7 @@ object IcdValidator {
    * Validates the given input config using the standard schema for it based on the file name.
    *
    * @param inputConfig the config to be validated against the schema
-   * @param fileName the name of the original file that inputConfig was made from
+   * @param fileName    the name of the original file that inputConfig was made from
    * @return a list of problems, if any were found
    */
   def validate(inputConfig: Config, fileName: String): List[Problem] = {
@@ -133,9 +138,26 @@ object IcdValidator {
   }
 
   /**
-   * Validates the given input config using the given schema config.
+   * Validates the given input config using the standard schema.
+   *
    * @param inputConfig the config to be validated against the schema
-   * @param schemaConfig a config using the JSON schema syntax (but may be simplified to HOCON format)
+   * @param stdName     holds the file and schema name
+   * @return a list of problems, if any were found
+   */
+  def validate(inputConfig: Config, stdName: StdName): List[Problem] = {
+    val schemaConfig = ConfigFactory.parseResources(stdName.schema)
+    if (schemaConfig == null) {
+      List(Problem("error", s"Missing schema resource: ${stdName.schema}"))
+    } else {
+      validate(inputConfig, schemaConfig, stdName.name)
+    }
+  }
+
+  /**
+   * Validates the given input config using the given schema config.
+   *
+   * @param inputConfig   the config to be validated against the schema
+   * @param schemaConfig  a config using the JSON schema syntax (but may be simplified to HOCON format)
    * @param inputFileName the name of the original input file (for error messages)
    * @return a list of problems, if any were found
    */

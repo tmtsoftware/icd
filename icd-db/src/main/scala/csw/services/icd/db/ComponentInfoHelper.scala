@@ -1,6 +1,7 @@
 package csw.services.icd.db
 
-import csw.services.icd.db.IcdDbQuery.{ Alarms, EventStreams, Events, Health, PublishType, Telemetry }
+import csw.services.icd.db.IcdDbQuery.{ Alarms, EventStreams, Events, PublishType, Telemetry }
+import csw.services.icd.html.HtmlMarkup
 import csw.services.icd.model.{ ComponentModel, IcdModels }
 import icd.web.shared.{ CommandInfo, OtherComponent, SubscribeInfo, PublishInfo, ComponentInfo }
 
@@ -12,6 +13,7 @@ object ComponentInfoHelper {
 
   /**
    * Query the database for information about the given components
+   *
    * @param db used to access the database
    * @param subsystem the subsystem containing the component
    * @param versionOpt the version of the subsystem to use (determines the version of the component):
@@ -28,6 +30,7 @@ object ComponentInfoHelper {
 
   /**
    * Query the database for information about the given component
+   *
    * @param query used to access the database
    * @param subsystem the subsystem containing the component
    * @param versionOpt the version of the subsystem to use (determines the version of the component):
@@ -51,7 +54,10 @@ object ComponentInfoHelper {
     val commandsReceived = h.map(getCommandsReceived(query, _))
     val commandsSent = h.map(getCommandsSent(query, _))
 
-    ComponentInfo(subsystem, compName, title, description, prefix, componentType, wbsId,
+    ComponentInfo(subsystem, compName, title,
+      description,
+      HtmlMarkup.gfmToHtml(description),
+      prefix, componentType, wbsId,
       publishInfo.toList.flatten,
       subscribeInfo.toList.flatten,
       commandsReceived.toList.flatten,
@@ -60,6 +66,7 @@ object ComponentInfoHelper {
 
   /**
    * Gets a string value from the component description, or an empty string if not found
+   *
    * @param modelsList list of model sets for the component
    * @param f function to get the value
    */
@@ -75,6 +82,7 @@ object ComponentInfoHelper {
 
   /**
    * Gets information about the items published by a component
+   *
    * @param query database query handle
    * @param models the model objects for the component
    */
@@ -95,9 +103,6 @@ object ComponentInfoHelper {
             } ++
             m.alarmList.map { al ⇒
               PublishInfo("Alarm", al.name, al.description, getSubscribers(query, prefix, al.name, al.description, Alarms))
-            } ++
-            m.healthList.map { hl ⇒
-              PublishInfo("Health", hl.name, hl.description, getSubscribers(query, prefix, hl.name, hl.description, Health))
             }
         }
         result.toList.flatten
@@ -106,6 +111,7 @@ object ComponentInfoHelper {
 
   /**
    * Gets information about who subscribes to the given published items
+   *
    * @param query database query handle
    * @param prefix component's prefix
    * @param name simple name of the published item
@@ -121,6 +127,7 @@ object ComponentInfoHelper {
 
   /**
    * Gets a list of items the component subscribes to, along with the publisher of each item
+   *
    * @param query the database query handle
    * @param models the model objects for the component
    */
@@ -139,8 +146,7 @@ object ComponentInfoHelper {
       m.telemetryList.map(getInfo(Telemetry, _)) ++
         m.eventList.map(getInfo(Events, _)) ++
         m.eventStreamList.map(getInfo(EventStreams, _)) ++
-        m.alarmList.map(getInfo(Alarms, _)) ++
-        m.healthList.map(getInfo(Health, _))
+        m.alarmList.map(getInfo(Alarms, _))
     }
     result.toList.flatten.flatten
   }
@@ -148,6 +154,7 @@ object ComponentInfoHelper {
   /**
    * Gets a list of commands received by the component, including information about which components
    * send each command.
+   *
    * @param query database query handle
    * @param models model objects for component
    */
@@ -165,6 +172,7 @@ object ComponentInfoHelper {
   /**
    * Gets a list of commands sent by the component, including information about the components
    * that receive each command.
+   *
    * @param query database query handle
    * @param models model objects for component
    */

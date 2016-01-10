@@ -19,8 +19,7 @@ case class PublishModelToGfm(m: PublishModel, level: Level) extends Gfm {
     TelemetryListToGfm(m.telemetryList, level.inc3()).gfm,
     EventListToGfm(m.eventList, level.inc3()).gfm,
     TelemetryListToGfm(m.eventStreamList, level.inc3(), "Event Streams").gfm,
-    AlarmListToGfm(m.alarmList, level.inc3()).gfm,
-    HealthListToGfm(m.healthList, level.inc3()).gfm)
+    AlarmListToGfm(m.alarmList, level.inc3()).gfm)
 
   val gfm = head + desc + parts.mkString("\n\n")
 }

@@ -170,7 +170,7 @@ case class IcdDbPrinter(db: IcdDb) {
     import scalatags.Text.all._
     div(cls := "pagebreakBefore")(
       h2(a(name := info.compName)(info.title)),
-      HtmlMarkup.mkParagraph(info.description),
+      raw(info.htmlDescription),
       componentInfoTableMarkup(info),
       publishMarkup(info.compName, info.publishInfo),
       subscribeMarkup(info.compName, info.subscribeInfo),
@@ -195,7 +195,7 @@ case class IcdDbPrinter(db: IcdDb) {
    */
   private def getSubsystemInfo(subsystem: String, versionOpt: Option[String]): Option[SubsystemInfo] =
     db.versionManager.getSubsystemModel(subsystem, versionOpt)
-      .map(m ⇒ SubsystemInfo(m.subsystem, versionOpt, m.title, m.description))
+      .map(m ⇒ SubsystemInfo(m.subsystem, versionOpt, m.title, m.description, HtmlMarkup.gfmToHtml(m.description)))
 
   /**
    * Gets information about the given components
@@ -227,7 +227,7 @@ case class IcdDbPrinter(db: IcdDb) {
   private def applyIcdFilter(info: ComponentInfo): ComponentInfo = {
     val publishInfo = info.publishInfo.filter(p ⇒ p.subscribers.nonEmpty)
     val commandsReceived = info.commandsReceived.filter(p ⇒ p.otherComponents.nonEmpty)
-    ComponentInfo(info.subsystem, info.compName, info.title, info.description, info.prefix,
+    ComponentInfo(info.subsystem, info.compName, info.title, info.description, info.htmlDescription, info.prefix,
       info.componentType, info.wbsId, publishInfo, info.subscribeInfo, commandsReceived, info.commandsSent)
   }
 
@@ -279,7 +279,7 @@ case class IcdDbPrinter(db: IcdDb) {
   private def makeIntro(titleInfo: TitleInfo): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (titleInfo.descriptionOpt.isDefined) {
-      HtmlMarkup.mkParagraph(titleInfo.descriptionOpt.get)
+      div(raw(titleInfo.descriptionOpt.get))
     } else div
   }
 

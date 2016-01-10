@@ -66,7 +66,7 @@ Two Docker related scripts are provided in the top level directory.
 
 * docker-run.sh - Can be used to run the ICD web server inside Docker
 
-Note that both scripts should be edited to add the correct docker user.
+__Note__ that *both* scripts should be edited to add the correct docker user.
 See comments in the scripts for more information.
 
 

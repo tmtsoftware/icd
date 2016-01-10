@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream
 
 import csw.services.icd.IcdToPdf
 import csw.services.icd.db.{ IcdDbPrinter, IcdComponentInfo, ComponentInfoHelper, IcdDb }
+import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.{ SubsystemWithVersion, SubsystemInfo, IcdName, VersionInfo, Csrf }
 import play.api.mvc._
 import play.filters.csrf.CSRFAddToken
@@ -38,7 +39,8 @@ object Application extends Controller {
     import upickle.default._
     db.versionManager.getSubsystemModel(subsystem, versionOpt) match {
       case Some(model) ⇒
-        val info = SubsystemInfo(model.subsystem, versionOpt, model.title, model.description)
+        val info = SubsystemInfo(model.subsystem, versionOpt, model.title,
+          model.description, HtmlMarkup.gfmToHtml(model.description))
         val json = write(info)
         Ok(json).as(JSON)
       case None ⇒
@@ -56,6 +58,7 @@ object Application extends Controller {
 
   /**
    * Gets information about a named component in the given version of the given subsystem
+   *
    * @param subsystem the subsystem
    * @param versionOpt the subsystem's version (default: current)
    * @param compNames component names to get info about (separated by ",")
@@ -70,6 +73,7 @@ object Application extends Controller {
 
   /**
    * Gets information about a component in a given version of an ICD
+   *
    * @param subsystem the source subsystem
    * @param versionOpt the source subsystem's version (default: current)
    * @param compNames component names to get info about (separated by ",")
@@ -87,6 +91,7 @@ object Application extends Controller {
 
   /**
    * Returns the PDF for the given ICD
+   *
    * @param subsystem the source subsystem
    * @param versionOpt the source subsystem's version (default: current)
    * @param compNamesOpt an optional comma separated list of component names to include (default: all)
@@ -126,6 +131,7 @@ object Application extends Controller {
 
   /**
    * Returns the PDF for the given subsystem API
+   *
    * @param subsystem the source subsystem
    * @param versionOpt the source subsystem's version (default: current)
    * @param compNamesOpt an optional comma separated list of component names to include (default: all)

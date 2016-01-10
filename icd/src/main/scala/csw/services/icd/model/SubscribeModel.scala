@@ -21,8 +21,7 @@ object SubscribeModel {
       telemetryList = getItems("telemetry"),
       eventList = getItems("events"),
       eventStreamList = getItems("eventStreams"),
-      alarmList = getItems("alarms"),
-      healthList = getItems("health"))
+      alarmList = getItems("alarms"))
   }
 }
 
@@ -32,8 +31,7 @@ case class SubscribeModel(subsystem: String,
                           telemetryList: List[SubscribeInfo],
                           eventList: List[SubscribeInfo],
                           eventStreamList: List[SubscribeInfo],
-                          alarmList: List[SubscribeInfo],
-                          healthList: List[SubscribeInfo])
+                          alarmList: List[SubscribeInfo])
 
 // Inner object in subscribe arrays
 object SubscribeInfo {

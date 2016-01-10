@@ -3,7 +3,7 @@ package controllers
 import com.mongodb.MongoTimeoutException
 import com.typesafe.config.ConfigException
 import csw.services.icd.db.StdConfig
-import csw.services.icd.Problem
+import csw.services.icd.{ IcdValidator, Problem }
 import play.api.libs.iteratee.{ Concurrent, Iteratee }
 import play.api.mvc.{ WebSocket, Result, Action, Controller }
 
@@ -42,21 +42,26 @@ object FileUploadController extends Controller {
 
   /**
    * Uploads/ingests the given configs
-   * @param list list of objects based on uploaded ICD files
-   * @param comment change comment from user
+   *
+   * @param list         list of objects based on uploaded ICD files
+   * @param comment      change comment from user
    * @param majorVersion if true, increment the ICD's major version
    * @return the HTTP result (OK, or NotAcceptable[list of Problems in JSON format])
    */
   private def ingestConfigs(list: List[StdConfig], comment: String, majorVersion: Boolean = false): Result = {
     import upickle.default._
-    val problems = list.flatMap(db.ingestConfig)
-
-    wsChannel.push("update")
-
-    if (problems.isEmpty) {
-      Ok.as(JSON)
+    // Validate everything first
+    val validateProblems = list.flatMap(sc ⇒ IcdValidator.validate(sc.config, sc.stdName))
+    if (validateProblems.nonEmpty) {
+      NotAcceptable(write(validateProblems)).as(JSON)
     } else {
-      NotAcceptable(write(problems)).as(JSON)
+      val problems = list.flatMap(db.ingestConfig)
+      wsChannel.push("update")
+      if (problems.nonEmpty) {
+        NotAcceptable(write(problems)).as(JSON)
+      } else {
+        Ok.as(JSON)
+      }
     }
   }
 

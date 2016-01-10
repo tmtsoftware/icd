@@ -67,7 +67,7 @@ object IcdDb extends App {
 
     opt[File]('i', "ingest") valueName "<dir>" action { (x, c) ⇒
       c.copy(ingest = Some(x))
-    } text "Directory containing ICD files to ingest into the database"
+    } text "Top level d§irectory containing ICD files to ingest into the database"
 
     opt[Unit]("major") action { (_, c) ⇒
       c.copy(majorVersion = true)
@@ -143,7 +143,13 @@ object IcdDb extends App {
   private def run(options: Options): Unit = {
     val db = IcdDb(options.dbName, options.host, options.port)
 
-    options.ingest.foreach(dir ⇒ db.ingest(dir))
+    options.ingest.map(dir ⇒ db.ingest(dir)) match {
+      case Some(problems) if problems.nonEmpty ⇒
+        problems.foreach(println(_))
+        System.exit(1)
+      case _ ⇒
+    }
+
     options.list.foreach(list)
     options.outputFile.foreach(output)
     options.drop.foreach(drop)
@@ -269,16 +275,21 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
   /**
    * Ingests all the files with the standard names (stdNames) in the given directory and recursively
    * in its subdirectories into the database.
+   *
    * @param dir the top level directory containing one or more of the the standard set of ICD files
    *            and any number of subdirectories containing ICD files
    */
   def ingest(dir: File = new File(".")): List[Problem] = {
-    val results = (dir :: subDirs(dir)).map(ingestOneDir)
-    results.flatten
+    val validateProblems = IcdValidator.validateRecursive(dir)
+    if (validateProblems.nonEmpty)
+      validateProblems
+    else
+      (dir :: subDirs(dir)).flatMap(ingestOneDir)
   }
 
   /**
    * Ingests all files with the standard names (stdNames) in the given directory (only) into the database.
+   *
    * @param dir the directory containing the standard set of ICD files
    * @return a list describing any problems that occured
    */
@@ -289,26 +300,22 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
 
   /**
    * Ingests the given ICD config objects (based on the contents of one ICD directory)
+   *
    * @param list list of ICD model files packaged as StdConfig objects
    * @return a list describing the problems, if any
    */
   private def ingestConfigs(list: List[StdConfig]): List[Problem] = {
-
-    // XXX TODO: Should validate all configs first, rather than do partial update?
-
     list.flatMap(ingestConfig)
   }
 
   /**
    * Ingests the given ICD config objects (based on the contents of one ICD directory)
+   *
    * @param stdConfig ICD model file packaged as a StdConfig object
    * @return a list describing the problems, if any
    */
   def ingestConfig(stdConfig: StdConfig): List[Problem] = {
-    val problems = IcdValidator.validate(stdConfig.config, stdConfig.stdName.name)
-    if (problems.nonEmpty) {
-      problems
-    } else try {
+    try {
       ingestConfig(getCollectionName(stdConfig), stdConfig.config)
       Nil
     } catch {
@@ -318,7 +325,8 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
 
   /**
    * Ingests the given input config into the database.
-   * @param name the name of the collection in which to store this part of the ICD
+   *
+   * @param name   the name of the collection in which to store this part of the ICD
    * @param config the config to be ingested into the datasbase
    */
   private def ingestConfig(name: String, config: Config): Unit = {
@@ -329,6 +337,7 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
 
   /**
    * Returns the MongoDB collection name to use for the given ICD config.
+   *
    * @param stdConfig ICD model file packaged as StdConfig object
    * @return the collection name
    */
@@ -344,6 +353,7 @@ case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
 
   /**
    * Returns the subsystem name for the given ICD config.
+   *
    * @param stdConfig ICD model file packaged as StdConfig object
    * @return the collection name
    */

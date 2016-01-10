@@ -11,7 +11,7 @@ package object icd {
    */
   def subDirs(dir: File): List[File] = {
     val dirs = for {
-      d ← dir.listFiles.filter(d ⇒ d.isDirectory && d.listFiles().contains(new File(d, "component-model.conf"))).toList
+      d ← dir.listFiles.filter(StdName.isStdDir).toList
     } yield d :: subDirs(d)
     dirs.flatten
   }

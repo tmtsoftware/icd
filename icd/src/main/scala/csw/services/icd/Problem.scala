@@ -7,5 +7,6 @@ package csw.services.icd
  */
 case class Problem(severity: String, message: String) {
   def errorMessage(): String = s"$severity: $message"
+  override def toString: String = errorMessage()
 }
 

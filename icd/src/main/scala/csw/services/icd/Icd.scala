@@ -22,7 +22,7 @@ object Icd extends App {
 
     opt[File]("validate") valueName "<dir>" action { (x, c) ⇒ // Note: -v is already taken by the shell script!
       c.copy(validateDir = Some(x))
-    } text "Validates set of files in dir (default: current dir): subsystem-model.conf, component-model.conf, command-model.conf, publish-model.conf, subscribe-model.conf"
+    } text "Validates icd files in dir (recursively, default: current dir): subsystem-model.conf, component-model.conf, command-model.conf, publish-model.conf, subscribe-model.conf"
 
     opt[File]('i', "in") valueName "<inputFile>" action { (x, c) ⇒
       c.copy(inputFile = Some(x))

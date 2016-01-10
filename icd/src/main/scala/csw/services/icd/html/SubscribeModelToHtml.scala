@@ -31,8 +31,7 @@ case class SubscribeModelToHtml(m: SubscribeModel) extends HtmlMarkup {
     SubscribeInfoToHtml(m.telemetryList, "Telemetry"),
     SubscribeInfoToHtml(m.eventList, "Events"),
     SubscribeInfoToHtml(m.eventStreamList, "Event Streams"),
-    SubscribeInfoToHtml(m.alarmList, "Alarms"),
-    SubscribeInfoToHtml(m.healthList, "Health"))
+    SubscribeInfoToHtml(m.alarmList, "Alarms"))
 
   override val tags = List(head, desc) ::: parts.map(_.markup)
 

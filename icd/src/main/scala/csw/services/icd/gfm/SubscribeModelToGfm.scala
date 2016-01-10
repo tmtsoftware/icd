@@ -28,8 +28,7 @@ case class SubscribeModelToGfm(m: SubscribeModel, level: Level) extends Gfm {
     SubscribeInfoToGfm(m.telemetryList, level.inc3(), "Telemetry").gfm,
     SubscribeInfoToGfm(m.eventList, level.inc3(), "Events").gfm,
     SubscribeInfoToGfm(m.eventStreamList, level.inc3(), "Event Streams").gfm,
-    SubscribeInfoToGfm(m.alarmList, level.inc3(), "Alarms").gfm,
-    SubscribeInfoToGfm(m.healthList, level.inc3(), "Health").gfm)
+    SubscribeInfoToGfm(m.alarmList, level.inc3(), "Alarms").gfm)
 
   val gfm = head + desc + parts.mkString("\n\n")
 }
