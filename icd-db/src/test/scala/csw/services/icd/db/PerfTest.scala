@@ -6,14 +6,17 @@ object PerfTest extends App {
 
   val info = ComponentInfoHelper.getComponentInfo(new CachedIcdDbQuery(db.db), "NFIRAOS", None, "envCtrl")
   assert(info.compName == "envCtrl")
-  assert(info.publishInfo.nonEmpty)
-  info.publishInfo.foreach { pubInfo ⇒
+  assert(info.publishes.nonEmpty)
+  assert(info.publishes.get.publishInfo.nonEmpty)
+  info.publishes.get.publishInfo.foreach { pubInfo ⇒
     println(s"envCtrl publishes ${pubInfo.name}")
     pubInfo.subscribers.foreach { subInfo ⇒
       println(s"${subInfo.compName} from ${subInfo.subsystem} subscribes to ${subInfo.name}")
     }
   }
-  info.subscribeInfo.foreach { subInfo ⇒
+  assert(info.subscribes.nonEmpty)
+  assert(info.subscribes.get.subscribeInfo.nonEmpty)
+  info.subscribes.get.subscribeInfo.foreach { subInfo ⇒
     println(s"envCtrl subscribes to ${subInfo.name} from ${subInfo.subsystem}")
   }
 }

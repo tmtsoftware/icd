@@ -176,9 +176,9 @@ object Application extends Controller {
   /**
    * Publishes the given version of the given subsystem
    */
-  def publishApi(path: String, majorVersion: Boolean, comment: String) = Action {
+  def publishApi(subsystem: String, majorVersion: Boolean, comment: String) = Action {
     // XXX error handling?
-    db.versionManager.publishApi(path, majorVersion, comment)
+    db.versionManager.publishApi(subsystem, majorVersion, comment)
     Ok.as(JSON)
   }
 

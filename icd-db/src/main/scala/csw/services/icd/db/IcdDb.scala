@@ -35,8 +35,6 @@ object IcdDb extends App {
                      host: String = defaultHost,
                      port: Int = defaultPort,
                      ingest: Option[File] = None,
-                     majorVersion: Boolean = false,
-                     comment: String = "",
                      list: Option[String] = None,
                      subsystem: Option[String] = None,
                      target: Option[String] = None,
@@ -46,6 +44,9 @@ object IcdDb extends App {
                      drop: Option[String] = None,
                      versions: Option[String] = None,
                      diff: Option[String] = None,
+                     publish: Boolean = false,
+                     majorVersion: Boolean = false,
+                     comment: String = "",
                      publishes: Option[String] = None,
                      subscribes: Option[String] = None)
 
@@ -67,15 +68,7 @@ object IcdDb extends App {
 
     opt[File]('i', "ingest") valueName "<dir>" action { (x, c) ⇒
       c.copy(ingest = Some(x))
-    } text "Top level d§irectory containing ICD files to ingest into the database"
-
-    opt[Unit]("major") action { (_, c) ⇒
-      c.copy(majorVersion = true)
-    } text "Increment the ICD's major version"
-
-    opt[String]('m', "comment") valueName "<text>" action { (x, c) ⇒
-      c.copy(comment = x)
-    } text "A comment describing the changes made (default: empty string)"
+    } text "Top level directory containing files to ingest into the database"
 
     opt[String]('l', "list") valueName "[subsystems|assemblies|hcds|all]" action { (x, c) ⇒
       c.copy(list = Some(x))
@@ -95,7 +88,7 @@ object IcdDb extends App {
 
     opt[String]("icdversion") valueName "<icd-version>" action { (x, c) ⇒
       c.copy(icdVersion = Some(x))
-    } text "Specifies the ICD version to be used by any following options (overrides subsystem and target versions)"
+    } text "Specifies the version to be used by any following options (overrides subsystem and target versions)"
 
     opt[File]('o', "out") valueName "<outputFile>" action { (x, c) ⇒
       c.copy(outputFile = Some(x))
@@ -105,21 +98,33 @@ object IcdDb extends App {
       c.copy(drop = Some(x))
     } text "Drops the specified component or database (use with caution!)"
 
-    opt[String]("versions") valueName "<icdName>" action { (x, c) ⇒
+    opt[String]("versions") valueName "<subsystem>" action { (x, c) ⇒
       c.copy(versions = Some(x))
-    } text "List the version history of the given ICD"
+    } text "List the version history of the given subsystem"
 
     opt[String]("diff") valueName "<subsystem>:<version1>[,version2]" action { (x, c) ⇒
       c.copy(diff = Some(x))
-    } text "For the given ICD, list the differences between <version1> and <version2> (or the current version)"
+    } text "For the given subsystem, list the differences between <version1> and <version2> (or the current version)"
+
+    opt[Unit]("publish") action { (_, c) ⇒
+      c.copy(publish = true)
+    } text "Publish the selected subsystem (Use together with --subsystem, --major and --comment)"
+
+    opt[Unit]("major") action { (_, c) ⇒
+      c.copy(majorVersion = true)
+    } text "Use with --publish to increment the major version"
+
+    opt[String]('m', "comment") valueName "<text>" action { (x, c) ⇒
+      c.copy(comment = x)
+    } text "Use with --publish to add a comment describing the changes made (default: empty string)"
 
     opt[String]("publishes") valueName "<path>" action { (x, c) ⇒
       c.copy(publishes = Some(x))
-    } text "Prints a list of ICD components that publish the given value (name with optional component prefix)"
+    } text "Prints a list of components that publish the given value (name with optional component prefix)"
 
     opt[String]("subscribes") valueName "<path>" action { (x, c) ⇒
       c.copy(subscribes = Some(x))
-    } text "Prints a list of ICD components that subscribe to the given value (name with optional component prefix)"
+    } text "Prints a list of components that subscribe to the given value (name with optional component prefix)"
 
     help("help")
     version("version")
@@ -157,6 +162,9 @@ object IcdDb extends App {
     options.diff.foreach(diffVersions)
     options.publishes.foreach(listPublishes)
     options.subscribes.foreach(listSubscribes)
+
+    if (options.publish)
+      options.subsystem.foreach(publish(options.majorVersion, options.comment))
 
     // --list option
     def list(componentType: String): Unit = {
@@ -211,9 +219,9 @@ object IcdDb extends App {
     }
 
     // --versions option
-    def listVersions(name: String): Unit = {
-      for (v ← db.versionManager.getVersions(name)) {
-        println(s"${v.versionOpt}\t${v.date.withZone(DateTimeZone.getDefault)}\t${v.comment}")
+    def listVersions(subsystem: String): Unit = {
+      for (v ← db.versionManager.getVersions(subsystem)) {
+        println(s"${v.versionOpt.getOrElse("*")}\t${v.date.withZone(DateTimeZone.getDefault)}\t${v.comment}")
       }
     }
 
@@ -246,13 +254,19 @@ object IcdDb extends App {
 
     // --publishes option
     def listPublishes(path: String): Unit = {
+      // XXX TODO
     }
 
     // --subscribes option
     def listSubscribes(path: String): Unit = {
+      // XXX TODO
+    }
+
+    // --publish option
+    def publish(majorVersion: Boolean, comment: String)(subsystem: String): Unit = {
+      db.versionManager.publishApi(subsystem, majorVersion, comment)
     }
   }
-
 }
 
 /**

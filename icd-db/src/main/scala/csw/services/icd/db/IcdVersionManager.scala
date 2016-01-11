@@ -55,6 +55,7 @@ object IcdVersionManager {
 
   /**
    * Describes a version of a subsystem or component
+   *
    * @param versionOpt the subsystem or component version (major.minor), if published
    * @param user the user that created the version
    * @param comment a change comment
@@ -87,6 +88,7 @@ object IcdVersionManager {
   /**
    * Represents the difference between two versions of an subsystem or component part in the db
    * (parts have names that end with "icd", "component", "publish", "subscribe", "command")
+   *
    * @param path the path to a part of the subsystem or component (for example: "NFIRAOS.lgsWfs.publish")
    * @param patch an object describing the difference for the subsystem or component part
    */
@@ -162,6 +164,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
 
   /**
    * Returns a list of information about the versions of the subsystem
+   *
    * @param subsystem the name of the subsystem
    */
   def getVersions(subsystem: String): List[VersionInfo] = {
@@ -175,6 +178,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
 
   /**
    * Returns a list of published version names of the subsystem or component
+   *
    * @param subsystem the name of the subsystem
    */
   def getVersionNames(subsystem: String): List[String] = {
@@ -187,6 +191,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
 
   /**
    * Returns information about the given version of the given subsystem or component
+   *
    * @param subsystem the name of the subsystem
    * @param versionOpt the version of interest (None for the current, unpublished version)
    * @param compNameOpt if defined, return the models for the component, otherwise for the subsystem
@@ -215,6 +220,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
 
   /**
    * Returns the version name of the latest, published version of the given subsystem or component, if found
+   *
    * @param collectionNames list of collection names (for better performance)
    * @param subsystem the name of the subsystem
    * @param compNameOpt if defined, the name of the component
@@ -229,6 +235,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
 
   /**
    * Compares all of the named subsystem or component parts and returns a list of patches describing any differences.
+   *
    * @param name the root subsystem or component name
    * @param v1 the first version to compare (None for the current, unpublished version)
    * @param v2 the second version to compare (None for the current, unpublished version)
@@ -353,6 +360,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
 
   /**
    * Returns the model for the given (or current) version of the given subsystem
+   *
    * @param subsystem the subsystem name
    * @param versionOpt optional version
    * @return the subsystem model
@@ -363,6 +371,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
 
   /**
    * Publishes the given subsystem
+   *
    * @param subsystem the name of subsystem
    * @param comment change comment
    * @param majorVersion if true, increment the subsystem's major version
@@ -382,6 +391,8 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
         val v = db(versionCollName)
         v.insert(obj, WriteConcern.SAFE)
         obj.put(versionKey, version + 1)
+        coll.remove(coll.head)
+        coll.insert(obj, WriteConcern.SAFE)
       }
       (path, version)
     }
@@ -399,6 +410,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
 
   /**
    * Returns the version name of the latest, published ICD from subsystem to target
+   *
    * @param subsystem the source subsystem
    * @param target the target subsystem
    */
@@ -419,6 +431,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
 
   /**
    * Publishes an ICD from the given version of the given subsystem to the target subsystem and version
+   *
    * @param subsystem the source subsystem
    * @param subsystemVersion the source subsystem version
    * @param target the target subsystem
@@ -458,6 +471,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
 
   /**
    * Returns a list of published ICD versions
+   *
    * @param subsystem the ICD's source subsystem
    * @param target the ICD's target subsystem
    */
