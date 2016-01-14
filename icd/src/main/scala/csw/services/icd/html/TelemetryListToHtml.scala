@@ -29,7 +29,7 @@ private case class TelemetryModelToHTML(m: TelemetryModel, title: String) extend
   private val table = mkTable(
     List("Name", "Value"),
     List(
-      List("Rate", m.rate.toString + " Hz"),
+      List("Min Rate", m.minRate.toString + " Hz"),
       List("Max Rate", m.maxRate.toString + " Hz"),
       List("Archive", m.archive.toString),
       List("Archive Rate", m.archiveRate.toString + " Hz")).filter(_(1) != "0 Hz"))

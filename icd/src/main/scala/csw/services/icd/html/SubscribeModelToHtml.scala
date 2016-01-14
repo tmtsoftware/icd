@@ -8,8 +8,8 @@ private case class SubscribeInfoToHtml(list: List[SubscribeInfo], title: String)
   private val head = mkHeading(3, title)
 
   private val table = mkTable(
-    List("Subsystem", "Name", "Required Rate", "Max Rate"),
-    list.map(m ⇒ List(m.subsystem, m.name, m.requiredRate.toString, m.maxRate.toString)))
+    List("Subsystem", "Name", "Required Rate", "Max Rate", "Usage"),
+    list.map(m ⇒ List(m.subsystem, m.name, m.requiredRate.toString, m.maxRate.toString, gfmToHtml(m.usage))))
 
   override val tags = List(head, table)
 

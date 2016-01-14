@@ -59,11 +59,13 @@ object HtmlMarkup {
 
   /**
    * Returns the HTML snippet for the given markdown (GFM)
+   *
    * @param gfm the Git formatted markdown
    */
   def gfmToHtml(gfm: String): String = {
     import org.pegdown.{ Extensions, PegDownProcessor }
-    if (isEmpty(gfm)) "" else {
+    if (isEmpty(gfm)) ""
+    else {
       val pd = new PegDownProcessor(Extensions.TABLES | Extensions.AUTOLINKS)
       pd.markdownToHtml(paragraphFilter(gfm))
     }
@@ -105,10 +107,17 @@ object HtmlMarkup {
           tr(newHead.map(th(_)))),
         tbody(
           for (row ← newRows) yield {
-            //            tr(row.map(text ⇒ td(raw(gfmToHtml(text))))) // XXX wraps cell values in a p()
-            tr(row.map(td(_)))
+            tr(row.map(mkTableCell))
           }))
     }
+  }
+
+  // Returns a table cell markup, checking if the text is already in html format (after markdown processing)
+  private def mkTableCell(text: String) = {
+    if (text.startsWith("<p>"))
+      td(raw(text))
+    else
+      td(text)
   }
 
   // Removes any columns that do not contain any values

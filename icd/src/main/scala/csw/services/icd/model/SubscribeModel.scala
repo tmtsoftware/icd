@@ -41,9 +41,9 @@ object SubscribeInfo {
       subsystem = config.as[Option[String]]("subsystem").getOrElse(""),
       name = config.as[Option[String]]("name").getOrElse(""),
       usage = config.as[Option[String]]("usage").getOrElse(""),
-      requiredRate = config.as[Option[Int]]("requiredRate").getOrElse(0),
-      maxRate = config.as[Option[Int]]("maxRate").getOrElse(0))
+      requiredRate = config.as[Option[Double]]("requiredRate").getOrElse(0),
+      maxRate = config.as[Option[Double]]("maxRate").getOrElse(0))
 }
 
-case class SubscribeInfo(subsystem: String, name: String, usage: String, requiredRate: Int, maxRate: Int)
+case class SubscribeInfo(subsystem: String, name: String, usage: String, requiredRate: Double, maxRate: Double)
 

@@ -18,7 +18,7 @@ case class AlarmListToHtml(list: List[AlarmModel]) extends HtmlMarkup {
 
   private val table = mkTable(
     List("Name", "Description", "Severity", "Archive"),
-    list.map(m ⇒ List(m.name, m.description, m.severity, m.archive.toString)))
+    list.map(m ⇒ List(m.name, gfmToHtml(m.description), m.severity, m.archive.toString)))
 
   override val tags = List(head, table)
 

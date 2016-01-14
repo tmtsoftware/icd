@@ -1,10 +1,9 @@
 package csw.services.icd
 
-import java.io.{ FileOutputStream, File }
+import java.io.File
 
 import com.typesafe.config.{ Config, ConfigFactory, ConfigResolveOptions }
 import csw.services.icd.IcdValidator._
-import csw.services.icd.gfm.IcdToGfm
 import csw.services.icd.model.IcdModels
 import org.scalatest.FunSuite
 
@@ -69,15 +68,6 @@ class IcdValidatorTests extends FunSuite {
     checkComponentModel(parser)
     checkPublishModel(parser)
     checkCommandModel(parser)
-
-    saveToGfm(parser)
-  }
-
-  // Save a test GFM markdown file
-  def saveToGfm(models: IcdModels): Unit = {
-    val f = new FileOutputStream("test.md")
-    f.write(IcdToGfm(models).gfm.getBytes)
-    f.close()
   }
 
   def checkSubsystemModel(models: IcdModels): Unit = {
@@ -108,7 +98,7 @@ class IcdValidatorTests extends FunSuite {
     val status1 = telemetryList.head
     assert(status1.name == "status1")
     assert(status1.description == "status1 description")
-    assert(status1.rate == 0)
+    assert(status1.minRate == 0)
     assert(status1.maxRate == 100)
     assert(status1.archive)
     assert(status1.archiveRate == 10)
