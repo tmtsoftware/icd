@@ -4,6 +4,7 @@ import icd.web.client.FileUtils._
 import org.scalajs.dom
 import org.scalajs.dom._
 import scala.language.implicitConversions
+
 //import org.scalajs.jquery.{ jQuery ⇒ $, _ }
 import org.querki.jquery._
 
@@ -97,7 +98,12 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
     clearProblems()
     statusItem.removeClass("label-danger")
     val (validFiles, invalidFiles) = getIcdFiles(e)
-    uploadFiles(validFiles.toList)
+    if (validFiles.isEmpty) {
+      val fileType = if (inputDirSupported) "directory of .conf files for the ICD" else "a zip file containing .conf files for the ICD"
+      displayProblem(Problem("error", s"Expected a $fileType"))
+    } else {
+      uploadFiles(validFiles.toList)
+    }
 
     // list ignored files:
     for (file ← invalidFiles)

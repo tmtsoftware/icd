@@ -61,7 +61,6 @@ object IcdComponentInfo {
     val commands = h.flatMap(getCommands(_, targetModelsList))
 
     ComponentInfo(subsystem, compName, title,
-      description,
       HtmlMarkup.gfmToHtml(description),
       prefix, componentType, wbsId,
       publishes,
@@ -101,24 +100,24 @@ object IcdComponentInfo {
           case None ⇒ None
           case Some(m) ⇒
             val publishInfo = m.telemetryList.map { t ⇒
-              web.shared.PublishInfo("Telemetry", t.name, t.description,
+              web.shared.PublishInfo("Telemetry", t.name, HtmlMarkup.gfmToHtml(t.description),
                 getSubscribers(subsystem, prefix, t.name, t.description, Telemetry, targetModelsList))
             } ++
               m.eventList.map { el ⇒
-                web.shared.PublishInfo("Event", el.name, el.description,
+                web.shared.PublishInfo("Event", el.name, HtmlMarkup.gfmToHtml(el.description),
                   getSubscribers(subsystem, prefix, el.name, el.description, Events, targetModelsList))
               } ++
               m.eventStreamList.map { esl ⇒
-                web.shared.PublishInfo("EventStream", esl.name, esl.description,
+                web.shared.PublishInfo("EventStream", esl.name, HtmlMarkup.gfmToHtml(esl.description),
                   getSubscribers(subsystem, prefix, esl.name, esl.description, EventStreams, targetModelsList))
               } ++
               m.alarmList.map { al ⇒
-                web.shared.PublishInfo("Alarm", al.name, al.description,
+                web.shared.PublishInfo("Alarm", al.name, HtmlMarkup.gfmToHtml(al.description),
                   getSubscribers(subsystem, prefix, al.name, al.description, Alarms, targetModelsList))
               }
             val desc = m.description
             if (desc.nonEmpty || publishInfo.nonEmpty)
-              Some(Publishes(desc, HtmlMarkup.gfmToHtml(desc), publishInfo))
+              Some(Publishes(HtmlMarkup.gfmToHtml(desc), publishInfo))
             else None
         }
     }
@@ -139,8 +138,8 @@ object IcdComponentInfo {
                          subscribeType: PublishType): Option[Subscribed] = {
     targetInfo.find { subscribeInfo ⇒
       subscribeInfo.name == path && subscribeInfo.subsystem == publisherSubsystem
-    }.map { _ ⇒
-      Subscribed(subscriberCompName, subscriberSubsystem, subscribeType, path)
+    }.map { subscribeInfo ⇒
+      Subscribed(subscriberCompName, subscriberSubsystem, subscribeType, path, subscribeInfo.usage)
     }
   }
 
@@ -162,7 +161,8 @@ object IcdComponentInfo {
       s ← subscribes(subscribeModel.subsystem, subscribeModel.component,
         subsystem, s"$prefix.$name", subscribeModel.telemetryList, subscribeType)
     } yield {
-      web.shared.SubscribeInfo(s.subscribeType.toString, s.name, desc, s.subsystem, s.componentName)
+      web.shared.SubscribeInfo(s.subscribeType.toString, s.name, HtmlMarkup.gfmToHtml(desc),
+        HtmlMarkup.gfmToHtml(s.usage), s.subsystem, s.componentName)
     }
   }
 
@@ -208,11 +208,12 @@ object IcdComponentInfo {
   private def getSubscribes(models: IcdModels, targetModelsList: List[IcdModels]): Option[Subscribes] = {
     def getInfo(publishType: PublishType, si: csw.services.icd.model.SubscribeInfo): List[SubscribeInfo] = {
       val info = publishes(si.name, publishType, targetModelsList).map { pi ⇒
-        web.shared.SubscribeInfo(publishType.toString, si.name, pi.item.description, si.subsystem, pi.componentName)
+        web.shared.SubscribeInfo(publishType.toString, si.name, HtmlMarkup.gfmToHtml(pi.item.description),
+          HtmlMarkup.gfmToHtml(si.usage), si.subsystem, pi.componentName)
       }
       if (info.nonEmpty) info
       else {
-        List(web.shared.SubscribeInfo(publishType.toString, si.name, "", si.subsystem, ""))
+        List(web.shared.SubscribeInfo(publishType.toString, si.name, "", "", si.subsystem, ""))
       }
     }
 
@@ -225,7 +226,7 @@ object IcdComponentInfo {
           m.alarmList.map(getInfo(Alarms, _))
         val desc = m.description
         if (desc.nonEmpty || subscribeInfo.nonEmpty)
-          Some(Subscribes(desc, HtmlMarkup.gfmToHtml(desc), subscribeInfo.flatten))
+          Some(Subscribes(HtmlMarkup.gfmToHtml(desc), subscribeInfo.flatten))
         else None
     }
   }
@@ -264,7 +265,7 @@ object IcdComponentInfo {
     } yield {
       val senders = getCommandSenders(cmd.subsystem, cmd.component, received.name, targetModelsList).map(comp ⇒
         OtherComponent(comp.subsystem, comp.component))
-      CommandInfo(received.name, received.description, senders)
+      CommandInfo(received.name, HtmlMarkup.gfmToHtml(received.description), senders)
     }
   }
 
@@ -302,7 +303,8 @@ object IcdComponentInfo {
       sent ← cmd.send
     } yield {
       getCommand(sent.subsystem, sent.component, sent.name, targetModelsList).map { r ⇒
-        CommandInfo(sent.name, r.description, List(OtherComponent(sent.subsystem, sent.component)))
+        CommandInfo(sent.name, HtmlMarkup.gfmToHtml(r.description),
+          List(OtherComponent(sent.subsystem, sent.component)))
       }
     }
     result.flatten
@@ -322,7 +324,7 @@ object IcdComponentInfo {
       case Some(m) ⇒
         val desc = m.description
         if (desc.nonEmpty || sent.nonEmpty || received.nonEmpty)
-          Some(Commands(desc, HtmlMarkup.gfmToHtml(desc), received, sent))
+          Some(Commands(HtmlMarkup.gfmToHtml(desc), received, sent))
         else None
     }
   }

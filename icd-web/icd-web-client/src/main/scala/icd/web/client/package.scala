@@ -24,11 +24,10 @@ package object client {
       span(cls := "glyphicon glyphicon-warning-sign", "aria-hidden".attr := "true"),
       span(cls := "sr-only", "Warning"), s" $msg").toString()
   }
-
-  //  // From scala-js-jquery
-  //  object jquery extends js.GlobalScope {
-  //    import icd.web.client.JQueryStatic
-  //    val jQuery: JQueryStatic = js.native
-  //  }
 }
 
+//// From scala-js-jquery
+//package object jquery extends js.GlobalScope {
+//  import icd.web.client.JQueryStatic
+//  val jQuery: JQueryStatic = js.native
+//}

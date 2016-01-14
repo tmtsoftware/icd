@@ -15,7 +15,7 @@ object ComponentInfo {
     val publishes = info.publishes.map(p => p.copy(publishInfo = newPublishInfo))
     val commands = info.commands.map(c => c.copy(commandsReceived = newCommandsReceived))
 
-    ComponentInfo(info.subsystem, info.compName, info.title, info.description, info.htmlDescription, info.prefix,
+    ComponentInfo(info.subsystem, info.compName, info.title, info.description, info.prefix,
       info.componentType, info.wbsId, publishes, info.subscribes, commands)
   }
 }
@@ -23,23 +23,21 @@ object ComponentInfo {
 /**
   * ICD Component information passed to client
   *
-  * @param subsystem        subsystem name
-  * @param compName         component name
-  * @param title            component title
-  * @param description      component description (may contain markdown formatting)
-  * @param htmlDescription  component description in HTML format (after markdown processing)
-  * @param prefix           the component's prefix (for accessing published items)
-  * @param componentType    the component's type (Assembly, HCD, Sequencer, Application, Container)
-  * @param wbsId            component's WBS id
-  * @param publishes        describes items published by the component
-  * @param subscribes       describes items the component subscribes to
-  * @param commands     describes commands the component can send and receive
+  * @param subsystem     subsystem name
+  * @param compName      component name
+  * @param title         component title
+  * @param description   component description (in html format, after markdown processing)
+  * @param prefix        the component's prefix (for accessing published items)
+  * @param componentType the component's type (Assembly, HCD, Sequencer, Application, Container)
+  * @param wbsId         component's WBS id
+  * @param publishes     describes items published by the component
+  * @param subscribes    describes items the component subscribes to
+  * @param commands      describes commands the component can send and receive
   */
 case class ComponentInfo(subsystem: String,
                          compName: String,
                          title: String,
                          description: String,
-                         htmlDescription: String,
                          prefix: String,
                          componentType: String,
                          wbsId: String,
@@ -52,7 +50,7 @@ case class ComponentInfo(subsystem: String,
   *
   * @param itemType    the type of item ("telemetry", "event", etc.)
   * @param name        name of the item
-  * @param description description of the item
+  * @param description description of the item (in html format, after markdown processing)
   * @param subscribers a list of the other components that subscribe to this item
   */
 case class PublishInfo(itemType: String,
@@ -63,12 +61,10 @@ case class PublishInfo(itemType: String,
 /**
   * Describes what values a component publishes
   *
-  * @param description     optional top level description of published items (may contain markdown formatting)
-  * @param htmlDescription description in HTML format (after markdown processing)
-  * @param publishInfo     a list of published items
+  * @param description optional top level description of published items (in html format, after markdown processing)
+  * @param publishInfo a list of published items
   */
 case class Publishes(description: String,
-                     htmlDescription: String,
                      publishInfo: List[PublishInfo])
 
 /**
@@ -76,25 +72,25 @@ case class Publishes(description: String,
   *
   * @param itemType    the type of item ("telemetry", "event", etc.)
   * @param name        name (prefix.name) of the item
-  * @param description description of the item
+  * @param description description of the item (in html format, after markdown processing)
+  * @param usage       describes how the subscribed item is used (in html format, after markdown processing)
   * @param subsystem   the subsystem that publishes the value
   * @param compName    name of the component that publishes the value
   */
 case class SubscribeInfo(itemType: String,
                          name: String,
                          description: String,
+                         usage: String,
                          subsystem: String,
                          compName: String)
 
 /**
   * Describes what values a component subscribes to
   *
-  * @param description     optional top level description of subscribed items (may contain markdown formatting)
-  * @param htmlDescription description in HTML format (after markdown processing)
-  * @param subscribeInfo   a list of subscribed items
+  * @param description   optional top level description of subscribed items (in html format, after markdown processing)
+  * @param subscribeInfo a list of subscribed items
   */
 case class Subscribes(description: String,
-                      htmlDescription: String,
                       subscribeInfo: List[SubscribeInfo])
 
 /**
@@ -110,7 +106,7 @@ case class OtherComponent(subsystem: String,
   * Describes a configuration command sent to or received by a component
   *
   * @param name            the name of the command
-  * @param description     description of the command
+  * @param description     description of the command (in html format, after markdown processing)
   * @param otherComponents the other component (receiver, for sent commands, sender for received commands)
   */
 case class CommandInfo(name: String,
@@ -120,12 +116,10 @@ case class CommandInfo(name: String,
 /**
   * Describes what values a component subscribes to
   *
-  * @param description      optional top level description of commands (may contain markdown formatting)
-  * @param htmlDescription  description in HTML format (after markdown processing)
+  * @param description      optional top level description of commands (in html format, after markdown processing)
   * @param commandsReceived a list of commands received be this component
   * @param commandsSent     a list of commands sent by this component
   */
 case class Commands(description: String,
-                    htmlDescription: String,
                     commandsReceived: List[CommandInfo],
                     commandsSent: List[CommandInfo])

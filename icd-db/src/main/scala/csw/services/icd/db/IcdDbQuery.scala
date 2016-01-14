@@ -118,8 +118,9 @@ object IcdDbQuery {
    * @param subsystem the component's subsystem
    * @param subscribeType one of Telemetry, Events, Alarms, etc.
    * @param name the name of the item being subscribed to
+   * @param usage describes how the subscribed item is used
    */
-  case class Subscribed(componentName: String, subsystem: String, subscribeType: PublishType, name: String)
+  case class Subscribed(componentName: String, subsystem: String, subscribeType: PublishType, name: String, usage: String)
 
   implicit def toDbObject(query: (String, Any)): DBObject = MongoDBObject(query)
 
@@ -452,10 +453,10 @@ case class IcdDbQuery(db: MongoDB) {
   private def getSubscribedTo(component: ComponentModel): List[Subscribed] = {
     getSubscribeModel(component) match {
       case Some(subscribeModel) ⇒
-        List(subscribeModel.telemetryList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Telemetry, i.name)),
-          subscribeModel.eventList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Events, i.name)),
-          subscribeModel.eventStreamList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, EventStreams, i.name)),
-          subscribeModel.alarmList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Alarms, i.name))).flatten
+        List(subscribeModel.telemetryList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Telemetry, i.name, i.usage)),
+          subscribeModel.eventList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Events, i.name, i.usage)),
+          subscribeModel.eventStreamList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, EventStreams, i.name, i.usage)),
+          subscribeModel.alarmList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Alarms, i.name, i.usage))).flatten
       case None ⇒ Nil
     }
   }

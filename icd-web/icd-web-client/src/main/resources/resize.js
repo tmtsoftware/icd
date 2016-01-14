@@ -6,7 +6,6 @@ $(document).ready(function () {
         maxWidth: 1200,
         resize: function (event, ui) {
             var x = ui.element.outerWidth();
-            //var y=ui.element.outerHeight();
             var par = $(this).parent().width();
             var ele = ui.element;
             var factor = par - x;
@@ -16,7 +15,6 @@ $(document).ready(function () {
             }
 
             $.each(ele.siblings(), function (idx, item) {
-                //ele.siblings().eq(idx).css('height',y+'px');
                 ele.siblings().eq(idx).css('width', (factor) + 'px');
             });
 
@@ -26,6 +24,9 @@ $(document).ready(function () {
         }
     });
 });
+
+
+
 
 
 

@@ -70,6 +70,11 @@ object HtmlMarkup {
   }
 
   /**
+   * Returns the HTML for the text (markdown content supported)
+   */
+  def markdown(text: String) = raw(gfmToHtml(text))
+
+  /**
    * Returns an HTML paragraph for the text (markdown content supported)
    */
   def mkParagraph(text: String) = div(raw(gfmToHtml(text)))

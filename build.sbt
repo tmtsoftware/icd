@@ -134,7 +134,7 @@ lazy val icdWebClient = (project in file("icd-web/icd-web-client")).settings(
     "org.scala-js" %%% "scalajs-dom" % "0.8.2",
     "com.lihaoyi" %%% "scalatags" % "0.5.3",
     "com.lihaoyi" %%% "upickle" % "0.3.6",
-    "org.querki" %%% "jquery-facade" % "0.10", // includes jquery webjar!
+    "org.querki" %%% "jquery-facade" % "0.11", // includes jquery webjar!
     "com.github.japgolly.scalacss" %%% "core" % "0.3.1",
     "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.3.1"
   ),

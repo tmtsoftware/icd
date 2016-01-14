@@ -31,6 +31,25 @@ object Components {
 
   // Displayed version for unpublished APIs
   val unpublished = "(unpublished)"
+
+  // XXX Hack to toggle full text in description columns (see resize.css)
+  private def descriptionTableCell(htmlDesc: String) = {
+    import scalatags.JsDom.all._
+
+    // XXX This works, but the elipse is not displayed if html content is in the table cell
+    //    import jquery.{ jQuery ⇒ $ }
+    //    val tdId = UUID.randomUUID().toString
+    //    val divId = UUID.randomUUID().toString
+    //    def clicked()(e: dom.Event) = {
+    //      $(s"#$tdId").toggleClass("fullDescriptionTableCell")
+    //      $(s"#$divId").toggleClass("fullDescription")
+    //    }
+    //    td(id := tdId, cls := "shortDescriptionTableCell", onclick := clicked() _,
+    //      div(id := divId, cls := "shortDescription", onclick := clicked() _,
+    //        span(cls := "shortDescriptionSpan", onclick := clicked() _, raw(htmlDesc))))
+
+    td(raw(htmlDesc))
+  }
 }
 
 /**
@@ -185,7 +204,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       case Some(publishes) ⇒
         div(Styles.componentSection,
           h3(s"Items published by $compName"),
-          raw(publishes.htmlDescription),
+          raw(publishes.description),
           table(Styles.componentTable, "data-toggle".attr := "table",
             thead(
               tr(
@@ -198,7 +217,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                 tr(
                   td(p.name),
                   td(p.itemType),
-                  td(p.description),
+                  descriptionTableCell(p.description),
                   td(p.subscribers.map(makeLinkForSubscriber)))
               })))
     }
@@ -222,28 +241,36 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         onclick := clickedOnPublisher(info) _)
     }
 
+    // Splits the name of the subscribed item into component prefix and simple name
+    def getPrefixName(s: SubscribeInfo): (String, String) = {
+      val path = s.name.split('.')
+      val prefix = path.dropRight(1).mkString(".")
+      val name = path.last
+      (prefix, name)
+    }
+
     subscribesOpt match {
       case None ⇒ div()
       case Some(subscribes) ⇒
         div(Styles.componentSection,
           h3(s"Items subscribed to by $compName"),
-          raw(subscribes.htmlDescription),
+          raw(subscribes.description),
           table(Styles.componentTable, "data-toggle".attr := "table",
             thead(
               tr(
                 th("Prefix.Name"),
                 th("Type"),
                 th("Description"),
+                th("Usage"),
                 th("Publisher"))),
             tbody(
               for (s ← subscribes.subscribeInfo) yield {
-                val path = s.name.split('.')
-                val prefix = path.dropRight(1).mkString(".")
-                val name = path.last
+                val (prefix, name) = getPrefixName(s)
                 tr(
                   td(prefix, br, s".$name"),
                   td(s.itemType),
-                  td(s.description),
+                  descriptionTableCell(s.description),
+                  descriptionTableCell(s.usage),
                   td(makeLinkForPublisher(s)))
               })))
     }
@@ -278,7 +305,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           for (p ← info) yield {
             tr(
               td(p.name), // XXX TODO: Make link to command description page with details
-              td(p.description),
+              descriptionTableCell(p.description),
               td(p.otherComponents.map(makeLinkForSender)))
           })))
   }
@@ -312,7 +339,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           for (p ← info) yield {
             tr(
               td(p.name), // XXX TODO: Make link to command description page with details
-              td(p.description),
+              descriptionTableCell(p.description),
               td(p.otherComponents.map(makeLinkForReceiver)))
           })))
   }
@@ -325,7 +352,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       case Some(commands) ⇒
         div(cls := "nopagebreak")(
           h3(s"Commands for $compName"),
-          raw(commands.htmlDescription),
+          raw(commands.description),
           receivedCommandsMarkup(compName, commands.commandsReceived),
           sentCommandsMarkup(compName, commands.commandsSent))
     }
@@ -360,7 +387,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     div(Styles.component, id := getComponentInfoId(info.compName))(
       h2(info.compName),
-      raw(info.htmlDescription),
+      raw(info.description),
       componentInfoTableMarkup(info),
       publishMarkup(info.compName, info.publishes),
       subscribeMarkup(info.compName, info.subscribes),

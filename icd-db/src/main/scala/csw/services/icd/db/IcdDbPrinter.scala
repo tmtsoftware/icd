@@ -42,7 +42,7 @@ case class IcdDbPrinter(db: IcdDb) {
       case Some(publishes) ⇒
         div(cls := "nopagebreak")(
           h3(a(name := publishId(compName))(publishTitle(compName))),
-          raw(publishes.htmlDescription),
+          raw(publishes.description),
           table("data-toggle".attr := "table",
             thead(
               tr(
@@ -55,7 +55,7 @@ case class IcdDbPrinter(db: IcdDb) {
                 tr(
                   td(p.name),
                   td(p.itemType),
-                  td(p.description),
+                  td(raw(p.description)),
                   td(p.subscribers.map(_.compName).mkString(", ")))
               })))
 
@@ -74,13 +74,20 @@ case class IcdDbPrinter(db: IcdDb) {
       case Some(subscribes) ⇒
         div(cls := "nopagebreak")(
           h3(a(name := subscribeId(compName))(subscribeTitle(compName))),
-          raw(subscribes.htmlDescription),
+          raw(subscribes.description),
           table("data-toggle".attr := "table",
             thead(
+              // Set the column widths to keep the Usage column the same size as the Description column
+              col(width := "4%"),
+              col(width := "5%"),
+              col(width := "43%"),
+              col(width := "43%"),
+              col(width := "5%"),
               tr(
                 th("Prefix.Name"),
                 th("Type"),
                 th("Description"),
+                th("Usage"),
                 th("Publisher"))),
             tbody(
               for (s ← subscribes.subscribeInfo) yield {
@@ -90,7 +97,8 @@ case class IcdDbPrinter(db: IcdDb) {
                 tr(
                   td(prefix, br, s".$name"),
                   td(s.itemType),
-                  td(s.description),
+                  td(raw(s.description)),
+                  td(raw(s.usage)),
                   td(s.compName))
               })))
     }
@@ -118,7 +126,7 @@ case class IcdDbPrinter(db: IcdDb) {
           for (p ← info) yield {
             tr(
               td(p.name), // XXX TODO: Make link to command description page with details
-              td(p.description),
+              td(raw(p.description)),
               td(p.otherComponents.map(_.compName).mkString(", ")))
           })))
   }
@@ -145,7 +153,7 @@ case class IcdDbPrinter(db: IcdDb) {
           for (p ← info) yield {
             tr(
               td(p.name), // XXX TODO: Make link to command description page with details
-              td(p.description),
+              td(raw(p.description)),
               td(p.otherComponents.map(_.compName).mkString(", ")))
           })))
   }
@@ -162,7 +170,7 @@ case class IcdDbPrinter(db: IcdDb) {
       case Some(commands) ⇒
         div(cls := "nopagebreak")(
           h3(a(name := commandsId(compName))(commandsTitle(compName))),
-          raw(commands.htmlDescription),
+          raw(commands.description),
           receivedCommandsMarkup(compName, commands.commandsReceived),
           sentCommandsMarkup(compName, commands.commandsSent))
     }
@@ -194,7 +202,7 @@ case class IcdDbPrinter(db: IcdDb) {
     import scalatags.Text.all._
     div(cls := "pagebreakBefore")(
       h2(a(name := info.compName)(info.title)),
-      raw(info.htmlDescription),
+      raw(info.description),
       componentInfoTableMarkup(info),
       publishMarkup(info.compName, info.publishes),
       subscribeMarkup(info.compName, info.subscribes),

@@ -54,6 +54,7 @@ object Styles extends StyleSheet.Inline {
 
   // Control width of tables in the information displayed for selected components
   val componentTable = style(
+    tableLayout.fixed,
     maxWidth(90 %%))
 
   // Used for table columns that should not wrap
