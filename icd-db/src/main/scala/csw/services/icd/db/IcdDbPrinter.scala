@@ -43,7 +43,8 @@ case class IcdDbPrinter(db: IcdDb) {
         div(cls := "nopagebreak")(
           h3(a(name := publishId(compName))(publishTitle(compName))),
           raw(publishes.description),
-          table("data-toggle".attr := "table",
+          if (publishes.publishInfo.isEmpty) div()
+          else table("data-toggle".attr := "table",
             thead(
               tr(
                 th("Name"),
@@ -75,7 +76,8 @@ case class IcdDbPrinter(db: IcdDb) {
         div(cls := "nopagebreak")(
           h3(a(name := subscribeId(compName))(subscribeTitle(compName))),
           raw(subscribes.description),
-          table("data-toggle".attr := "table",
+          if (subscribes.subscribeInfo.isEmpty) div()
+          else table("data-toggle".attr := "table",
             thead(
               // Set the column widths to keep the Usage column the same size as the Description column
               col(width := "4%"),

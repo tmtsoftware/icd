@@ -186,7 +186,7 @@ object IcdComponentInfo {
   }
 
   /**
-   * Returns a list describing which components publish the given value.
+   * Returns a list describing which component(s) publish the given value.
    *
    * @param path             full path name of value (prefix + name)
    * @param publishType      telemetry, alarm, etc...
@@ -200,20 +200,17 @@ object IcdComponentInfo {
   }
 
   /**
-   * Gets a list of items the component subscribes to, along with the publisher of each item
+   * Gets a information about the items the component subscribes to, along with the publisher of each item
    *
    * @param models           the model objects for the component
    * @param targetModelsList the target model objects
    */
   private def getSubscribes(models: IcdModels, targetModelsList: List[IcdModels]): Option[Subscribes] = {
+    // Gets a list of items of a given type that the component subscribes to, with publisher info
     def getInfo(publishType: PublishType, si: csw.services.icd.model.SubscribeInfo): List[SubscribeInfo] = {
-      val info = publishes(si.name, publishType, targetModelsList).map { pi ⇒
+      publishes(si.name, publishType, targetModelsList).map { pi ⇒
         web.shared.SubscribeInfo(publishType.toString, si.name, HtmlMarkup.gfmToHtml(pi.item.description),
           HtmlMarkup.gfmToHtml(si.usage), si.subsystem, pi.componentName)
-      }
-      if (info.nonEmpty) info
-      else {
-        List(web.shared.SubscribeInfo(publishType.toString, si.name, "", "", si.subsystem, ""))
       }
     }
 

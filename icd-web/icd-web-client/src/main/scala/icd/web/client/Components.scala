@@ -205,7 +205,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         div(Styles.componentSection,
           h3(s"Items published by $compName"),
           raw(publishes.description),
-          table(Styles.componentTable, "data-toggle".attr := "table",
+          if (publishes.publishInfo.isEmpty) div()
+          else table(Styles.componentTable, "data-toggle".attr := "table",
             thead(
               tr(
                 th("Name"),
@@ -255,7 +256,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         div(Styles.componentSection,
           h3(s"Items subscribed to by $compName"),
           raw(subscribes.description),
-          table(Styles.componentTable, "data-toggle".attr := "table",
+          if (subscribes.subscribeInfo.isEmpty) div()
+          else table(Styles.componentTable, "data-toggle".attr := "table",
             thead(
               tr(
                 th("Prefix.Name"),

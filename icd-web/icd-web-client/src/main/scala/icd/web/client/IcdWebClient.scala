@@ -155,6 +155,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
         case target.subsystemOpt ⇒ target
         case _                   ⇒ SubsystemWithVersion(Some(link.subsystem), None)
       }
+      setSidebarVisible(false)
       components.setComponent(sv, link.compName)
       pushState(viewType = ComponentLinkView, linkComponent = Some(link))
     }
@@ -191,8 +192,8 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
           case UploadView    ⇒ uploadSelected(saveHistory = false)()
           case PublishView   ⇒ publishItemSelected(saveHistory = false)()
           case VersionView   ⇒ showVersionHistory(saveHistory = false)()
-          case ComponentView ⇒ updateComponentDisplay()
-          case IcdView       ⇒ updateComponentDisplay()
+          case ComponentView ⇒ updateComponentDisplay(hist.sourceComponents)
+          case IcdView       ⇒ updateComponentDisplay(hist.sourceComponents)
           case ComponentLinkView ⇒ hist.linkComponent.foreach { link ⇒
             val sv = SubsystemWithVersion(Some(link.subsystem), None) // XXX where to get version?
             setSidebarVisible(false)
@@ -214,14 +215,14 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
    * Updates the main display to match the selected components
    * @return a future indicating when the changes are done
    */
-  private def updateComponentDisplay(): Future[Unit] = {
+  private def updateComponentDisplay(compNames: List[String]): Future[Unit] = {
     val sub = subsystem.getSubsystemWithVersion
     val targetOpt = targetSubsystem.getSubsystemWithVersion
     val icdOpt = icdChooser.getSelectedIcdVersion
     setSidebarVisible(true)
     mainContent.clearContent()
     showBusyCursorWhile(
-      components.addComponents(sidebar.getSelectedComponents, sub, targetOpt, icdOpt))
+      components.addComponents(compNames, sub, targetOpt, icdOpt))
   }
 
   // Gets the list of subcomponents for the selected subsystem
@@ -254,7 +255,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
             _ ← Future.successful {
               names.foreach(sidebar.addComponent)
             }
-            _ ← updateComponentDisplay()
+            _ ← updateComponentDisplay(names)
           } yield if (saveHistory) pushState(viewType = ComponentView)
         case None ⇒
           targetSubsystem.setAllOptionsEnabled()
@@ -276,7 +277,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
       }
       for {
         _ ← icdChooser.selectMatchingIcd(subsystem.getSubsystemWithVersion, targSv)
-        _ ← updateComponentDisplay()
+        _ ← updateComponentDisplay(sidebar.getSelectedComponents)
       } yield {
         if (saveHistory) pushState(viewType = ComponentView)
       }
@@ -327,7 +328,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
             mainContent.clearContent()
             getComponentNames(sv).flatMap { names ⇒ // Future!
               names.foreach(sidebar.addComponent)
-              updateComponentDisplay().map { _ ⇒
+              updateComponentDisplay(names).map { _ ⇒
                 if (saveHistory) pushState(viewType = IcdView)
               }
             }
