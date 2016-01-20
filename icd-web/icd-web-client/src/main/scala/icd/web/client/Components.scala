@@ -1,12 +1,17 @@
 package icd.web.client
 
+import java.util.UUID
+
 import icd.web.shared._
 import org.scalajs.dom
 import org.scalajs.dom.ext.Ajax
+import org.scalajs.dom.raw.{ HTMLTableRowElement, HTMLButtonElement, HTMLDivElement }
 import upickle.default._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import Components._
+
+import scalatags.JsDom.TypedTag
 
 object Components {
   // Id of component info for given component name
@@ -198,34 +203,38 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         onclick := clickedOnSubscriber(info) _)
     }
 
-    /*
-    <button type="button" class="btn btn-success" data-toggle="collapse" data-target="#demo">
-      <span class="glyphicon glyphicon-collapse-down"></span> Open
-    </button>
+    // Expandable table row for attributes
+    def attributeListMarkup(attributesList: List[AttributeInfo], colSpan: Int): (TypedTag[HTMLButtonElement], TypedTag[HTMLTableRowElement]) = {
+      if (attributesList.isEmpty) (button(), tr())
+      else {
+        // button to toggle visibility
+        val idStr = UUID.randomUUID().toString
+        val btn = button(cls := s"btn$idStr attributeBtn btn btn-default btn-xs", "data-toggle".attr := "collapse", "data-target".attr := s"#$idStr")(
+          span(cls := "glyphicon glyphicon-collapse-down"))
 
-     */
-    def attributeListMarkup(attributesList: List[AttributeInfo]) = {
-      if (attributesList.isEmpty) div()
-      else div(cls := "nopagebreak")(
-        br,
-        strong("Attributes"),
-        table("data-toggle".attr := "table",
-          thead(
-            tr(
-              th("Name"),
-              th("Description"),
-              th("Type"),
-              th("Units"),
-              th("Default"))),
-          tbody(
-            for (a ← attributesList) yield {
-              tr(
-                td(a.name),
-                td(raw(a.description)),
-                td(a.typeStr),
-                td(a.units),
-                td(a.defaultValue))
-            })))
+        val row = tr(id := idStr, cls := "collapse")(
+          td(colspan := colSpan)(
+            div(cls := "nopagebreak")(
+              strong("Attributes"),
+              table(cls := "attributeTable", "data-toggle".attr := "table",
+                thead(
+                  tr(
+                    th("Name"),
+                    th("Description"),
+                    th("Type"),
+                    th("Units"),
+                    th("Default"))),
+                tbody(
+                  for (a ← attributesList) yield {
+                    tr(
+                      td(a.name),
+                      td(raw(a.description)),
+                      td(a.typeStr),
+                      td(a.units),
+                      td(a.defaultValue))
+                  })))))
+        (btn, row)
+      }
     }
 
     def publishTelemetryListMarkup(pubType: String, telemetryList: List[TelemetryInfo]) = {
@@ -244,11 +253,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               th("Subscribers"))),
           tbody(
             for (t ← telemetryList) yield {
-              tr(
-                td(t.name),
+              val (btn, attrRow) = attributeListMarkup(t.attributesList, 4)
+              List(tr(
+                td(cls := "attributeCell", btn, t.name),
                 td(s"${t.minRate} - ${t.maxRate} Hz", br, br, "Archive: ", br, if (t.archive) s" at ${t.archiveRate} Hz" else "No"),
-                td(raw(t.description), attributeListMarkup(t.attributesList)),
-                td(t.subscribers.map(makeLinkForSubscriber)))
+                td(raw(t.description)),
+                td(t.subscribers.map(makeLinkForSubscriber))),
+                attrRow)
             })))
     }
 
