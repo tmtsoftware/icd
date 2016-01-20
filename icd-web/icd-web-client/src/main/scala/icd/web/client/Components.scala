@@ -185,39 +185,57 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
-  // Expandable table row for attributes
-  private def attributeListMarkup(titleStr: String, attributesList: List[AttributeInfo], colSpan: Int): (TypedTag[HTMLButtonElement], TypedTag[HTMLTableRowElement]) = {
+  /**
+   * Returns a table of attributes
+   *
+   * @param titleStr       title to display above the table
+   * @param attributesList list of attributes to display
+   * @return
+   */
+  private def attributeListMarkup(titleStr: String, attributesList: List[AttributeInfo]): TypedTag[HTMLDivElement] = {
     import scalatags.JsDom.all._
-    if (attributesList.isEmpty) (button(), tr())
-    else {
-      // button to toggle visibility
-      val idStr = UUID.randomUUID().toString
-      val btn = button(cls := s"btn$idStr attributeBtn btn btn-default btn-xs", "data-toggle".attr := "collapse", "data-target".attr := s"#$idStr")(
-        span(cls := "glyphicon glyphicon-collapse-down"))
+    if (attributesList.isEmpty) div()
+    else
+      div(
+        strong(titleStr),
+        table(cls := "attributeTable", "data-toggle".attr := "table",
+          thead(
+            tr(
+              th("Name"),
+              th("Description"),
+              th("Type"),
+              th("Units"),
+              th("Default"))),
+          tbody(
+            for (a ← attributesList) yield {
+              tr(
+                td(a.name),
+                td(raw(a.description)),
+                td(a.typeStr),
+                td(a.units),
+                td(a.defaultValue))
+            })))
+  }
 
-      val row = tr(id := idStr, cls := "collapse")(
-        td(colspan := colSpan)(
-          div(cls := "nopagebreak")(
-            strong(titleStr),
-            table(cls := "attributeTable", "data-toggle".attr := "table",
-              thead(
-                tr(
-                  th("Name"),
-                  th("Description"),
-                  th("Type"),
-                  th("Units"),
-                  th("Default"))),
-              tbody(
-                for (a ← attributesList) yield {
-                  tr(
-                    td(a.name),
-                    td(raw(a.description)),
-                    td(a.typeStr),
-                    td(a.units),
-                    td(a.defaultValue))
-                })))))
-      (btn, row)
-    }
+  /**
+   * Returns a hidden, expandable table row containing the given div item
+   *
+   * @param item    the contents of the table row
+   * @param colSpan the number of columns to span
+   * @return a pair of (button, tr) elements, where the button toggles the visibility of the row
+   */
+  private def hiddenRowMarkup(item: TypedTag[HTMLDivElement], colSpan: Int): (TypedTag[HTMLButtonElement], TypedTag[HTMLTableRowElement]) = {
+    import scalatags.JsDom.all._
+    // button to toggle visibility
+    val idStr = UUID.randomUUID().toString
+    val btn = button(
+      cls := s"btn$idStr attributeBtn btn btn-default btn-xs",
+      "data-toggle".attr := "collapse",
+      "data-target".attr := s"#$idStr",
+      title := "Show/hide details")(
+        span(cls := "glyphicon glyphicon-collapse-down"))
+    val row = tr(id := idStr, cls := "collapse")(td(colspan := colSpan)(item))
+    (btn, row)
   }
 
   // Generates the HTML markup to display the component's publish information
@@ -238,35 +256,50 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         onclick := clickedOnSubscriber(info) _)
     }
 
+    def formatRate(rate: Double): String = if (rate == 0) "" else s"$rate Hz"
+
+    // Returns a table row displaying more details for the given telemetry
+    def makeDetailsRow(t: TelemetryInfo) = {
+      div(
+        table("data-toggle".attr := "table",
+          thead(tr(
+            th("Min Rate"),
+            th("Max Rate"),
+            th("Archive"),
+            th("Archive Rate"))),
+          tbody(tr(
+            td(formatRate(t.minRate)),
+            td(formatRate(t.maxRate)),
+            td(if (t.archive) "Yes" else "No"),
+            td(formatRate(t.archiveRate))))),
+        attributeListMarkup("Attributes", t.attributesList))
+    }
+
+    // Returns the markup for the published telemetry
     def publishTelemetryListMarkup(pubType: String, telemetryList: List[TelemetryInfo]) = {
       if (telemetryList.isEmpty) div()
-      else div(cls := "nopagebreak")(
+      else div(
         h4(s"$pubType Published by $compName"),
         table("data-toggle".attr := "table",
-          thead(col(width := "5%"),
-            col(width := "10%"),
-            col(width := "75%"),
-            col(width := "10%"),
+          thead(
             tr(
               th("Name"),
-              th("Rate"),
               th("Description"),
               th("Subscribers"))),
           tbody(
             for (t ← telemetryList) yield {
-              val (btn, attrRow) = attributeListMarkup("Attributes", t.attributesList, 4)
+              val (btn, row) = hiddenRowMarkup(makeDetailsRow(t), 4)
               List(tr(
                 td(cls := "attributeCell", btn, t.name),
-                td(s"${t.minRate} - ${t.maxRate} Hz", br, br, "Archive: ", br, if (t.archive) s" at ${t.archiveRate} Hz" else "No"),
                 td(raw(t.description)),
                 td(t.subscribers.map(makeLinkForSubscriber))),
-                attrRow)
+                row)
             })))
     }
 
     def publishEventListMarkup(eventList: List[EventInfo]) = {
       if (eventList.isEmpty) div()
-      else div(cls := "nopagebreak")(
+      else div(
         h4(s"Events Published by $compName"),
         table("data-toggle".attr := "table",
           thead(
@@ -291,7 +324,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     def publishAlarmListMarkup(alarmList: List[AlarmInfo]) = {
       if (alarmList.isEmpty) div()
-      else div(cls := "nopagebreak")(
+      else div(
         h4(s"Alarms Published by $compName"),
         table("data-toggle".attr := "table",
           thead(
@@ -394,6 +427,19 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       a(s"${sender.compName} ", href := "#", onclick := clickedOnSender(sender) _)
     }
 
+    // Returns a table row displaying more details for the given command
+    def makeDetailsRow(r: ReceivedCommandInfo) = {
+      div(
+        table("data-toggle".attr := "table",
+          thead(tr(
+            th("Requirements"),
+            th("Required Args"))),
+          tbody(tr(
+            td(r.requirements),
+            td(r.requiredArgs.mkString(", "))))),
+        attributeListMarkup("Arguments", r.args))
+    }
+
     // Only display non-empty tables
     if (info.isEmpty) div()
     else div(Styles.componentSection,
@@ -406,13 +452,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             th("Senders"))),
         tbody(
           for (r ← info) yield {
-            val (btn, attrRow) = attributeListMarkup("Arguments", r.args, 3)
+            val (btn, row) = hiddenRowMarkup(makeDetailsRow(r), 3)
             List(
               tr(
                 td(cls := "attributeCell", btn, r.name), // XXX TODO: Make link to command description page with details
                 td(raw(r.description)),
                 td(r.senders.map(makeLinkForSender))),
-              attrRow)
+              row)
           })))
   }
 
@@ -456,7 +502,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     commandsOpt match {
       case None ⇒ div()
       case Some(commands) ⇒
-        div(cls := "nopagebreak")(
+        div(
           h3(s"Commands for $compName"),
           raw(commands.description),
           receivedCommandsMarkup(compName, commands.commandsReceived),
