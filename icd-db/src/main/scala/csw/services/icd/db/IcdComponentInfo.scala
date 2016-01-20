@@ -123,7 +123,7 @@ object IcdComponentInfo {
               AlarmInfo(al.name, HtmlMarkup.gfmToHtml(al.description), al.severity, al.archive,
                 getSubscribers(subsystem, prefix, al.name, al.description, Alarms, targetModelsList))
             }
-            if (desc.nonEmpty || telemetryList.nonEmpty || eventList.nonEmpty || eventStreamList.nonEmpty || alarmList.nonEmpty)
+            if (telemetryList.nonEmpty || eventList.nonEmpty || eventStreamList.nonEmpty || alarmList.nonEmpty)
               Some(Publishes(desc, telemetryList, eventList, eventStreamList, alarmList))
             else None
         }
@@ -229,7 +229,7 @@ object IcdComponentInfo {
           m.eventStreamList.map(getInfo(EventStreams, _)) ++
           m.alarmList.map(getInfo(Alarms, _))
         val desc = m.description
-        if (desc.nonEmpty || subscribeInfo.nonEmpty)
+        if (subscribeInfo.nonEmpty)
           Some(Subscribes(HtmlMarkup.gfmToHtml(desc), subscribeInfo.flatten))
         else None
     }
@@ -329,7 +329,7 @@ object IcdComponentInfo {
       case None ⇒ None
       case Some(m) ⇒
         val desc = m.description
-        if (desc.nonEmpty || sent.nonEmpty || received.nonEmpty)
+        if (sent.nonEmpty || received.nonEmpty)
           Some(Commands(HtmlMarkup.gfmToHtml(desc), received, sent))
         else None
     }

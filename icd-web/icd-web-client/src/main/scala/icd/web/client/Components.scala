@@ -185,6 +185,41 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
+  // Expandable table row for attributes
+  private def attributeListMarkup(titleStr: String, attributesList: List[AttributeInfo], colSpan: Int): (TypedTag[HTMLButtonElement], TypedTag[HTMLTableRowElement]) = {
+    import scalatags.JsDom.all._
+    if (attributesList.isEmpty) (button(), tr())
+    else {
+      // button to toggle visibility
+      val idStr = UUID.randomUUID().toString
+      val btn = button(cls := s"btn$idStr attributeBtn btn btn-default btn-xs", "data-toggle".attr := "collapse", "data-target".attr := s"#$idStr")(
+        span(cls := "glyphicon glyphicon-collapse-down"))
+
+      val row = tr(id := idStr, cls := "collapse")(
+        td(colspan := colSpan)(
+          div(cls := "nopagebreak")(
+            strong(titleStr),
+            table(cls := "attributeTable", "data-toggle".attr := "table",
+              thead(
+                tr(
+                  th("Name"),
+                  th("Description"),
+                  th("Type"),
+                  th("Units"),
+                  th("Default"))),
+              tbody(
+                for (a ← attributesList) yield {
+                  tr(
+                    td(a.name),
+                    td(raw(a.description)),
+                    td(a.typeStr),
+                    td(a.units),
+                    td(a.defaultValue))
+                })))))
+      (btn, row)
+    }
+  }
+
   // Generates the HTML markup to display the component's publish information
   private def publishMarkup(compName: String, publishesOpt: Option[Publishes]) = {
     import scalatags.JsDom.all._
@@ -203,40 +238,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         onclick := clickedOnSubscriber(info) _)
     }
 
-    // Expandable table row for attributes
-    def attributeListMarkup(attributesList: List[AttributeInfo], colSpan: Int): (TypedTag[HTMLButtonElement], TypedTag[HTMLTableRowElement]) = {
-      if (attributesList.isEmpty) (button(), tr())
-      else {
-        // button to toggle visibility
-        val idStr = UUID.randomUUID().toString
-        val btn = button(cls := s"btn$idStr attributeBtn btn btn-default btn-xs", "data-toggle".attr := "collapse", "data-target".attr := s"#$idStr")(
-          span(cls := "glyphicon glyphicon-collapse-down"))
-
-        val row = tr(id := idStr, cls := "collapse")(
-          td(colspan := colSpan)(
-            div(cls := "nopagebreak")(
-              strong("Attributes"),
-              table(cls := "attributeTable", "data-toggle".attr := "table",
-                thead(
-                  tr(
-                    th("Name"),
-                    th("Description"),
-                    th("Type"),
-                    th("Units"),
-                    th("Default"))),
-                tbody(
-                  for (a ← attributesList) yield {
-                    tr(
-                      td(a.name),
-                      td(raw(a.description)),
-                      td(a.typeStr),
-                      td(a.units),
-                      td(a.defaultValue))
-                  })))))
-        (btn, row)
-      }
-    }
-
     def publishTelemetryListMarkup(pubType: String, telemetryList: List[TelemetryInfo]) = {
       if (telemetryList.isEmpty) div()
       else div(cls := "nopagebreak")(
@@ -253,7 +254,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               th("Subscribers"))),
           tbody(
             for (t ← telemetryList) yield {
-              val (btn, attrRow) = attributeListMarkup(t.attributesList, 4)
+              val (btn, attrRow) = attributeListMarkup("Attributes", t.attributesList, 4)
               List(tr(
                 td(cls := "attributeCell", btn, t.name),
                 td(s"${t.minRate} - ${t.maxRate} Hz", br, br, "Archive: ", br, if (t.archive) s" at ${t.archiveRate} Hz" else "No"),
@@ -405,10 +406,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             th("Senders"))),
         tbody(
           for (r ← info) yield {
-            tr(
-              td(r.name), // XXX TODO: Make link to command description page with details
-              td(raw(r.description)),
-              td(r.senders.map(makeLinkForSender)))
+            val (btn, attrRow) = attributeListMarkup("Arguments", r.args, 3)
+            List(
+              tr(
+                td(cls := "attributeCell", btn, r.name), // XXX TODO: Make link to command description page with details
+                td(raw(r.description)),
+                td(r.senders.map(makeLinkForSender))),
+              attrRow)
           })))
   }
 
