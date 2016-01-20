@@ -39,8 +39,7 @@ object Application extends Controller {
     import upickle.default._
     db.versionManager.getSubsystemModel(subsystem, versionOpt) match {
       case Some(model) ⇒
-        val info = SubsystemInfo(model.subsystem, versionOpt, model.title,
-          model.description, HtmlMarkup.gfmToHtml(model.description))
+        val info = SubsystemInfo(model.subsystem, versionOpt, model.title, HtmlMarkup.gfmToHtml(model.description))
         val json = write(info)
         Ok(json).as(JSON)
       case None ⇒

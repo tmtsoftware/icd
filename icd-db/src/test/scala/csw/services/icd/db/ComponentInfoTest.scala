@@ -27,9 +27,9 @@ class ComponentInfoTest extends FunSuite {
     val info = ComponentInfoHelper.getComponentInfo(db.query, "NFIRAOS", None, "lgsWfs")
     assert(info.compName == "lgsWfs")
     assert(info.publishes.nonEmpty)
-    assert(info.publishes.get.publishInfo.nonEmpty)
-    info.publishes.get.publishInfo.foreach { pubInfo ⇒
-      println(s"envCtrl publishes ${pubInfo.name}")
+    assert(info.publishes.get.telemetryList.nonEmpty)
+    info.publishes.get.telemetryList.foreach { pubInfo ⇒
+      println(s"envCtrl publishes telemetry: ${pubInfo.name}")
       pubInfo.subscribers.foreach { subInfo ⇒
         println(s"${subInfo.compName} from ${subInfo.subsystem} subscribes to ${subInfo.name}")
       }

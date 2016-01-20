@@ -11,11 +11,9 @@ object SubsystemInfo {
   * @param subsystem       the subsystem
   * @param versionOpt      optional version (default: latest)
   * @param title           the subsystem title
-  * @param description     the subsystem description (may contain markdown formatting)
-  * @param htmlDescription the subsystem description as HTML (after markdown processing)
+  * @param description     the subsystem description as HTML (after markdown processing)
   */
-case class SubsystemInfo(subsystem: String, versionOpt: Option[String], title: String,
-                         description: String, htmlDescription: String)
+case class SubsystemInfo(subsystem: String, versionOpt: Option[String], title: String, description: String)
 
 /**
   * Holds an optional subsystem and optional subsystem version

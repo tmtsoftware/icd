@@ -32,24 +32,24 @@ object Components {
   // Displayed version for unpublished APIs
   val unpublished = "(unpublished)"
 
-  // XXX Hack to toggle full text in description columns (see resize.css)
-  private def descriptionTableCell(htmlDesc: String) = {
-    import scalatags.JsDom.all._
-
-    // XXX This works, but the elipse is not displayed if html content is in the table cell
-    //    import jquery.{ jQuery ⇒ $ }
-    //    val tdId = UUID.randomUUID().toString
-    //    val divId = UUID.randomUUID().toString
-    //    def clicked()(e: dom.Event) = {
-    //      $(s"#$tdId").toggleClass("fullDescriptionTableCell")
-    //      $(s"#$divId").toggleClass("fullDescription")
-    //    }
-    //    td(id := tdId, cls := "shortDescriptionTableCell", onclick := clicked() _,
-    //      div(id := divId, cls := "shortDescription", onclick := clicked() _,
-    //        span(cls := "shortDescriptionSpan", onclick := clicked() _, raw(htmlDesc))))
-
-    td(raw(htmlDesc))
-  }
+  //  // XXX Hack to toggle full text in description columns (see resize.css)
+  //  private def descriptionTableCell(htmlDesc: String) = {
+  //    import scalatags.JsDom.all._
+  //
+  //    // XXX This works, but the elipse is not displayed if html content is in the table cell
+  //    //    import jquery.{ jQuery ⇒ $ }
+  //    //    val tdId = UUID.randomUUID().toString
+  //    //    val divId = UUID.randomUUID().toString
+  //    //    def clicked()(e: dom.Event) = {
+  //    //      $(s"#$tdId").toggleClass("fullDescriptionTableCell")
+  //    //      $(s"#$divId").toggleClass("fullDescription")
+  //    //    }
+  //    //    td(id := tdId, cls := "shortDescriptionTableCell", onclick := clicked() _,
+  //    //      div(id := divId, cls := "shortDescription", onclick := clicked() _,
+  //    //        span(cls := "shortDescriptionSpan", onclick := clicked() _, raw(htmlDesc))))
+  //
+  //    td(raw(htmlDesc))
+  //  }
 }
 
 /**
@@ -198,29 +198,118 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         onclick := clickedOnSubscriber(info) _)
     }
 
-    // Only display non-empty tables
+    /*
+    <button type="button" class="btn btn-success" data-toggle="collapse" data-target="#demo">
+      <span class="glyphicon glyphicon-collapse-down"></span> Open
+    </button>
+
+     */
+    def attributeListMarkup(attributesList: List[AttributeInfo]) = {
+      if (attributesList.isEmpty) div()
+      else div(cls := "nopagebreak")(
+        br,
+        strong("Attributes"),
+        table("data-toggle".attr := "table",
+          thead(
+            tr(
+              th("Name"),
+              th("Description"),
+              th("Type"),
+              th("Units"),
+              th("Default"))),
+          tbody(
+            for (a ← attributesList) yield {
+              tr(
+                td(a.name),
+                td(raw(a.description)),
+                td(a.typeStr),
+                td(a.units),
+                td(a.defaultValue))
+            })))
+    }
+
+    def publishTelemetryListMarkup(pubType: String, telemetryList: List[TelemetryInfo]) = {
+      if (telemetryList.isEmpty) div()
+      else div(cls := "nopagebreak")(
+        h4(s"$pubType Published by $compName"),
+        table("data-toggle".attr := "table",
+          thead(col(width := "5%"),
+            col(width := "10%"),
+            col(width := "75%"),
+            col(width := "10%"),
+            tr(
+              th("Name"),
+              th("Rate"),
+              th("Description"),
+              th("Subscribers"))),
+          tbody(
+            for (t ← telemetryList) yield {
+              tr(
+                td(t.name),
+                td(s"${t.minRate} - ${t.maxRate} Hz", br, br, "Archive: ", br, if (t.archive) s" at ${t.archiveRate} Hz" else "No"),
+                td(raw(t.description), attributeListMarkup(t.attributesList)),
+                td(t.subscribers.map(makeLinkForSubscriber)))
+            })))
+    }
+
+    def publishEventListMarkup(eventList: List[EventInfo]) = {
+      if (eventList.isEmpty) div()
+      else div(cls := "nopagebreak")(
+        h4(s"Events Published by $compName"),
+        table("data-toggle".attr := "table",
+          thead(
+            tr(
+              th("Name"),
+              th("Description"),
+              th("Type"),
+              th("Units"),
+              th("Default"),
+              th("Subscribers"))),
+          tbody(
+            for (e ← eventList) yield {
+              tr(
+                td(e.attr.name),
+                td(raw(e.attr.description)),
+                td(e.attr.typeStr),
+                td(e.attr.units),
+                td(e.attr.defaultValue),
+                td(e.subscribers.map(makeLinkForSubscriber)))
+            })))
+    }
+
+    def publishAlarmListMarkup(alarmList: List[AlarmInfo]) = {
+      if (alarmList.isEmpty) div()
+      else div(cls := "nopagebreak")(
+        h4(s"Alarms Published by $compName"),
+        table("data-toggle".attr := "table",
+          thead(
+            tr(
+              th("Name"),
+              th("Description"),
+              th("Severity"),
+              th("Archive"),
+              th("Subscribers"))),
+          tbody(
+            for (a ← alarmList) yield {
+              tr(
+                td(a.name),
+                td(raw(a.description)),
+                td(a.severity),
+                td(if (a.archive) "Yes" else "No"),
+                td(a.subscribers.map(makeLinkForSubscriber)))
+            })))
+    }
+
     publishesOpt match {
       case None ⇒ div()
       case Some(publishes) ⇒
         div(Styles.componentSection,
           h3(s"Items published by $compName"),
           raw(publishes.description),
-          if (publishes.publishInfo.isEmpty) div()
-          else table(Styles.componentTable, "data-toggle".attr := "table",
-            thead(
-              tr(
-                th("Name"),
-                th("Type"),
-                th("Description"),
-                th("Subscribers"))),
-            tbody(
-              for (p ← publishes.publishInfo) yield {
-                tr(
-                  td(p.name),
-                  td(p.itemType),
-                  descriptionTableCell(p.description),
-                  td(p.subscribers.map(makeLinkForSubscriber)))
-              })))
+          publishTelemetryListMarkup("Telemetry", publishes.telemetryList),
+          publishEventListMarkup(publishes.eventList),
+          publishTelemetryListMarkup("Event Streams", publishes.eventStreamList),
+          publishAlarmListMarkup(publishes.alarmList))
     }
   }
 
@@ -271,15 +360,15 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                 tr(
                   td(prefix, br, s".$name"),
                   td(s.itemType),
-                  descriptionTableCell(s.description),
-                  descriptionTableCell(s.usage),
+                  td(raw(s.description)),
+                  td(raw(s.usage)),
                   td(makeLinkForPublisher(s)))
               })))
     }
   }
 
   // Generates the HTML markup to display the commands a component receives
-  private def receivedCommandsMarkup(compName: String, info: List[CommandInfo]) = {
+  private def receivedCommandsMarkup(compName: String, info: List[ReceivedCommandInfo]) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
@@ -304,16 +393,16 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             th("Description"),
             th("Senders"))),
         tbody(
-          for (p ← info) yield {
+          for (r ← info) yield {
             tr(
-              td(p.name), // XXX TODO: Make link to command description page with details
-              descriptionTableCell(p.description),
-              td(p.otherComponents.map(makeLinkForSender)))
+              td(r.name), // XXX TODO: Make link to command description page with details
+              td(raw(r.description)),
+              td(r.senders.map(makeLinkForSender)))
           })))
   }
 
   // Generates the HTML markup to display the commands a component sends
-  private def sentCommandsMarkup(compName: String, info: List[CommandInfo]) = {
+  private def sentCommandsMarkup(compName: String, info: List[SentCommandInfo]) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
@@ -338,11 +427,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             th("Description"),
             th("Receiver"))),
         tbody(
-          for (p ← info) yield {
+          for (s ← info) yield {
             tr(
-              td(p.name), // XXX TODO: Make link to command description page with details
-              descriptionTableCell(p.description),
-              td(p.otherComponents.map(makeLinkForReceiver)))
+              td(s.name), // XXX TODO: Make link to command description page with details
+              td(raw(s.description)),
+              td(s.receivers.map(makeLinkForReceiver)))
           })))
   }
 

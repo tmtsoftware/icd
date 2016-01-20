@@ -39,7 +39,7 @@ object TitleInfo {
         TitleInfo(title, Some(subtitle), None)
       } else {
         TitleInfo(s"API for ${subsystemInfo.subsystem} $version",
-          Some(subsystemInfo.title), Some(subsystemInfo.htmlDescription))
+          Some(subsystemInfo.title), Some(subsystemInfo.description))
       }
     }
   }

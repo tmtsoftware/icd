@@ -2,7 +2,7 @@ package csw.services.icd.db
 
 import csw.services.icd.db.IcdDbQuery.{ Alarms, EventStreams, Events, PublishType, Telemetry }
 import csw.services.icd.html.HtmlMarkup
-import csw.services.icd.model.{ ComponentModel, IcdModels }
+import csw.services.icd.model.{ JsonSchemaModel, ComponentModel, IcdModels }
 import icd.web.shared._
 
 /**
@@ -78,41 +78,10 @@ object ComponentInfoHelper {
   }
 
   /**
-   * Gets information about the items published by a component, along with a reference to the subscribers to each item
-   *
-   * @param query  database query handle
-   * @param models the model objects for the component
+   * Gets display information about an attribute from the given model object
    */
-  private def getPublishes(query: IcdDbQuery, models: IcdModels): Option[Publishes] = {
-    models.componentModel match {
-      case None ⇒ None
-      case Some(componentModel) ⇒
-        val prefix = componentModel.prefix
-        models.publishModel match {
-          case None ⇒ None
-          case Some(m) ⇒
-            val publishInfo = m.telemetryList.map { t ⇒
-              PublishInfo("Telemetry", t.name, HtmlMarkup.gfmToHtml(t.description),
-                getSubscribers(query, prefix, t.name, t.description, Telemetry))
-            } ++
-              m.eventList.map { el ⇒
-                PublishInfo("Event", el.name, HtmlMarkup.gfmToHtml(el.description),
-                  getSubscribers(query, prefix, el.name, el.description, Events))
-              } ++
-              m.eventStreamList.map { esl ⇒
-                PublishInfo("EventStream", esl.name, HtmlMarkup.gfmToHtml(esl.description),
-                  getSubscribers(query, prefix, esl.name, esl.description, EventStreams))
-              } ++
-              m.alarmList.map { al ⇒
-                PublishInfo("Alarm", al.name, HtmlMarkup.gfmToHtml(al.description),
-                  getSubscribers(query, prefix, al.name, al.description, Alarms))
-              }
-            val desc = m.description
-            if (desc.nonEmpty || publishInfo.nonEmpty)
-              Some(Publishes(HtmlMarkup.gfmToHtml(desc), publishInfo))
-            else None
-        }
-    }
+  private def getAttributeInfo(a: JsonSchemaModel): AttributeInfo = {
+    AttributeInfo(a.name, HtmlMarkup.gfmToHtml(a.description), a.typeStr, a.units, a.defaultValue)
   }
 
   /**
@@ -129,6 +98,44 @@ object ComponentInfoHelper {
     query.subscribes(s"$prefix.$name", subscribeType).map { s ⇒
       SubscribeInfo(s.subscribeType.toString, s.name, HtmlMarkup.gfmToHtml(desc),
         HtmlMarkup.gfmToHtml(s.usage), s.subsystem, s.componentName)
+    }
+  }
+
+  /**
+   * Gets information about the items published by a component, along with a reference to the subscribers to each item
+   *
+   * @param query  database query handle
+   * @param models the model objects for the component
+   */
+  private def getPublishes(query: IcdDbQuery, models: IcdModels): Option[Publishes] = {
+    models.componentModel match {
+      case None ⇒ None
+      case Some(componentModel) ⇒
+        val prefix = componentModel.prefix
+        models.publishModel match {
+          case None ⇒ None
+          case Some(m) ⇒
+            val desc = HtmlMarkup.gfmToHtml(m.description)
+            val telemetryList = m.telemetryList.map { t ⇒
+              TelemetryInfo(t.name, HtmlMarkup.gfmToHtml(t.description), t.minRate, t.maxRate, t.archive, t.archiveRate,
+                t.attributesList.map(getAttributeInfo), getSubscribers(query, prefix, t.name, t.description, Telemetry))
+            }
+            val eventList = m.eventList.map { el ⇒
+              EventInfo(getAttributeInfo(el),
+                getSubscribers(query, prefix, el.name, el.description, Events))
+            }
+            val eventStreamList = m.eventStreamList.map { t ⇒
+              TelemetryInfo(t.name, HtmlMarkup.gfmToHtml(t.description), t.minRate, t.maxRate, t.archive, t.archiveRate,
+                t.attributesList.map(getAttributeInfo), getSubscribers(query, prefix, t.name, t.description, EventStreams))
+            }
+            val alarmList = m.alarmList.map { al ⇒
+              AlarmInfo(al.name, HtmlMarkup.gfmToHtml(al.description), al.severity, al.archive,
+                getSubscribers(query, prefix, al.name, al.description, Alarms))
+            }
+            if (desc.nonEmpty || telemetryList.nonEmpty || eventList.nonEmpty || eventStreamList.nonEmpty || alarmList.nonEmpty)
+              Some(Publishes(desc, telemetryList, eventList, eventStreamList, alarmList))
+            else None
+        }
     }
   }
 
@@ -172,14 +179,16 @@ object ComponentInfoHelper {
    * @param query  database query handle
    * @param models model objects for component
    */
-  private def getCommandsReceived(query: IcdDbQuery, models: IcdModels): List[CommandInfo] = {
+  private def getCommandsReceived(query: IcdDbQuery, models: IcdModels): List[ReceivedCommandInfo] = {
     for {
       cmd ← models.commandModel.toList
       received ← cmd.receive
     } yield {
       val senders = query.getCommandSenders(cmd.subsystem, cmd.component, received.name).map(comp ⇒
         OtherComponent(comp.subsystem, comp.component))
-      CommandInfo(received.name, HtmlMarkup.gfmToHtml(received.description), senders)
+      val desc = HtmlMarkup.gfmToHtml(received.description)
+      val args = received.args.map(getAttributeInfo)
+      ReceivedCommandInfo(received.name, desc, senders, received.requirements, received.requiredArgs, args)
     }
   }
 
@@ -190,13 +199,13 @@ object ComponentInfoHelper {
    * @param query  database query handle
    * @param models model objects for component
    */
-  private def getCommandsSent(query: IcdDbQuery, models: IcdModels): List[CommandInfo] = {
+  private def getCommandsSent(query: IcdDbQuery, models: IcdModels): List[SentCommandInfo] = {
     val result = for {
       cmd ← models.commandModel.toList
       sent ← cmd.send
     } yield {
       query.getCommand(sent.subsystem, sent.component, sent.name).map { r ⇒
-        CommandInfo(sent.name, HtmlMarkup.gfmToHtml(r.description),
+        SentCommandInfo(sent.name, HtmlMarkup.gfmToHtml(r.description),
           List(OtherComponent(sent.subsystem, sent.component)))
       }
     }

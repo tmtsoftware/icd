@@ -2,7 +2,7 @@ package csw.services.icd.db
 
 import csw.services.icd.db.IcdDbQuery.{ Published, PublishInfo, PublishedItem, Subscribed, PublishType, Alarms, EventStreams, Events, Telemetry }
 import csw.services.icd.html.HtmlMarkup
-import csw.services.icd.model.{ ReceiveCommandModel, ComponentModel, IcdModels }
+import csw.services.icd.model.{ JsonSchemaModel, ReceiveCommandModel, ComponentModel, IcdModels }
 import icd.web
 import icd.web.shared._
 
@@ -85,6 +85,13 @@ object IcdComponentInfo {
   }
 
   /**
+   * Gets display information about an attribute from the given model object
+   */
+  private def getAttributeInfo(a: JsonSchemaModel): AttributeInfo = {
+    AttributeInfo(a.name, HtmlMarkup.gfmToHtml(a.description), a.typeStr, a.units, a.defaultValue)
+  }
+
+  /**
    * Gets information about the items published by a component
    *
    * @param subsystem        the source subsystem
@@ -99,25 +106,25 @@ object IcdComponentInfo {
         models.publishModel match {
           case None ⇒ None
           case Some(m) ⇒
-            val publishInfo = m.telemetryList.map { t ⇒
-              web.shared.PublishInfo("Telemetry", t.name, HtmlMarkup.gfmToHtml(t.description),
-                getSubscribers(subsystem, prefix, t.name, t.description, Telemetry, targetModelsList))
-            } ++
-              m.eventList.map { el ⇒
-                web.shared.PublishInfo("Event", el.name, HtmlMarkup.gfmToHtml(el.description),
-                  getSubscribers(subsystem, prefix, el.name, el.description, Events, targetModelsList))
-              } ++
-              m.eventStreamList.map { esl ⇒
-                web.shared.PublishInfo("EventStream", esl.name, HtmlMarkup.gfmToHtml(esl.description),
-                  getSubscribers(subsystem, prefix, esl.name, esl.description, EventStreams, targetModelsList))
-              } ++
-              m.alarmList.map { al ⇒
-                web.shared.PublishInfo("Alarm", al.name, HtmlMarkup.gfmToHtml(al.description),
-                  getSubscribers(subsystem, prefix, al.name, al.description, Alarms, targetModelsList))
-              }
-            val desc = m.description
-            if (desc.nonEmpty || publishInfo.nonEmpty)
-              Some(Publishes(HtmlMarkup.gfmToHtml(desc), publishInfo))
+            val desc = HtmlMarkup.gfmToHtml(m.description)
+            val telemetryList = m.telemetryList.map { t ⇒
+              TelemetryInfo(t.name, HtmlMarkup.gfmToHtml(t.description), t.minRate, t.maxRate, t.archive, t.archiveRate,
+                t.attributesList.map(getAttributeInfo), getSubscribers(subsystem, prefix, t.name, t.description, Telemetry, targetModelsList))
+            }
+            val eventList = m.eventList.map { el ⇒
+              EventInfo(getAttributeInfo(el),
+                getSubscribers(subsystem, prefix, el.name, el.description, Events, targetModelsList))
+            }
+            val eventStreamList = m.eventStreamList.map { t ⇒
+              TelemetryInfo(t.name, HtmlMarkup.gfmToHtml(t.description), t.minRate, t.maxRate, t.archive, t.archiveRate,
+                t.attributesList.map(getAttributeInfo), getSubscribers(subsystem, prefix, t.name, t.description, EventStreams, targetModelsList))
+            }
+            val alarmList = m.alarmList.map { al ⇒
+              AlarmInfo(al.name, HtmlMarkup.gfmToHtml(al.description), al.severity, al.archive,
+                getSubscribers(subsystem, prefix, al.name, al.description, Alarms, targetModelsList))
+            }
+            if (desc.nonEmpty || telemetryList.nonEmpty || eventList.nonEmpty || eventStreamList.nonEmpty || alarmList.nonEmpty)
+              Some(Publishes(desc, telemetryList, eventList, eventStreamList, alarmList))
             else None
         }
     }
@@ -255,14 +262,16 @@ object IcdComponentInfo {
    * @param models           the model objects for the component
    * @param targetModelsList the target model objects
    */
-  private def getCommandsReceived(models: IcdModels, targetModelsList: List[IcdModels]): List[CommandInfo] = {
+  private def getCommandsReceived(models: IcdModels, targetModelsList: List[IcdModels]): List[ReceivedCommandInfo] = {
     for {
       cmd ← models.commandModel.toList
       received ← cmd.receive
     } yield {
       val senders = getCommandSenders(cmd.subsystem, cmd.component, received.name, targetModelsList).map(comp ⇒
         OtherComponent(comp.subsystem, comp.component))
-      CommandInfo(received.name, HtmlMarkup.gfmToHtml(received.description), senders)
+      val desc = HtmlMarkup.gfmToHtml(received.description)
+      val args = received.args.map(getAttributeInfo)
+      ReceivedCommandInfo(received.name, desc, senders, received.requirements, received.requiredArgs, args)
     }
   }
 
@@ -294,13 +303,13 @@ object IcdComponentInfo {
    * @param models           the model objects for the component
    * @param targetModelsList the target model objects
    */
-  private def getCommandsSent(models: IcdModels, targetModelsList: List[IcdModels]): List[CommandInfo] = {
+  private def getCommandsSent(models: IcdModels, targetModelsList: List[IcdModels]): List[SentCommandInfo] = {
     val result = for {
       cmd ← models.commandModel.toList
       sent ← cmd.send
     } yield {
       getCommand(sent.subsystem, sent.component, sent.name, targetModelsList).map { r ⇒
-        CommandInfo(sent.name, HtmlMarkup.gfmToHtml(r.description),
+        SentCommandInfo(sent.name, HtmlMarkup.gfmToHtml(r.description),
           List(OtherComponent(sent.subsystem, sent.component)))
       }
     }

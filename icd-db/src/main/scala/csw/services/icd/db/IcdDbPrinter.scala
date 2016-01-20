@@ -15,7 +15,7 @@ import scalatags.Text
  */
 case class IcdDbPrinter(db: IcdDb) {
 
-  // Note: I thought about sharing parts of this code with the scala.js client, but
+  // Note: You would think we could share parts of this code with the scala.js client, but
   // here we import scalatags.Text.all._ and in scala.js its scalatags.JsDom.all._.
   // The difference is that here we generate plain HTML text, while in scala.js you can
   // create a DOM structure with event handlers, etc.
@@ -34,32 +34,109 @@ case class IcdDbPrinter(db: IcdDb) {
 
   private def publishTitle(compName: String): String = s"Items published by $compName"
 
+  private def attributeListMarkup(titleStr: String, attributesList: List[AttributeInfo]): Text.TypedTag[String] = {
+    import scalatags.Text.all._
+    if (attributesList.isEmpty) div()
+    else div(cls := "nopagebreak")(
+      h4(a(titleStr)),
+      table("data-toggle".attr := "table",
+        thead(
+          tr(
+            th("Name"),
+            th("Description"),
+            th("Type"),
+            th("Units"),
+            th("Default"))),
+        tbody(
+          for (a ← attributesList) yield {
+            tr(
+              td(a.name),
+              td(raw(a.description)),
+              td(a.typeStr),
+              td(a.units),
+              td(a.defaultValue))
+          })))
+  }
+
   // Generates the HTML markup to display the component's publish information
   private def publishMarkup(compName: String, publishesOpt: Option[Publishes]): Text.TypedTag[String] = {
     import scalatags.Text.all._
+
+    def publishTelemetryListMarkup(pubType: String, telemetryList: List[TelemetryInfo]): Text.TypedTag[String] = {
+      if (telemetryList.isEmpty) div()
+      else div(cls := "nopagebreak")(
+        h4(a(pubType)),
+        for (t ← telemetryList) yield {
+          div(cls := "nopagebreak")(
+            h4(a(s"$pubType: ${t.name}")),
+            raw(t.description),
+            table("data-toggle".attr := "table",
+              thead(
+                tr(th("Min Rate"), th("Max Rate"), th("Archive"), th("Archive Rate"), th("Subscribers"))),
+              tbody(
+                tr(td(t.minRate), td(t.maxRate), td(if (t.archive) "yes" else "no"), td(t.archiveRate), td(t.subscribers.map(_.compName).mkString(", "))))),
+            attributeListMarkup(s"Attributes for ${t.name}", t.attributesList), hr)
+        })
+    }
+
+    def publishEventListMarkup(eventList: List[EventInfo]): Text.TypedTag[String] = {
+      if (eventList.isEmpty) div()
+      else div(cls := "nopagebreak")(
+        h4(a("Events")),
+        table("data-toggle".attr := "table",
+          thead(
+            tr(
+              th("Name"),
+              th("Description"),
+              th("Type"),
+              th("Units"),
+              th("Default"),
+              th("Subscribers"))),
+          tbody(
+            for (e ← eventList) yield {
+              tr(
+                td(e.attr.name),
+                td(raw(e.attr.description)),
+                td(e.attr.typeStr),
+                td(e.attr.units),
+                td(e.attr.defaultValue),
+                td(e.subscribers.map(_.compName).mkString(", ")))
+            })), hr)
+    }
+
+    def publishAlarmListMarkup(alarmList: List[AlarmInfo]): Text.TypedTag[String] = {
+      if (alarmList.isEmpty) div()
+      else div(cls := "nopagebreak")(
+        h4(a("Alarms")),
+        table("data-toggle".attr := "table",
+          thead(
+            tr(
+              th("Name"),
+              th("Description"),
+              th("Severity"),
+              th("Archive"),
+              th("Subscribers"))),
+          tbody(
+            for (a ← alarmList) yield {
+              tr(
+                td(a.name),
+                td(raw(a.description)),
+                td(a.severity),
+                td(if (a.archive) "Yes" else "No"),
+                td(a.subscribers.map(_.compName).mkString(", ")))
+            })), hr)
+    }
+
     publishesOpt match {
       case None ⇒ div()
       case Some(publishes) ⇒
         div(cls := "nopagebreak")(
           h3(a(name := publishId(compName))(publishTitle(compName))),
-          raw(publishes.description),
-          if (publishes.publishInfo.isEmpty) div()
-          else table("data-toggle".attr := "table",
-            thead(
-              tr(
-                th("Name"),
-                th("Type"),
-                th("Description"),
-                th("Subscribers"))),
-            tbody(
-              for (p ← publishes.publishInfo) yield {
-                tr(
-                  td(p.name),
-                  td(p.itemType),
-                  td(raw(p.description)),
-                  td(p.subscribers.map(_.compName).mkString(", ")))
-              })))
-
+          raw(publishes.description), hr,
+          publishTelemetryListMarkup("Telemetry", publishes.telemetryList),
+          publishEventListMarkup(publishes.eventList),
+          publishTelemetryListMarkup("Event Streams", publishes.eventStreamList),
+          publishAlarmListMarkup(publishes.alarmList))
     }
   }
 
@@ -111,26 +188,20 @@ case class IcdDbPrinter(db: IcdDb) {
   private def receivedCommandsTitle(compName: String): String = s"Command Configurations Received by $compName"
 
   // Generates the HTML markup to display the commands a component receives
-  private def receivedCommandsMarkup(compName: String, info: List[CommandInfo]): Text.TypedTag[String] = {
+  private def receivedCommandsMarkup(compName: String, info: List[ReceivedCommandInfo]): Text.TypedTag[String] = {
     import scalatags.Text.all._
-
-    // Only display non-empty tables
     if (info.isEmpty) div()
-    else div(cls := "nopagebreak")(
-      h4(a(name := receivedCommandsId(compName))(receivedCommandsTitle(compName))),
-      table("data-toggle".attr := "table",
-        thead(
-          tr(
-            th("Name"),
-            th("Description"),
-            th("Senders"))),
-        tbody(
-          for (p ← info) yield {
-            tr(
-              td(p.name), // XXX TODO: Make link to command description page with details
-              td(raw(p.description)),
-              td(p.otherComponents.map(_.compName).mkString(", ")))
-          })))
+    else {
+      div(cls := "nopagebreak")(
+        h4(a(name := receivedCommandsId(compName))(receivedCommandsTitle(compName))),
+        for (r ← info) yield {
+          div(cls := "nopagebreak")(
+            h5(s"Configuration: ${r.name}"),
+            if (r.requirements.isEmpty) div() else p(strong("Requirements: ", r.requirements.mkString(", "))),
+            raw(r.description),
+            if (r.args.isEmpty) div() else attributeListMarkup(s"Arguments for ${r.name}", r.args))
+        })
+    }
   }
 
   private def sentCommandsId(compName: String): String = s"sent-$compName"
@@ -138,7 +209,7 @@ case class IcdDbPrinter(db: IcdDb) {
   private def sentCommandsTitle(compName: String): String = s"Command Configurations Sent by $compName"
 
   // Generates the HTML markup to display the commands a component sends
-  private def sentCommandsMarkup(compName: String, info: List[CommandInfo]): Text.TypedTag[String] = {
+  private def sentCommandsMarkup(compName: String, info: List[SentCommandInfo]): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
     // Only display non-empty tables
@@ -152,11 +223,11 @@ case class IcdDbPrinter(db: IcdDb) {
             th("Description"),
             th("Receiver"))),
         tbody(
-          for (p ← info) yield {
+          for (s ← info) yield {
             tr(
-              td(p.name), // XXX TODO: Make link to command description page with details
-              td(raw(p.description)),
-              td(p.otherComponents.map(_.compName).mkString(", ")))
+              td(s.name), // XXX TODO: Make link to command description page with details
+              td(raw(s.description)),
+              td(s.receivers.map(_.compName).mkString(", ")))
           })))
   }
 
@@ -228,7 +299,7 @@ case class IcdDbPrinter(db: IcdDb) {
    */
   private def getSubsystemInfo(subsystem: String, versionOpt: Option[String]): Option[SubsystemInfo] =
     db.versionManager.getSubsystemModel(subsystem, versionOpt)
-      .map(m ⇒ SubsystemInfo(m.subsystem, versionOpt, m.title, m.description, HtmlMarkup.gfmToHtml(m.description)))
+      .map(m ⇒ SubsystemInfo(m.subsystem, versionOpt, m.title, HtmlMarkup.gfmToHtml(m.description)))
 
   /**
    * Gets information about the given components

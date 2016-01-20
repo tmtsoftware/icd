@@ -17,7 +17,7 @@ case class JsonSchemaModel(config: Config) {
   val typeOpt = config.as[Option[String]]("type")
   val enumOpt = config.as[Option[List[String]]]("enum")
   val units = config.as[Option[String]]("units").getOrElse("")
-
+  val maxItems = config.as[Option[String]]("maxItems")
   val minimum = config.as[Option[String]]("minimum").orElse(config.as[Option[String]]("items.minimum"))
   val maximum = config.as[Option[String]]("maximum").orElse(config.as[Option[String]]("items.maximum"))
   val exclusiveMinimum = config.as[Option[Boolean]]("exclusiveMinimum").orElse(config.as[Option[Boolean]]("items.exclusiveMinimum")).getOrElse(false)
@@ -25,24 +25,31 @@ case class JsonSchemaModel(config: Config) {
 
   val defaultValue = if (config.hasPath("default")) config.getAnyRef("default").toString else ""
 
+  // String describing the type or enum
+  val typeStr = parseTypeStr(typeOpt, maxItems)
+
   // Returns a string describing an array type
-  private def arrayTypeStr: String = {
-    val t = config.as[Option[String]]("items.type")
-    val e = config.as[Option[List[String]]]("items.enum")
+  private def parseArrayTypeStr(itemPath: String, maxItemsOpt: Option[String]): String = {
+    val t = config.as[Option[String]](s"$itemPath.type")
+    val e = config.as[Option[List[String]]](s"$itemPath.enum")
     val s = if (t.isDefined) {
-      numberTypeStr(t.get)
+      parseTypeStr(t, config.as[Option[String]](s"$itemPath.maxItems"), s"$itemPath.items")
     } else if (e.isDefined) {
       e.get.mkString(", ")
     } else "?"
-    s"array of $s"
+
+    if (maxItemsOpt.isDefined)
+      s"array[${maxItemsOpt.get}] of $s"
+    else
+      s"array of $s"
   }
 
-  // Returns a string describing a type or enum
-  def typeStr: String = {
-    typeOpt match {
-      case Some("array")   ⇒ arrayTypeStr
+  // Returns a string describing the given type or enum
+  private def parseTypeStr(opt: Option[String], maxItemsOpt: Option[String], itemPath: String = "items"): String = {
+    opt match {
+      case Some("array")   ⇒ parseArrayTypeStr(itemPath, maxItemsOpt)
       case Some("integer") ⇒ numberTypeStr("integer")
-      case Some("number")  ⇒ numberTypeStr("number")
+      case Some("number")  ⇒ numberTypeStr("double")
       case Some(otherType) ⇒ otherType
       case None ⇒ enumOpt match {
         case Some(list) ⇒ "enum: (" + list.mkString(", ") + ")"
@@ -52,7 +59,7 @@ case class JsonSchemaModel(config: Config) {
   }
 
   // Returns a string describing a numeric type t with optional range
-  def numberTypeStr(t: String): String = {
+  private def numberTypeStr(t: String): String = {
     if (minimum.isDefined || maximum.isDefined) {
       // include range with () or []
       val infinity = "inf" // java and html escape sequences get lost in conversion...
