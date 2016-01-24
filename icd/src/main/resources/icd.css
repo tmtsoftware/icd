@@ -159,6 +159,7 @@ table tr th, table tr td {
     padding: 6px 13px;
 }
 
+/*FIXME space*/
 table tr td p {
     padding: 0 0;
     border-width: 0;

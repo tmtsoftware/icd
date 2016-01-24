@@ -28,4 +28,3 @@ case class TelemetryModel(name: String,
                           archive: Boolean,
                           archiveRate: Double,
                           attributesList: List[JsonSchemaModel])
-

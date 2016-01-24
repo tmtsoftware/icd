@@ -120,9 +120,9 @@ object ComponentInfoHelper {
               TelemetryInfo(t.name, HtmlMarkup.gfmToHtml(t.description), t.minRate, t.maxRate, t.archive, t.archiveRate,
                 t.attributesList.map(getAttributeInfo), getSubscribers(query, prefix, t.name, t.description, Telemetry))
             }
-            val eventList = m.eventList.map { el ⇒
-              EventInfo(getAttributeInfo(el),
-                getSubscribers(query, prefix, el.name, el.description, Events))
+            val eventList = m.eventList.map { t ⇒
+              TelemetryInfo(t.name, HtmlMarkup.gfmToHtml(t.description), t.minRate, t.maxRate, t.archive, t.archiveRate,
+                t.attributesList.map(getAttributeInfo), getSubscribers(query, prefix, t.name, t.description, EventStreams))
             }
             val eventStreamList = m.eventStreamList.map { t ⇒
               TelemetryInfo(t.name, HtmlMarkup.gfmToHtml(t.description), t.minRate, t.maxRate, t.archive, t.archiveRate,

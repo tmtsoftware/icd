@@ -25,15 +25,15 @@ $(document).ready(function () {
     });
 });
 
-//
-function addExpander(buttonRef, divRef) {
-    $("#demo").on("hide.bs.collapse", function(){
-        $(".btn").html('<span class="glyphicon glyphicon-collapse-down"></span> Open');
-    });
-    $("#demo").on("show.bs.collapse", function(){
-        $(".btn").html('<span class="glyphicon glyphicon-collapse-up"></span> Close');
-    });
-}
+////
+//function addExpander(buttonRef, divRef) {
+//    $("#demo").on("hide.bs.collapse", function(){
+//        $(".btn").html('<span class="glyphicon glyphicon-collapse-down"></span> Open');
+//    });
+//    $("#demo").on("show.bs.collapse", function(){
+//        $(".btn").html('<span class="glyphicon glyphicon-collapse-up"></span> Close');
+//    });
+//}
 
 
 

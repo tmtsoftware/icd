@@ -37,24 +37,65 @@ object Components {
   // Displayed version for unpublished APIs
   val unpublished = "(unpublished)"
 
-  //  // XXX Hack to toggle full text in description columns (see resize.css)
-  //  private def descriptionTableCell(htmlDesc: String) = {
-  //    import scalatags.JsDom.all._
-  //
-  //    // XXX This works, but the elipse is not displayed if html content is in the table cell
-  //    //    import jquery.{ jQuery ⇒ $ }
-  //    //    val tdId = UUID.randomUUID().toString
-  //    //    val divId = UUID.randomUUID().toString
-  //    //    def clicked()(e: dom.Event) = {
-  //    //      $(s"#$tdId").toggleClass("fullDescriptionTableCell")
-  //    //      $(s"#$divId").toggleClass("fullDescription")
-  //    //    }
-  //    //    td(id := tdId, cls := "shortDescriptionTableCell", onclick := clicked() _,
-  //    //      div(id := divId, cls := "shortDescription", onclick := clicked() _,
-  //    //        span(cls := "shortDescriptionSpan", onclick := clicked() _, raw(htmlDesc))))
-  //
-  //    td(raw(htmlDesc))
-  //  }
+  // Removes any columns that do not contain any values
+  private def compact(head: List[String], rows: List[List[String]]): (List[String], List[List[String]]) = {
+    def notAllEmpty(rows: List[List[String]], i: Int): Boolean = {
+      val l = for (r ← rows) yield r(i).length
+      l.sum != 0
+    }
+    val hh = for {
+      (h, i) ← head.zipWithIndex
+      if notAllEmpty(rows, i)
+    } yield (h, i)
+    if (hh.length == head.length) {
+      (head, rows)
+    } else {
+      val newHead = hh.map(_._1)
+      val indexes = hh.map(_._2)
+      def newRow(row: List[String]): List[String] = {
+        row.zipWithIndex.filter(p ⇒ indexes.contains(p._2)).map(_._1)
+      }
+      val newRows = rows.map(newRow)
+      (newHead, newRows)
+    }
+  }
+
+  // Returns a table cell markup, checking if the text is already in html format (after markdown processing)
+  private def mkTableCell(text: String) = {
+    import scalatags.JsDom.all._
+    if (text.startsWith("<p>"))
+      td(raw(text))
+    else
+      td(text)
+  }
+
+  /**
+   * Returns a HTML table with the given column headings and list of rows
+   *
+   * @param headings the table headings
+   * @param rowList list of row data
+   * @param tableStyle optional table style
+   * @return an html table element
+   */
+  private def mkTable(headings: List[String], rowList: List[List[String]],
+                      tableStyle: scalacss.StyleA = Styles.emptyStyle) = {
+    import scalatags.JsDom.all._
+    import scalacss.ScalatagsCss._
+    if (rowList.isEmpty) div()
+    else {
+      val (newHead, newRows) = compact(headings, rowList)
+      if (newHead.isEmpty) div()
+      else {
+        table(tableStyle, "data-toggle".attr := "table",
+          thead(
+            tr(newHead.map(th(_)))),
+          tbody(
+            for (row ← newRows) yield {
+              tr(row.map(mkTableCell))
+            }))
+      }
+    }
+  }
 }
 
 /**
@@ -195,26 +236,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def attributeListMarkup(titleStr: String, attributesList: List[AttributeInfo]): TypedTag[HTMLDivElement] = {
     import scalatags.JsDom.all._
     if (attributesList.isEmpty) div()
-    else
-      div(
-        strong(titleStr),
-        table(cls := "attributeTable", "data-toggle".attr := "table",
-          thead(
-            tr(
-              th("Name"),
-              th("Description"),
-              th("Type"),
-              th("Units"),
-              th("Default"))),
-          tbody(
-            for (a ← attributesList) yield {
-              tr(
-                td(a.name),
-                td(raw(a.description)),
-                td(a.typeStr),
-                td(a.units),
-                td(a.defaultValue))
-            })))
+    else {
+      val headings = List("Name", "Description", "Type", "Units", "Default")
+      val rowList = for (a ← attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
+      div(strong(titleStr),
+        mkTable(headings, rowList, tableStyle = Styles.attributeTable))
+    }
   }
 
   /**
@@ -226,10 +253,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    */
   private def hiddenRowMarkup(item: TypedTag[HTMLDivElement], colSpan: Int): (TypedTag[HTMLButtonElement], TypedTag[HTMLTableRowElement]) = {
     import scalatags.JsDom.all._
+    import scalacss.ScalatagsCss._
     // button to toggle visibility
     val idStr = UUID.randomUUID().toString
-    val btn = button(
-      cls := s"btn$idStr attributeBtn btn btn-default btn-xs",
+    val btn = button(Styles.attributeBtn,
       "data-toggle".attr := "collapse",
       "data-target".attr := s"#$idStr",
       title := "Show/hide details")(
@@ -260,18 +287,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Returns a table row displaying more details for the given telemetry
     def makeDetailsRow(t: TelemetryInfo) = {
-      div(
-        table("data-toggle".attr := "table",
-          thead(tr(
-            th("Min Rate"),
-            th("Max Rate"),
-            th("Archive"),
-            th("Archive Rate"))),
-          tbody(tr(
-            td(formatRate(t.minRate)),
-            td(formatRate(t.maxRate)),
-            td(if (t.archive) "Yes" else "No"),
-            td(formatRate(t.archiveRate))))),
+      val headings = List("Min Rate", "Max Rate", "Archive", "Archive Rate")
+      val rowList = List(List(
+        formatRate(t.minRate),
+        formatRate(t.maxRate),
+        if (t.archive) "Yes" else "No",
+        formatRate(t.archiveRate)))
+
+      div(mkTable(headings, rowList),
         attributeListMarkup("Attributes", t.attributesList))
     }
 
@@ -290,35 +313,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             for (t ← telemetryList) yield {
               val (btn, row) = hiddenRowMarkup(makeDetailsRow(t), 4)
               List(tr(
-                td(cls := "attributeCell", btn, t.name),
+                td(Styles.attributeCell, p(btn, t.name)),
                 td(raw(t.description)),
                 td(t.subscribers.map(makeLinkForSubscriber))),
                 row)
-            })))
-    }
-
-    def publishEventListMarkup(eventList: List[EventInfo]) = {
-      if (eventList.isEmpty) div()
-      else div(
-        h4(s"Events Published by $compName"),
-        table("data-toggle".attr := "table",
-          thead(
-            tr(
-              th("Name"),
-              th("Description"),
-              th("Type"),
-              th("Units"),
-              th("Default"),
-              th("Subscribers"))),
-          tbody(
-            for (e ← eventList) yield {
-              tr(
-                td(e.attr.name),
-                td(raw(e.attr.description)),
-                td(e.attr.typeStr),
-                td(e.attr.units),
-                td(e.attr.defaultValue),
-                td(e.subscribers.map(makeLinkForSubscriber)))
             })))
     }
 
@@ -352,7 +350,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           h3(s"Items published by $compName"),
           raw(publishes.description),
           publishTelemetryListMarkup("Telemetry", publishes.telemetryList),
-          publishEventListMarkup(publishes.eventList),
+          publishTelemetryListMarkup("Events", publishes.eventList),
           publishTelemetryListMarkup("Event Streams", publishes.eventStreamList),
           publishAlarmListMarkup(publishes.alarmList))
     }
@@ -429,15 +427,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Returns a table row displaying more details for the given command
     def makeDetailsRow(r: ReceivedCommandInfo) = {
-      div(
-        table("data-toggle".attr := "table",
-          thead(tr(
-            th("Requirements"),
-            th("Required Args"))),
-          tbody(tr(
-            td(r.requirements),
-            td(r.requiredArgs.mkString(", "))))),
-        attributeListMarkup("Arguments", r.args))
+      val headings = List("Requirements", "Required Args")
+      val rowList = List(List(r.requirements.mkString(", "), r.requiredArgs.mkString(", ")))
+      div(mkTable(headings, rowList), attributeListMarkup("Arguments", r.args))
     }
 
     // Only display non-empty tables
@@ -455,7 +447,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             val (btn, row) = hiddenRowMarkup(makeDetailsRow(r), 3)
             List(
               tr(
-                td(cls := "attributeCell", btn, r.name), // XXX TODO: Make link to command description page with details
+                td(Styles.attributeCell, p(btn, r.name)), // XXX TODO: Make link to command description page with details
                 td(raw(r.description)),
                 td(r.senders.map(makeLinkForSender))),
               row)

@@ -76,16 +76,7 @@ case class AttributeInfo(name: String,
                          defaultValue: String)
 
 /**
- * Describes a published event
- *
- * @param attr        the event attributes
- * @param subscribers a list of subscribers to the event
- */
-case class EventInfo(attr: AttributeInfo,
-                     subscribers: List[SubscribeInfo])
-
-/**
- * Describes a published telemetry or event stream item
+ * Describes a published telemetry, event or event stream item
  *
  * @param name           name of the item
  * @param description    description of the item (in html format, after markdown processing)
@@ -130,7 +121,7 @@ case class AlarmInfo(name: String,
  */
 case class Publishes(description: String,
                      telemetryList: List[TelemetryInfo],
-                     eventList: List[EventInfo],
+                     eventList: List[TelemetryInfo],
                      eventStreamList: List[TelemetryInfo],
                      alarmList: List[AlarmInfo])
 

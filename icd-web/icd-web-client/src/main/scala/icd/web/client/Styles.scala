@@ -57,6 +57,8 @@ object Styles extends StyleSheet.Inline {
     tableLayout.fixed,
     maxWidth(90 %%))
 
+  val emptyStyle = style()
+
   // Used for table columns that should not wrap
   val noWrapTableColumn = style(
     whiteSpace.nowrap)
@@ -94,4 +96,17 @@ object Styles extends StyleSheet.Inline {
 
   val componentSection = style(
     pageBreakInside.avoid)
+
+  val attributeTable = style(
+    margin(0 px))
+
+  val attributeBtn = style(
+    addClassNames("btn", "btn-default", "btn-xs"),
+    margin(0 px),
+    outline.none,
+    borderRadius(0 px),
+    border(0 px))
+
+  val attributeCell = style(
+    whiteSpace.nowrap)
 }

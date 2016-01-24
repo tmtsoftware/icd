@@ -39,7 +39,7 @@ case class IcdDbPrinter(db: IcdDb) {
     if (attributesList.isEmpty) div()
     else div(cls := "nopagebreak")(
       h4(a(titleStr)),
-      table("data-toggle".attr := "table",
+      table(
         thead(
           tr(
             th("Name"),
@@ -70,7 +70,7 @@ case class IcdDbPrinter(db: IcdDb) {
           div(cls := "nopagebreak")(
             h4(a(s"$pubType: ${t.name}")),
             raw(t.description),
-            table("data-toggle".attr := "table",
+            table(
               thead(
                 tr(th("Min Rate"), th("Max Rate"), th("Archive"), th("Archive Rate"), th("Subscribers"))),
               tbody(
@@ -79,36 +79,11 @@ case class IcdDbPrinter(db: IcdDb) {
         })
     }
 
-    def publishEventListMarkup(eventList: List[EventInfo]): Text.TypedTag[String] = {
-      if (eventList.isEmpty) div()
-      else div(cls := "nopagebreak")(
-        h4(a("Events")),
-        table("data-toggle".attr := "table",
-          thead(
-            tr(
-              th("Name"),
-              th("Description"),
-              th("Type"),
-              th("Units"),
-              th("Default"),
-              th("Subscribers"))),
-          tbody(
-            for (e ← eventList) yield {
-              tr(
-                td(e.attr.name),
-                td(raw(e.attr.description)),
-                td(e.attr.typeStr),
-                td(e.attr.units),
-                td(e.attr.defaultValue),
-                td(e.subscribers.map(_.compName).mkString(", ")))
-            })), hr)
-    }
-
     def publishAlarmListMarkup(alarmList: List[AlarmInfo]): Text.TypedTag[String] = {
       if (alarmList.isEmpty) div()
       else div(cls := "nopagebreak")(
         h4(a("Alarms")),
-        table("data-toggle".attr := "table",
+        table(
           thead(
             tr(
               th("Name"),
@@ -134,7 +109,7 @@ case class IcdDbPrinter(db: IcdDb) {
           h3(a(name := publishId(compName))(publishTitle(compName))),
           raw(publishes.description), hr,
           publishTelemetryListMarkup("Telemetry", publishes.telemetryList),
-          publishEventListMarkup(publishes.eventList),
+          publishTelemetryListMarkup("Events", publishes.eventList),
           publishTelemetryListMarkup("Event Streams", publishes.eventStreamList),
           publishAlarmListMarkup(publishes.alarmList))
     }
@@ -154,7 +129,7 @@ case class IcdDbPrinter(db: IcdDb) {
           h3(a(name := subscribeId(compName))(subscribeTitle(compName))),
           raw(subscribes.description),
           if (subscribes.subscribeInfo.isEmpty) div()
-          else table("data-toggle".attr := "table",
+          else table(
             thead(
               // Set the column widths to keep the Usage column the same size as the Description column
               col(width := "4%"),
@@ -216,7 +191,7 @@ case class IcdDbPrinter(db: IcdDb) {
     if (info.isEmpty) div()
     else div(cls := "nopagebreak")(
       h4(a(name := sentCommandsId(compName))(sentCommandsTitle(compName))),
-      table("data-toggle".attr := "table",
+      table(
         thead(
           tr(
             th("Name"),
@@ -253,7 +228,7 @@ case class IcdDbPrinter(db: IcdDb) {
   private def componentInfoTableMarkup(info: ComponentInfo): Text.TypedTag[String] = {
     import scalatags.Text.all._
     div(
-      table("data-toggle".attr := "table",
+      table(
         thead(
           tr(
             th("Subsystem"),
