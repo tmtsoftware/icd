@@ -2,7 +2,7 @@ package csw.services.icd.db
 
 import csw.services.icd.db.IcdDbQuery.{ Alarms, EventStreams, Events, PublishType, Telemetry }
 import csw.services.icd.html.HtmlMarkup
-import csw.services.icd.model.{ JsonSchemaModel, ComponentModel, IcdModels }
+import csw.services.icd.model.{ TelemetryModel, JsonSchemaModel, ComponentModel, IcdModels }
 import icd.web.shared._
 
 /**
@@ -96,9 +96,17 @@ object ComponentInfoHelper {
   private def getSubscribers(query: IcdDbQuery, prefix: String, name: String, desc: String,
                              subscribeType: PublishType): List[SubscribeInfo] = {
     query.subscribes(s"$prefix.$name", subscribeType).map { s ⇒
-      SubscribeInfo(s.subscribeType.toString, s.name, HtmlMarkup.gfmToHtml(desc),
+      SubscribeInfo(s.subscribeType.toString, s.name, s.path, HtmlMarkup.gfmToHtml(desc),
         HtmlMarkup.gfmToHtml(s.usage), s.subsystem, s.componentName)
     }
+  }
+
+  // Returns the telemetry description, or the description of the single item, if defined
+  private def getDescription(t: TelemetryModel): String = {
+    val s = if (t.description.nonEmpty) t.description
+    else if (t.attributesList.size == 1 && t.attributesList.head.description.nonEmpty) t.attributesList.head.description
+    else ""
+    HtmlMarkup.gfmToHtml(s)
   }
 
   /**
@@ -117,15 +125,15 @@ object ComponentInfoHelper {
           case Some(m) ⇒
             val desc = HtmlMarkup.gfmToHtml(m.description)
             val telemetryList = m.telemetryList.map { t ⇒
-              TelemetryInfo(t.name, HtmlMarkup.gfmToHtml(t.description), t.minRate, t.maxRate, t.archive, t.archiveRate,
+              TelemetryInfo(t.name, getDescription(t), t.minRate, t.maxRate, t.archive, t.archiveRate,
                 t.attributesList.map(getAttributeInfo), getSubscribers(query, prefix, t.name, t.description, Telemetry))
             }
             val eventList = m.eventList.map { t ⇒
-              TelemetryInfo(t.name, HtmlMarkup.gfmToHtml(t.description), t.minRate, t.maxRate, t.archive, t.archiveRate,
+              TelemetryInfo(t.name, getDescription(t), t.minRate, t.maxRate, t.archive, t.archiveRate,
                 t.attributesList.map(getAttributeInfo), getSubscribers(query, prefix, t.name, t.description, EventStreams))
             }
             val eventStreamList = m.eventStreamList.map { t ⇒
-              TelemetryInfo(t.name, HtmlMarkup.gfmToHtml(t.description), t.minRate, t.maxRate, t.archive, t.archiveRate,
+              TelemetryInfo(t.name, getDescription(t), t.minRate, t.maxRate, t.archive, t.archiveRate,
                 t.attributesList.map(getAttributeInfo), getSubscribers(query, prefix, t.name, t.description, EventStreams))
             }
             val alarmList = m.alarmList.map { al ⇒
@@ -148,13 +156,16 @@ object ComponentInfoHelper {
   private def getSubscribes(query: IcdDbQuery, models: IcdModels): Option[Subscribes] = {
 
     def getInfo(publishType: PublishType, si: csw.services.icd.model.SubscribeInfo): List[SubscribeInfo] = {
-      val info = query.publishes(si.name, si.subsystem, publishType).map { pi ⇒
-        SubscribeInfo(publishType.toString, si.name, HtmlMarkup.gfmToHtml(pi.item.description),
-          HtmlMarkup.gfmToHtml(si.usage), si.subsystem, pi.componentName)
+      val prefix = query.getPrefix(si.subsystem, si.component)
+      val path = s"$prefix.${si.name}"
+      val info = query.publishes(path, si.subsystem, publishType).map { pi ⇒
+        SubscribeInfo(publishType.toString, si.name, s"${pi.prefix}.${si.name}", HtmlMarkup.gfmToHtml(pi.item.description),
+          HtmlMarkup.gfmToHtml(si.usage), si.subsystem, si.component)
       }
       if (info.nonEmpty) info
       else {
-        List(SubscribeInfo(publishType.toString, si.name, "", "", si.subsystem, ""))
+        val prefix = query.getPrefix(si.subsystem, si.component)
+        List(SubscribeInfo(publishType.toString, si.name, s"$prefix.${si.name}", "", "", si.subsystem, si.component))
       }
     }
 

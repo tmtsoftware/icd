@@ -374,12 +374,25 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         onclick := clickedOnPublisher(info) _)
     }
 
-    // Splits the name of the subscribed item into component prefix and simple name
-    def getPrefixName(s: SubscribeInfo): (String, String) = {
-      val path = s.name.split('.')
-      val prefix = path.dropRight(1).mkString(".")
-      val name = path.last
-      (prefix, name)
+    def subscribeListMarkup(pubType: String, subscribeList: List[SubscribeInfo]) = {
+      if (subscribeList.isEmpty) div()
+      else div(
+        h4(s"$pubType Subscribed to by $compName"),
+        div(Styles.componentSection,
+          table(Styles.componentTable, "data-toggle".attr := "table",
+            thead(
+              tr(
+                th("Name"),
+                th("Description"),
+                th("Publisher"))),
+            tbody(
+              for (s ← subscribeList) yield {
+                val usage = if (s.usage.isEmpty) div() else div(strong("Usage:"), raw(s.usage))
+                tr(
+                  td(p(s.name)),
+                  td(raw(s.description), usage),
+                  td(p(makeLinkForPublisher(s))))
+              }))))
     }
 
     subscribesOpt match {
@@ -388,25 +401,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         div(Styles.componentSection,
           h3(s"Items subscribed to by $compName"),
           raw(subscribes.description),
-          if (subscribes.subscribeInfo.isEmpty) div()
-          else table(Styles.componentTable, "data-toggle".attr := "table",
-            thead(
-              tr(
-                th("Prefix.Name"),
-                th("Type"),
-                th("Description"),
-                th("Usage"),
-                th("Publisher"))),
-            tbody(
-              for (s ← subscribes.subscribeInfo) yield {
-                val (prefix, name) = getPrefixName(s)
-                tr(
-                  td(prefix, br, s".$name"),
-                  td(s.itemType),
-                  td(raw(s.description)),
-                  td(raw(s.usage)),
-                  td(makeLinkForPublisher(s)))
-              })))
+          subscribeListMarkup("Telemetry", subscribes.subscribeInfo.filter(_.itemType == "Telemetry")),
+          subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == "Events")),
+          subscribeListMarkup("Event Streams", subscribes.subscribeInfo.filter(_.itemType == "EventStreams")),
+          subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == "Alarms")))
     }
   }
 
@@ -449,7 +447,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               tr(
                 td(Styles.attributeCell, p(btn, r.name)), // XXX TODO: Make link to command description page with details
                 td(raw(r.description)),
-                td(r.senders.map(makeLinkForSender))),
+                td(p(r.senders.map(makeLinkForSender)))),
               row)
           })))
   }
@@ -482,9 +480,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         tbody(
           for (s ← info) yield {
             tr(
-              td(s.name), // XXX TODO: Make link to command description page with details
+              td(p(s.name)), // XXX TODO: Make link to command description page with details
               td(raw(s.description)),
-              td(s.receivers.map(makeLinkForReceiver)))
+              td(p(s.receivers.map(makeLinkForReceiver))))
           })))
   }
 

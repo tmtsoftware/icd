@@ -51,10 +51,6 @@ trait HtmlMarkup {
  */
 object HtmlMarkup {
 
-  // Strips leading whitespace from each line of text
-  private def paragraphFilter(s: String): String =
-    (for (line ← s.split("\n")) yield line.trim).mkString("\n")
-
   private def isEmpty(x: String): Boolean = Option(x).forall(_.isEmpty)
 
   /**
@@ -66,8 +62,9 @@ object HtmlMarkup {
     import org.pegdown.{ Extensions, PegDownProcessor }
     if (isEmpty(gfm)) ""
     else {
-      val pd = new PegDownProcessor(Extensions.TABLES | Extensions.AUTOLINKS)
-      pd.markdownToHtml(paragraphFilter(gfm))
+      val pd = new PegDownProcessor(Extensions.TABLES | Extensions.AUTOLINKS | Extensions.FENCED_CODE_BLOCKS
+        | Extensions.STRIKETHROUGH | Extensions.ATXHEADERSPACE | Extensions.TASKLISTITEMS | Extensions.HARDWRAPS)
+      pd.markdownToHtml(gfm.stripMargin)
     }
   }
 

@@ -115,12 +115,14 @@ object IcdDbQuery {
    * Describes a subscription
    *
    * @param componentName the name of the component that subscribes to the item
-   * @param subsystem the component's subsystem
+   * @param subsystem     the component's subsystem
    * @param subscribeType one of Telemetry, Events, Alarms, etc.
-   * @param name the name of the item being subscribed to
-   * @param usage describes how the subscribed item is used
+   * @param name          the simple name of the item being subscribed to
+   * @param path          the path name (component-prefix.name) of the item being subscribed to
+   * @param usage         describes how the subscribed item is used
    */
-  case class Subscribed(componentName: String, subsystem: String, subscribeType: PublishType, name: String, usage: String)
+  case class Subscribed(componentName: String, subsystem: String, subscribeType: PublishType,
+                        name: String, path: String, usage: String)
 
   implicit def toDbObject(query: (String, Any)): DBObject = MongoDBObject(query)
 
@@ -304,6 +306,12 @@ case class IcdDbQuery(db: MongoDB) {
   }
 
   /**
+   * Returns the given component's prefix, or an empty string if not found
+   */
+  def getPrefix(subsystem: String, componentName: String): String =
+    getComponentModel(subsystem, componentName).map(_.prefix).getOrElse("")
+
+  /**
    * Returns an object describing the items published by the named component
    */
   def getPublishModel(component: ComponentModel): Option[PublishModel] = {
@@ -440,9 +448,9 @@ case class IcdDbQuery(db: MongoDB) {
    */
   def publishes(path: String, subsystem: String, publishType: PublishType): List[PublishedItem] = {
     for {
-      i ← getPublishInfo(subsystem)
-      p ← i.publishes.filter(p ⇒ s"${i.prefix}.${p.name}" == path && publishType == p.publishType)
-    } yield PublishedItem(i.componentName, i.prefix, p)
+      pubInfo ← getPublishInfo(subsystem)
+      published ← pubInfo.publishes.filter(p ⇒ s"${pubInfo.prefix}.${p.name}" == path && publishType == p.publishType)
+    } yield PublishedItem(pubInfo.componentName, pubInfo.prefix, published)
   }
 
   /**
@@ -451,12 +459,16 @@ case class IcdDbQuery(db: MongoDB) {
    * @param component the component model
    */
   private def getSubscribedTo(component: ComponentModel): List[Subscribed] = {
+    // Gets the full path of the subscribed item
+    def getPath(i: csw.services.icd.model.SubscribeInfo): String = s"${getPrefix(i.subsystem, i.component)}.${i.name}"
+
     getSubscribeModel(component) match {
       case Some(subscribeModel) ⇒
-        List(subscribeModel.telemetryList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Telemetry, i.name, i.usage)),
-          subscribeModel.eventList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Events, i.name, i.usage)),
-          subscribeModel.eventStreamList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, EventStreams, i.name, i.usage)),
-          subscribeModel.alarmList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Alarms, i.name, i.usage))).flatten
+        List(subscribeModel.telemetryList.map(i ⇒
+          Subscribed(subscribeModel.component, subscribeModel.subsystem, Telemetry, i.name, getPath(i), i.usage)),
+          subscribeModel.eventList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Events, i.name, getPath(i), i.usage)),
+          subscribeModel.eventStreamList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, EventStreams, i.name, getPath(i), i.usage)),
+          subscribeModel.alarmList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Alarms, i.name, getPath(i), i.usage))).flatten
       case None ⇒ Nil
     }
   }
@@ -482,7 +494,7 @@ case class IcdDbQuery(db: MongoDB) {
   def subscribes(path: String, subscribeType: PublishType): List[Subscribed] = {
     for {
       i ← getSubscribeInfo
-      s ← i.subscribesTo.filter(sub ⇒ sub.name == path && sub.subscribeType == subscribeType)
+      s ← i.subscribesTo.filter(sub ⇒ sub.path == path && sub.subscribeType == subscribeType)
     } yield s
   }
 }

@@ -38,7 +38,7 @@ case class IcdDbPrinter(db: IcdDb) {
     import scalatags.Text.all._
     if (attributesList.isEmpty) div()
     else div(cls := "nopagebreak")(
-      h4(a(titleStr)),
+      h4(titleStr),
       table(
         thead(
           tr(
@@ -50,11 +50,11 @@ case class IcdDbPrinter(db: IcdDb) {
         tbody(
           for (a ← attributesList) yield {
             tr(
-              td(a.name),
+              td(p(a.name)),
               td(raw(a.description)),
-              td(a.typeStr),
-              td(a.units),
-              td(a.defaultValue))
+              td(p(a.typeStr)),
+              td(p(a.units)),
+              td(p(a.defaultValue)))
           })))
   }
 
@@ -94,11 +94,11 @@ case class IcdDbPrinter(db: IcdDb) {
           tbody(
             for (a ← alarmList) yield {
               tr(
-                td(a.name),
+                td(p(a.name)),
                 td(raw(a.description)),
-                td(a.severity),
-                td(if (a.archive) "Yes" else "No"),
-                td(a.subscribers.map(_.compName).mkString(", ")))
+                td(p(a.severity)),
+                td(p(if (a.archive) "Yes" else "No")),
+                td(p(a.subscribers.map(_.compName).mkString(", "))))
             })), hr)
     }
 
@@ -122,39 +122,38 @@ case class IcdDbPrinter(db: IcdDb) {
   // Generates the HTML markup to display the component's subscribe information
   private def subscribeMarkup(compName: String, subscribesOpt: Option[Subscribes]): Text.TypedTag[String] = {
     import scalatags.Text.all._
+
+    def subscribeListMarkup(pubType: String, subscribeList: List[SubscribeInfo]) = {
+      if (subscribeList.isEmpty) div()
+      else div(
+        h4(s"$pubType Subscribed to by $compName"),
+        div(cls := "nopagebreak")(
+          table(
+            thead(
+              tr(
+                th("Name"),
+                th("Description"),
+                th("Publisher"))),
+            tbody(
+              for (s ← subscribeList) yield {
+                val usage = if (s.usage.isEmpty) div() else div(strong("Usage:"), raw(s.usage))
+                tr(
+                  td(p(s.name)),
+                  td(raw(s.description), usage),
+                  td(p(s.compName)))
+              }))))
+    }
+
     subscribesOpt match {
       case None ⇒ div()
       case Some(subscribes) ⇒
         div(cls := "nopagebreak")(
           h3(a(name := subscribeId(compName))(subscribeTitle(compName))),
           raw(subscribes.description),
-          if (subscribes.subscribeInfo.isEmpty) div()
-          else table(
-            thead(
-              // Set the column widths to keep the Usage column the same size as the Description column
-              col(width := "4%"),
-              col(width := "5%"),
-              col(width := "43%"),
-              col(width := "43%"),
-              col(width := "5%"),
-              tr(
-                th("Prefix.Name"),
-                th("Type"),
-                th("Description"),
-                th("Usage"),
-                th("Publisher"))),
-            tbody(
-              for (s ← subscribes.subscribeInfo) yield {
-                val path = s.name.split('.')
-                val prefix = path.dropRight(1).mkString(".")
-                val name = path.last
-                tr(
-                  td(prefix, br, s".$name"),
-                  td(s.itemType),
-                  td(raw(s.description)),
-                  td(raw(s.usage)),
-                  td(s.compName))
-              })))
+          subscribeListMarkup("Telemetry", subscribes.subscribeInfo.filter(_.itemType == "Telemetry")),
+          subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == "Events")),
+          subscribeListMarkup("Event Streams", subscribes.subscribeInfo.filter(_.itemType == "EventStreams")),
+          subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == "Alarms")))
     }
   }
 
@@ -171,7 +170,7 @@ case class IcdDbPrinter(db: IcdDb) {
         h4(a(name := receivedCommandsId(compName))(receivedCommandsTitle(compName))),
         for (r ← info) yield {
           div(cls := "nopagebreak")(
-            h5(s"Configuration: ${r.name}"),
+            h4(a(s"Configuration: ${r.name}")),
             if (r.requirements.isEmpty) div() else p(strong("Requirements: ", r.requirements.mkString(", "))),
             raw(r.description),
             if (r.args.isEmpty) div() else attributeListMarkup(s"Arguments for ${r.name}", r.args))
@@ -200,9 +199,9 @@ case class IcdDbPrinter(db: IcdDb) {
         tbody(
           for (s ← info) yield {
             tr(
-              td(s.name), // XXX TODO: Make link to command description page with details
+              td(p(s.name)), // XXX TODO: Make link to command description page with details
               td(raw(s.description)),
-              td(s.receivers.map(_.compName).mkString(", ")))
+              td(p(s.receivers.map(_.compName).mkString(", "))))
           })))
   }
 

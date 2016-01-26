@@ -126,24 +126,26 @@ case class Publishes(description: String,
                      alarmList: List[AlarmInfo])
 
 /**
- * Describes a component that subscribes to an item
- *
- * @param itemType    the type of item ("telemetry", "event", etc.)
- * @param name        name (prefix.name) of the item
- * @param description description of the item (in html format, after markdown processing)
- * @param usage       describes how the subscribed item is used (in html format, after markdown processing)
- * @param subsystem   the subsystem that publishes the value
- * @param compName    name of the component that publishes the value
- */
+  * Describes an item that a component subscribes to
+  *
+  * @param itemType    the type of item ("Telemetry", "Event", etc.)
+  * @param name        the simple name of the item
+  * @param path        the full path name (component-prefix.name) of the item
+  * @param description description of the item (from the publisher, in html format, after markdown processing)
+  * @param usage       describes how the subscribed item is used (in html format, after markdown processing)
+  * @param subsystem   the subsystem that publishes the value
+  * @param compName    component that publishes the value
+  */
 case class SubscribeInfo(itemType: String,
                          name: String,
+                         path: String,
                          description: String,
                          usage: String,
                          subsystem: String,
                          compName: String)
 
 /**
- * Describes what values a component subscribes to
+ * Describes what items a component subscribes to
  *
  * @param description   optional top level description of subscribed items (in html format, after markdown processing)
  * @param subscribeInfo a list of subscribed items

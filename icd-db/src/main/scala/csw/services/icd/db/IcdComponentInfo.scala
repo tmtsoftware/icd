@@ -131,26 +131,6 @@ object IcdComponentInfo {
   }
 
   /**
-   * Returns the object if the component subscribes to the given value.
-   *
-   * @param subscriberSubsystem the subscriber's subsystem
-   * @param subscriberCompName  the subscriber's component name
-   * @param path                full path name of value (prefix + name)
-   * @param targetInfo          list of items the target subscribes to
-   * @param subscribeType       telemetry, alarm, etc...
-   * @return the Subscribed object, if the component is a subscriber to the given path
-   */
-  private def subscribes(subscriberSubsystem: String, subscriberCompName: String, publisherSubsystem: String,
-                         path: String, targetInfo: List[csw.services.icd.model.SubscribeInfo],
-                         subscribeType: PublishType): Option[Subscribed] = {
-    targetInfo.find { subscribeInfo ⇒
-      subscribeInfo.name == path && subscribeInfo.subsystem == publisherSubsystem
-    }.map { subscribeInfo ⇒
-      Subscribed(subscriberCompName, subscriberSubsystem, subscribeType, path, subscribeInfo.usage)
-    }
-  }
-
-  /**
    * Gets information about who subscribes to the given published items
    *
    * @param subsystem        the publisher's subsystem
@@ -162,13 +142,32 @@ object IcdComponentInfo {
    */
   private def getSubscribers(subsystem: String, prefix: String, name: String, desc: String, subscribeType: PublishType,
                              targetModelsList: List[IcdModels]): List[SubscribeInfo] = {
+
+    val path = s"$prefix.$name"
+
+    /**
+     * Returns the object if the component subscribes to the given value.
+     *
+     * @param subscriberSubsystem the subscriber's subsystem
+     * @param subscriberCompName  the subscriber's component name
+     * @param targetInfo          list of items the target subscribes to
+     * @return the Subscribed object, if the component is a subscriber to the given path
+     */
+    def subscribes(subscriberSubsystem: String, subscriberCompName: String,
+                   targetInfo: List[csw.services.icd.model.SubscribeInfo]): Option[Subscribed] = {
+      targetInfo.find { subscribeInfo ⇒
+        subscribeInfo.name == path && subscribeInfo.subsystem == subsystem
+      }.map { subscribeInfo ⇒
+        Subscribed(subscriberCompName, subscriberSubsystem, subscribeType, name, path, subscribeInfo.usage)
+      }
+    }
+
     for {
       icdModel ← targetModelsList
       subscribeModel ← icdModel.subscribeModel
-      s ← subscribes(subscribeModel.subsystem, subscribeModel.component,
-        subsystem, s"$prefix.$name", subscribeModel.telemetryList, subscribeType)
+      s ← subscribes(subscribeModel.subsystem, subscribeModel.component, subscribeModel.telemetryList)
     } yield {
-      web.shared.SubscribeInfo(s.subscribeType.toString, s.name, HtmlMarkup.gfmToHtml(desc),
+      web.shared.SubscribeInfo(s.subscribeType.toString, s.path, path, HtmlMarkup.gfmToHtml(desc),
         HtmlMarkup.gfmToHtml(s.usage), s.subsystem, s.componentName)
     }
   }
@@ -201,9 +200,9 @@ object IcdComponentInfo {
    */
   private def publishes(path: String, publishType: PublishType, targetModelsList: List[IcdModels]): List[PublishedItem] = {
     for {
-      i ← getPublishInfo(targetModelsList)
-      p ← i.publishes.filter(p ⇒ s"${i.prefix}.${p.name}" == path && publishType == p.publishType)
-    } yield PublishedItem(i.componentName, i.prefix, p)
+      publishInfo ← getPublishInfo(targetModelsList)
+      published ← publishInfo.publishes.filter(p ⇒ s"${publishInfo.prefix}.${p.name}" == path && publishType == p.publishType)
+    } yield PublishedItem(publishInfo.componentName, publishInfo.prefix, published)
   }
 
   /**
@@ -216,7 +215,7 @@ object IcdComponentInfo {
     // Gets a list of items of a given type that the component subscribes to, with publisher info
     def getInfo(publishType: PublishType, si: csw.services.icd.model.SubscribeInfo): List[SubscribeInfo] = {
       publishes(si.name, publishType, targetModelsList).map { pi ⇒
-        web.shared.SubscribeInfo(publishType.toString, si.name, HtmlMarkup.gfmToHtml(pi.item.description),
+        web.shared.SubscribeInfo(publishType.toString, si.name, pi.prefix, HtmlMarkup.gfmToHtml(pi.item.description),
           HtmlMarkup.gfmToHtml(si.usage), si.subsystem, pi.componentName)
       }
     }
