@@ -500,7 +500,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
-  // Generates a one line table with basic component informationdiv(
+  // Generates a one line table with basic component information
   private def componentInfoTableMarkup(info: ComponentInfo) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
@@ -529,8 +529,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     div(Styles.component, id := getComponentInfoId(info.compName))(
       h2(info.compName),
-      raw(info.description),
       componentInfoTableMarkup(info),
+      raw(info.description),
       publishMarkup(info.compName, info.publishes),
       subscribeMarkup(info.compName, info.subscribes),
       commandsMarkup(info.compName, info.commands))

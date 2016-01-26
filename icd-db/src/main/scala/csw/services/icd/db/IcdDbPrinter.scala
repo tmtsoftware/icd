@@ -249,8 +249,8 @@ case class IcdDbPrinter(db: IcdDb) {
     import scalatags.Text.all._
     div(cls := "pagebreakBefore")(
       h2(a(name := info.compName)(info.title)),
-      raw(info.description),
       componentInfoTableMarkup(info),
+      raw(info.description),
       publishMarkup(info.compName, info.publishes),
       subscribeMarkup(info.compName, info.subscribes),
       commandsMarkup(info.compName, info.commands))
