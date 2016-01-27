@@ -34,28 +34,50 @@ case class IcdDbPrinter(db: IcdDb) {
 
   private def publishTitle(compName: String): String = s"Items published by $compName"
 
+  /**
+   * Returns a HTML table with the given column headings and list of rows
+   *
+   * @param headings the table headings
+   * @param rowList  list of row data
+   * @return an html table element
+   */
+  private def mkTable(headings: List[String], rowList: List[List[String]]) = {
+    import scalatags.Text.all._
+
+    // Returns a table cell markup, checking if the text is already in html format (after markdown processing)
+    def mkTableCell(text: String) = {
+      if (text.startsWith("<p>"))
+        td(raw(text))
+      else
+        td(text)
+    }
+
+    if (rowList.isEmpty) div()
+    else {
+      val (newHead, newRows) = SharedUtils.compact(headings, rowList)
+      if (newHead.isEmpty) div()
+      else {
+        table(
+          thead(
+            tr(newHead.map(th(_)))),
+          tbody(
+            for (row ← newRows) yield {
+              tr(row.map(mkTableCell))
+            }))
+      }
+    }
+  }
+
   private def attributeListMarkup(titleStr: String, attributesList: List[AttributeInfo]): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (attributesList.isEmpty) div()
-    else div(cls := "nopagebreak")(
-      h4(titleStr),
-      table(
-        thead(
-          tr(
-            th("Name"),
-            th("Description"),
-            th("Type"),
-            th("Units"),
-            th("Default"))),
-        tbody(
-          for (a ← attributesList) yield {
-            tr(
-              td(p(a.name)),
-              td(raw(a.description)),
-              td(p(a.typeStr)),
-              td(p(a.units)),
-              td(p(a.defaultValue)))
-          })))
+    else {
+      val headings = List("Name", "Description", "Type", "Units", "Default")
+      val rowList = for (a ← attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
+      div(cls := "nopagebreak")(
+        h5(titleStr),
+        mkTable(headings, rowList))
+    }
   }
 
   // Generates the HTML markup to display the component's publish information
@@ -105,13 +127,15 @@ case class IcdDbPrinter(db: IcdDb) {
     publishesOpt match {
       case None ⇒ div()
       case Some(publishes) ⇒
-        div(cls := "nopagebreak")(
-          h3(a(name := publishId(compName))(publishTitle(compName))),
-          raw(publishes.description), hr,
-          publishTelemetryListMarkup("Telemetry", publishes.telemetryList),
-          publishTelemetryListMarkup("Events", publishes.eventList),
-          publishTelemetryListMarkup("Event Streams", publishes.eventStreamList),
-          publishAlarmListMarkup(publishes.alarmList))
+        if (publishesOpt.nonEmpty) {
+          div(cls := "nopagebreak")(
+            h3(a(name := publishId(compName))(publishTitle(compName))),
+            raw(publishes.description), hr,
+            publishTelemetryListMarkup("Telemetry", publishes.telemetryList),
+            publishTelemetryListMarkup("Events", publishes.eventList),
+            publishTelemetryListMarkup("Event Streams", publishes.eventStreamList),
+            publishAlarmListMarkup(publishes.alarmList))
+        } else div()
     }
   }
 
@@ -142,13 +166,15 @@ case class IcdDbPrinter(db: IcdDb) {
     subscribesOpt match {
       case None ⇒ div()
       case Some(subscribes) ⇒
-        div(cls := "nopagebreak")(
-          h3(a(name := subscribeId(compName))(subscribeTitle(compName))),
-          raw(subscribes.description),
-          subscribeListMarkup("Telemetry", subscribes.subscribeInfo.filter(_.itemType == "Telemetry")),
-          subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == "Events")),
-          subscribeListMarkup("Event Streams", subscribes.subscribeInfo.filter(_.itemType == "EventStreams")),
-          subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == "Alarms")))
+        if (subscribes.subscribeInfo.nonEmpty) {
+          div(cls := "nopagebreak")(
+            h3(a(name := subscribeId(compName))(subscribeTitle(compName))),
+            raw(subscribes.description),
+            subscribeListMarkup("Telemetry", subscribes.subscribeInfo.filter(_.itemType == "Telemetry")),
+            subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == "Events")),
+            subscribeListMarkup("Event Streams", subscribes.subscribeInfo.filter(_.itemType == "EventStreams")),
+            subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == "Alarms")))
+        } else div()
     }
   }
 
@@ -210,11 +236,13 @@ case class IcdDbPrinter(db: IcdDb) {
     commandsOpt match {
       case None ⇒ div()
       case Some(commands) ⇒
-        div(cls := "nopagebreak")(
-          h3(a(name := commandsId(compName))(commandsTitle(compName))),
-          raw(commands.description),
-          receivedCommandsMarkup(compName, commands.commandsReceived),
-          sentCommandsMarkup(compName, commands.commandsSent))
+        if (commands.commandsReceived.nonEmpty || commands.commandsSent.nonEmpty) {
+          div(cls := "nopagebreak")(
+            h3(a(name := commandsId(compName))(commandsTitle(compName))),
+            raw(commands.description),
+            receivedCommandsMarkup(compName, commands.commandsReceived),
+            sentCommandsMarkup(compName, commands.commandsSent))
+        } else div()
     }
   }
 
@@ -258,7 +286,9 @@ case class IcdDbPrinter(db: IcdDb) {
    */
   private def displayComponentInfo(info: ComponentInfo): Text.TypedTag[String] = {
     import scalatags.Text.all._
-    if (info.publishes.isDefined || info.subscribes.isDefined || info.commands.isDefined) {
+    if (info.publishes.isDefined && info.publishes.get.nonEmpty
+      || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
+      || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty || info.commands.get.commandsSent.nonEmpty)) {
       markupForComponent(info)
     } else div()
   }

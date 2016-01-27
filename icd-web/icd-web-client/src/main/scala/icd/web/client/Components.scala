@@ -37,38 +37,6 @@ object Components {
   // Displayed version for unpublished APIs
   val unpublished = "(unpublished)"
 
-  // Removes any columns that do not contain any values
-  private def compact(head: List[String], rows: List[List[String]]): (List[String], List[List[String]]) = {
-    def notAllEmpty(rows: List[List[String]], i: Int): Boolean = {
-      val l = for (r ← rows) yield r(i).length
-      l.sum != 0
-    }
-    val hh = for {
-      (h, i) ← head.zipWithIndex
-      if notAllEmpty(rows, i)
-    } yield (h, i)
-    if (hh.length == head.length) {
-      (head, rows)
-    } else {
-      val newHead = hh.map(_._1)
-      val indexes = hh.map(_._2)
-      def newRow(row: List[String]): List[String] = {
-        row.zipWithIndex.filter(p ⇒ indexes.contains(p._2)).map(_._1)
-      }
-      val newRows = rows.map(newRow)
-      (newHead, newRows)
-    }
-  }
-
-  // Returns a table cell markup, checking if the text is already in html format (after markdown processing)
-  private def mkTableCell(text: String) = {
-    import scalatags.JsDom.all._
-    if (text.startsWith("<p>"))
-      td(raw(text))
-    else
-      td(text)
-  }
-
   /**
    * Returns a HTML table with the given column headings and list of rows
    *
@@ -81,9 +49,18 @@ object Components {
                       tableStyle: scalacss.StyleA = Styles.emptyStyle) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
+
+    // Returns a table cell markup, checking if the text is already in html format (after markdown processing)
+    def mkTableCell(text: String) = {
+      if (text.startsWith("<p>"))
+        td(raw(text))
+      else
+        td(text)
+    }
+
     if (rowList.isEmpty) div()
     else {
-      val (newHead, newRows) = compact(headings, rowList)
+      val (newHead, newRows) = SharedUtils.compact(headings, rowList)
       if (newHead.isEmpty) div()
       else {
         table(tableStyle, "data-toggle".attr := "table",
@@ -214,7 +191,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    * @param info contains the information to display
    */
   private def displayComponentInfo(info: ComponentInfo): Unit = {
-    if (info.publishes.isDefined || info.subscribes.isDefined || info.commands.isDefined) {
+    if (info.publishes.isDefined && info.publishes.get.nonEmpty
+      || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
+      || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty || info.commands.get.commandsSent.nonEmpty)) {
       val markup = markupForComponent(info).render
       val oldElement = $id(getComponentInfoId(info.compName))
       if (oldElement == null) {
@@ -346,13 +325,15 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     publishesOpt match {
       case None ⇒ div()
       case Some(publishes) ⇒
-        div(Styles.componentSection,
-          h3(s"Items published by $compName"),
-          raw(publishes.description),
-          publishTelemetryListMarkup("Telemetry", publishes.telemetryList),
-          publishTelemetryListMarkup("Events", publishes.eventList),
-          publishTelemetryListMarkup("Event Streams", publishes.eventStreamList),
-          publishAlarmListMarkup(publishes.alarmList))
+        if (publishes.nonEmpty) {
+          div(Styles.componentSection,
+            h3(s"Items published by $compName"),
+            raw(publishes.description),
+            publishTelemetryListMarkup("Telemetry", publishes.telemetryList),
+            publishTelemetryListMarkup("Events", publishes.eventList),
+            publishTelemetryListMarkup("Event Streams", publishes.eventStreamList),
+            publishAlarmListMarkup(publishes.alarmList))
+        } else div()
     }
   }
 
@@ -413,13 +394,15 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     subscribesOpt match {
       case None ⇒ div()
       case Some(subscribes) ⇒
-        div(Styles.componentSection,
-          h3(s"Items subscribed to by $compName"),
-          raw(subscribes.description),
-          subscribeListMarkup("Telemetry", subscribes.subscribeInfo.filter(_.itemType == "Telemetry")),
-          subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == "Events")),
-          subscribeListMarkup("Event Streams", subscribes.subscribeInfo.filter(_.itemType == "EventStreams")),
-          subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == "Alarms")))
+        if (subscribes.subscribeInfo.nonEmpty) {
+          div(Styles.componentSection,
+            h3(s"Items subscribed to by $compName"),
+            raw(subscribes.description),
+            subscribeListMarkup("Telemetry", subscribes.subscribeInfo.filter(_.itemType == "Telemetry")),
+            subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == "Events")),
+            subscribeListMarkup("Event Streams", subscribes.subscribeInfo.filter(_.itemType == "EventStreams")),
+            subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == "Alarms")))
+        } else div()
     }
   }
 

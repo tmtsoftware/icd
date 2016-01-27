@@ -123,7 +123,12 @@ case class Publishes(description: String,
                      telemetryList: List[TelemetryInfo],
                      eventList: List[TelemetryInfo],
                      eventStreamList: List[TelemetryInfo],
-                     alarmList: List[AlarmInfo])
+                     alarmList: List[AlarmInfo]) {
+  /**
+    * True if at the component publishes something
+    */
+  def nonEmpty: Boolean = telemetryList.nonEmpty || eventList.nonEmpty || eventStreamList.nonEmpty || alarmList.nonEmpty
+}
 
 /**
   * Describes an item that a component subscribes to
