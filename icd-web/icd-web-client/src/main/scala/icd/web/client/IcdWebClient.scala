@@ -143,7 +143,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
 
   /**
    * Called when a component is selected in one of the publisher/subscriber/command tables.
-   * If the lined subsystem is the source or target subsystem, use the component from the
+   * If the linked subsystem is the source or target subsystem, use the component from the
    * selected version of the subsystem, otherwise use the latest version.
    */
   private object ComponentLinkSelectionHandler extends ComponentListener {
@@ -155,9 +155,15 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
         case target.subsystemOpt ⇒ target
         case _                   ⇒ SubsystemWithVersion(Some(link.subsystem), None)
       }
-      setSidebarVisible(false)
-      components.setComponent(sv, link.compName)
-      pushState(viewType = ComponentLinkView, linkComponent = Some(link))
+      val newTarget = SubsystemWithVersion(None, None)
+      val compId = Components.getComponentInfoId(link.compName)
+      for {
+        _ ← targetSubsystem.setSubsystemWithVersion(newTarget, saveHistory = false)
+        _ ← subsystem.setSubsystemWithVersion(sv, saveHistory = false)
+      } {
+        dom.window.location.hash = s"#$compId"
+        pushState(viewType = ComponentView)
+      }
     }
   }
 
@@ -194,11 +200,6 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
           case VersionView   ⇒ showVersionHistory(saveHistory = false)()
           case ComponentView ⇒ updateComponentDisplay(hist.sourceComponents)
           case IcdView       ⇒ updateComponentDisplay(hist.sourceComponents)
-          case ComponentLinkView ⇒ hist.linkComponent.foreach { link ⇒
-            val sv = SubsystemWithVersion(Some(link.subsystem), None) // XXX where to get version?
-            setSidebarVisible(false)
-            components.setComponent(sv, link.compName)
-          }
         }
       }
     }
@@ -213,6 +214,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
 
   /**
    * Updates the main display to match the selected components
+   *
    * @return a future indicating when the changes are done
    */
   private def updateComponentDisplay(compNames: List[String]): Future[Unit] = {
@@ -382,6 +384,7 @@ object IcdWebClient extends JSApp {
 
   /**
    * Main entry point from Play
+   *
    * @param settings a JavaScript object containing settings (see class IcdWebClient)
    * @return
    */

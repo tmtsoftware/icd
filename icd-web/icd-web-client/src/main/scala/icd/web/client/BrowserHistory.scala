@@ -18,8 +18,8 @@ object BrowserHistory {
   // Viewing an ICD
   case object IcdView extends ViewType
 
-  // Viewing a single component from a publisher/subscriber/command link
-  case object ComponentLinkView extends ViewType
+  //  // Viewing a single component from a publisher/subscriber/command link
+  //  case object ComponentLinkView extends ViewType
 
   // Uploading ICD files
   case object UploadView extends ViewType

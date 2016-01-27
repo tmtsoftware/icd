@@ -131,17 +131,11 @@ case class Subsystem(listener: SubsystemListener,
         case Some(s) ⇒ subsystemItem.value = s
         case None    ⇒ subsystemItem.value = placeholderMsg
       }
-      (for (_ ← updateSubsystemVersionOptions()) yield {
-        sv.versionOpt match {
-          case Some(s) ⇒ versionItem.value = s
-          case None    ⇒ versionItem.value = unpublishedVersion
-        }
-      }) andThen {
-        case _ ⇒
-          if (notifyListener)
-            listener.subsystemSelected(getSubsystemWithVersion, saveHistory)
-          else Future.successful()
-      }
+
+      for {
+        _ ← updateSubsystemVersionOptions(sv.versionOpt)
+        _ ← listener.subsystemSelected(getSubsystemWithVersion, saveHistory) if notifyListener
+      } yield ()
     }
   }
 
@@ -191,16 +185,18 @@ case class Subsystem(listener: SubsystemListener,
     }
   }
 
-  // Updates the version combobox with the list of available versions for the selected subsystem.
+  // Updates the version combobox with the list of available versions for the selected subsystem
+  // and selects the given version, if defined.
   // Returns a future indicating when done.
-  def updateSubsystemVersionOptions(): Future[Unit] = {
+  def updateSubsystemVersionOptions(versionOpt: Option[String] = None): Future[Unit] = {
     versionItem.setAttribute("hidden", "true")
     getSelectedSubsystem match {
       case Some(subsystem) ⇒
         getSubsystemVersionOptions(subsystem).map { list ⇒ // Future!
           updateSubsystemVersionOptions(list)
           versionItem.removeAttribute("hidden")
-          versionItem.value = unpublishedVersion
+          val version = versionOpt.getOrElse(unpublishedVersion)
+          versionItem.value = version
         }.recover {
           case ex ⇒ ex.printStackTrace()
         }
