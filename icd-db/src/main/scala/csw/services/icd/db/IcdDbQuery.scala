@@ -236,15 +236,16 @@ case class IcdDbQuery(db: MongoDB) {
 
   /**
    * Returns a list of all subsystem names in the database.
-   * If a subsystem-model.conf was included, it is used, otherwise the
-   * subsystem names defined by the components are used.
+   * //   * If a subsystem-model.conf was included, it is used, otherwise the
+   * //   * subsystem names defined by the components are used.
    */
   def getSubsystemNames: List[String] = {
     val result = for (entry ← getEntries) yield {
       if (entry.subsystem.isDefined) {
         Some(jsonToSubsystemModel(entry.subsystem.get.head.toString).subsystem)
-      } else if (entry.component.isDefined) {
-        Some(jsonToComponentModel(entry.component.get.head.toString).subsystem)
+        // XXX require a subsystem-model.conf file!
+        //      } else if (entry.component.isDefined) {
+        //        Some(jsonToComponentModel(entry.component.get.head.toString).subsystem)
       } else None
     }
     result.flatten.distinct
