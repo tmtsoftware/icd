@@ -2,7 +2,7 @@ package csw.services.icd.db
 
 import csw.services.icd.db.IcdDbQuery.{ Published, PublishInfo, PublishedItem, Subscribed, PublishType, Alarms, EventStreams, Events, Telemetry }
 import csw.services.icd.html.HtmlMarkup
-import csw.services.icd.model.{ JsonSchemaModel, ReceiveCommandModel, ComponentModel, IcdModels }
+import csw.services.icd.model._
 import icd.web
 import icd.web.shared._
 
@@ -94,7 +94,7 @@ object IcdComponentInfo {
   /**
    * Gets information about the items published by a component
    *
-   * @param subsystem        the source subsystem
+   * @param subsystem        the source (publisher) subsystem
    * @param models           the model objects for the component
    * @param targetModelsList the target model objects
    */
@@ -103,25 +103,26 @@ object IcdComponentInfo {
       case None ⇒ None
       case Some(componentModel) ⇒
         val prefix = componentModel.prefix
+        val component = componentModel.component
         models.publishModel match {
           case None ⇒ None
           case Some(m) ⇒
             val desc = HtmlMarkup.gfmToHtml(m.description)
             val telemetryList = m.telemetryList.map { t ⇒
               TelemetryInfo(t.name, HtmlMarkup.gfmToHtml(t.description), t.minRate, t.maxRate, t.archive, t.archiveRate,
-                t.attributesList.map(getAttributeInfo), getSubscribers(subsystem, prefix, t.name, t.description, Telemetry, targetModelsList))
+                t.attributesList.map(getAttributeInfo), getSubscribers(subsystem, component, prefix, t.name, t.description, Telemetry, targetModelsList))
             }
             val eventList = m.eventList.map { t ⇒
               TelemetryInfo(t.name, HtmlMarkup.gfmToHtml(t.description), t.minRate, t.maxRate, t.archive, t.archiveRate,
-                t.attributesList.map(getAttributeInfo), getSubscribers(subsystem, prefix, t.name, t.description, EventStreams, targetModelsList))
+                t.attributesList.map(getAttributeInfo), getSubscribers(subsystem, component, prefix, t.name, t.description, EventStreams, targetModelsList))
             }
             val eventStreamList = m.eventStreamList.map { t ⇒
               TelemetryInfo(t.name, HtmlMarkup.gfmToHtml(t.description), t.minRate, t.maxRate, t.archive, t.archiveRate,
-                t.attributesList.map(getAttributeInfo), getSubscribers(subsystem, prefix, t.name, t.description, EventStreams, targetModelsList))
+                t.attributesList.map(getAttributeInfo), getSubscribers(subsystem, component, prefix, t.name, t.description, EventStreams, targetModelsList))
             }
             val alarmList = m.alarmList.map { al ⇒
               AlarmInfo(al.name, HtmlMarkup.gfmToHtml(al.description), al.severity, al.archive,
-                getSubscribers(subsystem, prefix, al.name, al.description, Alarms, targetModelsList))
+                getSubscribers(subsystem, component, prefix, al.name, al.description, Alarms, targetModelsList))
             }
             if (telemetryList.nonEmpty || eventList.nonEmpty || eventStreamList.nonEmpty || alarmList.nonEmpty)
               Some(Publishes(desc, telemetryList, eventList, eventStreamList, alarmList))
@@ -134,15 +135,17 @@ object IcdComponentInfo {
    * Gets information about who subscribes to the given published items
    *
    * @param subsystem        the publisher's subsystem
-   * @param prefix           component's prefix
+   * @param component        the publisher's component
+   * @param prefix           the publisher component's prefix
    * @param name             simple name of the published item
    * @param desc             description of the item
-   * @param subscribeType    telemetry, alarm, etc...
-   * @param targetModelsList the target model objects
+   * @param pubType          One of Telemetry, Event, EventStream, Alarm.
+   * @param targetModelsList the target model objects for the ICD
    */
-  private def getSubscribers(subsystem: String, prefix: String, name: String, desc: String, subscribeType: PublishType,
-                             targetModelsList: List[IcdModels]): List[SubscribeInfo] = {
+  private def getSubscribers(subsystem: String, component: String, prefix: String, name: String, desc: String,
+                             pubType: PublishType, targetModelsList: List[IcdModels]): List[web.shared.SubscribeInfo] = {
 
+    // Full path of the published item
     val path = s"$prefix.$name"
 
     /**
@@ -150,25 +153,36 @@ object IcdComponentInfo {
      *
      * @param subscriberSubsystem the subscriber's subsystem
      * @param subscriberCompName  the subscriber's component name
-     * @param targetInfo          list of items the target subscribes to
+     * @param targetInfo          list of items the target subscriber subscribes to
      * @return the Subscribed object, if the component is a subscriber to the given path
      */
     def subscribes(subscriberSubsystem: String, subscriberCompName: String,
                    targetInfo: List[csw.services.icd.model.SubscribeInfo]): Option[Subscribed] = {
       targetInfo.find { subscribeInfo ⇒
-        subscribeInfo.name == path && subscribeInfo.subsystem == subsystem
+        subscribeInfo.name == name && subscribeInfo.subsystem == subsystem && subscribeInfo.component == component
       }.map { subscribeInfo ⇒
-        Subscribed(subscriberCompName, subscriberSubsystem, subscribeType, name, path, subscribeInfo.usage)
+        Subscribed(subscriberCompName, subscriberSubsystem, pubType, name, path, subscribeInfo.usage,
+          subscribeInfo.requiredRate, subscribeInfo.maxRate)
+      }
+    }
+
+    // Gets the list of subscribed items from the model given the publish type
+    def getSubscribeInfoByType(subscribeModel: SubscribeModel, pubType: PublishType): List[csw.services.icd.model.SubscribeInfo] = {
+      pubType match {
+        case Telemetry    ⇒ subscribeModel.telemetryList
+        case Events       ⇒ subscribeModel.eventList
+        case EventStreams ⇒ subscribeModel.eventStreamList
+        case Alarms       ⇒ subscribeModel.alarmList
       }
     }
 
     for {
       icdModel ← targetModelsList
       subscribeModel ← icdModel.subscribeModel
-      s ← subscribes(subscribeModel.subsystem, subscribeModel.component, subscribeModel.telemetryList)
+      s ← subscribes(subscribeModel.subsystem, subscribeModel.component, getSubscribeInfoByType(subscribeModel, pubType))
     } yield {
       web.shared.SubscribeInfo(s.subscribeType.toString, s.path, path, HtmlMarkup.gfmToHtml(desc),
-        HtmlMarkup.gfmToHtml(s.usage), s.subsystem, s.componentName)
+        HtmlMarkup.gfmToHtml(s.usage), s.subsystem, s.componentName, s.requiredRate, s.maxRate)
     }
   }
 
@@ -213,10 +227,10 @@ object IcdComponentInfo {
    */
   private def getSubscribes(models: IcdModels, targetModelsList: List[IcdModels]): Option[Subscribes] = {
     // Gets a list of items of a given type that the component subscribes to, with publisher info
-    def getInfo(publishType: PublishType, si: csw.services.icd.model.SubscribeInfo): List[SubscribeInfo] = {
+    def getInfo(publishType: PublishType, si: csw.services.icd.model.SubscribeInfo): List[web.shared.SubscribeInfo] = {
       publishes(si.name, publishType, targetModelsList).map { pi ⇒
         web.shared.SubscribeInfo(publishType.toString, si.name, pi.prefix, HtmlMarkup.gfmToHtml(pi.item.description),
-          HtmlMarkup.gfmToHtml(si.usage), si.subsystem, pi.componentName)
+          HtmlMarkup.gfmToHtml(si.usage), si.subsystem, pi.componentName, si.requiredRate, si.maxRate)
       }
     }
 

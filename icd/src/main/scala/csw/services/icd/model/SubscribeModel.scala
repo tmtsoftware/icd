@@ -25,6 +25,16 @@ object SubscribeModel {
   }
 }
 
+/**
+ * Describes the items a component subscribes to
+ * @param subsystem the component's subsystem
+ * @param component the component
+ * @param description a top level description of the subscribed items
+ * @param telemetryList list of subscribed telemetry
+ * @param eventList list of subscribed events
+ * @param eventStreamList list of subscribed event streams
+ * @param alarmList list of subscribed alarms
+ */
 case class SubscribeModel(subsystem: String,
                           component: String,
                           description: String,
@@ -46,6 +56,15 @@ object SubscribeInfo {
       maxRate = config.as[Option[Double]]("maxRate").getOrElse(0))
 }
 
+/**
+ * Describes an item the component subscribes to
+ * @param subsystem the publisher's subsystem
+ * @param component the publisher's component
+ * @param name the name of the published item
+ * @param usage describes how the item is used by the subscriber
+ * @param requiredRate the required rate
+ * @param maxRate the max rate
+ */
 case class SubscribeInfo(subsystem: String,
                          component: String,
                          name: String,

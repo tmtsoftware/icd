@@ -265,6 +265,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     (btn, row)
   }
 
+  private def formatRate(rate: Double): String = if (rate == 0) "" else s"$rate Hz"
+
   // Generates the HTML markup to display the component's publish information
   private def publishMarkup(compName: String, publishesOpt: Option[Publishes]) = {
     import scalatags.JsDom.all._
@@ -282,8 +284,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         href := "#",
         onclick := clickedOnSubscriber(info) _)
     }
-
-    def formatRate(rate: Double): String = if (rate == 0) "" else s"$rate Hz"
 
     // Returns a table row displaying more details for the given telemetry
     def makeDetailsRow(t: TelemetryInfo) = {
@@ -311,7 +311,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               th("Subscribers"))),
           tbody(
             for (t ← telemetryList) yield {
-              val (btn, row) = hiddenRowMarkup(makeDetailsRow(t), 4)
+              val (btn, row) = hiddenRowMarkup(makeDetailsRow(t), 3)
               List(tr(
                 td(Styles.attributeCell, p(btn, t.name)),
                 td(raw(t.description)),
@@ -374,6 +374,19 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         onclick := clickedOnPublisher(info) _)
     }
 
+    // Returns a table row displaying more details for the given subscription
+    def makeDetailsRow(si: SubscribeInfo) = {
+      val headings = List("Subsystem", "Component", "Prefix.Name", "Required Rate", "Max Rate")
+      val rowList = List(List(
+        si.subsystem,
+        si.compName,
+        si.path,
+        formatRate(si.requiredRate),
+        formatRate(si.maxRate)))
+
+      div(mkTable(headings, rowList))
+    }
+
     def subscribeListMarkup(pubType: String, subscribeList: List[SubscribeInfo]) = {
       if (subscribeList.isEmpty) div()
       else div(
@@ -387,11 +400,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                 th("Publisher"))),
             tbody(
               for (s ← subscribeList) yield {
+                val (btn, row) = hiddenRowMarkup(makeDetailsRow(s), 3)
                 val usage = if (s.usage.isEmpty) div() else div(strong("Usage:"), raw(s.usage))
-                tr(
-                  td(p(s.name)),
+                List(tr(
+                  td(Styles.attributeCell, p(btn, s.name)),
                   td(raw(s.description), usage),
-                  td(p(makeLinkForPublisher(s))))
+                  td(p(makeLinkForPublisher(s)))),
+                  row)
               }))))
     }
 

@@ -135,6 +135,8 @@ case class Publishes(description: String,
   * @param usage       describes how the subscribed item is used (in html format, after markdown processing)
   * @param subsystem   the subsystem that publishes the value
   * @param compName    component that publishes the value
+  * @param requiredRate  required rate for the item
+  * @param maxRate    maximum rate that can be accepted
   */
 case class SubscribeInfo(itemType: String,
                          name: String,
@@ -142,7 +144,9 @@ case class SubscribeInfo(itemType: String,
                          description: String,
                          usage: String,
                          subsystem: String,
-                         compName: String)
+                         compName: String,
+                         requiredRate: Double,
+                         maxRate: Double)
 
 /**
  * Describes what items a component subscribes to

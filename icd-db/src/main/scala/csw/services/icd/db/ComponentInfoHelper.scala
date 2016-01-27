@@ -97,7 +97,7 @@ object ComponentInfoHelper {
                              subscribeType: PublishType): List[SubscribeInfo] = {
     query.subscribes(s"$prefix.$name", subscribeType).map { s ⇒
       SubscribeInfo(s.subscribeType.toString, s.name, s.path, HtmlMarkup.gfmToHtml(desc),
-        HtmlMarkup.gfmToHtml(s.usage), s.subsystem, s.componentName)
+        HtmlMarkup.gfmToHtml(s.usage), s.subsystem, s.componentName, s.requiredRate, s.maxRate)
     }
   }
 
@@ -160,12 +160,12 @@ object ComponentInfoHelper {
       val path = s"$prefix.${si.name}"
       val info = query.publishes(path, si.subsystem, publishType).map { pi ⇒
         SubscribeInfo(publishType.toString, si.name, s"${pi.prefix}.${si.name}", HtmlMarkup.gfmToHtml(pi.item.description),
-          HtmlMarkup.gfmToHtml(si.usage), si.subsystem, si.component)
+          HtmlMarkup.gfmToHtml(si.usage), si.subsystem, si.component, si.requiredRate, si.maxRate)
       }
       if (info.nonEmpty) info
       else {
         val prefix = query.getPrefix(si.subsystem, si.component)
-        List(SubscribeInfo(publishType.toString, si.name, s"$prefix.${si.name}", "", "", si.subsystem, si.component))
+        List(SubscribeInfo(publishType.toString, si.name, s"$prefix.${si.name}", "", "", si.subsystem, si.component, si.requiredRate, si.maxRate))
       }
     }
 

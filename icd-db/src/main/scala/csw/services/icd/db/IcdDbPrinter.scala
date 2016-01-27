@@ -68,7 +68,7 @@ case class IcdDbPrinter(db: IcdDb) {
         h4(a(pubType)),
         for (t ← telemetryList) yield {
           div(cls := "nopagebreak")(
-            h4(a(s"$pubType: ${t.name}")),
+            h5(a(s"$pubType: ${t.name}")),
             raw(t.description),
             table(
               thead(
@@ -123,25 +123,20 @@ case class IcdDbPrinter(db: IcdDb) {
   private def subscribeMarkup(compName: String, subscribesOpt: Option[Subscribes]): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
-    def subscribeListMarkup(pubType: String, subscribeList: List[SubscribeInfo]) = {
+    def subscribeListMarkup(pubType: String, subscribeList: List[SubscribeInfo]): Text.TypedTag[String] = {
       if (subscribeList.isEmpty) div()
-      else div(
-        h4(s"$pubType Subscribed to by $compName"),
-        div(cls := "nopagebreak")(
-          table(
-            thead(
-              tr(
-                th("Name"),
-                th("Description"),
-                th("Publisher"))),
-            tbody(
-              for (s ← subscribeList) yield {
-                val usage = if (s.usage.isEmpty) div() else div(strong("Usage:"), raw(s.usage))
-                tr(
-                  td(p(s.name)),
-                  td(raw(s.description), usage),
-                  td(p(s.compName)))
-              }))))
+      else div(cls := "nopagebreak")(
+        h4(a(pubType)),
+        for (si ← subscribeList) yield {
+          div(cls := "nopagebreak")(
+            h5(a(s"$pubType: ${si.name}")),
+            raw(si.description),
+            table(
+              thead(
+                tr(th("Subsystem"), th("Component"), th("Prefix.Name"), th("Required Rate"), th("Max Rate"))),
+              tbody(
+                tr(td(si.subsystem), td(si.compName), td(si.path), td(si.requiredRate), td(si.maxRate)))))
+        })
     }
 
     subscribesOpt match {
@@ -170,7 +165,7 @@ case class IcdDbPrinter(db: IcdDb) {
         h4(a(name := receivedCommandsId(compName))(receivedCommandsTitle(compName))),
         for (r ← info) yield {
           div(cls := "nopagebreak")(
-            h4(a(s"Configuration: ${r.name}")),
+            h5(a(s"Configuration: ${r.name}")),
             if (r.requirements.isEmpty) div() else p(strong("Requirements: ", r.requirements.mkString(", "))),
             raw(r.description),
             if (r.args.isEmpty) div() else attributeListMarkup(s"Arguments for ${r.name}", r.args))
