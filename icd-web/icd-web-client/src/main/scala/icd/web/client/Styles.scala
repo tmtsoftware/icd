@@ -9,10 +9,9 @@ object Styles extends StyleSheet.Inline {
   import language.postfixOps
 
   val layout = style(
-    minHeight(100 %%),
-    height(100 %%),
+    height(95 %%),
     width(100 %%),
-    position.absolute,
+    position.fixed,
     top(50 px),
     // Increase top offset in the range 750 to 1170 px,
     // since the navbar items wrap around at that size
