@@ -10,19 +10,26 @@ import scalatags.JsDom.all._
 trait SidebarListener {
   /**
    * Called when a component in the sidebar is checked or unchecked
+   *
    * @param componentName the component name
-   * @param checked true if the checkbox is checked
+   * @param checked       true if the checkbox is checked
    */
-  def componentSelected(componentName: String, checked: Boolean): Unit
+  def componentCheckboxChanged(componentName: String, checked: Boolean): Unit
+
+  /**
+   * called when one of the component links of clicked
+   *
+   * @param componentName the component name
+   */
+  def componentSelected(componentName: String): Unit
 }
 
 /**
  * Manages the sidebar items
  *
- * @param listener called with the component name and checkbox state
- *                 when one of the component checkboxes is checked or unchecked
+ * @param sidebarListener notified when a checkbox is changed or a link is clicked on
  */
-case class Sidebar(listener: SidebarListener) extends Displayable {
+case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
 
   val sidebarList = ul(cls := "nav list-group").render
 
@@ -40,7 +47,7 @@ case class Sidebar(listener: SidebarListener) extends Displayable {
               value := compName,
               checked := true,
               onchange := checkboxListener),
-            a(title := s"Scroll to $compName", href := s"#$compId", compName)))))
+            a(title := s"Scroll to $compName", href := s"#$compId", compName, onclick := componentSelected(compName) _)))))
   }
 
   /**
@@ -57,6 +64,7 @@ case class Sidebar(listener: SidebarListener) extends Displayable {
 
   /**
    * Sets the list of checked components in the sidebar
+   *
    * @return true if anything was changed
    */
   def setSelectedComponents(components: List[String]): Boolean = {
@@ -72,10 +80,16 @@ case class Sidebar(listener: SidebarListener) extends Displayable {
     changes.contains(true)
   }
 
-  // called when a component is selected or deselected
-  private def componentSelected(compName: String)(e: dom.Event): Unit = {
+  // called when a component checkbox is checked or unchecked
+  private def componentCheckboxChanged(compName: String)(e: dom.Event): Unit = {
     val checked = e.target.asInstanceOf[HTMLInputElement].checked
-    listener.componentSelected(compName, checked)
+    sidebarListener.componentCheckboxChanged(compName, checked)
+  }
+
+  // called when a component link is clicked
+  private def componentSelected(compName: String)(e: dom.Event): Unit = {
+    e.preventDefault()
+    sidebarListener.componentSelected(compName)
   }
 
   // Uncheck all of the checkboxes in the sidebar
@@ -86,6 +100,7 @@ case class Sidebar(listener: SidebarListener) extends Displayable {
 
   /**
    * Adds an HTML element to the sidebar.
+   *
    * @param node a scalatags node
    */
   def addItem(node: Node): Unit = {
@@ -96,7 +111,7 @@ case class Sidebar(listener: SidebarListener) extends Displayable {
    * Adds an ICD component to the sidebar
    */
   def addComponent(compName: String): Unit = {
-    addItem(componentCheckBox(compName, componentSelected(compName)).render)
+    addItem(componentCheckBox(compName, componentCheckboxChanged(compName)).render)
   }
 
   /**

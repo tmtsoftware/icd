@@ -253,6 +253,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Action when user clicks on a subscriber link
     def clickedOnSubscriber(info: SubscribeInfo)(e: dom.Event) = {
+      e.preventDefault()
       listener.componentSelected(ComponentLink(info.subsystem, info.compName))
     }
 
@@ -344,6 +345,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Action when user clicks on a subscriber link
     def clickedOnPublisher(info: SubscribeInfo)(e: dom.Event) = {
+      e.preventDefault()
       listener.componentSelected(ComponentLink(info.subsystem, info.compName))
     }
 
@@ -413,6 +415,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Action when user clicks on a sender link
     def clickedOnSender(sender: OtherComponent)(e: dom.Event) = {
+      e.preventDefault()
       listener.componentSelected(ComponentLink(sender.subsystem, sender.compName))
     }
 
@@ -457,6 +460,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Action when user clicks on a receiver link
     def clickedOnReceiver(receiver: OtherComponent)(e: dom.Event) = {
+      e.preventDefault()
       listener.componentSelected(ComponentLink(receiver.subsystem, receiver.compName))
     }
 
@@ -490,7 +494,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     commandsOpt match {
       case None ⇒ div()
       case Some(commands) ⇒
-        div(
+        if (commands.commandsReceived.isEmpty && commands.commandsSent.isEmpty) div()
+        else div(
           h3(s"Commands for $compName"),
           raw(commands.description),
           receivedCommandsMarkup(compName, commands.commandsReceived),
@@ -525,7 +530,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
-    div(Styles.component, id := getComponentInfoId(info.compName))(
+    val idStr = getComponentInfoId(info.compName)
+
+    div(Styles.component, id := idStr)(
       h2(info.compName),
       componentInfoTableMarkup(info),
       raw(info.description),

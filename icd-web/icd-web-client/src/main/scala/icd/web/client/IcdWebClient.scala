@@ -24,8 +24,8 @@ import Components._
 /**
  * Main class for the ICD web app.
  *
- * @param csrfToken server token used for file upload (for security)
- * @param wsBaseUrl web socket base URL
+ * @param csrfToken         server token used for file upload (for security)
+ * @param wsBaseUrl         web socket base URL
  * @param inputDirSupported true if uploading directories is supported (currently only for Chrome)
  */
 case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported: Boolean) {
@@ -129,7 +129,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
 
   // Listener for sidebar component checkboxes
   private object LeftSidebarListener extends SidebarListener {
-    override def componentSelected(componentName: String, checked: Boolean): Unit = {
+    override def componentCheckboxChanged(componentName: String, checked: Boolean): Unit = {
       if (checked)
         components.addComponent(componentName,
           subsystem.getSubsystemWithVersion,
@@ -138,6 +138,12 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
         components.removeComponentInfo(componentName)
 
       pushState(viewType = ComponentView)
+    }
+
+    // Called when a component link is selected in the sidebar
+    override def componentSelected(componentName: String): Unit = {
+      goToComponent(componentName)
+      pushState(viewType = ComponentView, compName = Some(componentName), replace = true)
     }
   }
 
@@ -156,29 +162,48 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
         case _                   ⇒ SubsystemWithVersion(Some(link.subsystem), None)
       }
       val newTarget = SubsystemWithVersion(None, None)
-      val compId = Components.getComponentInfoId(link.compName)
       for {
         _ ← targetSubsystem.setSubsystemWithVersion(newTarget, saveHistory = false)
         _ ← subsystem.setSubsystemWithVersion(sv, saveHistory = false)
       } {
-        dom.window.location.hash = s"#$compId"
-        pushState(viewType = ComponentView)
+        goToComponent(link.compName)
+        pushState(viewType = ComponentView, compName = Some(link.compName), replace = true)
       }
     }
   }
 
+  // Jump to the component description
+  private def goToComponent(compName: String, replace: Boolean = false): Unit = {
+    val compId = Components.getComponentInfoId(compName)
+    if (replace) {
+      val baseUrl = dom.window.location.href.split('#')(0)
+      dom.window.location.replace(s"$baseUrl#$compId")
+    } else {
+      dom.window.location.hash = s"#$compId"
+    }
+  }
+
   /**
-   * Push the current app state for the browser history
+   * Push (or replace) the current app state for the browser history.
+   * (Replace is needed if the browser is following a link, in which case the browser automatically pushes something
+   * on the stack that we don't want.)
+   *
+   * If a single component is selected, it should be passed as compName.
    */
-  private def pushState(viewType: ViewType, linkComponent: Option[ComponentLink] = None): Unit = {
+  private def pushState(viewType: ViewType, compName: Option[String] = None, replace: Boolean = false): Unit = {
     val hist = BrowserHistory(
       subsystem.getSubsystemWithVersion,
       targetSubsystem.getSubsystemWithVersion,
       icdChooser.getSelectedIcdVersion,
       sidebar.getSelectedComponents,
       viewType = viewType,
-      linkComponent = linkComponent)
-    hist.pushState()
+      compName)
+
+    if (replace) {
+      hist.replaceState()
+    } else {
+      hist.pushState()
+    }
   }
 
   /**
@@ -195,11 +220,13 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
       } {
         sidebar.setSelectedComponents(hist.sourceComponents)
         hist.viewType match {
-          case UploadView    ⇒ uploadSelected(saveHistory = false)()
-          case PublishView   ⇒ publishItemSelected(saveHistory = false)()
-          case VersionView   ⇒ showVersionHistory(saveHistory = false)()
-          case ComponentView ⇒ updateComponentDisplay(hist.sourceComponents)
-          case IcdView       ⇒ updateComponentDisplay(hist.sourceComponents)
+          case UploadView  ⇒ uploadSelected(saveHistory = false)()
+          case PublishView ⇒ publishItemSelected(saveHistory = false)()
+          case VersionView ⇒ showVersionHistory(saveHistory = false)()
+          case ComponentView | IcdView ⇒
+            updateComponentDisplay(hist.sourceComponents).onSuccess {
+              case _ ⇒ hist.currentCompnent.foreach(compName ⇒ goToComponent(compName, replace = true))
+            }
         }
       }
     }
@@ -223,8 +250,9 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     val icdOpt = icdChooser.getSelectedIcdVersion
     setSidebarVisible(true)
     mainContent.clearContent()
-    showBusyCursorWhile(
-      components.addComponents(compNames, sub, targetOpt, icdOpt))
+    showBusyCursorWhile {
+      components.addComponents(compNames, sub, targetOpt, icdOpt)
+    }
   }
 
   // Gets the list of subcomponents for the selected subsystem
