@@ -80,48 +80,53 @@ case class IcdDbPrinter(db: IcdDb) {
     }
   }
 
+  private def formatRate(rate: Double): String = if (rate == 0) "" else s"$rate Hz"
+
   // Generates the HTML markup to display the component's publish information
   private def publishMarkup(compName: String, publishesOpt: Option[Publishes]): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
     def publishTelemetryListMarkup(pubType: String, telemetryList: List[TelemetryInfo]): Text.TypedTag[String] = {
       if (telemetryList.isEmpty) div()
-      else div(cls := "nopagebreak")(
-        h4(a(pubType)),
-        for (t ← telemetryList) yield {
-          div(cls := "nopagebreak")(
-            h5(a(s"$pubType: ${t.name}")),
-            raw(t.description),
-            table(
-              thead(
-                tr(th("Min Rate"), th("Max Rate"), th("Archive"), th("Archive Rate"), th("Subscribers"))),
-              tbody(
-                tr(td(t.minRate), td(t.maxRate), td(if (t.archive) "yes" else "no"), td(t.archiveRate), td(t.subscribers.map(_.compName).mkString(", "))))),
-            attributeListMarkup(s"Attributes for ${t.name}", t.attributesList), hr)
-        })
+      else {
+        div(cls := "nopagebreak")(
+          h4(a(pubType)),
+          for (t ← telemetryList) yield {
+            val headings = List("Min Rate", "Max Rate", "Archive", "Archive Rate", "Subscribers")
+            val rowList = List(List(formatRate(t.minRate), formatRate(t.maxRate), if (t.archive) "yes" else "no",
+              formatRate(t.archiveRate), t.subscribers.map(_.compName).mkString(", ")))
+            div(cls := "nopagebreak")(
+              h5(a(s"$pubType: ${t.name}")),
+              raw(t.description),
+              mkTable(headings, rowList),
+              attributeListMarkup(s"Attributes for ${t.name}", t.attributesList), hr)
+          })
+      }
     }
 
     def publishAlarmListMarkup(alarmList: List[AlarmInfo]): Text.TypedTag[String] = {
       if (alarmList.isEmpty) div()
-      else div(cls := "nopagebreak")(
-        h4(a("Alarms")),
-        table(
-          thead(
-            tr(
-              th("Name"),
-              th("Description"),
-              th("Severity"),
-              th("Archive"),
-              th("Subscribers"))),
-          tbody(
-            for (a ← alarmList) yield {
+      else {
+        div(cls := "nopagebreak")(
+          h4(a("Alarms")),
+          table(
+            thead(
               tr(
-                td(p(a.name)),
-                td(raw(a.description)),
-                td(p(a.severity)),
-                td(p(if (a.archive) "Yes" else "No")),
-                td(p(a.subscribers.map(_.compName).mkString(", "))))
-            })), hr)
+                th("Name"),
+                th("Description"),
+                th("Severity"),
+                th("Archive"),
+                th("Subscribers"))),
+            tbody(
+              for (a ← alarmList) yield {
+                tr(
+                  td(p(a.name)),
+                  td(raw(a.description)),
+                  td(p(a.severity)),
+                  td(p(if (a.archive) "Yes" else "No")),
+                  td(p(a.subscribers.map(_.compName).mkString(", "))))
+              })), hr)
+      }
     }
 
     publishesOpt match {
