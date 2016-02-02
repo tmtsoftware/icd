@@ -9,16 +9,16 @@ case class PublishModelToHtml(m: PublishModel) extends HtmlMarkup {
 
   import HtmlMarkup._
 
-  private val name = "Publish"
+  private val name = s"Items Published by ${m.component}"
   private val head = mkHeading(2, name)
 
   private val desc = mkParagraph(m.description)
 
   private val parts: List[HtmlMarkup] = List(
-    TelemetryListToHtml(m.telemetryList),
-    TelemetryListToHtml(m.eventList),
-    TelemetryListToHtml(m.eventStreamList, "Event Streams"),
-    AlarmListToHtml(m.alarmList))
+    TelemetryListToHtml(m.telemetryList, "Telemetry", m.component),
+    TelemetryListToHtml(m.eventList, "Events", m.component),
+    TelemetryListToHtml(m.eventStreamList, "Event Streams", m.component),
+    AlarmListToHtml(m.alarmList, m.component))
 
   override val tags = List(head, desc) ::: parts.map(_.markup)
 

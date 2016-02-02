@@ -9,7 +9,7 @@ import scalatags.Text.TypedTag
  * Converts a ComponentModel instance to a HTML formatted string
  */
 case class CommandModelToHtml(m: CommandModel) extends HtmlMarkup {
-  private val name = "Commands"
+  private val name = s"Commands for ${m.component}"
   private val head = mkHeading(2, name)
 
   private val desc = mkParagraph(m.description)
@@ -18,12 +18,17 @@ case class CommandModelToHtml(m: CommandModel) extends HtmlMarkup {
 
   private val send = SendCommandModelToHtml(m.send)
 
-  override val tags = List(head, desc) ::: receive.map(_.markup) ::: List(send.markup)
+  override val tags = if (m.receive.nonEmpty || m.send.nonEmpty)
+    List(head, desc) ::: receive.map(_.markup) ::: List(send.markup)
+  else {
+    import scalatags.Text.all._
+    List(div())
+  }
 
-  override val tocEntry = {
+  override val tocEntry = if (m.receive.nonEmpty || m.send.nonEmpty) {
     import scalatags.Text.all._
     Some(ul(li(a(href := s"#$idStr")(this.name), ul(receive.flatMap(_.tocEntry), send.tocEntry))))
-  }
+  } else None
 }
 
 private case class ReceiveCommandModelToHtml(m: ReceiveCommandModel) extends HtmlMarkup {
@@ -53,8 +58,11 @@ private case class SendCommandModelToHtml(list: List[SendCommandModel]) extends 
     List("Name", "Component", "Subsystem"),
     list.map(m ⇒ List(m.name, m.component, m.subsystem)))
 
-  override val tags = List(head, table)
+  override val tags = if (list.nonEmpty) List(head, table) else {
+    import scalatags.Text.all._
+    List(div())
+  }
 
-  override val tocEntry = Some(mkTocEntry(name))
+  override val tocEntry = if (list.nonEmpty) Some(mkTocEntry(name)) else None
 }
 

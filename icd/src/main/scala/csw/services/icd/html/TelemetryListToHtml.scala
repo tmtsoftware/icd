@@ -4,35 +4,36 @@ import csw.services.icd.html.HtmlMarkup._
 import csw.services.icd.model._
 
 /**
- * Converts a TelemetryModel instance (or EventStreamModel, which is the same) to a HTML formatted string
+ * Converts a TelemetryModel instance to a HTML formatted string
  */
-case class TelemetryListToHtml(list: List[TelemetryModel], title: String = "Telemetry") extends HtmlMarkup {
-  private val head = mkHeading(3, title)
+case class TelemetryListToHtml(list: List[TelemetryModel], pubType: String, compName: String) extends HtmlMarkup {
+  private val titleStr = s"$pubType Published by $compName"
+  private val head = mkHeading(3, titleStr)
 
   private val body = {
     import scalatags.Text.all._
-    div(this.list.map(TelemetryModelToHTML(_, this.title).markup))
+    div(this.list.map(TelemetryModelToHTML(_, pubType).markup))
   }
 
-  override val tags = List(head, body)
+  override val tags = if (list.nonEmpty) List(head, body) else {
+    import scalatags.Text.all._
+    List(div())
+  }
 
-  override val tocEntry = Some(mkTocEntry(title))
+  override val tocEntry = if (list.nonEmpty) Some(mkTocEntry(titleStr)) else None
 }
 
-private case class TelemetryModelToHTML(m: TelemetryModel, title: String) extends HtmlMarkup {
+private case class TelemetryModelToHTML(m: TelemetryModel, pubType: String) extends HtmlMarkup {
 
-  private val name = s"$title: ${m.name}"
+  private val name = s"$pubType: ${m.name}"
   private val head = mkHeading(4, name)
 
   private val desc = mkParagraph(m.description)
 
   private val table = mkTable(
-    List("Name", "Value"),
-    List(
-      List("Min Rate", m.minRate.toString + " Hz"),
-      List("Max Rate", m.maxRate.toString + " Hz"),
-      List("Archive", m.archive.toString),
-      List("Archive Rate", m.archiveRate.toString + " Hz")).filter(_(1) != "0 Hz"))
+    List("Min Rate", "Max Rate", "Archive", "Archive Rate"),
+    List(List(formatRate(m.minRate), formatRate(m.maxRate), if (m.archive) "yes" else "no",
+      formatRate(m.archiveRate))))
 
   private val attr = JsonSchemaListToHtml(Some(s"Attributes for ${m.name}"), m.attributesList)
 

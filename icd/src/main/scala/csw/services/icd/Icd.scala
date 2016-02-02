@@ -49,7 +49,7 @@ object Icd extends App {
         run(options)
       } catch {
         case e: Throwable ⇒
-          println(e)
+          e.printStackTrace()
           System.exit(1)
       }
     case None ⇒ System.exit(1)

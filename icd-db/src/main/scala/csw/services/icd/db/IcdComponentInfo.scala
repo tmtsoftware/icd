@@ -148,14 +148,12 @@ object IcdComponentInfo {
     // Full path of the published item
     val path = s"$prefix.$name"
 
-    /**
-     * Returns the object if the component subscribes to the given value.
-     *
-     * @param subscriberSubsystem the subscriber's subsystem
-     * @param subscriberCompName  the subscriber's component name
-     * @param targetInfo          list of items the target subscriber subscribes to
-     * @return the Subscribed object, if the component is a subscriber to the given path
-     */
+    // Returns the object if the component subscribes to the given value.
+    //
+    // subscriberSubsystem: the subscriber's subsystem
+    // subscriberCompName:  the subscriber's component name
+    // targetInfo:          list of items the target subscriber subscribes to
+    // Returns the Subscribed object, if the component is a subscriber to the given path
     def subscribes(subscriberSubsystem: String, subscriberCompName: String,
                    targetInfo: List[csw.services.icd.model.SubscribeInfo]): Option[Subscribed] = {
       targetInfo.find { subscribeInfo ⇒

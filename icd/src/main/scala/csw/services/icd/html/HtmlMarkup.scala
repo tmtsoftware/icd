@@ -53,6 +53,8 @@ object HtmlMarkup {
 
   private def isEmpty(x: String): Boolean = Option(x).forall(_.isEmpty)
 
+  def formatRate(rate: Double): String = if (rate == 0) "" else s"$rate Hz"
+
   /**
    * Returns the HTML snippet for the given markdown (GFM)
    *
