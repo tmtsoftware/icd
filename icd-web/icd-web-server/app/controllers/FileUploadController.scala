@@ -14,7 +14,8 @@ object FileUploadController extends Controller {
   val (wsEnumerator, wsChannel) = Concurrent.broadcast[String]
 
   // Server side of the upload ICD feature.
-  // Supported files: ICD files and .zip files of ICD files.
+  // Supported file types: A directory containing icd config files (chrome)
+  // or a .zip file containing directories with icd config files.
   def uploadFiles = Action(parse.multipartFormData) { request ⇒
     import upickle.default._
     val files = request.body.files.toList

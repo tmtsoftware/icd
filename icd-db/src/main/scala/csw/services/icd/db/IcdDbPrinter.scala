@@ -90,7 +90,7 @@ case class IcdDbPrinter(db: IcdDb) {
       if (telemetryList.isEmpty) div()
       else {
         div(cls := "nopagebreak")(
-          h4(a(pubType)),
+          h4(a(s"$pubType Published by $compName")),
           for (t ← telemetryList) yield {
             val headings = List("Min Rate", "Max Rate", "Archive", "Archive Rate", "Subscribers")
             val rowList = List(List(formatRate(t.minRate), formatRate(t.maxRate), if (t.archive) "yes" else "no",
@@ -108,7 +108,7 @@ case class IcdDbPrinter(db: IcdDb) {
       if (alarmList.isEmpty) div()
       else {
         div(cls := "nopagebreak")(
-          h4(a("Alarms")),
+          h4(a(s"Alarms Published by $compName")),
           table(
             thead(
               tr(
@@ -155,7 +155,7 @@ case class IcdDbPrinter(db: IcdDb) {
     def subscribeListMarkup(pubType: String, subscribeList: List[SubscribeInfo]): Text.TypedTag[String] = {
       if (subscribeList.isEmpty) div()
       else div(cls := "nopagebreak")(
-        h4(a(pubType)),
+        h4(a(s"$pubType Subscribed to by $compName")),
         for (si ← subscribeList) yield {
           div(cls := "nopagebreak")(
             h5(a(s"$pubType: ${si.name}")),
