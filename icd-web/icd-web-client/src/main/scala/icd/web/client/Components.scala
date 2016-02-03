@@ -55,7 +55,7 @@ object Components {
       if (text.startsWith("<p>"))
         td(raw(text))
       else
-        td(text)
+        td(p(text))
     }
 
     if (rowList.isEmpty) div()

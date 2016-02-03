@@ -160,17 +160,17 @@ table th {
     white-space: nowrap;
 }
 
-table tr td p, table tr td div p {
+table tbody tr td p, table tbody tr td div p {
     padding: 5px 0;
     border-width: 0;
     margin: 0;
 }
 
-.shadow {
-    -webkit-box-shadow: 0 5px 15px #000;
-    -moz-box-shadow: 0 5px 15px #000;
-    box-shadow: 0 5px 15px #000;
-}
+/*.shadow {*/
+    /*-webkit-box-shadow: 0 5px 15px #000;*/
+    /*-moz-box-shadow: 0 5px 15px #000;*/
+    /*box-shadow: 0 5px 15px #000;*/
+/*}*/
 
 .pagebreak {
     page-break-after: always;

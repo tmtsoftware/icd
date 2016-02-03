@@ -49,7 +49,7 @@ case class IcdDbPrinter(db: IcdDb) {
       if (text.startsWith("<p>"))
         td(raw(text))
       else
-        td(text)
+        td(p(text))
     }
 
     if (rowList.isEmpty) div()
