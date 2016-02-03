@@ -17,7 +17,7 @@ case class JsonSchemaModel(config: Config) {
   val typeOpt = config.as[Option[String]]("type")
   val enumOpt = config.as[Option[List[String]]]("enum")
   val units = config.as[Option[String]]("units").getOrElse("")
-  val maxItems = config.as[Option[String]]("maxItems")
+  val dimsOpt = config.as[Option[List[String]]]("dimensions")
   val minimum = config.as[Option[String]]("minimum").orElse(config.as[Option[String]]("items.minimum"))
   val maximum = config.as[Option[String]]("maximum").orElse(config.as[Option[String]]("items.maximum"))
   val exclusiveMinimum = config.as[Option[Boolean]]("exclusiveMinimum").orElse(config.as[Option[Boolean]]("items.exclusiveMinimum")).getOrElse(false)
@@ -26,30 +26,35 @@ case class JsonSchemaModel(config: Config) {
   val defaultValue = if (config.hasPath("default")) config.getAnyRef("default").toString else ""
 
   // String describing the type or enum
-  val typeStr = parseTypeStr(typeOpt, maxItems)
+  val typeStr = parseTypeStr(typeOpt)
 
   // Returns a string describing an array type
-  private def parseArrayTypeStr(itemPath: String, maxItemsOpt: Option[String]): String = {
+  private def parseArrayTypeStr(itemPath: String): String = {
     val t = config.as[Option[String]](s"$itemPath.type")
     val e = config.as[Option[List[String]]](s"$itemPath.enum")
     val s = if (t.isDefined) {
-      parseTypeStr(t, config.as[Option[String]](s"$itemPath.maxItems"), s"$itemPath.items")
+      parseTypeStr(t, s"$itemPath.items")
     } else if (e.isDefined) {
       e.get.mkString(", ")
     } else "?"
 
-    if (maxItemsOpt.isDefined)
-      s"array[${maxItemsOpt.get}] of $s"
+    if (dimsOpt.isDefined)
+      s"array[${dimsOpt.get.mkString(",")}] of $s"
     else
       s"array of $s"
   }
 
   // Returns a string describing the given type or enum
-  private def parseTypeStr(opt: Option[String], maxItemsOpt: Option[String], itemPath: String = "items"): String = {
+  private def parseTypeStr(opt: Option[String], itemPath: String = "items"): String = {
     opt match {
-      case Some("array")   ⇒ parseArrayTypeStr(itemPath, maxItemsOpt)
+      case Some("array")   ⇒ parseArrayTypeStr(itemPath)
       case Some("integer") ⇒ numberTypeStr("integer")
       case Some("number")  ⇒ numberTypeStr("double")
+      case Some("short")   ⇒ numberTypeStr("short")
+      case Some("long")    ⇒ numberTypeStr("long")
+      case Some("float")   ⇒ numberTypeStr("float")
+      case Some("double")  ⇒ numberTypeStr("double")
+      case Some("byte")    ⇒ numberTypeStr("byte")
       case Some(otherType) ⇒ otherType
       case None ⇒ enumOpt match {
         case Some(list) ⇒ "enum: (" + list.mkString(", ") + ")"
