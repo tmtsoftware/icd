@@ -63,16 +63,31 @@ case class JsonSchemaModel(config: Config) {
     }
   }
 
+  //  // Returns a string describing a numeric type t with optional range
+  //  private def numberTypeStr(t: String): String = {
+  //    if (minimum.isDefined || maximum.isDefined) {
+  //      // include range with () or []
+  //      val infinity = "inf" // java and html escape sequences get lost in conversion...
+  //      val min = minimum.getOrElse(infinity)
+  //      val max = maximum.getOrElse(infinity)
+  //      val exMin = if (exclusiveMinimum) "(" else "["
+  //      val exMax = if (exclusiveMaximum) ")" else "]"
+  //      s"$t $exMin$min, $max$exMax"
+  //    } else t
+  //  }
+  //
+
   // Returns a string describing a numeric type t with optional range
   private def numberTypeStr(t: String): String = {
     if (minimum.isDefined || maximum.isDefined) {
       // include range with () or []
       val infinity = "inf" // java and html escape sequences get lost in conversion...
-      val min = minimum.getOrElse(infinity)
-      val max = maximum.getOrElse(infinity)
-      val exMin = if (exclusiveMinimum) "(" else "["
-      val exMax = if (exclusiveMaximum) ")" else "]"
-      s"$t $exMin$min, $max$exMax"
+      val min = minimum.getOrElse("")
+      val max = maximum.getOrElse("")
+      val lt = if (minimum.isEmpty) "" else if (exclusiveMinimum) " < " else " ≤ "
+      val gt = if (maximum.isEmpty) "" else if (exclusiveMaximum) " < " else " ≤ "
+      s"$t ($min${lt}x$gt$max)"
     } else t
   }
+
 }
