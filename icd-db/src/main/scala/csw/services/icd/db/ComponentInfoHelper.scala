@@ -125,19 +125,19 @@ object ComponentInfoHelper {
           case Some(m) ⇒
             val desc = HtmlMarkup.gfmToHtml(m.description)
             val telemetryList = m.telemetryList.map { t ⇒
-              TelemetryInfo(t.name, getDescription(t), t.minRate, t.maxRate, t.archive, t.archiveRate,
+              TelemetryInfo(t.name, getDescription(t), t.requirements, t.minRate, t.maxRate, t.archive, t.archiveRate,
                 t.attributesList.map(getAttributeInfo), getSubscribers(query, prefix, t.name, t.description, Telemetry))
             }
             val eventList = m.eventList.map { t ⇒
-              TelemetryInfo(t.name, getDescription(t), t.minRate, t.maxRate, t.archive, t.archiveRate,
+              TelemetryInfo(t.name, getDescription(t), t.requirements, t.minRate, t.maxRate, t.archive, t.archiveRate,
                 t.attributesList.map(getAttributeInfo), getSubscribers(query, prefix, t.name, t.description, EventStreams))
             }
             val eventStreamList = m.eventStreamList.map { t ⇒
-              TelemetryInfo(t.name, getDescription(t), t.minRate, t.maxRate, t.archive, t.archiveRate,
+              TelemetryInfo(t.name, getDescription(t), t.requirements, t.minRate, t.maxRate, t.archive, t.archiveRate,
                 t.attributesList.map(getAttributeInfo), getSubscribers(query, prefix, t.name, t.description, EventStreams))
             }
             val alarmList = m.alarmList.map { al ⇒
-              AlarmInfo(al.name, HtmlMarkup.gfmToHtml(al.description), al.severity, al.archive,
+              AlarmInfo(al.name, HtmlMarkup.gfmToHtml(al.description), al.requirements, al.severity, al.archive,
                 getSubscribers(query, prefix, al.name, al.description, Alarms))
             }
             if (desc.nonEmpty || telemetryList.nonEmpty || eventList.nonEmpty || eventStreamList.nonEmpty || alarmList.nonEmpty)

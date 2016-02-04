@@ -74,6 +74,7 @@ case class IcdDbPrinter(db: IcdDb) {
               HtmlMarkup.formatRate(t.archiveRate), t.subscribers.map(_.compName).mkString(", ")))
             div(cls := "nopagebreak")(
               h5(a(s"$pubType: ${t.name}")),
+              if (t.requirements.isEmpty) div() else p(strong("Requirements: "), t.requirements.mkString(", ")),
               raw(t.description),
               HtmlMarkup.mkTable(headings, rowList),
               attributeListMarkup(t.name, t.attributesList), hr)
@@ -86,23 +87,15 @@ case class IcdDbPrinter(db: IcdDb) {
       else {
         div(cls := "nopagebreak")(
           h4(a(s"Alarms Published by $compName")),
-          table(
-            thead(
-              tr(
-                th("Name"),
-                th("Description"),
-                th("Severity"),
-                th("Archive"),
-                th("Subscribers"))),
-            tbody(
-              for (a ← alarmList) yield {
-                tr(
-                  td(p(a.name)),
-                  td(raw(a.description)),
-                  td(p(a.severity)),
-                  td(p(HtmlMarkup.yesNo(a.archive))),
-                  td(p(a.subscribers.map(_.compName).mkString(", "))))
-              })), hr)
+          for (t ← alarmList) yield {
+            val headings = List("Severity", "Archive", "Subscribers")
+            val rowList = List(List(t.severity, HtmlMarkup.yesNo(t.archive), t.subscribers.map(_.compName).mkString(", ")))
+            div(cls := "nopagebreak")(
+              h5(a(s"Alarm: ${t.name}")),
+              if (t.requirements.isEmpty) div() else p(strong("Requirements: "), t.requirements.mkString(", ")),
+              raw(t.description),
+              HtmlMarkup.mkTable(headings, rowList), hr)
+          })
       }
     }
 

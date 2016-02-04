@@ -109,19 +109,19 @@ object IcdComponentInfo {
           case Some(m) ⇒
             val desc = HtmlMarkup.gfmToHtml(m.description)
             val telemetryList = m.telemetryList.map { t ⇒
-              TelemetryInfo(t.name, HtmlMarkup.gfmToHtml(t.description), t.minRate, t.maxRate, t.archive, t.archiveRate,
+              TelemetryInfo(t.name, HtmlMarkup.gfmToHtml(t.description), t.requirements, t.minRate, t.maxRate, t.archive, t.archiveRate,
                 t.attributesList.map(getAttributeInfo), getSubscribers(subsystem, component, prefix, t.name, t.description, Telemetry, targetModelsList))
             }
             val eventList = m.eventList.map { t ⇒
-              TelemetryInfo(t.name, HtmlMarkup.gfmToHtml(t.description), t.minRate, t.maxRate, t.archive, t.archiveRate,
+              TelemetryInfo(t.name, HtmlMarkup.gfmToHtml(t.description), t.requirements, t.minRate, t.maxRate, t.archive, t.archiveRate,
                 t.attributesList.map(getAttributeInfo), getSubscribers(subsystem, component, prefix, t.name, t.description, EventStreams, targetModelsList))
             }
             val eventStreamList = m.eventStreamList.map { t ⇒
-              TelemetryInfo(t.name, HtmlMarkup.gfmToHtml(t.description), t.minRate, t.maxRate, t.archive, t.archiveRate,
+              TelemetryInfo(t.name, HtmlMarkup.gfmToHtml(t.description), t.requirements, t.minRate, t.maxRate, t.archive, t.archiveRate,
                 t.attributesList.map(getAttributeInfo), getSubscribers(subsystem, component, prefix, t.name, t.description, EventStreams, targetModelsList))
             }
             val alarmList = m.alarmList.map { al ⇒
-              AlarmInfo(al.name, HtmlMarkup.gfmToHtml(al.description), al.severity, al.archive,
+              AlarmInfo(al.name, HtmlMarkup.gfmToHtml(al.description), al.requirements, al.severity, al.archive,
                 getSubscribers(subsystem, component, prefix, al.name, al.description, Alarms, targetModelsList))
             }
             if (telemetryList.nonEmpty || eventList.nonEmpty || eventStreamList.nonEmpty || alarmList.nonEmpty)

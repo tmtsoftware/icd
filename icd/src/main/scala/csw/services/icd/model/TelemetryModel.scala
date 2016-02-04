@@ -14,6 +14,7 @@ object TelemetryModel {
     TelemetryModel(
       name = config.as[String]("name"),
       description = config.as[Option[String]]("description").getOrElse(""),
+      requirements = config.as[Option[List[String]]]("requirements").getOrElse(Nil),
       minRate = config.as[Option[Double]]("minRate").getOrElse(0),
       maxRate = config.as[Option[Double]]("maxRate").getOrElse(0),
       archive = config.as[Option[Boolean]]("archive").getOrElse(false),
@@ -23,6 +24,7 @@ object TelemetryModel {
 
 case class TelemetryModel(name: String,
                           description: String,
+                          requirements: List[String],
                           minRate: Double,
                           maxRate: Double,
                           archive: Boolean,

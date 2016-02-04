@@ -13,12 +13,14 @@ object AlarmModel {
     AlarmModel(
       name = config.as[String]("name"),
       description = config.as[String]("description"),
+      requirements = config.as[Option[List[String]]]("requirements").getOrElse(Nil),
       severity = config.as[Option[String]]("severity").getOrElse("none"),
       archive = config.as[Option[Boolean]]("archive").getOrElse(true))
 }
 
 case class AlarmModel(name: String,
                       description: String,
+                      requirements: List[String],
                       severity: String,
                       archive: Boolean)
 

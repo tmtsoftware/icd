@@ -80,6 +80,7 @@ case class AttributeInfo(name: String,
  *
  * @param name           name of the item
  * @param description    description of the item (in html format, after markdown processing)
+ * @param requirements   list of requirements for this item
  * @param minRate        min publish rate
  * @param maxRate        max publish rate
  * @param archive        true if the value is archived
@@ -89,6 +90,7 @@ case class AttributeInfo(name: String,
  */
 case class TelemetryInfo(name: String,
                          description: String,
+                         requirements: List[String],
                          minRate: Double,
                          maxRate: Double,
                          archive: Boolean,
@@ -99,13 +101,15 @@ case class TelemetryInfo(name: String,
 /**
  * Describes an alarm
  *
- * @param name        the name of the alarm
- * @param description description (in HTML format, after markdown processing)
- * @param severity    severity code
- * @param archive     true if the alarm is archived
+ * @param name         the name of the alarm
+ * @param description  description (in HTML format, after markdown processing)
+ * @param requirements list of requirements for this item
+ * @param severity     severity code
+ * @param archive      true if the alarm is archived
  */
 case class AlarmInfo(name: String,
                      description: String,
+                     requirements: List[String],
                      severity: String,
                      archive: Boolean,
                      subscribers: List[SubscribeInfo])
@@ -125,24 +129,24 @@ case class Publishes(description: String,
                      eventStreamList: List[TelemetryInfo],
                      alarmList: List[AlarmInfo]) {
   /**
-    * True if at the component publishes something
-    */
+   * True if at the component publishes something
+   */
   def nonEmpty: Boolean = telemetryList.nonEmpty || eventList.nonEmpty || eventStreamList.nonEmpty || alarmList.nonEmpty
 }
 
 /**
-  * Describes an item that a component subscribes to
-  *
-  * @param itemType    the type of item ("Telemetry", "Event", etc.)
-  * @param name        the simple name of the item
-  * @param path        the full path name (component-prefix.name) of the item
-  * @param description description of the item (from the publisher, in html format, after markdown processing)
-  * @param usage       describes how the subscribed item is used (in html format, after markdown processing)
-  * @param subsystem   the subsystem that publishes the value
-  * @param compName    component that publishes the value
-  * @param requiredRate  required rate for the item
-  * @param maxRate    maximum rate that can be accepted
-  */
+ * Describes an item that a component subscribes to
+ *
+ * @param itemType    the type of item ("Telemetry", "Event", etc.)
+ * @param name        the simple name of the item
+ * @param path        the full path name (component-prefix.name) of the item
+ * @param description description of the item (from the publisher, in html format, after markdown processing)
+ * @param usage       describes how the subscribed item is used (in html format, after markdown processing)
+ * @param subsystem   the subsystem that publishes the value
+ * @param compName    component that publishes the value
+ * @param requiredRate  required rate for the item
+ * @param maxRate    maximum rate that can be accepted
+ */
 case class SubscribeInfo(itemType: String,
                          name: String,
                          path: String,

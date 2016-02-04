@@ -286,7 +286,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
 
     // Returns a table row displaying more details for the given telemetry
-    def makeDetailsRow(t: TelemetryInfo) = {
+    def makeTelemetryDetailsRow(t: TelemetryInfo) = {
       val headings = List("Min Rate", "Max Rate", "Archive", "Archive Rate")
       val rowList = List(List(
         formatRate(t.minRate),
@@ -294,7 +294,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         if (t.archive) "Yes" else "No",
         formatRate(t.archiveRate)))
 
-      div(mkTable(headings, rowList),
+      div(
+        if (t.requirements.isEmpty) div() else p(strong("Requirements: "), t.requirements.mkString(", ")),
+        mkTable(headings, rowList),
         attributeListMarkup("Attributes", t.attributesList))
     }
 
@@ -311,15 +313,26 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               th("Subscribers"))),
           tbody(
             for (t ← telemetryList) yield {
-              val (btn, row) = hiddenRowMarkup(makeDetailsRow(t), 3)
+              val (btn, row) = hiddenRowMarkup(makeTelemetryDetailsRow(t), 3)
               List(tr(
                 td(Styles.attributeCell, p(btn, t.name)),
                 td(raw(t.description)),
-                td(t.subscribers.map(makeLinkForSubscriber))),
+                td(p(t.subscribers.map(makeLinkForSubscriber)))),
                 row)
             })))
     }
 
+    // Returns a table row displaying more details for the given alarm
+    def makeAlarmDetailsRow(t: AlarmInfo) = {
+      val headings = List("Severity", "Archive")
+      val rowList = List(List(t.severity, if (t.archive) "Yes" else "No"))
+
+      div(
+        if (t.requirements.isEmpty) div() else p(strong("Requirements: "), t.requirements.mkString(", ")),
+        mkTable(headings, rowList))
+    }
+
+    // Returns the markup for the published alarms
     def publishAlarmListMarkup(alarmList: List[AlarmInfo]) = {
       if (alarmList.isEmpty) div()
       else div(
@@ -329,17 +342,15 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             tr(
               th("Name"),
               th("Description"),
-              th("Severity"),
-              th("Archive"),
               th("Subscribers"))),
           tbody(
-            for (a ← alarmList) yield {
-              tr(
-                td(a.name),
-                td(raw(a.description)),
-                td(a.severity),
-                td(if (a.archive) "Yes" else "No"),
-                td(a.subscribers.map(makeLinkForSubscriber)))
+            for (t ← alarmList) yield {
+              val (btn, row) = hiddenRowMarkup(makeAlarmDetailsRow(t), 3)
+              List(tr(
+                td(Styles.attributeCell, p(btn, t.name)),
+                td(raw(t.description)),
+                td(p(t.subscribers.map(makeLinkForSubscriber)))),
+                row)
             })))
     }
 
