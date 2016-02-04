@@ -42,8 +42,8 @@ private case class ReceiveCommandModelToHtml(m: ReceiveCommandModel) extends Htm
   private val argsHead = mkParagraph(bold("Arguments:"))
 
   private val argsTable = mkTable(
-    List("Name", "Description", "Type", "Default", "Units"),
-    m.args.map(a ⇒ List(a.name, gfmToHtml(a.description), a.typeStr, a.defaultValue, a.units)))
+    List("Name", "Description", "Type", "Default", "Units", "Required"),
+    m.args.map(a ⇒ List(a.name, gfmToHtml(a.description), a.typeStr, a.defaultValue, a.units, yesNo(m.requiredArgs.contains(a.name)))))
 
   override val tags = List(head, requirements, desc, argsHead, argsTable)
 

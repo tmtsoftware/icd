@@ -34,53 +34,30 @@ case class IcdDbPrinter(db: IcdDb) {
 
   private def publishTitle(compName: String): String = s"Items published by $compName"
 
-  /**
-   * Returns a HTML table with the given column headings and list of rows
-   *
-   * @param headings the table headings
-   * @param rowList  list of row data
-   * @return an html table element
-   */
-  private def mkTable(headings: List[String], rowList: List[List[String]]) = {
-    import scalatags.Text.all._
-
-    // Returns a table cell markup, checking if the text is already in html format (after markdown processing)
-    def mkTableCell(text: String) = {
-      if (text.startsWith("<p>"))
-        td(raw(text))
-      else
-        td(p(text))
-    }
-
-    if (rowList.isEmpty) div()
-    else {
-      val (newHead, newRows) = SharedUtils.compact(headings, rowList)
-      if (newHead.isEmpty) div()
-      else {
-        table(
-          thead(
-            tr(newHead.map(th(_)))),
-          tbody(
-            for (row ← newRows) yield {
-              tr(row.map(mkTableCell))
-            }))
-      }
-    }
-  }
-
-  private def attributeListMarkup(titleStr: String, attributesList: List[AttributeInfo]): Text.TypedTag[String] = {
+  private def attributeListMarkup(nameStr: String, attributesList: List[AttributeInfo]): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (attributesList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default")
       val rowList = for (a ← attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
       div(cls := "nopagebreak")(
-        h5(titleStr),
-        mkTable(headings, rowList))
+        h5(s"Attributes for $nameStr"),
+        HtmlMarkup.mkTable(headings, rowList))
     }
   }
 
-  private def formatRate(rate: Double): String = if (rate == 0) "" else s"$rate Hz"
+  private def parameterListMarkup(nameStr: String, attributesList: List[AttributeInfo], requiredArgs: List[String]): Text.TypedTag[String] = {
+    import scalatags.Text.all._
+    if (attributesList.isEmpty) div()
+    else {
+      val headings = List("Name", "Description", "Type", "Units", "Default", "Required")
+      val rowList = for (a ← attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue,
+        HtmlMarkup.yesNo(requiredArgs.contains(a.name)))
+      div(cls := "nopagebreak")(
+        h5(s"Arguments for $nameStr"),
+        HtmlMarkup.mkTable(headings, rowList))
+    }
+  }
 
   // Generates the HTML markup to display the component's publish information
   private def publishMarkup(compName: String, publishesOpt: Option[Publishes]): Text.TypedTag[String] = {
@@ -93,13 +70,13 @@ case class IcdDbPrinter(db: IcdDb) {
           h4(a(s"$pubType Published by $compName")),
           for (t ← telemetryList) yield {
             val headings = List("Min Rate", "Max Rate", "Archive", "Archive Rate", "Subscribers")
-            val rowList = List(List(formatRate(t.minRate), formatRate(t.maxRate), if (t.archive) "yes" else "no",
-              formatRate(t.archiveRate), t.subscribers.map(_.compName).mkString(", ")))
+            val rowList = List(List(HtmlMarkup.formatRate(t.minRate), HtmlMarkup.formatRate(t.maxRate), HtmlMarkup.yesNo(t.archive),
+              HtmlMarkup.formatRate(t.archiveRate), t.subscribers.map(_.compName).mkString(", ")))
             div(cls := "nopagebreak")(
               h5(a(s"$pubType: ${t.name}")),
               raw(t.description),
-              mkTable(headings, rowList),
-              attributeListMarkup(s"Attributes for ${t.name}", t.attributesList), hr)
+              HtmlMarkup.mkTable(headings, rowList),
+              attributeListMarkup(t.name, t.attributesList), hr)
           })
       }
     }
@@ -123,7 +100,7 @@ case class IcdDbPrinter(db: IcdDb) {
                   td(p(a.name)),
                   td(raw(a.description)),
                   td(p(a.severity)),
-                  td(p(if (a.archive) "Yes" else "No")),
+                  td(p(HtmlMarkup.yesNo(a.archive))),
                   td(p(a.subscribers.map(_.compName).mkString(", "))))
               })), hr)
       }
@@ -199,7 +176,7 @@ case class IcdDbPrinter(db: IcdDb) {
             h5(a(s"Configuration: ${r.name}")),
             if (r.requirements.isEmpty) div() else p(strong("Requirements: ", r.requirements.mkString(", "))),
             raw(r.description),
-            if (r.args.isEmpty) div() else attributeListMarkup(s"Arguments for ${r.name}", r.args))
+            if (r.args.isEmpty) div() else parameterListMarkup(r.name, r.args, r.requiredArgs))
         })
     }
   }

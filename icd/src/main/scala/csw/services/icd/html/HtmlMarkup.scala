@@ -95,6 +95,8 @@ object HtmlMarkup {
 
   def italic(text: String) = em(text)
 
+  def yesNo(b: Boolean): String = if (b) "yes" else "no"
+
   /**
    * Returns a HTML table with the given column headings and list of rows
    */
