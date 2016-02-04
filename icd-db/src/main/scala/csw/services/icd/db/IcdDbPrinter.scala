@@ -130,6 +130,7 @@ case class IcdDbPrinter(db: IcdDb) {
           div(cls := "nopagebreak")(
             h5(a(s"$pubType: ${si.name}")),
             raw(si.description),
+            if (si.usage.isEmpty) div() else div(strong("Usage:"), raw(si.usage)),
             table(
               thead(
                 tr(th("Subsystem"), th("Component"), th("Prefix.Name"), th("Required Rate"), th("Max Rate"))),
