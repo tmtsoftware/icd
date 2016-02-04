@@ -120,7 +120,7 @@ class IcdValidatorTests extends FunSuite {
     assert(a2.description == "array of float")
     assert(a2.typeOpt.get == "array")
     val a2Conf = a2.config
-    assert(a2Conf.getConfig("items").getString("type") == "number")
+    assert(a2Conf.getConfig("items").getString("type") == "float")
     assert(a2Conf.getInt("minItems") == 5)
     assert(a2Conf.getInt("maxItems") == 5)
     assert(a2Conf.getString("units") == "mm")
