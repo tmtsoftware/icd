@@ -26,6 +26,10 @@ case class TelemetryListToHtml(list: List[TelemetryModel], pubType: String, comp
 private case class TelemetryModelToHTML(m: TelemetryModel, pubType: String) extends HtmlMarkup {
 
   private val name = s"$pubType: ${m.name}"
+  private val requirements = {
+    import scalatags.Text.all._
+    if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", "))
+  }
   private val head = mkHeading(4, name)
 
   private val desc = mkParagraph(m.description)
@@ -37,7 +41,7 @@ private case class TelemetryModelToHTML(m: TelemetryModel, pubType: String) exte
 
   private val attr = JsonSchemaListToHtml(Some(s"Attributes for ${m.name}"), m.attributesList)
 
-  override val tags = List(head, desc, table, attr.markup)
+  override val tags = List(head, requirements, desc, table, attr.markup)
 
   override val tocEntry = {
     import scalatags.Text.all._
