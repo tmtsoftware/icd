@@ -17,6 +17,8 @@ case class JsonSchemaModel(config: Config) {
   val typeOpt = config.as[Option[String]]("type")
   val enumOpt = config.as[Option[List[String]]]("enum")
   val units = config.as[Option[String]]("units").getOrElse("")
+  val maxItems = config.as[Option[String]]("maxItems")
+  val minItems = config.as[Option[String]]("minItems")
   val dimsOpt = config.as[Option[List[String]]]("dimensions")
   val minimum = config.as[Option[String]]("minimum").orElse(config.as[Option[String]]("items.minimum"))
   val maximum = config.as[Option[String]]("maximum").orElse(config.as[Option[String]]("items.maximum"))
@@ -35,7 +37,7 @@ case class JsonSchemaModel(config: Config) {
     val s = if (t.isDefined) {
       parseTypeStr(t, s"$itemPath.items")
     } else if (e.isDefined) {
-      e.get.mkString(", ")
+      "enum: (" + e.get.mkString(", ") + ")"
     } else "?"
 
     if (dimsOpt.isDefined)
@@ -63,25 +65,9 @@ case class JsonSchemaModel(config: Config) {
     }
   }
 
-  //  // Returns a string describing a numeric type t with optional range
-  //  private def numberTypeStr(t: String): String = {
-  //    if (minimum.isDefined || maximum.isDefined) {
-  //      // include range with () or []
-  //      val infinity = "inf" // java and html escape sequences get lost in conversion...
-  //      val min = minimum.getOrElse(infinity)
-  //      val max = maximum.getOrElse(infinity)
-  //      val exMin = if (exclusiveMinimum) "(" else "["
-  //      val exMax = if (exclusiveMaximum) ")" else "]"
-  //      s"$t $exMin$min, $max$exMax"
-  //    } else t
-  //  }
-  //
-
   // Returns a string describing a numeric type t with optional range
   private def numberTypeStr(t: String): String = {
     if (minimum.isDefined || maximum.isDefined) {
-      // include range with () or []
-      val infinity = "inf" // java and html escape sequences get lost in conversion...
       val min = minimum.getOrElse("")
       val max = maximum.getOrElse("")
       val lt = if (minimum.isEmpty) "" else if (exclusiveMinimum) " < " else " ≤ "

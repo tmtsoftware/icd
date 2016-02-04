@@ -174,7 +174,7 @@ case class IcdDbPrinter(db: IcdDb) {
         for (r ← info) yield {
           div(cls := "nopagebreak")(
             h5(a(s"Configuration: ${r.name}")),
-            if (r.requirements.isEmpty) div() else p(strong("Requirements: ", r.requirements.mkString(", "))),
+            if (r.requirements.isEmpty) div() else p(strong("Requirements: "), r.requirements.mkString(", ")),
             raw(r.description),
             if (r.args.isEmpty) div() else parameterListMarkup(r.name, r.args, r.requiredArgs))
         })

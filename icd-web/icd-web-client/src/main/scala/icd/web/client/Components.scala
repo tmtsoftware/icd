@@ -224,6 +224,26 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
+   * Returns a table of parameters
+   *
+   * @param titleStr       title to display above the table
+   * @param attributesList list of attributes to display
+   * @param requiredArgs   a list of required arguments
+   * @return
+   */
+  private def parameterListMarkup(titleStr: String, attributesList: List[AttributeInfo], requiredArgs: List[String]): TypedTag[HTMLDivElement] = {
+    import scalatags.JsDom.all._
+    if (attributesList.isEmpty) div()
+    else {
+      val headings = List("Name", "Description", "Type", "Units", "Default")
+      val rowList = for (a ← attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue,
+        if (requiredArgs.contains(a.name)) "yes" else "no")
+      div(strong(titleStr),
+        mkTable(headings, rowList, tableStyle = Styles.attributeTable))
+    }
+  }
+
+  /**
    * Returns a hidden, expandable table row containing the given div item
    *
    * @param item    the contents of the table row
@@ -426,9 +446,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Returns a table row displaying more details for the given command
     def makeDetailsRow(r: ReceivedCommandInfo) = {
-      val headings = List("Requirements", "Required Args")
-      val rowList = List(List(r.requirements.mkString(", "), r.requiredArgs.mkString(", ")))
-      div(mkTable(headings, rowList), attributeListMarkup("Arguments", r.args))
+      div(
+        if (r.requirements.isEmpty) div() else p(strong("Requirements: "), r.requirements.mkString(", ")),
+        parameterListMarkup("Arguments", r.args, r.requiredArgs))
     }
 
     // Only display non-empty tables
