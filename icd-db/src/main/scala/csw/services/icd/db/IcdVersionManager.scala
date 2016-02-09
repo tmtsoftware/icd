@@ -387,9 +387,14 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
       val obj = coll.head
       val versionCollName = versionCollectionName(path)
       val version = obj(versionKey).asInstanceOf[Int]
-      if (!collectionNames.contains(versionCollName) || diff(db(versionCollName), obj).isDefined) {
+      val id = obj(idKey)
+      val exists = collectionNames.contains(versionCollName)
+      if (!exists || diff(db(versionCollName), obj).isDefined) {
+        // Update version history, avoid duplicate key error?
         val v = db(versionCollName)
-        v.insert(obj, WriteConcern.SAFE) // XXX duplicate key error?
+        if (exists) v.findAndRemove(idKey → id)
+        v.insert(obj, WriteConcern.SAFE)
+        // increment version for unpublished working copy
         obj.put(versionKey, version + 1)
         coll.remove(coll.head)
         coll.insert(obj, WriteConcern.SAFE)
