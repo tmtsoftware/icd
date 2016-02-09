@@ -67,7 +67,7 @@ object Icd extends App {
         for (outputFile ← options.outputFile if !outputFile.getName.endsWith(".json")) {
           IcdPrinter.saveToFile(dir, outputFile)
         }
-      }
+      } else System.exit(1)
     }
 
     // --in option - Validate single input file
@@ -79,6 +79,7 @@ object Icd extends App {
         validate(inputConfig, inputFile.getName)
       }
       printProblems(problems)
+      if (errorCount(problems) != 0) System.exit(1)
     }
 
     // --out option - Save single input or schema file as JSON to output file, if specified
