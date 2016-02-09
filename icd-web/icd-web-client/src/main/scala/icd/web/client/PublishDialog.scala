@@ -37,12 +37,31 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
       placeholder := "Enter publish comment here...").render
   }
 
+  // Message about missing username (XXX should be an easier way...)
+  private val userNameMissing = {
+    import scalatags.JsDom.all._
+    span(id := "userNameMissing", cls := "hide", "Username is required!")
+  }
+
+  private def userNameMissingItem = $("#userNameMissing")
+
+  private def userNameChanged(): Unit = {
+    val userName = userNameBox.value
+    if (userName.isEmpty)
+      userNameMissingItem.removeClass("hide")
+    else
+      userNameMissingItem.addClass("hide")
+  }
+
   // Publish user name field
   private val userNameBox = {
     import scalatags.JsDom.all._
     input(
       cls := "form-control",
       name := "userName",
+      id := "userName",
+      onchange := userNameChanged _,
+      required,
       placeholder := "Enter your user name...").render
   }
 
@@ -112,28 +131,32 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
 
   // Called when the publish button is pressed
   def publishHandler(e: dom.Event): Unit = {
-    statusItem.addClass("label-default").text("Working...")
-    statusItem.removeClass("label-danger")
-    busyStatusItem.removeClass("hide")
-
-    val majorVersion = majorVersionCheckBox.checked
-    val comment = commentBox.value
     val userName = userNameBox.value
+    if (userName.isEmpty) {
+      userNameMissingItem.removeClass("hide")
+    } else {
+      statusItem.addClass("label-default").text("Working...")
+      statusItem.removeClass("label-danger")
+      busyStatusItem.removeClass("hide")
 
-    val s = subsystem.getSubsystemWithVersion
-    val t = targetSubsystem.getSubsystemWithVersion
+      val majorVersion = majorVersionCheckBox.checked
+      val comment = commentBox.value
 
-    if (isPublishApi(s, t)) {
-      val route = Routes.publishApi(s.subsystemOpt.get, majorVersion, comment, userName)
-      Ajax.post(route).map { r ⇒
-        subsystem.updateSubsystemVersionOptions()
-        displayResultStatus(r)
-      }
-    } else if (isPublishIcd(s, t)) {
-      val route = Routes.publishIcd(s.subsystemOpt.get, s.versionOpt.get, t.subsystemOpt.get, t.versionOpt.get, majorVersion, comment, userName)
-      Ajax.post(route).map { r ⇒
-        icdChooser.updateIcdOptions()
-        displayResultStatus(r)
+      val s = subsystem.getSubsystemWithVersion
+      val t = targetSubsystem.getSubsystemWithVersion
+
+      if (isPublishApi(s, t)) {
+        val route = Routes.publishApi(s.subsystemOpt.get, majorVersion, comment, userName)
+        Ajax.post(route).map { r ⇒
+          subsystem.updateSubsystemVersionOptions()
+          displayResultStatus(r)
+        }
+      } else if (isPublishIcd(s, t)) {
+        val route = Routes.publishIcd(s.subsystemOpt.get, s.versionOpt.get, t.subsystemOpt.get, t.versionOpt.get, majorVersion, comment, userName)
+        Ajax.post(route).map { r ⇒
+          icdChooser.updateIcdOptions()
+          displayResultStatus(r)
+        }
       }
     }
   }
@@ -156,7 +179,7 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
       div(cls := "panel panel-info")(
         div(cls := "panel-body")(
           div(Styles.commentBox, label("Comments")(commentBox)),
-          div(Styles.commentBox, label("Username")(userNameBox)),
+          div(Styles.commentBox, label("Username")("*", userNameBox, userNameMissing)),
           div(
             div(cls := "checkbox")(label(majorVersionCheckBox, "Increment major version")),
             publishButton))),
