@@ -45,14 +45,14 @@ object Components {
    * @param tableStyle optional table style
    * @return an html table element
    */
-  private def mkTable(headings: List[String], rowList: List[List[String]],
-                      tableStyle: scalacss.StyleA = Styles.emptyStyle) = {
+  def mkTable(headings: List[String], rowList: List[List[String]],
+              tableStyle: scalacss.StyleA = Styles.emptyStyle) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
     // Returns a table cell markup, checking if the text is already in html format (after markdown processing)
     def mkTableCell(text: String) = {
-      if (text.startsWith("<p>"))
+      if (text.startsWith("<"))
         td(raw(text))
       else
         td(p(text))

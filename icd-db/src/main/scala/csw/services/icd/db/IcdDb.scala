@@ -264,7 +264,7 @@ object IcdDb extends App {
 
     // --publish option
     def publish(majorVersion: Boolean, comment: String)(subsystem: String): Unit = {
-      db.versionManager.publishApi(subsystem, majorVersion, comment)
+      db.versionManager.publishApi(subsystem, majorVersion, comment, System.getProperty("user.name"))
     }
   }
 }

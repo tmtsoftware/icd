@@ -132,10 +132,13 @@ case class Subsystem(listener: SubsystemListener,
         case None    ⇒ subsystemItem.value = placeholderMsg
       }
 
-      for {
-        _ ← updateSubsystemVersionOptions(sv.versionOpt)
-        _ ← listener.subsystemSelected(getSubsystemWithVersion, saveHistory) if notifyListener
-      } yield ()
+      val f = updateSubsystemVersionOptions(sv.versionOpt)
+      if (notifyListener)
+        f.andThen {
+          case _ ⇒
+            listener.subsystemSelected(getSubsystemWithVersion, saveHistory)
+        }
+      else f
     }
   }
 

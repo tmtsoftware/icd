@@ -23,8 +23,9 @@ object Routes {
 
   /**
    * Returns the route to use to get the information for a component
-   * @param subsystem the component's subsystem
-   * @param versionOpt the subsystem version (or use current)
+   *
+   * @param subsystem    the component's subsystem
+   * @param versionOpt   the subsystem version (or use current)
    * @param compNameList list of component names to get info about
    * @return the URL path to use
    */
@@ -41,9 +42,9 @@ object Routes {
    * If the target subsystem is defined, the information is restricted to the ICD
    * from subsystem to target, otherwise the component API is returned.
    *
-   * @param subsystem the component's subsystem
-   * @param versionOpt the subsystem version (or use current)
-   * @param compNameList list of component names to get info about
+   * @param subsystem       the component's subsystem
+   * @param versionOpt      the subsystem version (or use current)
+   * @param compNameList    list of component names to get info about
    * @param targetSubsystem defines the optional target subsystem and version
    * @return the URL path to use
    */
@@ -75,11 +76,11 @@ object Routes {
    * If the target subsystem is defined, the document is restricted to the ICD
    * from subsystem to target, otherwise the API for the given subsystem and components is returned.
    *
-   * @param subsystem the component's subsystem
-   * @param versionOpt the subsystem version (or use current)
-   * @param compNamesList the component names to include
+   * @param subsystem       the component's subsystem
+   * @param versionOpt      the subsystem version (or use current)
+   * @param compNamesList   the component names to include
    * @param targetSubsystem defines the optional target subsystem and version
-   * @param icdVersion optional ICD version (default: use latest unpublished)
+   * @param icdVersion      optional ICD version (default: use latest unpublished)
    * @return the URL path to use
    */
   def icdAsPdf(subsystem: String, versionOpt: Option[String],
@@ -119,8 +120,8 @@ object Routes {
   /**
    * Returns the route to use to get a PDF of the API for the given Subsystem with selected components.
    *
-   * @param subsystem the component's subsystem
-   * @param versionOpt the subsystem version (or use current)
+   * @param subsystem     the component's subsystem
+   * @param versionOpt    the subsystem version (or use current)
    * @param compNamesList the component names to include
    * @return the URL path to use
    */
@@ -146,15 +147,17 @@ object Routes {
 
   def versionNames(name: String) = s"/versionNames/$name"
 
-  def publishApi(path: String, majorVersion: Boolean, comment: String) =
-    s"/publishApi/$path?majorVersion=$majorVersion&comment=$comment"
+  def publishApi(path: String, majorVersion: Boolean, comment: String, userName: String) =
+    s"/publishApi/$path?majorVersion=$majorVersion&comment=$comment&userName=$userName"
 
   def publishIcd(subsystem: String, version: String,
                  target: String, targetVersion: String,
-                 majorVersion: Boolean, comment: String) =
-    s"/publishIcd/$subsystem/$version/$target/$targetVersion?majorVersion=$majorVersion&comment=$comment"
+                 majorVersion: Boolean, comment: String, userName: String) =
+    s"/publishIcd/$subsystem/$version/$target/$targetVersion?majorVersion=$majorVersion&comment=$comment&userName=$userName"
 
   val icdNames = "/icdNames"
 
   def icdVersions(icdName: IcdName) = s"/icdVersions/${icdName.subsystem}/${icdName.target}"
+
+  def diff(subsystem: String, versions: List[String]) = s"/diff/$subsystem/${versions.mkString(",")}"
 }

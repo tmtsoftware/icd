@@ -20,13 +20,13 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
     div.render
   }
 
-  // Displays upload button
+  // Displays publish button
   private val publishButton = {
     import scalatags.JsDom.all._
     button(onclick := publishHandler _)("Publish").render
   }
 
-  // Upload comment box
+  // Publish comment box
   private val commentBox = {
     import scalatags.JsDom.all._
     textarea(
@@ -35,6 +35,15 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
       rows := 10,
       cols := 80,
       placeholder := "Enter publish comment here...").render
+  }
+
+  // Publish user name field
+  private val userNameBox = {
+    import scalatags.JsDom.all._
+    input(
+      cls := "form-control",
+      name := "userName",
+      placeholder := "Enter your user name...").render
   }
 
   private val majorVersionCheckBox = {
@@ -109,18 +118,19 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
 
     val majorVersion = majorVersionCheckBox.checked
     val comment = commentBox.value
+    val userName = userNameBox.value
 
     val s = subsystem.getSubsystemWithVersion
     val t = targetSubsystem.getSubsystemWithVersion
 
     if (isPublishApi(s, t)) {
-      val route = Routes.publishApi(s.subsystemOpt.get, majorVersion, comment)
+      val route = Routes.publishApi(s.subsystemOpt.get, majorVersion, comment, userName)
       Ajax.post(route).map { r ⇒
         subsystem.updateSubsystemVersionOptions()
         displayResultStatus(r)
       }
     } else if (isPublishIcd(s, t)) {
-      val route = Routes.publishIcd(s.subsystemOpt.get, s.versionOpt.get, t.subsystemOpt.get, t.versionOpt.get, majorVersion, comment)
+      val route = Routes.publishIcd(s.subsystemOpt.get, s.versionOpt.get, t.subsystemOpt.get, t.versionOpt.get, majorVersion, comment, userName)
       Ajax.post(route).map { r ⇒
         icdChooser.updateIcdOptions()
         displayResultStatus(r)
@@ -136,7 +146,7 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
     statusItem.removeClass("label-default").addClass(statusClass).text(statusMsg)
   }
 
-  // Produce the HTML to display for the upload screen
+  // Produce the HTML to display for the publish screen
   override def markup(): Element = {
     import scalacss.ScalatagsCss._
     import scalatags.JsDom.all._
@@ -146,6 +156,7 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
       div(cls := "panel panel-info")(
         div(cls := "panel-body")(
           div(Styles.commentBox, label("Comments")(commentBox)),
+          div(Styles.commentBox, label("Username")(userNameBox)),
           div(
             div(cls := "checkbox")(label(majorVersionCheckBox, "Increment major version")),
             publishButton))),

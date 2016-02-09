@@ -3,12 +3,16 @@ package controllers
 import java.io.ByteArrayOutputStream
 
 import csw.services.icd.IcdToPdf
+import csw.services.icd.db.IcdVersionManager.VersionDiff
 import csw.services.icd.db.{ IcdDbPrinter, IcdComponentInfo, ComponentInfoHelper, IcdDb }
 import csw.services.icd.html.HtmlMarkup
-import icd.web.shared.{ SubsystemWithVersion, SubsystemInfo, IcdName, VersionInfo, Csrf }
+import gnieh.diffson.Operation
+import icd.web.shared._
 import play.api.mvc._
 import play.filters.csrf.CSRFAddToken
 import play.api.libs.json._
+
+import scala.collection.immutable.Map
 
 /**
  * Provides the interface between the web client and the server
@@ -58,9 +62,9 @@ object Application extends Controller {
   /**
    * Gets information about a named component in the given version of the given subsystem
    *
-   * @param subsystem the subsystem
+   * @param subsystem  the subsystem
    * @param versionOpt the subsystem's version (default: current)
-   * @param compNames component names to get info about (separated by ",")
+   * @param compNames  component names to get info about (separated by ",")
    */
   def componentInfo(subsystem: String, versionOpt: Option[String], compNames: String) = Action {
     import upickle.default._
@@ -73,10 +77,10 @@ object Application extends Controller {
   /**
    * Gets information about a component in a given version of an ICD
    *
-   * @param subsystem the source subsystem
-   * @param versionOpt the source subsystem's version (default: current)
-   * @param compNames component names to get info about (separated by ",")
-   * @param target the target subsystem
+   * @param subsystem        the source subsystem
+   * @param versionOpt       the source subsystem's version (default: current)
+   * @param compNames        component names to get info about (separated by ",")
+   * @param target           the target subsystem
    * @param targetVersionOpt the target subsystem's version
    */
   def icdComponentInfo(subsystem: String, versionOpt: Option[String], compNames: String,
@@ -91,12 +95,12 @@ object Application extends Controller {
   /**
    * Returns the PDF for the given ICD
    *
-   * @param subsystem the source subsystem
-   * @param versionOpt the source subsystem's version (default: current)
-   * @param compNamesOpt an optional comma separated list of component names to include (default: all)
-   * @param target the target subsystem
+   * @param subsystem        the source subsystem
+   * @param versionOpt       the source subsystem's version (default: current)
+   * @param compNamesOpt     an optional comma separated list of component names to include (default: all)
+   * @param target           the target subsystem
    * @param targetVersionOpt optional target subsystem's version (default: current)
-   * @param icdVersionOpt optional ICD version (default: current)
+   * @param icdVersionOpt    optional ICD version (default: current)
    */
   def icdAsPdf(subsystem: String, versionOpt: Option[String], compNamesOpt: Option[String],
                target: String, targetVersionOpt: Option[String],
@@ -131,8 +135,8 @@ object Application extends Controller {
   /**
    * Returns the PDF for the given subsystem API
    *
-   * @param subsystem the source subsystem
-   * @param versionOpt the source subsystem's version (default: current)
+   * @param subsystem    the source subsystem
+   * @param versionOpt   the source subsystem's version (default: current)
    * @param compNamesOpt an optional comma separated list of component names to include (default: all)
    */
   def apiAsPdf(subsystem: String, versionOpt: Option[String], compNamesOpt: Option[String]) = Action {
@@ -175,20 +179,19 @@ object Application extends Controller {
   /**
    * Publishes the given version of the given subsystem
    */
-  def publishApi(subsystem: String, majorVersion: Boolean, comment: String) = Action {
+  def publishApi(subsystem: String, majorVersion: Boolean, comment: String, userName: String) = Action {
     // XXX error handling?
-    db.versionManager.publishApi(subsystem, majorVersion, comment)
+    db.versionManager.publishApi(subsystem, majorVersion, comment, userName)
     Ok.as(JSON)
   }
 
   /**
    * Publishes an ICD from the given version of the given subsystem to the target subsystem and version
    */
-  def publishIcd(subsystem: String, version: String,
-                 target: String, targetVersion: String,
-                 majorVersion: Boolean, comment: String) = Action {
+  def publishIcd(subsystem: String, version: String, target: String, targetVersion: String,
+                 majorVersion: Boolean, comment: String, userName: String) = Action {
     // XXX error handling?
-    db.versionManager.publishIcd(subsystem, version, target, targetVersion, majorVersion, comment)
+    db.versionManager.publishIcd(subsystem, version, target, targetVersion, majorVersion, comment, userName)
     Ok.as(JSON)
   }
 
@@ -211,4 +214,39 @@ object Application extends Controller {
     val list = db.versionManager.getIcdVersions(subsystem, target)
     Ok(write(list)).as(JSON)
   }
+
+  // Packages the diff information for return to browser
+  private def getDiffInfo(diff: VersionDiff): DiffInfo = {
+    def getValue(a: Any): String = {
+      a match {
+        case m: Map[_, _] ⇒
+          val header = List("Attribute", "Value")
+          val rows = m.toList.map(p ⇒ List(p._1.toString, getValue(p._2)))
+          HtmlMarkup.mkTable(header, rows).render
+        case l: List[Any] ⇒
+          l.mkString(", ")
+        case _ ⇒
+          HtmlMarkup.gfmToHtml(a.toString.stripMargin)
+      }
+    }
+    def getDiff(p: (String, Any)) = Diff(p._1, getValue(p._2))
+    def getDiffItem(op: Operation) = DiffItem(op.path, op.toJson.values.map(getDiff).toList)
+    DiffInfo(diff.path, diff.patch.ops.map(getDiffItem))
+  }
+
+  /**
+   * Gets the difference between two subsystem versions
+   */
+  def diff(subsystem: String, versionsStr: String) = Action {
+    import upickle.default._
+    val versions = versionsStr.split(',')
+    val v1 = versions.head
+    val v2 = versions.tail.head
+    val v1Opt = if (v1.nonEmpty) Some(v1) else None
+    val v2Opt = if (v2.nonEmpty) Some(v2) else None
+    // convert list to use shared IcdVersion class
+    val list = db.versionManager.diff(subsystem, v1Opt, v2Opt).map(getDiffInfo)
+    Ok(write(list)).as(JSON)
+  }
+
 }

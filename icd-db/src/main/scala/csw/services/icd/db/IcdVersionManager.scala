@@ -146,12 +146,12 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
    * @param majorVersion if true, increment the subsystem or component's major version
    */
   private def newVersion(collectionNames: Set[String], subsystem: String, compNameOpt: Option[String], versions: List[(String, Int)],
-                         comment: String, majorVersion: Boolean): Unit = {
+                         comment: String, userName: String, majorVersion: Boolean): Unit = {
 
     val parts = versions.map(v ⇒ Map("name" -> v._1, versionStrKey -> v._2).asDBObject)
     val version = incrVersion(getLatestPublishedVersion(collectionNames, subsystem, compNameOpt), majorVersion)
     val now = new DateTime(DateTimeZone.UTC)
-    val user = System.getProperty("user.name") // XXX TODO Which user name to use for web app? (Need user login...)
+    val user = if (userName.nonEmpty) userName else System.getProperty("user.name")
     val obj = Map(
       versionStrKey -> version,
       userKey -> user,
@@ -211,7 +211,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
         def filter(p: IcdPath) = p.subsystem == subsystem && compNameOpt.fold(true)(_ ⇒ p.component == path)
         val paths = getCollectionNames.filter(isStdSet).map(IcdPath).filter(filter).map(_.path).toList
         val now = new DateTime(DateTimeZone.UTC)
-        val user = System.getProperty("user.name")
+        val user = ""
         val comment = "Working version, unpublished"
         val parts = paths.map(p ⇒ (p, getPartVersion(p))).map(x ⇒ PartInfo(x._1, x._2))
         Some(VersionInfo(None, user, comment, now, parts))
@@ -234,16 +234,16 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
   }
 
   /**
-   * Compares all of the named subsystem or component parts and returns a list of patches describing any differences.
+   * Compares all of the named subsystem parts and returns a list of patches describing any differences.
    *
-   * @param name the root subsystem or component name
+   * @param subsystem the root subsystem
    * @param v1 the first version to compare (None for the current, unpublished version)
    * @param v2 the second version to compare (None for the current, unpublished version)
    * @return a list of diffs, one for each subsystem or component part
    */
-  def diff(name: String, v1: Option[String], v2: Option[String]): List[VersionDiff] = {
-    val v1Info = getVersion(name, v1, None)
-    val v2Info = getVersion(name, v2, None)
+  def diff(subsystem: String, v1: Option[String], v2: Option[String]): List[VersionDiff] = {
+    val v1Info = getVersion(subsystem, v1, None)
+    val v2Info = getVersion(subsystem, v2, None)
     if (v1Info.isEmpty || v2Info.isEmpty) Nil
     else {
       val result = for {
@@ -376,7 +376,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
    * @param comment change comment
    * @param majorVersion if true, increment the subsystem's major version
    */
-  def publishApi(subsystem: String, majorVersion: Boolean, comment: String): Unit = {
+  def publishApi(subsystem: String, majorVersion: Boolean, comment: String, userName: String): Unit = {
     val collectionNames = getCollectionNames
 
     // Save any of the subsystem's collections that changed
@@ -389,7 +389,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
       val version = obj(versionKey).asInstanceOf[Int]
       if (!collectionNames.contains(versionCollName) || diff(db(versionCollName), obj).isDefined) {
         val v = db(versionCollName)
-        v.insert(obj, WriteConcern.SAFE)
+        v.insert(obj, WriteConcern.SAFE) // XXX duplicate key error?
         obj.put(versionKey, version + 1)
         coll.remove(coll.head)
         coll.insert(obj, WriteConcern.SAFE)
@@ -398,13 +398,13 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
     }
 
     // Add to collection of published subsystem versions
-    newVersion(collectionNames, subsystem, None, versions, comment, majorVersion)
+    newVersion(collectionNames, subsystem, None, versions, comment, userName, majorVersion)
 
     // Add to collection of published subsystem component versions
     getComponentNames(subsystem, None).foreach { name ⇒
       val prefix = s"$subsystem.$name."
       val compVersions = versions.filter(p ⇒ p._1.startsWith(prefix))
-      newVersion(collectionNames, subsystem, Some(name), compVersions, comment, majorVersion)
+      newVersion(collectionNames, subsystem, Some(name), compVersions, comment, userName, majorVersion)
     }
   }
 
@@ -441,11 +441,11 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
    */
   def publishIcd(subsystem: String, subsystemVersion: String,
                  target: String, targetVersion: String,
-                 majorVersion: Boolean, comment: String): Unit = {
+                 majorVersion: Boolean, comment: String, userName: String): Unit = {
 
     val icdVersion = incrVersion(getLatestPublishedIcdVersion(subsystem, target), majorVersion)
     val now = new DateTime(DateTimeZone.UTC)
-    val user = System.getProperty("user.name") // XXX TODO Which user name to use for web app? (Need user login...)
+    val user = if (userName.nonEmpty) userName else System.getProperty("user.name")
 
     // XXX TODO: Use a case class with auto JSON conversion
     val obj = Map(

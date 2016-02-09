@@ -116,7 +116,7 @@ object HtmlMarkup {
 
   // Returns a table cell markup, checking if the text is already in html format (after markdown processing)
   private def mkTableCell(text: String) = {
-    if (text.startsWith("<p>"))
+    if (text.startsWith("<"))
       td(raw(text))
     else
       td(text)
