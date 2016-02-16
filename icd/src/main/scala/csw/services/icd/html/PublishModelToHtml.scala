@@ -18,7 +18,8 @@ case class PublishModelToHtml(m: PublishModel) extends HtmlMarkup {
     TelemetryListToHtml(m.telemetryList, "Telemetry", m.component),
     TelemetryListToHtml(m.eventList, "Events", m.component),
     TelemetryListToHtml(m.eventStreamList, "Event Streams", m.component),
-    AlarmListToHtml(m.alarmList, m.component))
+    AlarmListToHtml(m.alarmList, m.component)
+  )
 
   override val tags = List(head, desc) ::: parts.map(_.markup)
 

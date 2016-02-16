@@ -21,9 +21,11 @@ object TitleInfo {
    * @param icdOpt optional ICD related information
    * @return the title related information
    */
-  def apply(subsystemInfo: SubsystemInfo,
-            targetSubsystem: SubsystemWithVersion,
-            icdOpt: Option[IcdVersion]): TitleInfo = {
+  def apply(
+    subsystemInfo:   SubsystemInfo,
+    targetSubsystem: SubsystemWithVersion,
+    icdOpt:          Option[IcdVersion]
+  ): TitleInfo = {
     if (icdOpt.isDefined) {
       val icd = icdOpt.get
       val title = s"ICD from ${icd.subsystem} to ${icd.target} (version ${icd.icdVersion})"
@@ -38,8 +40,10 @@ object TitleInfo {
         val subtitle = s"Based on ${subsystemInfo.subsystem} $version and $target $targetVersion"
         TitleInfo(title, Some(subtitle), None)
       } else {
-        TitleInfo(s"API for ${subsystemInfo.subsystem} $version",
-          Some(subsystemInfo.title), Some(subsystemInfo.description))
+        TitleInfo(
+          s"API for ${subsystemInfo.subsystem} $version",
+          Some(subsystemInfo.title), Some(subsystemInfo.description)
+        )
       }
     }
   }

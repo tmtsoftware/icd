@@ -1,6 +1,6 @@
 package csw.services.icd
 
-import java.io.{ OutputStream, File, ByteArrayInputStream, FileOutputStream }
+import java.io.{OutputStream, File, ByteArrayInputStream, FileOutputStream}
 
 /**
  * Handles converting an ICD API from HTML to PDF format
@@ -21,9 +21,11 @@ object IcdToPdf {
         val rect = new Rectangle(x, y, x + 40, y - 30)
         val dc = writer.getDirectContent
         dc.setColorFill(BaseColor.GRAY)
-        ColumnText.showTextAligned(dc,
+        ColumnText.showTextAligned(
+          dc,
           Element.ALIGN_CENTER, new Phrase(s"$pageNumber"),
-          (rect.getLeft + rect.getRight) / 2, rect.getBottom - 18, 0)
+          (rect.getLeft + rect.getRight) / 2, rect.getBottom - 18, 0
+        )
 
         // Add the TMT logo on the first page
         if (pageNumber == 1) {
@@ -31,7 +33,8 @@ object IcdToPdf {
           val image = Image.getInstance(url)
           image.setAbsolutePosition(
             pageSize.getLeft + pageSize.getWidth / 2 - image.getWidth / 2,
-            pageSize.getBottom + pageSize.getHeight / 2 - image.getHeight / 2)
+            pageSize.getBottom + pageSize.getHeight / 2 - image.getHeight / 2
+          )
           dc.addImage(image)
         }
 

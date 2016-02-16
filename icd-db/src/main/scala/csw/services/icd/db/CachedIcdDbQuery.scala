@@ -1,7 +1,7 @@
 package csw.services.icd.db
 
 import com.mongodb.casbah.MongoDB
-import csw.services.icd.model.{ SubscribeModel, PublishModel, CommandModel, ComponentModel }
+import csw.services.icd.model.{SubscribeModel, PublishModel, CommandModel, ComponentModel}
 
 /**
  * Adds caching to IcdDbQuery for better performance when creating documents or web pages that
@@ -34,7 +34,7 @@ class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
    * Returns a map from subsystem name to list of PublishInfo for the subsystem
    */
   private def getPublishInfoMap: Map[String, List[PublishInfo]] = {
-    val list = for (s ← subsystemNames) yield s -> super.getPublishInfo(s)
+    val list = for (s ← subsystemNames) yield s → super.getPublishInfo(s)
     list.toMap
   }
 
@@ -46,7 +46,7 @@ class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
     val list = for {
       componentModel ← components
       subscribeModel ← super.getSubscribeModel(componentModel)
-    } yield Component(componentModel.subsystem, componentModel.component) -> subscribeModel
+    } yield Component(componentModel.subsystem, componentModel.component) → subscribeModel
     list.toMap
   }
 
@@ -58,7 +58,7 @@ class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
     val list = for {
       componentModel ← components
       publishModel ← super.getPublishModel(componentModel)
-    } yield Component(componentModel.subsystem, componentModel.component) -> publishModel
+    } yield Component(componentModel.subsystem, componentModel.component) → publishModel
     list.toMap
   }
 
@@ -70,7 +70,7 @@ class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
     val list = for {
       componentModel ← components
       commandModel ← super.getCommandModel(componentModel.subsystem, componentModel.component)
-    } yield Component(componentModel.subsystem, componentModel.component) -> commandModel
+    } yield Component(componentModel.subsystem, componentModel.component) → commandModel
     list.toMap
   }
 

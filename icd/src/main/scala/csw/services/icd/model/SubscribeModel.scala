@@ -21,7 +21,8 @@ object SubscribeModel {
       telemetryList = getItems("telemetry"),
       eventList = getItems("events"),
       eventStreamList = getItems("eventStreams"),
-      alarmList = getItems("alarms"))
+      alarmList = getItems("alarms")
+    )
   }
 }
 
@@ -35,13 +36,15 @@ object SubscribeModel {
  * @param eventStreamList list of subscribed event streams
  * @param alarmList list of subscribed alarms
  */
-case class SubscribeModel(subsystem: String,
-                          component: String,
-                          description: String,
-                          telemetryList: List[SubscribeInfo],
-                          eventList: List[SubscribeInfo],
-                          eventStreamList: List[SubscribeInfo],
-                          alarmList: List[SubscribeInfo])
+case class SubscribeModel(
+  subsystem:       String,
+  component:       String,
+  description:     String,
+  telemetryList:   List[SubscribeInfo],
+  eventList:       List[SubscribeInfo],
+  eventStreamList: List[SubscribeInfo],
+  alarmList:       List[SubscribeInfo]
+)
 
 // Inner object in subscribe arrays
 object SubscribeInfo {
@@ -53,7 +56,8 @@ object SubscribeInfo {
       name = config.as[Option[String]]("name").getOrElse(""),
       usage = config.as[Option[String]]("usage").getOrElse(""),
       requiredRate = config.as[Option[Double]]("requiredRate").getOrElse(0),
-      maxRate = config.as[Option[Double]]("maxRate").getOrElse(0))
+      maxRate = config.as[Option[Double]]("maxRate").getOrElse(0)
+    )
 }
 
 /**
@@ -65,10 +69,12 @@ object SubscribeInfo {
  * @param requiredRate the required rate
  * @param maxRate the max rate
  */
-case class SubscribeInfo(subsystem: String,
-                         component: String,
-                         name: String,
-                         usage: String,
-                         requiredRate: Double,
-                         maxRate: Double)
+case class SubscribeInfo(
+  subsystem:    String,
+  component:    String,
+  name:         String,
+  usage:        String,
+  requiredRate: Double,
+  maxRate:      Double
+)
 

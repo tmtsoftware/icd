@@ -117,6 +117,7 @@ case class MainContent() extends Displayable {
   def markup() = {
     import scalacss.ScalatagsCss._
     div(Styles.mainContent)(
-      div(Styles.main)(contentTitle, contentDescription, contentDiv)).render
+      div(Styles.main)(contentTitle, contentDescription, contentDiv)
+    ).render
   }
 }

@@ -1,9 +1,9 @@
 package csw.services.icd.db
 
-import java.io.{ InputStreamReader, File }
-import java.util.zip.{ ZipEntry, ZipFile }
+import java.io.{InputStreamReader, File}
+import java.util.zip.{ZipEntry, ZipFile}
 
-import com.typesafe.config.{ ConfigResolveOptions, ConfigFactory, Config }
+import com.typesafe.config.{ConfigResolveOptions, ConfigFactory, Config}
 import csw.services.icd.StdName
 import csw.services.icd.StdName._
 

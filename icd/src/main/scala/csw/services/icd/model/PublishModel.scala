@@ -22,14 +22,17 @@ object PublishModel {
       telemetryList = getItems("telemetry", TelemetryModel(_)),
       eventList = getItems("events", TelemetryModel(_)),
       eventStreamList = getItems("eventStreams", TelemetryModel(_)),
-      alarmList = getItems("alarms", AlarmModel(_)))
+      alarmList = getItems("alarms", AlarmModel(_))
+    )
   }
 }
 
-case class PublishModel(subsystem: String,
-                        component: String,
-                        description: String,
-                        telemetryList: List[TelemetryModel],
-                        eventList: List[TelemetryModel],
-                        eventStreamList: List[TelemetryModel],
-                        alarmList: List[AlarmModel])
+case class PublishModel(
+  subsystem:       String,
+  component:       String,
+  description:     String,
+  telemetryList:   List[TelemetryModel],
+  eventList:       List[TelemetryModel],
+  eventStreamList: List[TelemetryModel],
+  alarmList:       List[AlarmModel]
+)

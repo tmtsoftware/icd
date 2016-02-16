@@ -18,7 +18,8 @@ case class AlarmListToHtml(list: List[AlarmModel], compName: String) extends Htm
 
   private val table = mkTable(
     List("Name", "Description", "Severity", "Archive"),
-    list.map(m ⇒ List(m.name, gfmToHtml(m.description), m.severity, m.archive.toString)))
+    list.map(m ⇒ List(m.name, gfmToHtml(m.description), m.severity, m.archive.toString))
+  )
 
   override val tags = if (list.nonEmpty) List(head, table) else {
     import scalatags.Text.all._

@@ -1,6 +1,6 @@
 package csw.services.icd.db
 
-import csw.services.icd.db.IcdDbQuery.{ Published, PublishInfo, PublishedItem, Subscribed, PublishType, Alarms, EventStreams, Events, Telemetry }
+import csw.services.icd.db.IcdDbQuery.{Published, PublishInfo, PublishedItem, Subscribed, PublishType, Alarms, EventStreams, Events, Telemetry}
 import csw.services.icd.html.HtmlMarkup
 import csw.services.icd.model._
 import icd.web
@@ -195,10 +195,12 @@ object IcdComponentInfo {
       publishModel ← icdModels.publishModel
       componentModel ← icdModels.componentModel
     } yield {
-      val publishedList = List(publishModel.telemetryList.map(i ⇒ Published(Telemetry, i.name, i.description)),
+      val publishedList = List(
+        publishModel.telemetryList.map(i ⇒ Published(Telemetry, i.name, i.description)),
         publishModel.eventList.map(i ⇒ Published(Events, i.name, i.description)),
         publishModel.eventStreamList.map(i ⇒ Published(EventStreams, i.name, i.description)),
-        publishModel.alarmList.map(i ⇒ Published(Alarms, i.name, i.description))).flatten
+        publishModel.alarmList.map(i ⇒ Published(Alarms, i.name, i.description))
+      ).flatten
       PublishInfo(publishModel.component, componentModel.prefix, publishedList)
     }
   }

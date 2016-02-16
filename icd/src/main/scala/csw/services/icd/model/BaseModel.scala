@@ -13,7 +13,8 @@ object BaseModel {
   def apply(config: Config): BaseModel =
     BaseModel(
       subsystem = config.getString(subsystemKey),
-      component = config.getString(componentKey))
+      component = config.getString(componentKey)
+    )
 }
 
 case class BaseModel(subsystem: String, component: String)

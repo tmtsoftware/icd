@@ -20,7 +20,8 @@ object Subsystem {
   trait SubsystemListener {
     /**
      * Called when a subsystem is selected
-     * @param sv the selected and version
+     *
+     * @param sv          the selected and version
      * @param saveHistory if true, push the browser history state, otherwise not
      * @return a future indicating when changes are done
      */
@@ -35,15 +36,18 @@ object Subsystem {
 
 /**
  * Manages the subsystem and related subsystem version comboboxes
- * @param listener notified when the user makes a selection
- * @param labelStr the text for the combobox label
- * @param placeholderMsg the initial message to display before the first selection is made
+ *
+ * @param listener          notified when the user makes a selection
+ * @param labelStr          the text for the combobox label
+ * @param placeholderMsg    the initial message to display before the first selection is made
  * @param enablePlaceholder if true, allow selecting the placeholder item
  */
-case class Subsystem(listener: SubsystemListener,
-                     labelStr: String = "Subsystem",
-                     placeholderMsg: String = "Select subsystem",
-                     enablePlaceholder: Boolean = false) extends Displayable {
+case class Subsystem(
+    listener:          SubsystemListener,
+    labelStr:          String            = "Subsystem",
+    placeholderMsg:    String            = "Select subsystem",
+    enablePlaceholder: Boolean           = false
+) extends Displayable {
 
   // The subsystem combobox
   private val subsystemItem = {
@@ -52,7 +56,8 @@ case class Subsystem(listener: SubsystemListener,
       if (enablePlaceholder)
         option(value := placeholderMsg, selected := true)(placeholderMsg)
       else
-        option(value := placeholderMsg, disabled := true, selected := true)(placeholderMsg)).render
+        option(value := placeholderMsg, disabled := true, selected := true)(placeholderMsg)
+    ).render
   }
 
   // The subsystem version combobox
@@ -116,14 +121,17 @@ case class Subsystem(listener: SubsystemListener,
 
   /**
    * Sets the selected subsystem and version.
-   * @param sv the subsystem name and version to set
+   *
+   * @param sv             the subsystem name and version to set
    * @param notifyListener if true, notify the listener
-   * @param saveHistory if true, save the current state to the browser history
+   * @param saveHistory    if true, save the current state to the browser history
    * @return a future indicating when any event handlers have completed
    */
-  def setSubsystemWithVersion(sv: SubsystemWithVersion,
-                              notifyListener: Boolean = true,
-                              saveHistory: Boolean = true): Future[Unit] = {
+  def setSubsystemWithVersion(
+    sv:             SubsystemWithVersion,
+    notifyListener: Boolean              = true,
+    saveHistory:    Boolean              = true
+  ): Future[Unit] = {
     if (sv == getSubsystemWithVersion)
       Future.successful()
     else {
@@ -132,13 +140,15 @@ case class Subsystem(listener: SubsystemListener,
         case None    ⇒ subsystemItem.value = placeholderMsg
       }
 
-      val f = updateSubsystemVersionOptions(sv.versionOpt)
-      if (notifyListener)
-        f.andThen {
-          case _ ⇒
-            listener.subsystemSelected(getSubsystemWithVersion, saveHistory)
+      if (notifyListener) {
+        for {
+          _ ← updateSubsystemVersionOptions(sv.versionOpt)
+          _ ← listener.subsystemSelected(getSubsystemWithVersion, saveHistory)
+        } yield {
         }
-      else f
+      } else {
+        updateSubsystemVersionOptions(sv.versionOpt)
+      }
     }
   }
 
@@ -170,11 +180,14 @@ case class Subsystem(listener: SubsystemListener,
 
   /**
    * Sets the selected subsystem version.
+   *
    * @return a future indicating when any event handlers have completed
    */
-  def setSelectedSubsystemVersion(versionOpt: Option[String],
-                                  notifyListener: Boolean = true,
-                                  saveHistory: Boolean = true): Future[Unit] = {
+  def setSelectedSubsystemVersion(
+    versionOpt:     Option[String],
+    notifyListener: Boolean        = true,
+    saveHistory:    Boolean        = true
+  ): Future[Unit] = {
     if (versionOpt == getSelectedSubsystemVersion)
       Future.successful()
     else {

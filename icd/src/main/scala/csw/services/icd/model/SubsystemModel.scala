@@ -12,11 +12,14 @@ object SubsystemModel {
       subsystem = config.getString("subsystem"),
       title = config.getString("title"),
       description = config.getString("description"),
-      modelVersion = config.getString("modelVersion"))
+      modelVersion = config.getString("modelVersion")
+    )
 }
 
-case class SubsystemModel(subsystem: String,
-                          title: String,
-                          description: String,
-                          modelVersion: String)
+case class SubsystemModel(
+  subsystem:    String,
+  title:        String,
+  description:  String,
+  modelVersion: String
+)
 

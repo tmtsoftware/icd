@@ -7,9 +7,9 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.github.fge.jackson.JsonLoader
 import com.github.fge.jsonschema.core.load.configuration.LoadingConfiguration
 import com.github.fge.jsonschema.core.load.download.URIDownloader
-import com.github.fge.jsonschema.core.report.{ ProcessingMessage, ProcessingReport }
-import com.github.fge.jsonschema.main.{ JsonSchema, JsonSchemaFactory }
-import com.typesafe.config.{ Config, ConfigFactory, ConfigRenderOptions, ConfigResolveOptions }
+import com.github.fge.jsonschema.core.report.{ProcessingMessage, ProcessingReport}
+import com.github.fge.jsonschema.main.{JsonSchema, JsonSchemaFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions, ConfigResolveOptions}
 
 import scala.io.Source
 

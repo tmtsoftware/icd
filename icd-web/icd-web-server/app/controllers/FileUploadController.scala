@@ -3,9 +3,9 @@ package controllers
 import com.mongodb.MongoTimeoutException
 import com.typesafe.config.ConfigException
 import csw.services.icd.db.StdConfig
-import csw.services.icd.{ IcdValidator, Problem }
-import play.api.libs.iteratee.{ Concurrent, Iteratee }
-import play.api.mvc.{ WebSocket, Result, Action, Controller }
+import csw.services.icd.{IcdValidator, Problem}
+import play.api.libs.iteratee.{Concurrent, Iteratee}
+import play.api.mvc.{WebSocket, Result, Action, Controller}
 
 object FileUploadController extends Controller {
 

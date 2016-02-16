@@ -2,7 +2,7 @@ package csw.services.icd
 
 import java.io.File
 
-import com.typesafe.config.{ ConfigResolveOptions, ConfigFactory, Config }
+import com.typesafe.config.{ConfigResolveOptions, ConfigFactory, Config}
 import csw.services.icd.model._
 
 /**

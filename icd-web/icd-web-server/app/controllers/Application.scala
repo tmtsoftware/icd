@@ -4,13 +4,14 @@ import java.io.ByteArrayOutputStream
 
 import csw.services.icd.IcdToPdf
 import csw.services.icd.db.IcdVersionManager.VersionDiff
-import csw.services.icd.db.{ IcdDbPrinter, IcdComponentInfo, ComponentInfoHelper, IcdDb }
+import csw.services.icd.db.{IcdDbPrinter, IcdComponentInfo, ComponentInfoHelper, IcdDb}
 import csw.services.icd.html.HtmlMarkup
 import gnieh.diffson.Operation
 import icd.web.shared._
+import play.api.libs.json.Json
 import play.api.mvc._
 import play.filters.csrf.CSRFAddToken
-import play.api.libs.json._
+import spray.json.{JsArray, JsObject, JsNumber, JsString}
 
 import scala.collection.immutable.Map
 
@@ -219,18 +220,25 @@ object Application extends Controller {
   private def getDiffInfo(diff: VersionDiff): DiffInfo = {
     def getValue(a: Any): String = {
       a match {
-        case m: Map[_, _] ⇒
+        case o: JsObject ⇒
           val header = List("Attribute", "Value")
-          val rows = m.toList.map(p ⇒ List(p._1.toString, getValue(p._2)))
+          val rows = o.fields.toList.map(p ⇒ List(getValue(p._1), getValue(p._2)))
           HtmlMarkup.mkTable(header, rows).render
-        case l: List[Any] ⇒
-          l.mkString(", ")
+        case ar: JsArray ⇒
+          ar.elements.map(getValue).mkString(", ")
+        //        case l: List[Any] ⇒
+        //          l.map(getValue).mkString(", ")
+        case s: JsString ⇒
+          HtmlMarkup.gfmToHtml(s.value.stripMargin)
+        case n: JsNumber ⇒
+          n.value.toString()
         case _ ⇒
-          HtmlMarkup.gfmToHtml(a.toString.stripMargin)
+          a.toString
       }
     }
     def getDiff(p: (String, Any)) = Diff(p._1, getValue(p._2))
-    def getDiffItem(op: Operation) = DiffItem(op.path, op.toJson.values.map(getDiff).toList)
+    //    def getDiffItem(op: Operation) = DiffItem(op.path, op.toJson.values.map(getDiff).toList)
+    def getDiffItem(op: Operation) = DiffItem(op.path, op.toJson.fields.map(getDiff).toList)
     DiffInfo(diff.path, diff.patch.ops.map(getDiffItem))
   }
 

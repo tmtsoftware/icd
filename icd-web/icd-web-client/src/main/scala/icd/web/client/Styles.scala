@@ -18,65 +18,77 @@ object Styles extends StyleSheet.Inline {
     media.minWidth(750 px).maxWidth(1170 px)(top(170 px)),
     media.print(top(0 px)),
     left(0 px),
-    display.block)
+    display.block
+  )
 
   val mainContent = style(
     addClassName("col-xs-11"),
     padding(0 px, 0 px, 0 px, 0 px),
-    height(100 %%))
+    height(100 %%)
+  )
 
   val main = style(
     position.relative,
     height(100 %%),
     overflowY.auto,
     padding(0 px, 0 px, 0 px, 15 px),
-    media.print(width.auto, height.auto, display.block, overflow.visible, float.none, position.static))
+    media.print(width.auto, height.auto, display.block, overflow.visible, float.none, position.static)
+  )
 
   val contentDiv = style(
     float.left,
-    media.print(float.none))
+    media.print(float.none)
+  )
 
   val sidebarWrapper = style(
     addClassNames("col-xs-1", "hidden-print"),
-    height(100 %%))
+    height(100 %%)
+  )
 
   val sidebar = style(
     height(100 %%),
-    overflowY.auto)
+    overflowY.auto
+  )
 
   val listGroupItem = style(
     addClassName("list-group-item"),
     borderRadius(0 px),
     borderLeft(0 px),
     borderRight(0 px),
-    borderTop(0 px))
+    borderTop(0 px)
+  )
 
   // Control width of tables in the information displayed for selected components
   val componentTable = style(
     tableLayout.fixed,
-    maxWidth(90 %%))
+    maxWidth(90 %%)
+  )
 
   val emptyStyle = style()
 
   // Used for table columns that should not wrap
   val noWrapTableColumn = style(
-    whiteSpace.nowrap)
+    whiteSpace.nowrap
+  )
 
   // Used for table columns that should wrap at "."
   val wrapTableColumn = style(
-    wordBreak.breakAll, wordWrap.breakWord)
+    wordBreak.breakAll, wordWrap.breakWord
+  )
 
   val fileUploadMessages = style(
     addClassNames("alert", "alert-info"),
     padding(0 px, 10 px),
     margin(1 em, 0 em),
-    border(1 px, solid, gray))
+    border(1 px, solid, gray)
+  )
 
   val publishMessages = fileUploadMessages
 
   val commentBox = style(
     padding(10 px, 0 px),
-    margin(1 em, 0 em))
+    margin(1 em, 0 em)
+  )
 
   val versionHistory = style(
     position.absolute,
@@ -87,25 +99,31 @@ object Styles extends StyleSheet.Inline {
     height(15 %%),
     backgroundColor(c"#f5f5f5"),
     padding(5 px, 10 px, 0 px, 10 px),
-    borderTop(1 px, solid, gray))
+    borderTop(1 px, solid, gray)
+  )
 
   val component = style(
     addClassName("container"),
-    pageBreakBefore.always)
+    pageBreakBefore.always
+  )
 
   val componentSection = style(
-    pageBreakInside.avoid)
+    pageBreakInside.avoid
+  )
 
   val attributeTable = style(
-    margin(0 px))
+    margin(0 px)
+  )
 
   val attributeBtn = style(
     addClassNames("btn", "btn-default", "btn-xs"),
     margin(0 px),
     outline.none,
     borderRadius(0 px),
-    border(0 px))
+    border(0 px)
+  )
 
   val attributeCell = style(
-    whiteSpace.nowrap)
+    whiteSpace.nowrap
+  )
 }

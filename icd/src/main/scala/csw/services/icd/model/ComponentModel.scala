@@ -18,14 +18,17 @@ object ComponentModel {
       title = config.as[String]("title"),
       description = config.as[String]("description"),
       modelVersion = config.as[String]("modelVersion"),
-      wbsId = config.as[Option[String]]("wbsId").getOrElse(""))
+      wbsId = config.as[Option[String]]("wbsId").getOrElse("")
+    )
 }
 
-case class ComponentModel(componentType: String,
-                          subsystem: String,
-                          component: String,
-                          prefix: String,
-                          title: String,
-                          description: String,
-                          modelVersion: String,
-                          wbsId: String)
+case class ComponentModel(
+  componentType: String,
+  subsystem:     String,
+  component:     String,
+  prefix:        String,
+  title:         String,
+  description:   String,
+  modelVersion:  String,
+  wbsId:         String
+)

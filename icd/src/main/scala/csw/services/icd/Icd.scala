@@ -1,8 +1,8 @@
 package csw.services.icd
 
-import java.io.{ File, FileOutputStream }
+import java.io.{File, FileOutputStream}
 
-import com.typesafe.config.{ ConfigResolveOptions, ConfigFactory }
+import com.typesafe.config.{ConfigResolveOptions, ConfigFactory}
 
 /**
  * An ICD API validator application
@@ -14,8 +14,10 @@ object Icd extends App {
    * Command line options: [--validate <dir> --in <inputFile> --out <outputFile>]
    * (Some options may be abbreviated to a single letter: -i, -s, -o)
    */
-  case class Options(validateDir: Option[File] = None,
-                     inputFile: Option[File] = None, schemaFile: Option[File] = None, outputFile: Option[File] = None)
+  case class Options(
+    validateDir: Option[File] = None,
+    inputFile:   Option[File] = None, schemaFile: Option[File] = None, outputFile: Option[File] = None
+  )
 
   private val parser = new scopt.OptionParser[Options]("icd") {
     head("icd", System.getProperty("CSW_VERSION"))

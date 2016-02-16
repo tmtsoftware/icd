@@ -15,7 +15,8 @@ case class ComponentModelToHtml(m: ComponentModel) extends HtmlMarkup {
 
   private val table = mkTable(
     List("Subsyatem", "Name", "Prefix", "Type", "WBS ID"),
-    List(List(m.subsystem, m.component, m.prefix, m.componentType, m.wbsId)))
+    List(List(m.subsystem, m.component, m.prefix, m.componentType, m.wbsId))
+  )
 
   override val tags = List(head, desc, table)
 

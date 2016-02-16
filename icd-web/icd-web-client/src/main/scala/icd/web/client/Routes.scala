@@ -1,6 +1,6 @@
 package icd.web.client
 
-import icd.web.shared.{ SubsystemWithVersion, IcdName }
+import icd.web.shared.{SubsystemWithVersion, IcdName}
 
 /**
  * Defines URI routes to access the server API
@@ -84,9 +84,9 @@ object Routes {
    * @return the URL path to use
    */
   def icdAsPdf(subsystem: String, versionOpt: Option[String],
-               compNamesList: List[String],
+               compNamesList:   List[String],
                targetSubsystem: SubsystemWithVersion,
-               icdVersion: Option[String]) = {
+               icdVersion:      Option[String]) = {
     targetSubsystem.subsystemOpt match {
       case None ⇒ apiAsPdf(subsystem, versionOpt, compNamesList)
       case Some(target) ⇒

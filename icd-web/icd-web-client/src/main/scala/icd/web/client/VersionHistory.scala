@@ -3,7 +3,7 @@ package icd.web.client
 import icd.web.shared._
 import org.scalajs.dom
 import org.scalajs.dom.ext.Ajax
-import org.scalajs.dom.raw.{ HTMLInputElement, HTMLElement }
+import org.scalajs.dom.raw.{HTMLInputElement, HTMLElement}
 import upickle.default._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -43,7 +43,8 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
     import scalatags.JsDom.all._
     button(
       title := "Compare two selected subsystem versions",
-      onclick := compareHandler(subsystem) _)("Compare").render
+      onclick := compareHandler(subsystem) _
+    )("Compare").render
   }
 
   // Displays the diff of two versions
@@ -83,12 +84,14 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
     def diffInfoMarkup(diffInfo: DiffInfo) = {
       div(
         h3(formatPath(diffInfo.path)),
-        diffInfo.items.map(diffItemMarkup))
+        diffInfo.items.map(diffItemMarkup)
+      )
     }
 
     div(
       h2(s"Changes to $subsystem"),
-      list.map(diffInfoMarkup)).render
+      list.map(diffInfoMarkup)
+    ).render
   }
 
   // Called when one of the version checkboxes is clicked to update the enabled state of the compare
@@ -107,8 +110,11 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
           title := s"Select this version for comparison",
           tpe := "checkbox",
           onchange := checkboxListener(compButton) _,
-          value := version.getOrElse("")),
-        version))
+          value := version.getOrElse("")
+        ),
+        version
+      )
+    )
   }
 
   // Returns the markup for displaying a table of version information for a subsystem
@@ -124,15 +130,20 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
               th(subsystem, br, "Version"),
               th("User"),
               th("Date"),
-              th("Comment"))),
+              th("Comment")
+            )
+          ),
           tbody(
             for (v ← list) yield {
               tr(
                 td(makeVersionCheckBox(v.version, compButton)),
                 td(v.user),
                 td(Styles.noWrapTableColumn, v.date),
-                td(v.comment))
-            })), compButton, diffDiv).render
+                td(v.comment)
+              )
+            }
+          )), compButton, diffDiv
+      ).render
     }
 
   }
@@ -150,7 +161,9 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
             th(icdName.target, br, "Version"),
             th("User"),
             th("Date"),
-            th("Comment"))),
+            th("Comment")
+          )
+        ),
         tbody(
           for (v ← list) yield {
             val icdVersion = v.icdVersion
@@ -160,8 +173,11 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
               td(icdVersion.targetVersion),
               td(v.user),
               td(Styles.noWrapTableColumn, v.date),
-              td(v.comment))
-          }))).render
+              td(v.comment)
+            )
+          }
+        ))
+    ).render
 
   }
 

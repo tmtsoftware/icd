@@ -26,7 +26,8 @@ object ComponentInfo {
       telemetryList = newTelemetryList,
       eventList = newEventList,
       eventStreamList = newEventStreamList,
-      alarmList = newAlarmList))
+      alarmList = newAlarmList
+    ))
 
     val commands = info.commands.map(c ⇒ c.copy(commandsReceived = newCommandsReceived))
 
@@ -49,16 +50,18 @@ object ComponentInfo {
  * @param subscribes    describes items the component subscribes to
  * @param commands      describes commands the component can send and receive
  */
-case class ComponentInfo(subsystem: String,
-                         compName: String,
-                         title: String,
-                         description: String,
-                         prefix: String,
-                         componentType: String,
-                         wbsId: String,
-                         publishes: Option[Publishes],
-                         subscribes: Option[Subscribes],
-                         commands: Option[Commands])
+case class ComponentInfo(
+  subsystem:     String,
+  compName:      String,
+  title:         String,
+  description:   String,
+  prefix:        String,
+  componentType: String,
+  wbsId:         String,
+  publishes:     Option[Publishes],
+  subscribes:    Option[Subscribes],
+  commands:      Option[Commands]
+)
 
 /**
  * Describes an attribute or parameter
@@ -69,11 +72,13 @@ case class ComponentInfo(subsystem: String,
  * @param units        the units of the type, or empty if not defined
  * @param defaultValue the default value, or empty if not defined
  */
-case class AttributeInfo(name: String,
-                         description: String,
-                         typeStr: String,
-                         units: String,
-                         defaultValue: String)
+case class AttributeInfo(
+  name:         String,
+  description:  String,
+  typeStr:      String,
+  units:        String,
+  defaultValue: String
+)
 
 /**
  * Describes a published telemetry, event or event stream item
@@ -88,15 +93,17 @@ case class AttributeInfo(name: String,
  * @param attributesList a list of the attributes published for this item
  * @param subscribers    a list of the other components that subscribe to this item
  */
-case class TelemetryInfo(name: String,
-                         description: String,
-                         requirements: List[String],
-                         minRate: Double,
-                         maxRate: Double,
-                         archive: Boolean,
-                         archiveRate: Double,
-                         attributesList: List[AttributeInfo],
-                         subscribers: List[SubscribeInfo])
+case class TelemetryInfo(
+  name:           String,
+  description:    String,
+  requirements:   List[String],
+  minRate:        Double,
+  maxRate:        Double,
+  archive:        Boolean,
+  archiveRate:    Double,
+  attributesList: List[AttributeInfo],
+  subscribers:    List[SubscribeInfo]
+)
 
 /**
  * Describes an alarm
@@ -107,12 +114,14 @@ case class TelemetryInfo(name: String,
  * @param severity     severity code
  * @param archive      true if the alarm is archived
  */
-case class AlarmInfo(name: String,
-                     description: String,
-                     requirements: List[String],
-                     severity: String,
-                     archive: Boolean,
-                     subscribers: List[SubscribeInfo])
+case class AlarmInfo(
+  name:         String,
+  description:  String,
+  requirements: List[String],
+  severity:     String,
+  archive:      Boolean,
+  subscribers:  List[SubscribeInfo]
+)
 
 /**
  * Describes what values a component publishes
@@ -123,11 +132,13 @@ case class AlarmInfo(name: String,
  * @param eventStreamList list of published event streams
  * @param alarmList       list of published alarms
  */
-case class Publishes(description: String,
-                     telemetryList: List[TelemetryInfo],
-                     eventList: List[TelemetryInfo],
-                     eventStreamList: List[TelemetryInfo],
-                     alarmList: List[AlarmInfo]) {
+case class Publishes(
+    description:     String,
+    telemetryList:   List[TelemetryInfo],
+    eventList:       List[TelemetryInfo],
+    eventStreamList: List[TelemetryInfo],
+    alarmList:       List[AlarmInfo]
+) {
   /**
    * True if at the component publishes something
    */
@@ -147,15 +158,17 @@ case class Publishes(description: String,
  * @param requiredRate  required rate for the item
  * @param maxRate    maximum rate that can be accepted
  */
-case class SubscribeInfo(itemType: String,
-                         name: String,
-                         path: String,
-                         description: String,
-                         usage: String,
-                         subsystem: String,
-                         compName: String,
-                         requiredRate: Double,
-                         maxRate: Double)
+case class SubscribeInfo(
+  itemType:     String,
+  name:         String,
+  path:         String,
+  description:  String,
+  usage:        String,
+  subsystem:    String,
+  compName:     String,
+  requiredRate: Double,
+  maxRate:      Double
+)
 
 /**
  * Describes what items a component subscribes to
@@ -163,8 +176,10 @@ case class SubscribeInfo(itemType: String,
  * @param description   optional top level description of subscribed items (in html format, after markdown processing)
  * @param subscribeInfo a list of subscribed items
  */
-case class Subscribes(description: String,
-                      subscribeInfo: List[SubscribeInfo])
+case class Subscribes(
+  description:   String,
+  subscribeInfo: List[SubscribeInfo]
+)
 
 /**
  * Describes another component (receiver, for sent commands, sender for received commands)
@@ -172,8 +187,10 @@ case class Subscribes(description: String,
  * @param subsystem the subsystem of the other component
  * @param compName  the other component
  */
-case class OtherComponent(subsystem: String,
-                          compName: String)
+case class OtherComponent(
+  subsystem: String,
+  compName:  String
+)
 
 /**
  * Describes a configuration command sent to another component
@@ -182,9 +199,11 @@ case class OtherComponent(subsystem: String,
  * @param description description of the command (in html format, after markdown processing)
  * @param receivers   the receiving components
  */
-case class SentCommandInfo(name: String,
-                           description: String,
-                           receivers: List[OtherComponent])
+case class SentCommandInfo(
+  name:        String,
+  description: String,
+  receivers:   List[OtherComponent]
+)
 
 /**
  * Describes a command config received by this component
@@ -196,12 +215,14 @@ case class SentCommandInfo(name: String,
  * @param requiredArgs list of names of required arguments
  * @param args         describes the command's arguments
  */
-case class ReceivedCommandInfo(name: String,
-                               description: String,
-                               senders: List[OtherComponent],
-                               requirements: List[String],
-                               requiredArgs: List[String],
-                               args: List[AttributeInfo])
+case class ReceivedCommandInfo(
+  name:         String,
+  description:  String,
+  senders:      List[OtherComponent],
+  requirements: List[String],
+  requiredArgs: List[String],
+  args:         List[AttributeInfo]
+)
 
 /**
  * Describes commands the component sends and receives
@@ -210,6 +231,8 @@ case class ReceivedCommandInfo(name: String,
  * @param commandsReceived a list of commands received be this component
  * @param commandsSent     a list of commands sent by this component
  */
-case class Commands(description: String,
-                    commandsReceived: List[ReceivedCommandInfo],
-                    commandsSent: List[SentCommandInfo])
+case class Commands(
+  description:      String,
+  commandsReceived: List[ReceivedCommandInfo],
+  commandsSent:     List[SentCommandInfo]
+)

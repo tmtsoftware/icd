@@ -37,7 +37,8 @@ private case class TelemetryModelToHTML(m: TelemetryModel, pubType: String) exte
   private val table = mkTable(
     List("Min Rate", "Max Rate", "Archive", "Archive Rate"),
     List(List(formatRate(m.minRate), formatRate(m.maxRate), yesNo(m.archive),
-      formatRate(m.archiveRate))))
+      formatRate(m.archiveRate)))
+  )
 
   private val attr = JsonSchemaListToHtml(Some(s"Attributes for ${m.name}"), m.attributesList)
 

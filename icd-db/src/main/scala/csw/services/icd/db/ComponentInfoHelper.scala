@@ -1,8 +1,8 @@
 package csw.services.icd.db
 
-import csw.services.icd.db.IcdDbQuery.{ Alarms, EventStreams, Events, PublishType, Telemetry }
+import csw.services.icd.db.IcdDbQuery.{Alarms, EventStreams, Events, PublishType, Telemetry}
 import csw.services.icd.html.HtmlMarkup
-import csw.services.icd.model.{ TelemetryModel, JsonSchemaModel, ComponentModel, IcdModels }
+import csw.services.icd.model.{TelemetryModel, JsonSchemaModel, ComponentModel, IcdModels}
 import icd.web.shared._
 
 /**

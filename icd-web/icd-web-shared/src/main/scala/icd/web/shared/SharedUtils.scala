@@ -1,15 +1,15 @@
 package icd.web.shared
 
 /**
-  * Common, shared utility code
-  */
+ * Common, shared utility code
+ */
 object SharedUtils {
   /**
-    * Removes any columns that do not contain any values
-    * @param head table headings
-    * @param rows table rows
-    * @return the input, minus any empty columns
-    */
+   * Removes any columns that do not contain any values
+   * @param head table headings
+   * @param rows table rows
+   * @return the input, minus any empty columns
+   */
   def compact(head: List[String], rows: List[List[String]]): (List[String], List[List[String]]) = {
     def notAllEmpty(rows: List[List[String]], i: Int): Boolean = {
       val l = for (r ← rows) yield r(i).length

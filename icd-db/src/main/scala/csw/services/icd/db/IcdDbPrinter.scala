@@ -1,9 +1,9 @@
 package csw.services.icd.db
 
-import java.io.{ FileOutputStream, File }
+import java.io.{FileOutputStream, File}
 
 import csw.services.icd.IcdToPdf
-import csw.services.icd.html.{ HtmlMarkup, IcdToHtml }
+import csw.services.icd.html.{HtmlMarkup, IcdToHtml}
 import icd.web.shared._
 
 import scalatags.Text
@@ -42,7 +42,8 @@ case class IcdDbPrinter(db: IcdDb) {
       val rowList = for (a ← attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
       div(cls := "nopagebreak")(
         h5(s"Attributes for $nameStr"),
-        HtmlMarkup.mkTable(headings, rowList))
+        HtmlMarkup.mkTable(headings, rowList)
+      )
     }
   }
 
@@ -55,7 +56,8 @@ case class IcdDbPrinter(db: IcdDb) {
         HtmlMarkup.yesNo(requiredArgs.contains(a.name)))
       div(cls := "nopagebreak")(
         h5(s"Arguments for $nameStr"),
-        HtmlMarkup.mkTable(headings, rowList))
+        HtmlMarkup.mkTable(headings, rowList)
+      )
     }
   }
 
@@ -77,8 +79,10 @@ case class IcdDbPrinter(db: IcdDb) {
               if (t.requirements.isEmpty) div() else p(strong("Requirements: "), t.requirements.mkString(", ")),
               raw(t.description),
               HtmlMarkup.mkTable(headings, rowList),
-              attributeListMarkup(t.name, t.attributesList), hr)
-          })
+              attributeListMarkup(t.name, t.attributesList), hr
+            )
+          }
+        )
       }
     }
 
@@ -94,8 +98,10 @@ case class IcdDbPrinter(db: IcdDb) {
               h5(a(s"Alarm: ${t.name}")),
               if (t.requirements.isEmpty) div() else p(strong("Requirements: "), t.requirements.mkString(", ")),
               raw(t.description),
-              HtmlMarkup.mkTable(headings, rowList), hr)
-          })
+              HtmlMarkup.mkTable(headings, rowList), hr
+            )
+          }
+        )
       }
     }
 
@@ -109,7 +115,8 @@ case class IcdDbPrinter(db: IcdDb) {
             publishTelemetryListMarkup("Telemetry", publishes.telemetryList),
             publishTelemetryListMarkup("Events", publishes.eventList),
             publishTelemetryListMarkup("Event Streams", publishes.eventStreamList),
-            publishAlarmListMarkup(publishes.alarmList))
+            publishAlarmListMarkup(publishes.alarmList)
+          )
         } else div()
     }
   }
@@ -133,10 +140,15 @@ case class IcdDbPrinter(db: IcdDb) {
             if (si.usage.isEmpty) div() else div(strong("Usage:"), raw(si.usage)),
             table(
               thead(
-                tr(th("Subsystem"), th("Component"), th("Prefix.Name"), th("Required Rate"), th("Max Rate"))),
+                tr(th("Subsystem"), th("Component"), th("Prefix.Name"), th("Required Rate"), th("Max Rate"))
+              ),
               tbody(
-                tr(td(si.subsystem), td(si.compName), td(si.path), td(si.requiredRate), td(si.maxRate)))))
-        })
+                tr(td(si.subsystem), td(si.compName), td(si.path), td(si.requiredRate), td(si.maxRate))
+              )
+            )
+          )
+        }
+      )
     }
 
     subscribesOpt match {
@@ -149,7 +161,8 @@ case class IcdDbPrinter(db: IcdDb) {
             subscribeListMarkup("Telemetry", subscribes.subscribeInfo.filter(_.itemType == "Telemetry")),
             subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == "Events")),
             subscribeListMarkup("Event Streams", subscribes.subscribeInfo.filter(_.itemType == "EventStreams")),
-            subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == "Alarms")))
+            subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == "Alarms"))
+          )
         } else div()
     }
   }
@@ -170,8 +183,10 @@ case class IcdDbPrinter(db: IcdDb) {
             h5(a(s"Configuration: ${r.name}")),
             if (r.requirements.isEmpty) div() else p(strong("Requirements: "), r.requirements.mkString(", ")),
             raw(r.description),
-            if (r.args.isEmpty) div() else parameterListMarkup(r.name, r.args, r.requiredArgs))
-        })
+            if (r.args.isEmpty) div() else parameterListMarkup(r.name, r.args, r.requiredArgs)
+          )
+        }
+      )
     }
   }
 
@@ -192,14 +207,20 @@ case class IcdDbPrinter(db: IcdDb) {
           tr(
             th("Name"),
             th("Description"),
-            th("Receiver"))),
+            th("Receiver")
+          )
+        ),
         tbody(
           for (s ← info) yield {
             tr(
               td(p(s.name)), // XXX TODO: Make link to command description page with details
               td(raw(s.description)),
-              td(p(s.receivers.map(_.compName).mkString(", "))))
-          })))
+              td(p(s.receivers.map(_.compName).mkString(", ")))
+            )
+          }
+        )
+      )
+    )
   }
 
   private def commandsId(compName: String): String = s"commands-$compName"
@@ -217,7 +238,8 @@ case class IcdDbPrinter(db: IcdDb) {
             h3(a(name := commandsId(compName))(commandsTitle(compName))),
             raw(commands.description),
             receivedCommandsMarkup(compName, commands.commandsReceived),
-            sentCommandsMarkup(compName, commands.commandsSent))
+            sentCommandsMarkup(compName, commands.commandsSent)
+          )
         } else div()
     }
   }
@@ -233,14 +255,20 @@ case class IcdDbPrinter(db: IcdDb) {
             th("Name"),
             th("Prefix"),
             th("Type"),
-            th("WBS ID"))),
+            th("WBS ID")
+          )
+        ),
         tbody(
           tr(
             td(info.subsystem),
             td(info.compName),
             td(info.prefix),
             td(info.componentType),
-            td(info.wbsId)))))
+            td(info.wbsId)
+          )
+        )
+      )
+    )
   }
 
   // Generates the HTML markup to display the component information
@@ -252,7 +280,8 @@ case class IcdDbPrinter(db: IcdDb) {
       raw(info.description),
       publishMarkup(info.compName, info.publishes),
       subscribeMarkup(info.compName, info.subscribes),
-      commandsMarkup(info.compName, info.commands))
+      commandsMarkup(info.compName, info.commands)
+    )
   }
 
   /**
@@ -327,7 +356,9 @@ case class IcdDbPrinter(db: IcdDb) {
       info.subscribes.map(_ ⇒ li(a(href := "#" + subscribeId(compName))(subscribeTitle(compName)))),
       info.commands.map(_ ⇒ li(a(href := "#" + commandsId(compName))(commandsTitle(compName)), ul(
         commandsReceived.headOption.map(_ ⇒ li(a(href := "#" + receivedCommandsId(compName))(receivedCommandsTitle(compName)))),
-        commandsSent.headOption.map(_ ⇒ li(a(href := "#" + sentCommandsId(compName))(sentCommandsTitle(compName)))))))).flatten
+        commandsSent.headOption.map(_ ⇒ li(a(href := "#" + sentCommandsId(compName))(sentCommandsTitle(compName))))
+      )))
+    ).flatten
 
     li(a(href := s"#$compName")(info.title), ul(sections))
   }
@@ -360,10 +391,12 @@ case class IcdDbPrinter(db: IcdDb) {
    * @param targetSubsystem the target subsystem (might not be set)
    * @param icdVersionOpt   optional ICD version, to be displayed in the title
    */
-  def getAsHtml(compNames: List[String],
-                sv: SubsystemWithVersion,
-                targetSubsystem: SubsystemWithVersion,
-                icdVersionOpt: Option[IcdVersion]): Option[String] = {
+  def getAsHtml(
+    compNames:       List[String],
+    sv:              SubsystemWithVersion,
+    targetSubsystem: SubsystemWithVersion,
+    icdVersionOpt:   Option[IcdVersion]
+  ): Option[String] = {
     val markup = for {
       subsystem ← sv.subsystemOpt
       subsystemInfo ← getSubsystemInfo(subsystem, sv.versionOpt)
@@ -374,14 +407,17 @@ case class IcdDbPrinter(db: IcdDb) {
       html(
         head(
           scalatags.Text.tags2.title(titleInfo.title),
-          scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss))),
+          scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss))
+        ),
         body(
           getTitleMarkup(titleInfo),
           div(cls := "pagebreakBefore"),
           h2("Table of Contents"),
           makeToc(titleInfo.title, infoList),
           makeIntro(titleInfo),
-          infoList.map(displayComponentInfo)))
+          infoList.map(displayComponentInfo)
+        )
+      )
     }
     markup.map(_.render)
   }

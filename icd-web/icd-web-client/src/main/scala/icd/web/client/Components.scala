@@ -5,7 +5,7 @@ import java.util.UUID
 import icd.web.shared._
 import org.scalajs.dom
 import org.scalajs.dom.ext.Ajax
-import org.scalajs.dom.raw.{ HTMLTableRowElement, HTMLButtonElement, HTMLDivElement }
+import org.scalajs.dom.raw.{HTMLTableRowElement, HTMLButtonElement, HTMLDivElement}
 import upickle.default._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -65,11 +65,13 @@ object Components {
       else {
         table(tableStyle, "data-toggle".attr := "table",
           thead(
-            tr(newHead.map(th(_)))),
+            tr(newHead.map(th(_)))
+          ),
           tbody(
             for (row ← newRows) yield {
               tr(row.map(mkTableCell))
-            }))
+            }
+          ))
       }
     }
   }
@@ -218,8 +220,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default")
       val rowList = for (a ← attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
-      div(strong(titleStr),
-        mkTable(headings, rowList, tableStyle = Styles.attributeTable))
+      div(
+        strong(titleStr),
+        mkTable(headings, rowList, tableStyle = Styles.attributeTable)
+      )
     }
   }
 
@@ -238,8 +242,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       val headings = List("Name", "Description", "Type", "Units", "Default")
       val rowList = for (a ← attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue,
         if (requiredArgs.contains(a.name)) "yes" else "no")
-      div(strong(titleStr),
-        mkTable(headings, rowList, tableStyle = Styles.attributeTable))
+      div(
+        strong(titleStr),
+        mkTable(headings, rowList, tableStyle = Styles.attributeTable)
+      )
     }
   }
 
@@ -255,11 +261,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalacss.ScalatagsCss._
     // button to toggle visibility
     val idStr = UUID.randomUUID().toString
-    val btn = button(Styles.attributeBtn,
+    val btn = button(
+      Styles.attributeBtn,
       "data-toggle".attr := "collapse",
       "data-target".attr := s"#$idStr",
-      title := "Show/hide details")(
-        span(cls := "glyphicon glyphicon-collapse-down"))
+      title := "Show/hide details"
+    )(
+        span(cls := "glyphicon glyphicon-collapse-down")
+      )
     val row = tr(id := idStr, cls := "collapse")(td(colspan := colSpan)(item))
     (btn, row)
   }
@@ -279,10 +288,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Makes the link for a subscriber component in the table
     def makeLinkForSubscriber(info: SubscribeInfo) = {
-      a(title := s"Show API for ${info.compName}",
+      a(
+        title := s"Show API for ${info.compName}",
         s"${info.compName} ",
         href := "#",
-        onclick := clickedOnSubscriber(info) _)
+        onclick := clickedOnSubscriber(info) _
+      )
     }
 
     // Returns a table row displaying more details for the given telemetry
@@ -292,12 +303,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         formatRate(t.minRate),
         formatRate(t.maxRate),
         if (t.archive) "Yes" else "No",
-        formatRate(t.archiveRate)))
+        formatRate(t.archiveRate)
+      ))
 
       div(
         if (t.requirements.isEmpty) div() else p(strong("Requirements: "), t.requirements.mkString(", ")),
         mkTable(headings, rowList),
-        attributeListMarkup("Attributes", t.attributesList))
+        attributeListMarkup("Attributes", t.attributesList)
+      )
     }
 
     // Returns the markup for the published telemetry
@@ -305,21 +318,30 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       if (telemetryList.isEmpty) div()
       else div(
         h4(s"$pubType Published by $compName"),
-        table("data-toggle".attr := "table",
+        table(
+          "data-toggle".attr := "table",
           thead(
             tr(
               th("Name"),
               th("Description"),
-              th("Subscribers"))),
+              th("Subscribers")
+            )
+          ),
           tbody(
             for (t ← telemetryList) yield {
               val (btn, row) = hiddenRowMarkup(makeTelemetryDetailsRow(t), 3)
-              List(tr(
+              List(
+                tr(
                 td(Styles.attributeCell, p(btn, t.name)),
                 td(raw(t.description)),
-                td(p(t.subscribers.map(makeLinkForSubscriber)))),
-                row)
-            })))
+                td(p(t.subscribers.map(makeLinkForSubscriber)))
+              ),
+                row
+              )
+            }
+          )
+        )
+      )
     }
 
     // Returns a table row displaying more details for the given alarm
@@ -329,7 +351,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
       div(
         if (t.requirements.isEmpty) div() else p(strong("Requirements: "), t.requirements.mkString(", ")),
-        mkTable(headings, rowList))
+        mkTable(headings, rowList)
+      )
     }
 
     // Returns the markup for the published alarms
@@ -337,34 +360,45 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       if (alarmList.isEmpty) div()
       else div(
         h4(s"Alarms Published by $compName"),
-        table("data-toggle".attr := "table",
+        table(
+          "data-toggle".attr := "table",
           thead(
             tr(
               th("Name"),
               th("Description"),
-              th("Subscribers"))),
+              th("Subscribers")
+            )
+          ),
           tbody(
             for (t ← alarmList) yield {
               val (btn, row) = hiddenRowMarkup(makeAlarmDetailsRow(t), 3)
-              List(tr(
+              List(
+                tr(
                 td(Styles.attributeCell, p(btn, t.name)),
                 td(raw(t.description)),
-                td(p(t.subscribers.map(makeLinkForSubscriber)))),
-                row)
-            })))
+                td(p(t.subscribers.map(makeLinkForSubscriber)))
+              ),
+                row
+              )
+            }
+          )
+        )
+      )
     }
 
     publishesOpt match {
       case None ⇒ div()
       case Some(publishes) ⇒
         if (publishes.nonEmpty) {
-          div(Styles.componentSection,
+          div(
+            Styles.componentSection,
             h3(s"Items published by $compName"),
             raw(publishes.description),
             publishTelemetryListMarkup("Telemetry", publishes.telemetryList),
             publishTelemetryListMarkup("Events", publishes.eventList),
             publishTelemetryListMarkup("Event Streams", publishes.eventStreamList),
-            publishAlarmListMarkup(publishes.alarmList))
+            publishAlarmListMarkup(publishes.alarmList)
+          )
         } else div()
     }
   }
@@ -382,10 +416,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Makes the link for a publisher component in the table
     def makeLinkForPublisher(info: SubscribeInfo) = {
-      a(title := s"Show API for ${info.compName}",
+      a(
+        title := s"Show API for ${info.compName}",
         s"${info.compName} ",
         href := "#",
-        onclick := clickedOnPublisher(info) _)
+        onclick := clickedOnPublisher(info) _
+      )
     }
 
     // Returns a table row displaying more details for the given subscription
@@ -396,7 +432,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         si.compName,
         si.path,
         formatRate(si.requiredRate),
-        formatRate(si.maxRate)))
+        formatRate(si.maxRate)
+      ))
 
       div(mkTable(headings, rowList))
     }
@@ -405,36 +442,47 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       if (subscribeList.isEmpty) div()
       else div(
         h4(s"$pubType Subscribed to by $compName"),
-        div(Styles.componentSection,
+        div(
+          Styles.componentSection,
           table(Styles.componentTable, "data-toggle".attr := "table",
             thead(
               tr(
                 th("Name"),
                 th("Description"),
-                th("Publisher"))),
+                th("Publisher")
+              )
+            ),
             tbody(
               for (s ← subscribeList) yield {
                 val (btn, row) = hiddenRowMarkup(makeDetailsRow(s), 3)
                 val usage = if (s.usage.isEmpty) div() else div(strong("Usage:"), raw(s.usage))
-                List(tr(
+                List(
+                  tr(
                   td(Styles.attributeCell, p(btn, s.name)),
                   td(raw(s.description), usage),
-                  td(p(makeLinkForPublisher(s)))),
-                  row)
-              }))))
+                  td(p(makeLinkForPublisher(s)))
+                ),
+                  row
+                )
+              }
+            ))
+        )
+      )
     }
 
     subscribesOpt match {
       case None ⇒ div()
       case Some(subscribes) ⇒
         if (subscribes.subscribeInfo.nonEmpty) {
-          div(Styles.componentSection,
+          div(
+            Styles.componentSection,
             h3(s"Items subscribed to by $compName"),
             raw(subscribes.description),
             subscribeListMarkup("Telemetry", subscribes.subscribeInfo.filter(_.itemType == "Telemetry")),
             subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == "Events")),
             subscribeListMarkup("Event Streams", subscribes.subscribeInfo.filter(_.itemType == "EventStreams")),
-            subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == "Alarms")))
+            subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == "Alarms"))
+          )
         } else div()
     }
   }
@@ -459,19 +507,23 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     def makeDetailsRow(r: ReceivedCommandInfo) = {
       div(
         if (r.requirements.isEmpty) div() else p(strong("Requirements: "), r.requirements.mkString(", ")),
-        parameterListMarkup("Arguments", r.args, r.requiredArgs))
+        parameterListMarkup("Arguments", r.args, r.requiredArgs)
+      )
     }
 
     // Only display non-empty tables
     if (info.isEmpty) div()
-    else div(Styles.componentSection,
+    else div(
+      Styles.componentSection,
       h4(s"Command Configurations Received by $compName"),
       table(Styles.componentTable, "data-toggle".attr := "table",
         thead(
           tr(
             th("Name"),
             th("Description"),
-            th("Senders"))),
+            th("Senders")
+          )
+        ),
         tbody(
           for (r ← info) yield {
             val (btn, row) = hiddenRowMarkup(makeDetailsRow(r), 3)
@@ -479,9 +531,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               tr(
                 td(Styles.attributeCell, p(btn, r.name)), // XXX TODO: Make link to command description page with details
                 td(raw(r.description)),
-                td(p(r.senders.map(makeLinkForSender)))),
-              row)
-          })))
+                td(p(r.senders.map(makeLinkForSender)))
+              ),
+              row
+            )
+          }
+        ))
+    )
   }
 
   // Generates the HTML markup to display the commands a component sends
@@ -502,21 +558,27 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Only display non-empty tables
     if (info.isEmpty) div()
-    else div(Styles.componentSection,
+    else div(
+      Styles.componentSection,
       h4(s"Command Configurations Sent by $compName"),
       table(Styles.componentTable, "data-toggle".attr := "table",
         thead(
           tr(
             th("Name"),
             th("Description"),
-            th("Receiver"))),
+            th("Receiver")
+          )
+        ),
         tbody(
           for (s ← info) yield {
             tr(
               td(p(s.name)), // XXX TODO: Make link to command description page with details
               td(raw(s.description)),
-              td(p(s.receivers.map(makeLinkForReceiver))))
-          })))
+              td(p(s.receivers.map(makeLinkForReceiver)))
+            )
+          }
+        ))
+    )
   }
 
   // Generates the markup for the commands section (description plus received and sent)
@@ -530,7 +592,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           h3(s"Commands for $compName"),
           raw(commands.description),
           receivedCommandsMarkup(compName, commands.commandsReceived),
-          sentCommandsMarkup(compName, commands.commandsSent))
+          sentCommandsMarkup(compName, commands.commandsSent)
+        )
     }
   }
 
@@ -546,14 +609,19 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             th("Name"),
             th("Prefix"),
             th("Type"),
-            th("WBS ID"))),
+            th("WBS ID")
+          )
+        ),
         tbody(
           tr(
             td(info.subsystem),
             td(info.compName),
             td(info.prefix),
             td(info.componentType),
-            td(info.wbsId)))))
+            td(info.wbsId)
+          )
+        ))
+    )
   }
 
   // Generates the HTML markup to display the component information
@@ -569,7 +637,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       raw(info.description),
       publishMarkup(info.compName, info.publishes),
       subscribeMarkup(info.compName, info.subscribes),
-      commandsMarkup(info.compName, info.commands))
+      commandsMarkup(info.compName, info.commands)
+    )
   }
 
 }

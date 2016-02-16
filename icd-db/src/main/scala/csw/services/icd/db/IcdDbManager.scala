@@ -1,6 +1,6 @@
 package csw.services.icd.db
 
-import com.mongodb.{ WriteConcern, DBObject }
+import com.mongodb.{WriteConcern, DBObject}
 import com.mongodb.casbah.Imports._
 
 /**

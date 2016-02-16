@@ -3,9 +3,9 @@ package csw.services.icd.db
 import java.io.File
 
 import com.mongodb.casbah.Imports._
-import com.typesafe.config.{ ConfigFactory, Config }
+import com.typesafe.config.{ConfigFactory, Config}
 import csw.services.icd._
-import csw.services.icd.model.{ BaseModel, SubsystemModel }
+import csw.services.icd.model.{BaseModel, SubsystemModel}
 import org.joda.time.DateTimeZone
 
 import scala.io.StdIn
@@ -31,24 +31,26 @@ object IcdDb extends App {
    *
    * (Options may be abbreviated to a single letter: For example: -i, -l, -c, -o)
    */
-  case class Options(dbName: String = defaultDbName,
-                     host: String = defaultHost,
-                     port: Int = defaultPort,
-                     ingest: Option[File] = None,
-                     list: Option[String] = None,
-                     subsystem: Option[String] = None,
-                     target: Option[String] = None,
-                     icdVersion: Option[String] = None,
-                     component: Option[String] = None,
-                     outputFile: Option[File] = None,
-                     drop: Option[String] = None,
-                     versions: Option[String] = None,
-                     diff: Option[String] = None,
-                     publish: Boolean = false,
-                     majorVersion: Boolean = false,
-                     comment: String = "",
-                     publishes: Option[String] = None,
-                     subscribes: Option[String] = None)
+  case class Options(
+    dbName:       String         = defaultDbName,
+    host:         String         = defaultHost,
+    port:         Int            = defaultPort,
+    ingest:       Option[File]   = None,
+    list:         Option[String] = None,
+    subsystem:    Option[String] = None,
+    target:       Option[String] = None,
+    icdVersion:   Option[String] = None,
+    component:    Option[String] = None,
+    outputFile:   Option[File]   = None,
+    drop:         Option[String] = None,
+    versions:     Option[String] = None,
+    diff:         Option[String] = None,
+    publish:      Boolean        = false,
+    majorVersion: Boolean        = false,
+    comment:      String         = "",
+    publishes:    Option[String] = None,
+    subscribes:   Option[String] = None
+  )
 
   // Parser for the command line options
   private val parser = new scopt.OptionParser[Options]("icd-db") {
@@ -272,9 +274,11 @@ object IcdDb extends App {
 /**
  * ICD Database (Mongodb) support
  */
-case class IcdDb(dbName: String = IcdDbDefaults.defaultDbName,
-                 host: String = IcdDbDefaults.defaultHost,
-                 port: Int = IcdDbDefaults.defaultPort) {
+case class IcdDb(
+  dbName: String = IcdDbDefaults.defaultDbName,
+  host:   String = IcdDbDefaults.defaultHost,
+  port:   Int    = IcdDbDefaults.defaultPort
+) {
 
   val mongoClient = MongoClient(host, port)
 

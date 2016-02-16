@@ -1,7 +1,7 @@
 package icd.web.client
 
 import org.scalajs.dom
-import org.scalajs.dom.raw.{ Node, HTMLInputElement }
+import org.scalajs.dom.raw.{Node, HTMLInputElement}
 
 import org.scalajs.dom.Element
 
@@ -46,8 +46,13 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
               tpe := "checkbox",
               value := compName,
               checked := true,
-              onchange := checkboxListener),
-            a(title := s"Scroll to $compName", href := s"#$compId", compName, onclick := componentSelected(compName) _)))))
+              onchange := checkboxListener
+            ),
+            a(title := s"Scroll to $compName", href := s"#$compId", compName, onclick := componentSelected(compName) _)
+          )
+        )
+      )
+    )
   }
 
   /**
@@ -59,6 +64,7 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
       val elem = nodeList(i).asInstanceOf[HTMLInputElement]
       if (elem.checked) Some(elem.value) else None
     }
+    println(s"XXX selected comps: ${result.toList.flatten}")
     result.toList.flatten
   }
 
@@ -127,7 +133,9 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
 
     div(Styles.sidebarWrapper, id := "sidebar")(
       div(Styles.sidebar)(
-        sidebarList)).render
+        sidebarList
+      )
+    ).render
   }
 }
 

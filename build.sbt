@@ -24,7 +24,8 @@ val buildSettings = Seq(
   resolvers += Resolver.typesafeRepo("releases"),
   resolvers += Resolver.sonatypeRepo("releases"),
   resolvers += sbtResolver.value,
-  resolvers += "Scalaz Bintray Repo" at "https://dl.bintray.com/scalaz/releases"
+  resolvers += "Scalaz Bintray Repo" at "https://dl.bintray.com/scalaz/releases",
+  resolvers += Resolver.jcenterRepo
 )
 
 // Automatic code formatting
@@ -61,18 +62,18 @@ def provided(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "provided")
 def test(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test")
 
 // dependencies
-val scopt = "com.github.scopt" %% "scopt" % "3.3.0"
+val scopt = "com.github.scopt" %% "scopt" % "3.4.0"
 val jsonSchemaValidator = "com.github.fge" % "json-schema-validator" % "2.2.6"
-val ficus = "net.ceedubs" % "ficus_2.11" % "1.1.2"
-val typesafeConfig = "com.typesafe" % "config" % "1.2.1"
-val scalaTest = "org.scalatest" %% "scalatest" % "2.1.5"
+val ficus = "com.iheart" %% "ficus" % "1.2.0"
+val typesafeConfig = "com.typesafe" % "config" % "1.3.0"
+val scalaTest = "org.scalatest" %% "scalatest" % "2.2.6"
 val pegdown = "org.pegdown" % "pegdown" % "1.6.0"
-val xmlworker = "com.itextpdf.tool" % "xmlworker" % "5.5.6"
+val xmlworker = "com.itextpdf.tool" % "xmlworker" % "5.5.8"
 val casbah = "org.mongodb" %% "casbah" % "2.8.2"
-val diffson = "org.gnieh" %% "diffson" % "0.3"
-val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2"
-val logback = "ch.qos.logback" % "logback-classic" % "1.1.1"
-val scalatags = "com.lihaoyi" %% "scalatags" % "0.5.3"
+val diffson = "org.gnieh" %% "diffson" % "1.1.0"
+val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.1.0"
+val logback = "ch.qos.logback" % "logback-classic" % "1.1.5"
+val scalatags = "com.lihaoyi" %% "scalatags" % "0.5.4"
 
 // Root of the multi-project build
 lazy val root = (project in file("."))
@@ -110,8 +111,8 @@ lazy val icdWebServer = (project in file("icd-web/icd-web-server"))
     includeFilter in(Assets, LessKeys.less) := "*.less",
     libraryDependencies ++= Seq(
       filters,
-      "com.vmunier" %% "play-scalajs-scripts" % "0.3.0",
-      "com.lihaoyi" %%% "upickle" % "0.3.6",
+      "com.vmunier" %% "play-scalajs-scripts" % "0.4.0",
+      "com.lihaoyi" %%% "upickle" % "0.3.8",
       "org.webjars" % "jquery-ui" % "1.11.4",
       "org.webjars" %% "webjars-play" % "2.4.0-1",
       "org.webjars" % "bootstrap" % "3.3.4",
@@ -131,9 +132,9 @@ lazy val icdWebClient = (project in file("icd-web/icd-web-client")).settings(
   sourceMapsDirectories += icdWebSharedJs.base / "..",
   unmanagedSourceDirectories in Compile := Seq((scalaSource in Compile).value),
   libraryDependencies ++= Seq(
-    "org.scala-js" %%% "scalajs-dom" % "0.8.2",
-    "com.lihaoyi" %%% "scalatags" % "0.5.3",
-    "com.lihaoyi" %%% "upickle" % "0.3.6",
+    "org.scala-js" %%% "scalajs-dom" % "0.9.0",
+    "com.lihaoyi" %%% "scalatags" % "0.5.4",
+    "com.lihaoyi" %%% "upickle" % "0.3.8",
     "org.querki" %%% "jquery-facade" % "0.11", // includes jquery webjar!
     "com.github.japgolly.scalacss" %%% "core" % "0.3.1",
     "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.3.1"
@@ -155,7 +156,7 @@ lazy val icdWebShared = (crossProject.crossType(CrossType.Pure) in file("icd-web
   .settings(scalaVersion := ScalaVersion)
   .settings(formatSettings: _*)
   .jsConfigure(_ enablePlugins ScalaJSPlay)
-  .jsSettings(sourceMapsBase := baseDirectory.value / "..")
+//  .jsSettings(sourceMapsBase := baseDirectory.value / "..")
 
 lazy val icdWebSharedJvm = icdWebShared.jvm
 lazy val icdWebSharedJs = icdWebShared.js

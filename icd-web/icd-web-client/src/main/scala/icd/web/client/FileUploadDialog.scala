@@ -166,7 +166,8 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
 
     val acceptSuffix = if (inputDirSupported) "" else ".zip,application/zip"
 
-    div(cls := "container",
+    div(
+      cls := "container",
       p(dirMsg),
       form(id := "upload", action := "/upload", "role".attr := "form",
         "method".attr := "POST", "enctype".attr := "multipart/form-data")(
@@ -175,16 +176,23 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
             div(cls := "panel-body")(
               div(label(s"$dirLabel to upload:")(inputItem)),
               div(cls := "hide")(
-                button(`type` := "submit")("Upload Files"))))),
+                button(`type` := "submit")("Upload Files")
+              )
+            )
+          )
+        ),
       div(cls := "progress")(
         div(id := "progress", cls := "progress-bar progress-bar-info progress-bar-striped",
           role := "progressbar", "aria-valuenow".attr := "0", "aria-valuemin".attr := "0",
-          "aria-valuemax".attr := "100", style := "width: 0%", "0%")),
+          "aria-valuemax".attr := "100", style := "width: 0%", "0%")
+      ),
       h4("Status")(
         span(style := "margin-left:15px;"),
         span(id := "busyStatus", cls := "glyphicon glyphicon-refresh glyphicon-refresh-animate hide"),
         span(style := "margin-left:15px;"),
-        span(id := "status", cls := "label", "Working...")),
-      messagesItem).render
+        span(id := "status", cls := "label", "Working...")
+      ),
+      messagesItem
+    ).render
   }
 }

@@ -1,6 +1,6 @@
 package icd.web.client
 
-import icd.web.shared.{ SubsystemWithVersion, IcdVersion }
+import icd.web.shared.{SubsystemWithVersion, IcdVersion}
 import org.scalajs.dom
 import org.scalajs.dom._
 import upickle.default._
@@ -55,13 +55,13 @@ case class BrowserHistory(sourceSubsystem: SubsystemWithVersion, targetSubsystem
   // Pushes the current application history state (Note that the title is ignored in some browsers)
   def pushState(): Unit = {
     val json = write(this)
-    dom.history.pushState(json, dom.document.title, dom.document.documentURI)
+    dom.window.history.pushState(json, dom.document.title, dom.document.documentURI)
   }
 
   // Replaces the current application history state (Note that the title is ignored in some browsers)
   def replaceState(): Unit = {
     val json = write(this)
-    dom.history.replaceState(json, dom.document.title, dom.document.documentURI)
+    dom.window.history.replaceState(json, dom.document.title, dom.document.documentURI)
   }
 }
 

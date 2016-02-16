@@ -61,12 +61,14 @@ object HtmlMarkup {
    * @param gfm the Git formatted markdown
    */
   def gfmToHtml(gfm: String): String = {
-    import org.pegdown.{ Extensions, PegDownProcessor }
+    import org.pegdown.{Extensions, PegDownProcessor}
     if (isEmpty(gfm)) ""
     else {
-      val pd = new PegDownProcessor(Extensions.TABLES | Extensions.AUTOLINKS | Extensions.FENCED_CODE_BLOCKS
+      val pd = new PegDownProcessor(
+        Extensions.TABLES | Extensions.AUTOLINKS | Extensions.FENCED_CODE_BLOCKS
         | Extensions.STRIKETHROUGH | Extensions.ATXHEADERSPACE | Extensions.TASKLISTITEMS,
-        Long.MaxValue) // last arg is to avoid pegdown timeouts
+        Long.MaxValue
+      ) // last arg is to avoid pegdown timeouts
       pd.markdownToHtml(gfm.stripMargin)
     }
   }
@@ -106,11 +108,14 @@ object HtmlMarkup {
       val (newHead, newRows) = compact(head, rows)
       table(
         thead(
-          tr(newHead.map(th(_)))),
+          tr(newHead.map(th(_)))
+        ),
         tbody(
           for (row ← newRows) yield {
             tr(row.map(mkTableCell))
-          }))
+          }
+        )
+      )
     }
   }
 

@@ -9,7 +9,8 @@ private case class SubscribeInfoToHtml(list: List[SubscribeInfo], title: String)
 
   private val table = mkTable(
     List("Subsystem", "Component", "Name", "Required Rate", "Max Rate", "Usage"),
-    list.map(m ⇒ List(m.subsystem, m.component, m.name, m.requiredRate.toString, m.maxRate.toString, gfmToHtml(m.usage))))
+    list.map(m ⇒ List(m.subsystem, m.component, m.name, m.requiredRate.toString, m.maxRate.toString, gfmToHtml(m.usage)))
+  )
 
   override val tags = if (list.nonEmpty) List(head, table) else {
     import scalatags.Text.all._
@@ -34,7 +35,8 @@ case class SubscribeModelToHtml(m: SubscribeModel) extends HtmlMarkup {
     SubscribeInfoToHtml(m.telemetryList, s"Telemetry Subscribed to by ${m.component}"),
     SubscribeInfoToHtml(m.eventList, s"Events Subscribed to by ${m.component}"),
     SubscribeInfoToHtml(m.eventStreamList, s"Event Streams Subscribed to by ${m.component}"),
-    SubscribeInfoToHtml(m.alarmList, s"Alarms Subscribed to by ${m.component}"))
+    SubscribeInfoToHtml(m.alarmList, s"Alarms Subscribed to by ${m.component}")
+  )
 
   override val tags = List(head, desc) ::: parts.map(_.markup)
 

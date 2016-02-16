@@ -2,7 +2,7 @@ package csw.services.icd
 
 import java.io.File
 
-import com.typesafe.config.{ Config, ConfigFactory, ConfigResolveOptions }
+import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions}
 import csw.services.icd.IcdValidator._
 import csw.services.icd.model.IcdModels
 import org.scalatest.FunSuite

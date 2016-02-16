@@ -34,13 +34,15 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
       name := "comments",
       rows := 10,
       cols := 80,
-      placeholder := "Enter publish comment here...").render
+      placeholder := "Enter publish comment here..."
+    ).render
   }
 
   // Message about missing username (XXX should be an easier way...)
   private val userNameMissing = {
     import scalatags.JsDom.all._
-    span(id := "userNameMissing", cls := "hide", "Username is required!")
+    div(id := "userNameMissing", cls := "hide has-error",
+      label(cls := "control-label", "Username is required!"))
   }
 
   private def userNameMissingItem = $("#userNameMissing")
@@ -60,9 +62,10 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
       cls := "form-control",
       name := "userName",
       id := "userName",
-      onchange := userNameChanged _,
+      onkeyup := userNameChanged _,
       required,
-      placeholder := "Enter your user name...").render
+      placeholder := "Enter your user name..."
+    ).render
   }
 
   private val majorVersionCheckBox = {
@@ -113,13 +116,15 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
       setMessage(p(s"Click below to publish the ICD from $source $sourceVersion to $target $targetVersion").render)
       setPublishButtonLabel("Publish ICD")
     } else {
-      setMessage(p(s"Please select an ",
+      setMessage(p(
+        s"Please select an ",
         em("unpublished"),
         " (version = *) subsystem and the target ",
         em("All"),
         " to publish the API for the subsystem.",
         br,
-        "Or select a published subsystem and target to publish the ICD from the subsystem to the target subsystem").render)
+        "Or select a published subsystem and target to publish the ICD from the subsystem to the target subsystem"
+      ).render)
       setPublishButtonLabel("Publish (disabled)")
       publishButton.disabled = true
     }
@@ -174,7 +179,8 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
     import scalacss.ScalatagsCss._
     import scalatags.JsDom.all._
 
-    div(cls := "container",
+    div(
+      cls := "container",
       messageItem,
       div(cls := "panel panel-info")(
         div(cls := "panel-body")(
@@ -182,11 +188,16 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
           div(Styles.commentBox, label("Username")("*", userNameBox, userNameMissing)),
           div(
             div(cls := "checkbox")(label(majorVersionCheckBox, "Increment major version")),
-            publishButton))),
+            publishButton
+          )
+        )
+      ),
       h4("Status")(
         span(style := "margin-left:15px;"),
         span(id := "busyStatus", cls := "glyphicon glyphicon-refresh glyphicon-refresh-animate hide"),
         span(style := "margin-left:15px;"),
-        span(id := "status", cls := "label", "Working..."))).render
+        span(id := "status", cls := "label", "Working...")
+      )
+    ).render
   }
 }

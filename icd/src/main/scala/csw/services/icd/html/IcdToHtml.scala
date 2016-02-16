@@ -29,13 +29,16 @@ object IcdToHtml {
     html(
       head(
         scalatags.Text.tags2.title(title),
-        scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss))),
+        scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss))
+      ),
       body(
         h2(a(name := "title"), cls := "page-header")("Interface Control Document", br, title),
         div(cls := "pagebreak"),
         h2("Table of Contents"),
         markupInfo.map(_.tocEntry),
-        markupInfo.map(_.tags))).render
+        markupInfo.map(_.tags)
+      )
+    ).render
   }
 }
 
@@ -49,7 +52,8 @@ case class IcdToHtml(models: IcdModels) extends HtmlMarkup {
     models.componentModel.map(ComponentModelToHtml),
     models.publishModel.map(PublishModelToHtml),
     models.subscribeModel.map(SubscribeModelToHtml),
-    models.commandModel.map(CommandModelToHtml)).flatten
+    models.commandModel.map(CommandModelToHtml)
+  ).flatten
 
   override val tags = {
     import scalatags.Text.all._

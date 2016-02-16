@@ -1,9 +1,9 @@
 package csw.services.icd.db
 
-import com.mongodb.casbah.{ MongoCollection, MongoDB }
+import com.mongodb.casbah.{MongoCollection, MongoDB}
 import com.mongodb.casbah.commons.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import com.typesafe.config.{ ConfigFactory, Config }
+import com.typesafe.config.{ConfigFactory, Config}
 import csw.services.icd.StdName._
 import csw.services.icd.model._
 import scala.language.implicitConversions
@@ -37,12 +37,14 @@ object IcdDbQuery {
 
   // Returns an IcdEntry for the given collection path
   private[db] def getEntry(db: MongoDB, name: String, paths: List[String]): IcdEntry = {
-    IcdEntry(name = name,
+    IcdEntry(
+      name = name,
       subsystem = paths.find(_.endsWith(".subsystem")).map(db(_)),
       component = paths.find(_.endsWith(".component")).map(db(_)),
       publish = paths.find(_.endsWith(".publish")).map(db(_)),
       subscribe = paths.find(_.endsWith(".subscribe")).map(db(_)),
-      command = paths.find(_.endsWith(".command")).map(db(_)))
+      command = paths.find(_.endsWith(".command")).map(db(_))
+    )
   }
 
   private[db] def getSubsystemCollectionName(subsystem: String): String = s"$subsystem.subsystem"
@@ -169,12 +171,14 @@ case class IcdDbQuery(db: MongoDB) {
 
   // Returns an IcdEntry object for the given component name, if found
   private[db] def entryForComponentName(subsystem: String, component: String): IcdEntry = {
-    IcdEntry(name = s"$subsystem.$component",
+    IcdEntry(
+      name = s"$subsystem.$component",
       subsystem = getSubsystemCollection(subsystem),
       component = getComponentCollection(subsystem, component),
       publish = getPublishCollection(subsystem, component),
       subscribe = getSubscribeCollection(subsystem, component),
-      command = getCommandCollection(subsystem, component))
+      command = getCommandCollection(subsystem, component)
+    )
   }
 
   // Returns an IcdEntry object for the given subsystem name, if found
@@ -202,7 +206,7 @@ case class IcdDbQuery(db: MongoDB) {
    * @param componentType restricts the type of components returned (one of: Assembly, HCD, Sequencer, etc.)
    */
   def getComponents(componentType: String): List[ComponentModel] =
-    queryComponents("componentType" -> componentType)
+    queryComponents("componentType" → componentType)
 
   /**
    * Returns a list of all the component names in the DB
@@ -425,10 +429,12 @@ case class IcdDbQuery(db: MongoDB) {
   def getPublished(component: ComponentModel): List[Published] = {
     getPublishModel(component) match {
       case Some(publishModel) ⇒
-        List(publishModel.telemetryList.map(i ⇒ Published(Telemetry, i.name, i.description)),
+        List(
+          publishModel.telemetryList.map(i ⇒ Published(Telemetry, i.name, i.description)),
           publishModel.eventList.map(i ⇒ Published(Events, i.name, i.description)),
           publishModel.eventStreamList.map(i ⇒ Published(EventStreams, i.name, i.description)),
-          publishModel.alarmList.map(i ⇒ Published(Alarms, i.name, i.description))).flatten
+          publishModel.alarmList.map(i ⇒ Published(Alarms, i.name, i.description))
+        ).flatten
       case None ⇒ Nil
     }
   }
@@ -467,11 +473,13 @@ case class IcdDbQuery(db: MongoDB) {
 
     getSubscribeModel(component) match {
       case Some(subscribeModel) ⇒
-        List(subscribeModel.telemetryList.map(i ⇒
+        List(
+          subscribeModel.telemetryList.map(i ⇒
           Subscribed(subscribeModel.component, subscribeModel.subsystem, Telemetry, i.name, getPath(i), i.usage, i.requiredRate, i.maxRate)),
           subscribeModel.eventList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Events, i.name, getPath(i), i.usage, i.requiredRate, i.maxRate)),
           subscribeModel.eventStreamList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, EventStreams, i.name, getPath(i), i.usage, i.requiredRate, i.maxRate)),
-          subscribeModel.alarmList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Alarms, i.name, getPath(i), i.usage, i.requiredRate, i.maxRate))).flatten
+          subscribeModel.alarmList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Alarms, i.name, getPath(i), i.usage, i.requiredRate, i.maxRate))
+        ).flatten
       case None ⇒ Nil
     }
   }

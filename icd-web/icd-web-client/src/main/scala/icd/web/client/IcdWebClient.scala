@@ -1,6 +1,6 @@
 package icd.web.client
 
-import icd.web.shared.{ SubsystemWithVersion, IcdVersion }
+import icd.web.shared.{SubsystemWithVersion, IcdVersion}
 import org.scalajs.dom
 import org.scalajs.dom.PopStateEvent
 import org.scalajs.dom.ext.Ajax
@@ -35,8 +35,10 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
 
   // Page components
   private val subsystem = Subsystem(SourceSubsystemListener)
-  private val targetSubsystem = Subsystem(TargetSubsystemListener,
-    labelStr = "Target", placeholderMsg = "All", enablePlaceholder = true)
+  private val targetSubsystem = Subsystem(
+    TargetSubsystemListener,
+    labelStr = "Target", placeholderMsg = "All", enablePlaceholder = true
+  )
   private val subsystemSwapper = SubsystemSwapper(swapSubsystems)
   private val icdChooser = IcdChooser(IcdChooserListener)
   private val mainContent = MainContent()
@@ -131,9 +133,11 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private object LeftSidebarListener extends SidebarListener {
     override def componentCheckboxChanged(componentName: String, checked: Boolean): Unit = {
       if (checked)
-        components.addComponent(componentName,
+        components.addComponent(
+          componentName,
           subsystem.getSubsystemWithVersion,
-          targetSubsystem.getSubsystemWithVersion)
+          targetSubsystem.getSubsystemWithVersion
+        )
       else
         components.removeComponentInfo(componentName)
 
@@ -165,7 +169,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
       for {
         _ ← targetSubsystem.setSubsystemWithVersion(newTarget, saveHistory = false)
         _ ← subsystem.setSubsystemWithVersion(sv, saveHistory = false)
-      } {
+      } yield {
         goToComponent(link.compName)
         pushState(viewType = ComponentView, compName = Some(link.compName), replace = true)
       }
@@ -197,7 +201,8 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
       icdChooser.getSelectedIcdVersion,
       sidebar.getSelectedComponents,
       viewType = viewType,
-      compName)
+      compName
+    )
 
     if (replace) {
       hist.replaceState()
@@ -286,7 +291,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
               names.foreach(sidebar.addComponent)
             }
             _ ← updateComponentDisplay(names)
-          } yield if (saveHistory) pushState(viewType = ComponentView)
+          } yield if (saveHistory) pushState(viewType = ComponentView) else ()
         case None ⇒
           targetSubsystem.setAllOptionsEnabled()
           Future.successful()

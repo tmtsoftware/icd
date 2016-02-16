@@ -10,20 +10,20 @@ package icd.web.shared
 case class VersionInfo(version: Option[String], user: String, comment: String, date: String)
 
 /**
-  * Describes a single change
-  */
+ * Describes a single change
+ */
 case class Diff(key: String, value: String)
 
 /**
-  * Describes the difference between two subsystem versions
-  * @param pointer pointer down to the nested json part that changed
-  * @param changes a list of operation name (add, remove, move, remove, etc.) and the part that changed
-  */
+ * Describes the difference between two subsystem versions
+ * @param pointer pointer down to the nested json part that changed
+ * @param changes a list of operation name (add, remove, move, remove, etc.) and the part that changed
+ */
 case class DiffItem(pointer: List[String], changes: List[Diff])
 
 /**
-  * Top level diff of two subsystems
-  * @param path path to the top level part that changed (subsystem.component.publish, for example)
-  * @param items list of objects describing the changes
-  */
+ * Top level diff of two subsystems
+ * @param path path to the top level part that changed (subsystem.component.publish, for example)
+ * @param items list of objects describing the changes
+ */
 case class DiffInfo(path: String, items: List[DiffItem])

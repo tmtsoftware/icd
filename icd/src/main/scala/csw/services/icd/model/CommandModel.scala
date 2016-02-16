@@ -13,14 +13,17 @@ object ReceiveCommandModel {
       description = config.as[String]("description"),
       requirements = config.as[Option[List[String]]]("requirements").getOrElse(Nil),
       requiredArgs = config.as[Option[List[String]]]("requiredArgs").getOrElse(Nil),
-      args = for (conf ← config.as[Option[List[Config]]]("args").getOrElse(Nil)) yield JsonSchemaModel(conf))
+      args = for (conf ← config.as[Option[List[Config]]]("args").getOrElse(Nil)) yield JsonSchemaModel(conf)
+    )
 }
 
-case class ReceiveCommandModel(name: String,
-                               description: String,
-                               requirements: List[String],
-                               requiredArgs: List[String],
-                               args: List[JsonSchemaModel])
+case class ReceiveCommandModel(
+  name:         String,
+  description:  String,
+  requirements: List[String],
+  requiredArgs: List[String],
+  args:         List[JsonSchemaModel]
+)
 
 /**
  * Model for commands sent
@@ -30,12 +33,15 @@ object SendCommandModel {
     SendCommandModel(
       name = config.as[String]("name"),
       subsystem = config.as[String](BaseModel.subsystemKey),
-      component = config.as[String](BaseModel.componentKey))
+      component = config.as[String](BaseModel.componentKey)
+    )
 }
 
-case class SendCommandModel(name: String,
-                            subsystem: String,
-                            component: String)
+case class SendCommandModel(
+  name:      String,
+  subsystem: String,
+  component: String
+)
 
 /**
  * Model for commands
@@ -47,14 +53,17 @@ object CommandModel {
       component = config.as[String](BaseModel.componentKey),
       description = config.as[Option[String]]("description").getOrElse(""),
       receive = config.as[List[Config]]("receive").map(ReceiveCommandModel(_)),
-      send = config.as[Option[List[Config]]]("send").getOrElse(Nil).map(SendCommandModel(_)))
+      send = config.as[Option[List[Config]]]("send").getOrElse(Nil).map(SendCommandModel(_))
+    )
 }
 
 /**
  * Model for commands received and sent by component: See resources/command-schema.conf
  */
-case class CommandModel(subsystem: String,
-                        component: String,
-                        description: String,
-                        receive: List[ReceiveCommandModel],
-                        send: List[SendCommandModel])
+case class CommandModel(
+  subsystem:   String,
+  component:   String,
+  description: String,
+  receive:     List[ReceiveCommandModel],
+  send:        List[SendCommandModel]
+)

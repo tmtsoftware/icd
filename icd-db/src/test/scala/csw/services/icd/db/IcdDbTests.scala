@@ -3,7 +3,7 @@ package csw.services.icd.db
 import java.io.File
 
 import csw.services.icd.db.IcdDbQuery.Telemetry
-import org.scalatest.{ DoNotDiscover, FunSuite }
+import org.scalatest.{DoNotDiscover, FunSuite}
 
 /**
  * Tests the IcdDb class (Note: Assumes MongoDB is running)

@@ -1,11 +1,11 @@
 package icd.web.client
 
-import icd.web.shared.{ SubsystemWithVersion, IcdVersionInfo, IcdVersion, IcdName }
+import icd.web.shared.{SubsystemWithVersion, IcdVersionInfo, IcdVersion, IcdName}
 import org.scalajs.dom
 import org.scalajs.dom._
 import org.scalajs.dom.ext.Ajax
 
-import scala.concurrent.{ Promise, Future }
+import scala.concurrent.{Promise, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import IcdChooser._
 
@@ -41,7 +41,8 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   private val icdItem = {
     import scalatags.JsDom.all._
     select(onchange := icdSelected _)(
-      option(value := emptyOptionMsg)(emptyOptionMsg)).render
+      option(value := emptyOptionMsg)(emptyOptionMsg)
+    ).render
   }
 
   // The ICD version combobox
@@ -101,9 +102,11 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
    * @param saveHistory if true, save the current state to the browser history
    * @return a future indicating when any event handlers have completed
    */
-  def setIcdWithVersion(icdVersionOpt: Option[IcdVersion],
-                        notifyListener: Boolean = true,
-                        saveHistory: Boolean = true): Future[Unit] = {
+  def setIcdWithVersion(
+    icdVersionOpt:  Option[IcdVersion],
+    notifyListener: Boolean            = true,
+    saveHistory:    Boolean            = true
+  ): Future[Unit] = {
     import upickle.default._
     icdVersionOpt match {
       case Some(icdVersion) ⇒
@@ -209,9 +212,11 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
    * Sets the selected ICD version.
    * @return a future indicating when any event handlers have completed
    */
-  def setSelectedIcdVersion(versionOpt: Option[IcdVersion],
-                            notifyListener: Boolean = true,
-                            saveHistory: Boolean = true): Future[Unit] = {
+  def setSelectedIcdVersion(
+    versionOpt:     Option[IcdVersion],
+    notifyListener: Boolean            = true,
+    saveHistory:    Boolean            = true
+  ): Future[Unit] = {
 
     import upickle.default._
 
