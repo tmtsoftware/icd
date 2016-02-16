@@ -13,8 +13,6 @@ import play.api.mvc._
 import play.filters.csrf.CSRFAddToken
 import spray.json.{JsArray, JsObject, JsNumber, JsString}
 
-import scala.collection.immutable.Map
-
 /**
  * Provides the interface between the web client and the server
  */
