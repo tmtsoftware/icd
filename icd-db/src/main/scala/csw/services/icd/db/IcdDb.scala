@@ -275,9 +275,9 @@ object IcdDb extends App {
  * ICD Database (Mongodb) support
  */
 case class IcdDb(
-  dbName: String = IcdDbDefaults.defaultDbName,
-  host:   String = IcdDbDefaults.defaultHost,
-  port:   Int    = IcdDbDefaults.defaultPort
+    dbName: String = IcdDbDefaults.defaultDbName,
+    host:   String = IcdDbDefaults.defaultHost,
+    port:   Int    = IcdDbDefaults.defaultPort
 ) {
 
   val mongoClient = MongoClient(host, port)

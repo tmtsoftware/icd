@@ -332,10 +332,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               val (btn, row) = hiddenRowMarkup(makeTelemetryDetailsRow(t), 3)
               List(
                 tr(
-                td(Styles.attributeCell, p(btn, t.name)),
-                td(raw(t.description)),
-                td(p(t.subscribers.map(makeLinkForSubscriber)))
-              ),
+                  td(Styles.attributeCell, p(btn, t.name)),
+                  td(raw(t.description)),
+                  td(p(t.subscribers.map(makeLinkForSubscriber)))
+                ),
                 row
               )
             }
@@ -374,10 +374,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               val (btn, row) = hiddenRowMarkup(makeAlarmDetailsRow(t), 3)
               List(
                 tr(
-                td(Styles.attributeCell, p(btn, t.name)),
-                td(raw(t.description)),
-                td(p(t.subscribers.map(makeLinkForSubscriber)))
-              ),
+                  td(Styles.attributeCell, p(btn, t.name)),
+                  td(raw(t.description)),
+                  td(p(t.subscribers.map(makeLinkForSubscriber)))
+                ),
                 row
               )
             }
@@ -458,10 +458,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                 val usage = if (s.usage.isEmpty) div() else div(strong("Usage:"), raw(s.usage))
                 List(
                   tr(
-                  td(Styles.attributeCell, p(btn, s.name)),
-                  td(raw(s.description), usage),
-                  td(p(makeLinkForPublisher(s)))
-                ),
+                    td(Styles.attributeCell, p(btn, s.name)),
+                    td(raw(s.description), usage),
+                    td(p(makeLinkForPublisher(s)))
+                  ),
                   row
                 )
               }

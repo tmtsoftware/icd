@@ -66,7 +66,7 @@ object HtmlMarkup {
     else {
       val pd = new PegDownProcessor(
         Extensions.TABLES | Extensions.AUTOLINKS | Extensions.FENCED_CODE_BLOCKS
-        | Extensions.STRIKETHROUGH | Extensions.ATXHEADERSPACE | Extensions.TASKLISTITEMS,
+          | Extensions.STRIKETHROUGH | Extensions.ATXHEADERSPACE | Extensions.TASKLISTITEMS,
         Long.MaxValue
       ) // last arg is to avoid pegdown timeouts
       pd.markdownToHtml(gfm.stripMargin)

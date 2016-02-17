@@ -475,7 +475,7 @@ case class IcdDbQuery(db: MongoDB) {
       case Some(subscribeModel) ⇒
         List(
           subscribeModel.telemetryList.map(i ⇒
-          Subscribed(subscribeModel.component, subscribeModel.subsystem, Telemetry, i.name, getPath(i), i.usage, i.requiredRate, i.maxRate)),
+            Subscribed(subscribeModel.component, subscribeModel.subsystem, Telemetry, i.name, getPath(i), i.usage, i.requiredRate, i.maxRate)),
           subscribeModel.eventList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Events, i.name, getPath(i), i.usage, i.requiredRate, i.maxRate)),
           subscribeModel.eventStreamList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, EventStreams, i.name, getPath(i), i.usage, i.requiredRate, i.maxRate)),
           subscribeModel.alarmList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Alarms, i.name, getPath(i), i.usage, i.requiredRate, i.maxRate))
