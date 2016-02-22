@@ -3,11 +3,11 @@ package csw.services.icd.model
 import com.typesafe.config.Config
 
 /**
- * This model is a value that is based on the json-schema "ref": "resource:/json-schema.json".
- * In this case it can define a primitive type, enum, array, or object, for example.
- * Since we don't know ahead of time what the format is, this class
- * just contains the raw config object.
- */
+  * This model is a value that is based on the json-schema "ref": "resource:/json-schema.json".
+  * In this case it can define a primitive type, enum, array, or object, for example.
+  * Since we don't know ahead of time what the format is, this class
+  * just contains the raw config object.
+  */
 case class JsonSchemaModel(config: Config) {
 
   import net.ceedubs.ficus.Ficus._
@@ -19,7 +19,6 @@ case class JsonSchemaModel(config: Config) {
   val units = config.as[Option[String]]("units").getOrElse("")
   val maxItems = config.as[Option[String]]("maxItems")
   val minItems = config.as[Option[String]]("minItems")
-  val dimsOpt = config.as[Option[List[String]]]("dimensions")
   val minimum = config.as[Option[String]]("minimum").orElse(config.as[Option[String]]("items.minimum"))
   val maximum = config.as[Option[String]]("maximum").orElse(config.as[Option[String]]("items.maximum"))
   val exclusiveMinimum = config.as[Option[Boolean]]("exclusiveMinimum").orElse(config.as[Option[Boolean]]("items.exclusiveMinimum")).getOrElse(false)
@@ -30,12 +29,15 @@ case class JsonSchemaModel(config: Config) {
   // String describing the type or enum
   val typeStr = parseTypeStr(typeOpt)
 
+  private def getPath(path: String, s: String): String = if (path.isEmpty) s else s"$path.$s"
+
   // Returns a string describing an array type
-  private def parseArrayTypeStr(itemPath: String): String = {
+  private def parseArrayTypeStr(itemPath: String, dimPath: String): String = {
+    val dimsOpt = config.as[Option[List[String]]](getPath(dimPath, "dimensions"))
     val t = config.as[Option[String]](s"$itemPath.type")
     val e = config.as[Option[List[String]]](s"$itemPath.enum")
     val s = if (t.isDefined) {
-      parseTypeStr(t, s"$itemPath.items")
+      parseTypeStr(t, s"$itemPath.items", getPath(dimPath, "items"))
     } else if (e.isDefined) {
       "enum: (" + e.get.mkString(", ") + ")"
     } else "?"
@@ -47,9 +49,9 @@ case class JsonSchemaModel(config: Config) {
   }
 
   // Returns a string describing the given type or enum
-  private def parseTypeStr(opt: Option[String], itemPath: String = "items"): String = {
+  private def parseTypeStr(opt: Option[String], itemPath: String = "items", dimPath: String = ""): String = {
     opt match {
-      case Some("array")   ⇒ parseArrayTypeStr(itemPath)
+      case Some("array")   ⇒ parseArrayTypeStr(itemPath, dimPath)
       case Some("integer") ⇒ numberTypeStr("integer")
       case Some("number")  ⇒ numberTypeStr("double")
       case Some("short")   ⇒ numberTypeStr("short")
