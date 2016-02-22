@@ -206,16 +206,18 @@ object IcdComponentInfo {
   }
 
   /**
-   * Returns a list describing which component(s) publish the given value.
+   * Returns a list describing which component (if any) publishes the given value.
+   * (XXX should simplify all this...)
    *
-   * @param path             full path name of value (prefix + name)
+   * @param name             name of the value
+   * @param compName         name of the publishing component
    * @param publishType      telemetry, alarm, etc...
    * @param targetModelsList the target model objects
    */
-  private def publishes(path: String, publishType: PublishType, targetModelsList: List[IcdModels]): List[PublishedItem] = {
+  private def publishes(name: String, compName: String, publishType: PublishType, targetModelsList: List[IcdModels]): List[PublishedItem] = {
     for {
       publishInfo ← getPublishInfo(targetModelsList)
-      published ← publishInfo.publishes.filter(p ⇒ s"${publishInfo.prefix}.${p.name}" == path && publishType == p.publishType)
+      published ← publishInfo.publishes.filter(p ⇒ p.name == name && publishInfo.componentName == compName && publishType == p.publishType)
     } yield PublishedItem(publishInfo.componentName, publishInfo.prefix, published)
   }
 
@@ -226,9 +228,10 @@ object IcdComponentInfo {
    * @param targetModelsList the target model objects
    */
   private def getSubscribes(models: IcdModels, targetModelsList: List[IcdModels]): Option[Subscribes] = {
+
     // Gets a list of items of a given type that the component subscribes to, with publisher info
     def getInfo(publishType: PublishType, si: csw.services.icd.model.SubscribeInfo): List[web.shared.SubscribeInfo] = {
-      publishes(si.name, publishType, targetModelsList).map { pi ⇒
+      publishes(si.name, si.component, publishType, targetModelsList).map { pi ⇒
         web.shared.SubscribeInfo(publishType.toString, si.name, pi.prefix, HtmlMarkup.gfmToHtml(pi.item.description),
           HtmlMarkup.gfmToHtml(si.usage), si.subsystem, pi.componentName, si.requiredRate, si.maxRate)
       }
