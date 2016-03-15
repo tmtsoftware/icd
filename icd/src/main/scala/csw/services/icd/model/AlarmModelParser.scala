@@ -1,11 +1,12 @@
 package csw.services.icd.model
 
 import com.typesafe.config.Config
+import icd.web.shared.IcdModels.AlarmModel
 
 /**
  * See resources/alarm-schema.conf
  */
-object AlarmModel {
+object AlarmModelParser {
 
   import net.ceedubs.ficus.Ficus._
 
@@ -18,12 +19,4 @@ object AlarmModel {
       archive = config.as[Option[Boolean]]("archive").getOrElse(true)
     )
 }
-
-case class AlarmModel(
-  name:         String,
-  description:  String,
-  requirements: List[String],
-  severity:     String,
-  archive:      Boolean
-)
 

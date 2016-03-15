@@ -108,7 +108,7 @@ case class IcdDbPrinter(db: IcdDb) {
     publishesOpt match {
       case None ⇒ div()
       case Some(publishes) ⇒
-        if (publishesOpt.nonEmpty) {
+        if (publishesOpt.nonEmpty && publishesOpt.get.nonEmpty) {
           div(cls := "nopagebreak")(
             h3(a(name := publishId(compName))(publishTitle(compName))),
             raw(publishes.description), hr,

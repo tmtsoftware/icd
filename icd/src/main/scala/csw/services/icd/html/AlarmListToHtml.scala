@@ -2,7 +2,7 @@ package csw.services.icd.html
 
 import java.util.UUID
 
-import csw.services.icd.model.AlarmModel
+import icd.web.shared.IcdModels.AlarmModel
 
 import scalatags.Text.TypedTag
 

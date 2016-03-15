@@ -1,6 +1,6 @@
 package csw.services.icd.html
 
-import csw.services.icd.model.SubsystemModel
+import icd.web.shared.IcdModels.SubsystemModel
 
 /**
  * Converts a SubsystemModel instance to a HTML formatted string

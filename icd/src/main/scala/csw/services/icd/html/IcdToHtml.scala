@@ -1,6 +1,6 @@
 package csw.services.icd.html
 
-import csw.services.icd.model._
+import icd.web.shared.IcdModels
 
 /**
  * Handles converting ICD API from GFM to HTML

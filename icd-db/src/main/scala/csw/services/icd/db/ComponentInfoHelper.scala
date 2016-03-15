@@ -2,7 +2,7 @@ package csw.services.icd.db
 
 import csw.services.icd.db.IcdDbQuery.{Alarms, EventStreams, Events, PublishType, Telemetry}
 import csw.services.icd.html.HtmlMarkup
-import csw.services.icd.model.{TelemetryModel, JsonSchemaModel, ComponentModel, IcdModels}
+import icd.web.shared.IcdModels._
 import icd.web.shared._
 
 /**
@@ -80,7 +80,7 @@ object ComponentInfoHelper {
   /**
    * Gets display information about an attribute from the given model object
    */
-  private def getAttributeInfo(a: JsonSchemaModel): AttributeInfo = {
+  private def getAttributeInfo(a: AttributeModel): AttributeInfo = {
     AttributeInfo(a.name, HtmlMarkup.gfmToHtml(a.description), a.typeStr, a.units, a.defaultValue)
   }
 
@@ -155,7 +155,7 @@ object ComponentInfoHelper {
    */
   private def getSubscribes(query: IcdDbQuery, models: IcdModels): Option[Subscribes] = {
 
-    def getInfo(publishType: PublishType, si: csw.services.icd.model.SubscribeInfo): List[SubscribeInfo] = {
+    def getInfo(publishType: PublishType, si: SubscribeModelInfo): List[SubscribeInfo] = {
       val prefix = query.getPrefix(si.subsystem, si.component)
       val path = s"$prefix.${si.name}"
       val info = query.publishes(path, si.subsystem, publishType).map { pi ⇒

@@ -1,11 +1,12 @@
 package csw.services.icd.model
 
 import com.typesafe.config.Config
+import icd.web.shared.IcdModels.SubsystemModel
 
 /**
  * See resources/subsystem-schema.conf
  */
-object SubsystemModel {
+object SubsystemModelParser {
 
   def apply(config: Config): SubsystemModel =
     SubsystemModel(
@@ -15,11 +16,4 @@ object SubsystemModel {
       modelVersion = config.getString("modelVersion")
     )
 }
-
-case class SubsystemModel(
-  subsystem:    String,
-  title:        String,
-  description:  String,
-  modelVersion: String
-)
 

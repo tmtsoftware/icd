@@ -205,9 +205,8 @@ object IcdValidator {
 
     // try to get additional messages from the reports section
     val reports = json.get("reports")
-    val messages = if (reports == null) ""
-    else {
-      val reportElems = for (r ← reports.elements().toList) yield r
+    val messages = if (reports == null) "" else {
+      for (r ← reports.elements().toList) yield r
       val msgElems = (for (r ← reports) yield r.elements().toList).flatten
       val msgTexts = for (e ← msgElems) yield e.get("message").asText()
       "\n" + msgTexts.mkString("\n")

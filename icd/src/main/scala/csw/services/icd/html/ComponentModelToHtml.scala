@@ -1,6 +1,6 @@
 package csw.services.icd.html
 
-import csw.services.icd.model.ComponentModel
+import icd.web.shared.IcdModels.ComponentModel
 
 /**
  * Converts a ComponentModel instance to a HTML formatted string

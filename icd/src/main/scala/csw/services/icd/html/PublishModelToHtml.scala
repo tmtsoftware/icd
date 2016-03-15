@@ -1,6 +1,6 @@
 package csw.services.icd.html
 
-import csw.services.icd.model._
+import icd.web.shared.IcdModels.PublishModel
 
 /**
  * Converts a PublishModel instance to a HTML formatted string

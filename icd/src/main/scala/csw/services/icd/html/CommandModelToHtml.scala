@@ -1,9 +1,7 @@
 package csw.services.icd.html
 
 import csw.services.icd.html.HtmlMarkup._
-import csw.services.icd.model.{CommandModel, ReceiveCommandModel, SendCommandModel}
-
-import scalatags.Text.TypedTag
+import icd.web.shared.IcdModels.{SendCommandModel, ReceiveCommandModel, CommandModel}
 
 /**
  * Converts a ComponentModel instance to a HTML formatted string

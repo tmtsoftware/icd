@@ -4,7 +4,8 @@ import com.mongodb.{WriteConcern, DBObject}
 import com.mongodb.casbah.Imports._
 import com.typesafe.config.Config
 import gnieh.diffson.{JsonDiff, JsonPatch}
-import icd.web.shared.{IcdVersionInfo, IcdVersion}
+import icd.web.shared.IcdModels.SubsystemModel
+import icd.web.shared.{IcdModels, IcdVersionInfo, IcdVersion}
 import org.joda.time.{DateTimeZone, DateTime}
 import csw.services.icd.model._
 import spray.json.{JsValue, JsonParser}
@@ -345,11 +346,11 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
       // Parses the data from collection s (or an older version of it) and returns a Config object for it
       private def parse(coll: MongoCollection): Config = getConfig(getVersionOf(coll, versionMap(coll.name)))
 
-      override val subsystemModel = entry.subsystem.map(coll ⇒ SubsystemModel(parse(coll)))
-      override val publishModel = entry.publish.map(coll ⇒ PublishModel(parse(coll)))
-      override val subscribeModel = entry.subscribe.map(coll ⇒ SubscribeModel(parse(coll)))
-      override val commandModel = entry.command.map(coll ⇒ CommandModel(parse(coll)))
-      override val componentModel = entry.component.map(coll ⇒ ComponentModel(parse(coll)))
+      override val subsystemModel = entry.subsystem.map(coll ⇒ SubsystemModelParser(parse(coll)))
+      override val publishModel = entry.publish.map(coll ⇒ PublishModelParser(parse(coll)))
+      override val subscribeModel = entry.subscribe.map(coll ⇒ SubscribeModelParser(parse(coll)))
+      override val commandModel = entry.command.map(coll ⇒ CommandModelParser(parse(coll)))
+      override val componentModel = entry.component.map(coll ⇒ ComponentModelParser(parse(coll)))
     }
 
     getVersion(subsystem, versionOpt, compNameOpt) match {

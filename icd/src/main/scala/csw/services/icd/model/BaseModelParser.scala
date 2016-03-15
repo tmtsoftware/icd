@@ -1,11 +1,12 @@
 package csw.services.icd.model
 
 import com.typesafe.config.Config
+import icd.web.shared.IcdModels.BaseModel
 
 /**
  * Fake model class used to hold only the subsystem and component name
  */
-object BaseModel {
+object BaseModelParser {
 
   val subsystemKey = "subsystem"
   val componentKey = "component"
@@ -17,4 +18,3 @@ object BaseModel {
     )
 }
 
-case class BaseModel(subsystem: String, component: String)

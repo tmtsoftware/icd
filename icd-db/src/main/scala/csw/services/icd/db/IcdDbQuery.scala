@@ -6,6 +6,8 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.typesafe.config.{ConfigFactory, Config}
 import csw.services.icd.StdName._
 import csw.services.icd.model._
+import icd.web.shared.IcdModels
+import icd.web.shared.IcdModels._
 import scala.language.implicitConversions
 
 object IcdDbQuery {
@@ -132,12 +134,12 @@ object IcdDbQuery {
 
   // Parses the given json and returns a componnet model object
   def jsonToComponentModel(json: String): ComponentModel = {
-    ComponentModel(getConfig(json))
+    ComponentModelParser(getConfig(json))
   }
 
   // Parses the given json and returns a subsystem model object
   def jsonToSubsystemModel(json: String): SubsystemModel = {
-    SubsystemModel(getConfig(json))
+    SubsystemModelParser(getConfig(json))
   }
 }
 
@@ -240,16 +242,11 @@ case class IcdDbQuery(db: MongoDB) {
 
   /**
    * Returns a list of all subsystem names in the database.
-   * //   * If a subsystem-model.conf was included, it is used, otherwise the
-   * //   * subsystem names defined by the components are used.
    */
   def getSubsystemNames: List[String] = {
     val result = for (entry ← getEntries) yield {
       if (entry.subsystem.isDefined) {
         Some(jsonToSubsystemModel(entry.subsystem.get.head.toString).subsystem)
-        // XXX require a subsystem-model.conf file!
-        //      } else if (entry.component.isDefined) {
-        //        Some(jsonToComponentModel(entry.component.get.head.toString).subsystem)
       } else None
     }
     result.flatten.distinct
@@ -298,7 +295,7 @@ case class IcdDbQuery(db: MongoDB) {
   def getSubsystemModel(subsystem: String): Option[SubsystemModel] = {
     val collName = getSubsystemCollectionName(subsystem)
     if (collectionExists(collName))
-      Some(SubsystemModel(getConfig(db(collName).head.toString)))
+      Some(SubsystemModelParser(getConfig(db(collName).head.toString)))
     else None
   }
 
@@ -308,7 +305,7 @@ case class IcdDbQuery(db: MongoDB) {
   def getComponentModel(subsystem: String, componentName: String): Option[ComponentModel] = {
     val collName = getComponentCollectionName(subsystem, componentName)
     if (collectionExists(collName))
-      Some(ComponentModel(getConfig(db(collName).head.toString)))
+      Some(ComponentModelParser(getConfig(db(collName).head.toString)))
     else None
   }
 
@@ -324,7 +321,7 @@ case class IcdDbQuery(db: MongoDB) {
   def getPublishModel(component: ComponentModel): Option[PublishModel] = {
     val collName = getPublishCollectionName(component.subsystem, component.component)
     if (collectionExists(collName))
-      Some(PublishModel(getConfig(db(collName).head.toString)))
+      Some(PublishModelParser(getConfig(db(collName).head.toString)))
     else None
   }
 
@@ -336,7 +333,7 @@ case class IcdDbQuery(db: MongoDB) {
   def getSubscribeModel(component: ComponentModel): Option[SubscribeModel] = {
     val collName = getSubscribeCollectionName(component.subsystem, component.component)
     if (collectionExists(collName))
-      Some(SubscribeModel(getConfig(db(collName).head.toString)))
+      Some(SubscribeModelParser(getConfig(db(collName).head.toString)))
     else None
   }
 
@@ -346,7 +343,7 @@ case class IcdDbQuery(db: MongoDB) {
   def getCommandModel(subsystem: String, componentName: String): Option[CommandModel] = {
     val collName = getCommandCollectionName(subsystem, componentName)
     if (collectionExists(collName))
-      Some(CommandModel(getConfig(db(collName).head.toString)))
+      Some(CommandModelParser(getConfig(db(collName).head.toString)))
     else None
   }
 
@@ -392,11 +389,11 @@ case class IcdDbQuery(db: MongoDB) {
   def getModels(subsystem: String, component: Option[String] = None): List[IcdModels] = {
     // Holds all the model classes associated with a single ICD entry.
     case class Models(entry: IcdEntry) extends IcdModels {
-      override val subsystemModel = entry.subsystem.map(s ⇒ SubsystemModel(getConfig(s.head.toString)))
-      override val publishModel = entry.publish.map(s ⇒ PublishModel(getConfig(s.head.toString)))
-      override val subscribeModel = entry.subscribe.map(s ⇒ SubscribeModel(getConfig(s.head.toString)))
-      override val commandModel = entry.command.map(s ⇒ CommandModel(getConfig(s.head.toString)))
-      override val componentModel = entry.component.map(s ⇒ ComponentModel(getConfig(s.head.toString)))
+      override val subsystemModel = entry.subsystem.map(s ⇒ SubsystemModelParser(getConfig(s.head.toString)))
+      override val publishModel = entry.publish.map(s ⇒ PublishModelParser(getConfig(s.head.toString)))
+      override val subscribeModel = entry.subscribe.map(s ⇒ SubscribeModelParser(getConfig(s.head.toString)))
+      override val commandModel = entry.command.map(s ⇒ CommandModelParser(getConfig(s.head.toString)))
+      override val componentModel = entry.component.map(s ⇒ ComponentModelParser(getConfig(s.head.toString)))
     }
 
     val e = if (component.isDefined)
@@ -469,7 +466,7 @@ case class IcdDbQuery(db: MongoDB) {
    */
   private def getSubscribedTo(component: ComponentModel): List[Subscribed] = {
     // Gets the full path of the subscribed item
-    def getPath(i: csw.services.icd.model.SubscribeInfo): String = s"${getPrefix(i.subsystem, i.component)}.${i.name}"
+    def getPath(i: SubscribeModelInfo): String = s"${getPrefix(i.subsystem, i.component)}.${i.name}"
 
     getSubscribeModel(component) match {
       case Some(subscribeModel) ⇒

@@ -1,7 +1,5 @@
 package csw.services.icd.db
 
-import com.mongodb.casbah.Imports._
-
 /**
  * Adds caching to IcdVersionManager for better performance when creating documents or web pages that
  * require access to all subsystems and components.

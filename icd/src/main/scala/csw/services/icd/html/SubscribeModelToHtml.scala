@@ -1,9 +1,9 @@
 package csw.services.icd.html
 
 import csw.services.icd.html.HtmlMarkup._
-import csw.services.icd.model._
+import icd.web.shared.IcdModels.{SubscribeModel, SubscribeModelInfo}
 
-private case class SubscribeInfoToHtml(list: List[SubscribeInfo], title: String) extends HtmlMarkup {
+private case class SubscribeInfoToHtml(list: List[SubscribeModelInfo], title: String) extends HtmlMarkup {
 
   private val head = mkHeading(3, title)
 

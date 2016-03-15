@@ -4,7 +4,7 @@ import java.io.File
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions}
 import csw.services.icd.IcdValidator._
-import csw.services.icd.model.IcdModels
+import icd.web.shared.IcdModels
 import org.scalatest.FunSuite
 
 /**
@@ -110,27 +110,24 @@ class IcdValidatorTests extends FunSuite {
     assert(a1.name == "a1")
     assert(a1.description == "single value with min/max")
     assert(a1.typeOpt.get == "integer")
-    val a1Conf = a1.config
-    assert(a1Conf.getInt("minimum") == -100)
-    assert(a1Conf.getInt("maximum") == 100)
-    assert(a1Conf.getString("units") == "m")
+    assert(a1.minimum.contains("-100"))
+    assert(a1.maximum.contains("100"))
+    assert(a1.units == "m")
 
     val a2 = attr1(1)
     assert(a2.name == "a2")
     assert(a2.description == "array of float")
     assert(a2.typeOpt.get == "array")
-    val a2Conf = a2.config
-    assert(a2Conf.getConfig("items").getString("type") == "float")
-    assert(a2Conf.getInt("minItems") == 5)
-    assert(a2Conf.getInt("maxItems") == 5)
-    assert(a2Conf.getString("units") == "mm")
+//    assert(a2Conf.getConfig("items").getString("type") == "float")
+    assert(a2.minItems.contains("5"))
+    assert(a2.maxItems.contains("5"))
+    assert(a2.units == "mm")
 
     val a3 = attr1(2)
     assert(a3.name == "a3")
     assert(a3.description == "enum choice")
     assert(a3.enumOpt.get == List("red", "green", "blue"))
-    val a3Conf = a3.config
-    assert(a3Conf.getString("default") == "green")
+    assert(a3.defaultValue == "green")
     // ... XXX TODO continue
   }
 

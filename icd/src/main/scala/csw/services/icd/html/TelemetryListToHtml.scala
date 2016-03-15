@@ -1,7 +1,7 @@
 package csw.services.icd.html
 
 import csw.services.icd.html.HtmlMarkup._
-import csw.services.icd.model._
+import icd.web.shared.IcdModels.TelemetryModel
 
 /**
  * Converts a TelemetryModel instance to a HTML formatted string
@@ -40,7 +40,7 @@ private case class TelemetryModelToHTML(m: TelemetryModel, pubType: String) exte
       formatRate(m.archiveRate)))
   )
 
-  private val attr = JsonSchemaListToHtml(Some(s"Attributes for ${m.name}"), m.attributesList)
+  private val attr = AttributeModelListToHtml(Some(s"Attributes for ${m.name}"), m.attributesList)
 
   override val tags = List(head, requirements, desc, table, attr.markup)
 

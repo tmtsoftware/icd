@@ -5,7 +5,7 @@ import java.io.File
 import com.mongodb.casbah.Imports._
 import com.typesafe.config.{ConfigFactory, Config}
 import csw.services.icd._
-import csw.services.icd.model.{BaseModel, SubsystemModel}
+import csw.services.icd.model.{BaseModelParser, SubsystemModelParser}
 import org.joda.time.DateTimeZone
 
 import scala.io.StdIn
@@ -361,9 +361,9 @@ case class IcdDb(
    */
   private def getCollectionName(stdConfig: StdConfig): String = {
     val baseName = if (stdConfig.stdName.isSubsystemModel) {
-      SubsystemModel(stdConfig.config).subsystem
+      SubsystemModelParser(stdConfig.config).subsystem
     } else {
-      val model = BaseModel(stdConfig.config)
+      val model = BaseModelParser(stdConfig.config)
       s"${model.subsystem}.${model.component}"
     }
     s"$baseName.${stdConfig.stdName.modelBaseName}"
@@ -377,9 +377,9 @@ case class IcdDb(
    */
   def getSubsystemName(stdConfig: StdConfig): String = {
     if (stdConfig.stdName.isSubsystemModel)
-      SubsystemModel(stdConfig.config).subsystem
+      SubsystemModelParser(stdConfig.config).subsystem
     else
-      BaseModel(stdConfig.config).subsystem
+      BaseModelParser(stdConfig.config).subsystem
   }
 
   /**

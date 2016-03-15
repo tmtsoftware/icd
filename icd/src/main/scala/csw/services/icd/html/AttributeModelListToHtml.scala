@@ -1,11 +1,12 @@
 package csw.services.icd.html
 
-import csw.services.icd.model.JsonSchemaModel
+import csw.services.icd.model.AttributeModelParser
+import icd.web.shared.IcdModels.AttributeModel
 
 /**
- * Converts a JsonSchemaModel instance to a GFM formatted string
+ * Converts a AttributeModel instance to HTML
  */
-case class JsonSchemaListToHtml(titleOpt: Option[String], list: List[JsonSchemaModel]) extends HtmlMarkup {
+case class AttributeModelListToHtml(titleOpt: Option[String], list: List[AttributeModel]) extends HtmlMarkup {
 
   import HtmlMarkup._
 

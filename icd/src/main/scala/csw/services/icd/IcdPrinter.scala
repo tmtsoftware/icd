@@ -3,7 +3,7 @@ package csw.services.icd
 import java.io._
 
 import csw.services.icd.html.IcdToHtml
-import csw.services.icd.model.IcdModels
+import icd.web.shared.IcdModels
 
 /**
  * Saves the ICD/API as a document

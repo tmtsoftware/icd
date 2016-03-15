@@ -21,7 +21,7 @@ lazy val icd = project
   .settings(libraryDependencies ++=
     compile(jsonSchemaValidator, scopt, scalatags, typesafeConfig, ficus, pegdown, xmlworker, diffson, scalaLogging, logback) ++
       test(scalaTest)
-  )
+  ) dependsOn icdWebSharedJvm
 
 // adds MongoDB database support, ICD versioning, queries
 lazy val `icd-db` = project
@@ -30,7 +30,7 @@ lazy val `icd-db` = project
   .settings(libraryDependencies ++=
     compile(casbah) ++
       test(scalaTest)
-  ) dependsOn(icd, icdWebSharedJvm)
+  ) dependsOn icd
 
 
 // -- Play/ScalaJS parts below --

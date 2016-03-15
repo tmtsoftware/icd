@@ -1,19 +1,20 @@
 package csw.services.icd.model
 
 import com.typesafe.config.Config
+import icd.web.shared.IcdModels.ComponentModel
 
 /**
  * See resources/component-schema.conf
  */
-object ComponentModel {
+object ComponentModelParser {
 
   import net.ceedubs.ficus.Ficus._
 
   def apply(config: Config): ComponentModel =
     ComponentModel(
       componentType = config.as[String]("componentType"),
-      subsystem = config.as[String](BaseModel.subsystemKey),
-      component = config.as[String](BaseModel.componentKey),
+      subsystem = config.as[String](BaseModelParser.subsystemKey),
+      component = config.as[String](BaseModelParser.componentKey),
       prefix = config.as[String]("prefix"),
       title = config.as[String]("title"),
       description = config.as[String]("description"),
@@ -22,13 +23,3 @@ object ComponentModel {
     )
 }
 
-case class ComponentModel(
-  componentType: String,
-  subsystem:     String,
-  component:     String,
-  prefix:        String,
-  title:         String,
-  description:   String,
-  modelVersion:  String,
-  wbsId:         String
-)

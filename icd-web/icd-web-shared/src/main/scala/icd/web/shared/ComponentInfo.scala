@@ -6,7 +6,7 @@ object ComponentInfo {
   // Filter out any published commands with no subscribers,
   // and any commands received, with no senders
   //
-  // XXX TODO: filter subscribe with no publisger, commands received with no sender!
+  // XXX TODO: filter subscribe with no publisher, commands received with no sender!
   //
   def applyIcdFilter(info: ComponentInfo): ComponentInfo = {
     val (oldTelemetryList, oldEventList, oldEventStreamList, oldAlarmList) = info.publishes match {

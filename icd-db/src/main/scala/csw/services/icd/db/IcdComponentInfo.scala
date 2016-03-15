@@ -2,8 +2,8 @@ package csw.services.icd.db
 
 import csw.services.icd.db.IcdDbQuery.{Published, PublishInfo, PublishedItem, Subscribed, PublishType, Alarms, EventStreams, Events, Telemetry}
 import csw.services.icd.html.HtmlMarkup
-import csw.services.icd.model._
 import icd.web
+import icd.web.shared.IcdModels._
 import icd.web.shared._
 
 /**
@@ -87,7 +87,7 @@ object IcdComponentInfo {
   /**
    * Gets display information about an attribute from the given model object
    */
-  private def getAttributeInfo(a: JsonSchemaModel): AttributeInfo = {
+  private def getAttributeInfo(a: AttributeModel): AttributeInfo = {
     AttributeInfo(a.name, HtmlMarkup.gfmToHtml(a.description), a.typeStr, a.units, a.defaultValue)
   }
 
@@ -155,7 +155,7 @@ object IcdComponentInfo {
     // targetInfo:          list of items the target subscriber subscribes to
     // Returns the Subscribed object, if the component is a subscriber to the given path
     def subscribes(subscriberSubsystem: String, subscriberCompName: String,
-                   targetInfo: List[csw.services.icd.model.SubscribeInfo]): Option[Subscribed] = {
+                   targetInfo: List[SubscribeModelInfo]): Option[Subscribed] = {
       targetInfo.find { subscribeInfo ⇒
         subscribeInfo.name == name && subscribeInfo.subsystem == subsystem && subscribeInfo.component == component
       }.map { subscribeInfo ⇒
@@ -165,7 +165,7 @@ object IcdComponentInfo {
     }
 
     // Gets the list of subscribed items from the model given the publish type
-    def getSubscribeInfoByType(subscribeModel: SubscribeModel, pubType: PublishType): List[csw.services.icd.model.SubscribeInfo] = {
+    def getSubscribeInfoByType(subscribeModel: SubscribeModel, pubType: PublishType): List[SubscribeModelInfo] = {
       pubType match {
         case Telemetry    ⇒ subscribeModel.telemetryList
         case Events       ⇒ subscribeModel.eventList
@@ -230,7 +230,7 @@ object IcdComponentInfo {
   private def getSubscribes(models: IcdModels, targetModelsList: List[IcdModels]): Option[Subscribes] = {
 
     // Gets a list of items of a given type that the component subscribes to, with publisher info
-    def getInfo(publishType: PublishType, si: csw.services.icd.model.SubscribeInfo): List[web.shared.SubscribeInfo] = {
+    def getInfo(publishType: PublishType, si: SubscribeModelInfo): List[web.shared.SubscribeInfo] = {
       publishes(si.name, si.component, publishType, targetModelsList).map { pi ⇒
         web.shared.SubscribeInfo(publishType.toString, si.name, pi.prefix, HtmlMarkup.gfmToHtml(pi.item.description),
           HtmlMarkup.gfmToHtml(si.usage), si.subsystem, pi.componentName, si.requiredRate, si.maxRate)
