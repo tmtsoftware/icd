@@ -1,5 +1,7 @@
 package icd.web.shared
 
+import icd.web.shared.IcdModels._
+
 object ComponentInfo {
 
   // For ICDs, we are only interested in the interface between the two subsystems.
@@ -31,96 +33,45 @@ object ComponentInfo {
 
     val commands = info.commands.map(c ⇒ c.copy(commandsReceived = newCommandsReceived))
 
-    ComponentInfo(info.subsystem, info.compName, info.title, info.description, info.prefix,
-      info.componentType, info.wbsId, publishes, info.subscribes, commands)
+    ComponentInfo(info.componentModel, publishes, info.subscribes, commands)
   }
 }
 
 /**
  * ICD Component information passed to client
  *
- * @param subsystem     subsystem name
- * @param compName      component name
- * @param title         component title
- * @param description   component description (in html format, after markdown processing)
- * @param prefix        the component's prefix (for accessing published items)
- * @param componentType the component's type (Assembly, HCD, Sequencer, Application, Container)
- * @param wbsId         component's WBS id
- * @param publishes     describes items published by the component
- * @param subscribes    describes items the component subscribes to
- * @param commands      describes commands the component can send and receive
+ * @param componentModel the component model
+ * @param publishes      describes items published by the component
+ * @param subscribes     describes items the component subscribes to
+ * @param commands       describes commands the component can send and receive
  */
 case class ComponentInfo(
-  subsystem:     String,
-  compName:      String,
-  title:         String,
-  description:   String,
-  prefix:        String,
-  componentType: String,
-  wbsId:         String,
-  publishes:     Option[Publishes],
-  subscribes:    Option[Subscribes],
-  commands:      Option[Commands]
-)
-
-/**
- * Describes an attribute or parameter
- *
- * @param name         the name of the attribute or parameter
- * @param description  description of the item
- * @param typeStr      a description of the type (for example: "array of number" or "enum(A, B, C)"
- * @param units        the units of the type, or empty if not defined
- * @param defaultValue the default value, or empty if not defined
- */
-case class AttributeInfo(
-  name:         String,
-  description:  String,
-  typeStr:      String,
-  units:        String,
-  defaultValue: String
+  componentModel: ComponentModel,
+  publishes:      Option[Publishes],
+  subscribes:     Option[Subscribes],
+  commands:       Option[Commands]
 )
 
 /**
  * Describes a published telemetry, event or event stream item
  *
- * @param name           name of the item
- * @param description    description of the item (in html format, after markdown processing)
- * @param requirements   list of requirements for this item
- * @param minRate        min publish rate
- * @param maxRate        max publish rate
- * @param archive        true if the value is archived
- * @param archiveRate    the archive rate, if applicable
- * @param attributesList a list of the attributes published for this item
+ * @param telemetryModel the publisher's telemetry information
  * @param subscribers    a list of the other components that subscribe to this item
  */
 case class TelemetryInfo(
-  name:           String,
-  description:    String,
-  requirements:   List[String],
-  minRate:        Double,
-  maxRate:        Double,
-  archive:        Boolean,
-  archiveRate:    Double,
-  attributesList: List[AttributeInfo],
+  telemetryModel: TelemetryModel,
   subscribers:    List[SubscribeInfo]
 )
 
 /**
  * Describes an alarm
  *
- * @param name         the name of the alarm
- * @param description  description (in HTML format, after markdown processing)
- * @param requirements list of requirements for this item
- * @param severity     severity code
- * @param archive      true if the alarm is archived
+ * @param alarmModel   the basic alarm model
+ * @param subscribers  list of components who subscribe to the alarm
  */
 case class AlarmInfo(
-  name:         String,
-  description:  String,
-  requirements: List[String],
-  severity:     String,
-  archive:      Boolean,
-  subscribers:  List[SubscribeInfo]
+  alarmModel:  AlarmModel,
+  subscribers: List[SubscribeInfo]
 )
 
 /**
@@ -148,26 +99,15 @@ case class Publishes(
 /**
  * Describes an item that a component subscribes to
  *
- * @param itemType    the type of item ("Telemetry", "Event", etc.)
- * @param name        the simple name of the item
- * @param path        the full path name (component-prefix.name) of the item
- * @param description description of the item (from the publisher, in html format, after markdown processing)
- * @param usage       describes how the subscribed item is used (in html format, after markdown processing)
- * @param subsystem   the subsystem that publishes the value
- * @param compName    component that publishes the value
- * @param requiredRate  required rate for the item
- * @param maxRate    maximum rate that can be accepted
+ * @param subscribeModelInfo     data from the input subscribe model
+ * @param path         the full path name (component-prefix.name) of the item
+ * @param description  description of the item (from the publisher, in html format, after markdown processing)
  */
 case class SubscribeInfo(
-  itemType:     String,
-  name:         String,
-  path:         String,
-  description:  String,
-  usage:        String,
-  subsystem:    String,
-  compName:     String,
-  requiredRate: Double,
-  maxRate:      Double
+  itemType:           String,
+  subscribeModelInfo: SubscribeModelInfo,
+  path:               String,
+  description:        String
 )
 
 /**
@@ -221,7 +161,7 @@ case class ReceivedCommandInfo(
   senders:      List[OtherComponent],
   requirements: List[String],
   requiredArgs: List[String],
-  args:         List[AttributeInfo]
+  args:         List[AttributeModel]
 )
 
 /**

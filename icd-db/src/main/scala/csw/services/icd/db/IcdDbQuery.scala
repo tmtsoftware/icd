@@ -118,17 +118,15 @@ object IcdDbQuery {
   /**
    * Describes a subscription
    *
-   * @param componentName the name of the component that subscribes to the item
-   * @param subsystem     the component's subsystem
+   * @param subscribeModelInfo from the subscribe model
    * @param subscribeType one of Telemetry, Events, Alarms, etc.
-   * @param name          the simple name of the item being subscribed to
    * @param path          the path name (component-prefix.name) of the item being subscribed to
-   * @param usage         describes how the subscribed item is used
-   * @param requiredRate  required rate for the item
-   * @param maxRate       maximum rate that can be accepted
    */
-  case class Subscribed(componentName: String, subsystem: String, subscribeType: PublishType,
-                        name: String, path: String, usage: String, requiredRate: Double, maxRate: Double)
+  case class Subscribed(
+    subscribeModelInfo: SubscribeModelInfo,
+    subscribeType:      PublishType,
+    path:               String
+  )
 
   implicit def toDbObject(query: (String, Any)): DBObject = MongoDBObject(query)
 
@@ -471,11 +469,10 @@ case class IcdDbQuery(db: MongoDB) {
     getSubscribeModel(component) match {
       case Some(subscribeModel) ⇒
         List(
-          subscribeModel.telemetryList.map(i ⇒
-            Subscribed(subscribeModel.component, subscribeModel.subsystem, Telemetry, i.name, getPath(i), i.usage, i.requiredRate, i.maxRate)),
-          subscribeModel.eventList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Events, i.name, getPath(i), i.usage, i.requiredRate, i.maxRate)),
-          subscribeModel.eventStreamList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, EventStreams, i.name, getPath(i), i.usage, i.requiredRate, i.maxRate)),
-          subscribeModel.alarmList.map(i ⇒ Subscribed(subscribeModel.component, subscribeModel.subsystem, Alarms, i.name, getPath(i), i.usage, i.requiredRate, i.maxRate))
+          subscribeModel.telemetryList.map(i ⇒ Subscribed(i, Telemetry, getPath(i))),
+          subscribeModel.eventList.map(i ⇒ Subscribed(i, Events, getPath(i))),
+          subscribeModel.eventStreamList.map(i ⇒ Subscribed(i, EventStreams, getPath(i))),
+          subscribeModel.alarmList.map(i ⇒ Subscribed(i, Alarms, getPath(i)))
         ).flatten
       case None ⇒ Nil
     }

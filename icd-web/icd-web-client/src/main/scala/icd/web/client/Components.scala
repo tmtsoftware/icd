@@ -2,6 +2,7 @@ package icd.web.client
 
 import java.util.UUID
 
+import icd.web.shared.IcdModels.AttributeModel
 import icd.web.shared._
 import org.scalajs.dom
 import org.scalajs.dom.ext.Ajax
@@ -197,7 +198,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
       || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty || info.commands.get.commandsSent.nonEmpty)) {
       val markup = markupForComponent(info).render
-      val oldElement = $id(getComponentInfoId(info.compName))
+      val oldElement = $id(getComponentInfoId(info.componentModel.component))
       if (oldElement == null) {
         mainContent.appendElement(markup)
       } else {
@@ -214,7 +215,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    * @param attributesList list of attributes to display
    * @return
    */
-  private def attributeListMarkup(titleStr: String, attributesList: List[AttributeInfo]): TypedTag[HTMLDivElement] = {
+  private def attributeListMarkup(titleStr: String, attributesList: List[AttributeModel]): TypedTag[HTMLDivElement] = {
     import scalatags.JsDom.all._
     if (attributesList.isEmpty) div()
     else {
@@ -235,7 +236,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    * @param requiredArgs   a list of required arguments
    * @return
    */
-  private def parameterListMarkup(titleStr: String, attributesList: List[AttributeInfo], requiredArgs: List[String]): TypedTag[HTMLDivElement] = {
+  private def parameterListMarkup(titleStr: String, attributesList: List[AttributeModel], requiredArgs: List[String]): TypedTag[HTMLDivElement] = {
     import scalatags.JsDom.all._
     if (attributesList.isEmpty) div()
     else {
@@ -283,14 +284,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     // Action when user clicks on a subscriber link
     def clickedOnSubscriber(info: SubscribeInfo)(e: dom.Event) = {
       e.preventDefault()
-      listener.componentSelected(ComponentLink(info.subsystem, info.compName))
+      listener.componentSelected(ComponentLink(info.subscribeModelInfo.subsystem, info.subscribeModelInfo.component))
     }
 
     // Makes the link for a subscriber component in the table
     def makeLinkForSubscriber(info: SubscribeInfo) = {
       a(
-        title := s"Show API for ${info.compName}",
-        s"${info.compName} ",
+        title := s"Show API for ${info.subscribeModelInfo.component}",
+        s"${info.subscribeModelInfo.component} ",
         href := "#",
         onclick := clickedOnSubscriber(info) _
       )
@@ -300,16 +301,16 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     def makeTelemetryDetailsRow(t: TelemetryInfo) = {
       val headings = List("Min Rate", "Max Rate", "Archive", "Archive Rate")
       val rowList = List(List(
-        formatRate(t.minRate),
-        formatRate(t.maxRate),
-        if (t.archive) "Yes" else "No",
-        formatRate(t.archiveRate)
+        formatRate(t.telemetryModel.minRate),
+        formatRate(t.telemetryModel.maxRate),
+        if (t.telemetryModel.archive) "Yes" else "No",
+        formatRate(t.telemetryModel.archiveRate)
       ))
 
       div(
-        if (t.requirements.isEmpty) div() else p(strong("Requirements: "), t.requirements.mkString(", ")),
+        if (t.telemetryModel.requirements.isEmpty) div() else p(strong("Requirements: "), t.telemetryModel.requirements.mkString(", ")),
         mkTable(headings, rowList),
-        attributeListMarkup("Attributes", t.attributesList)
+        attributeListMarkup("Attributes", t.telemetryModel.attributesList)
       )
     }
 
@@ -332,8 +333,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               val (btn, row) = hiddenRowMarkup(makeTelemetryDetailsRow(t), 3)
               List(
                 tr(
-                  td(Styles.attributeCell, p(btn, t.name)),
-                  td(raw(t.description)),
+                  td(Styles.attributeCell, p(btn, t.telemetryModel.name)),
+                  td(raw(t.telemetryModel.description)),
                   td(p(t.subscribers.map(makeLinkForSubscriber)))
                 ),
                 row
@@ -347,10 +348,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     // Returns a table row displaying more details for the given alarm
     def makeAlarmDetailsRow(t: AlarmInfo) = {
       val headings = List("Severity", "Archive")
-      val rowList = List(List(t.severity, if (t.archive) "Yes" else "No"))
+      val rowList = List(List(t.alarmModel.severity, if (t.alarmModel.archive) "Yes" else "No"))
 
       div(
-        if (t.requirements.isEmpty) div() else p(strong("Requirements: "), t.requirements.mkString(", ")),
+        if (t.alarmModel.requirements.isEmpty) div() else p(strong("Requirements: "), t.alarmModel.requirements.mkString(", ")),
         mkTable(headings, rowList)
       )
     }
@@ -374,8 +375,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               val (btn, row) = hiddenRowMarkup(makeAlarmDetailsRow(t), 3)
               List(
                 tr(
-                  td(Styles.attributeCell, p(btn, t.name)),
-                  td(raw(t.description)),
+                  td(Styles.attributeCell, p(btn, t.alarmModel.name)),
+                  td(raw(t.alarmModel.description)),
                   td(p(t.subscribers.map(makeLinkForSubscriber)))
                 ),
                 row
@@ -411,14 +412,18 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     // Action when user clicks on a subscriber link
     def clickedOnPublisher(info: SubscribeInfo)(e: dom.Event) = {
       e.preventDefault()
-      listener.componentSelected(ComponentLink(info.subsystem, info.compName))
+      listener.componentSelected(ComponentLink(
+        info.subscribeModelInfo.subsystem,
+        info.subscribeModelInfo.component
+      ))
     }
 
     // Makes the link for a publisher component in the table
     def makeLinkForPublisher(info: SubscribeInfo) = {
+      val comp = info.subscribeModelInfo.component
       a(
-        title := s"Show API for ${info.compName}",
-        s"${info.compName} ",
+        title := s"Show API for $comp",
+        comp,
         href := "#",
         onclick := clickedOnPublisher(info) _
       )
@@ -426,13 +431,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Returns a table row displaying more details for the given subscription
     def makeDetailsRow(si: SubscribeInfo) = {
+      val sInfo = si.subscribeModelInfo
       val headings = List("Subsystem", "Component", "Prefix.Name", "Required Rate", "Max Rate")
       val rowList = List(List(
-        si.subsystem,
-        si.compName,
+        sInfo.subsystem,
+        sInfo.component,
         si.path,
-        formatRate(si.requiredRate),
-        formatRate(si.maxRate)
+        formatRate(sInfo.requiredRate),
+        formatRate(sInfo.maxRate)
       ))
 
       div(mkTable(headings, rowList))
@@ -455,10 +461,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             tbody(
               for (s ← subscribeList) yield {
                 val (btn, row) = hiddenRowMarkup(makeDetailsRow(s), 3)
-                val usage = if (s.usage.isEmpty) div() else div(strong("Usage:"), raw(s.usage))
+                val usage = if (s.subscribeModelInfo.usage.isEmpty) div() else div(
+                  strong("Usage:"),
+                  raw(s.subscribeModelInfo.usage)
+                )
                 List(
                   tr(
-                    td(Styles.attributeCell, p(btn, s.name)),
+                    td(Styles.attributeCell, p(btn, s.subscribeModelInfo.name)),
                     td(raw(s.description), usage),
                     td(p(makeLinkForPublisher(s)))
                   ),
@@ -614,11 +623,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         ),
         tbody(
           tr(
-            td(info.subsystem),
-            td(info.compName),
-            td(info.prefix),
-            td(info.componentType),
-            td(info.wbsId)
+            td(info.componentModel.subsystem),
+            td(info.componentModel.component),
+            td(info.componentModel.prefix),
+            td(info.componentModel.componentType),
+            td(info.componentModel.wbsId)
           )
         ))
     )
@@ -629,15 +638,15 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
-    val idStr = getComponentInfoId(info.compName)
+    val idStr = getComponentInfoId(info.componentModel.component)
 
     div(Styles.component, id := idStr)(
-      h2(info.compName),
+      h2(info.componentModel.component),
       componentInfoTableMarkup(info),
-      raw(info.description),
-      publishMarkup(info.compName, info.publishes),
-      subscribeMarkup(info.compName, info.subscribes),
-      commandsMarkup(info.compName, info.commands)
+      raw(info.componentModel.description),
+      publishMarkup(info.componentModel.component, info.publishes),
+      subscribeMarkup(info.componentModel.component, info.subscribes),
+      commandsMarkup(info.componentModel.component, info.commands)
     )
   }
 

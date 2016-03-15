@@ -1,7 +1,6 @@
 package icd.web
 
 import org.scalajs.dom
-import scala.scalajs.js
 
 /**
  * Common definitions
@@ -28,8 +27,3 @@ package object client {
   }
 }
 
-//// From scala-js-jquery
-//package object jquery extends js.GlobalScope {
-//  import icd.web.client.JQueryStatic
-//  val jQuery: JQueryStatic = js.native
-//}

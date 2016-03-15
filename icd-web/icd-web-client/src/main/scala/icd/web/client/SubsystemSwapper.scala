@@ -11,7 +11,6 @@ case class SubsystemSwapper(listener: () ⇒ Unit) extends Displayable {
    * Returns the initial HTML markup for the item
    */
   override def markup(): Element = {
-    import scalacss.ScalatagsCss._
     import scalatags.JsDom.all._
     li(a(button(
       tpe := "button",

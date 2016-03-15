@@ -1,7 +1,6 @@
 package icd.web.client
 
 import org.scalajs.dom._
-import org.scalajs.dom.raw.Node
 
 import scalacss.ScalatagsCss._
 import scalatags.JsDom.all._

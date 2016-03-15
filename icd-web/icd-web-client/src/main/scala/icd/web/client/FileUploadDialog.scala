@@ -154,7 +154,6 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
 
   // Produce the HTML to display for the upload screen
   override def markup(): Element = {
-    import scalacss.ScalatagsCss._
     import scalatags.JsDom.all._
 
     // Only Chrome supports uploading8 directories. For other browsers, use zip file upload

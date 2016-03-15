@@ -118,7 +118,7 @@ class IcdValidatorTests extends FunSuite {
     assert(a2.name == "a2")
     assert(a2.description == "array of float")
     assert(a2.typeOpt.get == "array")
-//    assert(a2Conf.getConfig("items").getString("type") == "float")
+    //    assert(a2Conf.getConfig("items").getString("type") == "float")
     assert(a2.minItems.contains("5"))
     assert(a2.maxItems.contains("5"))
     assert(a2.units == "mm")

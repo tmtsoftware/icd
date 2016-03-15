@@ -4,6 +4,7 @@ import java.io.{FileOutputStream, File}
 
 import csw.services.icd.IcdToPdf
 import csw.services.icd.html.{HtmlMarkup, IcdToHtml}
+import icd.web.shared.IcdModels.AttributeModel
 import icd.web.shared._
 
 import scalatags.Text
@@ -34,7 +35,7 @@ case class IcdDbPrinter(db: IcdDb) {
 
   private def publishTitle(compName: String): String = s"Items published by $compName"
 
-  private def attributeListMarkup(nameStr: String, attributesList: List[AttributeInfo]): Text.TypedTag[String] = {
+  private def attributeListMarkup(nameStr: String, attributesList: List[AttributeModel]): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (attributesList.isEmpty) div()
     else {
@@ -47,7 +48,7 @@ case class IcdDbPrinter(db: IcdDb) {
     }
   }
 
-  private def parameterListMarkup(nameStr: String, attributesList: List[AttributeInfo], requiredArgs: List[String]): Text.TypedTag[String] = {
+  private def parameterListMarkup(nameStr: String, attributesList: List[AttributeModel], requiredArgs: List[String]): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (attributesList.isEmpty) div()
     else {
@@ -72,14 +73,15 @@ case class IcdDbPrinter(db: IcdDb) {
           h4(a(s"$pubType Published by $compName")),
           for (t ← telemetryList) yield {
             val headings = List("Min Rate", "Max Rate", "Archive", "Archive Rate", "Subscribers")
-            val rowList = List(List(HtmlMarkup.formatRate(t.minRate), HtmlMarkup.formatRate(t.maxRate), HtmlMarkup.yesNo(t.archive),
-              HtmlMarkup.formatRate(t.archiveRate), t.subscribers.map(_.compName).mkString(", ")))
+            val rowList = List(List(HtmlMarkup.formatRate(t.telemetryModel.minRate), HtmlMarkup.formatRate(t.telemetryModel.maxRate),
+              HtmlMarkup.yesNo(t.telemetryModel.archive),
+              HtmlMarkup.formatRate(t.telemetryModel.archiveRate), t.subscribers.map(_.subscribeModelInfo.component).mkString(", ")))
             div(cls := "nopagebreak")(
-              h5(a(s"$pubType: ${t.name}")),
-              if (t.requirements.isEmpty) div() else p(strong("Requirements: "), t.requirements.mkString(", ")),
-              raw(t.description),
+              h5(a(s"$pubType: ${t.telemetryModel.name}")),
+              if (t.telemetryModel.requirements.isEmpty) div() else p(strong("Requirements: "), t.telemetryModel.requirements.mkString(", ")),
+              raw(t.telemetryModel.description),
               HtmlMarkup.mkTable(headings, rowList),
-              attributeListMarkup(t.name, t.attributesList), hr
+              attributeListMarkup(t.telemetryModel.name, t.telemetryModel.attributesList), hr
             )
           }
         )
@@ -93,11 +95,12 @@ case class IcdDbPrinter(db: IcdDb) {
           h4(a(s"Alarms Published by $compName")),
           for (t ← alarmList) yield {
             val headings = List("Severity", "Archive", "Subscribers")
-            val rowList = List(List(t.severity, HtmlMarkup.yesNo(t.archive), t.subscribers.map(_.compName).mkString(", ")))
+            val rowList = List(List(t.alarmModel.severity, HtmlMarkup.yesNo(t.alarmModel.archive),
+              t.subscribers.map(_.subscribeModelInfo.component).mkString(", ")))
             div(cls := "nopagebreak")(
-              h5(a(s"Alarm: ${t.name}")),
-              if (t.requirements.isEmpty) div() else p(strong("Requirements: "), t.requirements.mkString(", ")),
-              raw(t.description),
+              h5(a(s"Alarm: ${t.alarmModel.name}")),
+              if (t.alarmModel.requirements.isEmpty) div() else p(strong("Requirements: "), t.alarmModel.requirements.mkString(", ")),
+              raw(t.alarmModel.description),
               HtmlMarkup.mkTable(headings, rowList), hr
             )
           }
@@ -134,16 +137,17 @@ case class IcdDbPrinter(db: IcdDb) {
       else div(cls := "nopagebreak")(
         h4(a(s"$pubType Subscribed to by $compName")),
         for (si ← subscribeList) yield {
+          val sInfo = si.subscribeModelInfo
           div(cls := "nopagebreak")(
-            h5(a(s"$pubType: ${si.name}")),
+            h5(a(s"$pubType: ${sInfo.name}")),
             raw(si.description),
-            if (si.usage.isEmpty) div() else div(strong("Usage:"), raw(si.usage)),
+            if (sInfo.usage.isEmpty) div() else div(strong("Usage:"), raw(sInfo.usage)),
             table(
               thead(
                 tr(th("Subsystem"), th("Component"), th("Prefix.Name"), th("Required Rate"), th("Max Rate"))
               ),
               tbody(
-                tr(td(si.subsystem), td(si.compName), td(si.path), td(si.requiredRate), td(si.maxRate))
+                tr(td(sInfo.subsystem), td(sInfo.component), td(si.path), td(sInfo.requiredRate), td(sInfo.maxRate))
               )
             )
           )
@@ -260,11 +264,11 @@ case class IcdDbPrinter(db: IcdDb) {
         ),
         tbody(
           tr(
-            td(info.subsystem),
-            td(info.compName),
-            td(info.prefix),
-            td(info.componentType),
-            td(info.wbsId)
+            td(info.componentModel.subsystem),
+            td(info.componentModel.component),
+            td(info.componentModel.prefix),
+            td(info.componentModel.componentType),
+            td(info.componentModel.wbsId)
           )
         )
       )
@@ -275,12 +279,12 @@ case class IcdDbPrinter(db: IcdDb) {
   private def markupForComponent(info: ComponentInfo): Text.TypedTag[String] = {
     import scalatags.Text.all._
     div(cls := "pagebreakBefore")(
-      h2(a(name := info.compName)(info.title)),
+      h2(a(name := info.componentModel.component)(info.componentModel.title)),
       componentInfoTableMarkup(info),
-      raw(info.description),
-      publishMarkup(info.compName, info.publishes),
-      subscribeMarkup(info.compName, info.subscribes),
-      commandsMarkup(info.compName, info.commands)
+      raw(info.componentModel.description),
+      publishMarkup(info.componentModel.component, info.publishes),
+      subscribeMarkup(info.componentModel.component, info.subscribes),
+      commandsMarkup(info.componentModel.component, info.commands)
     )
   }
 
@@ -348,7 +352,7 @@ case class IcdDbPrinter(db: IcdDb) {
    */
   private def makeTocEntry(info: ComponentInfo): Text.TypedTag[String] = {
     import scalatags.Text.all._
-    val compName = info.compName
+    val compName = info.componentModel.component
     val commandsReceived = info.commands.toList.flatMap(_.commandsReceived)
     val commandsSent = info.commands.toList.flatMap(_.commandsSent)
     val sections = List(
@@ -360,7 +364,7 @@ case class IcdDbPrinter(db: IcdDb) {
       )))
     ).flatten
 
-    li(a(href := s"#$compName")(info.title), ul(sections))
+    li(a(href := s"#$compName")(info.componentModel.title), ul(sections))
   }
 
   /**
