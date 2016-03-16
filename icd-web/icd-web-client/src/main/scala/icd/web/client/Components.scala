@@ -3,7 +3,7 @@ package icd.web.client
 import java.util.UUID
 
 import icd.web.shared.ComponentInfo.{EventStreams, Events, Telemetry, Alarms}
-import icd.web.shared.IcdModels.AttributeModel
+import icd.web.shared.IcdModels.{ReceiveCommandModel, AttributeModel}
 import icd.web.shared._
 import org.scalajs.dom
 import org.scalajs.dom.ext.Ajax
@@ -42,8 +42,8 @@ object Components {
   /**
    * Returns a HTML table with the given column headings and list of rows
    *
-   * @param headings the table headings
-   * @param rowList list of row data
+   * @param headings   the table headings
+   * @param rowList    list of row data
    * @param tableStyle optional table style
    * @return an html table element
    */
@@ -463,7 +463,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             tbody(
               for (s ← subscribeList) yield {
                 val (btn, row) = hiddenRowMarkup(makeDetailsRow(s), 3)
-                val usage = if (s.subscribeModelInfo.usage.isEmpty) div() else div(
+                val usage = if (s.subscribeModelInfo.usage.isEmpty) div()
+                else div(
                   strong("Usage:"),
                   raw(s.subscribeModelInfo.usage)
                 )
@@ -516,9 +517,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Returns a table row displaying more details for the given command
     def makeDetailsRow(r: ReceivedCommandInfo) = {
+      val m = r.receiveCommandModel
       div(
-        if (r.requirements.isEmpty) div() else p(strong("Requirements: "), r.requirements.mkString(", ")),
-        parameterListMarkup("Arguments", r.args, r.requiredArgs)
+        if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
+        parameterListMarkup("Arguments", m.args, m.requiredArgs)
       )
     }
 
@@ -537,11 +539,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         ),
         tbody(
           for (r ← info) yield {
+            val rc = r.receiveCommandModel
             val (btn, row) = hiddenRowMarkup(makeDetailsRow(r), 3)
             List(
               tr(
-                td(Styles.attributeCell, p(btn, r.name)), // XXX TODO: Make link to command description page with details
-                td(raw(r.description)),
+                td(Styles.attributeCell, p(btn, rc.name)), // XXX TODO: Make link to command description page with details
+                td(raw(rc.description)),
                 td(p(r.senders.map(makeLinkForSender)))
               ),
               row
@@ -567,6 +570,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       a(s"${receiver.compName} ", href := "#", onclick := clickedOnReceiver(receiver) _)
     }
 
+    // Returns a table row displaying more details for the given command
+    def makeDetailsRow(r: ReceiveCommandModel) = {
+      div(
+        if (r.requirements.isEmpty) div() else p(strong("Requirements: "), r.requirements.mkString(", ")),
+        parameterListMarkup("Arguments", r.args, r.requiredArgs)
+      )
+    }
+
     // Only display non-empty tables
     if (info.isEmpty) div()
     else div(
@@ -582,10 +593,15 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         ),
         tbody(
           for (s ← info) yield {
-            tr(
-              td(p(s.name)), // XXX TODO: Make link to command description page with details
-              td(raw(s.description)),
-              td(p(s.receivers.map(makeLinkForReceiver)))
+            val r = s.receiveCommandModel
+            val (btn, row) = hiddenRowMarkup(makeDetailsRow(r), 3)
+            List(
+              tr(
+                td(Styles.attributeCell, p(btn, r.name)), // XXX TODO: Make link to command description page with details
+                td(raw(r.description)),
+                td(p(s.receiver.map(makeLinkForReceiver)))
+              ),
+              row
             )
           }
         ))

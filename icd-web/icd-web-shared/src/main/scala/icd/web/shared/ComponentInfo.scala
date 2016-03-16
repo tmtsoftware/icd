@@ -169,33 +169,23 @@ case class OtherComponent(
 /**
  * Describes a configuration command sent to another component
  *
- * @param name        the name of the command
- * @param description description of the command (in html format, after markdown processing)
- * @param receivers   the receiving components
+ * @param receiveCommandModel the model for receiving end of the command
+ * @param receiver            the receiving component, if found
  */
 case class SentCommandInfo(
-  name:        String,
-  description: String,
-  receivers:   List[OtherComponent]
+  receiveCommandModel: ReceiveCommandModel,
+  receiver:            Option[OtherComponent]
 )
 
 /**
  * Describes a command config received by this component
  *
- * @param name         the name of the command
- * @param description  description of the command (in html format, after markdown processing)
- * @param senders      list of components that send the command
- * @param requirements list of requirements for the command
- * @param requiredArgs list of names of required arguments
- * @param args         describes the command's arguments
+ * @param receiveCommandModel the basic model for the command
+ * @param senders             list of components that send the command
  */
 case class ReceivedCommandInfo(
-  name:         String,
-  description:  String,
-  senders:      List[OtherComponent],
-  requirements: List[String],
-  requiredArgs: List[String],
-  args:         List[AttributeModel]
+  receiveCommandModel: ReceiveCommandModel,
+  senders:             List[OtherComponent]
 )
 
 /**

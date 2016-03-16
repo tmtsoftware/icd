@@ -215,8 +215,7 @@ object IcdComponentInfo {
     } yield {
       val senders = getCommandSenders(cmd.subsystem, cmd.component, received.name, targetModelsList).map(comp ⇒
         OtherComponent(comp.subsystem, comp.component))
-      ReceivedCommandInfo(received.name, received.description, senders, received.requirements, received.requiredArgs,
-        received.args)
+      ReceivedCommandInfo(received, senders)
     }
   }
 
@@ -254,8 +253,7 @@ object IcdComponentInfo {
       sent ← cmd.send
     } yield {
       getCommand(sent.subsystem, sent.component, sent.name, targetModelsList).map { r ⇒
-        SentCommandInfo(sent.name, r.description,
-          List(OtherComponent(sent.subsystem, sent.component)))
+        SentCommandInfo(r, Some(OtherComponent(sent.subsystem, sent.component)))
       }
     }
     result.flatten

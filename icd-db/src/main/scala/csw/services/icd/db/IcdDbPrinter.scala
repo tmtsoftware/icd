@@ -185,11 +185,12 @@ case class IcdDbPrinter(db: IcdDb) {
       div(cls := "nopagebreak")(
         h4(a(name := receivedCommandsId(compName))(receivedCommandsTitle(compName))),
         for (r ← info) yield {
+          val m = r.receiveCommandModel
           div(cls := "nopagebreak")(
-            h5(a(s"Configuration: ${r.name}")),
-            if (r.requirements.isEmpty) div() else p(strong("Requirements: "), r.requirements.mkString(", ")),
-            raw(r.description),
-            if (r.args.isEmpty) div() else parameterListMarkup(r.name, r.args, r.requiredArgs)
+            h5(a(s"Configuration: ${m.name}")),
+            if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
+            raw(m.description),
+            if (m.args.isEmpty) div() else parameterListMarkup(m.name, m.args, m.requiredArgs)
           )
         }
       )
@@ -218,10 +219,11 @@ case class IcdDbPrinter(db: IcdDb) {
         ),
         tbody(
           for (s ← info) yield {
+            val r = s.receiveCommandModel
             tr(
-              td(p(s.name)), // XXX TODO: Make link to command description page with details
-              td(raw(s.description)),
-              td(p(s.receivers.map(_.compName).mkString(", ")))
+              td(p(r.name)), // XXX TODO: Make link to command description page with details
+              td(raw(r.description)),
+              td(p(s.receiver.map(_.compName).mkString(", ")))
             )
           }
         )
