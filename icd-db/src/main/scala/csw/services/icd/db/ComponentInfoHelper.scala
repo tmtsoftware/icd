@@ -1,7 +1,6 @@
 package csw.services.icd.db
 
-import csw.services.icd.db.IcdDbQuery.{Alarms, EventStreams, Events, PublishType, Telemetry}
-import csw.services.icd.html.HtmlMarkup
+import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels._
 import icd.web.shared._
 
@@ -47,15 +46,7 @@ object ComponentInfoHelper {
       val publishes = getPublishes(query, icdModels)
       val subscribes = getSubscribes(query, icdModels)
       val commands = getCommands(query, icdModels)
-
-      componentModel.map { model ⇒
-        ComponentInfo(
-          model.copy(description = HtmlMarkup.gfmToHtml(model.description)),
-          publishes,
-          subscribes,
-          commands
-        )
-      }
+      componentModel.map { model ⇒ ComponentInfo(model, publishes, subscribes, commands) }
     }
   }
 
@@ -71,23 +62,8 @@ object ComponentInfoHelper {
   private def getSubscribers(query: IcdDbQuery, prefix: String, name: String, desc: String,
                              subscribeType: PublishType): List[SubscribeInfo] = {
     query.subscribes(s"$prefix.$name", subscribeType).map { s ⇒
-      val sf = subscribeModelInfoMarkup(s.subscribeModelInfo)
-      SubscribeInfo(s.subscribeType.toString, sf, s.path, HtmlMarkup.gfmToHtml(desc))
+      SubscribeInfo(s.subscribeType, s.subscribeModelInfo)
     }
-  }
-
-  // Replaces description fields with markdown formatted HTML
-  private[db] def attributeMarkup(a: AttributeModel): AttributeModel = {
-    a.copy(description = HtmlMarkup.gfmToHtml(a.description))
-  }
-  private[db] def telemtryMarkup(t: TelemetryModel): TelemetryModel = {
-    t.copy(description = HtmlMarkup.gfmToHtml(t.description), attributesList = t.attributesList.map(attributeMarkup))
-  }
-  private[db] def alarmMarkup(t: AlarmModel): AlarmModel = {
-    t.copy(description = HtmlMarkup.gfmToHtml(t.description))
-  }
-  private[db] def subscribeModelInfoMarkup(t: SubscribeModelInfo): SubscribeModelInfo = {
-    t.copy(usage = HtmlMarkup.gfmToHtml(t.usage))
   }
 
   /**
@@ -104,25 +80,20 @@ object ComponentInfoHelper {
         models.publishModel match {
           case None ⇒ None
           case Some(m) ⇒
-            val desc = HtmlMarkup.gfmToHtml(m.description)
             val telemetryList = m.telemetryList.map { t ⇒
-              val tf = telemtryMarkup(t)
-              TelemetryInfo(tf, getSubscribers(query, prefix, tf.name, tf.description, Telemetry))
+              TelemetryInfo(t, getSubscribers(query, prefix, t.name, t.description, Telemetry))
             }
             val eventList = m.eventList.map { t ⇒
-              val tf = telemtryMarkup(t)
-              TelemetryInfo(tf, getSubscribers(query, prefix, tf.name, tf.description, EventStreams))
+              TelemetryInfo(t, getSubscribers(query, prefix, t.name, t.description, EventStreams))
             }
             val eventStreamList = m.eventStreamList.map { t ⇒
-              val tf = telemtryMarkup(t)
-              TelemetryInfo(tf, getSubscribers(query, prefix, tf.name, tf.description, EventStreams))
+              TelemetryInfo(t, getSubscribers(query, prefix, t.name, t.description, EventStreams))
             }
             val alarmList = m.alarmList.map { al ⇒
-              val af = alarmMarkup(al)
-              AlarmInfo(af, getSubscribers(query, prefix, af.name, af.description, Alarms))
+              AlarmInfo(al, getSubscribers(query, prefix, al.name, al.description, Alarms))
             }
-            if (desc.nonEmpty || telemetryList.nonEmpty || eventList.nonEmpty || eventStreamList.nonEmpty || alarmList.nonEmpty)
-              Some(Publishes(desc, telemetryList, eventList, eventStreamList, alarmList))
+            if (m.description.nonEmpty || telemetryList.nonEmpty || eventList.nonEmpty || eventStreamList.nonEmpty || alarmList.nonEmpty)
+              Some(Publishes(m.description, telemetryList, eventList, eventStreamList, alarmList))
             else None
         }
     }
@@ -136,18 +107,20 @@ object ComponentInfoHelper {
    */
   private def getSubscribes(query: IcdDbQuery, models: IcdModels): Option[Subscribes] = {
 
-    def getInfo(publishType: PublishType, si: SubscribeModelInfo): List[SubscribeInfo] = {
-      val prefix = query.getPrefix(si.subsystem, si.component)
-      val path = s"$prefix.${si.name}"
-      val sf = subscribeModelInfoMarkup(si)
-      val info = query.publishes(path, si.subsystem, publishType).map { pi ⇒
-        SubscribeInfo(publishType.toString, sf, s"${pi.prefix}.${si.name}", HtmlMarkup.gfmToHtml(pi.item.description))
+    // Gets additional information about the given subscription, including info from the publisher
+    def getInfo(publishType: PublishType, si: SubscribeModelInfo): Option[DetailedSubscribeInfo] = {
+      val x = for {
+        t ← query.getModels(si.subsystem, Some(si.component))
+        componentModel ← t.componentModel
+        publishModel ← t.publishModel
+      } yield {
+        val (telem, alarm) = publishType match {
+          case Alarms ⇒ (None, publishModel.alarmList.find(a ⇒ a.name == si.name))
+          case _      ⇒ (publishModel.telemetryList.find(t ⇒ t.name == si.name), None)
+        }
+        DetailedSubscribeInfo(publishType, si, telem, alarm, componentModel)
       }
-      if (info.nonEmpty) info
-      else {
-        val prefix = query.getPrefix(si.subsystem, si.component)
-        List(SubscribeInfo(publishType.toString, sf, s"$prefix.${si.name}", ""))
-      }
+      x.headOption
     }
 
     models.subscribeModel match {
@@ -159,7 +132,7 @@ object ComponentInfoHelper {
           m.alarmList.map(getInfo(Alarms, _))
         val desc = m.description
         if (desc.nonEmpty || subscribeInfo.nonEmpty)
-          Some(Subscribes(HtmlMarkup.gfmToHtml(desc), subscribeInfo.flatten))
+          Some(Subscribes(desc, subscribeInfo.flatten))
         else None
     }
   }
@@ -178,9 +151,8 @@ object ComponentInfoHelper {
     } yield {
       val senders = query.getCommandSenders(cmd.subsystem, cmd.component, received.name).map(comp ⇒
         OtherComponent(comp.subsystem, comp.component))
-      val desc = HtmlMarkup.gfmToHtml(received.description)
-      ReceivedCommandInfo(received.name, desc, senders, received.requirements, received.requiredArgs,
-        received.args.map(attributeMarkup))
+      ReceivedCommandInfo(received.name, received.description, senders, received.requirements, received.requiredArgs,
+        received.args)
     }
   }
 
@@ -197,7 +169,7 @@ object ComponentInfoHelper {
       sent ← cmd.send
     } yield {
       query.getCommand(sent.subsystem, sent.component, sent.name).map { r ⇒
-        SentCommandInfo(sent.name, HtmlMarkup.gfmToHtml(r.description),
+        SentCommandInfo(sent.name, r.description,
           List(OtherComponent(sent.subsystem, sent.component)))
       }
     }
@@ -218,7 +190,7 @@ object ComponentInfoHelper {
       case Some(m) ⇒
         val desc = m.description
         if (desc.nonEmpty || sent.nonEmpty || received.nonEmpty)
-          Some(Commands(HtmlMarkup.gfmToHtml(desc), received, sent))
+          Some(Commands(desc, received, sent))
         else None
     }
   }

@@ -1,6 +1,7 @@
 package csw.services.icd.model
 
 import com.typesafe.config.Config
+import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.PublishModel
 
 /**
@@ -19,7 +20,7 @@ object PublishModelParser {
     PublishModel(
       subsystem = config.as[String](BaseModelParser.subsystemKey),
       component = config.as[String](BaseModelParser.componentKey),
-      description = publishConfig.as[Option[String]]("description").getOrElse(""),
+      description = publishConfig.as[Option[String]]("description").map(HtmlMarkup.gfmToHtml).getOrElse(""),
       telemetryList = getItems("telemetry", TelemetryModelParser(_)),
       eventList = getItems("events", TelemetryModelParser(_)),
       eventStreamList = getItems("eventStreams", TelemetryModelParser(_)),

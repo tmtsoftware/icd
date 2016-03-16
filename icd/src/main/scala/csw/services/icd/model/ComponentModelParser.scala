@@ -1,6 +1,7 @@
 package csw.services.icd.model
 
 import com.typesafe.config.Config
+import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.ComponentModel
 
 /**
@@ -17,7 +18,7 @@ object ComponentModelParser {
       component = config.as[String](BaseModelParser.componentKey),
       prefix = config.as[String]("prefix"),
       title = config.as[String]("title"),
-      description = config.as[String]("description"),
+      description = HtmlMarkup.gfmToHtml(config.as[String]("description")),
       modelVersion = config.as[String]("modelVersion"),
       wbsId = config.as[Option[String]]("wbsId").getOrElse("")
     )

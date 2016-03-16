@@ -6,6 +6,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.typesafe.config.{ConfigFactory, Config}
 import csw.services.icd.StdName._
 import csw.services.icd.model._
+import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels
 import icd.web.shared.IcdModels._
 import scala.language.implicitConversions
@@ -64,17 +65,6 @@ object IcdDbQuery {
     ConfigFactory.parseString(json)
   }
 
-  // Types of published items
-  sealed trait PublishType
-
-  case object Telemetry extends PublishType
-
-  case object Events extends PublishType
-
-  case object EventStreams extends PublishType
-
-  case object Alarms extends PublishType
-
   /**
    * Describes a component in a subsystem
    */
@@ -88,15 +78,6 @@ object IcdDbQuery {
    * @param description description of the published item
    */
   case class Published(publishType: PublishType, name: String, description: String)
-
-  /**
-   * Describes a published item along with the component that publishes it
-   *
-   * @param componentName the publishing component
-   * @param prefix the component's prefix
-   * @param item description of the published item
-   */
-  case class PublishedItem(componentName: String, prefix: String, item: Published)
 
   /**
    * Describes what values a component publishes
@@ -308,12 +289,6 @@ case class IcdDbQuery(db: MongoDB) {
   }
 
   /**
-   * Returns the given component's prefix, or an empty string if not found
-   */
-  def getPrefix(subsystem: String, componentName: String): String =
-    getComponentModel(subsystem, componentName).map(_.prefix).getOrElse("")
-
-  /**
    * Returns an object describing the items published by the named component
    */
   def getPublishModel(component: ComponentModel): Option[PublishModel] = {
@@ -445,26 +420,13 @@ case class IcdDbQuery(db: MongoDB) {
   }
 
   /**
-   * Returns a list describing which components publish the given value.
-   *
-   * @param path full path name of value (prefix + name)
-   * @param publishType telemetry, alarm, etc...
-   */
-  def publishes(path: String, subsystem: String, publishType: PublishType): List[PublishedItem] = {
-    for {
-      pubInfo ← getPublishInfo(subsystem)
-      published ← pubInfo.publishes.filter(p ⇒ s"${pubInfo.prefix}.${p.name}" == path && publishType == p.publishType)
-    } yield PublishedItem(pubInfo.componentName, pubInfo.prefix, published)
-  }
-
-  /**
    * Returns a list of items the given component subscribes to
    *
    * @param component the component model
    */
   private def getSubscribedTo(component: ComponentModel): List[Subscribed] = {
     // Gets the full path of the subscribed item
-    def getPath(i: SubscribeModelInfo): String = s"${getPrefix(i.subsystem, i.component)}.${i.name}"
+    def getPath(i: SubscribeModelInfo): String = s"${component.prefix}.${i.name}"
 
     getSubscribeModel(component) match {
       case Some(subscribeModel) ⇒

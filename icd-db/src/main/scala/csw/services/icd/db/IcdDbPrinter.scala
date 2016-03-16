@@ -4,6 +4,7 @@ import java.io.{FileOutputStream, File}
 
 import csw.services.icd.IcdToPdf
 import csw.services.icd.html.{HtmlMarkup, IcdToHtml}
+import icd.web.shared.ComponentInfo.{Alarms, EventStreams, Events, Telemetry}
 import icd.web.shared.IcdModels.AttributeModel
 import icd.web.shared._
 
@@ -132,7 +133,7 @@ case class IcdDbPrinter(db: IcdDb) {
   private def subscribeMarkup(compName: String, subscribesOpt: Option[Subscribes]): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
-    def subscribeListMarkup(pubType: String, subscribeList: List[SubscribeInfo]): Text.TypedTag[String] = {
+    def subscribeListMarkup(pubType: String, subscribeList: List[DetailedSubscribeInfo]): Text.TypedTag[String] = {
       if (subscribeList.isEmpty) div()
       else div(cls := "nopagebreak")(
         h4(a(s"$pubType Subscribed to by $compName")),
@@ -162,10 +163,10 @@ case class IcdDbPrinter(db: IcdDb) {
           div(cls := "nopagebreak")(
             h3(a(name := subscribeId(compName))(subscribeTitle(compName))),
             raw(subscribes.description),
-            subscribeListMarkup("Telemetry", subscribes.subscribeInfo.filter(_.itemType == "Telemetry")),
-            subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == "Events")),
-            subscribeListMarkup("Event Streams", subscribes.subscribeInfo.filter(_.itemType == "EventStreams")),
-            subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == "Alarms"))
+            subscribeListMarkup("Telemetry", subscribes.subscribeInfo.filter(_.itemType == Telemetry)),
+            subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == Events)),
+            subscribeListMarkup("Event Streams", subscribes.subscribeInfo.filter(_.itemType == EventStreams)),
+            subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == Alarms))
           )
         } else div()
     }
@@ -307,7 +308,7 @@ case class IcdDbPrinter(db: IcdDb) {
    */
   private def getSubsystemInfo(subsystem: String, versionOpt: Option[String]): Option[SubsystemInfo] =
     db.versionManager.getSubsystemModel(subsystem, versionOpt)
-      .map(m ⇒ SubsystemInfo(m.subsystem, versionOpt, m.title, HtmlMarkup.gfmToHtml(m.description)))
+      .map(m ⇒ SubsystemInfo(m.subsystem, versionOpt, m.title, m.description))
 
   /**
    * Gets information about the given components

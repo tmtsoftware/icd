@@ -42,7 +42,7 @@ object Application extends Controller {
     import upickle.default._
     db.versionManager.getSubsystemModel(subsystem, versionOpt) match {
       case Some(model) ⇒
-        val info = SubsystemInfo(model.subsystem, versionOpt, model.title, HtmlMarkup.gfmToHtml(model.description))
+        val info = SubsystemInfo(model.subsystem, versionOpt, model.title, model.description)
         val json = write(info)
         Ok(json).as(JSON)
       case None ⇒
@@ -224,10 +224,8 @@ object Application extends Controller {
           HtmlMarkup.mkTable(header, rows).render
         case ar: JsArray ⇒
           ar.elements.map(getValue).mkString(", ")
-        //        case l: List[Any] ⇒
-        //          l.map(getValue).mkString(", ")
         case s: JsString ⇒
-          HtmlMarkup.gfmToHtml(s.value.stripMargin)
+          s.value.stripMargin
         case n: JsNumber ⇒
           n.value.toString()
         case _ ⇒

@@ -1,6 +1,7 @@
 package csw.services.icd.model
 
 import com.typesafe.config.Config
+import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.AlarmModel
 
 /**
@@ -13,7 +14,7 @@ object AlarmModelParser {
   def apply(config: Config): AlarmModel =
     AlarmModel(
       name = config.as[String]("name"),
-      description = config.as[String]("description"),
+      description = HtmlMarkup.gfmToHtml(config.as[String]("description")),
       requirements = config.as[Option[List[String]]]("requirements").getOrElse(Nil),
       severity = config.as[Option[String]]("severity").getOrElse("none"),
       archive = config.as[Option[Boolean]]("archive").getOrElse(true)

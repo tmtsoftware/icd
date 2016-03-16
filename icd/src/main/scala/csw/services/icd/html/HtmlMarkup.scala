@@ -74,14 +74,9 @@ object HtmlMarkup {
   }
 
   /**
-   * Returns the HTML for the text (markdown content supported)
+   * Returns an HTML paragraph for the text (assumes markdown content was already converted to HTML)
    */
-  def markdown(text: String) = raw(gfmToHtml(text))
-
-  /**
-   * Returns an HTML paragraph for the text (markdown content supported)
-   */
-  def mkParagraph(text: String) = div(raw(gfmToHtml(text)))
+  def mkParagraph(text: String) = div(raw(text))
 
   /**
    * Returns an HTML paragraph containing the markup
@@ -89,9 +84,9 @@ object HtmlMarkup {
   def mkParagraph(markup: TypedTag[String]) = p(markup)
 
   /**
-   * Returns an HTML paragraph for the given markup and text (markdown content supported in the text)
+   * Returns an HTML paragraph for the given markup and text
    */
-  def mkParagraph(markup: TypedTag[String], text: String) = div(markup, raw(gfmToHtml(text)))
+  def mkParagraph(markup: TypedTag[String], text: String) = div(markup, text)
 
   def bold(text: String) = strong(text)
 

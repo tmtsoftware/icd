@@ -1,8 +1,20 @@
 package icd.web.shared
 
+import icd.web.shared.ComponentInfo.{Telemetry, PublishType}
 import icd.web.shared.IcdModels._
 
 object ComponentInfo {
+
+  // Types of published items
+  sealed trait PublishType
+
+  case object Telemetry extends PublishType
+
+  case object Events extends PublishType
+
+  case object EventStreams extends PublishType
+
+  case object Alarms extends PublishType
 
   // For ICDs, we are only interested in the interface between the two subsystems.
   // Filter out any published commands with no subscribers,
@@ -66,8 +78,8 @@ case class TelemetryInfo(
 /**
  * Describes an alarm
  *
- * @param alarmModel   the basic alarm model
- * @param subscribers  list of components who subscribe to the alarm
+ * @param alarmModel  the basic alarm model
+ * @param subscribers list of components who subscribe to the alarm
  */
 case class AlarmInfo(
   alarmModel:  AlarmModel,
@@ -97,18 +109,40 @@ case class Publishes(
 }
 
 /**
- * Describes an item that a component subscribes to
+ * Holds information about a subscriber
  *
- * @param subscribeModelInfo     data from the input subscribe model
- * @param path         the full path name (component-prefix.name) of the item
- * @param description  description of the item (from the publisher, in html format, after markdown processing)
+ * @param itemType           the publish type (Telemetry, Alarm, EventStream, etc.)
+ * @param subscribeModelInfo data from the input subscribe model
  */
-case class SubscribeInfo(
-  itemType:           String,
-  subscribeModelInfo: SubscribeModelInfo,
-  path:               String,
-  description:        String
-)
+case class SubscribeInfo(itemType: PublishType, subscribeModelInfo: SubscribeModelInfo)
+
+/**
+ * Describes an item that a component subscribes to, including information from the publisher
+ *
+ * @param itemType           the publish type (Telemetry, Alarm, EventStream, etc.)
+ * @param subscribeModelInfo data from the input subscribe model
+ * @param telemetryModel     set only if itemType is not Alarms
+ * @param alarmModel         set only if itemType is Alarms
+ * @param publisher          the publisher's component model
+ */
+case class DetailedSubscribeInfo(
+    itemType:           PublishType,
+    subscribeModelInfo: SubscribeModelInfo,
+    telemetryModel:     Option[TelemetryModel],
+    alarmModel:         Option[AlarmModel],
+    publisher:          ComponentModel
+) {
+  val description = (if (itemType == Telemetry) {
+    telemetryModel.map(_.description)
+  } else {
+    alarmModel.map(_.description)
+  }).getOrElse("")
+
+  /**
+   * Full path to subscribed item ($prefix.$name)
+   */
+  val path: String = s"${publisher.prefix}.${subscribeModelInfo.name}"
+}
 
 /**
  * Describes what items a component subscribes to
@@ -118,7 +152,7 @@ case class SubscribeInfo(
  */
 case class Subscribes(
   description:   String,
-  subscribeInfo: List[SubscribeInfo]
+  subscribeInfo: List[DetailedSubscribeInfo]
 )
 
 /**

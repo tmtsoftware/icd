@@ -77,12 +77,12 @@ object IcdModels {
   )
 
   /**
-   *
-   * @param name
-   * @param description
-   * @param requirements
-   * @param requiredArgs
-   * @param args
+   * Model for a commands configuration that a component receives
+   * @param name command name
+   * @param description command desc
+   * @param requirements an array of requirement ids
+   * @param requiredArgs list of names of required args
+   * @param args describes the command argumemnts (configuration fields)
    */
   case class ReceiveCommandModel(
     name:         String,
@@ -93,10 +93,10 @@ object IcdModels {
   )
 
   /**
-   *
-   * @param name
-   * @param subsystem
-   * @param component
+   * Describes command configurations that the component sends
+   * @param name command name
+   * @param subsystem the target subsystem
+   * @param component the target component
    */
   case class SendCommandModel(
     name:      String,
@@ -116,15 +116,7 @@ object IcdModels {
   )
 
   /**
-   *
-   * @param componentType
-   * @param subsystem
-   * @param component
-   * @param prefix
-   * @param title
-   * @param description
-   * @param modelVersion
-   * @param wbsId
+   * The basic component model
    */
   case class ComponentModel(
     componentType: String,
@@ -138,14 +130,7 @@ object IcdModels {
   )
 
   /**
-   *
-   * @param subsystem
-   * @param component
-   * @param description
-   * @param telemetryList
-   * @param eventList
-   * @param eventStreamList
-   * @param alarmList
+   * The component's publish model
    */
   case class PublishModel(
     subsystem:       String,
@@ -198,11 +183,7 @@ object IcdModels {
   )
 
   /**
-   *
-   * @param subsystem
-   * @param title
-   * @param description
-   * @param modelVersion
+   * Models the component's subsystem
    */
   case class SubsystemModel(
     subsystem:    String,
@@ -212,15 +193,7 @@ object IcdModels {
   )
 
   /**
-   *
-   * @param name
-   * @param description
-   * @param requirements
-   * @param minRate
-   * @param maxRate
-   * @param archive
-   * @param archiveRate
-   * @param attributesList
+   * Models the telemetry published by a component
    */
   case class TelemetryModel(
     name:           String,

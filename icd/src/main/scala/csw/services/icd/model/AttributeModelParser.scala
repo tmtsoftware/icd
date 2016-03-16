@@ -1,6 +1,7 @@
 package csw.services.icd.model
 
 import com.typesafe.config.Config
+import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.AttributeModel
 
 /**
@@ -13,7 +14,7 @@ object AttributeModelParser {
 
   def apply(config: Config): AttributeModel = {
     val name = config.as[Option[String]]("name").getOrElse("")
-    val description = config.as[Option[String]]("description").getOrElse("")
+    val description = config.as[Option[String]]("description").map(HtmlMarkup.gfmToHtml).getOrElse("")
     val typeOpt = config.as[Option[String]]("type")
     val enumOpt = config.as[Option[List[String]]]("enum")
     val units = config.as[Option[String]]("units").getOrElse("")

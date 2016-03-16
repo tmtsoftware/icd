@@ -1,6 +1,7 @@
 package csw.services.icd.model
 
 import com.typesafe.config.Config
+import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.SubsystemModel
 
 /**
@@ -12,7 +13,7 @@ object SubsystemModelParser {
     SubsystemModel(
       subsystem = config.getString("subsystem"),
       title = config.getString("title"),
-      description = config.getString("description"),
+      description = HtmlMarkup.gfmToHtml(config.getString("description")),
       modelVersion = config.getString("modelVersion")
     )
 }

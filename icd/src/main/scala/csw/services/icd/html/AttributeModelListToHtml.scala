@@ -14,7 +14,7 @@ case class AttributeModelListToHtml(titleOpt: Option[String], list: List[Attribu
 
   val table = mkTable(
     List("Name", "Description", "Type", "Default", "Units"),
-    list.map(m ⇒ List(m.name, gfmToHtml(m.description), m.typeStr, m.defaultValue, m.units))
+    list.map(m ⇒ List(m.name, m.description, m.typeStr, m.defaultValue, m.units))
   )
 
   override val tags = headOpt.toList ::: List(table)

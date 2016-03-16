@@ -1,6 +1,7 @@
 package csw.services.icd.model
 
 import com.typesafe.config.Config
+import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.TelemetryModel
 
 /**
@@ -13,7 +14,7 @@ object TelemetryModelParser {
   def apply(config: Config): TelemetryModel =
     TelemetryModel(
       name = config.as[String]("name"),
-      description = config.as[Option[String]]("description").getOrElse(""),
+      description = config.as[Option[String]]("description").map(HtmlMarkup.gfmToHtml).getOrElse(""),
       requirements = config.as[Option[List[String]]]("requirements").getOrElse(Nil),
       minRate = config.as[Option[Double]]("minRate").getOrElse(0),
       maxRate = config.as[Option[Double]]("maxRate").getOrElse(0),

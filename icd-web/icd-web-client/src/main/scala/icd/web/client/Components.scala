@@ -2,6 +2,7 @@ package icd.web.client
 
 import java.util.UUID
 
+import icd.web.shared.ComponentInfo.{EventStreams, Events, Telemetry, Alarms}
 import icd.web.shared.IcdModels.AttributeModel
 import icd.web.shared._
 import org.scalajs.dom
@@ -410,7 +411,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalacss.ScalatagsCss._
 
     // Action when user clicks on a subscriber link
-    def clickedOnPublisher(info: SubscribeInfo)(e: dom.Event) = {
+    def clickedOnPublisher(info: DetailedSubscribeInfo)(e: dom.Event) = {
       e.preventDefault()
       listener.componentSelected(ComponentLink(
         info.subscribeModelInfo.subsystem,
@@ -419,7 +420,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
 
     // Makes the link for a publisher component in the table
-    def makeLinkForPublisher(info: SubscribeInfo) = {
+    def makeLinkForPublisher(info: DetailedSubscribeInfo) = {
       val comp = info.subscribeModelInfo.component
       a(
         title := s"Show API for $comp",
@@ -430,7 +431,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
 
     // Returns a table row displaying more details for the given subscription
-    def makeDetailsRow(si: SubscribeInfo) = {
+    def makeDetailsRow(si: DetailedSubscribeInfo) = {
       val sInfo = si.subscribeModelInfo
       val headings = List("Subsystem", "Component", "Prefix.Name", "Required Rate", "Max Rate")
       val rowList = List(List(
@@ -441,10 +442,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         formatRate(sInfo.maxRate)
       ))
 
-      div(mkTable(headings, rowList))
+      val attrTable = si.telemetryModel.map(t ⇒ attributeListMarkup("Attributes", t.attributesList)).getOrElse(div())
+      div(mkTable(headings, rowList), attrTable)
     }
 
-    def subscribeListMarkup(pubType: String, subscribeList: List[SubscribeInfo]) = {
+    def subscribeListMarkup(pubType: String, subscribeList: List[DetailedSubscribeInfo]) = {
       if (subscribeList.isEmpty) div()
       else div(
         h4(s"$pubType Subscribed to by $compName"),
@@ -487,10 +489,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             Styles.componentSection,
             h3(s"Items subscribed to by $compName"),
             raw(subscribes.description),
-            subscribeListMarkup("Telemetry", subscribes.subscribeInfo.filter(_.itemType == "Telemetry")),
-            subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == "Events")),
-            subscribeListMarkup("Event Streams", subscribes.subscribeInfo.filter(_.itemType == "EventStreams")),
-            subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == "Alarms"))
+            subscribeListMarkup("Telemetry", subscribes.subscribeInfo.filter(_.itemType == Telemetry)),
+            subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == Events)),
+            subscribeListMarkup("Event Streams", subscribes.subscribeInfo.filter(_.itemType == EventStreams)),
+            subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == Alarms))
           )
         } else div()
     }

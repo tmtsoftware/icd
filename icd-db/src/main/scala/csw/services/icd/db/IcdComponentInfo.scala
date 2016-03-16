@@ -1,7 +1,7 @@
 package csw.services.icd.db
 
-import csw.services.icd.db.IcdDbQuery.{Published, PublishInfo, PublishedItem, Subscribed, PublishType, Alarms, EventStreams, Events, Telemetry}
-import csw.services.icd.html.HtmlMarkup
+import csw.services.icd.db.IcdDbQuery.Subscribed
+import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels._
 import icd.web.shared._
 
@@ -55,14 +55,7 @@ object IcdComponentInfo {
       val subscribes = getSubscribes(icdModels, targetModelsList)
       val commands = getCommands(icdModels, targetModelsList)
 
-      componentModel.map { model ⇒
-        ComponentInfo(
-          model.copy(description = HtmlMarkup.gfmToHtml(model.description)),
-          publishes,
-          subscribes,
-          commands
-        )
-      }
+      componentModel.map { model ⇒ ComponentInfo(model, publishes, subscribes, commands) }
     }
   }
 
@@ -82,25 +75,20 @@ object IcdComponentInfo {
         models.publishModel match {
           case None ⇒ None
           case Some(m) ⇒
-            val desc = HtmlMarkup.gfmToHtml(m.description)
             val telemetryList = m.telemetryList.map { t ⇒
-              val tf = ComponentInfoHelper.telemtryMarkup(t)
-              TelemetryInfo(tf, getSubscribers(subsystem, component, prefix, tf.name, tf.description, Telemetry, targetModelsList))
+              TelemetryInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, Telemetry, targetModelsList))
             }
             val eventList = m.eventList.map { t ⇒
-              val tf = ComponentInfoHelper.telemtryMarkup(t)
-              TelemetryInfo(tf, getSubscribers(subsystem, component, prefix, tf.name, tf.description, EventStreams, targetModelsList))
+              TelemetryInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, EventStreams, targetModelsList))
             }
             val eventStreamList = m.eventStreamList.map { t ⇒
-              val tf = ComponentInfoHelper.telemtryMarkup(t)
-              TelemetryInfo(tf, getSubscribers(subsystem, component, prefix, tf.name, tf.description, EventStreams, targetModelsList))
+              TelemetryInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, EventStreams, targetModelsList))
             }
             val alarmList = m.alarmList.map { al ⇒
-              val af = ComponentInfoHelper.alarmMarkup(al)
-              AlarmInfo(af, getSubscribers(subsystem, component, prefix, af.name, af.description, Alarms, targetModelsList))
+              AlarmInfo(al, getSubscribers(subsystem, component, prefix, al.name, al.description, Alarms, targetModelsList))
             }
             if (telemetryList.nonEmpty || eventList.nonEmpty || eventStreamList.nonEmpty || alarmList.nonEmpty)
-              Some(Publishes(desc, telemetryList, eventList, eventStreamList, alarmList))
+              Some(Publishes(m.description, telemetryList, eventList, eventStreamList, alarmList))
             else None
         }
     }
@@ -150,62 +138,33 @@ object IcdComponentInfo {
       subscribeModel ← icdModel.subscribeModel
       s ← subscribes(getSubscribeInfoByType(subscribeModel, pubType))
     } yield {
-      SubscribeInfo(s.subscribeType.toString, s.subscribeModelInfo, path, HtmlMarkup.gfmToHtml(desc))
+      SubscribeInfo(s.subscribeType, s.subscribeModelInfo)
     }
   }
 
   /**
-   * Returns a list describing what each component publishes
-   *
-   * @param targetModelsList the target model objects
-   */
-  private def getPublishInfo(targetModelsList: List[IcdModels]): List[PublishInfo] = {
-    for {
-      icdModels ← targetModelsList
-      publishModel ← icdModels.publishModel
-      componentModel ← icdModels.componentModel
-    } yield {
-      val publishedList = List(
-        publishModel.telemetryList.map(i ⇒ Published(Telemetry, i.name, i.description)),
-        publishModel.eventList.map(i ⇒ Published(Events, i.name, i.description)),
-        publishModel.eventStreamList.map(i ⇒ Published(EventStreams, i.name, i.description)),
-        publishModel.alarmList.map(i ⇒ Published(Alarms, i.name, i.description))
-      ).flatten
-      PublishInfo(publishModel.component, componentModel.prefix, publishedList)
-    }
-  }
-
-  /**
-   * Returns a list describing which component (if any) publishes the given value.
-   * (XXX should simplify all this...)
-   *
-   * @param name             name of the value
-   * @param compName         name of the publishing component
-   * @param publishType      telemetry, alarm, etc...
-   * @param targetModelsList the target model objects
-   */
-  private def publishes(name: String, compName: String, publishType: PublishType, targetModelsList: List[IcdModels]): List[PublishedItem] = {
-    for {
-      publishInfo ← getPublishInfo(targetModelsList)
-      published ← publishInfo.publishes.filter(p ⇒ p.name == name && publishInfo.componentName == compName && publishType == p.publishType)
-    } yield PublishedItem(publishInfo.componentName, publishInfo.prefix, published)
-  }
-
-  /**
-   * Gets a information about the items the component subscribes to, along with the publisher of each item
+   * Gets information about the items the component subscribes to, along with the publisher of each item
    *
    * @param models           the model objects for the component
    * @param targetModelsList the target model objects
    */
   private def getSubscribes(models: IcdModels, targetModelsList: List[IcdModels]): Option[Subscribes] = {
 
-    // Gets a list of items of a given type that the component subscribes to, with publisher info
-    def getInfo(publishType: PublishType, si: SubscribeModelInfo): List[SubscribeInfo] = {
-      publishes(si.name, si.component, publishType, targetModelsList).map { pi ⇒
-        // XXX prefix != path?
-        val sf = ComponentInfoHelper.subscribeModelInfoMarkup(si)
-        SubscribeInfo(publishType.toString, sf, pi.prefix, HtmlMarkup.gfmToHtml(pi.item.description))
+    // Gets additional information about the given subscription, including info from the publisher
+    def getInfo(publishType: PublishType, si: SubscribeModelInfo): Option[DetailedSubscribeInfo] = {
+      val x = for {
+        t ← targetModelsList
+        componentModel ← t.componentModel
+        if componentModel.component == si.component && componentModel.subsystem == si.subsystem
+        publishModel ← t.publishModel
+      } yield {
+        val (telem, alarm) = publishType match {
+          case Alarms ⇒ (None, publishModel.alarmList.find(a ⇒ a.name == si.name))
+          case _      ⇒ (publishModel.telemetryList.find(t ⇒ t.name == si.name), None)
+        }
+        DetailedSubscribeInfo(publishType, si, telem, alarm, componentModel)
       }
+      x.headOption
     }
 
     models.subscribeModel match {
@@ -217,7 +176,7 @@ object IcdComponentInfo {
           m.alarmList.map(getInfo(Alarms, _))
         val desc = m.description
         if (subscribeInfo.nonEmpty)
-          Some(Subscribes(HtmlMarkup.gfmToHtml(desc), subscribeInfo.flatten))
+          Some(Subscribes(desc, subscribeInfo.flatten))
         else None
     }
   }
@@ -256,9 +215,8 @@ object IcdComponentInfo {
     } yield {
       val senders = getCommandSenders(cmd.subsystem, cmd.component, received.name, targetModelsList).map(comp ⇒
         OtherComponent(comp.subsystem, comp.component))
-      val desc = HtmlMarkup.gfmToHtml(received.description)
-      ReceivedCommandInfo(received.name, desc, senders, received.requirements, received.requiredArgs,
-        received.args.map(ComponentInfoHelper.attributeMarkup))
+      ReceivedCommandInfo(received.name, received.description, senders, received.requirements, received.requiredArgs,
+        received.args)
     }
   }
 
@@ -296,7 +254,7 @@ object IcdComponentInfo {
       sent ← cmd.send
     } yield {
       getCommand(sent.subsystem, sent.component, sent.name, targetModelsList).map { r ⇒
-        SentCommandInfo(sent.name, HtmlMarkup.gfmToHtml(r.description),
+        SentCommandInfo(sent.name, r.description,
           List(OtherComponent(sent.subsystem, sent.component)))
       }
     }
@@ -315,9 +273,8 @@ object IcdComponentInfo {
     models.commandModel match {
       case None ⇒ None
       case Some(m) ⇒
-        val desc = m.description
         if (sent.nonEmpty || received.nonEmpty)
-          Some(Commands(HtmlMarkup.gfmToHtml(desc), received, sent))
+          Some(Commands(m.description, received, sent))
         else None
     }
   }

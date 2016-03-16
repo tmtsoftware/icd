@@ -9,7 +9,7 @@ private case class SubscribeInfoToHtml(list: List[SubscribeModelInfo], title: St
 
   private val table = mkTable(
     List("Subsystem", "Component", "Name", "Required Rate", "Max Rate", "Usage"),
-    list.map(m ⇒ List(m.subsystem, m.component, m.name, m.requiredRate.toString, m.maxRate.toString, gfmToHtml(m.usage)))
+    list.map(m ⇒ List(m.subsystem, m.component, m.name, m.requiredRate.toString, m.maxRate.toString, m.usage))
   )
 
   override val tags = if (list.nonEmpty) List(head, table) else {
