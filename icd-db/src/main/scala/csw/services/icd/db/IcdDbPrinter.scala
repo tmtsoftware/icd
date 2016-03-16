@@ -150,7 +150,8 @@ case class IcdDbPrinter(db: IcdDb) {
               tbody(
                 tr(td(sInfo.subsystem), td(sInfo.component), td(si.path), td(sInfo.requiredRate), td(sInfo.maxRate))
               )
-            )
+            ),
+            si.telemetryModel.map(t ⇒ attributeListMarkup(t.name, t.attributesList))
           )
         }
       )
