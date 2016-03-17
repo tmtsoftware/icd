@@ -62,7 +62,7 @@ object ComponentInfoHelper {
   private def getSubscribers(query: IcdDbQuery, prefix: String, name: String, desc: String,
                              subscribeType: PublishType): List[SubscribeInfo] = {
     query.subscribes(s"$prefix.$name", subscribeType).map { s ⇒
-      SubscribeInfo(s.subscribeType, s.subscribeModelInfo)
+      SubscribeInfo(s.component, s.subscribeType, s.subscribeModelInfo)
     }
   }
 

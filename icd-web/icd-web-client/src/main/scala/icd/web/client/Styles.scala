@@ -18,13 +18,15 @@ object Styles extends StyleSheet.Inline {
     media.minWidth(750 px).maxWidth(1170 px)(top(170 px)),
     media.print(top(0 px)),
     left(0 px),
-    display.block
+    display.block,
+    media.print(width.auto, height.auto, display.block, overflow.visible, float.none, position.static)
   )
 
   val mainContent = style(
     addClassName("col-xs-11"),
     padding(0 px, 0 px, 0 px, 0 px),
-    height(100 %%)
+    height(100 %%),
+    media.print(width.auto, height.auto, display.block, overflow.visible, float.none, position.static)
   )
 
   val main = style(

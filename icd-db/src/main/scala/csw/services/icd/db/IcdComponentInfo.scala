@@ -115,11 +115,11 @@ object IcdComponentInfo {
     //
     // targetInfo: list of items the target subscriber subscribes to
     // Returns the Subscribed object, if the component is a subscriber to the given path
-    def subscribes(targetInfo: List[SubscribeModelInfo]): Option[Subscribed] = {
+    def subscribes(componentModel: ComponentModel, targetInfo: List[SubscribeModelInfo]): Option[Subscribed] = {
       targetInfo.find { subscribeInfo ⇒
         subscribeInfo.name == name && subscribeInfo.subsystem == subsystem && subscribeInfo.component == component
       }.map { subscribeInfo ⇒
-        Subscribed(subscribeInfo, pubType, path)
+        Subscribed(componentModel, subscribeInfo, pubType, path)
       }
     }
 
@@ -135,10 +135,11 @@ object IcdComponentInfo {
 
     for {
       icdModel ← targetModelsList
+      componentModel ← icdModel.componentModel
       subscribeModel ← icdModel.subscribeModel
-      s ← subscribes(getSubscribeInfoByType(subscribeModel, pubType))
+      s ← subscribes(componentModel, getSubscribeInfoByType(subscribeModel, pubType))
     } yield {
-      SubscribeInfo(s.subscribeType, s.subscribeModelInfo)
+      SubscribeInfo(componentModel, s.subscribeType, s.subscribeModelInfo)
     }
   }
 

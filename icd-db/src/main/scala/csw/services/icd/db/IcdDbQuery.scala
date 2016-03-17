@@ -74,7 +74,7 @@ object IcdDbQuery {
    * Describes a published item
    *
    * @param publishType one of Telemetry, Events, Alarms, etc.
-   * @param name the name of the item being published
+   * @param name        the name of the item being published
    * @param description description of the published item
    */
   case class Published(publishType: PublishType, name: String, description: String)
@@ -83,15 +83,15 @@ object IcdDbQuery {
    * Describes what values a component publishes
    *
    * @param componentName component (HCD, assembly, ...) name
-   * @param prefix component prefix
-   * @param publishes list of names (without prefix) of published items (telemetry, events, alarms, etc.)
+   * @param prefix        component prefix
+   * @param publishes     list of names (without prefix) of published items (telemetry, events, alarms, etc.)
    */
   case class PublishInfo(componentName: String, prefix: String, publishes: List[Published])
 
   /**
    * Describes what values a component subscribes to
    *
-   * @param component component (HCD, assembly, ...) model
+   * @param component    component (HCD, assembly, ...) model
    * @param subscribesTo list of types and names (with prefix) of items the component subscribes to
    */
   case class SubscribeInfo(component: ComponentModel, subscribesTo: List[Subscribed])
@@ -99,11 +99,13 @@ object IcdDbQuery {
   /**
    * Describes a subscription
    *
+   * @param component          The subscriber's component model
    * @param subscribeModelInfo from the subscribe model
-   * @param subscribeType one of Telemetry, Events, Alarms, etc.
-   * @param path          the path name (component-prefix.name) of the item being subscribed to
+   * @param subscribeType      one of Telemetry, Events, Alarms, etc.
+   * @param path               the path name (component-prefix.name) of the item being subscribed to
    */
   case class Subscribed(
+    component:          ComponentModel,
     subscribeModelInfo: SubscribeModelInfo,
     subscribeType:      PublishType,
     path:               String
@@ -133,6 +135,7 @@ case class IcdDbQuery(db: MongoDB) {
   import IcdDbQuery._
 
   private[db] def collectionExists(name: String): Boolean = db.collectionExists(name)
+
   private[db] def getCollectionNames: Set[String] = db.getCollectionNames().toSet
 
   private[db] def getEntries: List[IcdEntry] = {
@@ -330,8 +333,8 @@ case class IcdDbQuery(db: MongoDB) {
   /**
    * Returns a list of components that send the given command to the given component/subsystem
    *
-   * @param subsystem the target component's subsystem
-   * @param component the target component
+   * @param subsystem   the target component's subsystem
+   * @param component   the target component
    * @param commandName the name of the command being sent
    * @return list containing one item for each component that sends the command
    */
@@ -426,15 +429,19 @@ case class IcdDbQuery(db: MongoDB) {
    */
   private def getSubscribedTo(component: ComponentModel): List[Subscribed] = {
     // Gets the full path of the subscribed item
-    def getPath(i: SubscribeModelInfo): String = s"${component.prefix}.${i.name}"
+    def getPath(i: SubscribeModelInfo): String = {
+      val pubComp = getComponentModel(i.subsystem, i.component)
+      val prefix = pubComp.map(_.prefix).getOrElse("")
+      s"$prefix.${i.name}"
+    }
 
     getSubscribeModel(component) match {
       case Some(subscribeModel) ⇒
         List(
-          subscribeModel.telemetryList.map(i ⇒ Subscribed(i, Telemetry, getPath(i))),
-          subscribeModel.eventList.map(i ⇒ Subscribed(i, Events, getPath(i))),
-          subscribeModel.eventStreamList.map(i ⇒ Subscribed(i, EventStreams, getPath(i))),
-          subscribeModel.alarmList.map(i ⇒ Subscribed(i, Alarms, getPath(i)))
+          subscribeModel.telemetryList.map(i ⇒ Subscribed(component, i, Telemetry, getPath(i))),
+          subscribeModel.eventList.map(i ⇒ Subscribed(component, i, Events, getPath(i))),
+          subscribeModel.eventStreamList.map(i ⇒ Subscribed(component, i, EventStreams, getPath(i))),
+          subscribeModel.alarmList.map(i ⇒ Subscribed(component, i, Alarms, getPath(i)))
         ).flatten
       case None ⇒ Nil
     }
@@ -455,7 +462,7 @@ case class IcdDbQuery(db: MongoDB) {
   /**
    * Returns a list describing the components that subscribe to the given value.
    *
-   * @param path full path name of value (prefix + name)
+   * @param path          full path name of value (prefix + name)
    * @param subscribeType telemetry, alarm, etc...
    */
   def subscribes(path: String, subscribeType: PublishType): List[Subscribed] = {

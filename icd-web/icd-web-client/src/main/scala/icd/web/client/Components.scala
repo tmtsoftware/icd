@@ -285,14 +285,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     // Action when user clicks on a subscriber link
     def clickedOnSubscriber(info: SubscribeInfo)(e: dom.Event) = {
       e.preventDefault()
-      listener.componentSelected(ComponentLink(info.subscribeModelInfo.subsystem, info.subscribeModelInfo.component))
+      listener.componentSelected(ComponentLink(info.componentModel.subsystem, info.componentModel.component))
     }
 
     // Makes the link for a subscriber component in the table
     def makeLinkForSubscriber(info: SubscribeInfo) = {
       a(
-        title := s"Show API for ${info.subscribeModelInfo.component}",
-        s"${info.subscribeModelInfo.component} ",
+        title := s"Show API for ${info.componentModel.subsystem}.${info.componentModel.component}",
+        s"${info.componentModel.subsystem}.${info.componentModel.component} ",
         href := "#",
         onclick := clickedOnSubscriber(info) _
       )
@@ -421,7 +421,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Makes the link for a publisher component in the table
     def makeLinkForPublisher(info: DetailedSubscribeInfo) = {
-      val comp = info.subscribeModelInfo.component
+      val comp = s"${info.subscribeModelInfo.subsystem}.${info.subscribeModelInfo.component}"
       a(
         title := s"Show API for $comp",
         comp,
@@ -512,7 +512,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Makes the link for a sender component in the table
     def makeLinkForSender(sender: OtherComponent) = {
-      a(s"${sender.compName} ", href := "#", onclick := clickedOnSender(sender) _)
+      a(s"${sender.subsystem}.${sender.compName} ", href := "#", onclick := clickedOnSender(sender) _)
     }
 
     // Returns a table row displaying more details for the given command
@@ -567,7 +567,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Makes the link for a receiver component in the table
     def makeLinkForReceiver(receiver: OtherComponent) = {
-      a(s"${receiver.compName} ", href := "#", onclick := clickedOnReceiver(receiver) _)
+      a(s"${receiver.subsystem}.${receiver.compName} ", href := "#", onclick := clickedOnReceiver(receiver) _)
     }
 
     // Returns a table row displaying more details for the given command

@@ -111,10 +111,11 @@ case class Publishes(
 /**
  * Holds information about a subscriber
  *
+ * @param componentModel     the subscriber's component model
  * @param itemType           the publish type (Telemetry, Alarm, EventStream, etc.)
  * @param subscribeModelInfo data from the input subscribe model
  */
-case class SubscribeInfo(itemType: PublishType, subscribeModelInfo: SubscribeModelInfo)
+case class SubscribeInfo(componentModel: ComponentModel, itemType: PublishType, subscribeModelInfo: SubscribeModelInfo)
 
 /**
  * Describes an item that a component subscribes to, including information from the publisher
