@@ -77,7 +77,7 @@ case class IcdDbPrinter(db: IcdDb) {
             val rowList = List(List(HtmlMarkup.formatRate(t.telemetryModel.minRate), HtmlMarkup.formatRate(t.telemetryModel.maxRate),
               HtmlMarkup.yesNo(t.telemetryModel.archive),
               HtmlMarkup.formatRate(t.telemetryModel.archiveRate), t.subscribers.map(_.subscribeModelInfo.component).mkString(", ")))
-            val subscribers = t.subscribers.map(s ⇒ s"${s.componentModel.subsystem}.${s.componentModel.component}")
+            val subscribers = t.subscribers.map(s ⇒ s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
             val subscriberDiv = if (t.subscribers.isEmpty) div() else p(strong("Subscribers: "), subscribers)
             div(cls := "nopagebreak")(
               h5(a(s"$compName publishes ${singlePubType(pubType)}: ${t.telemetryModel.name}")),
