@@ -40,6 +40,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     labelStr = "Target", placeholderMsg = "All", enablePlaceholder = true
   )
   private val subsystemSwapper = SubsystemSwapper(swapSubsystems)
+  private val expandToggler = ExpandToggler()
   private val icdChooser = IcdChooser(IcdChooserListener)
   private val mainContent = MainContent()
   private val components = Components(mainContent, ComponentLinkSelectionHandler)
@@ -86,6 +87,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     navbar.addItem(publishItem)
     navbar.addItem(historyItem)
     navbar.addItem(pdfItem)
+    navbar.addItem(expandToggler)
 
     layout.addItem(sidebar)
     layout.addItem(mainContent)

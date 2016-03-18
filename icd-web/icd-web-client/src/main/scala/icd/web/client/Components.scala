@@ -271,7 +271,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     )(
         span(cls := "glyphicon glyphicon-collapse-down")
       )
-    val row = tr(id := idStr, cls := "collapse")(td(colspan := colSpan)(item))
+    val row = tr(id := idStr, cls := "collapse panel-collapse")(td(colspan := colSpan)(item))
     (btn, row)
   }
 

@@ -1,5 +1,6 @@
-// Make the sidebar resizable using jquery-ui resizable
 $(document).ready(function () {
+
+    // Make the sidebar resizable using jquery-ui resizable
     $("#sidebar").resizable({
         handles: 'e',
         minWidth: 150,
@@ -23,24 +24,22 @@ $(document).ready(function () {
             }
         }
     });
+
+
+    // Implement Expand/Collapse toolbar button
+    var navbarExpandAll = false;
+    $('#expand-init').click(function () {
+        if (navbarExpandAll) {
+            navbarExpandAll = false;
+            $('.panel-collapse').collapse('hide');
+            // $('.panel-title').attr('data-toggle', 'collapse');
+            // $(this).text('Disable accordion behavior');
+        } else {
+            navbarExpandAll = true;
+            $('.panel-collapse').collapse('show');
+            // $('.panel-title').attr('data-toggle', '');
+            // $(this).text('Enable accordion behavior');
+        }
+    });
+
 });
-
-////
-//function addExpander(buttonRef, divRef) {
-//    $("#demo").on("hide.bs.collapse", function(){
-//        $(".btn").html('<span class="glyphicon glyphicon-collapse-down"></span> Open');
-//    });
-//    $("#demo").on("show.bs.collapse", function(){
-//        $(".btn").html('<span class="glyphicon glyphicon-collapse-up"></span> Close');
-//    });
-//}
-
-
-
-
-
-
-
-
-
-
