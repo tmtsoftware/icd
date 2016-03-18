@@ -75,7 +75,7 @@ class IcdValidatorTests extends FunSuite {
     assert(subsystemModel.modelVersion == "1.1")
     assert(subsystemModel.subsystem == "WFOS")
     assert(subsystemModel.title == "Wide-Field Optical Spectrometer (WFOS)")
-    assert(subsystemModel.description.startsWith("The Wide Field"))
+    assert(subsystemModel.description.startsWith("<p>The Wide Field"))
   }
 
   def checkComponentModel(models: IcdModels): Unit = {
@@ -85,7 +85,7 @@ class IcdValidatorTests extends FunSuite {
     assert(componentModel.subsystem == "WFOS")
     assert(componentModel.title == "WFOS Filter")
     assert(componentModel.componentType == "Assembly")
-    assert(componentModel.description == "This is the metadata description of the WFOS filter Assembly")
+    assert(componentModel.description == "<p>This is the metadata description of the WFOS filter Assembly</p>")
     assert(componentModel.wbsId == "TMT.INS.INST.WFOS.SWE")
     assert(componentModel.modelVersion == "1.1")
   }
@@ -97,7 +97,7 @@ class IcdValidatorTests extends FunSuite {
 
     val status1 = telemetryList.head
     assert(status1.name == "status1")
-    assert(status1.description == "status1 description")
+    assert(status1.description == "<p>status1 description</p>")
     assert(status1.minRate == 0)
     assert(status1.maxRate == 100)
     assert(status1.archive)
@@ -108,7 +108,7 @@ class IcdValidatorTests extends FunSuite {
 
     val a1 = attr1.head
     assert(a1.name == "a1")
-    assert(a1.description == "single value with min/max")
+    assert(a1.description == "<p>single value with min/max</p>")
     assert(a1.typeOpt.get == "integer")
     assert(a1.minimum.contains("-100"))
     assert(a1.maximum.contains("100"))
@@ -116,16 +116,15 @@ class IcdValidatorTests extends FunSuite {
 
     val a2 = attr1(1)
     assert(a2.name == "a2")
-    assert(a2.description == "array of float")
+    assert(a2.description == "<p>array of float</p>")
     assert(a2.typeOpt.get == "array")
-    //    assert(a2Conf.getConfig("items").getString("type") == "float")
     assert(a2.minItems.contains("5"))
     assert(a2.maxItems.contains("5"))
     assert(a2.units == "mm")
 
     val a3 = attr1(2)
     assert(a3.name == "a3")
-    assert(a3.description == "enum choice")
+    assert(a3.description == "<p>enum choice</p>")
     assert(a3.enumOpt.get == List("red", "green", "blue"))
     assert(a3.defaultValue == "green")
     // ... XXX TODO continue
@@ -136,7 +135,7 @@ class IcdValidatorTests extends FunSuite {
     assert(commandModel.receive.size == 2)
     val item1 = commandModel.receive.head
     assert(item1.name == "cmd1")
-    assert(item1.description == "Description of cmd1")
+    assert(item1.description == "<p>Description of cmd1</p>")
     assert(item1.requirements == List("First requirement for cmd1", "Second requirement for cmd1"))
     assert(item1.requiredArgs == List("a1"))
     // ... XXX TODO continue

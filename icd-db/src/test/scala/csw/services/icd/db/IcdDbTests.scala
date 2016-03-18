@@ -64,7 +64,7 @@ class IcdDbTests extends FunSuite {
 
     val temp_ngsWfs = attrList.head
     assert(temp_ngsWfs.name == "temp_ngsWfs")
-    assert(temp_ngsWfs.description == "NGS WFS temperature")
+    assert(temp_ngsWfs.description == "<p>NGS WFS temperature</p>")
     assert(temp_ngsWfs.typeStr == "float")
     assert(temp_ngsWfs.units == "degC")
 
@@ -74,12 +74,12 @@ class IcdDbTests extends FunSuite {
     assert(published.size == 1)
     assert(published.head.publishType == Telemetry)
 
-//    val sensorList = db.query.publishes("nfiraos.ncc.envCtrl.sensors", "NFIRAOS", Telemetry)
-//    assert(sensorList.size == 1)
-//    assert(sensorList.head.componentName == "envCtrl")
-//    assert(sensorList.head.item.publishType == Telemetry)
-//    assert(sensorList.head.prefix == "nfiraos.ncc.envCtrl")
-//    assert(sensorList.head.item.name == "sensors")
+    //    val sensorList = db.query.publishes("nfiraos.ncc.envCtrl.sensors", "NFIRAOS", Telemetry)
+    //    assert(sensorList.size == 1)
+    //    assert(sensorList.head.componentName == "envCtrl")
+    //    assert(sensorList.head.item.publishType == Telemetry)
+    //    assert(sensorList.head.prefix == "nfiraos.ncc.envCtrl")
+    //    assert(sensorList.head.item.name == "sensors")
 
     // Test accessing ICD models
     testModels(db)
