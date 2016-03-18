@@ -27,18 +27,15 @@ $(document).ready(function () {
 
 
     // Implement Expand/Collapse toolbar button
+    // (based on http://jsfiddle.net/KyleMit/f8ypa/)
     var navbarExpandAll = false;
     $('#expand-init').click(function () {
         if (navbarExpandAll) {
             navbarExpandAll = false;
             $('.panel-collapse').collapse('hide');
-            // $('.panel-title').attr('data-toggle', 'collapse');
-            // $(this).text('Disable accordion behavior');
         } else {
             navbarExpandAll = true;
             $('.panel-collapse').collapse('show');
-            // $('.panel-title').attr('data-toggle', '');
-            // $(this).text('Enable accordion behavior');
         }
     });
 
