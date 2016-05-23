@@ -3,7 +3,7 @@ import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
 object Dependencies {
   val Version = "0.9"
-  val ScalaVersion = "2.11.7"
+  val ScalaVersion = "2.11.8"
 
   // command line dependencies
   val scopt = "com.github.scopt" %% "scopt" % "3.4.0"

@@ -1,9 +1,11 @@
 import com.typesafe.sbt.SbtNativePackager._
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
+import com.typesafe.sbt.jse.JsEngineImport.JsEngineKeys
 import com.typesafe.sbt.packager.Keys._
 import sbt.Keys._
 import sbt._
+
 import scalariform.formatter.preferences._
 import com.typesafe.sbt.packager.docker._
 

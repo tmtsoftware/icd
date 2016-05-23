@@ -78,7 +78,9 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
   def getIcdFiles(e: dom.Event): (Seq[WebkitFile], Seq[WebkitFile]) = {
     val files = e.target.files
     val fileList = for (i ← 0 until files.length) yield files(i).asInstanceOf[WebkitFile]
-    fileList.partition(isValidFile)
+    fileList.filterNot { f ⇒
+      f.webkitRelativePath.contains(".git") || f.webkitRelativePath.contains(".idea") || f.name.endsWith(".md")
+    }.partition(isValidFile)
   }
 
   def statusItem = $("#status")
