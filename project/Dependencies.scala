@@ -18,6 +18,7 @@ object Dependencies {
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.1.0"
   val logback = "ch.qos.logback" % "logback-classic" % "1.1.5"
   val scalatags = "com.lihaoyi" %% "scalatags" % "0.5.4"
+  val jsoup = "org.jsoup" % "jsoup" % "1.9.2"
 
   // web server dependencies
   val playScalajsScripts = "com.vmunier" %% "play-scalajs-scripts" % "0.4.0"

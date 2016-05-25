@@ -2,6 +2,9 @@ package csw.services.icd.html
 
 import java.util.UUID
 
+import org.jsoup.Jsoup
+import org.jsoup.safety.Whitelist
+
 import scalatags.Text.all._
 import scalatags.Text.TypedTag
 
@@ -55,6 +58,12 @@ object HtmlMarkup {
 
   def formatRate(rate: Double): String = if (rate == 0) "" else s"$rate Hz"
 
+  // Strips leading spaces from each line, since people don't realize that indenting is like ``` blocks in markdown.
+  // Note: We could preserve the leading spaces after "|", but that was thought to be too scala specific...
+  private def stripLeadingWs(s: String): String = {
+    s.stripMargin.lines.map(_.trim).toList.mkString("\n")
+  }
+
   /**
    * Returns the HTML snippet for the given markdown (GFM)
    *
@@ -69,7 +78,9 @@ object HtmlMarkup {
           | Extensions.STRIKETHROUGH | Extensions.ATXHEADERSPACE | Extensions.TASKLISTITEMS,
         Long.MaxValue
       ) // last arg is to avoid pegdown timeouts
-      pd.markdownToHtml(gfm.stripMargin)
+
+      // Convert markdown to HTML, then clean it up with jsoup to avoid issues with the pdf generator (and for security)
+      Jsoup.clean(pd.markdownToHtml(stripLeadingWs(gfm)), Whitelist.basicWithImages())
     }
   }
 

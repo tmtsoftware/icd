@@ -13,13 +13,14 @@ lazy val clients = Seq(icdWebClient)
 // Root of the multi-project build
 lazy val root = (project in file("."))
   .aggregate(icd, `icd-db`, icdWebServer)
+  .settings(name := "ICD")
 
 // core project, implements validation of ICD files against JSON schema files, icd command line tool
 lazy val icd = project
   .enablePlugins(JavaAppPackaging)
   .settings(defaultSettings: _*)
   .settings(libraryDependencies ++=
-    compile(jsonSchemaValidator, scopt, scalatags, typesafeConfig, ficus, pegdown, xmlworker, diffson, scalaLogging, logback) ++
+    compile(jsonSchemaValidator, scopt, scalatags, typesafeConfig, ficus, pegdown, xmlworker, diffson, scalaLogging, logback, jsoup) ++
       test(scalaTest)
   ) dependsOn icdWebSharedJvm
 
