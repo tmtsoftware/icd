@@ -22,14 +22,7 @@ object IcdDb extends App {
   import IcdDbDefaults._
 
   /**
-   * Command line options: [--db <name> --host <host> --port <port>
-   * --ingest <dir> --major --subsystem <name[:version]> --target <name[:version]> --icdversion <version>
-   * --component <name> --list [subsystems|hcds|assemblies|all]  --out <outputFile>
-   * --drop [db|component] --versions <icdName> --diff <subsystem>:<version1>[,version2]
-   * --publishes <path> --subscribes <path>
-   * ]
-   *
-   * (Options may be abbreviated to a single letter: For example: -i, -l, -c, -o)
+   * Command line options ("icd-db --help" prints a usage message with descriptions of all the options)
    */
   case class Options(
     dbName:       String         = defaultDbName,
@@ -265,8 +258,10 @@ object IcdDb extends App {
     }
 
     // --publish option
-    def publish(majorVersion: Boolean, comment: String)(subsystem: String): Unit = {
-      db.versionManager.publishApi(subsystem, majorVersion, comment, System.getProperty("user.name"))
+    def publish(majorVersion: Boolean, comment: String)(subsystemStr: String): Unit = {
+      val (subsystem, versionOpt) = IcdVersionManager.getSubsystemAndVersion(subsystemStr)
+      checkVersion(versionOpt)
+      db.versionManager.publishApi(subsystem, versionOpt, majorVersion, comment, System.getProperty("user.name"))
     }
   }
 }

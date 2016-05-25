@@ -180,7 +180,7 @@ object Application extends Controller {
    */
   def publishApi(subsystem: String, majorVersion: Boolean, comment: String, userName: String) = Action {
     // XXX error handling?
-    db.versionManager.publishApi(subsystem, majorVersion, comment, userName)
+    db.versionManager.publishApi(subsystem, None, majorVersion, comment, userName)
     Ok.as(JSON)
   }
 

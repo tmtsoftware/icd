@@ -105,6 +105,13 @@ object IcdVersionManager {
     implicit def orderingByName[A <: IcdName]: Ordering[A] = Ordering.by(e ⇒ (e.subsystem, e.target))
   }
 
+  // Gets the subsystem and optional version, if defined
+  def getSubsystemAndVersion(s: String): (String, Option[String]) = {
+    if (s.contains(':')) {
+      val ar = s.split(':')
+      (ar(0), Some(ar(1)))
+    } else (s, None)
+  }
 }
 
 /**
@@ -141,16 +148,17 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
    *
    * @param collectionNames list of collection names (for better performance)
    * @param subsystem the subsystem
+   * @param versionOpt optional version string in the form "1.0" (used when importing specific release from github)
    * @param compNameOpt if defined, publish a new version of the component, otherwise the subsystem
    * @param versions list of (name, version) pairs for the collections belonging to the subsystem or component
    * @param comment change comment
    * @param majorVersion if true, increment the subsystem or component's major version
    */
-  private def newVersion(collectionNames: Set[String], subsystem: String, compNameOpt: Option[String], versions: List[(String, Int)],
+  private def newVersion(collectionNames: Set[String], subsystem: String, versionOpt: Option[String], compNameOpt: Option[String], versions: List[(String, Int)],
                          comment: String, userName: String, majorVersion: Boolean): Unit = {
 
     val parts = versions.map(v ⇒ Map("name" → v._1, versionStrKey → v._2).asDBObject)
-    val version = incrVersion(getLatestPublishedVersion(collectionNames, subsystem, compNameOpt), majorVersion)
+    val version = versionOpt.getOrElse(incrVersion(getLatestPublishedVersion(collectionNames, subsystem, compNameOpt), majorVersion))
     val now = new DateTime(DateTimeZone.UTC)
     val user = if (userName.nonEmpty) userName else System.getProperty("user.name")
     val obj = Map(
@@ -375,13 +383,16 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
   }
 
   /**
-   * Publishes the given subsystem
+   * Publishes the given subsystem.
+   * If the subsystem string contains a version number, that is the version that is published.
+   * (For use when importing from GitHub.)
    *
    * @param subsystem the name of subsystem
+   * @param versionOpt optional version string in the form "1.0" (used when importing specific release from github)
    * @param comment change comment
-   * @param majorVersion if true, increment the subsystem's major version
+   * @param majorVersion if true (and no subsystem version was given), increment the subsystem's major version
    */
-  def publishApi(subsystem: String, majorVersion: Boolean, comment: String, userName: String): Unit = {
+  def publishApi(subsystem: String, versionOpt: Option[String], majorVersion: Boolean, comment: String, userName: String): Unit = {
     val collectionNames = getCollectionNames
 
     // Save any of the subsystem's collections that changed
@@ -408,13 +419,13 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
     }
 
     // Add to collection of published subsystem versions
-    newVersion(collectionNames, subsystem, None, versions, comment, userName, majorVersion)
+    newVersion(collectionNames, subsystem, versionOpt, None, versions, comment, userName, majorVersion)
 
     // Add to collection of published subsystem component versions
     getComponentNames(subsystem, None).foreach { name ⇒
       val prefix = s"$subsystem.$name."
       val compVersions = versions.filter(p ⇒ p._1.startsWith(prefix))
-      newVersion(collectionNames, subsystem, Some(name), compVersions, comment, userName, majorVersion)
+      newVersion(collectionNames, subsystem, versionOpt, Some(name), compVersions, comment, userName, majorVersion)
     }
   }
 

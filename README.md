@@ -57,6 +57,23 @@ Then go to http://localhost:9000 in a web browser.
 
 See [icd-web/README.md](icd-web/README.md) for more information.
 
+Importing ICD-Model-Files from GitHub into the ICD Database with Version History
+--------------------------------------------------------------------------------
+
+Using the ingest.sh script in this directory you can import all of the subsystem model files from the
+[ICD-Model-Files](https://github.com/tmtsoftware/ICD-Model-Files) GitHub repository into a local MongoDB database
+for use with the icd tools. For this to work, you must have installed the icd software
+(run the install.sh script in this project). The ingest.sh script assumes the default install directory:
+../install_icd.
+MongoDB must be running and a recent version of git must be installed.
+
+Warning: The ingest.sh script will delete the current contents of the ICD database before
+ingesting the files from the repository.
+
+The icd software looks for release tags in the Git submodules.
+Git subsystem releases should have names like "v1.0", "v1.2", "v2.0", etc.
+These then translate into published versions in the ICD database: "1.0", "1.1", "2.0".
+
 Docker Install
 --------------
 

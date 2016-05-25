@@ -446,14 +446,6 @@ case class IcdDbPrinter(db: IcdDb) {
   def saveToFile(subsystemStr: String, compNamesOpt: Option[String],
                  targetOpt: Option[String], icdVersionOpt: Option[String], file: File): Unit = {
 
-    // Gets the subsystem and optional version, if defined
-    def getSubsystemAndVersion(s: String): (String, Option[String]) = {
-      if (s.contains(':')) {
-        val ar = s.split(':')
-        (ar(0), Some(ar(1)))
-      } else (s, None)
-    }
-
     def saveAsHtml(html: String): Unit = {
       val out = new FileOutputStream(file)
       out.write(html.getBytes)
@@ -464,7 +456,7 @@ case class IcdDbPrinter(db: IcdDb) {
 
     // ---
 
-    val (subsystem, versionOpt) = getSubsystemAndVersion(subsystemStr)
+    val (subsystem, versionOpt) = IcdVersionManager.getSubsystemAndVersion(subsystemStr)
 
     val compNames = compNamesOpt match {
       case Some(str) ⇒ str.split(",").toList
@@ -473,7 +465,7 @@ case class IcdDbPrinter(db: IcdDb) {
 
     val (subsys, targ, icdV) = targetOpt match {
       case Some(t) ⇒ // ICD
-        val (target, targetVersionOpt) = getSubsystemAndVersion(t)
+        val (target, targetVersionOpt) = IcdVersionManager.getSubsystemAndVersion(t)
         // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
         // if only the subsystem or target versions were given, use those (default to latest versions)
         val v = icdVersionOpt.getOrElse("*")
