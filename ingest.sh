@@ -1,19 +1,12 @@
 #!/bin/sh
 
 # Ingests all releases of all subsystems into the database using the icd-db tool,
-# which must be in your shell path
+# which must be in your shell path, or installed in the default location from here (../install_icd/bin)
 
-icddb=`pwd`/../install_icd/bin/icd-db
-
-if ! test -e $icddb; then
-    echo "Please run install.sh to install the icd tools"
-    exit 1
-fi
-
-if ! hash git 2>/dev/null; then
-    echo "Please install git"
-    exit 1
-fi
+PATH="$PATH:../install_icd/bin"
+icddb="icd-db"
+hash $icddb 2>/dev/null || { echo >&2 "Please run the icd install.sh script first.  Aborting."; exit 1; }
+hash git 2>/dev/null || { echo >&2 "Please install git.  Aborting."; exit 1; }
 
 if ! test `ps -ef | grep mongod | grep -v grep | wc -l | tr -d ' '` ; then
     echo "Mongodb needs to be running"

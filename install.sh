@@ -4,8 +4,10 @@
 
 dir=../install_icd
 
+hash sbt 2>/dev/null || { echo >&2 "Please install sbt first.  Aborting."; exit 1; }
+
 test -d $dir || mkdir -p $dir/bin $dir/lib $dir/conf
-sbt stage "project root" stage
+sbt clean stage "project root" clean stage
 
 for i in bin lib; do
     for j in */target/universal/stage/$i/* ; do
