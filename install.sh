@@ -7,7 +7,9 @@ dir=../install_icd
 hash sbt 2>/dev/null || { echo >&2 "Please install sbt first.  Aborting."; exit 1; }
 
 test -d $dir || mkdir -p $dir/bin $dir/lib $dir/conf
-sbt clean stage "project root" clean stage
+
+#sbt clean stage "project root" clean stage
+sbt stage "project root" stage
 
 for i in bin lib; do
     for j in */target/universal/stage/$i/* ; do
@@ -20,5 +22,8 @@ for i in bin lib conf; do
         cp -f $j $dir/$i
     done
 done
+
+chmod utg+x icd-ingest.sh
+cp icd-ingest.sh $dir/bin
 
 rm -f $dir/bin/*.log.* $dir/bin/*.bat
