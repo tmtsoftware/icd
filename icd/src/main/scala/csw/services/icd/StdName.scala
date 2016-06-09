@@ -26,7 +26,7 @@ object StdName {
    * True if the argument is a directory containing icd files with the standard names
    */
   def isStdDir(d: File): Boolean = {
-    d.isDirectory && d.listFiles().map(_.getName).toSet.intersect(StdName.stdSet).nonEmpty
+    d.isDirectory // && d.listFiles().map(_.getName).toSet.intersect(StdName.stdSet).nonEmpty
   }
 }
 
