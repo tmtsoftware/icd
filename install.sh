@@ -23,7 +23,7 @@ for i in bin lib conf; do
     done
 done
 
-chmod utg+x icd-ingest.sh
+chmod ugo+x icd-ingest.sh
 cp icd-ingest.sh $dir/bin
 
 rm -f $dir/bin/*.log.* $dir/bin/*.bat
