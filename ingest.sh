@@ -27,12 +27,14 @@ for submodule in $submodules ; do (
     cd $submodule
     releases=`git tag -l`
     for release in $releases ; do (
+    comment=`git tag -l -n3 $release | tail -1`
 	echo check out $submodule $release
 	git checkout tags/$release
 	subsystem=`egrep '^subsystem ' subsystem-model.conf | cut -d ' ' -f 3`
 	version=`echo $release | tr -d v`
 	$icddb --ingest .
-	$icddb --subsystem $subsystem:$version --comment "Imported $release from GitHub" --publish
+	#$icddb --subsystem $subsystem:$version --comment "Imported $release from GitHub" --publish
+	$icddb --subsystem $subsystem:$version --comment "$comment" --publish
     ) done
 ) done
 
