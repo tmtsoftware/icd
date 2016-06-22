@@ -7,7 +7,8 @@ if  [ `which boot2docker` ] ; then
     eval "$(boot2docker shellinit)"
     host=`boot2docker ip`
 else
-    host=`uname -n`
+    # set host to the current ip
+    host=`ip route get 8.8.8.8 | awk '{print $NF; exit}'`
 fi
 
 # Start MongoDB
