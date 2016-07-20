@@ -25,9 +25,9 @@ case class IcdDbPrinter(db: IcdDb) {
   private def getTitleMarkup(titleInfo: TitleInfo): Text.TypedTag[String] = {
     import scalatags.Text.all._
     titleInfo.subtitleOpt match {
-      case Some(subtitle) ⇒
+      case Some(subtitle) =>
         h3(a(name := "title"), cls := "page-header")(titleInfo.title, br, small(subtitle))
-      case None ⇒
+      case None =>
         h3(a(name := "title"), cls := "page-header")(titleInfo.title)
     }
   }
@@ -41,7 +41,7 @@ case class IcdDbPrinter(db: IcdDb) {
     if (attributesList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default")
-      val rowList = for (a ← attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
+      val rowList = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
       div(cls := "nopagebreak")(
         h5(s"Attributes for $nameStr"),
         HtmlMarkup.mkTable(headings, rowList)
@@ -54,7 +54,7 @@ case class IcdDbPrinter(db: IcdDb) {
     if (attributesList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default", "Required")
-      val rowList = for (a ← attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue,
+      val rowList = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue,
         HtmlMarkup.yesNo(requiredArgs.contains(a.name)))
       div(cls := "nopagebreak")(
         h5(s"Arguments for $nameStr"),
@@ -72,12 +72,12 @@ case class IcdDbPrinter(db: IcdDb) {
       else {
         div(
           h4(a(s"$pubType Published by $compName")),
-          for (t ← telemetryList) yield {
+          for (t <- telemetryList) yield {
             val headings = List("Min Rate", "Max Rate", "Archive", "Archive Rate", "Subscribers")
             val rowList = List(List(HtmlMarkup.formatRate(t.telemetryModel.minRate), HtmlMarkup.formatRate(t.telemetryModel.maxRate),
               HtmlMarkup.yesNo(t.telemetryModel.archive),
               HtmlMarkup.formatRate(t.telemetryModel.archiveRate), t.subscribers.map(_.subscribeModelInfo.component).mkString(", ")))
-            val subscribers = t.subscribers.map(s ⇒ s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
+            val subscribers = t.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
             val subscriberDiv = if (t.subscribers.isEmpty) div() else p(strong("Subscribers: "), subscribers)
             div(cls := "nopagebreak")(
               h5(a(s"$compName publishes ${singlePubType(pubType)}: ${t.telemetryModel.name}")),
@@ -97,7 +97,7 @@ case class IcdDbPrinter(db: IcdDb) {
       else {
         div(
           h4(a(s"Alarms Published by $compName")),
-          for (t ← alarmList) yield {
+          for (t <- alarmList) yield {
             val headings = List("Severity", "Archive", "Subscribers")
             val rowList = List(List(t.alarmModel.severity, HtmlMarkup.yesNo(t.alarmModel.archive),
               t.subscribers.map(_.subscribeModelInfo.component).mkString(", ")))
@@ -113,8 +113,8 @@ case class IcdDbPrinter(db: IcdDb) {
     }
 
     publishesOpt match {
-      case None ⇒ div()
-      case Some(publishes) ⇒
+      case None => div()
+      case Some(publishes) =>
         if (publishesOpt.nonEmpty && publishesOpt.get.nonEmpty) {
           div(
             h3(a(name := publishId(compName))(publishTitle(compName))),
@@ -145,7 +145,7 @@ case class IcdDbPrinter(db: IcdDb) {
       if (subscribeList.isEmpty) div()
       else div(
         h4(a(s"$pubType Subscribed to by $compName")),
-        for (si ← subscribeList) yield {
+        for (si <- subscribeList) yield {
           val sInfo = si.subscribeModelInfo
           val from = s"from ${si.publisher.subsystem}.${si.publisher.component}"
           div(cls := "nopagebreak")(
@@ -160,15 +160,15 @@ case class IcdDbPrinter(db: IcdDb) {
                 tr(td(sInfo.subsystem), td(sInfo.component), td(si.path), td(sInfo.requiredRate), td(sInfo.maxRate))
               )
             ),
-            si.telemetryModel.map(t ⇒ attributeListMarkup(t.name, t.attributesList))
+            si.telemetryModel.map(t => attributeListMarkup(t.name, t.attributesList))
           )
         }
       )
     }
 
     subscribesOpt match {
-      case None ⇒ div()
-      case Some(subscribes) ⇒
+      case None => div()
+      case Some(subscribes) =>
         if (subscribes.subscribeInfo.nonEmpty) {
           div(
             h3(a(name := subscribeId(compName))(subscribeTitle(compName))),
@@ -193,9 +193,9 @@ case class IcdDbPrinter(db: IcdDb) {
     else {
       div(
         h4(a(name := receivedCommandsId(compName))(receivedCommandsTitle(compName))),
-        for (r ← info) yield {
+        for (r <- info) yield {
           val m = r.receiveCommandModel
-          val from = r.senders.map(s ⇒ s"${s.subsystem}.${s.compName}").mkString(", ")
+          val from = r.senders.map(s => s"${s.subsystem}.${s.compName}").mkString(", ")
           val senders = if (from.isEmpty) div() else p(strong("Senders: "), from)
           div(cls := "nopagebreak")(
             h5(a(s"$compName receives configuration: ${m.name}")),
@@ -220,9 +220,9 @@ case class IcdDbPrinter(db: IcdDb) {
     else {
       div(
         h4(a(name := receivedCommandsId(compName))(receivedCommandsTitle(compName))),
-        for (s ← info) yield {
+        for (s <- info) yield {
           val m = s.receiveCommandModel
-          val to = s.receiver.map(r ⇒ s"to ${r.subsystem}.${r.compName}").getOrElse("")
+          val to = s.receiver.map(r => s"to ${r.subsystem}.${r.compName}").getOrElse("")
           div(cls := "nopagebreak")(
             h5(a(s"$compName sends configuration: ${m.name} $to")),
             if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
@@ -242,8 +242,8 @@ case class IcdDbPrinter(db: IcdDb) {
   private def commandsMarkup(compName: String, commandsOpt: Option[Commands]): Text.TypedTag[String] = {
     import scalatags.Text.all._
     commandsOpt match {
-      case None ⇒ div()
-      case Some(commands) ⇒
+      case None => div()
+      case Some(commands) =>
         if (commands.commandsReceived.nonEmpty || commands.commandsSent.nonEmpty) {
           div(
             h3(a(name := commandsId(compName))(commandsTitle(compName))),
@@ -314,7 +314,7 @@ case class IcdDbPrinter(db: IcdDb) {
    */
   private def getSubsystemInfo(subsystem: String, versionOpt: Option[String]): Option[SubsystemInfo] =
     db.versionManager.getSubsystemModel(subsystem, versionOpt)
-      .map(m ⇒ SubsystemInfo(m.subsystem, versionOpt, m.title, m.description))
+      .map(m => SubsystemInfo(m.subsystem, versionOpt, m.title, m.description))
 
   /**
    * Gets information about the given components
@@ -328,7 +328,7 @@ case class IcdDbPrinter(db: IcdDb) {
   private def getComponentInfo(subsystem: String, versionOpt: Option[String], compNames: List[String],
                                targetSubsystem: SubsystemWithVersion): List[ComponentInfo] = {
     for {
-      info ← icdComponentInfo(subsystem, versionOpt, compNames, targetSubsystem)
+      info <- icdComponentInfo(subsystem, versionOpt, compNames, targetSubsystem)
     } yield {
       // If there is a target subsystem, filter out any items not referenced by it
       if (targetSubsystem.subsystemOpt.isDefined) ComponentInfo.applyIcdFilter(info) else info
@@ -349,8 +349,8 @@ case class IcdDbPrinter(db: IcdDb) {
   private def icdComponentInfo(subsystem: String, versionOpt: Option[String], compNames: List[String],
                                targetSubsystem: SubsystemWithVersion): List[ComponentInfo] = {
     targetSubsystem.subsystemOpt match {
-      case None         ⇒ ComponentInfoHelper.getComponentInfoList(db, subsystem, versionOpt, compNames)
-      case Some(target) ⇒ IcdComponentInfo.getComponentInfoList(db, subsystem, versionOpt, compNames, target, targetSubsystem.versionOpt)
+      case None         => ComponentInfoHelper.getComponentInfoList(db, subsystem, versionOpt, compNames)
+      case Some(target) => IcdComponentInfo.getComponentInfoList(db, subsystem, versionOpt, compNames, target, targetSubsystem.versionOpt)
     }
   }
 
@@ -363,11 +363,11 @@ case class IcdDbPrinter(db: IcdDb) {
     val commandsReceived = info.commands.toList.flatMap(_.commandsReceived)
     val commandsSent = info.commands.toList.flatMap(_.commandsSent)
     val sections = List(
-      info.publishes.map(_ ⇒ li(a(href := "#" + publishId(compName))(publishTitle(compName)))),
-      info.subscribes.map(_ ⇒ li(a(href := "#" + subscribeId(compName))(subscribeTitle(compName)))),
-      info.commands.map(_ ⇒ li(a(href := "#" + commandsId(compName))(commandsTitle(compName)), ul(
-        commandsReceived.headOption.map(_ ⇒ li(a(href := "#" + receivedCommandsId(compName))(receivedCommandsTitle(compName)))),
-        commandsSent.headOption.map(_ ⇒ li(a(href := "#" + sentCommandsId(compName))(sentCommandsTitle(compName))))
+      info.publishes.map(_ => li(a(href := "#" + publishId(compName))(publishTitle(compName)))),
+      info.subscribes.map(_ => li(a(href := "#" + subscribeId(compName))(subscribeTitle(compName)))),
+      info.commands.map(_ => li(a(href := "#" + commandsId(compName))(commandsTitle(compName)), ul(
+        commandsReceived.headOption.map(_ => li(a(href := "#" + receivedCommandsId(compName))(receivedCommandsTitle(compName)))),
+        commandsSent.headOption.map(_ => li(a(href := "#" + sentCommandsId(compName))(sentCommandsTitle(compName))))
       )))
     ).flatten
 
@@ -409,8 +409,8 @@ case class IcdDbPrinter(db: IcdDb) {
     icdVersionOpt:   Option[IcdVersion]
   ): Option[String] = {
     val markup = for {
-      subsystem ← sv.subsystemOpt
-      subsystemInfo ← getSubsystemInfo(subsystem, sv.versionOpt)
+      subsystem <- sv.subsystemOpt
+      subsystemInfo <- getSubsystemInfo(subsystem, sv.versionOpt)
     } yield {
       import scalatags.Text.all._
       val infoList = getComponentInfo(subsystem, sv.versionOpt, compNames, targetSubsystem)
@@ -459,12 +459,12 @@ case class IcdDbPrinter(db: IcdDb) {
     val (subsystem, versionOpt) = IcdVersionManager.getSubsystemAndVersion(subsystemStr)
 
     val compNames = compNamesOpt match {
-      case Some(str) ⇒ str.split(",").toList
-      case None      ⇒ db.versionManager.getComponentNames(subsystem, versionOpt)
+      case Some(str) => str.split(",").toList
+      case None      => db.versionManager.getComponentNames(subsystem, versionOpt)
     }
 
     val (subsys, targ, icdV) = targetOpt match {
-      case Some(t) ⇒ // ICD
+      case Some(t) => // ICD
         val (target, targetVersionOpt) = IcdVersionManager.getSubsystemAndVersion(t)
         // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
         // if only the subsystem or target versions were given, use those (default to latest versions)
@@ -478,20 +478,20 @@ case class IcdDbPrinter(db: IcdDb) {
         }
         (sv, tv, iv)
 
-      case None ⇒ // API
+      case None => // API
         val sv = SubsystemWithVersion(Some(subsystem), versionOpt)
         val tv = SubsystemWithVersion(None, None)
         (sv, tv, None)
     }
 
     IcdDbPrinter(db).getAsHtml(compNames, subsys, targ, icdV) match {
-      case Some(html) ⇒
+      case Some(html) =>
         file.getName.split('.').drop(1).lastOption match {
-          case Some("html") ⇒ saveAsHtml(html)
-          case Some("pdf")  ⇒ saveAsPdf(html)
-          case _            ⇒ println(s"Unsupported output format: Expected *.html or *.pdf")
+          case Some("html") => saveAsHtml(html)
+          case Some("pdf")  => saveAsPdf(html)
+          case _            => println(s"Unsupported output format: Expected *.html or *.pdf")
         }
-      case None ⇒
+      case None =>
         println("Please specify source and optionally target subsystems to print")
     }
   }

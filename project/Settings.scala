@@ -32,7 +32,7 @@ object Settings {
   // Automatic code formatting
   def formattingPreferences: FormattingPreferences =
     FormattingPreferences()
-      .setPreference(RewriteArrowSymbols, true)
+      .setPreference(RewriteArrowSymbols, false)
       .setPreference(AlignParameters, true)
       .setPreference(AlignSingleLineCaseStatements, true)
       .setPreference(DoubleIndentClassDeclaration, true)

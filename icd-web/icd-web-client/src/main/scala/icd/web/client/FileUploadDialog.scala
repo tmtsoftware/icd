@@ -5,7 +5,7 @@ import org.scalajs.dom
 import org.scalajs.dom._
 import scala.language.implicitConversions
 
-//import org.scalajs.jquery.{ jQuery ⇒ $, _ }
+//import org.scalajs.jquery.{ jQuery => $, _ }
 import org.querki.jquery._
 
 /**
@@ -77,8 +77,8 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
   // Returns a pair of lists containing the valid and invalid ICD files
   def getIcdFiles(e: dom.Event): (Seq[WebkitFile], Seq[WebkitFile]) = {
     val files = e.target.files
-    val fileList = for (i ← 0 until files.length) yield files(i).asInstanceOf[WebkitFile]
-    fileList.filterNot { f ⇒
+    val fileList = for (i <- 0 until files.length) yield files(i).asInstanceOf[WebkitFile]
+    fileList.filterNot { f =>
       f.webkitRelativePath.contains(".git") || f.webkitRelativePath.contains(".idea") || f.name.endsWith(".md")
     }.partition(isValidFile)
   }
@@ -108,14 +108,14 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
     }
 
     // list ignored files:
-    for (file ← invalidFiles)
+    for (file <- invalidFiles)
       displayProblem(Problem("warning", s"${getFilePath(file)}: Ignored"))
   }
 
   // Starts uploading the selected files (or files in selected directory) to the server
   def uploadFiles(files: List[WebkitFile]) = {
     val formData = new FormData()
-    for (file ← files if isValidFile(file)) {
+    for (file <- files if isValidFile(file)) {
       formData.append(getFilePath(file), file)
     }
     //    formData.append("comment", commentBox.value)
@@ -140,7 +140,7 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
       }
       if (xhr.status != 200) {
         val problems = read[List[Problem]](xhr.responseText)
-        for (problem ← problems)
+        for (problem <- problems)
           displayProblem(problem)
       }
     }

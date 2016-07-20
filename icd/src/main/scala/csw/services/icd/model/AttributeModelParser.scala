@@ -48,18 +48,18 @@ object AttributeModelParser {
     // Returns a string describing the given type or enum
     def parseTypeStr(opt: Option[String], itemPath: String = "items", dimPath: String = ""): String = {
       opt match {
-        case Some("array")   ⇒ parseArrayTypeStr(itemPath, dimPath)
-        case Some("integer") ⇒ numberTypeStr("integer")
-        case Some("number")  ⇒ numberTypeStr("double")
-        case Some("short")   ⇒ numberTypeStr("short")
-        case Some("long")    ⇒ numberTypeStr("long")
-        case Some("float")   ⇒ numberTypeStr("float")
-        case Some("double")  ⇒ numberTypeStr("double")
-        case Some("byte")    ⇒ numberTypeStr("byte")
-        case Some(otherType) ⇒ otherType
-        case None ⇒ enumOpt match {
-          case Some(list) ⇒ "enum: (" + list.mkString(", ") + ")"
-          case None       ⇒ ""
+        case Some("array")   => parseArrayTypeStr(itemPath, dimPath)
+        case Some("integer") => numberTypeStr("integer")
+        case Some("number")  => numberTypeStr("double")
+        case Some("short")   => numberTypeStr("short")
+        case Some("long")    => numberTypeStr("long")
+        case Some("float")   => numberTypeStr("float")
+        case Some("double")  => numberTypeStr("double")
+        case Some("byte")    => numberTypeStr("byte")
+        case Some(otherType) => otherType
+        case None => enumOpt match {
+          case Some(list) => "enum: (" + list.mkString(", ") + ")"
+          case None       => ""
         }
       }
     }

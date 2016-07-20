@@ -73,7 +73,7 @@ case class Subsystem(
 
   // called when a subsystem is selected
   private def subsystemSelected(e: dom.Event): Unit = {
-    for (_ ← updateSubsystemVersionOptions())
+    for (_ <- updateSubsystemVersionOptions())
       listener.subsystemSelected(getSubsystemWithVersion)
   }
 
@@ -93,8 +93,8 @@ case class Subsystem(
    */
   def getSelectedSubsystem: Option[String] =
     subsystemItem.value match {
-      case `placeholderMsg` ⇒ None
-      case subsystemName    ⇒ Some(subsystemName)
+      case `placeholderMsg` => None
+      case subsystemName    => Some(subsystemName)
     }
 
   /**
@@ -109,8 +109,8 @@ case class Subsystem(
    */
   def getSelectedSubsystemVersion: Option[String] =
     versionItem.value match {
-      case `unpublishedVersion` | null | "" ⇒ None
-      case version                          ⇒ Some(version)
+      case `unpublishedVersion` | null | "" => None
+      case version                          => Some(version)
     }
 
   /**
@@ -136,14 +136,14 @@ case class Subsystem(
       Future.successful()
     else {
       sv.subsystemOpt match {
-        case Some(s) ⇒ subsystemItem.value = s
-        case None    ⇒ subsystemItem.value = placeholderMsg
+        case Some(s) => subsystemItem.value = s
+        case None    => subsystemItem.value = placeholderMsg
       }
 
       if (notifyListener) {
         for {
-          _ ← updateSubsystemVersionOptions(sv.versionOpt)
-          _ ← listener.subsystemSelected(getSubsystemWithVersion, saveHistory)
+          _ <- updateSubsystemVersionOptions(sv.versionOpt)
+          _ <- listener.subsystemSelected(getSubsystemWithVersion, saveHistory)
         } yield {
         }
       } else {
@@ -156,10 +156,10 @@ case class Subsystem(
    * Update the Subsystem combobox options
    */
   def updateSubsystemOptions(items: List[String]): Unit = {
-    for (i ← (1 until subsystemItem.length).reverse) {
+    for (i <- (1 until subsystemItem.length).reverse) {
       subsystemItem.remove(i)
     }
-    items.foreach { str ⇒
+    items.foreach { str =>
       import scalatags.JsDom.all._
       subsystemItem.add(option(value := str)(str).render)
     }
@@ -167,13 +167,13 @@ case class Subsystem(
   }
 
   def disableOption(name: String): Unit = {
-    subsystemItem.options.drop(1).find(_.value == name).foreach { option ⇒
+    subsystemItem.options.drop(1).find(_.value == name).foreach { option =>
       option.setAttribute("disabled", "true")
     }
   }
 
   def setAllOptionsEnabled(): Unit = {
-    subsystemItem.options.drop(1).foreach { option ⇒
+    subsystemItem.options.drop(1).foreach { option =>
       option.removeAttribute("disabled")
     }
   }
@@ -192,8 +192,8 @@ case class Subsystem(
       Future.successful()
     else {
       versionOpt match {
-        case Some(s) ⇒ versionItem.value = s
-        case None    ⇒ versionItem.value = unpublishedVersion
+        case Some(s) => versionItem.value = s
+        case None    => versionItem.value = unpublishedVersion
       }
       if (notifyListener)
         listener.subsystemSelected(getSubsystemWithVersion, saveHistory)
@@ -207,16 +207,16 @@ case class Subsystem(
   def updateSubsystemVersionOptions(versionOpt: Option[String] = None): Future[Unit] = {
     versionItem.setAttribute("hidden", "true")
     getSelectedSubsystem match {
-      case Some(subsystem) ⇒
-        getSubsystemVersionOptions(subsystem).map { list ⇒ // Future!
+      case Some(subsystem) =>
+        getSubsystemVersionOptions(subsystem).map { list => // Future!
           updateSubsystemVersionOptions(list)
           versionItem.removeAttribute("hidden")
           val version = versionOpt.getOrElse(unpublishedVersion)
           versionItem.value = version
         }.recover {
-          case ex ⇒ ex.printStackTrace()
+          case ex => ex.printStackTrace()
         }
-      case None ⇒
+      case None =>
         Future.successful()
     }
   }
@@ -228,7 +228,7 @@ case class Subsystem(
       versionItem.remove(0)
     }
     // Insert unpublished working version (*) as first item
-    for (s ← unpublishedVersion :: versions) {
+    for (s <- unpublishedVersion :: versions) {
       versionItem.add(option(value := s)(s).render)
     }
     setSelectedSubsystemVersion(versions.headOption, notifyListener = false)
@@ -238,10 +238,10 @@ case class Subsystem(
   // Gets the list of available versions for the given subsystem
   private def getSubsystemVersionOptions(subsystem: String): Future[List[String]] = {
     import upickle.default._
-    Ajax.get(Routes.versionNames(subsystem)).map { r ⇒
+    Ajax.get(Routes.versionNames(subsystem)).map { r =>
       read[List[String]](r.responseText)
     }.recover {
-      case ex ⇒
+      case ex =>
         ex.printStackTrace() // XXX TODO
         Nil
     }

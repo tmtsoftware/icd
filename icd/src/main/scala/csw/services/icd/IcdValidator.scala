@@ -82,7 +82,7 @@ object IcdValidator {
     if (!dir.isDirectory) {
       List(Problem("error", s"$dir does not exist or is not a directory"))
     } else {
-      val result = for (stdName ← stdNames) yield {
+      val result = for (stdName <- stdNames) yield {
         val inputFile = new File(dir, stdName.name)
         if (!inputFile.exists()) {
           Nil
@@ -125,14 +125,14 @@ object IcdValidator {
   def validate(inputConfig: Config, fileName: String): List[Problem] = {
     val name = new File(fileName).getName
     StdName.stdNames.find(_.name == name) match {
-      case Some(stdName) ⇒
+      case Some(stdName) =>
         val schemaConfig = ConfigFactory.parseResources(stdName.schema)
         if (schemaConfig == null) {
           List(Problem("error", s"Missing schema resource: ${stdName.schema}"))
         } else {
           validate(inputConfig, schemaConfig, fileName)
         }
-      case None ⇒
+      case None =>
         List(Problem("error", s"Invalid ICD file name: $fileName"))
     }
   }
@@ -174,7 +174,7 @@ object IcdValidator {
     try {
       validateResult(schema.validate(jsonInput, true), source)
     } catch {
-      case e: Exception ⇒
+      case e: Exception =>
         e.printStackTrace()
         List(Problem("fatal", e.toString))
     }
@@ -184,7 +184,7 @@ object IcdValidator {
   // 'source' is the name of the input file for use in error messages.
   private def validateResult(report: ProcessingReport, source: String): List[Problem] = {
     import scala.collection.JavaConverters._
-    val result = for (msg ← report.asScala)
+    val result = for (msg <- report.asScala)
       yield Problem(msg.getLogLevel.toString, formatMsg(msg, source))
     result.toList
   }
@@ -206,9 +206,9 @@ object IcdValidator {
     // try to get additional messages from the reports section
     val reports = json.get("reports")
     val messages = if (reports == null) "" else {
-      for (r ← reports.elements().toList) yield r
-      val msgElems = (for (r ← reports) yield r.elements().toList).flatten
-      val msgTexts = for (e ← msgElems) yield e.get("message").asText()
+      for (r <- reports.elements().toList) yield r
+      val msgElems = (for (r <- reports) yield r.elements().toList).flatten
+      val msgTexts = for (e <- msgElems) yield e.get("message").asText()
       "\n" + msgTexts.mkString("\n")
     }
 

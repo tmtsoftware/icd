@@ -14,7 +14,7 @@ object SubscribeModelParser {
     val subscribeConfig = config.getConfig("subscribe")
 
     def getItems(name: String): List[SubscribeModelInfo] =
-      for (conf ← subscribeConfig.as[Option[List[Config]]](name).getOrElse(Nil)) yield SubscribeInfoParser(conf)
+      for (conf <- subscribeConfig.as[Option[List[Config]]](name).getOrElse(Nil)) yield SubscribeInfoParser(conf)
 
     SubscribeModel(
       subsystem = config.as[String](BaseModelParser.subsystemKey),

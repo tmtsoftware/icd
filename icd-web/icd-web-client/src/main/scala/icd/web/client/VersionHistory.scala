@@ -54,9 +54,9 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
   private def compareHandler(subsystem: String)(e: dom.Event): Unit = {
     val checked = $("input[name='version']:checked")
     if (checked.length == 2) {
-      val versions = checked.mapElems(elem ⇒ elem.asInstanceOf[HTMLInputElement].value).sortWith(compareVersions).toList
+      val versions = checked.mapElems(elem => elem.asInstanceOf[HTMLInputElement].value).sortWith(compareVersions).toList
       val route = Routes.diff(subsystem, versions)
-      Ajax.get(route).map { r ⇒
+      Ajax.get(route).map { r =>
         val list = read[List[DiffInfo]](r.responseText)
         diffDiv.innerHTML = ""
         diffDiv.appendChild(markupDiff(subsystem, list))
@@ -134,7 +134,7 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
             )
           ),
           tbody(
-            for (v ← list) yield {
+            for (v <- list) yield {
               tr(
                 td(makeVersionCheckBox(v.version, compButton)),
                 td(v.user),
@@ -165,7 +165,7 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
           )
         ),
         tbody(
-          for (v ← list) yield {
+          for (v <- list) yield {
             val icdVersion = v.icdVersion
             tr(
               td(icdVersion.icdVersion),
@@ -183,10 +183,10 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
 
   // Gets the subsystem version info from the server
   private def getSubsystemVersionInfo(subsystem: String): Future[List[VersionInfo]] =
-    Ajax.get(Routes.versions(subsystem)).map { r ⇒
+    Ajax.get(Routes.versions(subsystem)).map { r =>
       read[List[VersionInfo]](r.responseText)
     }.recover {
-      case ex ⇒
+      case ex =>
         mainContent.displayInternalError(ex)
         Nil
     }
@@ -194,17 +194,17 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
   // Gets the ICD version info from the server
   private def getIcdVersionInfo(icdName: IcdName): Future[List[IcdVersionInfo]] = {
     import upickle.default._
-    Ajax.get(Routes.icdVersions(icdName)).map { r ⇒
+    Ajax.get(Routes.icdVersions(icdName)).map { r =>
       read[List[IcdVersionInfo]](r.responseText)
     }.recover {
-      case ex ⇒
+      case ex =>
         mainContent.displayInternalError(ex)
         Nil
     }
   }
 
   def setSubsystem(subsystem: String): Unit = {
-    getSubsystemVersionInfo(subsystem).foreach { list ⇒
+    getSubsystemVersionInfo(subsystem).foreach { list =>
       diffDiv.innerHTML = ""
       contentDiv.innerHTML = ""
       contentDiv.appendChild(markupSubsystemVersionInfo(subsystem, list))
@@ -212,7 +212,7 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
   }
 
   def setIcd(icdName: IcdName): Unit = {
-    getIcdVersionInfo(icdName).foreach { list ⇒
+    getIcdVersionInfo(icdName).foreach { list =>
       diffDiv.innerHTML = ""
       contentDiv.innerHTML = ""
       contentDiv.appendChild(markupIcdVersionInfo(icdName, list))

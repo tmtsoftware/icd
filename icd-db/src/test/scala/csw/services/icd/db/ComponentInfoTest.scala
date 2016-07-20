@@ -19,24 +19,24 @@ class ComponentInfoTest extends FunSuite {
 
     // ingest examples/NFIRAOS into the DB
     val problems = db.ingest(getTestDir("examples/NFIRAOS"))
-    for (p ← problems) println(p)
+    for (p <- problems) println(p)
 
     val problems2 = db.ingest(getTestDir("examples/TCS"))
-    for (p ← problems2) println(p)
+    for (p <- problems2) println(p)
 
-    ComponentInfoHelper.getComponentInfo(db.query, "NFIRAOS", None, "lgsWfs").foreach { info ⇒
+    ComponentInfoHelper.getComponentInfo(db.query, "NFIRAOS", None, "lgsWfs").foreach { info =>
       assert(info.componentModel.component == "lgsWfs")
       assert(info.publishes.nonEmpty)
       assert(info.publishes.get.telemetryList.nonEmpty)
-      info.publishes.get.telemetryList.foreach { pubInfo ⇒
+      info.publishes.get.telemetryList.foreach { pubInfo =>
         println(s"envCtrl publishes telemetry: ${pubInfo.telemetryModel.name}")
-        pubInfo.subscribers.foreach { subInfo ⇒
+        pubInfo.subscribers.foreach { subInfo =>
           println(s"${subInfo.subscribeModelInfo.component} from ${subInfo.subscribeModelInfo.subsystem} subscribes to ${subInfo.subscribeModelInfo.name}")
         }
       }
       assert(info.subscribes.nonEmpty)
       assert(info.subscribes.get.subscribeInfo.nonEmpty)
-      info.subscribes.get.subscribeInfo.foreach { subInfo ⇒
+      info.subscribes.get.subscribeInfo.foreach { subInfo =>
         println(s"envCtrl subscribes to ${subInfo.subscribeModelInfo.name} from ${subInfo.subscribeModelInfo.subsystem}")
       }
     }

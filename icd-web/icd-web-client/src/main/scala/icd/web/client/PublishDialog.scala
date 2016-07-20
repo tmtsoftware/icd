@@ -5,7 +5,7 @@ import org.scalajs.dom
 import org.scalajs.dom._
 import org.scalajs.dom.ext.Ajax
 import scala.language.implicitConversions
-//import org.scalajs.jquery.{ jQuery ⇒ $, _ }
+//import org.scalajs.jquery.{ jQuery => $, _ }
 import org.querki.jquery._
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -152,13 +152,13 @@ case class PublishDialog(subsystem: Subsystem, targetSubsystem: Subsystem, icdCh
 
       if (isPublishApi(s, t)) {
         val route = Routes.publishApi(s.subsystemOpt.get, majorVersion, comment, userName)
-        Ajax.post(route).map { r ⇒
+        Ajax.post(route).map { r =>
           subsystem.updateSubsystemVersionOptions()
           displayResultStatus(r)
         }
       } else if (isPublishIcd(s, t)) {
         val route = Routes.publishIcd(s.subsystemOpt.get, s.versionOpt.get, t.subsystemOpt.get, t.versionOpt.get, majorVersion, comment, userName)
-        Ajax.post(route).map { r ⇒
+        Ajax.post(route).map { r =>
           icdChooser.updateIcdOptions()
           displayResultStatus(r)
         }

@@ -20,9 +20,9 @@ object Application extends Controller {
   val db = IcdDb()
 
   def index = CSRFAddToken {
-    Action { implicit request ⇒
+    Action { implicit request =>
       import play.filters.csrf.CSRF
-      val token = CSRF.getToken(request).map(t ⇒ Csrf(t.value)).getOrElse(Csrf(""))
+      val token = CSRF.getToken(request).map(t => Csrf(t.value)).getOrElse(Csrf(""))
       Ok(views.html.index(token))
     }
   }
@@ -41,11 +41,11 @@ object Application extends Controller {
   def subsystemInfo(subsystem: String, versionOpt: Option[String]) = Action {
     import upickle.default._
     db.versionManager.getSubsystemModel(subsystem, versionOpt) match {
-      case Some(model) ⇒
+      case Some(model) =>
         val info = SubsystemInfo(model.subsystem, versionOpt, model.title, model.description)
         val json = write(info)
         Ok(json).as(JSON)
-      case None ⇒
+      case None =>
         NotFound
     }
   }
@@ -106,8 +106,8 @@ object Application extends Controller {
                icdVersionOpt: Option[String]) = Action {
     val out = new ByteArrayOutputStream()
     val compNames = compNamesOpt match {
-      case Some(s) ⇒ s.split(",").toList
-      case None    ⇒ db.versionManager.getComponentNames(subsystem, versionOpt)
+      case Some(s) => s.split(",").toList
+      case None    => db.versionManager.getComponentNames(subsystem, versionOpt)
     }
 
     // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
@@ -122,11 +122,11 @@ object Application extends Controller {
     }
 
     IcdDbPrinter(db).getAsHtml(compNames, sv, tv, iv) match {
-      case Some(html) ⇒
+      case Some(html) =>
         IcdToPdf.saveAsPdf(out, html)
         val bytes = out.toByteArray
         Ok(bytes).as("application/pdf")
-      case None ⇒
+      case None =>
         NotFound
     }
   }
@@ -141,17 +141,17 @@ object Application extends Controller {
   def apiAsPdf(subsystem: String, versionOpt: Option[String], compNamesOpt: Option[String]) = Action {
     val out = new ByteArrayOutputStream()
     val compNames = compNamesOpt match {
-      case Some(s) ⇒ s.split(",").toList
-      case None    ⇒ db.versionManager.getComponentNames(subsystem, versionOpt)
+      case Some(s) => s.split(",").toList
+      case None    => db.versionManager.getComponentNames(subsystem, versionOpt)
     }
     val sv = SubsystemWithVersion(Some(subsystem), versionOpt)
     val tv = SubsystemWithVersion(None, None)
     IcdDbPrinter(db).getAsHtml(compNames, sv, tv, None) match {
-      case Some(html) ⇒
+      case Some(html) =>
         IcdToPdf.saveAsPdf(out, html)
         val bytes = out.toByteArray
         Ok(bytes).as("application/pdf")
-      case None ⇒
+      case None =>
         NotFound
     }
   }
@@ -161,7 +161,7 @@ object Application extends Controller {
    */
   def getVersions(subsystem: String) = Action {
     import upickle.default._
-    val versions = db.versionManager.getVersions(subsystem).map(v ⇒
+    val versions = db.versionManager.getVersions(subsystem).map(v =>
       VersionInfo(v.versionOpt, v.user, v.comment, v.date.toString))
     Ok(write(versions)).as(JSON)
   }
@@ -200,7 +200,7 @@ object Application extends Controller {
   def getIcdNames = Action {
     import upickle.default._
     // convert list to use shared IcdName class
-    val list = db.versionManager.getIcdNames.map(icd ⇒ IcdName(icd.subsystem, icd.target))
+    val list = db.versionManager.getIcdNames.map(icd => IcdName(icd.subsystem, icd.target))
     Ok(write(list)).as(JSON)
   }
 
@@ -218,17 +218,17 @@ object Application extends Controller {
   private def getDiffInfo(diff: VersionDiff): DiffInfo = {
     def getValue(a: Any): String = {
       a match {
-        case o: JsObject ⇒
+        case o: JsObject =>
           val header = List("Attribute", "Value")
-          val rows = o.fields.toList.map(p ⇒ List(getValue(p._1), getValue(p._2)))
+          val rows = o.fields.toList.map(p => List(getValue(p._1), getValue(p._2)))
           HtmlMarkup.mkTable(header, rows).render
-        case ar: JsArray ⇒
+        case ar: JsArray =>
           ar.elements.map(getValue).mkString(", ")
-        case s: JsString ⇒
+        case s: JsString =>
           s.value.stripMargin
-        case n: JsNumber ⇒
+        case n: JsNumber =>
           n.value.toString()
-        case _ ⇒
+        case _ =>
           a.toString
       }
     }

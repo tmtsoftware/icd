@@ -34,7 +34,7 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
   val sidebarList = ul(cls := "nav list-group").render
 
   // HTML for component
-  private def componentCheckBox(compName: String, checkboxListener: dom.Event ⇒ Unit) = {
+  private def componentCheckBox(compName: String, checkboxListener: dom.Event => Unit) = {
     import scalacss.ScalatagsCss._
     val compId = Components.getComponentInfoId(compName)
     li(
@@ -60,7 +60,7 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
    */
   def getSelectedComponents: List[String] = {
     val nodeList = sidebarList.getElementsByTagName("input")
-    val result = for (i ← 0 until nodeList.length) yield {
+    val result = for (i <- 0 until nodeList.length) yield {
       val elem = nodeList(i).asInstanceOf[HTMLInputElement]
       if (elem.checked) Some(elem.value) else None
     }
@@ -76,7 +76,7 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
   def setSelectedComponents(components: List[String]): Boolean = {
     import org.scalajs.dom.ext._
     val set = components.toSet
-    val changes = for (elem ← sidebarList.getElementsByTagName("input").toList) yield {
+    val changes = for (elem <- sidebarList.getElementsByTagName("input").toList) yield {
       val checkbox = elem.asInstanceOf[HTMLInputElement]
       val checked = set.contains(checkbox.value)
       val changed = checkbox.checked != checked
@@ -101,7 +101,7 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
   // Uncheck all of the checkboxes in the sidebar
   def uncheckAll(): Unit = {
     val nodeList = sidebarList.getElementsByTagName("input")
-    for (i ← 0 until nodeList.length) nodeList(i).asInstanceOf[HTMLInputElement].checked = false
+    for (i <- 0 until nodeList.length) nodeList(i).asInstanceOf[HTMLInputElement].checked = false
   }
 
   /**

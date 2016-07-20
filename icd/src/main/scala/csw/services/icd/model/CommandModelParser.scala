@@ -15,7 +15,7 @@ object ReceiveCommandModelParser {
       description = HtmlMarkup.gfmToHtml(config.as[String]("description")),
       requirements = config.as[Option[List[String]]]("requirements").getOrElse(Nil),
       requiredArgs = config.as[Option[List[String]]]("requiredArgs").getOrElse(Nil),
-      args = for (conf ← config.as[Option[List[Config]]]("args").getOrElse(Nil)) yield AttributeModelParser(conf)
+      args = for (conf <- config.as[Option[List[Config]]]("args").getOrElse(Nil)) yield AttributeModelParser(conf)
     )
 }
 

@@ -32,7 +32,7 @@ object BrowserHistory {
     else try {
       Some(read[BrowserHistory](e.state.toString))
     } catch {
-      case e: Exception ⇒
+      case e: Exception =>
         None
     }
   }

@@ -39,7 +39,7 @@ object IcdToPdf {
         }
 
       } catch {
-        case e: Throwable ⇒ e.printStackTrace()
+        case e: Throwable => e.printStackTrace()
       }
     }
   }

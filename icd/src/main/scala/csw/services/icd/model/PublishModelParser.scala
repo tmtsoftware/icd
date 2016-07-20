@@ -14,8 +14,8 @@ object PublishModelParser {
   def apply(config: Config): PublishModel = {
     val publishConfig = config.getConfig("publish")
 
-    def getItems[A](name: String, f: Config ⇒ A): List[A] =
-      for (conf ← publishConfig.as[Option[List[Config]]](name).getOrElse(Nil)) yield f(conf)
+    def getItems[A](name: String, f: Config => A): List[A] =
+      for (conf <- publishConfig.as[Option[List[Config]]](name).getOrElse(Nil)) yield f(conf)
 
     PublishModel(
       subsystem = config.as[String](BaseModelParser.subsystemKey),

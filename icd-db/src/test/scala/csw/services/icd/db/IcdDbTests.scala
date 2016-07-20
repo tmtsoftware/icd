@@ -22,7 +22,7 @@ class IcdDbTests extends FunSuite {
 
     // ingest examples/NFIRAOS into the DB
     val problems = db.ingest(getTestDir("examples/NFIRAOS"))
-    for (p ← problems) println(p)
+    for (p <- problems) println(p)
     assert(problems.isEmpty)
 
     // query the DB
@@ -69,7 +69,7 @@ class IcdDbTests extends FunSuite {
     assert(temp_ngsWfs.units == "degC")
 
     // Test publish queries
-    val published = db.query.getPublished(envCtrl).filter(p ⇒
+    val published = db.query.getPublished(envCtrl).filter(p =>
       p.name == "sensors" && p.publishType == Telemetry)
     assert(published.size == 1)
     assert(published.head.publishType == Telemetry)
@@ -136,7 +136,7 @@ class IcdDbTests extends FunSuite {
   //
   //    // Test diff
   //    println("\nDiff example 2.0 2.1")
-  //    for (diff ← db.manager.diff("example", "2.0", "2.1")) {
+  //    for (diff <- db.manager.diff("example", "2.0", "2.1")) {
   //      // XXX TODO: add automatic test?
   //      //      println(s"\n${diff.path}:\n${diff.patch.toString()}")
   //    }
@@ -147,22 +147,22 @@ class IcdDbTests extends FunSuite {
   // XXX TODO: Turn this into a test
   def testModels(db: IcdDb): Unit = {
     val modelsList = db.query.getModels("NFIRAOS")
-    val publishInfo = for (models ← modelsList) yield {
-      models.publishModel.foreach { publishModel ⇒
-        publishModel.telemetryList.foreach { telemetryModel ⇒
+    val publishInfo = for (models <- modelsList) yield {
+      models.publishModel.foreach { publishModel =>
+        publishModel.telemetryList.foreach { telemetryModel =>
           // println(s"${publishModel.component} publishes telemetry ${telemetryModel.name}: ${telemetryModel.description}")
         }
       }
-      models.subscribeModel.foreach { subscribeModel ⇒
-        subscribeModel.telemetryList.foreach { telemetryModel ⇒
+      models.subscribeModel.foreach { subscribeModel =>
+        subscribeModel.telemetryList.foreach { telemetryModel =>
           // println(s"${subscribeModel.component} subscribes to telemetry ${telemetryModel.name} from ${telemetryModel.subsystem}")
         }
       }
     }
 
-    modelsList.foreach { models ⇒
-      models.commandModel.foreach { commandModel ⇒
-        commandModel.receive.foreach { receiveCommandModel ⇒
+    modelsList.foreach { models =>
+      models.commandModel.foreach { commandModel =>
+        commandModel.receive.foreach { receiveCommandModel =>
           val opt = db.query.getCommand(commandModel.subsystem, commandModel.component, receiveCommandModel.name)
           assert(opt.get == receiveCommandModel)
           val senders = db.query.getCommandSenders(commandModel.subsystem, commandModel.component, receiveCommandModel.name)
@@ -175,7 +175,7 @@ class IcdDbTests extends FunSuite {
   //  // Ingests the given dir under the name "example" (any previous version is saved in the history)
   //  def testExample(db: IcdDb, path: String, componentNames: List[String], comment: String, majorVersion: Boolean): Unit = {
   //    val problems = db.ingest(getTestDir(path), Some("example"), comment, majorVersion)
-  //    for (p ← problems) println(p)
+  //    for (p <- problems) println(p)
   //    assert(problems.isEmpty)
   //
   //    assert(db.query.getComponentNames == componentNames)

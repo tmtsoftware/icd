@@ -20,7 +20,7 @@ object TelemetryModelParser {
       maxRate = config.as[Option[Double]]("maxRate").getOrElse(0),
       archive = config.as[Option[Boolean]]("archive").getOrElse(false),
       archiveRate = config.as[Option[Double]]("archiveRate").getOrElse(0),
-      attributesList = for (conf ← config.as[Option[List[Config]]]("attributes").getOrElse(Nil)) yield AttributeModelParser(conf)
+      attributesList = for (conf <- config.as[Option[List[Config]]]("attributes").getOrElse(Nil)) yield AttributeModelParser(conf)
     )
 }
 

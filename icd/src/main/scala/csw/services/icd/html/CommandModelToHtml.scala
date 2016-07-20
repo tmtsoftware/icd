@@ -41,7 +41,7 @@ private case class ReceiveCommandModelToHtml(m: ReceiveCommandModel) extends Htm
 
   private val argsTable = mkTable(
     List("Name", "Description", "Type", "Default", "Units", "Required"),
-    m.args.map(a ⇒ List(a.name, a.description, a.typeStr, a.defaultValue, a.units, yesNo(m.requiredArgs.contains(a.name))))
+    m.args.map(a => List(a.name, a.description, a.typeStr, a.defaultValue, a.units, yesNo(m.requiredArgs.contains(a.name))))
   )
 
   override val tags = List(head, requirements, desc, argsHead, argsTable)
@@ -55,7 +55,7 @@ private case class SendCommandModelToHtml(list: List[SendCommandModel]) extends 
 
   private val table = mkTable(
     List("Name", "Component", "Subsystem"),
-    list.map(m ⇒ List(m.name, m.component, m.subsystem))
+    list.map(m => List(m.name, m.component, m.subsystem))
   )
 
   override val tags = if (list.nonEmpty) List(head, table) else {

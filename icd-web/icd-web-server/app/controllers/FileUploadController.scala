@@ -16,25 +16,25 @@ object FileUploadController extends Controller {
   // Server side of the upload ICD feature.
   // Supported file types: A directory containing icd config files (chrome)
   // or a .zip file containing directories with icd config files.
-  def uploadFiles = Action(parse.multipartFormData) { request ⇒
+  def uploadFiles = Action(parse.multipartFormData) { request =>
     import upickle.default._
     val files = request.body.files.toList
     try {
       // XXX TODO: Return config parse errors in StdConfig.get with file names!
-      val list = files.flatMap(filePart ⇒ StdConfig.get(filePart.ref.file, filePart.filename))
+      val list = files.flatMap(filePart => StdConfig.get(filePart.ref.file, filePart.filename))
       val comment = request.body.asFormUrlEncoded.getOrElse("comment", List("")).head
       val majorVersion = false // XXX TODO
       ingestConfigs(list, comment, majorVersion)
     } catch {
-      case e: MongoTimeoutException ⇒
+      case e: MongoTimeoutException =>
         val msg = "Database seems to be down"
         log.error(msg, e)
         ServiceUnavailable(write(List(Problem("error", msg)))).as(JSON)
-      case e: ConfigException ⇒
+      case e: ConfigException =>
         val msg = e.getMessage
         log.error(msg, e)
         NotAcceptable(write(List(Problem("error", msg)))).as(JSON)
-      case t: Throwable ⇒
+      case t: Throwable =>
         val msg = "Internal error"
         log.error(msg, t)
         InternalServerError(write(List(Problem("error", msg)))).as(JSON)
@@ -52,7 +52,7 @@ object FileUploadController extends Controller {
   private def ingestConfigs(list: List[StdConfig], comment: String, majorVersion: Boolean = false): Result = {
     import upickle.default._
     // Validate everything first
-    val validateProblems = list.flatMap(sc ⇒ IcdValidator.validate(sc.config, sc.stdName))
+    val validateProblems = list.flatMap(sc => IcdValidator.validate(sc.config, sc.stdName))
     if (validateProblems.nonEmpty) {
       NotAcceptable(write(validateProblems)).as(JSON)
     } else {
@@ -67,7 +67,7 @@ object FileUploadController extends Controller {
   }
 
   // Websocket used to notify client when upload is complete
-  def ws = WebSocket.using[String] { request ⇒
+  def ws = WebSocket.using[String] { request =>
     (Iteratee.ignore, wsEnumerator)
   }
 }

@@ -5,7 +5,7 @@ import org.scalajs.dom.Element
 /**
  * Displays a button that, when pressed, swaps source and target subsystems
  */
-case class SubsystemSwapper(listener: () ⇒ Unit) extends Displayable {
+case class SubsystemSwapper(listener: () => Unit) extends Displayable {
 
   /**
    * Returns the initial HTML markup for the item

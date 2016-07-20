@@ -24,7 +24,7 @@ object StdConfig {
    * XXX TODO: Return config parse errors in StdConfig.get with file names
    */
   def get(dir: File): List[StdConfig] = {
-    stdNames.flatMap { stdName ⇒
+    stdNames.flatMap { stdName =>
       val inputFile = new File(dir, stdName.name)
       if (inputFile.exists())
         Some(StdConfig(stdName, ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())))
@@ -41,7 +41,7 @@ object StdConfig {
     if (name.endsWith(".zip"))
       get(new ZipFile(inputFile))
     else {
-      stdNames.flatMap { stdName ⇒
+      stdNames.flatMap { stdName =>
         if (name == stdName.name)
           Some(StdConfig(stdName, ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())))
         else None
@@ -55,7 +55,7 @@ object StdConfig {
   def get(zipFile: ZipFile): List[StdConfig] = {
     import scala.collection.JavaConversions._
     def isValid(f: ZipEntry) = stdSet.contains(new File(f.getName).getName)
-    val list = for (e ← zipFile.entries().filter(isValid)) yield {
+    val list = for (e <- zipFile.entries().filter(isValid)) yield {
       val reader = new InputStreamReader(zipFile.getInputStream(e))
       val config = ConfigFactory.parseReader(reader)
       StdConfig.get(config, e.getName).get
@@ -70,7 +70,7 @@ object StdConfig {
   def get(config: Config, fileName: String): Option[StdConfig] = {
     val name = new File(fileName).getName
     stdNames.flatMap {
-      stdName ⇒ if (name == stdName.name) Some(StdConfig(stdName, config)) else None
+      stdName => if (name == stdName.name) Some(StdConfig(stdName, config)) else None
     }.headOption
   }
 }

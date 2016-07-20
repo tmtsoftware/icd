@@ -10,7 +10,7 @@ import SubsystemNames._
 
 object SubsystemNames {
   // Type of a listener for changes in the list of subsystem names
-  type Listener = List[String] ⇒ Unit
+  type Listener = List[String] => Unit
 }
 
 /**
@@ -28,10 +28,10 @@ case class SubsystemNames(mainContent: MainContent, wsBaseUrl: String, listener:
 
   // Gets the list of top level ICDs from the server
   private def getSubsystemNames: Future[List[String]] = {
-    Ajax.get(Routes.subsystems).map { r ⇒
+    Ajax.get(Routes.subsystems).map { r =>
       read[List[String]](r.responseText)
     }.recover {
-      case ex ⇒
+      case ex =>
         mainContent.displayInternalError(ex)
         Nil
     }

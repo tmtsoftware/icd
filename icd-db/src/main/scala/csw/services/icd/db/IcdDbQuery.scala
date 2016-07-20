@@ -17,7 +17,7 @@ object IcdDbQuery {
 
   // True if the named collection represents an ICD model (has one of the standard names)
   def isStdSet(name: String): Boolean =
-    stdSet.exists(s ⇒ name.endsWith(s".$s"))
+    stdSet.exists(s => name.endsWith(s".$s"))
 
   // for working with dot separated paths
   private[db] case class IcdPath(path: String) {
@@ -140,16 +140,16 @@ case class IcdDbQuery(db: MongoDB) {
 
   private[db] def getEntries: List[IcdEntry] = {
     val paths = getCollectionNames.filter(isStdSet).map(IcdPath).toList
-    val compMap = paths.map(p ⇒ (p.component, paths.filter(_.component == p.component).map(_.path))).toMap
-    val entries = compMap.keys.map(key ⇒ getEntry(db, key, compMap(key))).toList
-    entries.sortBy(entry ⇒ (IcdPath(entry.name).parts.length, entry.name))
+    val compMap = paths.map(p => (p.component, paths.filter(_.component == p.component).map(_.path))).toMap
+    val entries = compMap.keys.map(key => getEntry(db, key, compMap(key))).toList
+    entries.sortBy(entry => (IcdPath(entry.name).parts.length, entry.name))
   }
 
   /**
    * Returns a list of models, one for each component in the db
    */
   def getComponents: List[ComponentModel] = {
-    for (entry ← getEntries if entry.component.isDefined)
+    for (entry <- getEntries if entry.component.isDefined)
       yield jsonToComponentModel(entry.component.get.head.toString)
   }
 
@@ -176,7 +176,7 @@ case class IcdDbQuery(db: MongoDB) {
    * @param query restricts the components returned (a MongoDBObject, for example)
    */
   def queryComponents(query: DBObject): List[ComponentModel] = {
-    val list = for (entry ← getEntries if entry.component.isDefined) yield {
+    val list = for (entry <- getEntries if entry.component.isDefined) yield {
       val coll = entry.component.get
       val data = coll.findOne(query)
       if (data.isDefined) Some(jsonToComponentModel(data.get.toString)) else None
@@ -190,7 +190,7 @@ case class IcdDbQuery(db: MongoDB) {
    * @param componentType restricts the type of components returned (one of: Assembly, HCD, Sequencer, etc.)
    */
   def getComponents(componentType: String): List[ComponentModel] =
-    queryComponents("componentType" → componentType)
+    queryComponents("componentType" -> componentType)
 
   /**
    * Returns a list of all the component names in the DB
@@ -204,9 +204,9 @@ case class IcdDbQuery(db: MongoDB) {
    */
   def getComponentNames(subsystem: String): List[String] = {
     getCollectionNames
-      .filter(name ⇒ name.startsWith(s"$subsystem.") && !name.endsWith(s".${IcdVersionManager.versionColl}"))
+      .filter(name => name.startsWith(s"$subsystem.") && !name.endsWith(s".${IcdVersionManager.versionColl}"))
       .map(IcdPath)
-      .filter(p ⇒ p.parts.length == 3)
+      .filter(p => p.parts.length == 3)
       .map(_.parts.tail.head)
       .toList
       .sorted
@@ -226,7 +226,7 @@ case class IcdDbQuery(db: MongoDB) {
    * Returns a list of all subsystem names in the database.
    */
   def getSubsystemNames: List[String] = {
-    val result = for (entry ← getEntries) yield {
+    val result = for (entry <- getEntries) yield {
       if (entry.subsystem.isDefined) {
         Some(jsonToSubsystemModel(entry.subsystem.get.head.toString).subsystem)
       } else None
@@ -340,9 +340,9 @@ case class IcdDbQuery(db: MongoDB) {
    */
   def getCommandSenders(subsystem: String, component: String, commandName: String): List[ComponentModel] = {
     for {
-      componentModel ← getComponents
-      commandModel ← getCommandModel(componentModel.subsystem, componentModel.component)
-      sendCommandModel ← commandModel.send.find(s ⇒
+      componentModel <- getComponents
+      commandModel <- getCommandModel(componentModel.subsystem, componentModel.component)
+      sendCommandModel <- commandModel.send.find(s =>
         s.subsystem == subsystem && s.component == component && s.name == commandName)
     } yield componentModel
   }
@@ -365,11 +365,11 @@ case class IcdDbQuery(db: MongoDB) {
   def getModels(subsystem: String, component: Option[String] = None): List[IcdModels] = {
     // Holds all the model classes associated with a single ICD entry.
     case class Models(entry: IcdEntry) extends IcdModels {
-      override val subsystemModel = entry.subsystem.map(s ⇒ SubsystemModelParser(getConfig(s.head.toString)))
-      override val publishModel = entry.publish.map(s ⇒ PublishModelParser(getConfig(s.head.toString)))
-      override val subscribeModel = entry.subscribe.map(s ⇒ SubscribeModelParser(getConfig(s.head.toString)))
-      override val commandModel = entry.command.map(s ⇒ CommandModelParser(getConfig(s.head.toString)))
-      override val componentModel = entry.component.map(s ⇒ ComponentModelParser(getConfig(s.head.toString)))
+      override val subsystemModel = entry.subsystem.map(s => SubsystemModelParser(getConfig(s.head.toString)))
+      override val publishModel = entry.publish.map(s => PublishModelParser(getConfig(s.head.toString)))
+      override val subscribeModel = entry.subscribe.map(s => SubscribeModelParser(getConfig(s.head.toString)))
+      override val commandModel = entry.command.map(s => CommandModelParser(getConfig(s.head.toString)))
+      override val componentModel = entry.component.map(s => ComponentModelParser(getConfig(s.head.toString)))
     }
 
     val e = if (component.isDefined)
@@ -378,7 +378,7 @@ case class IcdDbQuery(db: MongoDB) {
 
     // Get the prefix for the related db sub-collections
     val prefix = e.name + "."
-    val list = for (entry ← getEntries if entry.name.startsWith(prefix)) yield new Models(entry)
+    val list = for (entry <- getEntries if entry.name.startsWith(prefix)) yield new Models(entry)
     Models(e) :: list
   }
 
@@ -389,7 +389,7 @@ case class IcdDbQuery(db: MongoDB) {
    * @param component the component to delete
    */
   def dropComponent(subsystem: String, component: String): Unit = {
-    for (coll ← entryForComponentName(subsystem, component).getCollections) {
+    for (coll <- entryForComponentName(subsystem, component).getCollections) {
       coll.drop()
     }
   }
@@ -401,14 +401,14 @@ case class IcdDbQuery(db: MongoDB) {
    */
   def getPublished(component: ComponentModel): List[Published] = {
     getPublishModel(component) match {
-      case Some(publishModel) ⇒
+      case Some(publishModel) =>
         List(
-          publishModel.telemetryList.map(i ⇒ Published(Telemetry, i.name, i.description)),
-          publishModel.eventList.map(i ⇒ Published(Events, i.name, i.description)),
-          publishModel.eventStreamList.map(i ⇒ Published(EventStreams, i.name, i.description)),
-          publishModel.alarmList.map(i ⇒ Published(Alarms, i.name, i.description))
+          publishModel.telemetryList.map(i => Published(Telemetry, i.name, i.description)),
+          publishModel.eventList.map(i => Published(Events, i.name, i.description)),
+          publishModel.eventStreamList.map(i => Published(EventStreams, i.name, i.description)),
+          publishModel.alarmList.map(i => Published(Alarms, i.name, i.description))
         ).flatten
-      case None ⇒ Nil
+      case None => Nil
     }
   }
 
@@ -419,7 +419,7 @@ case class IcdDbQuery(db: MongoDB) {
     def getPublishInfo(c: ComponentModel): PublishInfo =
       PublishInfo(c.component, c.prefix, getPublished(c))
 
-    getComponents.map(c ⇒ getPublishInfo(c))
+    getComponents.map(c => getPublishInfo(c))
   }
 
   /**
@@ -436,14 +436,14 @@ case class IcdDbQuery(db: MongoDB) {
     }
 
     getSubscribeModel(component) match {
-      case Some(subscribeModel) ⇒
+      case Some(subscribeModel) =>
         List(
-          subscribeModel.telemetryList.map(i ⇒ Subscribed(component, i, Telemetry, getPath(i))),
-          subscribeModel.eventList.map(i ⇒ Subscribed(component, i, Events, getPath(i))),
-          subscribeModel.eventStreamList.map(i ⇒ Subscribed(component, i, EventStreams, getPath(i))),
-          subscribeModel.alarmList.map(i ⇒ Subscribed(component, i, Alarms, getPath(i)))
+          subscribeModel.telemetryList.map(i => Subscribed(component, i, Telemetry, getPath(i))),
+          subscribeModel.eventList.map(i => Subscribed(component, i, Events, getPath(i))),
+          subscribeModel.eventStreamList.map(i => Subscribed(component, i, EventStreams, getPath(i))),
+          subscribeModel.alarmList.map(i => Subscribed(component, i, Alarms, getPath(i)))
         ).flatten
-      case None ⇒ Nil
+      case None => Nil
     }
   }
 
@@ -456,7 +456,7 @@ case class IcdDbQuery(db: MongoDB) {
    * Returns a list describing what each component subscribes to
    */
   def getSubscribeInfo: List[SubscribeInfo] = {
-    getComponents.map(c ⇒ getSubscribeInfo(c))
+    getComponents.map(c => getSubscribeInfo(c))
   }
 
   /**
@@ -467,8 +467,8 @@ case class IcdDbQuery(db: MongoDB) {
    */
   def subscribes(path: String, subscribeType: PublishType): List[Subscribed] = {
     for {
-      i ← getSubscribeInfo
-      s ← i.subscribesTo.filter(sub ⇒ sub.path == path && sub.subscribeType == subscribeType)
+      i <- getSubscribeInfo
+      s <- i.subscribesTo.filter(sub => sub.path == path && sub.subscribeType == subscribeType)
     } yield s
   }
 }

@@ -8,7 +8,7 @@ object Dependencies {
   // command line dependencies
   val scopt = "com.github.scopt" %% "scopt" % "3.4.0"
   val jsonSchemaValidator = "com.github.fge" % "json-schema-validator" % "2.2.6"
-  val ficus = "com.iheart" %% "ficus" % "1.2.0"
+  val ficus = "com.iheart" %% "ficus" % "1.2.3"
   val typesafeConfig = "com.typesafe" % "config" % "1.3.0"
   val scalaTest = "org.scalatest" %% "scalatest" % "2.2.6"
   val pegdown = "org.pegdown" % "pegdown" % "1.6.0"

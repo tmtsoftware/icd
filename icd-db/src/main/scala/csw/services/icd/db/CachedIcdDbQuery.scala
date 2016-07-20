@@ -27,14 +27,14 @@ class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
   private val publishModelMap = getPublishModelMap(components)
   private val commandModelMap = getCommandModelMap(components)
 
-  private val subscribeInfo = components.map(c ⇒ super.getSubscribeInfo(c))
+  private val subscribeInfo = components.map(c => super.getSubscribeInfo(c))
   private val publishInfoMap = getPublishInfoMap
 
   /**
    * Returns a map from subsystem name to list of PublishInfo for the subsystem
    */
   private def getPublishInfoMap: Map[String, List[PublishInfo]] = {
-    val list = for (s ← subsystemNames) yield s → super.getPublishInfo(s)
+    val list = for (s <- subsystemNames) yield s -> super.getPublishInfo(s)
     list.toMap
   }
 
@@ -44,9 +44,9 @@ class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
    */
   private def getSubscribeModelMap(components: List[ComponentModel]): Map[Component, SubscribeModel] = {
     val list = for {
-      componentModel ← components
-      subscribeModel ← super.getSubscribeModel(componentModel)
-    } yield Component(componentModel.subsystem, componentModel.component) → subscribeModel
+      componentModel <- components
+      subscribeModel <- super.getSubscribeModel(componentModel)
+    } yield Component(componentModel.subsystem, componentModel.component) -> subscribeModel
     list.toMap
   }
 
@@ -56,9 +56,9 @@ class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
    */
   private def getPublishModelMap(components: List[ComponentModel]): Map[Component, PublishModel] = {
     val list = for {
-      componentModel ← components
-      publishModel ← super.getPublishModel(componentModel)
-    } yield Component(componentModel.subsystem, componentModel.component) → publishModel
+      componentModel <- components
+      publishModel <- super.getPublishModel(componentModel)
+    } yield Component(componentModel.subsystem, componentModel.component) -> publishModel
     list.toMap
   }
 
@@ -68,9 +68,9 @@ class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
    */
   private def getCommandModelMap(components: List[ComponentModel]): Map[Component, CommandModel] = {
     val list = for {
-      componentModel ← components
-      commandModel ← super.getCommandModel(componentModel.subsystem, componentModel.component)
-    } yield Component(componentModel.subsystem, componentModel.component) → commandModel
+      componentModel <- components
+      commandModel <- super.getCommandModel(componentModel.subsystem, componentModel.component)
+    } yield Component(componentModel.subsystem, componentModel.component) -> commandModel
     list.toMap
   }
 

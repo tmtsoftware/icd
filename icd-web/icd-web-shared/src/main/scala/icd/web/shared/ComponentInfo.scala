@@ -24,26 +24,26 @@ object ComponentInfo {
   //
   def applyIcdFilter(info: ComponentInfo): ComponentInfo = {
     val (oldTelemetryList, oldEventList, oldEventStreamList, oldAlarmList) = info.publishes match {
-      case None    ⇒ (Nil, Nil, Nil, Nil)
-      case Some(p) ⇒ (p.telemetryList, p.eventList, p.eventStreamList, p.alarmList)
+      case None    => (Nil, Nil, Nil, Nil)
+      case Some(p) => (p.telemetryList, p.eventList, p.eventStreamList, p.alarmList)
     }
     val oldCommandsReceived = info.commands.toList.flatMap(_.commandsReceived)
 
-    val newTelemetryList = oldTelemetryList.filter(p ⇒ p.subscribers.nonEmpty)
-    val newEventList = oldEventList.filter(p ⇒ p.subscribers.nonEmpty)
-    val newEventStreamList = oldEventStreamList.filter(p ⇒ p.subscribers.nonEmpty)
-    val newAlarmList = oldAlarmList.filter(p ⇒ p.subscribers.nonEmpty)
+    val newTelemetryList = oldTelemetryList.filter(p => p.subscribers.nonEmpty)
+    val newEventList = oldEventList.filter(p => p.subscribers.nonEmpty)
+    val newEventStreamList = oldEventStreamList.filter(p => p.subscribers.nonEmpty)
+    val newAlarmList = oldAlarmList.filter(p => p.subscribers.nonEmpty)
 
-    val newCommandsReceived = oldCommandsReceived.filter(p ⇒ p.senders.nonEmpty)
+    val newCommandsReceived = oldCommandsReceived.filter(p => p.senders.nonEmpty)
 
-    val publishes = info.publishes.map(p ⇒ p.copy(
+    val publishes = info.publishes.map(p => p.copy(
       telemetryList = newTelemetryList,
       eventList = newEventList,
       eventStreamList = newEventStreamList,
       alarmList = newAlarmList
     ))
 
-    val commands = info.commands.map(c ⇒ c.copy(commandsReceived = newCommandsReceived))
+    val commands = info.commands.map(c => c.copy(commandsReceived = newCommandsReceived))
 
     ComponentInfo(info.componentModel, publishes, info.subscribes, commands)
   }

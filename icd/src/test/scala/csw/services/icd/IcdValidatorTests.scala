@@ -23,7 +23,7 @@ class IcdValidatorTests extends FunSuite {
   }
 
   def printResult(result: List[Problem]): Unit = {
-    for (problem ← result) {
+    for (problem <- result) {
       println(problem.message + "\n")
     }
   }

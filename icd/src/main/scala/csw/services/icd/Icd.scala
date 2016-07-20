@@ -22,19 +22,19 @@ object Icd extends App {
   private val parser = new scopt.OptionParser[Options]("icd") {
     head("icd", System.getProperty("CSW_VERSION"))
 
-    opt[File]("validate") valueName "<dir>" action { (x, c) ⇒ // Note: -v is already taken by the shell script!
+    opt[File]("validate") valueName "<dir>" action { (x, c) => // Note: -v is already taken by the shell script!
       c.copy(validateDir = Some(x))
     } text "Validates icd files in dir (recursively, default: current dir): subsystem-model.conf, component-model.conf, command-model.conf, publish-model.conf, subscribe-model.conf"
 
-    opt[File]('i', "in") valueName "<inputFile>" action { (x, c) ⇒
+    opt[File]('i', "in") valueName "<inputFile>" action { (x, c) =>
       c.copy(inputFile = Some(x))
     } text "Single input file to be verified, assumed to be in HOCON (*.conf) format"
 
-    opt[File]('s', "schema") valueName "<jsonSchemaFile>" action { (x, c) ⇒
+    opt[File]('s', "schema") valueName "<jsonSchemaFile>" action { (x, c) =>
       c.copy(schemaFile = Some(x))
     } text s"""JSON schema file to use to validate the input file, assumed to be in HOCON (*.conf) or JSON (*.json) format
          |        (Default uses schema based on input file name (${StdName.stdSet.mkString(", ")})""".stripMargin
-    opt[File]('o', "out") valueName "<outputFile>" action { (x, c) ⇒
+    opt[File]('o', "out") valueName "<outputFile>" action { (x, c) =>
       c.copy(outputFile = Some(x))
     } text
       """Saves the API doc (or single input or schema file) to the given file in a format based on
@@ -46,15 +46,15 @@ object Icd extends App {
   }
 
   parser.parse(args, Options()) match {
-    case Some(options) ⇒
+    case Some(options) =>
       try {
         run(options)
       } catch {
-        case e: Throwable ⇒
+        case e: Throwable =>
           e.printStackTrace()
           System.exit(1)
       }
-    case None ⇒ System.exit(1)
+    case None => System.exit(1)
   }
 
   private def run(options: Options): Unit = {
@@ -66,7 +66,7 @@ object Icd extends App {
       val dir = options.validateDir.getOrElse(new File("."))
       val problems = validateDir(dir)
       if (errorCount(problems) == 0) {
-        for (outputFile ← options.outputFile if !outputFile.getName.endsWith(".json")) {
+        for (outputFile <- options.outputFile if !outputFile.getName.endsWith(".json")) {
           IcdPrinter.saveToFile(dir, outputFile)
         }
       } else System.exit(1)
@@ -89,8 +89,8 @@ object Icd extends App {
       if (outputFile.getName.endsWith(".json")) {
         options.inputFile match {
           // JSON output
-          case Some(inputFile) ⇒ saveAsJson(inputFile, outputFile)
-          case None ⇒ options.schemaFile foreach { schemaFile ⇒
+          case Some(inputFile) => saveAsJson(inputFile, outputFile)
+          case None => options.schemaFile foreach { schemaFile =>
             saveAsJson(schemaFile, outputFile)
           }
         }
@@ -107,11 +107,11 @@ object Icd extends App {
   }
 
   private def errorCount(problems: List[Problem]): Int = {
-    problems.count(p ⇒ p.severity == "error" || p.severity == "fatal")
+    problems.count(p => p.severity == "error" || p.severity == "fatal")
   }
 
   private def printProblems(problems: List[Problem]): List[Problem] = {
-    for (problem ← problems) {
+    for (problem <- problems) {
       println(s"${problem.severity}: ${problem.message}")
     }
     problems

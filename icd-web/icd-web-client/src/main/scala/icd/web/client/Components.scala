@@ -70,7 +70,7 @@ object Components {
             tr(newHead.map(th(_)))
           ),
           tbody(
-            for (row ← newRows) yield {
+            for (row <- newRows) yield {
               tr(row.map(mkTableCell))
             }
           ))
@@ -100,7 +100,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    */
   private def getComponentInfo(subsystem: String, versionOpt: Option[String], compNames: List[String],
                                targetSubsystem: SubsystemWithVersion): Future[List[ComponentInfo]] = {
-    Ajax.get(Routes.icdComponentInfo(subsystem, versionOpt, compNames, targetSubsystem)).map { r ⇒
+    Ajax.get(Routes.icdComponentInfo(subsystem, versionOpt, compNames, targetSubsystem)).map { r =>
       val list = read[List[ComponentInfo]](r.responseText)
       if (targetSubsystem.subsystemOpt.isDefined) list.map(ComponentInfo.applyIcdFilter) else list
     }
@@ -109,7 +109,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   // Gets top level subsystem info from the server
   private def getSubsystemInfo(subsystem: String, versionOpt: Option[String]): Future[SubsystemInfo] = {
     val path = Routes.subsystemInfo(subsystem, versionOpt)
-    Ajax.get(path).map { r ⇒
+    Ajax.get(path).map { r =>
       read[SubsystemInfo](r.responseText)
     }
   }
@@ -124,18 +124,18 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   def addComponents(compNames: List[String], sv: SubsystemWithVersion, targetSubsystem: SubsystemWithVersion,
                     icdOpt: Option[IcdVersion]): Future[Unit] = {
     sv.subsystemOpt match {
-      case None ⇒ Future.successful()
-      case Some(subsystem) ⇒
+      case None => Future.successful()
+      case Some(subsystem) =>
         val f = for {
-          subsystemInfo ← getSubsystemInfo(subsystem, sv.versionOpt)
-          infoList ← getComponentInfo(subsystem, sv.versionOpt, compNames, targetSubsystem)
+          subsystemInfo <- getSubsystemInfo(subsystem, sv.versionOpt)
+          infoList <- getComponentInfo(subsystem, sv.versionOpt, compNames, targetSubsystem)
         } yield {
           val titleInfo = TitleInfo(subsystemInfo, targetSubsystem, icdOpt)
           mainContent.clearContent()
           mainContent.setTitle(titleInfo.title, titleInfo.subtitleOpt, titleInfo.descriptionOpt)
           infoList.foreach(displayComponentInfo)
         }
-        f.onFailure { case ex ⇒ mainContent.displayInternalError(ex) }
+        f.onFailure { case ex => mainContent.displayInternalError(ex) }
         f
     }
   }
@@ -149,11 +149,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    */
   def addComponent(compName: String, sv: SubsystemWithVersion,
                    targetSubsystem: SubsystemWithVersion): Unit = {
-    sv.subsystemOpt.foreach { subsystem ⇒
-      getComponentInfo(subsystem, sv.versionOpt, List(compName), targetSubsystem).map { list ⇒
+    sv.subsystemOpt.foreach { subsystem =>
+      getComponentInfo(subsystem, sv.versionOpt, List(compName), targetSubsystem).map { list =>
         list.foreach(displayComponentInfo)
       }.recover {
-        case ex ⇒ mainContent.displayInternalError(ex)
+        case ex => mainContent.displayInternalError(ex)
       }
     }
   }
@@ -167,14 +167,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   def setComponent(sv: SubsystemWithVersion, compName: String): Unit = {
     if (sv.subsystemOpt.isDefined) {
       val path = Routes.componentInfo(sv.subsystemOpt.get, sv.versionOpt, List(compName))
-      Ajax.get(path).map { r ⇒
+      Ajax.get(path).map { r =>
         val infoList = read[List[ComponentInfo]](r.responseText)
         mainContent.clearContent()
         mainContent.scrollToTop()
         mainContent.setTitle(s"Component: $compName")
         displayComponentInfo(infoList.head)
       }.recover {
-        case ex ⇒
+        case ex =>
           mainContent.displayInternalError(ex)
       }
     }
@@ -221,7 +221,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     if (attributesList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default")
-      val rowList = for (a ← attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
+      val rowList = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
       div(
         strong(titleStr),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable)
@@ -242,7 +242,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     if (attributesList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default")
-      val rowList = for (a ← attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue,
+      val rowList = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue,
         if (requiredArgs.contains(a.name)) "yes" else "no")
       div(
         strong(titleStr),
@@ -330,7 +330,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             )
           ),
           tbody(
-            for (t ← telemetryList) yield {
+            for (t <- telemetryList) yield {
               val (btn, row) = hiddenRowMarkup(makeTelemetryDetailsRow(t), 3)
               List(
                 tr(
@@ -372,7 +372,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             )
           ),
           tbody(
-            for (t ← alarmList) yield {
+            for (t <- alarmList) yield {
               val (btn, row) = hiddenRowMarkup(makeAlarmDetailsRow(t), 3)
               List(
                 tr(
@@ -389,8 +389,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
 
     publishesOpt match {
-      case None ⇒ div()
-      case Some(publishes) ⇒
+      case None => div()
+      case Some(publishes) =>
         if (publishes.nonEmpty) {
           div(
             Styles.componentSection,
@@ -442,7 +442,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         formatRate(sInfo.maxRate)
       ))
 
-      val attrTable = si.telemetryModel.map(t ⇒ attributeListMarkup("Attributes", t.attributesList)).getOrElse(div())
+      val attrTable = si.telemetryModel.map(t => attributeListMarkup("Attributes", t.attributesList)).getOrElse(div())
       div(mkTable(headings, rowList), attrTable)
     }
 
@@ -461,7 +461,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               )
             ),
             tbody(
-              for (s ← subscribeList) yield {
+              for (s <- subscribeList) yield {
                 val (btn, row) = hiddenRowMarkup(makeDetailsRow(s), 3)
                 val usage = if (s.subscribeModelInfo.usage.isEmpty) div()
                 else div(
@@ -483,8 +483,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
 
     subscribesOpt match {
-      case None ⇒ div()
-      case Some(subscribes) ⇒
+      case None => div()
+      case Some(subscribes) =>
         if (subscribes.subscribeInfo.nonEmpty) {
           div(
             Styles.componentSection,
@@ -538,7 +538,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           )
         ),
         tbody(
-          for (r ← info) yield {
+          for (r <- info) yield {
             val rc = r.receiveCommandModel
             val (btn, row) = hiddenRowMarkup(makeDetailsRow(r), 3)
             List(
@@ -592,7 +592,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           )
         ),
         tbody(
-          for (s ← info) yield {
+          for (s <- info) yield {
             val r = s.receiveCommandModel
             val (btn, row) = hiddenRowMarkup(makeDetailsRow(r), 3)
             List(
@@ -612,8 +612,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def commandsMarkup(compName: String, commandsOpt: Option[Commands]) = {
     import scalatags.JsDom.all._
     commandsOpt match {
-      case None ⇒ div()
-      case Some(commands) ⇒
+      case None => div()
+      case Some(commands) =>
         if (commands.commandsReceived.isEmpty && commands.commandsSent.isEmpty) div()
         else div(
           h3(s"Commands for $compName"),

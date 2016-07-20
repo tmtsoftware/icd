@@ -41,12 +41,12 @@ object ComponentInfoHelper {
     // get the models for this component
     val versionManager = IcdVersionManager(query.db, query)
     val modelsList = versionManager.getModels(subsystem, versionOpt, Some(compName))
-    modelsList.headOption.flatMap { icdModels ⇒
+    modelsList.headOption.flatMap { icdModels =>
       val componentModel = icdModels.componentModel
       val publishes = getPublishes(query, icdModels)
       val subscribes = getSubscribes(query, icdModels)
       val commands = getCommands(query, icdModels)
-      componentModel.map { model ⇒ ComponentInfo(model, publishes, subscribes, commands) }
+      componentModel.map { model => ComponentInfo(model, publishes, subscribes, commands) }
     }
   }
 
@@ -61,7 +61,7 @@ object ComponentInfoHelper {
    */
   private def getSubscribers(query: IcdDbQuery, prefix: String, name: String, desc: String,
                              subscribeType: PublishType): List[SubscribeInfo] = {
-    query.subscribes(s"$prefix.$name", subscribeType).map { s ⇒
+    query.subscribes(s"$prefix.$name", subscribeType).map { s =>
       SubscribeInfo(s.component, s.subscribeType, s.subscribeModelInfo)
     }
   }
@@ -74,22 +74,22 @@ object ComponentInfoHelper {
    */
   private def getPublishes(query: IcdDbQuery, models: IcdModels): Option[Publishes] = {
     models.componentModel match {
-      case None ⇒ None
-      case Some(componentModel) ⇒
+      case None => None
+      case Some(componentModel) =>
         val prefix = componentModel.prefix
         models.publishModel match {
-          case None ⇒ None
-          case Some(m) ⇒
-            val telemetryList = m.telemetryList.map { t ⇒
+          case None => None
+          case Some(m) =>
+            val telemetryList = m.telemetryList.map { t =>
               TelemetryInfo(t, getSubscribers(query, prefix, t.name, t.description, Telemetry))
             }
-            val eventList = m.eventList.map { t ⇒
+            val eventList = m.eventList.map { t =>
               TelemetryInfo(t, getSubscribers(query, prefix, t.name, t.description, EventStreams))
             }
-            val eventStreamList = m.eventStreamList.map { t ⇒
+            val eventStreamList = m.eventStreamList.map { t =>
               TelemetryInfo(t, getSubscribers(query, prefix, t.name, t.description, EventStreams))
             }
-            val alarmList = m.alarmList.map { al ⇒
+            val alarmList = m.alarmList.map { al =>
               AlarmInfo(al, getSubscribers(query, prefix, al.name, al.description, Alarms))
             }
             if (m.description.nonEmpty || telemetryList.nonEmpty || eventList.nonEmpty || eventStreamList.nonEmpty || alarmList.nonEmpty)
@@ -110,13 +110,13 @@ object ComponentInfoHelper {
     // Gets additional information about the given subscription, including info from the publisher
     def getInfo(publishType: PublishType, si: SubscribeModelInfo): Option[DetailedSubscribeInfo] = {
       val x = for {
-        t ← query.getModels(si.subsystem, Some(si.component))
-        componentModel ← t.componentModel
-        publishModel ← t.publishModel
+        t <- query.getModels(si.subsystem, Some(si.component))
+        componentModel <- t.componentModel
+        publishModel <- t.publishModel
       } yield {
         val (telem, alarm) = publishType match {
-          case Alarms ⇒ (None, publishModel.alarmList.find(a ⇒ a.name == si.name))
-          case _      ⇒ (publishModel.telemetryList.find(t ⇒ t.name == si.name), None)
+          case Alarms => (None, publishModel.alarmList.find(a => a.name == si.name))
+          case _      => (publishModel.telemetryList.find(t => t.name == si.name), None)
         }
         DetailedSubscribeInfo(publishType, si, telem, alarm, componentModel)
       }
@@ -124,8 +124,8 @@ object ComponentInfoHelper {
     }
 
     models.subscribeModel match {
-      case None ⇒ None
-      case Some(m) ⇒
+      case None => None
+      case Some(m) =>
         val subscribeInfo = m.telemetryList.map(getInfo(Telemetry, _)) ++
           m.eventList.map(getInfo(Events, _)) ++
           m.eventStreamList.map(getInfo(EventStreams, _)) ++
@@ -146,10 +146,10 @@ object ComponentInfoHelper {
    */
   private def getCommandsReceived(query: IcdDbQuery, models: IcdModels): List[ReceivedCommandInfo] = {
     for {
-      cmd ← models.commandModel.toList
-      received ← cmd.receive
+      cmd <- models.commandModel.toList
+      received <- cmd.receive
     } yield {
-      val senders = query.getCommandSenders(cmd.subsystem, cmd.component, received.name).map(comp ⇒
+      val senders = query.getCommandSenders(cmd.subsystem, cmd.component, received.name).map(comp =>
         OtherComponent(comp.subsystem, comp.component))
       ReceivedCommandInfo(received, senders)
     }
@@ -164,10 +164,10 @@ object ComponentInfoHelper {
    */
   private def getCommandsSent(query: IcdDbQuery, models: IcdModels): List[SentCommandInfo] = {
     val result = for {
-      cmd ← models.commandModel.toList
-      sent ← cmd.send
+      cmd <- models.commandModel.toList
+      sent <- cmd.send
     } yield {
-      query.getCommand(sent.subsystem, sent.component, sent.name).map { r ⇒
+      query.getCommand(sent.subsystem, sent.component, sent.name).map { r =>
         SentCommandInfo(r, Some(OtherComponent(sent.subsystem, sent.component)))
       }
     }
@@ -184,8 +184,8 @@ object ComponentInfoHelper {
     val received = getCommandsReceived(query, models)
     val sent = getCommandsSent(query, models)
     models.commandModel match {
-      case None ⇒ None
-      case Some(m) ⇒
+      case None => None
+      case Some(m) =>
         val desc = m.description
         if (desc.nonEmpty || sent.nonEmpty || received.nonEmpty)
           Some(Commands(desc, received, sent))

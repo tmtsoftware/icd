@@ -58,7 +58,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
 
   // called when an ICD is selected
   private def icdSelected(e: dom.Event): Unit = {
-    for (_ ← updateIcdVersionOptions())
+    for (_ <- updateIcdVersionOptions())
       listener.icdSelected(getSelectedIcdVersion)
   }
 
@@ -79,8 +79,8 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   def getSelectedIcd: Option[IcdName] = {
     import upickle.default._
     icdItem.value match {
-      case `emptyOptionMsg` ⇒ None
-      case json             ⇒ Some(read[IcdName](json))
+      case `emptyOptionMsg` => None
+      case json             => Some(read[IcdName](json))
     }
   }
 
@@ -90,8 +90,8 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   def getSelectedIcdVersion: Option[IcdVersion] = {
     import upickle.default._
     versionItem.value match {
-      case `unpublishedVersion` | null | "" ⇒ None
-      case json                             ⇒ Some(read[IcdVersion](json))
+      case `unpublishedVersion` | null | "" => None
+      case json                             => Some(read[IcdVersion](json))
     }
   }
 
@@ -109,14 +109,14 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   ): Future[Unit] = {
     import upickle.default._
     icdVersionOpt match {
-      case Some(icdVersion) ⇒
+      case Some(icdVersion) =>
         icdItem.value = write(IcdName(icdVersion.subsystem, icdVersion.target)) // JSON
         versionItem.value = write(icdVersion) // JSON
         versionItem.removeAttribute("hidden")
         if (notifyListener)
           listener.icdSelected(icdVersionOpt, saveHistory)
         else Future.successful()
-      case None ⇒
+      case None =>
         icdItem.value = emptyOptionMsg
         versionItem.value = unpublishedVersion
         versionItem.setAttribute("hidden", "true")
@@ -131,7 +131,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
    */
   def getIcds: List[IcdName] = {
     import upickle.default._
-    icdItem.options.drop(1).map(s ⇒ read[IcdName](s.value)).toList
+    icdItem.options.drop(1).map(s => read[IcdName](s.value)).toList
   }
 
   /**
@@ -144,18 +144,18 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
     setIcdWithVersion(None, notifyListener = false, saveHistory = false)
     val p = Promise[Unit]()
     val icdNames = for {
-      subsystem ← sv.subsystemOpt
-      subsystemVersion ← sv.versionOpt
-      target ← tv.subsystemOpt
-      targetVersion ← tv.versionOpt
-      icd ← getIcds.find(i ⇒ i.subsystem == subsystem && i.target == target)
+      subsystem <- sv.subsystemOpt
+      subsystemVersion <- sv.versionOpt
+      target <- tv.subsystemOpt
+      targetVersion <- tv.versionOpt
+      icd <- getIcds.find(i => i.subsystem == subsystem && i.target == target)
     } yield {
-      for (icdVersionList ← getIcdVersionOptions(icd) recover { case ex ⇒ p.failure(ex); Nil }) {
-        val icdVersionOpt = icdVersionList.find(i ⇒ i.subsystemVersion == subsystemVersion && i.targetVersion == targetVersion)
+      for (icdVersionList <- getIcdVersionOptions(icd) recover { case ex => p.failure(ex); Nil }) {
+        val icdVersionOpt = icdVersionList.find(i => i.subsystemVersion == subsystemVersion && i.targetVersion == targetVersion)
         if (icdVersionOpt.isDefined) {
           for {
-            _ ← updateIcdVersionOptions(icdVersionList) recover { case ex ⇒ p.failure(ex) }
-            _ ← setIcdWithVersion(icdVersionOpt, notifyListener = false, saveHistory = false)
+            _ <- updateIcdVersionOptions(icdVersionList) recover { case ex => p.failure(ex) }
+            _ <- setIcdWithVersion(icdVersionOpt, notifyListener = false, saveHistory = false)
           } p.success(())
         } else p.success(())
       }
@@ -170,11 +170,11 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
     import upickle.default._
 
     Ajax.get(Routes.icdNames).flatMap {
-      r ⇒
+      r =>
         val icdNames = read[List[IcdName]](r.responseText)
         updateIcdOptions(icdNames)
     }.recover {
-      case ex ⇒
+      case ex =>
         ex.printStackTrace() // XXX TODO
         Nil
     }
@@ -191,20 +191,20 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
       icdItem.remove(0)
     }
     icdItem.add(option(value := emptyOptionMsg)(emptyOptionMsg).render)
-    for (icdName ← icdNames) {
+    for (icdName <- icdNames) {
       icdItem.add(option(value := write(icdName))(icdName.toString).render)
     }
 
     // restore selected ICD (updateIcdVersionOptions() below depends on an ICD being selected)
     icdVersionOpt.foreach {
-      icdVersion ⇒
+      icdVersion =>
         icdItem.value = write(IcdName(icdVersion.subsystem, icdVersion.target)) // JSON
     }
 
     // Update version options
     for {
-      _ ← updateIcdVersionOptions()
-      _ ← setIcdWithVersion(icdVersionOpt)
+      _ <- updateIcdVersionOptions()
+      _ <- setIcdWithVersion(icdVersionOpt)
     } yield ()
   }
 
@@ -225,10 +225,10 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
       Future.successful()
     else {
       versionOpt match {
-        case Some(s) ⇒
+        case Some(s) =>
           versionItem.value = write(s) // JSON
           versionItem.removeAttribute("hidden")
-        case None ⇒
+        case None =>
           versionItem.value = unpublishedVersion
           versionItem.setAttribute("hidden", "true")
       }
@@ -243,15 +243,15 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   def updateIcdVersionOptions(): Future[Unit] = {
     versionItem.setAttribute("hidden", "true")
     getSelectedIcd match {
-      case Some(icdName) ⇒
+      case Some(icdName) =>
         getIcdVersionOptions(icdName).flatMap {
-          list ⇒ // Future!
+          list => // Future!
             versionItem.removeAttribute("hidden")
             updateIcdVersionOptions(list)
         }.recover {
-          case ex ⇒ ex.printStackTrace()
+          case ex => ex.printStackTrace()
         }
-      case None ⇒
+      case None =>
         Future.successful()
     }
   }
@@ -265,7 +265,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
     while (versionItem.options.length != 0) {
       versionItem.remove(0)
     }
-    for (v ← versions) {
+    for (v <- versions) {
       // The option value is the JSON for the IcdVersion object
       versionItem.add(option(value := write(v))(v.icdVersion).render)
     }
@@ -278,13 +278,13 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
     import upickle.default._
 
     Ajax.get(Routes.icdVersions(icdName)).map {
-      r ⇒
+      r =>
         read[List[IcdVersionInfo]](r.responseText)
     }.recover {
-      case ex ⇒
+      case ex =>
         ex.printStackTrace() // XXX TODO
         Nil
-    }.map(list ⇒ list.map(_.icdVersion))
+    }.map(list => list.map(_.icdVersion))
   }
 
 }

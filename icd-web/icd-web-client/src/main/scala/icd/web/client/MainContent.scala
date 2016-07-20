@@ -47,9 +47,9 @@ case class MainContent() extends Displayable {
    */
   def setTitle(title: String, subtitleOpt: Option[String] = None, descriptionOpt: Option[String] = None): Unit = {
     subtitleOpt match {
-      case Some(subtitle) ⇒
+      case Some(subtitle) =>
         contentTitle.innerHTML = s"$title<br><small>$subtitle</small>"
-      case None ⇒
+      case None =>
         contentTitle.textContent = title
     }
     setDescription(descriptionOpt.getOrElse(""))
@@ -61,8 +61,8 @@ case class MainContent() extends Displayable {
   def getTitle: String = {
     val s = contentTitle.innerHTML
     s.indexOf("<br>") match {
-      case -1 ⇒ s
-      case n  ⇒ s.substring(0, n)
+      case -1 => s
+      case n  => s.substring(0, n)
     }
   }
 
