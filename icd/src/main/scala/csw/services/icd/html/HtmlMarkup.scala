@@ -4,6 +4,7 @@ import java.util.UUID
 
 import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
+import org.jsoup.nodes.Document.OutputSettings
 
 import scalatags.Text.all._
 import scalatags.Text.TypedTag
@@ -79,8 +80,11 @@ object HtmlMarkup {
         Long.MaxValue
       ) // last arg is to avoid pegdown timeouts
 
+      // Enforce self-closing tags (e.g. for <img> tags) so that PDF generator will not fail.
+      val os = new OutputSettings().syntax(OutputSettings.Syntax.xml)
+
       // Convert markdown to HTML, then clean it up with jsoup to avoid issues with the pdf generator (and for security)
-      Jsoup.clean(pd.markdownToHtml(stripLeadingWs(gfm)), Whitelist.basicWithImages())
+      Jsoup.clean(pd.markdownToHtml(stripLeadingWs(gfm)), "", Whitelist.basicWithImages(), os)
     }
   }
 
