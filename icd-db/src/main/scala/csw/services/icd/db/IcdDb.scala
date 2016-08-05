@@ -3,10 +3,10 @@ package csw.services.icd.db
 import java.io.File
 
 import com.mongodb.casbah.Imports._
-import com.typesafe.config.{ConfigFactory, Config}
+import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions}
 import csw.services.icd._
 import csw.services.icd.model.{BaseModelParser, SubsystemModelParser}
-import org.joda.time.DateTimeZone
+import org.joda.time.{DateTime, DateTimeZone}
 
 import scala.io.StdIn
 
@@ -29,6 +29,7 @@ object IcdDb extends App {
     host:         String         = defaultHost,
     port:         Int            = defaultPort,
     ingest:       Option[File]   = None,
+    importIcds:   Option[File]   = None,
     list:         Option[String] = None,
     subsystem:    Option[String] = None,
     target:       Option[String] = None,
@@ -84,6 +85,10 @@ object IcdDb extends App {
     opt[String]("icdversion") valueName "<icd-version>" action { (x, c) =>
       c.copy(icdVersion = Some(x))
     } text "Specifies the version to be used by any following options (overrides subsystem and target versions)"
+
+    opt[File]("import-icds") valueName "<file>" action { (x, c) =>
+      c.copy(importIcds = Some(x))
+    } text "Imports ICD release information from the given file (format: see icds-schema.conf)"
 
     opt[File]('o', "out") valueName "<outputFile>" action { (x, c) =>
       c.copy(outputFile = Some(x))
@@ -144,6 +149,13 @@ object IcdDb extends App {
     val db = IcdDb(options.dbName, options.host, options.port)
 
     options.ingest.map(dir => db.ingest(dir)) match {
+      case Some(problems) if problems.nonEmpty =>
+        problems.foreach(println(_))
+        System.exit(1)
+      case _ =>
+    }
+
+    options.importIcds.map(file => db.importIcds(file)) match {
       case Some(problems) if problems.nonEmpty =>
         problems.foreach(println(_))
         System.exit(1)
@@ -375,6 +387,43 @@ case class IcdDb(
       SubsystemModelParser(stdConfig.config).subsystem
     else
       BaseModelParser(stdConfig.config).subsystem
+  }
+
+  /**
+   * Imports a file with ICD release information.
+   *
+   * @param inputFile a file in HOCON/JSON format matching the JSON schema in icds-schema.conf
+   */
+  def importIcds(inputFile: File): List[Problem] = {
+    import net.ceedubs.ficus.Ficus._
+    val inputConfig = ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())
+    val schemaConfig = ConfigFactory.parseResources("icds-schema.conf")
+    val validateProblems = if (schemaConfig == null) {
+      List(Problem("error", s"Missing schema resource: icds-schema.conf"))
+    } else {
+      IcdValidator.validate(inputConfig, schemaConfig, inputFile.toString)
+    }
+    if (validateProblems.nonEmpty)
+      validateProblems
+    else {
+      val subsystems = inputConfig.as[List[String]]("subsystems")
+      val configList = inputConfig.as[List[Config]]("icds")
+      versionManager.removeIcdVersions(subsystems.head, subsystems(1))
+      configList.foreach { config =>
+        val icdVersion = config.as[String]("icdVersion")
+        val versions = config.as[List[String]]("versions")
+        val user = config.as[String]("user")
+        val comment = config.as[String]("comment")
+        val date = config.as[String]("date")
+        versionManager.addIcdVersion(
+          icdVersion,
+          subsystems.head, versions.head,
+          subsystems(1), versions(1),
+          user, comment, DateTime.parse(date)
+        )
+      }
+      Nil
+    }
   }
 
   /**

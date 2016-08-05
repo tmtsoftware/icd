@@ -231,7 +231,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
           case PublishView => publishItemSelected(saveHistory = false)()
           case VersionView => showVersionHistory(saveHistory = false)()
           case ComponentView | IcdView =>
-            updateComponentDisplay(hist.sourceComponents).onSuccess {
+            updateComponentDisplay(hist.sourceSubsystem, hist.targetSubsystem, hist.sourceComponents).onSuccess {
               case _ => hist.currentCompnent.foreach(compName => goToComponent(compName, replace = true))
             }
         }
@@ -251,14 +251,12 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
    *
    * @return a future indicating when the changes are done
    */
-  private def updateComponentDisplay(compNames: List[String]): Future[Unit] = {
-    val sub = subsystem.getSubsystemWithVersion
-    val targetOpt = targetSubsystem.getSubsystemWithVersion
+  private def updateComponentDisplay(sv: SubsystemWithVersion, targetSv: SubsystemWithVersion, compNames: List[String]): Future[Unit] = {
     val icdOpt = icdChooser.getSelectedIcdVersion
     setSidebarVisible(true)
     mainContent.clearContent()
     showBusyCursorWhile {
-      components.addComponents(compNames, sub, targetOpt, icdOpt)
+      components.addComponents(compNames, sv, targetSv, icdOpt)
     }
   }
 
@@ -286,14 +284,15 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
           // Target subsystem can't be the same as the selected subsystem
           targetSubsystem.setAllOptionsEnabled()
           targetSubsystem.disableOption(selectedSubsystem)
+          val targetSv = targetSubsystem.getSubsystemWithVersion
           for {
-            _ <- icdChooser.selectMatchingIcd(sv, targetSubsystem.getSubsystemWithVersion)
+            _ <- icdChooser.selectMatchingIcd(sv, targetSv)
             names <- getComponentNames(sv)
-            _ <- Future.successful {
-              names.foreach(sidebar.addComponent)
-            }
-            _ <- updateComponentDisplay(names)
-          } yield if (saveHistory) pushState(viewType = ComponentView) else ()
+            _ <- Future.successful { names.foreach(sidebar.addComponent) }
+            _ <- updateComponentDisplay(sv, targetSv, names)
+          } yield {
+            if (saveHistory) pushState(viewType = ComponentView) else ()
+          }
         case None =>
           targetSubsystem.setAllOptionsEnabled()
           Future.successful()
@@ -312,9 +311,10 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
         case None =>
           subsystem.setAllOptionsEnabled()
       }
+      val sv = subsystem.getSubsystemWithVersion
       for {
-        _ <- icdChooser.selectMatchingIcd(subsystem.getSubsystemWithVersion, targSv)
-        _ <- updateComponentDisplay(sidebar.getSelectedComponents)
+        _ <- icdChooser.selectMatchingIcd(sv, targSv)
+        _ <- updateComponentDisplay(sv, targSv, sidebar.getSelectedComponents)
       } yield {
         if (saveHistory) pushState(viewType = ComponentView)
       }
@@ -347,6 +347,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private object IcdChooserListener extends IcdListener {
     // Called when the ICD (or ICD version) combobox selection is changed
     override def icdSelected(icdVersionOpt: Option[IcdVersion], saveHistory: Boolean = true): Future[Unit] = {
+      println(s"XXX icdSelected($icdVersionOpt ...)")
       icdVersionOpt match {
         case Some(icdVersion) =>
           val sv = SubsystemWithVersion(Some(icdVersion.subsystem), Some(icdVersion.subsystemVersion))
@@ -363,11 +364,12 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
             // Update the display
             sidebar.clearComponents()
             mainContent.clearContent()
-            getComponentNames(sv).flatMap { names => // Future!
-              names.foreach(sidebar.addComponent)
-              updateComponentDisplay(names).map { _ =>
-                if (saveHistory) pushState(viewType = IcdView)
-              }
+            getComponentNames(sv).onSuccess {
+              case names => // Future!
+                names.foreach(sidebar.addComponent)
+                updateComponentDisplay(sv, tv, names).map { _ =>
+                  if (saveHistory) pushState(viewType = IcdView)
+                }
             }
           }
         case None => Future.successful()

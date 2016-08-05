@@ -279,6 +279,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
     if (version == currentVersion) {
       coll.head.toString
     } else {
+      println(s"XXX v = $v, version = $version")
       v.find(versionKey -> version).one().toString
     }
   }
@@ -463,12 +464,30 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
   def publishIcd(subsystem: String, subsystemVersion: String,
                  target: String, targetVersion: String,
                  majorVersion: Boolean, comment: String, userName: String): Unit = {
-
     val icdVersion = incrVersion(getLatestPublishedIcdVersion(subsystem, target), majorVersion)
-    val now = new DateTime(DateTimeZone.UTC)
+    val date = new DateTime(DateTimeZone.UTC)
     val user = if (userName.nonEmpty) userName else System.getProperty("user.name")
+    addIcdVersion(icdVersion, subsystem, subsystemVersion, target, targetVersion, user, comment, date)
+  }
 
-    // XXX TODO: Use a case class with auto JSON conversion
+  /**
+   * Adds an entry for a published ICD with the given version,
+   * from the given subsystem and version to the target subsystem and version.
+   *
+   * @param icdVersion the new ICD version
+   * @param subsystem the source subsystem
+   * @param subsystemVersion the source subsystem version
+   * @param target the target subsystem
+   * @param targetVersion the target subsystem version
+   * @param user the user who made the release
+   * @param comment comment to go with this version
+   */
+  def addIcdVersion(
+    icdVersion: String,
+    subsystem:  String, subsystemVersion: String,
+    target: String, targetVersion: String,
+    user: String, comment: String, date: DateTime
+  ): Unit = {
     val obj = Map(
       versionStrKey -> icdVersion,
       subsystemKey -> subsystem,
@@ -476,10 +495,20 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
       targetKey -> target,
       targetVersionKey -> targetVersion,
       userKey -> user,
-      dateKey -> now,
+      dateKey -> date,
       commentKey -> comment
     ).asDBObject
     db(icdCollName).insert(obj, WriteConcern.SAFE)
+  }
+
+  /**
+   * Removes all entries for published ICDs with the given subsystem and target subsystem.
+   *
+   * @param subsystem the source subsystem
+   * @param target the target subsystem
+   */
+  def removeIcdVersions(subsystem: String, target: String): Unit = {
+    db(icdCollName).remove(MongoDBObject(subsystemKey -> subsystem, targetKey -> target), WriteConcern.SAFE)
   }
 
   /**

@@ -50,6 +50,7 @@ object Routes {
    */
   def icdComponentInfo(subsystem: String, versionOpt: Option[String], compNameList: List[String],
                        targetSubsystem: SubsystemWithVersion) = {
+    println(s"XXX icdComponentInfo(subsys=$subsystem $versionOpt, comps=$compNameList, target=$targetSubsystem")
     targetSubsystem.subsystemOpt match {
       case None => componentInfo(subsystem, versionOpt, compNameList)
       case Some(target) =>
