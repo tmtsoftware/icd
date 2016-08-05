@@ -347,7 +347,6 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private object IcdChooserListener extends IcdListener {
     // Called when the ICD (or ICD version) combobox selection is changed
     override def icdSelected(icdVersionOpt: Option[IcdVersion], saveHistory: Boolean = true): Future[Unit] = {
-      println(s"XXX icdSelected($icdVersionOpt ...)")
       icdVersionOpt match {
         case Some(icdVersion) =>
           val sv = SubsystemWithVersion(Some(icdVersion.subsystem), Some(icdVersion.subsystemVersion))

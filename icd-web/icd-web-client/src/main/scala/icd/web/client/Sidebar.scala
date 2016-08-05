@@ -64,7 +64,6 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
       val elem = nodeList(i).asInstanceOf[HTMLInputElement]
       if (elem.checked) Some(elem.value) else None
     }
-    println(s"XXX selected comps: ${result.toList.flatten}")
     result.toList.flatten
   }
 

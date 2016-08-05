@@ -279,7 +279,6 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
     if (version == currentVersion) {
       coll.head.toString
     } else {
-      println(s"XXX v = $v, version = $version")
       v.find(versionKey -> version).one().toString
     }
   }
