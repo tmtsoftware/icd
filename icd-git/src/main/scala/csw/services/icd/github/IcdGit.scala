@@ -41,8 +41,7 @@ object IcdGit extends App {
     subsystem: Option[String] = None,
     target: Option[String] = None,
     icdVersion: Option[String] = None,
-    //                      versions:     Option[String] = None,
-    //                      diff:         Option[String] = None,
+    versions: Boolean = false,
     interactive: Boolean = false,
     publish: Boolean = false,
     unpublish: Boolean = false,
@@ -57,7 +56,7 @@ object IcdGit extends App {
 
     opt[Unit]('l', "list") action { (x, c) =>
       c.copy(list = true)
-    } text "Prints a list of available versions (based on release tags) for the subsystem given by the subsystem option"
+    } text "Prints the list of ICDs defined for the given subsystem and target subsystem options"
 
     opt[String]('s', "subsystem") valueName "<subsystem>[:version]" action { (x, c) =>
       c.copy(subsystem = Some(x))
@@ -71,13 +70,9 @@ object IcdGit extends App {
       c.copy(icdVersion = Some(x))
     } text "Specifies the ICD version for the --unpublish option"
 
-    //    opt[String]("versions") valueName "<subsystem>" action { (x, c) =>
-    //      c.copy(versions = Some(x))
-    //    } text "List the version history of the given subsystem"
-    //
-    //    opt[String]("diff") valueName "<subsystem>:<version1>[,version2]" action { (x, c) =>
-    //      c.copy(diff = Some(x))
-    //    } text "For the given subsystem, list the differences between <version1> and <version2> (or the current version)"
+    opt[Unit]("versions") action { (x, c) =>
+      c.copy(versions = true)
+    } text "Prints a list of available versions for the subsystems given by the subsystem and/or target options"
 
     opt[Unit]('i', "interactive") action { (_, c) =>
       c.copy(interactive = true)
@@ -127,6 +122,7 @@ object IcdGit extends App {
 
   // Run the application
   private def run(options: Options): Unit = {
+    if (options.versions) listVersions(options)
     if (options.list) list(options)
     if (options.unpublish) unpublish(options)
     if (options.publish) publish(options)
@@ -202,11 +198,47 @@ object IcdGit extends App {
       }.filter(_.matches("[0-9]+\\.[0-9]+")).sortWith(sortVersion)
   }
 
+  // --versions option
+  private def listVersions(options: Options): Unit = {
+    List(options.subsystem, options.target).foreach { subsysOpt =>
+      subsysOpt.map(getSubsystemGitHubUrl).foreach { url =>
+        val tags = getRepoVersions(url)
+        println(s"${subsysOpt.get} versions: ${tags.mkString(", ")}")
+      }
+    }
+  }
+
   // --list option
   private def list(options: Options): Unit = {
-    options.subsystem.map(getSubsystemGitHubUrl).foreach { url =>
-      val tags = getRepoVersions(url)
-      tags.foreach(println)
+    import IcdVersions._
+    import spray.json._
+    for {
+      (subsystem, versionOpt) <- options.subsystem.map(getSubsystemAndVersion)
+      (target, targetVersionOpt) <- options.target.map(getSubsystemAndVersion)
+      subsystemVersion <- versionOpt
+      targetVersion <- targetVersionOpt
+    } yield {
+      // Checkout the icds repo in a temp dir
+      val gitWorkDir = Files.createTempDirectory("icds").toFile
+      try {
+        val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUrl).call
+        val fileName = s"$gitIcdsDir/icd-$subsystem-$target.conf"
+        val file = new File(gitWorkDir, fileName)
+        val path = Paths.get(file.getPath)
+
+        // Get the list of published ICDs for the subsystem and target from GitHub
+        if (!file.exists()) error(s"No ICDs defined between $subsystem and $target")
+        val icdVersions = IcdVersions.fromJson(new String(Files.readAllBytes(path)))
+        val icds = icdVersions.icds
+        println(s"ICDs defined between $subsystem and $target:")
+        icds.foreach { icd =>
+          val a = s"${icdVersions.subsystems.head}-${icd.versions.head}"
+          val b = s"${icdVersions.subsystems(1)}-${icd.versions(1)}"
+          println(s"- v${icd.icdVersion} between $a and $b: published by ${icd.user} on ${icd.date}: ${icd.comment}")
+        }
+      } finally {
+        deleteDirectoryRecursively(gitWorkDir)
+      }
     }
   }
 
