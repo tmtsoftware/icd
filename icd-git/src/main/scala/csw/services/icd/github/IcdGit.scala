@@ -3,6 +3,7 @@ package csw.services.icd.github
 import java.io.File
 import java.nio.file.{Files, Paths}
 
+import com.typesafe.config.ConfigFactory
 import csw.services.icd.db.IcdVersionManager
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
@@ -20,60 +21,27 @@ object IcdGit extends App {
    * All known subsubsystems.
    * Note: This should match the icd subsystems.conf resource (or else read it to get the values...)
    */
-  private val allSubsystems = Set(
-    "AOESW", // AO Executive Software
-    "APS", // Phasing System
-    "CIS", // Communications and Information Systems
-    "CLN", // Optical Cleaning System
-    "COAT", // Optical Coating System
-    "COOL", // Instrument Cooling System
-    "CRYO", // Instrumentation Cryogenic Cooling System
-    "CSW", // Common Software
-    "DMS", // Data Management System
-    "DPS", // Data Processing Subsystem
-    "ENC", // Enclosure
-    "ESEN", // Engineering Sensors
-    "ESW", // Executive Software System
-    "HNDL", // Optics Handling Equipment
-    "HQ", // Observatory Headquarters
-    "IRIS", // InfraRed Imaging Spectrometer
-    "IRMS", // Infrared Multi-Slit Spectrometer
-    "LGSF", // Laser Guide Star Facility
-    "M1CS", // M1 Control System
-    "M1S", // M1 Optics System
-    "M2S", // M2 Control System
-    "M3S", // M3 Control System
-    "MCS", // Mount Control System
-    "NFIRAOS", // Narrow Field Infrared AO System
-    "NSCU", // NFIRAOS Science Calibration Unit
-    "OSS", // Observatory Safety System
-    "REFR", // Instrumentation Refrigerant Cooling System
-    "ROAD", // Road
-    "SCMS", // Site Conditions Monitoring System
-    "SOSS", // Science Operations Support System
-    "STR", // Structure
-    "SUM", // Summit Facility
-    "TCS", // Telescope Control System
-    "TEST", // Dummy test subsystem
-    "TEST2", // Second dummy test subsystem
-    "TINC", // Test instrument control
-    "TINS", // Test Instruments
-    "WFOS" // Wide Field Optical Spectrometer
-    )
+  private val allSubsystems: Set[String] = getSubsystems
+
+  private def getSubsystems: Set[String] = {
+    val config = ConfigFactory.parseResources("subsystem.conf")
+    config.getStringList("enum").asScala.toSet
+  }
 
   /**
    * Command line options ("icd-git --help" prints a usage message with descriptions of all the options)
    */
-  case class Options(
+  private case class Options(
     list: Boolean = false,
     subsystem: Option[String] = None,
     target: Option[String] = None,
-    //                      icdVersion:   Option[String] = None,
+    icdVersion: Option[String] = None,
     //                      outputFile:   Option[File]   = None,
     //                      versions:     Option[String] = None,
     //                      diff:         Option[String] = None,
     interactive: Boolean = false,
     publish: Boolean = false,
+    unpublish: Boolean = false,
     majorVersion: Boolean = false,
     user: String = System.getProperty("user.name"),
     password: String = "",
@@ -95,10 +63,10 @@ object IcdGit extends App {
       c.copy(target = Some(x))
     } text "Specifies the target or second subsystem (and optional version) to be used by the other options"
 
-    //    opt[String]("icdversion") valueName "<icd-version>" action { (x, c) =>
-    //      c.copy(icdVersion = Some(x))
-    //    } text "Specifies the version to be used by any following options (overrides subsystem and target versions)"
-    //
+    opt[String]("icdversion") valueName "<icd-version>" action { (x, c) =>
+      c.copy(icdVersion = Some(x))
+    } text "Specifies the ICD version for the --unpublish option"
+
     //    opt[String]("versions") valueName "<subsystem>" action { (x, c) =>
     //      c.copy(versions = Some(x))
     //    } text "List the version history of the given subsystem"
@@ -114,6 +82,10 @@ object IcdGit extends App {
     opt[Unit]("publish") action { (_, c) =>
       c.copy(publish = true)
     } text "Publish an ICD based on the selected subsystem and target (Use together with --subsystem, --target and --comment)"
+
+    opt[Unit]("unpublish") action { (_, c) =>
+      c.copy(unpublish = true)
+    } text "Deletes the entry for the given ICD version (Use together with --subsystem, --target and --icdversion)"
 
     opt[Unit]("major") action { (_, c) =>
       c.copy(majorVersion = true)
@@ -152,10 +124,11 @@ object IcdGit extends App {
   // Run the application
   private def run(options: Options): Unit = {
     if (options.list) list(options)
+    if (options.unpublish) unpublish(options)
     if (options.publish) publish(options)
   }
 
-  def error(msg: String): Unit = {
+  private def error(msg: String): Unit = {
     println(s"Error: $msg")
     System.exit(1)
   }
@@ -233,6 +206,49 @@ object IcdGit extends App {
     }
   }
 
+  // --unpublish option
+  private def unpublish(options: Options): Unit = {
+    import IcdVersions._
+    import spray.json._
+    for {
+      (subsystem, versionOpt) <- options.subsystem.map(getSubsystemAndVersion)
+      (target, targetVersionOpt) <- options.target.map(getSubsystemAndVersion)
+      icdVersion <- options.icdVersion
+      subsystemVersion <- versionOpt
+      targetVersion <- targetVersionOpt
+    } yield {
+      // Checkout the icds repo in a temp dir
+      val gitWorkDir = Files.createTempDirectory("icds").toFile
+      try {
+        val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitHubBaseUrl).call
+        val fileName = s"icd-$subsystem-$target.conf"
+        val file = new File(gitWorkDir, fileName)
+        val path = Paths.get(file.getPath)
+
+        // Get the list of published ICDs for the subsystem and target from GitHub
+        val exists = file.exists()
+        val icdVersions = if (exists) Some(IcdVersions.fromJson(new String(Files.readAllBytes(path)))) else None
+        val icds = icdVersions.map(_.icds).getOrElse(Nil)
+
+        if (!icds.exists(_.icdVersion == icdVersion))
+          error(s"ICD version $icdVersion for $subsystem and $target does not exist")
+
+        // Write the file without the given ICD version
+        val json = IcdVersions(List(subsystem, target), icds.filter(_.icdVersion != icdVersion)).toJson.prettyPrint
+
+        Files.write(path, json.getBytes)
+        if (!exists) git.add.addFilepattern(fileName).call()
+        git.commit().setOnly(fileName).setMessage(options.comment).call
+        git.push
+          .setCredentialsProvider(new UsernamePasswordCredentialsProvider(options.user, options.password))
+          .call()
+        println(s"Removed ICD version $icdVersion from the list of ICDs for $subsystem and $target")
+      } finally {
+        deleteDirectoryRecursively(gitWorkDir)
+      }
+    }
+  }
+
   // --publish option
   private def publish(options: Options): Unit = {
     import IcdVersions._
@@ -282,7 +298,7 @@ object IcdGit extends App {
   /**
    * Deletes the contents of the given temporary directory (recursively).
    */
-  def deleteDirectoryRecursively(dir: File): Unit = {
+  private def deleteDirectoryRecursively(dir: File): Unit = {
     // just to be safe, don't delete anything that is not in /tmp/
     val p = dir.getPath
     if (!p.startsWith("/tmp/") && !p.startsWith(tmpDir))
