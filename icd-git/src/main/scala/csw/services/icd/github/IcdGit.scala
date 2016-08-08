@@ -1,7 +1,7 @@
 package csw.services.icd.github
 
 import java.io.File
-import java.nio.file.{Files, Paths}
+import java.nio.file.{ Files, Paths }
 
 import com.typesafe.config.ConfigFactory
 import csw.services.icd.db.IcdVersionManager
@@ -13,17 +13,22 @@ import scala.collection.JavaConverters._
 
 object IcdGit extends App {
 
-  // XXX FIXME
-  private val gitHubBaseUrl = "https://github.com/abrighton/Subsystems"
+  // You can override the GitHub URI used to store the ICD version files for testing
+  private val gitBaseUrl = {
+    val uri = System.getProperty("csw.services.icd.github.uri")
+    if (uri != null) uri else "https://github.com/tmtsoftware/ICD-Model-Files"
+  }
+
+  // Directory in the Git repository used to store the ICD version info files
+  private val gitIcdsDir = "icds"
+
+  // A temp dir is used to clone the GitHub repo in order to edit the ICD version file
   private val tmpDir = System.getProperty("java.io.tmpdir")
 
   /**
-   * All known subsubsystems.
-   * Note: This should match the icd subsystems.conf resource (or else read it to get the values...)
+   * A list of all known TMT subsystems (read from the same resources file used in validating the ICDs)
    */
-  private val allSubsystems: Set[String] = getSubsystems
-
-  private def getSubsystems: Set[String] = {
+  private val allSubsystems: Set[String] = {
     val config = ConfigFactory.parseResources("subsystem.conf")
     config.getStringList("enum").asScala.toSet
   }
@@ -36,7 +41,6 @@ object IcdGit extends App {
     subsystem: Option[String] = None,
     target: Option[String] = None,
     icdVersion: Option[String] = None,
-    //                      outputFile:   Option[File]   = None,
     //                      versions:     Option[String] = None,
     //                      diff:         Option[String] = None,
     interactive: Boolean = false,
@@ -220,8 +224,8 @@ object IcdGit extends App {
       // Checkout the icds repo in a temp dir
       val gitWorkDir = Files.createTempDirectory("icds").toFile
       try {
-        val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitHubBaseUrl).call
-        val fileName = s"icd-$subsystem-$target.conf"
+        val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUrl).call
+        val fileName = s"$gitIcdsDir/icd-$subsystem-$target.conf"
         val file = new File(gitWorkDir, fileName)
         val path = Paths.get(file.getPath)
 
@@ -262,8 +266,8 @@ object IcdGit extends App {
       // Checkout the icds repo in a temp dir
       val gitWorkDir = Files.createTempDirectory("icds").toFile
       try {
-        val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitHubBaseUrl).call
-        val fileName = s"icd-$subsystem-$target.conf"
+        val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUrl).call
+        val fileName = s"$gitIcdsDir/icd-$subsystem-$target.conf"
         val file = new File(gitWorkDir, fileName)
         val path = Paths.get(file.getPath)
 
@@ -282,6 +286,9 @@ object IcdGit extends App {
           error(s"ICD version ${icd.icdVersion} is already defined for $subsystem-$subsystemVersion and $target-$targetVersion")
         }
         val json = IcdVersions(List(subsystem, target), icdEntry :: icds).toJson.prettyPrint
+
+        val dir = file.getParentFile
+        if (!dir.exists()) dir.mkdir()
         Files.write(path, json.getBytes)
         if (!exists) git.add.addFilepattern(fileName).call()
         git.commit().setOnly(fileName).setMessage(options.comment).call
