@@ -1,13 +1,11 @@
 package csw.services.icd.github
 
-import icd.web.shared._
 import spray.json._
 
-
 object IcdVersions extends DefaultJsonProtocol {
-  implicit val icdVersionFormat = jsonFormat5(IcdVersion.apply)
-  implicit val icdVersionInfoFormat = jsonFormat4(IcdVersionInfo.apply)
-  implicit val icdVersionsFormat = jsonFormat1(IcdVersions.apply)
+  case class IcdEntry(icdVersion: String, versions: List[String], user: String, comment: String, date: String)
+  implicit val icdEntryFormat = jsonFormat5(IcdEntry.apply)
+  implicit val icdVersionsFormat = jsonFormat2(IcdVersions.apply)
 
   def fromJson(s: String): IcdVersions = icdVersionsFormat.read(s.parseJson)
 }
@@ -15,4 +13,5 @@ object IcdVersions extends DefaultJsonProtocol {
 /**
   * Holds a list describing ICD versions
   */
-case class IcdVersions(icds: List[IcdVersionInfo])
+case class IcdVersions(subsystems: List[String], icds: List[IcdVersions.IcdEntry])
+

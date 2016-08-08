@@ -4,7 +4,6 @@ import java.io.File
 import java.nio.file.{Files, Paths}
 
 import csw.services.icd.db.IcdVersionManager
-import icd.web.shared.{IcdVersion, IcdVersionInfo}
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.joda.time.DateTime
@@ -157,7 +156,7 @@ object IcdGit extends App {
   }
 
   def error(msg: String): Unit = {
-    println(msg)
+    println(s"Error: $msg")
     System.exit(1)
   }
 
@@ -254,22 +253,26 @@ object IcdGit extends App {
 
         // Get the list of published ICDs for the subsystem and target from GitHub
         val exists = file.exists()
-        val icds = if (exists) IcdVersions.fromJson(new String(Files.readAllBytes(path))).icds else Nil
+        val icdVersions = if (exists) Some(IcdVersions.fromJson(new String(Files.readAllBytes(path)))) else None
+        val icds = icdVersions.map(_.icds).getOrElse(Nil)
 
         // get the new ICD version info (increment the latest version number)
-        val newIcdVersion = IcdVersionManager.incrVersion(icds.headOption.map(_.icdVersion.icdVersion), options.majorVersion)
-        val icdVersion = IcdVersion(newIcdVersion, subsystem, subsystemVersion, target, targetVersion)
+        val newIcdVersion = IcdVersionManager.incrVersion(icds.headOption.map(_.icdVersion), options.majorVersion)
         val date = DateTime.now().toString()
-        val icdVersionInfo = IcdVersionInfo(icdVersion, options.user, options.comment, date)
+        val icdEntry = IcdVersions.IcdEntry(newIcdVersion, List(subsystemVersion, targetVersion), options.user, options.comment, date)
 
         // Prepend the new icd version info to the JSON file and commit/push back to GitHub
-        val json = IcdVersions(icdVersionInfo :: icds).toJson.prettyPrint
+        icds.find(e => e.versions.toSet == icdEntry.versions.toSet).foreach { icd =>
+          error(s"ICD version ${icd.icdVersion} is already defined for $subsystem-$subsystemVersion and $target-$targetVersion")
+        }
+        val json = IcdVersions(List(subsystem, target), icdEntry :: icds).toJson.prettyPrint
         Files.write(path, json.getBytes)
         if (!exists) git.add.addFilepattern(fileName).call()
         git.commit().setOnly(fileName).setMessage(options.comment).call
         git.push
           .setCredentialsProvider(new UsernamePasswordCredentialsProvider(options.user, options.password))
           .call()
+        println(s"Created ICD version $newIcdVersion based on $subsystem-$subsystemVersion and $target-$targetVersion")
       } finally {
         deleteDirectoryRecursively(gitWorkDir)
       }
