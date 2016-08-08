@@ -122,11 +122,15 @@ object IcdGit extends App {
 
     opt[String]('u', "user") valueName "<user>" action { (x, c) =>
       c.copy(user = x)
-    } text "Use with --publish to set the user name (default: $USER)"
+    } text "Use with --publish to set the GitHub user name (default: $USER)"
+
+    opt[String]('p', "password") valueName "<password>" action { (x, c) =>
+      c.copy(password = x)
+    } text "Use with --publish to set the user's GitHub password"
 
     opt[String]('m', "comment") valueName "<text>" action { (x, c) =>
       c.copy(comment = x)
-    } text "Use with --publish to add a comment describing the changes made (default: empty string)"
+    } text "Use with --publish to add a comment describing the changes made"
 
     help("help")
     version("version")
