@@ -112,6 +112,17 @@ object IcdVersionManager {
       (ar(0), Some(ar(1)))
     } else (s, None)
   }
+
+  // Start with "1.0" as the subsystem or component version, then increment the minor version automatically each time.
+  // If the user requests a new major version, increment that and reset minor version to 0.
+  def incrVersion(versionOpt: Option[String], majorVersion: Boolean): String = {
+    versionOpt match {
+      case Some(v) =>
+        val Array(maj, min) = v.split("\\.")
+        if (majorVersion) s"${maj.toInt + 1}.0" else s"$maj.${min.toInt + 1}"
+      case None => "1.0"
+    }
+  }
 }
 
 /**
@@ -129,17 +140,6 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
   private[db] def collectionExists(name: String): Boolean = query.collectionExists(name)
 
   private[db] def getCollectionNames: Set[String] = query.getCollectionNames
-
-  // Start with "1.0" as the subsystem or component version, then increment the minor version automatically each time.
-  // If the user requests a new major version, increment that and reset minor version to 0.
-  private def incrVersion(versionOpt: Option[String], majorVersion: Boolean): String = {
-    versionOpt match {
-      case Some(v) =>
-        val Array(maj, min) = v.split("\\.")
-        if (majorVersion) s"${maj.toInt + 1}.0" else s"$maj.${min.toInt + 1}"
-      case None => "1.0"
-    }
-  }
 
   /**
    * Increments the version for the named subsystem or component.

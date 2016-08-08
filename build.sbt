@@ -12,10 +12,10 @@ lazy val clients = Seq(icdWebClient)
 
 // Root of the multi-project build
 lazy val root = (project in file("."))
-  .aggregate(icd, `icd-db`, icdWebServer)
+  .aggregate(icd, `icd-db`, `icd-git`, icdWebServer)
   .settings(name := "ICD")
 
-// core project, implements validation of ICD files against JSON schema files, icd command line tool
+// Core project, implements validation of ICD model files against JSON schema files, icd command line tool
 lazy val icd = project
   .enablePlugins(JavaAppPackaging)
   .settings(defaultSettings: _*)
@@ -24,7 +24,7 @@ lazy val icd = project
       test(scalaTest)
   ) dependsOn icdWebSharedJvm
 
-// adds MongoDB database support, ICD versioning, queries
+// Adds MongoDB database support, ICD versioning, queries, icd-db command line tool
 lazy val `icd-db` = project
   .enablePlugins(JavaAppPackaging)
   .settings(defaultSettings: _*)
@@ -32,6 +32,16 @@ lazy val `icd-db` = project
     compile(casbah) ++
       test(scalaTest)
   ) dependsOn icd
+
+
+// Adds support for working with ICD model file repositories on GitHub, ICD version management, icd-github tool
+lazy val `icd-git` = project
+  .enablePlugins(JavaAppPackaging)
+  .settings(defaultSettings: _*)
+  .settings(libraryDependencies ++=
+    compile(jgit) ++
+      test(scalaTest)
+  ) dependsOn(icd, `icd-db`)
 
 
 // -- Play/ScalaJS parts below --

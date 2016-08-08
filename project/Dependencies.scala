@@ -19,6 +19,8 @@ object Dependencies {
   val logback = "ch.qos.logback" % "logback-classic" % "1.1.5"
   val scalatags = "com.lihaoyi" %% "scalatags" % "0.5.4"
   val jsoup = "org.jsoup" % "jsoup" % "1.9.2"
+//  val buhtig = "net.caoticode.buhtig" %% "buhtig" % "0.3.1"
+  val jgit = "org.eclipse.jgit" % "org.eclipse.jgit" % "4.4.1.201607150455-r" // EDL (new-style BSD)
 
   // web server dependencies
   val playScalajsScripts = "com.vmunier" %% "play-scalajs-scripts" % "0.4.0"
