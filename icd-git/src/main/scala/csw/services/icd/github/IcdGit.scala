@@ -26,6 +26,9 @@ object IcdGit extends App {
   // A temp dir is used to clone the GitHub repo in order to edit the ICD version file
   private val tmpDir = System.getProperty("java.io.tmpdir")
 
+  // Default user name if none given
+  private val defaultUser = System.getProperty("user.name")
+
   /**
    * A list of all known TMT subsystems (read from the same resources file used in validating the ICDs)
    */
@@ -38,18 +41,19 @@ object IcdGit extends App {
    * Command line options ("icd-git --help" prints a usage message with descriptions of all the options)
    */
   private case class Options(
-    list: Boolean = false,
-    subsystem: Option[String] = None,
-    target: Option[String] = None,
-    icdVersion: Option[String] = None,
-    versions: Boolean = false,
-    interactive: Boolean = false,
-    publish: Boolean = false,
-    unpublish: Boolean = false,
-    majorVersion: Boolean = false,
-    user: String = System.getProperty("user.name"),
-    password: String = "",
-    comment: String = "")
+    list:         Boolean        = false,
+    subsystem:    Option[String] = None,
+    target:       Option[String] = None,
+    icdVersion:   Option[String] = None,
+    versions:     Boolean        = false,
+    interactive:  Boolean        = false,
+    publish:      Boolean        = false,
+    unpublish:    Boolean        = false,
+    majorVersion: Boolean        = false,
+    user:         Option[String] = None,
+    password:     Option[String] = None,
+    comment:      String         = ""
+  )
 
   // Parser for the command line options
   private val parser = new scopt.OptionParser[Options]("icd-git") {
@@ -92,11 +96,11 @@ object IcdGit extends App {
     } text "Use with --publish to increment the major version"
 
     opt[String]('u', "user") valueName "<user>" action { (x, c) =>
-      c.copy(user = x)
+      c.copy(user = Some(x))
     } text "Use with --publish to set the GitHub user name (default: $USER)"
 
     opt[String]('p', "password") valueName "<password>" action { (x, c) =>
-      c.copy(password = x)
+      c.copy(password = Some(x))
     } text "Use with --publish to set the user's GitHub password"
 
     opt[String]('m', "comment") valueName "<text>" action { (x, c) =>
@@ -122,7 +126,8 @@ object IcdGit extends App {
   }
 
   // Run the application
-  private def run(options: Options): Unit = {
+  private def run(opts: Options): Unit = {
+    val options = if (opts.interactive) interact(opts) else opts
     if (options.versions) listVersions(options)
     if (options.list) list(options)
     if (options.unpublish) unpublish(options)
@@ -132,6 +137,56 @@ object IcdGit extends App {
   private def error(msg: String): Unit = {
     println(s"Error: $msg")
     System.exit(1)
+  }
+
+  // If the --interactive option was given, ask for any missing options
+  private def interact(options: Options): Options = {
+    import scala.io.StdIn._
+
+    def readSubsystemAndVersion(opt: Option[String], prompt: String, needsVersion: Boolean): Option[String] = {
+      if (opt.isEmpty) {
+        println(s"Please enter the $prompt subsystem: (one of ${allSubsystems.mkString(", ")})")
+        Option(readLine()).map { subsys =>
+          if (needsVersion) {
+            val versions = getRepoVersions(getSubsystemGitHubUrl(subsys))
+            println(s"Please enter the version for $subsys: (one of $versions)")
+            val version = Option(readLine()).map(v => s":$v").getOrElse("")
+            s"$subsys$version"
+          } else subsys
+        }
+      } else opt
+    }
+
+    def readIcdVersion(opts: Options): Option[String] = {
+      if (opts.icdVersion.isEmpty) {
+
+        println(s"Please enter the ICD version number to unpublish: (Choose version number from the list below):")
+        list(opts)
+        Option(readLine())
+      } else opts.icdVersion
+    }
+
+    // Get the user name and password and return the pair
+    def readCredentials(opts: Options): (Option[String], Option[String]) = {
+      val user = if (options.user.isDefined) options.user else {
+        println(s"Enter the user name for Git: [$defaultUser]")
+        val u = Option(readLine)
+        if (u.isDefined) u else Some(defaultUser)
+      }
+      val password = if (options.password.isDefined) options.password else {
+        println(s"Enter the password for Git:")
+        Option(System.console().readPassword()).map(new String(_))
+      }
+      (user, password)
+    }
+
+    val subsysOpt = readSubsystemAndVersion(options.subsystem, "first", options.publish)
+    val needsTarget = options.publish || options.unpublish || options.list
+    val targetOpt = if (needsTarget) readSubsystemAndVersion(options.target, "second", options.publish) else options.target
+    val icdVersion = if (options.unpublish) readIcdVersion(options.copy(subsystem = subsysOpt, target = targetOpt)) else options.icdVersion
+    val needsPassword = options.publish || options.unpublish
+    val (user, password) = if (needsPassword) readCredentials(options) else (options.user, options.password)
+    options.copy(subsystem = subsysOpt, target = targetOpt, icdVersion = icdVersion, user = user, password = password)
   }
 
   /**
@@ -207,32 +262,32 @@ object IcdGit extends App {
    */
   private def getSubsystemVersions(subsystem: String): List[SubsystemVersion] = {
     val url = getSubsystemGitHubUrl(subsystem)
-      // Checkout the icds repo in a temp dir
-      val gitWorkDir = Files.createTempDirectory("icds").toFile
-      try {
-        val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(url).setNoCheckout(true).call
-        git.tagList().call().asScala.toList.filter(_.getName.startsWith("refs/tags/v")).map { ref =>
-          val version = ref.getName.substring(ref.getName.lastIndexOf('/') + 2)
-          val walk = new RevWalk(git.getRepository)
-          val commit = walk.parseCommit(ref.getObjectId)
-          val comment = commit.getFullMessage
-          val user = commit.getCommitterIdent.getName
-          val date = new DateTime(commit.getCommitTime * 1000L).toString()
-          walk.dispose()
-          SubsystemVersion(subsystem, version, user, comment, date)
-        }
-      } finally {
-        deleteDirectoryRecursively(gitWorkDir)
+    // Checkout the icds repo in a temp dir
+    val gitWorkDir = Files.createTempDirectory("icds").toFile
+    try {
+      val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(url).setNoCheckout(true).call
+      git.tagList().call().asScala.toList.filter(_.getName.startsWith("refs/tags/v")).map { ref =>
+        val version = ref.getName.substring(ref.getName.lastIndexOf('/') + 2)
+        val walk = new RevWalk(git.getRepository)
+        val commit = walk.parseCommit(ref.getObjectId)
+        val comment = commit.getFullMessage
+        val user = commit.getCommitterIdent.getName
+        val date = new DateTime(commit.getCommitTime * 1000L).toString()
+        walk.dispose()
+        SubsystemVersion(subsystem, version, user, comment, date)
       }
+    } finally {
+      deleteDirectoryRecursively(gitWorkDir)
+    }
   }
 
-  // --versions option
+  // --versions option (print versions of subsystem and target subsystem)
   private def listVersions(options: Options): Unit = {
     List(options.subsystem, options.target).foreach { subsysOpt =>
-//      subsysOpt.map(getSubsystemGitHubUrl).foreach { url =>
-//        val tags = getRepoVersions(url)
-//        println(s"${subsysOpt.get} versions: ${tags.mkString(", ")}")
-//      }
+      //      subsysOpt.map(getSubsystemGitHubUrl).foreach { url =>
+      //        val tags = getRepoVersions(url)
+      //        println(s"${subsysOpt.get} versions: ${tags.mkString(", ")}")
+      //      }
       subsysOpt.map(getSubsystemVersions).foreach {
         _.foreach { sv =>
           println(s"\nSubsystem ${sv.subsystem}-${sv.version}: created by ${sv.user} on ${sv.date}:\n${sv.comment}\n----")
@@ -241,15 +296,13 @@ object IcdGit extends App {
     }
   }
 
-  // --list option
+  // --list option (print ICD versions for subsystem and target)
   private def list(options: Options): Unit = {
-    if(options.subsystem.isEmpty) error("Missing required --subsystem option")
-    if(options.target.isEmpty) error("Missing required --target subsystem option")
+    if (options.subsystem.isEmpty) error("Missing required --subsystem option")
+    if (options.target.isEmpty) error("Missing required --target subsystem option")
     for {
       (subsystem, versionOpt) <- options.subsystem.map(getSubsystemAndVersion)
       (target, targetVersionOpt) <- options.target.map(getSubsystemAndVersion)
-      subsystemVersion <- versionOpt
-      targetVersion <- targetVersionOpt
     } yield {
       // Checkout the icds repo in a temp dir
       val gitWorkDir = Files.createTempDirectory("icds").toFile
@@ -263,11 +316,10 @@ object IcdGit extends App {
         if (!file.exists()) error(s"No ICDs defined between $subsystem and $target")
         val icdVersions = IcdVersions.fromJson(new String(Files.readAllBytes(path)))
         val icds = icdVersions.icds
-        println(s"ICDs defined between $subsystem and $target:")
         icds.foreach { icd =>
           val a = s"${icdVersions.subsystems.head}-${icd.versions.head}"
           val b = s"${icdVersions.subsystems(1)}-${icd.versions(1)}"
-          println(s"- v${icd.icdVersion} between $a and $b: published by ${icd.user} on ${icd.date}: ${icd.comment}")
+          println(s"- ICD Version ${icd.icdVersion} between $a and $b: published by ${icd.user} on ${icd.date}: ${icd.comment}")
         }
       } finally {
         deleteDirectoryRecursively(gitWorkDir)
@@ -279,14 +331,14 @@ object IcdGit extends App {
   private def unpublish(options: Options): Unit = {
     import IcdVersions._
     import spray.json._
-    if(options.subsystem.isEmpty) error("Missing required --subsystem option")
-    if(options.target.isEmpty) error("Missing required --target subsystem option")
+    if (options.subsystem.isEmpty) error("Missing required --subsystem option")
+    if (options.target.isEmpty) error("Missing required --target subsystem option")
+    if (options.icdVersion.isEmpty) error("Missing required --icdVersion option")
+    if (options.password.isEmpty) error("Missing required --password option")
     for {
       (subsystem, versionOpt) <- options.subsystem.map(getSubsystemAndVersion)
       (target, targetVersionOpt) <- options.target.map(getSubsystemAndVersion)
       icdVersion <- options.icdVersion
-      subsystemVersion <- versionOpt
-      targetVersion <- targetVersionOpt
     } yield {
       // Checkout the icds repo in a temp dir
       val gitWorkDir = Files.createTempDirectory("icds").toFile
@@ -311,7 +363,9 @@ object IcdGit extends App {
         if (!exists) git.add.addFilepattern(fileName).call()
         git.commit().setOnly(fileName).setMessage(options.comment).call
         git.push
-          .setCredentialsProvider(new UsernamePasswordCredentialsProvider(options.user, options.password))
+          .setCredentialsProvider(
+            new UsernamePasswordCredentialsProvider(options.user.getOrElse(defaultUser), options.password.get)
+          )
           .call()
         println(s"Removed ICD version $icdVersion from the list of ICDs for $subsystem and $target")
       } finally {
@@ -324,8 +378,9 @@ object IcdGit extends App {
   private def publish(options: Options): Unit = {
     import IcdVersions._
     import spray.json._
-    if(options.subsystem.isEmpty) error("Missing required --subsystem option")
-    if(options.target.isEmpty) error("Missing required --target subsystem option")
+    if (options.subsystem.isEmpty) error("Missing required --subsystem option")
+    if (options.target.isEmpty) error("Missing required --target subsystem option")
+    if (options.password.isEmpty) error("Missing required --password option")
     for {
       (subsystem, versionOpt) <- options.subsystem.map(getSubsystemAndVersion)
       (target, targetVersionOpt) <- options.target.map(getSubsystemAndVersion)
@@ -348,7 +403,8 @@ object IcdGit extends App {
         // get the new ICD version info (increment the latest version number)
         val newIcdVersion = IcdVersionManager.incrVersion(icds.headOption.map(_.icdVersion), options.majorVersion)
         val date = DateTime.now().toString()
-        val icdEntry = IcdVersions.IcdEntry(newIcdVersion, List(subsystemVersion, targetVersion), options.user, options.comment, date)
+        val icdEntry = IcdVersions.IcdEntry(newIcdVersion, List(subsystemVersion, targetVersion),
+          options.user.getOrElse(defaultUser), options.comment, date)
 
         // Prepend the new icd version info to the JSON file and commit/push back to GitHub
         icds.find(e => e.versions.toSet == icdEntry.versions.toSet).foreach { icd =>
@@ -362,7 +418,9 @@ object IcdGit extends App {
         if (!exists) git.add.addFilepattern(fileName).call()
         git.commit().setOnly(fileName).setMessage(options.comment).call
         git.push
-          .setCredentialsProvider(new UsernamePasswordCredentialsProvider(options.user, options.password))
+          .setCredentialsProvider(
+            new UsernamePasswordCredentialsProvider(options.user.getOrElse(defaultUser), options.password.get)
+          )
           .call()
         println(s"Created ICD version $newIcdVersion based on $subsystem-$subsystemVersion and $target-$targetVersion")
         (subsystem, target)
