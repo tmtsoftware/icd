@@ -99,4 +99,49 @@ Usage: icd-git [options]
 
 ```
 
+Example Command Line Usage
+--------------------------
 
+List the ICD versions between the subsystems TEST and TEST2, in interactive mode:
+
+```
+$ icd-git -i --list
+Please enter the first subsystem: (one of M2S, ROAD, OSS, TINC, SCMS, CSW, ESEN, SUM, REFR, NFIRAOS, LGSF, AOESW, TEST, STR, TEST2, HQ, APS, M1CS, IRMS, HNDL, ENC, M3S, WFOS, COOL, CRYO, COAT, ESW, SOSS, DPS, MCS, M1S, CLN, TCS, NSCU, DMS, TINS, IRIS, CIS)
+TEST
+Please enter the second subsystem: (one of M2S, ROAD, OSS, TINC, SCMS, CSW, ESEN, SUM, REFR, NFIRAOS, LGSF, AOESW, TEST, STR, TEST2, HQ, APS, M1CS, IRMS, HNDL, ENC, M3S, WFOS, COOL, CRYO, COAT, ESW, SOSS, DPS, MCS, M1S, CLN, TCS, NSCU, DMS, TINS, IRIS, CIS)
+TEST2
+- ICD Version 1.0 between TEST-1.0 and TEST2-1.0: published by $USER on 2016-08-09T14:50:59.024+02:00: My new version comment
+```
+
+Without the -i option, you need to specify all the required options:
+
+```
+$ icd-git --list --subsystem TEST --target TEST2
+- ICD Version 1.0 between TEST-1.0 and TEST2-1.0: published by $USER on 2016-08-09T14:50:59.024+02:00: My new version comment
+```
+
+For publishing, you need to also add user name and password for git:
+
+```
+$ icd-git -i --publish
+Please enter the first subsystem: (one of M2S, ROAD, OSS, TINC, SCMS, CSW, ESEN, SUM, REFR, NFIRAOS, LGSF, AOESW, TEST, STR, TEST2, HQ, APS, M1CS, IRMS, HNDL, ENC, M3S, WFOS, COOL, CRYO, COAT, ESW, SOSS, DPS, MCS, M1S, CLN, TCS, NSCU, DMS, TINS, IRIS, CIS)
+TEST
+Please enter the version for TEST: (one of List(1.0, 1.1, 1.2))
+1.1
+Please enter the second subsystem: (one of M2S, ROAD, OSS, TINC, SCMS, CSW, ESEN, SUM, REFR, NFIRAOS, LGSF, AOESW, TEST, STR, TEST2, HQ, APS, M1CS, IRMS, HNDL, ENC, M3S, WFOS, COOL, CRYO, COAT, ESW, SOSS, DPS, MCS, M1S, CLN, TCS, NSCU, DMS, TINS, IRIS, CIS)
+TEST2
+Enter the user name for Git: [$USER]
+
+Enter the password for Git:
+
+Enter a comment for the new ICD version:
+This is a test comment
+Created ICD version 1.1 based on TEST-1.1 and TEST2-1.0
+```
+
+Without the -i option, you need to specify all the required options:
+
+```
+$ icd-git --publish --subsystem TEST:1.2 --target TEST2:1.0 --user $USER --password XXXXX --comment "Another update"
+Created ICD version 1.2 based on TEST-1.2 and TEST2-1.0
+```
