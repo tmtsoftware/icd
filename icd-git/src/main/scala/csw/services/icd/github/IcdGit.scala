@@ -161,7 +161,7 @@ object IcdGit extends App {
     if (!allSubsystems.contains(subsys)) {
       error(s"unknown subsystem: $subsys")
     }
-    val v = if (versionOpt.isDefined) versionOpt else getRepoVersions(getSubsystemGitHubUrl(subsys)).headOption
+    val v = if (versionOpt.isDefined) versionOpt else getRepoVersions(getSubsystemGitHubUrl(subsys)).reverse.headOption
     (subsys, v)
   }
 
@@ -243,6 +243,8 @@ object IcdGit extends App {
 
   // --list option
   private def list(options: Options): Unit = {
+    if(options.subsystem.isEmpty) error("Missing required --subsystem option")
+    if(options.target.isEmpty) error("Missing required --target subsystem option")
     for {
       (subsystem, versionOpt) <- options.subsystem.map(getSubsystemAndVersion)
       (target, targetVersionOpt) <- options.target.map(getSubsystemAndVersion)
@@ -277,6 +279,8 @@ object IcdGit extends App {
   private def unpublish(options: Options): Unit = {
     import IcdVersions._
     import spray.json._
+    if(options.subsystem.isEmpty) error("Missing required --subsystem option")
+    if(options.target.isEmpty) error("Missing required --target subsystem option")
     for {
       (subsystem, versionOpt) <- options.subsystem.map(getSubsystemAndVersion)
       (target, targetVersionOpt) <- options.target.map(getSubsystemAndVersion)
@@ -320,12 +324,14 @@ object IcdGit extends App {
   private def publish(options: Options): Unit = {
     import IcdVersions._
     import spray.json._
+    if(options.subsystem.isEmpty) error("Missing required --subsystem option")
+    if(options.target.isEmpty) error("Missing required --target subsystem option")
     for {
       (subsystem, versionOpt) <- options.subsystem.map(getSubsystemAndVersion)
       (target, targetVersionOpt) <- options.target.map(getSubsystemAndVersion)
       subsystemVersion <- versionOpt
       targetVersion <- targetVersionOpt
-    } yield {
+    } {
       // Checkout the icds repo in a temp dir
       val gitWorkDir = Files.createTempDirectory("icds").toFile
       try {
@@ -359,6 +365,7 @@ object IcdGit extends App {
           .setCredentialsProvider(new UsernamePasswordCredentialsProvider(options.user, options.password))
           .call()
         println(s"Created ICD version $newIcdVersion based on $subsystem-$subsystemVersion and $target-$targetVersion")
+        (subsystem, target)
       } finally {
         deleteDirectoryRecursively(gitWorkDir)
       }
