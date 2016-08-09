@@ -1,11 +1,12 @@
 package csw.services.icd.github
 
 import java.io.File
-import java.nio.file.{ Files, Paths }
+import java.nio.file.{Files, Paths}
 
 import com.typesafe.config.ConfigFactory
 import csw.services.icd.db.IcdVersionManager
 import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.revwalk.RevWalk
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.joda.time.DateTime
 
@@ -198,20 +199,50 @@ object IcdGit extends App {
       }.filter(_.matches("[0-9]+\\.[0-9]+")).sortWith(sortVersion)
   }
 
+  // A version of a subsystem
+  private case class SubsystemVersion(subsystem: String, version: String, user: String, comment: String, date: String)
+
+  /**
+   * Gets a list of information about the tagged versions of the given subsystem
+   */
+  private def getSubsystemVersions(subsystem: String): List[SubsystemVersion] = {
+    val url = getSubsystemGitHubUrl(subsystem)
+      // Checkout the icds repo in a temp dir
+      val gitWorkDir = Files.createTempDirectory("icds").toFile
+      try {
+        val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(url).setNoCheckout(true).call
+        git.tagList().call().asScala.toList.filter(_.getName.startsWith("refs/tags/v")).map { ref =>
+          val version = ref.getName.substring(ref.getName.lastIndexOf('/') + 2)
+          val walk = new RevWalk(git.getRepository)
+          val commit = walk.parseCommit(ref.getObjectId)
+          val comment = commit.getFullMessage
+          val user = commit.getCommitterIdent.getName
+          val date = new DateTime(commit.getCommitTime * 1000L).toString()
+          walk.dispose()
+          SubsystemVersion(subsystem, version, user, comment, date)
+        }
+      } finally {
+        deleteDirectoryRecursively(gitWorkDir)
+      }
+  }
+
   // --versions option
   private def listVersions(options: Options): Unit = {
     List(options.subsystem, options.target).foreach { subsysOpt =>
-      subsysOpt.map(getSubsystemGitHubUrl).foreach { url =>
-        val tags = getRepoVersions(url)
-        println(s"${subsysOpt.get} versions: ${tags.mkString(", ")}")
+//      subsysOpt.map(getSubsystemGitHubUrl).foreach { url =>
+//        val tags = getRepoVersions(url)
+//        println(s"${subsysOpt.get} versions: ${tags.mkString(", ")}")
+//      }
+      subsysOpt.map(getSubsystemVersions).foreach {
+        _.foreach { sv =>
+          println(s"\nSubsystem ${sv.subsystem}-${sv.version}: created by ${sv.user} on ${sv.date}:\n${sv.comment}\n----")
+        }
       }
     }
   }
 
   // --list option
   private def list(options: Options): Unit = {
-    import IcdVersions._
-    import spray.json._
     for {
       (subsystem, versionOpt) <- options.subsystem.map(getSubsystemAndVersion)
       (target, targetVersionOpt) <- options.target.map(getSubsystemAndVersion)
@@ -221,7 +252,7 @@ object IcdGit extends App {
       // Checkout the icds repo in a temp dir
       val gitWorkDir = Files.createTempDirectory("icds").toFile
       try {
-        val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUrl).call
+        Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUrl).call
         val fileName = s"$gitIcdsDir/icd-$subsystem-$target.conf"
         val file = new File(gitWorkDir, fileName)
         val path = Paths.get(file.getPath)
