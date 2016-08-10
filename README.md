@@ -28,9 +28,10 @@ ICD Subprojects
 
 There are currently these ICD subprojects:
 
-* icd - supports validating an API against the JSON schema as well as saving it as a Markdown, HTML or PDF document
-* icd-db - supports ingesting API files into a MongoDB database, querying the db and saving an API or ICD as a document
-* icd-web/* - a Play/Scala.js based web app for working with ICDs
+* [icd](icd) - supports validating an API against the JSON schema as well as saving it as a Markdown, HTML or PDF document
+* [icd-db](icd-db) - supports ingesting API files into a MongoDB database, querying the db and saving an API or ICD as a document
+* [icd-git](icd-git) - work directly with ICD model files stored on GitHub, publish ICDs, ingest ICD releases into the ICD database
+* [icd-web](icd-web) - a Play/Scala.js based web app for working with ICDs
 
 Build and Install
 -----------------
@@ -60,17 +61,16 @@ See [icd-web/README.md](icd-web/README.md) for more information.
 Importing ICD-Model-Files from GitHub into the ICD Database with Version History
 --------------------------------------------------------------------------------
 
-Using the icd-ingest.sh script in this directory you can import all of the subsystem model files from the
-[ICD-Model-Files](https://github.com/tmtsoftware/ICD-Model-Files) GitHub repository into a local MongoDB database
+Using the [icd-git](icd-git) command line application you can import all of the subsystem model files from the
+[ICD-Model-Files](https://github.com/tmtsoftware/ICD-Model-Files) GitHub repositories into a local MongoDB database
 for use with the icd tools. For this to work, you must have installed the icd software
-(run the install.sh script in this project). The icd-ingest.sh script assumes the default install directory:
-../install_icd.
-MongoDB must be running and a recent version of git must be installed.
+(run the install.sh script in this project) and MongoDB must be running. The install.sh script installs 
+to the ../install_icd directory.
 
-Warning: The icd-ingest.sh script will delete the current contents of the ICD database before
+Warning: The icd-git app will delete the current contents of the ICD database before
 ingesting the files from the repository.
 
-The icd software looks for release tags in the Git submodules.
+The icd software looks for release tags in the Git subsystem repoistories.
 Git subsystem releases should have names like "v1.0", "v1.2", "v2.0", etc.
 These then translate into published versions in the ICD database: "1.0", "1.1", "2.0".
 
@@ -85,9 +85,6 @@ Two Docker related scripts are provided in the top level directory.
 
 __Note__ that *both* scripts should be edited to add the correct docker user.
 See comments in the scripts for more information.
-
-
-
 
 
 

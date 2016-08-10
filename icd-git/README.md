@@ -1,9 +1,9 @@
 ICD GitHub Support
 ==================
 
-icd-git is a command line application that reads release tags from the GitHub 
+icd-git is a command line application that reads release tags and model files from the GitHub 
 [ICD-Model-Files](https://github.com/tmtsoftware/ICD-Model-Files.git) repository and
-allows you to publish ICD versions.
+allows you to publish ICD versions and ingest them into the ICD database.
 
 In order for a subsystem to be part of an ICD, there needs to be a release tag for it in the
 form `v1.0`, `v1.1`, `v2.1`, etc. You can add this as follows:
