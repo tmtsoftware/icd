@@ -80,7 +80,7 @@ icd-git 0.9
 Usage: icd-git [options]
 
   -l | --list
-        Prints the list of ICDs defined for the given subsystem and target subsystem options
+        Prints the list of ICD versions defined on GitHub for the given subsystem and target subsystem options
   -s <subsystem>[:version] | --subsystem <subsystem>[:version]
         Specifies the subsystem (and optional version) to be used by the other options
   -t <subsystem>[:version] | --target <subsystem>[:version]
@@ -88,11 +88,11 @@ Usage: icd-git [options]
   --icdversion <icd-version>
         Specifies the ICD version for the --unpublish option
   --versions
-        Prints a list of available versions for the subsystems given by the subsystem and/or target options
+        Prints a list of available versions on GitHub for the subsystems given by the subsystem and/or target options
   -i | --interactive
         Interactive mode: Asks to choose missing options
   --publish
-        Publish an ICD based on the selected subsystem and target (Use together with --subsystem, --target and --comment)
+        Publish an ICD based on the selected subsystem and target (Use together with --subsystem:version, --target:version and --comment)
   --unpublish
         Deletes the entry for the given ICD version (Use together with --subsystem, --target and --icdversion)
   --major
@@ -103,10 +103,17 @@ Usage: icd-git [options]
         Use with --publish to set the user's GitHub password
   -m <text> | --comment <text>
         Use with --publish to add a comment describing the changes made
+  -d <name> | --db <name>
+        The name of the database to use (for the --ingest option, default: icds)
+  --host <hostname>
+        The host name where the database is running (for the --ingest option, default: localhost)
+  --port <number>
+        The port number to use for the database (for the --ingest option, default: 27017)
+  --ingest
+        Ingests the selected --subsystem and --target subsystem model files from GitHub into the ICD database (Ingests all subsystems, if neither option is given)
   --help
 
   --version
-
 ```
 
 Example Command Line Usage
@@ -155,3 +162,24 @@ Without the -i option, you need to specify all the required options:
 $ icd-git --publish --subsystem TEST:1.2 --target TEST2:1.0 --user $USER --password XXXXX --comment "Another update"
 Created ICD version 1.2 based on TEST-1.2 and TEST2-1.0
 ```
+
+To ingest an ICD for two subsystems into the local ICD database, use a command like this:
+
+    $ icd-git --ingest --subsystem TEST --target TEST2
+
+This deletes the current ICD database, 
+loads the ICD model files (with version history) for the TEST and TEST2 subsystems into the ICD database, 
+and reads the ICD version information from GitHub and updates the database. After running this command,
+you can use the icd web app to browse the ICD or use the `icd-db` command line app to generate a pdf
+of the ICD.
+
+If you leave off the `--subsystem` and `--target` options, all subsystems and ICDs are ingested into the database:
+
+    $ icd-git --ingest --subsystem TEST --target TEST2
+
+It is also possible to ingest only specific versions of subsystems:
+
+    $ icd-git --ingest --subsystem TEST:1.2 --target TEST2:1.1
+
+In that case, only ICDs that include those subsystem versions will be defined.
+
