@@ -142,8 +142,10 @@ object IcdGit extends App {
       try {
         run(options)
       } catch {
+        case e: IcdGitException =>
+          println(s"Error: ${e.getMessage}")
+          System.exit(1)
         case e: Throwable =>
-          //          println(e)
           e.printStackTrace()
           System.exit(1)
       }
@@ -174,9 +176,15 @@ object IcdGit extends App {
     }
   }
 
+  /**
+    * Exception thrown for normal errors
+    * @param msg the error message
+    */
+  class IcdGitException(msg: String) extends Exception(msg)
+
+  // Report an error
   private def error(msg: String): Unit = {
-    println(s"Error: $msg")
-    System.exit(1)
+    throw new IcdGitException(msg)
   }
 
   // If the --interactive option was given, ask for any missing options
@@ -314,12 +322,21 @@ object IcdGit extends App {
   }
 
   // A version of a subsystem
-  private case class SubsystemVersion(subsystem: String, version: String, user: String, comment: String, date: String)
+  private case class SubsystemVersionInfo(subsystem: String, version: String, user: String, comment: String, date: String)
+
+
+  /**
+    * Gets a list of the subsystem version numbers, based on tags like v1.0.
+    */
+  private def getSubsystemVersionNumbers(subsystem: String): List[String] = {
+    val url = getSubsystemGitHubUrl(subsystem)
+    getRepoVersions(url)
+  }
 
   /**
    * Gets a list of information about the tagged versions of the given subsystem
    */
-  private def getSubsystemVersions(subsystem: String): List[SubsystemVersion] = {
+  private def getSubsystemVersionInfo(subsystem: String): List[SubsystemVersionInfo] = {
 
     // Note: If there are multiple tags for the same commit, the code below can print out the messages
     //    def moreInfo(git: Git, xcommit: RevCommit): Unit = {
@@ -368,7 +385,7 @@ object IcdGit extends App {
         val user = commit.getCommitterIdent.getName
         val date = new DateTime(commit.getCommitTime * 1000L).toString()
         walk.dispose()
-        SubsystemVersion(subsystem, version, user, comment, date)
+        SubsystemVersionInfo(subsystem, version, user, comment, date)
       }
     } finally {
       deleteDirectoryRecursively(gitWorkDir)
@@ -378,14 +395,8 @@ object IcdGit extends App {
   // --versions option (print versions of subsystem and target subsystem)
   private def listVersions(options: Options): Unit = {
     List(options.subsystem, options.target).foreach { subsysOpt =>
-      // This code lists only the tag names
-      //      subsysOpt.map(getSubsystemGitHubUrl).foreach { url =>
-      //        val tags = getRepoVersions(url)
-      //        println(s"${subsysOpt.get} versions: ${tags.mkString(", ")}")
-      //      }
-
       // This code lists the tag names and associated information
-      subsysOpt.map(getSubsystemVersions).foreach {
+      subsysOpt.map(getSubsystemVersionInfo).foreach {
         _.foreach { sv =>
           println(s"\nSubsystem ${sv.subsystem}-${sv.version}: created by ${sv.user} on ${sv.date}:\n${sv.comment}\n----")
         }
@@ -566,13 +577,23 @@ object IcdGit extends App {
       }
     }
 
-    subsystems.foreach(ingest(_, db, options))
+    subsystems.foreach { subsystem =>
+      // only import subsystems with release tags like v1.0
+      if (getSubsystemVersionNumbers(subsystem).nonEmpty)
+        ingest(subsystem, db, options)
+    }
     importIcdFiles(db, subsystems)
   }
 
   // Ingests the given subsystem into the icd db
-  private def ingest(subsystem: String, db: IcdDb, options: Options): Unit = {
-    val versions = getSubsystemVersions(subsystem)
+  private def ingest(subsys: String, db: IcdDb, options: Options): Unit = {
+    val (subsystem, versionOpt) = getSubsystemAndVersion(subsys)
+    val versionsFound = getSubsystemVersionInfo(subsystem)
+    versionOpt.foreach { v =>
+      if (!versionsFound.exists(_.version == v)) error(s"Version tag v$v of $subsystem not found")
+    }
+    def versionFilter(v: SubsystemVersionInfo) = if (versionOpt.isEmpty) true else versionOpt.get == v.version
+    val versions = versionsFound.filter(versionFilter)
     val url = getSubsystemGitHubUrl(subsystem)
     // Checkout the icds repo in a temp dir
     val gitWorkDir = Files.createTempDirectory("icds").toFile
