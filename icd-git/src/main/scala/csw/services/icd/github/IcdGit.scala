@@ -6,6 +6,7 @@ import java.nio.file.{Files, Paths}
 import com.typesafe.config.ConfigFactory
 import csw.services.icd.db.IcdVersionManager
 import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.lib.Ref
 import org.eclipse.jgit.revwalk.RevWalk
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.joda.time.DateTime
@@ -30,30 +31,30 @@ object IcdGit extends App {
   private val defaultUser = System.getProperty("user.name")
 
   /**
-   * A list of all known TMT subsystems (read from the same resources file used in validating the ICDs)
-   */
+    * A list of all known TMT subsystems (read from the same resources file used in validating the ICDs)
+    */
   private val allSubsystems: Set[String] = {
     val config = ConfigFactory.parseResources("subsystem.conf")
     config.getStringList("enum").asScala.toSet
   }
 
   /**
-   * Command line options ("icd-git --help" prints a usage message with descriptions of all the options)
-   */
+    * Command line options ("icd-git --help" prints a usage message with descriptions of all the options)
+    */
   private case class Options(
-    list:         Boolean        = false,
-    subsystem:    Option[String] = None,
-    target:       Option[String] = None,
-    icdVersion:   Option[String] = None,
-    versions:     Boolean        = false,
-    interactive:  Boolean        = false,
-    publish:      Boolean        = false,
-    unpublish:    Boolean        = false,
-    majorVersion: Boolean        = false,
-    user:         Option[String] = None,
-    password:     Option[String] = None,
-    comment:      Option[String] = None
-  )
+                              list: Boolean = false,
+                              subsystem: Option[String] = None,
+                              target: Option[String] = None,
+                              icdVersion: Option[String] = None,
+                              versions: Boolean = false,
+                              interactive: Boolean = false,
+                              publish: Boolean = false,
+                              unpublish: Boolean = false,
+                              majorVersion: Boolean = false,
+                              user: Option[String] = None,
+                              password: Option[String] = None,
+                              comment: Option[String] = None
+                            )
 
   // Parser for the command line options
   private val parser = new scopt.OptionParser[Options]("icd-git") {
@@ -129,11 +130,12 @@ object IcdGit extends App {
   private def run(opts: Options): Unit = {
     val options = if (opts.interactive) interact(opts) else opts
     if (options.versions) listVersions(options)
-
-    val sortedOpts = sortSubsystems(options)
-    if (sortedOpts.list) list(sortedOpts)
-    if (sortedOpts.unpublish) unpublish(sortedOpts)
-    if (sortedOpts.publish) publish(sortedOpts)
+    else {
+      val sortedOpts = sortSubsystems(options)
+      if (sortedOpts.list) list(sortedOpts)
+      if (sortedOpts.unpublish) unpublish(sortedOpts)
+      if (sortedOpts.publish) publish(sortedOpts)
+    }
   }
 
   // Make sure subsystem and target subsystem are alphabetically sorted (convention, since A->B == B->A)
@@ -163,7 +165,8 @@ object IcdGit extends App {
           if (needsVersion) {
             val versions = getRepoVersions(getSubsystemGitHubUrl(subsys))
             if (versions.isEmpty) error(s"No tagged versions of $subsys were found. Please add a v1.0 git release tag.")
-            val version = if (versions.size == 1) s":${versions.head}" else {
+            val version = if (versions.size == 1) s":${versions.head}"
+            else {
               println(s"Please enter the version for $subsys: (one of $versions)")
               Option(readLine()).map(v => s":$v").getOrElse("")
             }
@@ -183,12 +186,14 @@ object IcdGit extends App {
 
     // Get the user name and password and return the pair
     def readCredentials(opts: Options): (Option[String], Option[String]) = {
-      val user = if (options.user.isDefined) options.user else {
+      val user = if (options.user.isDefined) options.user
+      else {
         println(s"Enter the user name for Git: [$defaultUser]")
         val u = Option(readLine)
         if (u.isDefined) u else Some(defaultUser)
       }
-      val password = if (options.password.isDefined) options.password else {
+      val password = if (options.password.isDefined) options.password
+      else {
         println(s"Enter the password for Git:")
         Option(System.console().readPassword()).map(new String(_))
       }
@@ -211,11 +216,11 @@ object IcdGit extends App {
   }
 
   /**
-   * Returns the subsystem from a string in the format "subsystem:version", where the ":version" part is optional.
-   *
-   * @param s the subsystem or subsystem:version string (the version is ignored here)
-   * @return the subsystem
-   */
+    * Returns the subsystem from a string in the format "subsystem:version", where the ":version" part is optional.
+    *
+    * @param s the subsystem or subsystem:version string (the version is ignored here)
+    * @return the subsystem
+    */
   private def getSubsystem(s: String): String = {
     val subsys = IcdVersionManager.getSubsystemAndVersion(s)._1
     if (!allSubsystems.contains(subsys)) {
@@ -225,14 +230,13 @@ object IcdGit extends App {
   }
 
   /**
-   * Returns the subsystem and version from a string in the format "subsystem:version", where the ":version" part is optional.
-   * The version defaults to the latest tagged release, or None if there are no releases
-   *
-   * @param s the subsystem or subsystem:version string
-   * @return a pair of (subsystem, Option(version))
-   */
+    * Returns the subsystem and version from a string in the format "subsystem:version", where the ":version" part is optional.
+    * The version defaults to the latest tagged release, or None if there are no releases
+    *
+    * @param s the subsystem or subsystem:version string
+    * @return a pair of (subsystem, Option(version))
+    */
   private def getSubsystemAndVersion(s: String): (String, Option[String]) = {
-    // XXX add interactive...
     val (subsys, versionOpt) = IcdVersionManager.getSubsystemAndVersion(s)
     if (!allSubsystems.contains(subsys)) {
       error(s"unknown subsystem: $subsys")
@@ -242,11 +246,11 @@ object IcdGit extends App {
   }
 
   /**
-   * Returns the GitHub URL for a subsystem string in the format "subsystem:version", where the ":version" part is optional.
-   *
-   * @param s the subsystem or subsystem:version string (the version is ignored here)
-   * @return the subsystem
-   */
+    * Returns the GitHub URL for a subsystem string in the format "subsystem:version", where the ":version" part is optional.
+    *
+    * @param s the subsystem or subsystem:version string (the version is ignored here)
+    * @return the subsystem
+    */
   private def getSubsystemGitHubUrl(s: String): String = {
     val subsystem = getSubsystem(s)
     s"https://github.com/tmtsoftware/$subsystem-Model-Files.git"
@@ -260,37 +264,72 @@ object IcdGit extends App {
   }
 
   /**
-   * Gets the versions from the git tags for the given remote repo url
-   * (The tags should be like: refs/tags/v1.0, refs/tags/v1.2, ...)
-   */
+    * Gets the versions from the git tags for the given remote repo url
+    * (The tags should be like: refs/tags/v1.0, refs/tags/v1.2, ...)
+    */
   private def getRepoVersions(url: String): List[String] = {
     Git.lsRemoteRepository()
       .setTags(true)
       .setRemote(url)
       .call().asScala.toList.map { ref =>
-        val name = ref.getName
-        name
-      }.filter(_.startsWith("refs/tags/v")).map { name =>
-        name.substring(name.lastIndexOf('/') + 2)
-      }.filter(_.matches("[0-9]+\\.[0-9]+")).sortWith(sortVersion)
+      val name = ref.getName
+      name
+    }.filter(_.startsWith("refs/tags/v")).map { name =>
+      name.substring(name.lastIndexOf('/') + 2)
+    }.filter(_.matches("[0-9]+\\.[0-9]+")).sortWith(sortVersion)
   }
 
   // A version of a subsystem
   private case class SubsystemVersion(subsystem: String, version: String, user: String, comment: String, date: String)
 
   /**
-   * Gets a list of information about the tagged versions of the given subsystem
-   */
+    * Gets a list of information about the tagged versions of the given subsystem
+    */
   private def getSubsystemVersions(subsystem: String): List[SubsystemVersion] = {
+
+// Note: If there are multiple tags for the same commit, the code below can print out the messages
+//    def moreInfo(git: Git, xcommit: RevCommit): Unit = {
+//      val log = git.log()
+//      val call = git.tagList().call().asScala.toList
+//      val walk = new RevWalk(git.getRepository)
+//      val getTags = call.map { ref =>
+//        val peeledRef = git.getRepository.peel(ref)
+//        if (peeledRef.getPeeledObjectId != null) {
+//          log.add(peeledRef.getPeeledObjectId)
+//          peeledRef
+//        } else {
+//          log.add(ref.getObjectId)
+//          ref
+//        }
+//      }
+//      // for each ref from getTags list, create a RevTag
+//      getTags.foreach { obj =>
+//       if (obj.getPeeledObjectId != null) {
+//         val tagId = obj.getPeeledObjectId.getName
+//         println(s"XXX tagId = $tagId")
+//         if (tagId.equals(xcommit.getName)) {
+//           val tag = walk.parseTag(obj.getObjectId)
+//           println(s"XXX Commit = ${xcommit.getName} has tag ${tag.getTagName} with message tag ${tag.getFullMessage}")
+//         }
+//       }
+//      }
+//    }
+
+    def refFilter(ref: Ref): Boolean = {
+      ref.getName.matches("refs/tags/v[0-9]+\\.[0-9]+")
+    }
+
     val url = getSubsystemGitHubUrl(subsystem)
     // Checkout the icds repo in a temp dir
     val gitWorkDir = Files.createTempDirectory("icds").toFile
     try {
-      val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(url).setNoCheckout(true).call
-      git.tagList().call().asScala.toList.filter(_.getName.startsWith("refs/tags/v")).map { ref =>
-        val version = ref.getName.substring(ref.getName.lastIndexOf('/') + 2)
+      val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(url).setNoCheckout(true).call()
+      git.tagList().call().asScala.toList.filter(refFilter).map { ref =>
+      val peeledRef = git.getRepository.peel(ref)
+      val version = ref.getName.substring(ref.getName.lastIndexOf('/') + 2)
         val walk = new RevWalk(git.getRepository)
-        val commit = walk.parseCommit(ref.getObjectId)
+        val commit = walk.parseCommit(peeledRef.getObjectId)
+//        moreInfo(git, commit)
         val comment = commit.getFullMessage
         val user = commit.getCommitterIdent.getName
         val date = new DateTime(commit.getCommitTime * 1000L).toString()
@@ -305,10 +344,13 @@ object IcdGit extends App {
   // --versions option (print versions of subsystem and target subsystem)
   private def listVersions(options: Options): Unit = {
     List(options.subsystem, options.target).foreach { subsysOpt =>
+      // This code lists only the tag names
       //      subsysOpt.map(getSubsystemGitHubUrl).foreach { url =>
       //        val tags = getRepoVersions(url)
       //        println(s"${subsysOpt.get} versions: ${tags.mkString(", ")}")
       //      }
+
+      // This code lists the tag names and associated information
       subsysOpt.map(getSubsystemVersions).foreach {
         _.foreach { sv =>
           println(s"\nSubsystem ${sv.subsystem}-${sv.version}: created by ${sv.user} on ${sv.date}:\n${sv.comment}\n----")
@@ -446,8 +488,8 @@ object IcdGit extends App {
   }
 
   /**
-   * Deletes the contents of the given temporary directory (recursively).
-   */
+    * Deletes the contents of the given temporary directory (recursively).
+    */
   private def deleteDirectoryRecursively(dir: File): Unit = {
     // just to be safe, don't delete anything that is not in /tmp/
     val p = dir.getPath

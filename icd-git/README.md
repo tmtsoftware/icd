@@ -5,6 +5,16 @@ icd-git is a command line application that reads release tags from the GitHub
 [ICD-Model-Files](https://github.com/tmtsoftware/ICD-Model-Files.git) repository and
 allows you to publish ICD versions.
 
+In order for a subsystem to be part of an ICD, there needs to be a release tag for it in the
+form `v1.0`, `v1.1`, `v2.1`, etc. You can add this as follows:
+
+```
+git commit -m "my comment..."
+git push
+git tag -a v1.1 -m "my version 1.1 changes..."
+git push origin --tags
+```
+
 An ICD version is defined by an entry in a JSON formatted file named `icd-$subsytem1-$subsystem2.conf`
 which is stored in the icds subdirectory of the repository. 
 The file lists the two subsystems that make up the ICD, the ICD version, the versions of the two subsystems along with the
