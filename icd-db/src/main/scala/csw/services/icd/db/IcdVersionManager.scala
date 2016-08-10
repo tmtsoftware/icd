@@ -487,17 +487,25 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
     target: String, targetVersion: String,
     user: String, comment: String, date: DateTime
   ): Unit = {
-    val obj = Map(
-      versionStrKey -> icdVersion,
-      subsystemKey -> subsystem,
-      subsystemVersionKey -> subsystemVersion,
-      targetKey -> target,
-      targetVersionKey -> targetVersion,
-      userKey -> user,
-      dateKey -> date,
-      commentKey -> comment
-    ).asDBObject
-    db(icdCollName).insert(obj, WriteConcern.SAFE)
+
+    // Only add an ICD version if the referenced subsystem and target versions exist
+    val subsystemVersions = getVersions(subsystem)
+    val targetVersions = getVersions(target)
+    if (subsystemVersions.exists(_.versionOpt.contains(subsystemVersion)) && targetVersions.exists(_.versionOpt.contains(targetVersion))) {
+      val obj = Map(
+        versionStrKey -> icdVersion,
+        subsystemKey -> subsystem,
+        subsystemVersionKey -> subsystemVersion,
+        targetKey -> target,
+        targetVersionKey -> targetVersion,
+        userKey -> user,
+        dateKey -> date,
+        commentKey -> comment
+      ).asDBObject
+      db(icdCollName).insert(obj, WriteConcern.SAFE)
+    } else {
+      println(s"Warning: Not adding ICD version $icdVersion between $subsystem-$subsystemVersion and $target-$targetVersion, since not all referenecd subsystem versions exist")
+    }
   }
 
   /**
