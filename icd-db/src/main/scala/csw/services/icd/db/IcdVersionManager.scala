@@ -389,8 +389,8 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
    *
    * @param subsystem the name of subsystem
    * @param versionOpt optional version string in the form "1.0" (used when importing specific release from github)
-   * @param comment change comment
    * @param majorVersion if true (and no subsystem version was given), increment the subsystem's major version
+   * @param comment change comment
    */
   def publishApi(subsystem: String, versionOpt: Option[String], majorVersion: Boolean, comment: String, userName: String): Unit = {
     val collectionNames = getCollectionNames

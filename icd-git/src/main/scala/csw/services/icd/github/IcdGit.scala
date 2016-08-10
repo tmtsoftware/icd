@@ -4,7 +4,7 @@ import java.io.File
 import java.nio.file.{Files, Paths}
 
 import com.typesafe.config.ConfigFactory
-import csw.services.icd.db.IcdVersionManager
+import csw.services.icd.db.{IcdDb, IcdDbDefaults, IcdVersionManager}
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib.Ref
 import org.eclipse.jgit.revwalk.RevWalk
@@ -13,6 +13,10 @@ import org.joda.time.DateTime
 
 import scala.collection.JavaConverters._
 
+/**
+ * Implements the icd-git command line application, which is used to manage ICD versions in Git and
+ * support importing from Git into the ICD database.
+ */
 object IcdGit extends App {
 
   // You can override the GitHub URI used to store the ICD version files for testing
@@ -31,30 +35,34 @@ object IcdGit extends App {
   private val defaultUser = System.getProperty("user.name")
 
   /**
-    * A list of all known TMT subsystems (read from the same resources file used in validating the ICDs)
-    */
+   * A list of all known TMT subsystems (read from the same resources file used in validating the ICDs)
+   */
   private val allSubsystems: Set[String] = {
     val config = ConfigFactory.parseResources("subsystem.conf")
     config.getStringList("enum").asScala.toSet
   }
 
   /**
-    * Command line options ("icd-git --help" prints a usage message with descriptions of all the options)
-    */
+   * Command line options ("icd-git --help" prints a usage message with descriptions of all the options)
+   */
   private case class Options(
-                              list: Boolean = false,
-                              subsystem: Option[String] = None,
-                              target: Option[String] = None,
-                              icdVersion: Option[String] = None,
-                              versions: Boolean = false,
-                              interactive: Boolean = false,
-                              publish: Boolean = false,
-                              unpublish: Boolean = false,
-                              majorVersion: Boolean = false,
-                              user: Option[String] = None,
-                              password: Option[String] = None,
-                              comment: Option[String] = None
-                            )
+    list:         Boolean        = false,
+    subsystem:    Option[String] = None,
+    target:       Option[String] = None,
+    icdVersion:   Option[String] = None,
+    versions:     Boolean        = false,
+    interactive:  Boolean        = false,
+    publish:      Boolean        = false,
+    unpublish:    Boolean        = false,
+    majorVersion: Boolean        = false,
+    user:         Option[String] = None,
+    password:     Option[String] = None,
+    comment:      Option[String] = None,
+    dbName:       String         = IcdDbDefaults.defaultDbName,
+    host:         String         = IcdDbDefaults.defaultHost,
+    port:         Int            = IcdDbDefaults.defaultPort,
+    ingest:       Boolean        = false
+  )
 
   // Parser for the command line options
   private val parser = new scopt.OptionParser[Options]("icd-git") {
@@ -62,7 +70,7 @@ object IcdGit extends App {
 
     opt[Unit]('l', "list") action { (x, c) =>
       c.copy(list = true)
-    } text "Prints the list of ICDs defined for the given subsystem and target subsystem options"
+    } text "Prints the list of ICD versions defined on GitHub for the given subsystem and target subsystem options"
 
     opt[String]('s', "subsystem") valueName "<subsystem>[:version]" action { (x, c) =>
       c.copy(subsystem = Some(x))
@@ -78,7 +86,7 @@ object IcdGit extends App {
 
     opt[Unit]("versions") action { (x, c) =>
       c.copy(versions = true)
-    } text "Prints a list of available versions for the subsystems given by the subsystem and/or target options"
+    } text "Prints a list of available versions on GitHub for the subsystems given by the subsystem and/or target options"
 
     opt[Unit]('i', "interactive") action { (_, c) =>
       c.copy(interactive = true)
@@ -86,7 +94,7 @@ object IcdGit extends App {
 
     opt[Unit]("publish") action { (_, c) =>
       c.copy(publish = true)
-    } text "Publish an ICD based on the selected subsystem and target (Use together with --subsystem, --target and --comment)"
+    } text "Publish an ICD based on the selected subsystem and target (Use together with --subsystem:version, --target:version and --comment)"
 
     opt[Unit]("unpublish") action { (_, c) =>
       c.copy(unpublish = true)
@@ -107,6 +115,22 @@ object IcdGit extends App {
     opt[String]('m', "comment") valueName "<text>" action { (x, c) =>
       c.copy(comment = Some(x))
     } text "Use with --publish to add a comment describing the changes made"
+
+    opt[String]('d', "db") valueName "<name>" action { (x, c) =>
+      c.copy(dbName = x)
+    } text "The name of the database to use (for the --ingest option, default: icds)"
+
+    opt[String]("host") valueName "<hostname>" action { (x, c) =>
+      c.copy(host = x)
+    } text "The host name where the database is running (for the --ingest option, default: localhost)"
+
+    opt[Int]("port") valueName "<number>" action { (x, c) =>
+      c.copy(port = x)
+    } text "The port number to use for the database (for the --ingest option, default: 27017)"
+
+    opt[Unit]("ingest") action { (_, c) =>
+      c.copy(ingest = true)
+    } text "Ingests the selected --subsystem and --target subsystem model files from GitHub into the ICD database (Ingests all subsystems, if neither option is given)"
 
     help("help")
     version("version")
@@ -130,23 +154,24 @@ object IcdGit extends App {
   private def run(opts: Options): Unit = {
     val options = if (opts.interactive) interact(opts) else opts
     if (options.versions) listVersions(options)
-    else {
-      val sortedOpts = sortSubsystems(options)
-      if (sortedOpts.list) list(sortedOpts)
-      if (sortedOpts.unpublish) unpublish(sortedOpts)
-      if (sortedOpts.publish) publish(sortedOpts)
-    }
+    if (options.list) list(sortSubsystems(options))
+    if (options.unpublish) unpublish(sortSubsystems(options))
+    if (options.publish) publish(sortSubsystems(options))
+    if (options.ingest) ingest(sortSubsystems(options, subsystemRequired = false, targetRequired = false))
   }
 
   // Make sure subsystem and target subsystem are alphabetically sorted (convention, since A->B == B->A)
-  private def sortSubsystems(opts: Options): Options = {
-    if (opts.subsystem.isEmpty) error("Missing required --subsystem option")
-    if (opts.target.isEmpty) error("Missing required --target subsystem option")
-    val list = List(opts.subsystem.get, opts.target.get).sortWith { (a, b) =>
-      // Ignore optional ":version" part
-      IcdVersionManager.getSubsystemAndVersion(a)._1 < IcdVersionManager.getSubsystemAndVersion(b)._1
+  private def sortSubsystems(opts: Options, subsystemRequired: Boolean = true, targetRequired: Boolean = true): Options = {
+    if (subsystemRequired && opts.subsystem.isEmpty) error("Missing required --subsystem option")
+    if (targetRequired && opts.target.isEmpty) error("Missing required --target subsystem option")
+    if (opts.subsystem.isEmpty || opts.target.isEmpty) opts
+    else {
+      val list = List(opts.subsystem.get, opts.target.get).sortWith { (a, b) =>
+        // Ignore optional ":version" part
+        IcdVersionManager.getSubsystemAndVersion(a)._1 < IcdVersionManager.getSubsystemAndVersion(b)._1
+      }
+      opts.copy(subsystem = Some(list.head), target = Some(list(1)))
     }
-    opts.copy(subsystem = Some(list.head), target = Some(list(1)))
   }
 
   private def error(msg: String): Unit = {
@@ -205,8 +230,17 @@ object IcdGit extends App {
       Option(readLine)
     }
 
-    val subsysOpt = readSubsystemAndVersion(options.subsystem, "first", options.publish)
-    val needsTarget = options.publish || options.unpublish || options.list
+    def askIngestAll(opts: Options): Boolean = {
+      if (opts.subsystem.isDefined) false else {
+        println("Do you want to ingest all subsystem model files into the ICD database? [no] (Answer no to select the two subsystems): ")
+        val ans = Option(readLine)
+        ans.isDefined && Set("y", "yes").contains(ans.get.toLowerCase())
+      }
+    }
+
+    val ingestAll = if (options.ingest) askIngestAll(options) else false
+    val subsysOpt = if (options.ingest && ingestAll) None else readSubsystemAndVersion(options.subsystem, "first", options.publish)
+    val needsTarget = options.publish || options.unpublish || options.list || (options.ingest && !ingestAll)
     val targetOpt = if (needsTarget) readSubsystemAndVersion(options.target, "second", options.publish) else options.target
     val icdVersion = if (options.unpublish) readIcdVersion(options.copy(subsystem = subsysOpt, target = targetOpt)) else options.icdVersion
     val needsPassword = options.publish || options.unpublish
@@ -216,11 +250,11 @@ object IcdGit extends App {
   }
 
   /**
-    * Returns the subsystem from a string in the format "subsystem:version", where the ":version" part is optional.
-    *
-    * @param s the subsystem or subsystem:version string (the version is ignored here)
-    * @return the subsystem
-    */
+   * Returns the subsystem from a string in the format "subsystem:version", where the ":version" part is optional.
+   *
+   * @param s the subsystem or subsystem:version string (the version is ignored here)
+   * @return the subsystem
+   */
   private def getSubsystem(s: String): String = {
     val subsys = IcdVersionManager.getSubsystemAndVersion(s)._1
     if (!allSubsystems.contains(subsys)) {
@@ -230,12 +264,12 @@ object IcdGit extends App {
   }
 
   /**
-    * Returns the subsystem and version from a string in the format "subsystem:version", where the ":version" part is optional.
-    * The version defaults to the latest tagged release, or None if there are no releases
-    *
-    * @param s the subsystem or subsystem:version string
-    * @return a pair of (subsystem, Option(version))
-    */
+   * Returns the subsystem and version from a string in the format "subsystem:version", where the ":version" part is optional.
+   * The version defaults to the latest tagged release, or None if there are no releases
+   *
+   * @param s the subsystem or subsystem:version string
+   * @return a pair of (subsystem, Option(version))
+   */
   private def getSubsystemAndVersion(s: String): (String, Option[String]) = {
     val (subsys, versionOpt) = IcdVersionManager.getSubsystemAndVersion(s)
     if (!allSubsystems.contains(subsys)) {
@@ -246,11 +280,11 @@ object IcdGit extends App {
   }
 
   /**
-    * Returns the GitHub URL for a subsystem string in the format "subsystem:version", where the ":version" part is optional.
-    *
-    * @param s the subsystem or subsystem:version string (the version is ignored here)
-    * @return the subsystem
-    */
+   * Returns the GitHub URL for a subsystem string in the format "subsystem:version", where the ":version" part is optional.
+   *
+   * @param s the subsystem or subsystem:version string (the version is ignored here)
+   * @return the subsystem
+   */
   private def getSubsystemGitHubUrl(s: String): String = {
     val subsystem = getSubsystem(s)
     s"https://github.com/tmtsoftware/$subsystem-Model-Files.git"
@@ -264,56 +298,56 @@ object IcdGit extends App {
   }
 
   /**
-    * Gets the versions from the git tags for the given remote repo url
-    * (The tags should be like: refs/tags/v1.0, refs/tags/v1.2, ...)
-    */
+   * Gets the versions from the git tags for the given remote repo url
+   * (The tags should be like: refs/tags/v1.0, refs/tags/v1.2, ...)
+   */
   private def getRepoVersions(url: String): List[String] = {
     Git.lsRemoteRepository()
       .setTags(true)
       .setRemote(url)
       .call().asScala.toList.map { ref =>
-      val name = ref.getName
-      name
-    }.filter(_.startsWith("refs/tags/v")).map { name =>
-      name.substring(name.lastIndexOf('/') + 2)
-    }.filter(_.matches("[0-9]+\\.[0-9]+")).sortWith(sortVersion)
+        val name = ref.getName
+        name
+      }.filter(_.startsWith("refs/tags/v")).map { name =>
+        name.substring(name.lastIndexOf('/') + 2)
+      }.filter(_.matches("[0-9]+\\.[0-9]+")).sortWith(sortVersion)
   }
 
   // A version of a subsystem
   private case class SubsystemVersion(subsystem: String, version: String, user: String, comment: String, date: String)
 
   /**
-    * Gets a list of information about the tagged versions of the given subsystem
-    */
+   * Gets a list of information about the tagged versions of the given subsystem
+   */
   private def getSubsystemVersions(subsystem: String): List[SubsystemVersion] = {
 
-// Note: If there are multiple tags for the same commit, the code below can print out the messages
-//    def moreInfo(git: Git, xcommit: RevCommit): Unit = {
-//      val log = git.log()
-//      val call = git.tagList().call().asScala.toList
-//      val walk = new RevWalk(git.getRepository)
-//      val getTags = call.map { ref =>
-//        val peeledRef = git.getRepository.peel(ref)
-//        if (peeledRef.getPeeledObjectId != null) {
-//          log.add(peeledRef.getPeeledObjectId)
-//          peeledRef
-//        } else {
-//          log.add(ref.getObjectId)
-//          ref
-//        }
-//      }
-//      // for each ref from getTags list, create a RevTag
-//      getTags.foreach { obj =>
-//       if (obj.getPeeledObjectId != null) {
-//         val tagId = obj.getPeeledObjectId.getName
-//         println(s"XXX tagId = $tagId")
-//         if (tagId.equals(xcommit.getName)) {
-//           val tag = walk.parseTag(obj.getObjectId)
-//           println(s"XXX Commit = ${xcommit.getName} has tag ${tag.getTagName} with message tag ${tag.getFullMessage}")
-//         }
-//       }
-//      }
-//    }
+    // Note: If there are multiple tags for the same commit, the code below can print out the messages
+    //    def moreInfo(git: Git, xcommit: RevCommit): Unit = {
+    //      val log = git.log()
+    //      val call = git.tagList().call().asScala.toList
+    //      val walk = new RevWalk(git.getRepository)
+    //      val getTags = call.map { ref =>
+    //        val peeledRef = git.getRepository.peel(ref)
+    //        if (peeledRef.getPeeledObjectId != null) {
+    //          log.add(peeledRef.getPeeledObjectId)
+    //          peeledRef
+    //        } else {
+    //          log.add(ref.getObjectId)
+    //          ref
+    //        }
+    //      }
+    //      // for each ref from getTags list, create a RevTag
+    //      getTags.foreach { obj =>
+    //       if (obj.getPeeledObjectId != null) {
+    //         val tagId = obj.getPeeledObjectId.getName
+    //         println(s"XXX tagId = $tagId")
+    //         if (tagId.equals(xcommit.getName)) {
+    //           val tag = walk.parseTag(obj.getObjectId)
+    //           println(s"XXX Commit = ${xcommit.getName} has tag ${tag.getTagName} with message tag ${tag.getFullMessage}")
+    //         }
+    //       }
+    //      }
+    //    }
 
     def refFilter(ref: Ref): Boolean = {
       ref.getName.matches("refs/tags/v[0-9]+\\.[0-9]+")
@@ -325,11 +359,11 @@ object IcdGit extends App {
     try {
       val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(url).setNoCheckout(true).call()
       git.tagList().call().asScala.toList.filter(refFilter).map { ref =>
-      val peeledRef = git.getRepository.peel(ref)
-      val version = ref.getName.substring(ref.getName.lastIndexOf('/') + 2)
+        val peeledRef = git.getRepository.peel(ref)
+        val version = ref.getName.substring(ref.getName.lastIndexOf('/') + 2)
         val walk = new RevWalk(git.getRepository)
         val commit = walk.parseCommit(peeledRef.getObjectId)
-//        moreInfo(git, commit)
+        //        moreInfo(git, commit)
         val comment = commit.getFullMessage
         val user = commit.getCommitterIdent.getName
         val date = new DateTime(commit.getCommitTime * 1000L).toString()
@@ -488,8 +522,8 @@ object IcdGit extends App {
   }
 
   /**
-    * Deletes the contents of the given temporary directory (recursively).
-    */
+   * Deletes the contents of the given temporary directory (recursively).
+   */
   private def deleteDirectoryRecursively(dir: File): Unit = {
     // just to be safe, don't delete anything that is not in /tmp/
     val p = dir.getPath
@@ -507,6 +541,88 @@ object IcdGit extends App {
           }
       }
       dir.delete()
+    }
+  }
+
+  // Handle the --ingest option
+  private def ingest(options: Options): Unit = {
+    // Get the MongoDB handle
+    val db = IcdDb(options.dbName, options.host, options.port)
+    try {
+      db.dropDatabase()
+    } catch {
+      case ex: Exception => error("Unable to drop the existing ICD database: $ex")
+    }
+
+    // Get the list of subsystems to ingest
+    val subsystems = {
+      val l = options.subsystem.toList ++ options.target.toList
+      if (l.nonEmpty) {
+        println(s"Ingesting ${l.mkString(" and ")}")
+        l
+      } else {
+        println(s"Ingesting all known subsystems")
+        allSubsystems.toList
+      }
+    }
+
+    subsystems.foreach(ingest(_, db, options))
+    importIcdFiles(db, subsystems)
+  }
+
+  // Ingests the given subsystem into the icd db
+  private def ingest(subsystem: String, db: IcdDb, options: Options): Unit = {
+    val versions = getSubsystemVersions(subsystem)
+    val url = getSubsystemGitHubUrl(subsystem)
+    // Checkout the icds repo in a temp dir
+    val gitWorkDir = Files.createTempDirectory("icds").toFile
+    try {
+      val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(url).call()
+      versions.foreach { sv =>
+        val name = s"tags/v${sv.version}"
+        println(s"Checking out $subsystem tag v${sv.version}")
+        git.checkout().setName(name).call
+        println(s"Ingesting $subsystem ${sv.version}")
+        db.ingest(gitWorkDir)
+        db.versionManager.publishApi(sv.subsystem, Some(sv.version), majorVersion = false, sv.comment, sv.user)
+      }
+    } finally {
+      deleteDirectoryRecursively(gitWorkDir)
+    }
+  }
+
+  // Imports the ICD release information for the two subsystems, or all subsystems
+  private def importIcdFiles(db: IcdDb, subsystems: List[String]): Unit = {
+    val gitWorkDir = Files.createTempDirectory("icds").toFile
+    try {
+      Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUrl).call
+
+      if (subsystems.size == 2) {
+        // Import one ICD if subsystem and target options were given
+        val subsystem = subsystems.head
+        val target = subsystems(1)
+        val fileName = s"$gitIcdsDir/icd-$subsystem-$target.conf"
+        val file = new File(gitWorkDir, fileName)
+        if (file.exists()) importIcdFile(db, file)
+      } else {
+        // Import all ICD files
+        val dir = new File(gitWorkDir, gitIcdsDir)
+        if (dir.exists && dir.isDirectory) {
+          val files = dir.listFiles.filter(f => f.isFile && f.getName.endsWith(".conf")).toList
+          files.foreach(file => importIcdFile(db, file))
+        }
+      }
+    } finally {
+      deleteDirectoryRecursively(gitWorkDir)
+    }
+  }
+
+
+  // Imports ICD version information from the given file (in JSON format in the ICD-Model-Files/icds dir)
+  private def importIcdFile(db: IcdDb, file: File): Unit = {
+    val problems = db.importIcds(file)
+    if (problems.nonEmpty) {
+      problems.foreach(println(_))
     }
   }
 }
