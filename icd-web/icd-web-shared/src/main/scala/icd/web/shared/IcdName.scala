@@ -24,3 +24,13 @@ case class IcdVersion(
  * @param date the date the ICD was published
  */
 case class IcdVersionInfo(icdVersion: IcdVersion, user: String, comment: String, date: String)
+
+/**
+ * A subsystem API version with additional history information
+ * @param subsystem the subsystem name
+ * @param version the subsystem version
+ * @param user the user that published the version
+ * @param comment the publish comment
+ * @param date the date the ICD was published
+ */
+case class ApiVersionInfo(subsystem: String, version: String, user: String, comment: String, date: String)

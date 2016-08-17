@@ -441,7 +441,7 @@ case class IcdDbPrinter(db: IcdDb) {
    * @param compNamesOpt  optional names of the component to print (separated by ",")
    * @param targetOpt     optional target subsystem, followed by optional :version
    * @param icdVersionOpt optional icd version (overrides source and target subsystem versions)
-   * @param file          the file in which to save the document (should end with .md, .html or .pdf)
+   * @param file          the file in which to save the document (should end with .html or .pdf)
    */
   def saveToFile(subsystemStr: String, compNamesOpt: Option[String],
                  targetOpt: Option[String], icdVersionOpt: Option[String], file: File): Unit = {
@@ -454,34 +454,32 @@ case class IcdDbPrinter(db: IcdDb) {
 
     def saveAsPdf(html: String): Unit = IcdToPdf.saveAsPdf(file, html)
 
-    // ---
-
-    val (subsystem, versionOpt) = IcdVersionManager.getSubsystemAndVersion(subsystemStr)
-
-    val compNames = compNamesOpt match {
-      case Some(str) => str.split(",").toList
-      case None      => db.versionManager.getComponentNames(subsystem, versionOpt)
-    }
+    val s1 = IcdVersionManager.SubsystemAndVersion(subsystemStr)
 
     val (subsys, targ, icdV) = targetOpt match {
       case Some(t) => // ICD
-        val (target, targetVersionOpt) = IcdVersionManager.getSubsystemAndVersion(t)
+        val s2 = IcdVersionManager.SubsystemAndVersion(t)
         // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
         // if only the subsystem or target versions were given, use those (default to latest versions)
         val v = icdVersionOpt.getOrElse("*")
-        val iv = db.versionManager.getIcdVersions(subsystem, target).find(_.icdVersion.icdVersion == v).map(_.icdVersion)
+        val iv = db.versionManager.getIcdVersions(s1.subsystem, s2.subsystem).find(_.icdVersion.icdVersion == v).map(_.icdVersion)
         val (sv, tv) = if (iv.isDefined) {
           val i = iv.get
           (SubsystemWithVersion(Some(i.subsystem), Some(i.subsystemVersion)), SubsystemWithVersion(Some(i.target), Some(i.targetVersion)))
         } else {
-          (SubsystemWithVersion(Some(subsystem), versionOpt), SubsystemWithVersion(Some(target), targetVersionOpt))
+          (SubsystemWithVersion(Some(s1.subsystem), s1.versionOpt), SubsystemWithVersion(Some(s2.subsystem), s2.versionOpt))
         }
         (sv, tv, iv)
 
       case None => // API
-        val sv = SubsystemWithVersion(Some(subsystem), versionOpt)
+        val sv = SubsystemWithVersion(Some(s1.subsystem), s1.versionOpt)
         val tv = SubsystemWithVersion(None, None)
         (sv, tv, None)
+    }
+
+    val compNames = compNamesOpt match {
+      case Some(str) => str.split(",").toList
+      case None      => db.versionManager.getComponentNames(s1.subsystem, s1.versionOpt)
     }
 
     IcdDbPrinter(db).getAsHtml(compNames, subsys, targ, icdV) match {

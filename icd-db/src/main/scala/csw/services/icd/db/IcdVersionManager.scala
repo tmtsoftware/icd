@@ -1,12 +1,12 @@
 package csw.services.icd.db
 
-import com.mongodb.{WriteConcern, DBObject}
+import com.mongodb.{DBObject, WriteConcern}
 import com.mongodb.casbah.Imports._
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigFactory}
 import gnieh.diffson.{JsonDiff, JsonPatch}
 import icd.web.shared.IcdModels.SubsystemModel
-import icd.web.shared.{IcdModels, IcdVersionInfo, IcdVersion}
-import org.joda.time.{DateTimeZone, DateTime}
+import icd.web.shared.{IcdModels, IcdVersion, IcdVersionInfo}
+import org.joda.time.{DateTime, DateTimeZone}
 import csw.services.icd.model._
 import spray.json.{JsValue, JsonParser}
 
@@ -44,6 +44,15 @@ object IcdVersionManager {
   val userKey = "user"
   val dateKey = "date"
   val commentKey = "comment"
+
+  /**
+   * A list of all known TMT subsystems (read from the same resources file used in validating the ICDs)
+   */
+  val allSubsystems: Set[String] = {
+    import scala.collection.JavaConverters._
+    val config = ConfigFactory.parseResources("subsystem.conf")
+    config.getStringList("enum").asScala.toSet
+  }
 
   /**
    * Holds a collection path for a component or subsystem and it's version
@@ -105,12 +114,45 @@ object IcdVersionManager {
     implicit def orderingByName[A <: IcdName]: Ordering[A] = Ordering.by(e => (e.subsystem, e.target))
   }
 
-  // Gets the subsystem and optional version, if defined
-  def getSubsystemAndVersion(s: String): (String, Option[String]) = {
-    if (s.contains(':')) {
-      val ar = s.split(':')
-      (ar(0), Some(ar(1)))
-    } else (s, None)
+  /**
+   * Wraps a subsystem name and optional version
+   */
+  case class SubsystemAndVersion(subsystem: String, versionOpt: Option[String]) extends Ordered [SubsystemAndVersion] {
+
+    versionOpt.foreach(SubsystemAndVersion.checkVersion)
+
+    override def toString: String = versionOpt match {
+      case Some(v) => s"$subsystem-$v"
+      case None => subsystem
+    }
+
+    // Used to sort subsystems alphabetically, to avoid duplicates, since A->B should be the same as B->A
+    override def compare (that: SubsystemAndVersion): Int = {
+        subsystem.compare(that.subsystem)
+    }
+  }
+
+  object SubsystemAndVersion {
+    /**
+     * Extracts the subsystem and optional version, if defined
+     * @param s a string containing the subsystem, possibly followed by a ':' and the version
+     */
+    def apply(s: String): SubsystemAndVersion = {
+      val sv = if (s.contains(':')) {
+        val ar = s.split(':')
+        SubsystemAndVersion(ar(0), Some(ar(1)))
+      } else SubsystemAndVersion(s, None)
+      if (!allSubsystems.contains(sv.subsystem))
+        throw new IllegalArgumentException(s"Unknown subsystem: ${sv.subsystem}")
+      sv
+    }
+
+    /**
+      * Validates the format of the given version string
+      */
+    def checkVersion(v: String): Unit = {
+      if (!v.matches("\\d+\\.\\d+")) throw new IllegalArgumentException(s"Invalid subsystem version: $v")
+    }
   }
 
   // Start with "1.0" as the subsystem or component version, then increment the minor version automatically each time.
