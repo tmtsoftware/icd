@@ -108,12 +108,28 @@ object IcdGitManager {
   }
 
   /**
+    * Gets the file to use to store API versions for the given subsystem, and the relative pathname
+    */
+  private def getApiFile(subsystem: String, gitWorkDir: File): (File, String) = {
+    val fileName = s"$gitApisDir/api-$subsystem.json"
+    (new File(gitWorkDir, fileName), fileName)
+  }
+
+  /**
+    * Gets the file to use to store ICD versions for the given subsystems, and the relative pathname
+    */
+  private def getIcdFile(subsystem: String, target: String, gitWorkDir: File): (File, String) = {
+    val fileName = s"$gitIcdsDir/icd-$subsystem-$target.json"
+    val file = new File(gitWorkDir, fileName)
+    (new File(gitWorkDir, fileName), fileName)
+  }
+
+    /**
    * Gets a list of information about the published versions of the given subsystem
     * from an already checked out working directory
    */
   private def getApiVersions(sv: SubsystemAndVersion, gitWorkDir: File): Option[ApiVersions] = {
-      val fileName = s"$gitApisDir/api-${sv.subsystem}.conf"
-      val file = new File(gitWorkDir, fileName)
+      val (file, _) = getApiFile(sv.subsystem, gitWorkDir)
       val path = Paths.get(file.getPath)
 
       // Get the list of published APIs for the subsystem from GitHub
@@ -138,8 +154,7 @@ object IcdGitManager {
     try {
       val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
       git.close()
-      val fileName = s"$gitIcdsDir/icd-${sv.subsystem}-${tv.subsystem}.conf"
-      val file = new File(gitWorkDir, fileName)
+      val (file, fileName) = getIcdFile(sv.subsystem, tv.subsystem, gitWorkDir)
       val path = Paths.get(file.getPath)
 
       // Get the list of published ICDs for the subsystem and target from GitHub
@@ -176,8 +191,7 @@ object IcdGitManager {
     val gitWorkDir = Files.createTempDirectory("icds").toFile
     try {
       val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
-      val fileName = s"$gitIcdsDir/icd-$s-$t.conf"
-      val file = new File(gitWorkDir, fileName)
+      val (file, fileName) = getIcdFile(s, t, gitWorkDir)
       val path = Paths.get(file.getPath)
 
       // Get the list of published ICDs for the subsystem and target from GitHub
@@ -220,8 +234,7 @@ object IcdGitManager {
 
       // Clone the repository containing the API version info files
       val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
-      val fileName = s"$gitApisDir/api-$subsystem.conf"
-      val file = new File(gitWorkDir, fileName)
+      val (file, fileName) = getApiFile(subsystem, gitWorkDir)
       val path = Paths.get(file.getPath)
 
       // Get the list of published APIs for the subsystem from GitHub
@@ -285,8 +298,7 @@ object IcdGitManager {
     val gitWorkDir = Files.createTempDirectory("icds").toFile
     try {
       val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
-      val fileName = s"$gitIcdsDir/icd-${sv.subsystem}-${tv.subsystem}.conf"
-      val file = new File(gitWorkDir, fileName)
+      val (file, fileName) = getIcdFile(sv.subsystem, tv.subsystem, gitWorkDir)
       val path = Paths.get(file.getPath)
 
       // Get the list of published ICDs for the subsystem and target from GitHub
@@ -409,14 +421,13 @@ object IcdGitManager {
         // Import one ICD if subsystem and target options were given
         val subsystem = subsystems.head.subsystem
         val target = subsystems.tail.head.subsystem
-        val fileName = s"$gitIcdsDir/icd-$subsystem-$target.conf"
-        val file = new File(gitWorkDir, fileName)
+        val (file, fileName) = getIcdFile(subsystem, target, gitWorkDir)
         if (file.exists()) db.importIcds(file)
       } else {
         // Import all ICD files
         val dir = new File(gitWorkDir, gitIcdsDir)
         if (dir.exists && dir.isDirectory) {
-          val files = dir.listFiles.filter(f => f.isFile && f.getName.endsWith(".conf")).toList
+          val files = dir.listFiles.filter(f => f.isFile && f.getName.endsWith(".json")).toList
           files.foreach(file => db.importIcds(file))
         }
       }
