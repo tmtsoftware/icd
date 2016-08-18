@@ -136,7 +136,9 @@ object IcdGit extends App {
     def readSubsystemAndVersion(sv: Option[SubsystemAndVersion], prompt: String, needsVersion: Boolean): Option[SubsystemAndVersion] = {
       if (sv.isEmpty) {
         println(s"Please enter the $prompt subsystem: (one of ${IcdVersionManager.allSubsystems.mkString(", ")})")
-        Option(readLine()).map { subsys =>
+        val s = readLine()
+        if (s == null || s.isEmpty) sv
+        else Option(s).map { subsys =>
           if (needsVersion) {
             val versions = IcdGitManager.getSubsystemVersionNumbers(SubsystemAndVersion(subsys, None))
             if (versions.isEmpty) error(s"No published versions of $subsys were found. Please use --publish option.")
@@ -207,15 +209,6 @@ object IcdGit extends App {
 
   // --list option (print API and ICD versions for subsystem and target)
   private def list(options: Options): Unit = {
-    // list the publish history for each of the given subsystems
-    options.subsystems.map(sv => IcdGitManager.getApiVersions(sv)).foreach {
-      _.foreach { a =>
-        a.apis.foreach { api =>
-          println(s"\nSubsystem ${a.subsystem}-${api.version}: created by ${api.user} on ${api.date}:\n${api.comment}\n----")
-        }
-      }
-    }
-
     if (options.subsystems.size == 2) {
       // XXX TODO: Get all pairs of subsystems?
       for {
@@ -224,7 +217,16 @@ object IcdGit extends App {
         icdVersions.icds.foreach { icd =>
           val a = s"${icdVersions.subsystems.head}-${icd.versions.head}"
           val b = s"${icdVersions.subsystems(1)}-${icd.versions(1)}"
-          println(s"- ICD Version ${icd.icdVersion} between $a and $b: published by ${icd.user} on ${icd.date}: ${icd.comment}")
+          println(s"\n- ICD Version ${icd.icdVersion} between $a and $b: published by ${icd.user} on ${icd.date}: ${icd.comment}\n")
+        }
+      }
+    } else {
+      // list the publish history for each of the given subsystems
+      options.subsystems.map(sv => IcdGitManager.getApiVersions(sv)).foreach {
+        _.foreach { a =>
+          a.apis.foreach { api =>
+            println(s"\nSubsystem ${a.subsystem}-${api.version}: created by ${api.user} on ${api.date}:\n${api.comment}\n")
+          }
         }
       }
     }
@@ -268,7 +270,7 @@ object IcdGit extends App {
       val sv = options.subsystems.head
       val tv = options.subsystems.tail.head
       val info = IcdGitManager.publish(options.subsystems, options.majorVersion, user, password, comment)
-      println(s"Created ICD version ${info.icdVersion} based on $sv and $tv")
+      println(s"Created ICD version ${info.icdVersion.icdVersion} based on $sv and $tv")
     }
   }
 

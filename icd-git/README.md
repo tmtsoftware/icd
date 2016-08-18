@@ -114,14 +114,8 @@ TEST
 Please enter the second subsystem: (one of M2S, ROAD, OSS, TINC, SCMS, CSW, ESEN, SUM, REFR, NFIRAOS, LGSF, AOESW, TEST, STR, TEST2, HQ, APS, M1CS, IRMS, HNDL, ENC, M3S, WFOS, COOL, CRYO, COAT, ESW, SOSS, DPS, MCS, M1S, CLN, TCS, NSCU, DMS, TINS, IRIS, CIS)
 TEST2
 
-Subsystem TEST-1.0: created by abrighton on 2016-08-17T23:37:24.633+02:00:
-Some comment
-----
-
-Subsystem TEST2-1.0: created by abrighton on 2016-08-17T23:37:08.779+02:00:
-Some comment
-----
 - ICD Version 1.0 between TEST-1.0 and TEST2-1.0: published by abrighton on 2016-08-17T23:38:39.098+02:00: Some comment
+
 ```
 
 Without the -i option, you need to specify all the required options:

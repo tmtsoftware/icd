@@ -118,6 +118,9 @@ object IcdVersionManager {
    * Wraps a subsystem name and optional version
    */
   case class SubsystemAndVersion(subsystem: String, versionOpt: Option[String]) extends Ordered[SubsystemAndVersion] {
+    if (!allSubsystems.contains(subsystem)) {
+      throw new IllegalArgumentException(s"Unknown subsystem: $subsystem")
+    }
 
     versionOpt.foreach(SubsystemAndVersion.checkVersion)
 
@@ -138,13 +141,10 @@ object IcdVersionManager {
      * @param s a string containing the subsystem, possibly followed by a ':' and the version
      */
     def apply(s: String): SubsystemAndVersion = {
-      val sv = if (s.contains(':')) {
+      if (s.contains(':')) {
         val ar = s.split(':')
         SubsystemAndVersion(ar(0), Some(ar(1)))
       } else SubsystemAndVersion(s, None)
-      if (!allSubsystems.contains(sv.subsystem))
-        throw new IllegalArgumentException(s"Unknown subsystem: ${sv.subsystem}")
-      sv
     }
 
     /**
