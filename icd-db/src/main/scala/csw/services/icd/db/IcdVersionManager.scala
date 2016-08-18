@@ -117,18 +117,18 @@ object IcdVersionManager {
   /**
    * Wraps a subsystem name and optional version
    */
-  case class SubsystemAndVersion(subsystem: String, versionOpt: Option[String]) extends Ordered [SubsystemAndVersion] {
+  case class SubsystemAndVersion(subsystem: String, versionOpt: Option[String]) extends Ordered[SubsystemAndVersion] {
 
     versionOpt.foreach(SubsystemAndVersion.checkVersion)
 
     override def toString: String = versionOpt match {
       case Some(v) => s"$subsystem-$v"
-      case None => subsystem
+      case None    => subsystem
     }
 
     // Used to sort subsystems alphabetically, to avoid duplicates, since A->B should be the same as B->A
-    override def compare (that: SubsystemAndVersion): Int = {
-        subsystem.compare(that.subsystem)
+    override def compare(that: SubsystemAndVersion): Int = {
+      subsystem.compare(that.subsystem)
     }
   }
 
@@ -148,8 +148,8 @@ object IcdVersionManager {
     }
 
     /**
-      * Validates the format of the given version string
-      */
+     * Validates the format of the given version string
+     */
     def checkVersion(v: String): Unit = {
       if (!v.matches("\\d+\\.\\d+")) throw new IllegalArgumentException(s"Invalid subsystem version: $v")
     }
@@ -202,7 +202,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
 
     val parts = versions.map(v => Map("name" -> v._1, versionStrKey -> v._2).asDBObject)
     val version = versionOpt.getOrElse(incrVersion(getLatestPublishedVersion(collectionNames, subsystem, compNameOpt), majorVersion))
-//    val now = new DateTime(DateTimeZone.UTC)
+    //    val now = new DateTime(DateTimeZone.UTC)
     val user = if (userName.nonEmpty) userName else System.getProperty("user.name")
     val obj = Map(
       versionStrKey -> version,

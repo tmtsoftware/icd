@@ -33,23 +33,20 @@ object IcdVersions extends DefaultJsonProtocol {
  */
 case class IcdVersions(subsystems: List[String], icds: List[IcdVersions.IcdEntry])
 
-
-
-
 /**
-  * These definitions determine the JSON format of the files recording the subsystem API version information.
-  * (Be careful to make any changes backward compatible, once in production!)
-  */
+ * These definitions determine the JSON format of the files recording the subsystem API version information.
+ * (Be careful to make any changes backward compatible, once in production!)
+ */
 object ApiVersions extends DefaultJsonProtocol {
   /**
-    * Describes a single subsystem API version
-    *
-    * @param version the version of the subsystem API
-    * @param commit the git commit id to use for this version
-    * @param user the user that made the version
-    * @param comment a comment describing the version
-    * @param date the date the version was made
-    */
+   * Describes a single subsystem API version
+   *
+   * @param version the version of the subsystem API
+   * @param commit the git commit id to use for this version
+   * @param user the user that made the version
+   * @param comment a comment describing the version
+   * @param date the date the version was made
+   */
   case class ApiEntry(version: String, commit: String, user: String, comment: String, date: String)
 
   // JSON support
@@ -57,8 +54,8 @@ object ApiVersions extends DefaultJsonProtocol {
   implicit val apiVersionsFormat = jsonFormat2(ApiVersions.apply)
 
   /**
-    * Creates an IcdVersions object from a string in JSON format
-    */
+   * Creates an IcdVersions object from a string in JSON format
+   */
   def fromJson(s: String): ApiVersions = apiVersionsFormat.read(s.parseJson)
 }
 

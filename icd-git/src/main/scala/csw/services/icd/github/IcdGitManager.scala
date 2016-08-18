@@ -72,8 +72,8 @@ object IcdGitManager {
       .setHeads(true)
       .setRemote(url)
       .call().asScala.toList.map { ref =>
-      ref.getObjectId.getName
-    }
+        ref.getObjectId.getName
+      }
     list.head
   }
 
@@ -108,33 +108,33 @@ object IcdGitManager {
   }
 
   /**
-    * Gets the file to use to store API versions for the given subsystem, and the relative pathname
-    */
+   * Gets the file to use to store API versions for the given subsystem, and the relative pathname
+   */
   private def getApiFile(subsystem: String, gitWorkDir: File): (File, String) = {
     val fileName = s"$gitApisDir/api-$subsystem.json"
     (new File(gitWorkDir, fileName), fileName)
   }
 
   /**
-    * Gets the file to use to store ICD versions for the given subsystems, and the relative pathname
-    */
+   * Gets the file to use to store ICD versions for the given subsystems, and the relative pathname
+   */
   private def getIcdFile(subsystem: String, target: String, gitWorkDir: File): (File, String) = {
     val fileName = s"$gitIcdsDir/icd-$subsystem-$target.json"
     val file = new File(gitWorkDir, fileName)
     (new File(gitWorkDir, fileName), fileName)
   }
 
-    /**
+  /**
    * Gets a list of information about the published versions of the given subsystem
-    * from an already checked out working directory
+   * from an already checked out working directory
    */
   private def getApiVersions(sv: SubsystemAndVersion, gitWorkDir: File): Option[ApiVersions] = {
-      val (file, _) = getApiFile(sv.subsystem, gitWorkDir)
-      val path = Paths.get(file.getPath)
+    val (file, _) = getApiFile(sv.subsystem, gitWorkDir)
+    val path = Paths.get(file.getPath)
 
-      // Get the list of published APIs for the subsystem from GitHub
-      val exists = file.exists()
-      if (exists) Some(ApiVersions.fromJson(new String(Files.readAllBytes(path)))) else None
+    // Get the list of published APIs for the subsystem from GitHub
+    val exists = file.exists()
+    if (exists) Some(ApiVersions.fromJson(new String(Files.readAllBytes(path)))) else None
   }
 
   /**

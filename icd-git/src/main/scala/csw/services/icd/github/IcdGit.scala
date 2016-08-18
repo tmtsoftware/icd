@@ -16,20 +16,21 @@ object IcdGit extends App {
    * Command line options ("icd-git --help" prints a usage message with descriptions of all the options)
    */
   private case class Options(
-    list: Boolean = false,
-    subsystems: List[SubsystemAndVersion] = Nil,
-    icdVersion: Option[String] = None,
-    interactive: Boolean = false,
-    publish: Boolean = false,
-    unpublish: Boolean = false,
-    majorVersion: Boolean = false,
-    user: Option[String] = None,
-    password: Option[String] = None,
-    comment: Option[String] = None,
-    dbName: String = IcdDbDefaults.defaultDbName,
-    host: String = IcdDbDefaults.defaultHost,
-    port: Int = IcdDbDefaults.defaultPort,
-    ingest: Boolean = false)
+    list:         Boolean                   = false,
+    subsystems:   List[SubsystemAndVersion] = Nil,
+    icdVersion:   Option[String]            = None,
+    interactive:  Boolean                   = false,
+    publish:      Boolean                   = false,
+    unpublish:    Boolean                   = false,
+    majorVersion: Boolean                   = false,
+    user:         Option[String]            = None,
+    password:     Option[String]            = None,
+    comment:      Option[String]            = None,
+    dbName:       String                    = IcdDbDefaults.defaultDbName,
+    host:         String                    = IcdDbDefaults.defaultHost,
+    port:         Int                       = IcdDbDefaults.defaultPort,
+    ingest:       Boolean                   = false
+  )
 
   private def parseSubsystemsArg(s: String): List[SubsystemAndVersion] = {
     s.split(',').toList.map(SubsystemAndVersion(_)).sorted
