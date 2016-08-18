@@ -10,7 +10,7 @@ import csw.services.icd.db.{ApiVersions, IcdDb, IcdVersionManager, IcdVersions}
 import icd.web.shared.{ApiVersionInfo, IcdVersion, IcdVersionInfo}
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, DateTimeZone}
 
 import scala.collection.JavaConverters._
 
@@ -145,6 +145,7 @@ object IcdGitManager {
    * @return the ICD version info, if found
    */
   def list(subsystems: List[SubsystemAndVersion]): Option[IcdVersions] = {
+    if (subsystems.size != 2) error("Expected two subsystems that make up an ICD")
     // sort by convention
     val sorted = subsystems.sorted
     val sv = sorted.head
@@ -244,7 +245,7 @@ object IcdGitManager {
 
       // get the new ICD version info (increment the latest version number)
       val newApiVersion = IcdVersionManager.incrVersion(apis.headOption.map(_.version), majorVersion)
-      val date = DateTime.now().toString()
+      val date = DateTime.now().withZone(DateTimeZone.UTC).toString()
       val apiEntry = ApiVersions.ApiEntry(newApiVersion, commit, user, comment, date)
 
       // Prepend the new icd version info to the JSON file and commit/push back to GitHub
@@ -308,7 +309,7 @@ object IcdGitManager {
 
       // get the new ICD version info (increment the latest version number)
       val newIcdVersion = IcdVersionManager.incrVersion(icds.headOption.map(_.icdVersion), majorVersion)
-      val date = DateTime.now().toString()
+      val date = DateTime.now().withZone(DateTimeZone.UTC).toString()
       val v1 = getVersion(sv, gitWorkDir)
       val v2 = getVersion(tv, gitWorkDir)
       val icdEntry = IcdVersions.IcdEntry(newIcdVersion, List(v1, v2), user, comment, date)
@@ -335,7 +336,7 @@ object IcdGitManager {
   /**
    * Deletes the contents of the given temporary directory (recursively).
    */
-  private def deleteDirectoryRecursively(dir: File): Unit = {
+  private[github] def deleteDirectoryRecursively(dir: File): Unit = {
     // just to be safe, don't delete anything that is not in /tmp/
     val p = dir.getPath
     if (!p.startsWith("/tmp/") && !p.startsWith(tmpDir))
@@ -399,10 +400,11 @@ object IcdGitManager {
       val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(url).call()
       apiEntries.foreach { e =>
         feedback(s"Checking out ${sv.subsystem}-${e.version}")
-        git.checkout().setStartPoint(e.commit).call
+        git.checkout().setName(e.commit).call
         feedback(s"Ingesting ${sv.subsystem}-${e.version}")
         db.ingest(gitWorkDir)
-        db.versionManager.publishApi(sv.subsystem, Some(e.version), majorVersion = false, e.comment, e.user)
+        val date = DateTime.parse(e.date)
+        db.versionManager.publishApi(sv.subsystem, Some(e.version), majorVersion = false, e.comment, e.user, date)
       }
       git.close()
     } finally {

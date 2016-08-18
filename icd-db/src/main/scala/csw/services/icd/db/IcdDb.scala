@@ -4,7 +4,7 @@ import java.io.File
 import java.nio.file.Files
 
 import com.mongodb.casbah.Imports._
-import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions}
+import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd._
 import csw.services.icd.model.{BaseModelParser, SubsystemModelParser}
 import org.joda.time.{DateTime, DateTimeZone}
@@ -230,6 +230,7 @@ object IcdDb extends App {
     def listVersions(subsystem: String): Unit = {
       for (v <- db.versionManager.getVersions(subsystem)) {
         println(s"${v.versionOpt.getOrElse("*")}\t${v.date.withZone(DateTimeZone.getDefault)}\t${v.comment}")
+        println(s"${v.versionOpt.getOrElse("*")}\t${v.date.withZone(DateTimeZone.getDefault)}\t${v.comment}")
       }
     }
 
@@ -274,7 +275,8 @@ object IcdDb extends App {
     def publish(majorVersion: Boolean, comment: String)(subsystemStr: String): Unit = {
       val sv = IcdVersionManager.SubsystemAndVersion(subsystemStr)
       checkVersion(sv.versionOpt)
-      db.versionManager.publishApi(sv.subsystem, sv.versionOpt, majorVersion, comment, System.getProperty("user.name"))
+      val date = new DateTime(DateTimeZone.UTC)
+      db.versionManager.publishApi(sv.subsystem, sv.versionOpt, majorVersion, comment, System.getProperty("user.name"), date)
     }
   }
 }

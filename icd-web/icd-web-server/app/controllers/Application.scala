@@ -4,14 +4,15 @@ import java.io.ByteArrayOutputStream
 
 import csw.services.icd.IcdToPdf
 import csw.services.icd.db.IcdVersionManager.VersionDiff
-import csw.services.icd.db.{IcdDbPrinter, IcdComponentInfo, ComponentInfoHelper, IcdDb}
+import csw.services.icd.db.{ComponentInfoHelper, IcdComponentInfo, IcdDb, IcdDbPrinter}
 import csw.services.icd.html.HtmlMarkup
 import gnieh.diffson.Operation
 import icd.web.shared._
+import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.filters.csrf.CSRFAddToken
-import spray.json.{JsArray, JsObject, JsNumber, JsString}
+import spray.json.{JsArray, JsNumber, JsObject, JsString}
 
 /**
  * Provides the interface between the web client and the server
@@ -179,8 +180,9 @@ object Application extends Controller {
    * Publishes the given version of the given subsystem
    */
   def publishApi(subsystem: String, majorVersion: Boolean, comment: String, userName: String) = Action {
-    // XXX error handling?
-    db.versionManager.publishApi(subsystem, None, majorVersion, comment, userName)
+    // XXX TODO FIXME: publish should go away
+    val now = new DateTime(DateTimeZone.UTC)
+    db.versionManager.publishApi(subsystem, None, majorVersion, comment, userName, now)
     Ok.as(JSON)
   }
 

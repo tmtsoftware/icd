@@ -278,7 +278,7 @@ object IcdGit extends App {
     try {
       db.dropDatabase()
     } catch {
-      case ex: Exception => error("Unable to drop the existing ICD database: $ex")
+      case ex: Exception => error(s"Unable to drop the existing ICD database: $ex")
     }
 
     IcdGitManager.ingest(db, options.subsystems)
