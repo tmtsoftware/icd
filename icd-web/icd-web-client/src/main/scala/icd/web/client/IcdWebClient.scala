@@ -49,8 +49,8 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private val fileUploadItem = NavbarItem("Upload", uploadSelected())
   private val fileUploadDialog = FileUploadDialog(csrfToken, inputDirSupported)
 
-  private val publishItem = NavbarItem("Publish", publishItemSelected())
-  private val publishDialog = PublishDialog(subsystem, targetSubsystem, icdChooser)
+  //  private val publishItem = NavbarItem("Publish", publishItemSelected())
+  //  private val publishDialog = PublishDialog(subsystem, targetSubsystem, icdChooser)
 
   private val historyItem = NavbarItem("History", showVersionHistory())
   private val versionHistory = VersionHistory(mainContent)
@@ -84,7 +84,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     navbar.addItem(icdChooser)
 
     navbar.addItem(fileUploadItem)
-    navbar.addItem(publishItem)
+    //    navbar.addItem(publishItem)
     navbar.addItem(historyItem)
     navbar.addItem(pdfItem)
     navbar.addItem(expandToggler)
@@ -120,16 +120,16 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     if (saveHistory) pushState(viewType = UploadView)
   }
 
-  // Called when the Publish item is selected
-  private def publishItemSelected(saveHistory: Boolean = true)(): Unit = {
-    val title = if (targetSubsystem.getSubsystemWithVersion.subsystemOpt.isDefined)
-      "Publish ICD"
-    else "Publish API"
-    publishDialog.subsystemChanged()
-    setSidebarVisible(false)
-    mainContent.setContent(publishDialog, title)
-    if (saveHistory) pushState(viewType = PublishView)
-  }
+  //  // Called when the Publish item is selected
+  //  private def publishItemSelected(saveHistory: Boolean = true)(): Unit = {
+  //    val title = if (targetSubsystem.getSubsystemWithVersion.subsystemOpt.isDefined)
+  //      "Publish ICD"
+  //    else "Publish API"
+  //    publishDialog.subsystemChanged()
+  //    setSidebarVisible(false)
+  //    mainContent.setContent(publishDialog, title)
+  //    if (saveHistory) pushState(viewType = PublishView)
+  //  }
 
   // Listener for sidebar component checkboxes
   private object LeftSidebarListener extends SidebarListener {
@@ -228,7 +228,7 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
         sidebar.setSelectedComponents(hist.sourceComponents)
         hist.viewType match {
           case UploadView  => uploadSelected(saveHistory = false)()
-          case PublishView => publishItemSelected(saveHistory = false)()
+          //          case PublishView => publishItemSelected(saveHistory = false)()
           case VersionView => showVersionHistory(saveHistory = false)()
           case ComponentView | IcdView =>
             updateComponentDisplay(hist.sourceSubsystem, hist.targetSubsystem, hist.sourceComponents).onSuccess {

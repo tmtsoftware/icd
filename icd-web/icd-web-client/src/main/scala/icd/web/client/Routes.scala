@@ -147,13 +147,13 @@ object Routes {
 
   def versionNames(name: String) = s"/versionNames/$name"
 
-  def publishApi(path: String, majorVersion: Boolean, comment: String, userName: String) =
-    s"/publishApi/$path?majorVersion=$majorVersion&comment=$comment&userName=$userName"
+  //  def publishApi(path: String, majorVersion: Boolean, comment: String, userName: String) =
+  //    s"/publishApi/$path?majorVersion=$majorVersion&comment=$comment&userName=$userName"
 
-  def publishIcd(subsystem: String, version: String,
-                 target: String, targetVersion: String,
-                 majorVersion: Boolean, comment: String, userName: String) =
-    s"/publishIcd/$subsystem/$version/$target/$targetVersion?majorVersion=$majorVersion&comment=$comment&userName=$userName"
+  //  def publishIcd(subsystem: String, version: String,
+  //                 target: String, targetVersion: String,
+  //                 majorVersion: Boolean, comment: String, userName: String) =
+  //    s"/publishIcd/$subsystem/$version/$target/$targetVersion?majorVersion=$majorVersion&comment=$comment&userName=$userName"
 
   val icdNames = "/icdNames"
 
