@@ -20,7 +20,7 @@ lazy val icd = project
   .enablePlugins(JavaAppPackaging)
   .settings(defaultSettings: _*)
   .settings(libraryDependencies ++=
-    compile(jsonSchemaValidator, scopt, scalatags, typesafeConfig, ficus, pegdown, xmlworker, diffson, scalaLogging, logback, jsoup) ++
+    compile(jsonSchemaValidator, scopt, scalatags, typesafeConfig, ficus, pegdown, itextpdf, xmlworker, diffson, sprayJson, scalaLogging, logback, jsoup) ++
       test(scalaTest)
   ) dependsOn icdWebSharedJvm
 

@@ -29,7 +29,7 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
   private val inputItem = {
     import scalatags.JsDom.all._
     input(`type` := "file", name := "files[]", multiple := "multiple",
-      "webkitdirectory".attr := "webkitdirectory",
+      attr("webkitdirectory") := "webkitdirectory",
       onclick := fileSelectReset _,
       onchange := fileSelectHandler _).render
   }
@@ -170,8 +170,8 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
     div(
       cls := "container",
       p(dirMsg),
-      form(id := "upload", action := "/upload", "role".attr := "form",
-        "method".attr := "POST", "enctype".attr := "multipart/form-data")(
+      form(id := "upload", action := "/upload", attr("role") := "form",
+        attr("method") := "POST", attr("enctype") := "multipart/form-data")(
           input(`type` := "hidden", name := "csrfToken", value := csrfToken, accept := acceptSuffix),
           div(cls := "panel panel-info")(
             div(cls := "panel-body")(
@@ -184,8 +184,8 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
         ),
       div(cls := "progress")(
         div(id := "progress", cls := "progress-bar progress-bar-info progress-bar-striped",
-          role := "progressbar", "aria-valuenow".attr := "0", "aria-valuemin".attr := "0",
-          "aria-valuemax".attr := "100", style := "width: 0%", "0%")
+          role := "progressbar", attr("aria-valuenow") := "0", attr("aria-valuemin") := "0",
+          attr("aria-valuemax") := "100", style := "width: 0%", "0%")
       ),
       h4("Status")(
         span(style := "margin-left:15px;"),

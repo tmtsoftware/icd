@@ -1,6 +1,7 @@
 package controllers
 
 import java.io.ByteArrayOutputStream
+import javax.inject.Inject
 
 import csw.services.icd.IcdToPdf
 import csw.services.icd.db.IcdVersionManager.VersionDiff
@@ -10,15 +11,21 @@ import gnieh.diffson.Operation
 import icd.web.shared._
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.Json
-import play.api.mvc._
 import play.filters.csrf.CSRFAddToken
-import spray.json.{JsArray, JsNumber, JsObject, JsString}
+import spray.json._
+import play.api.mvc._
+import play.api.Environment
+
+object Application {
+  // Used to access the ICD database
+  val db = IcdDb()
+}
 
 /**
  * Provides the interface between the web client and the server
  */
-object Application extends Controller {
-  val db = IcdDb()
+class Application @Inject() (implicit environment: Environment) extends Controller {
+  import Application._
 
   def index = CSRFAddToken {
     Action { implicit request =>

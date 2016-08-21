@@ -19,7 +19,7 @@ trait HtmlMarkup {
    * Returns an HTML heading with the given depth, text and id
    */
   protected def mkHeading(depth: Int, text: String) = {
-    val heading = s"h$depth".tag[String]
+    val heading = tag(s"h$depth")
     heading(a(name := idStr)(text))
   }
 

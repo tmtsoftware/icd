@@ -40,12 +40,12 @@ private case class TelemetryModelToHTML(m: TelemetryModel, pubType: String) exte
       formatRate(m.archiveRate)))
   )
 
-  private val attr = AttributeModelListToHtml(Some(s"Attributes for ${m.name}"), m.attributesList)
+  private val attribute = AttributeModelListToHtml(Some(s"Attributes for ${m.name}"), m.attributesList)
 
-  override val tags = List(head, requirements, desc, table, attr.markup)
+  override val tags = List(head, requirements, desc, table, attribute.markup)
 
   override val tocEntry = {
     import scalatags.Text.all._
-    Some(ul(li(a(href := s"#$idStr")(this.name), ul(attr.tocEntry))))
+    Some(ul(li(a(href := s"#$idStr")(this.name), ul(attribute.tocEntry))))
   }
 }

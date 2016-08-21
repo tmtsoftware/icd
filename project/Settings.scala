@@ -20,7 +20,19 @@ object Settings {
     version := Dependencies.Version,
     scalaVersion := Dependencies.ScalaVersion,
     crossPaths := true,
+
+    // Note: "parallelExecution in Test := false" doesn't seem to prevent parallel execution when all tests are run,
+    // which can be a problem in some cases. Besides the fact that all the test output is mixed up,
+    // some tests access external resources, such as the location service, redis, hornetq, the config service, etc.,
+    // and running these tests in parallel can cause spurious errors (although it would be much faster, if it worked).
     parallelExecution in Test := false,
+    // See http://stackoverflow.com/questions/11899723/how-to-turn-off-parallel-execution-of-tests-for-multi-project-builds
+    parallelExecution in ThisBuild := false,
+    // See https://github.com/sbt/sbt/issues/1886
+    concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),
+    // Don't buffer test log output (since not parallel)
+    logBuffered in Test := false,
+
     fork := true,
     resolvers += Resolver.typesafeRepo("releases"),
     resolvers += Resolver.sonatypeRepo("releases"),

@@ -26,7 +26,7 @@ case class IcdDbManager(db: MongoDB, versionManager: IcdVersionManager) {
   // Inserts an new object in a collection
   private def insert(coll: MongoCollection, obj: DBObject): Unit = {
     obj.put(versionKey, 1)
-    coll.insert(obj, WriteConcern.SAFE)
+    coll.insert(obj, WriteConcern.ACKNOWLEDGED)
   }
 
   // Updates an object in an existing collection
@@ -34,6 +34,6 @@ case class IcdDbManager(db: MongoDB, versionManager: IcdVersionManager) {
     val currentVersion = coll.head(versionKey).asInstanceOf[Int]
     obj.put(versionKey, currentVersion)
     coll.remove(coll.head)
-    coll.insert(obj, WriteConcern.SAFE)
+    coll.insert(obj, WriteConcern.ACKNOWLEDGED)
   }
 }

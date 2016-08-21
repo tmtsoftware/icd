@@ -30,7 +30,6 @@
     margin: 3px;
 }
 
-
 /* For expanding table cells containing long descriptions (text-overflow missing in scalacss, so doing this here) */
 .shortDescription {
     max-height: 30px;
@@ -47,7 +46,7 @@
     max-height: none;
     max-width: 400px;
     overflow: inherit;
-    word-wrap:break-word;
+    word-wrap: break-word;
     cursor: move;
 }
 

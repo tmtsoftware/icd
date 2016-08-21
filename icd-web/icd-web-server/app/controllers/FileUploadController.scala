@@ -5,9 +5,9 @@ import com.typesafe.config.ConfigException
 import csw.services.icd.db.StdConfig
 import csw.services.icd.{IcdValidator, Problem}
 import play.api.libs.iteratee.{Concurrent, Iteratee}
-import play.api.mvc.{WebSocket, Result, Action, Controller}
+import play.api.mvc.{Action, Controller, Result, WebSocket}
 
-object FileUploadController extends Controller {
+class FileUploadController extends Controller {
 
   private val log = play.Logger.of("application")
   private lazy val db = Application.db
@@ -23,8 +23,7 @@ object FileUploadController extends Controller {
       // XXX TODO: Return config parse errors in StdConfig.get with file names!
       val list = files.flatMap(filePart => StdConfig.get(filePart.ref.file, filePart.filename))
       val comment = request.body.asFormUrlEncoded.getOrElse("comment", List("")).head
-      val majorVersion = false // XXX TODO
-      ingestConfigs(list, comment, majorVersion)
+      ingestConfigs(list, comment)
     } catch {
       case e: MongoTimeoutException =>
         val msg = "Database seems to be down"
@@ -42,14 +41,13 @@ object FileUploadController extends Controller {
   }
 
   /**
-   * Uploads/ingests the given configs
+   * Uploads/ingests the given API config files
    *
    * @param list         list of objects based on uploaded ICD files
    * @param comment      change comment from user
-   * @param majorVersion if true, increment the ICD's major version
    * @return the HTTP result (OK, or NotAcceptable[list of Problems in JSON format])
    */
-  private def ingestConfigs(list: List[StdConfig], comment: String, majorVersion: Boolean = false): Result = {
+  private def ingestConfigs(list: List[StdConfig], comment: String): Result = {
     import upickle.default._
     // Validate everything first
     val validateProblems = list.flatMap(sc => IcdValidator.validate(sc.config, sc.stdName))

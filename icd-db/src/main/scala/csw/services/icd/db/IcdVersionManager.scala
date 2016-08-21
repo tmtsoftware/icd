@@ -3,11 +3,11 @@ package csw.services.icd.db
 import com.mongodb.{DBObject, WriteConcern}
 import com.mongodb.casbah.Imports._
 import com.typesafe.config.{Config, ConfigFactory}
-import gnieh.diffson.{JsonDiff, JsonPatch}
 import icd.web.shared.IcdModels.SubsystemModel
 import icd.web.shared.{IcdModels, IcdVersion, IcdVersionInfo}
 import org.joda.time.{DateTime, DateTimeZone}
 import csw.services.icd.model._
+import gnieh.diffson.{JsonDiff, JsonPatch}
 import spray.json.{JsValue, JsonParser}
 
 /**
@@ -212,7 +212,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
       "parts" -> parts
     ).asDBObject
     val path = compNameOpt.fold(subsystem)(compName => s"$subsystem.$compName")
-    db(versionCollectionName(path)).insert(obj, WriteConcern.SAFE)
+    db(versionCollectionName(path)).insert(obj, WriteConcern.ACKNOWLEDGED)
   }
 
   /**
@@ -454,11 +454,11 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
         // Update version history, avoid duplicate key error?
         val v = db(versionCollName)
         if (exists) v.findAndRemove(idKey -> id)
-        v.insert(obj, WriteConcern.SAFE)
+        v.insert(obj, WriteConcern.ACKNOWLEDGED)
         // increment version for unpublished working copy
         obj.put(versionKey, version + 1)
         coll.remove(coll.head)
-        coll.insert(obj, WriteConcern.SAFE)
+        coll.insert(obj, WriteConcern.ACKNOWLEDGED)
       }
       (path, version)
     }
@@ -547,7 +547,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
         dateKey -> date,
         commentKey -> comment
       ).asDBObject
-      db(icdCollName).insert(obj, WriteConcern.SAFE)
+      db(icdCollName).insert(obj, WriteConcern.ACKNOWLEDGED)
     } else {
       println(s"Warning: Not adding ICD version $icdVersion between $subsystem-$subsystemVersion and $target-$targetVersion, since not all referenecd subsystem versions exist")
     }
@@ -560,7 +560,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
    * @param target the target subsystem
    */
   def removeIcdVersions(subsystem: String, target: String): Unit = {
-    db(icdCollName).remove(MongoDBObject(subsystemKey -> subsystem, targetKey -> target), WriteConcern.SAFE)
+    db(icdCollName).remove(MongoDBObject(subsystemKey -> subsystem, targetKey -> target), WriteConcern.ACKNOWLEDGED)
   }
 
   /**

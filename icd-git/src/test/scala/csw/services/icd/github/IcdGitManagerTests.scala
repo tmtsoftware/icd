@@ -82,7 +82,7 @@ class IcdGitManagerTests extends FunSuite with BeforeAndAfter {
     val icdVersions = icdVersionsOpt.get
     assert(icdVersions.subsystems == List("TEST", "TEST2"))
     assert(icdVersions.icds.size == 1)
-                          val icd = icdVersions.icds.head
+    val icd = icdVersions.icds.head
     assert(icd.icdVersion == "1.0")
     assert(icd.versions == List("1.0", "1.0"))
     assert(icd.user == user)

@@ -65,7 +65,7 @@ object Components {
       val (newHead, newRows) = SharedUtils.compact(headings, rowList)
       if (newHead.isEmpty) div()
       else {
-        table(tableStyle, "data-toggle".attr := "table",
+        table(tableStyle, attr("data-toggle") := "table",
           thead(
             tr(newHead.map(th(_)))
           ),
@@ -265,8 +265,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     val idStr = UUID.randomUUID().toString
     val btn = button(
       Styles.attributeBtn,
-      "data-toggle".attr := "collapse",
-      "data-target".attr := s"#$idStr",
+      attr("data-toggle") := "collapse",
+      attr("data-target") := s"#$idStr",
       title := "Show/hide details"
     )(
         span(cls := "glyphicon glyphicon-collapse-down")
@@ -321,7 +321,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       else div(
         h4(s"$pubType Published by $compName"),
         table(
-          "data-toggle".attr := "table",
+          attr("data-toggle") := "table",
           thead(
             tr(
               th("Name"),
@@ -363,7 +363,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       else div(
         h4(s"Alarms Published by $compName"),
         table(
-          "data-toggle".attr := "table",
+          attr("data-toggle") := "table",
           thead(
             tr(
               th("Name"),
@@ -452,7 +452,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         h4(s"$pubType Subscribed to by $compName"),
         div(
           Styles.componentSection,
-          table(Styles.componentTable, "data-toggle".attr := "table",
+          table(Styles.componentTable, attr("data-toggle") := "table",
             thead(
               tr(
                 th("Name"),
@@ -529,7 +529,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     else div(
       Styles.componentSection,
       h4(s"Command Configurations Received by $compName"),
-      table(Styles.componentTable, "data-toggle".attr := "table",
+      table(Styles.componentTable, attr("data-toggle") := "table",
         thead(
           tr(
             th("Name"),
@@ -583,7 +583,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     else div(
       Styles.componentSection,
       h4(s"Command Configurations Sent by $compName"),
-      table(Styles.componentTable, "data-toggle".attr := "table",
+      table(Styles.componentTable, attr("data-toggle") := "table",
         thead(
           tr(
             th("Name"),
@@ -629,7 +629,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
     div(
-      table(Styles.componentTable, "data-toggle".attr := "table",
+      table(Styles.componentTable, attr("data-toggle") := "table",
         thead(
           tr(
             th("Subsystem"),

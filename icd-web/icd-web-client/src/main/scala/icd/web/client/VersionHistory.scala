@@ -124,7 +124,7 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
     else {
       val compButton = compareButton(subsystem)
       div(
-        table(Styles.componentTable, "data-toggle".attr := "table",
+        table(Styles.componentTable, attr("data-toggle") := "table",
           thead(
             tr(
               th(subsystem, br, "Version"),
@@ -153,7 +153,7 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
     import scalacss.ScalatagsCss._
     if (list.isEmpty) div().render
     else div(
-      table(Styles.componentTable, "data-toggle".attr := "table",
+      table(Styles.componentTable, attr("data-toggle") := "table",
         thead(
           tr(
             th("ICD", br, "Version"),

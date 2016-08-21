@@ -17,7 +17,7 @@ case class Navbar() extends Displayable {
 
     nav(cls := "navbar navbar-default navbar-fixed-top hidden-print", role := "navigation")(
       div(cls := "navbar-header")(
-        button(`type` := "button", cls := "navbar-toggle", "data-toggle".attr := "collapse", "data-target".attr := "#icd-navbar")(
+        button(`type` := "button", cls := "navbar-toggle", attr("data-toggle") := "collapse", attr("data-target") := "#icd-navbar")(
           span(cls := "sr-only")("Toggle navigation/span"),
           span(cls := "icon-bar"),
           span(cls := "icon-bar"),
