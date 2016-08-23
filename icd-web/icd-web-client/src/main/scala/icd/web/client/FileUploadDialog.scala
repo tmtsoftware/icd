@@ -118,7 +118,6 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
     for (file <- files if isValidFile(file)) {
       formData.append(getFilePath(file), file)
     }
-    //    formData.append("comment", commentBox.value)
 
     val xhr = new dom.XMLHttpRequest
     xhr.open("POST", Routes.uploadFiles, async = true)

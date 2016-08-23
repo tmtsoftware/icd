@@ -101,7 +101,8 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
     subsystem.updateSubsystemOptions(items)
     subsystem.getSelectedSubsystem match {
       case Some(subsys) =>
-        targetSubsystem.updateSubsystemOptions(items.filter(_ != subsys))
+        targetSubsystem.updateSubsystemOptions(items)
+        targetSubsystem.disableOption(subsys)
       case None =>
         targetSubsystem.updateSubsystemOptions(items)
     }

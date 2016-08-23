@@ -14,7 +14,7 @@ object SubsystemNames {
 }
 
 /**
- * Manages getting the list of subsystem (top level ICD) names from the server and notifying listeners
+ * Manages getting the list of subsystem names from the server and notifying listeners
  */
 case class SubsystemNames(mainContent: MainContent, wsBaseUrl: String, listener: Listener) {
 
@@ -22,11 +22,11 @@ case class SubsystemNames(mainContent: MainContent, wsBaseUrl: String, listener:
   // future updates to the list
   update()
 
-  // Arrange to be notified when DB changes, so we can update the combobox with the list of ICDs
+  // Arrange to be notified when DB changes, so we can update the combobox with the list of subsystems
   val socket = new dom.WebSocket(wsBaseUrl)
   socket.onmessage = wsReceive _
 
-  // Gets the list of top level ICDs from the server
+  // Gets the list of subsystems from the server
   private def getSubsystemNames: Future[List[String]] = {
     Ajax.get(Routes.subsystems).map { r =>
       read[List[String]](r.responseText)

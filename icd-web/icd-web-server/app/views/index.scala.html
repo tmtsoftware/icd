@@ -1,5 +1,7 @@
 @import icd.web.shared.Csrf
-@(csrfToken: Csrf)(implicit request: RequestHeader, environment: play.api.Environment)
+@import play.api.Environment
+
+@(csrfToken: Csrf)(implicit request: RequestHeader, environment: Environment)
 
 @main("TMT ICD Database") {
     @playscalajs.html.scripts("icdwebclient")
