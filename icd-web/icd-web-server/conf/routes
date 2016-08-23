@@ -41,11 +41,11 @@ GET         /icdVersions/:subsystem/:target                               contro
 # Uploads ICD files from a selected directory, all at once as multipart/formdata
 POST        /uploadFiles                                                  controllers.FileUploadController.uploadFiles
 
-# Publishes an API (subsystem or subsystem.component path)
-POST        /publishApi/:path                                             controllers.Application.publishApi(path, majorVersion: Boolean, comment, userName)
-
-# Publishes an ICD (subsystem -> target version combination)
-POST        /publishIcd/:subsystem/:version/:target/:targetVersion        controllers.Application.publishIcd(subsystem, version, target, targetVersion, majorVersion: Boolean, comment, userName)
+## Publishes an API (subsystem or subsystem.component path)
+#POST        /publishApi/:path                                             controllers.Application.publishApi(path, majorVersion: Boolean, comment, userName)
+#
+## Publishes an ICD (subsystem -> target version combination)
+#POST        /publishIcd/:subsystem/:version/:target/:targetVersion        controllers.Application.publishIcd(subsystem, version, target, targetVersion, majorVersion: Boolean, comment, userName)
 
 # Gets the differences between two versions (version strings separated by a comma)
 GET         /diff/:subsystem/:versions                                    controllers.Application.diff(subsystem, versions)

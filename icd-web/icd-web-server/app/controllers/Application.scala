@@ -25,7 +25,6 @@ object Application {
 /**
  * Provides the interface between the web client and the server
  */
-//@Singleton
 class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToken: CSRFCheck) extends Controller {
   import Application._
 

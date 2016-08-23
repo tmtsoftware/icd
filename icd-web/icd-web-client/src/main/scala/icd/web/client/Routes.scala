@@ -9,13 +9,22 @@ import icd.web.shared.{SubsystemWithVersion, IcdName}
 object Routes {
   // XXX TODO: Need a URI builder for scala.js (last I checked, scala-uri did not work here)
 
+  /**
+   * Gets a list of top level subsystem names
+   */
   val subsystems = "/subsystems"
 
+  /**
+   * Gets top level information about a given version of the given subsystem
+   */
   def subsystemInfo(subsystem: String, versionOpt: Option[String]) = versionOpt match {
     case Some("*") | None => s"/subsystemInfo/$subsystem"
     case Some(version)    => s"/subsystemInfo/$subsystem?version=$version"
   }
 
+  /**
+   * Gets a list of components belonging to the given version of the given subsystem
+   */
   def components(subsystem: String, versionOpt: Option[String]) = versionOpt match {
     case Some("*") | None => s"/components/$subsystem"
     case Some(version)    => s"/components/$subsystem?version=$version"
@@ -141,10 +150,19 @@ object Routes {
     }
   }
 
+  /**
+   * Uploads ICD files from a selected directory, all at once as multipart/formdata
+   */
   val uploadFiles = "/uploadFiles"
 
+  /**
+   * Gets the detailed information about the versions of a component or subsystem
+   */
   def versions(name: String) = s"/versions/$name"
 
+  /**
+   * Gets a list of version names for a component or subsystem
+   */
   def versionNames(name: String) = s"/versionNames/$name"
 
   //  def publishApi(path: String, majorVersion: Boolean, comment: String, userName: String) =
@@ -155,9 +173,18 @@ object Routes {
   //                 majorVersion: Boolean, comment: String, userName: String) =
   //    s"/publishIcd/$subsystem/$version/$target/$targetVersion?majorVersion=$majorVersion&comment=$comment&userName=$userName"
 
+  /**
+   * Gets a list of published ICD names
+   */
   val icdNames = "/icdNames"
 
+  /**
+   * Gets a list of versions for the ICD from subsystem to target
+   */
   def icdVersions(icdName: IcdName) = s"/icdVersions/${icdName.subsystem}/${icdName.target}"
 
+  /**
+   * Gets the differences between two versions (version strings separated by a comma)
+   */
   def diff(subsystem: String, versions: List[String]) = s"/diff/$subsystem/${versions.mkString(",")}"
 }
