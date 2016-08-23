@@ -1,7 +1,5 @@
 package icd.web.client
 
-import java.util.Date
-
 import icd.web.client.FileUtils._
 import org.scalajs.dom
 import org.scalajs.dom._
@@ -20,7 +18,6 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
 
   implicit def monkeyizeEvent(e: dom.Event): EventExt = e.asInstanceOf[EventExt]
 
-  private val maxFileSize = 3000000l
   private val errorSet = Set("error", "fatal")
   private var problemSet = Set[Problem]()
 
