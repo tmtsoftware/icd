@@ -4,14 +4,12 @@ import com.mongodb.MongoTimeoutException
 import com.typesafe.config.ConfigException
 import csw.services.icd.db.StdConfig
 import csw.services.icd.{IcdValidator, Problem}
-import play.api.libs.iteratee.{Concurrent, Iteratee}
-import play.api.mvc.{Action, Controller, Result, WebSocket}
+import play.api.mvc.{Action, Controller, Result}
 
 class FileUploadController extends Controller {
 
   private val log = play.Logger.of("application")
   private lazy val db = Application.db
-  val (wsEnumerator, wsChannel) = Concurrent.broadcast[String]
 
   // Server side of the upload ICD feature.
   // Supported file types: A directory containing icd config files (chrome)
@@ -55,17 +53,11 @@ class FileUploadController extends Controller {
       NotAcceptable(write(validateProblems)).as(JSON)
     } else {
       val problems = list.flatMap(db.ingestConfig)
-      wsChannel.push("update")
       if (problems.nonEmpty) {
         NotAcceptable(write(problems)).as(JSON)
       } else {
         Ok.as(JSON)
       }
     }
-  }
-
-  // Websocket used to notify client when upload is complete
-  def ws = WebSocket.using[String] { request =>
-    (Iteratee.ignore, wsEnumerator)
   }
 }

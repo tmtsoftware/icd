@@ -20,8 +20,8 @@ object BrowserHistory {
   // Uploading ICD files
   case object UploadView extends ViewType
 
-  // Publishing an API or ICD
-  case object PublishView extends ViewType
+  //  // Publishing an API or ICD
+  //  case object PublishView extends ViewType
 
   // Viewing the version history
   case object VersionView extends ViewType

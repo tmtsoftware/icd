@@ -25,10 +25,9 @@ import Components._
  * Main class for the ICD web app.
  *
  * @param csrfToken         server token used for file upload (for security)
- * @param wsBaseUrl         web socket base URL
  * @param inputDirSupported true if uploading directories is supported (currently only for Chrome)
  */
-case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported: Boolean) {
+case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   private val head = dom.document.head
   private val body = dom.document.body
@@ -46,9 +45,6 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private val components = Components(mainContent, ComponentLinkSelectionHandler)
   private val sidebar = Sidebar(LeftSidebarListener)
 
-  private val fileUploadItem = NavbarItem("Upload", uploadSelected())
-  private val fileUploadDialog = FileUploadDialog(csrfToken, inputDirSupported)
-
   //  private val publishItem = NavbarItem("Publish", publishItemSelected())
   //  private val publishDialog = PublishDialog(subsystem, targetSubsystem, icdChooser)
 
@@ -61,7 +57,10 @@ case class IcdWebClient(csrfToken: String, wsBaseUrl: String, inputDirSupported:
   private val layout = Layout()
 
   // Get the list of subsystems from the server and update the two comboboxes
-  SubsystemNames(mainContent, wsBaseUrl, updateSubsystemOptions)
+  private val subsystemNames = SubsystemNames(mainContent, updateSubsystemOptions)
+
+  private val fileUploadItem = NavbarItem("Upload", uploadSelected())
+  private val fileUploadDialog = FileUploadDialog(subsystemNames, csrfToken, inputDirSupported)
 
   icdChooser.updateIcdOptions()
 
@@ -428,9 +427,8 @@ object IcdWebClient extends JSApp {
   @JSExport
   def init(settings: js.Dynamic) = {
     val csrfToken = settings.csrfToken.toString
-    val wsBaseUrl = settings.wsBaseUrl.toString
     val inputDirSupported = settings.inputDirSupported.toString == "true"
-    IcdWebClient(csrfToken, wsBaseUrl, inputDirSupported)
+    IcdWebClient(csrfToken, inputDirSupported)
   }
 
   // Main entry point (not used, see init() above)

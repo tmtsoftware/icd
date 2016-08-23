@@ -50,9 +50,6 @@ POST        /publishIcd/:subsystem/:version/:target/:targetVersion        contro
 # Gets the differences between two versions (version strings separated by a comma)
 GET         /diff/:subsystem/:versions                                    controllers.Application.diff(subsystem, versions)
 
-# Websocket to notify client when DB has changed
-GET         /ws                                                           controllers.FileUploadController.ws
-
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                                                 controllers.Assets.at(path="/public", file)
 

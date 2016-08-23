@@ -1,6 +1,5 @@
 package icd.web.client
 
-import org.scalajs.dom
 import org.scalajs.dom.ext.Ajax
 import upickle.default._
 
@@ -16,15 +15,10 @@ object SubsystemNames {
 /**
  * Manages getting the list of subsystem names from the server and notifying listeners
  */
-case class SubsystemNames(mainContent: MainContent, wsBaseUrl: String, listener: Listener) {
+case class SubsystemNames(mainContent: MainContent, listener: Listener) {
 
-  // Initialize by requesting the list of subsystem names and then listening on a websocket for
-  // future updates to the list
+  // Initialize by requesting the list of subsystem names and then updating the menus
   update()
-
-  // Arrange to be notified when DB changes, so we can update the combobox with the list of subsystems
-  val socket = new dom.WebSocket(wsBaseUrl)
-  socket.onmessage = wsReceive _
 
   // Gets the list of subsystems from the server
   private def getSubsystemNames: Future[List[String]] = {
@@ -42,13 +36,7 @@ case class SubsystemNames(mainContent: MainContent, wsBaseUrl: String, listener:
   }
 
   // Updates the menu
-  def update(): Unit = {
+  def update(): Future[Unit] = {
     getSubsystemNames.map(notifyListener)
   }
-
-  // Called when the DB is changed, for example after an upload/ingest
-  private def wsReceive(e: dom.Event) = {
-    update()
-  }
-
 }

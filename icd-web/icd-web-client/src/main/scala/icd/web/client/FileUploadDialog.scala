@@ -1,8 +1,11 @@
 package icd.web.client
 
+import java.util.Date
+
 import icd.web.client.FileUtils._
 import org.scalajs.dom
 import org.scalajs.dom._
+
 import scala.language.implicitConversions
 
 //import org.scalajs.jquery.{ jQuery => $, _ }
@@ -11,7 +14,7 @@ import org.querki.jquery._
 /**
  * Displays the page for uploading ICD files and directories
  */
-case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) extends Displayable {
+case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, inputDirSupported: Boolean) extends Displayable {
 
   implicit def monkeyizeEventTarget(e: dom.EventTarget): EventTargetExt = e.asInstanceOf[EventTargetExt]
 
@@ -142,6 +145,9 @@ case class FileUploadDialog(csrfToken: String, inputDirSupported: Boolean) exten
         for (problem <- problems)
           displayProblem(problem)
       }
+
+      // Update the menus of subsystem names,in case anything changed
+      subsystemNames.update()
     }
 
     xhr.upload.addEventListener("progress", progressListener _, useCapture = false)
