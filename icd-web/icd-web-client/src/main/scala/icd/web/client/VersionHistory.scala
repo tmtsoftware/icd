@@ -120,7 +120,7 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
   // Returns the markup for displaying a table of version information for a subsystem
   private def markupSubsystemVersionInfo(subsystem: String, list: List[VersionInfo]) = {
     import scalacss.ScalatagsCss._
-    if (list.isEmpty) div().render
+    if (list.isEmpty) div(p(em(s"No published versions found for $subsystem."))).render
     else {
       val compButton = compareButton(subsystem)
       div(
