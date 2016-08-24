@@ -219,7 +219,7 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
   def getVersions(subsystem: String) = Action {
     import upickle.default._
     //    val versions = db.versionManager.getVersions(subsystem).map(v => VersionInfo(v.versionOpt, v.user, v.comment, v.date.toString))
-    val versions = allApiVersions.flatMap(_.apis).map(a => VersionInfo(Some(a.version), a.user, a.comment, a.date))
+    val versions = allApiVersions.filter(_.subsystem == subsystem).flatMap(_.apis).map(a => VersionInfo(Some(a.version), a.user, a.comment, a.date))
     Ok(write(versions)).as(JSON)
   }
 
@@ -229,7 +229,7 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
   def getVersionNames(subsystem: String) = Action {
     import upickle.default._
     //    val versions = db.versionManager.getVersionNames(subsystem)
-    val versions = allApiVersions.find(_.subsystem == subsystem).toList.flatMap(_.apis).map(a => a.version)
+    val versions = allApiVersions.filter(_.subsystem == subsystem).flatMap(_.apis).map(_.version)
     Ok(write(versions)).as(JSON)
   }
 
