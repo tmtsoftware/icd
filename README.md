@@ -1,16 +1,19 @@
 ICD - Interface Control Document Management
 ===========================================
 
-This project contains support for validating, storing, managing, 
-searching and viewing APIs and ICDs (Interface Control Documents between TMT subsystems).
-An ICD consists of source and target subsystem APIs.
+This project contains support for validating, 
+searching and viewing subsystem APIs and ICDs (Interface Control Document between two TMT subsystems).
+
 The validation is based on [JSON Schema](http://json-schema.org/),
 however the schema descriptions as well as the ICDs themselves may also be written in
 the simpler [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md) format.
 
-ICDs are stored in a MongoDB database, which also keeps track of any changes made.
-Two command line applications ([icd](icd) and [icd-db](icd-db)) and a web app ([icd-web](icd-web)) 
-are provided for ingesting the ICDs from files, querying and viewing the data.
+Versions of ICDs are managed in [GitHub repositories](https://github.com/tmtsoftware/ICD-Model-Files.git) and 
+the subsystem model files can be imported (with version history) into a local MongoDB database, which is used
+by command line applications and a web app.
+ 
+Three command line applications ([icd](icd), [icd-db](icd-db)), [icd-git](icd-git)) and a web app ([icd-web](icd-web)) 
+are provided for working with ICDs, querying and viewing the data.
 
 The applications here assume the MongoDB database is running. 
 To start the MongoDB server, you can run a command like this:
@@ -19,8 +22,8 @@ To start the MongoDB server, you can run a command like this:
     
 where $db is the directory containing the database.
 
-The default database name used is `icds` and can be configured in icd-db/src/main/resources/reference.conf
-(or in <installDir>/conf/reference.conf).
+The default database name used is `icds` and can be configured in icd-db/src/main/resources/reference.conf,
+in <installDir>/conf/reference.conf or via equivalent -D (system property) command line options.
 
 
 ICD Subprojects
@@ -41,10 +44,10 @@ This is basically just the command `sbt stage` in each project followed by copyi
 install directory. A binary is installed for each subproject, with the same name as the subproject
 (except for icd-web, where the binary produced is `icdwebserver`).
 
-For the two command line apps (icd and icd-db), type `icd --help` or `icd-db --help` for a list of the 
-command line options.
+For the command line apps, the `--help` option prints a summary of the command line options.
 
-The icdwebserver application starts the web app (by default on localhost:9000).
+The `icdwebserver` application starts the web app (by default on localhost:9000).
+You can change the port used by adding an option like this: `-Dhttp.port=9876`.
 
 Note that the build is set up so that the Play subproject is selected on start.
 So to run any commands (like sbt clean or sbt stage) that should apply to the other projects,
@@ -53,7 +56,7 @@ you need to first switch to that project or the root project. For example `sbt c
 Play Project icd-web
 --------------------
 
-To test the web server, run `sbt run` from this directory.
+To start the server for the web app during development, you can use `sbt run` from this directory.
 Then go to http://localhost:9000 in a web browser.
 
 See [icd-web/README.md](icd-web/README.md) for more information.
@@ -61,18 +64,20 @@ See [icd-web/README.md](icd-web/README.md) for more information.
 Importing ICD-Model-Files from GitHub into the ICD Database with Version History
 --------------------------------------------------------------------------------
 
-Using the [icd-git](icd-git) command line application you can import all of the subsystem model files from the
-[ICD-Model-Files](https://github.com/tmtsoftware/ICD-Model-Files) GitHub repositories into a local MongoDB database
-for use with the icd tools. For this to work, you must have installed the icd software
-(run the install.sh script in this project) and MongoDB must be running. The install.sh script installs 
-to the ../install_icd directory.
+Using the [icd-git](icd-git) command line application you can publish subsystem APIs and ICDs between subsystems.
+Publishing a subsystem or ICD adds an entry to a JSON file on GitHub which is used later to extract specific 
+versions of the model files.
 
-Warning: The icd-git app will delete the current contents of the ICD database before
-ingesting the files from the repository.
+The app also lets you import subsystem model files directly from the
+[GitHub repositories](https://github.com/tmtsoftware/ICD-Model-Files)  into a local MongoDB database
+for use with the icd tools. 
 
-The icd software looks for release tags in the Git subsystem repoistories.
-Git subsystem releases should have names like "v1.0", "v1.2", "v2.0", etc.
-These then translate into published versions in the ICD database: "1.0", "1.1", "2.0".
+Warning: The icd-git app will currently delete the current contents of the ICD database before
+ingesting the files from the repository (*This may be changed in the future*).
+
+The icd web app lists the published versions of subsystems and ICDs from GitHub and the model
+files are checked out and ingested into the database automatoically as needed (when you select a subsystem 
+from the menu, for example).
 
 Docker Install
 --------------

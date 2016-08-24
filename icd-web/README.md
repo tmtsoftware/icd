@@ -12,6 +12,11 @@ It also makes use of Bootstrap and Less.
 * The icd-web-shared project contains shared classes that can be used by both client and server
 
 Note that the MongoDB server (mongod) needs to be running on the server machine.
+You can add -D options or config file entries to override the default database host, port and name:
+
+* icd.db.host is the host name where mongodb is running (default: localhost)
+* icd.db.port is the port for mongodb (default: 27017)
+* icd.db.name is the name of the mongodb database (default: icds)
 
 Usage
 -----
@@ -23,27 +28,35 @@ For example:
 
 where <path> is the path in which to store the data.
  
-Then start the play web app with:
+Then start the play web app with the installed `icdwebserver` command, or during development:
 
     sbt run
 
 in the directory containing build.sbt and open http://localhost:9000/ in a browser.
-Use the *Upload* item to upload an ICD directory (choose examples/NFIRAOS, if you are using Chrome, otherwise 
+
+The subsystem and ICD versions published on GitHub are automatically listed and made available on demand.
+Use the *Upload* item to upload your own, unpublished ICD directory (choose for example, examples/NFIRAOS, if you are using Chrome, otherwise 
 make a zip file of that directory and upload that. Do the same for TCS).
-It is also possible to upload multiple directories at once.
+It is also possible to upload multiple directories at once. 
+
+*Note that only the Chrome browser supports uploading directories. For the other browsers, you have to make a zip file of the directories.*
 
 Any validation or upload errors or warnings will be displayed in the browser window.
 
-After uploading, select NFIRAOS from the Subsystem menu to view the NFIRAOS API. 
+After uploading, select the subsystem (for example, NFIRAOS) from the Subsystem menu to view the API. 
 To view an ICD between two subsystems, select a target subsystem as well, or select an ICD
-from the ICD menu, if one has been published.
+from the ICD menu, if one has been published. Use the arrow button between the two subsystems to
+change the order.
 
 Publishing APIs and ICDs
 ------------------------
 
-After uploading, you have a list of unpublished APIs (version = *). Click on *Publish* to publish
-a version of the selected API. Select a version in the menu to the right to display a published API.
-In order to publish an ICD, published source and target subsystems need to be selected.
+After uploading, you have a list of unpublished APIs (version = *). 
+
+In order to publish an API or ICD, commit and push your changes to the subsystem's GitHub repositories
+and request that they be published. A TMT admin can use the `icd-git --publish` command to actually 
+publish the subsystem or ICD version (making an entry in a JSON file under `apis` or `icds` in the
+[main repository](https://github.com/tmtsoftware/ICD-Model-Files.git)).
 
 Install
 -------
