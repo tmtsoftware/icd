@@ -400,6 +400,15 @@ case class IcdDb(
    */
   def importIcds(inputFile: File): Unit = {
     val icdVersions = IcdVersions.fromJson(new String(Files.readAllBytes(inputFile.toPath)))
+    importIcds(icdVersions)
+  }
+
+  /**
+   * Imports the given ICD release information.
+   *
+   * @param icdVersions describes the ICD version
+   */
+  def importIcds(icdVersions: IcdVersions): Unit = {
     versionManager.removeIcdVersions(icdVersions.subsystems.head, icdVersions.subsystems(1))
     icdVersions.icds.foreach { icd =>
       versionManager.addIcdVersion(

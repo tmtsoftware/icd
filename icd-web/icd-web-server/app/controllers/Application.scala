@@ -4,12 +4,14 @@ import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 
 import csw.services.icd.IcdToPdf
-import csw.services.icd.db.IcdVersionManager.VersionDiff
-import csw.services.icd.db.{ComponentInfoHelper, IcdComponentInfo, IcdDb, IcdDbPrinter}
+import csw.services.icd.db.ApiVersions.ApiEntry
+import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
+import csw.services.icd.db._
+import csw.services.icd.github.IcdGitManager
 import csw.services.icd.html.HtmlMarkup
 import gnieh.diffson.Operation
+import icd.web.shared.IcdModels.SubsystemModel
 import icd.web.shared._
-import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.Json
 import play.filters.csrf.{CSRF, CSRFAddToken, CSRFCheck}
 import spray.json._
@@ -28,6 +30,10 @@ object Application {
 class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToken: CSRFCheck) extends Controller {
   import Application._
 
+  // XXX TODO FIXME
+  // cache of API and ICD versions published on GitHub
+  val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
+
   def index = addToken(Action { implicit request =>
     implicit val environment = env
     val token = Csrf(CSRF.getToken.get.value)
@@ -38,8 +44,34 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
    * Gets a list of top level subsystem names
    */
   def subsystemNames = Action {
-    val names = db.query.getSubsystemNames
-    Ok(Json.toJson(names))
+    val subsystemsInDb = db.query.getSubsystemNames
+    val publishedSubsystemNames = allApiVersions.map(_.subsystem)
+    val names = publishedSubsystemNames ++ subsystemsInDb
+    Ok(Json.toJson(names.sorted.toSet))
+  }
+
+  /**
+    * Ingests a published subsystem and returns the db model, if found
+    * @param subsystem the subsystem name
+    * @param versionOpt optional version to ingest (otherwise all versions)
+    * @return the subsystem database model
+    */
+  private def ingestPublishedSubsystem(subsystem: String, versionOpt: Option[String]): Option[SubsystemModel] = {
+
+    // Gets the matching published ApiEntry for the subsystem version
+    def getApiEntry(apiVersions: ApiVersions): Option[ApiEntry] = versionOpt match {
+      case Some(version) => apiVersions.apis.find(_.version == version)
+      case None          => Some(apiVersions.apis.head)
+    }
+
+    allApiVersions.find(a => a.subsystem == subsystem).flatMap(getApiEntry) match {
+      case Some(apiEntry) =>
+        val sv = SubsystemAndVersion(subsystem, Some(apiEntry.version))
+        IcdGitManager.ingest(db, sv, List(apiEntry), println(_))
+        db.versionManager.getSubsystemModel(subsystem, versionOpt)
+      case None => None
+    }
+
   }
 
   /**
@@ -47,13 +79,30 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
    */
   def subsystemInfo(subsystem: String, versionOpt: Option[String]) = Action {
     import upickle.default._
+
+    // Gets the matching subsystem info from GitHub, if published there
+    def getPublishedSubsystemInfo: Option[SubsystemInfo] = {
+      ingestPublishedSubsystem(subsystem, versionOpt).map { model =>
+        SubsystemInfo(model.subsystem, versionOpt, model.title, model.description)
+      }
+    }
+
+    // Get the subsystem info from the database, or if not found, look in the published GitHub repo
     db.versionManager.getSubsystemModel(subsystem, versionOpt) match {
       case Some(model) =>
+        // Found in db
         val info = SubsystemInfo(model.subsystem, versionOpt, model.title, model.description)
         val json = write(info)
         Ok(json).as(JSON)
       case None =>
-        NotFound
+        // Not found in db, check if its a published version on GitHub, and if so, ingest it first
+        getPublishedSubsystemInfo match {
+          case Some(info) =>
+            val json = write(info)
+            Ok(json).as(JSON)
+          case None =>
+            NotFound
+        }
     }
   }
 
@@ -61,6 +110,7 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
    * Gets a list of components belonging to the given version of the given subsystem
    */
   def components(subsystem: String, versionOpt: Option[String]) = Action {
+    ingestPublishedSubsystem(subsystem, versionOpt) // Make sure subsystem is ingested from GitHub if needed
     val names = db.versionManager.getComponentNames(subsystem, versionOpt)
     Ok(Json.toJson(names))
   }
@@ -81,7 +131,7 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
   }
 
   /**
-   * Gets information about a component in a given version of an ICD
+   * Gets information about a component in a given version of a subsystem
    *
    * @param subsystem        the source subsystem
    * @param versionOpt       the source subsystem's version (default: current)
@@ -168,8 +218,8 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
    */
   def getVersions(subsystem: String) = Action {
     import upickle.default._
-    val versions = db.versionManager.getVersions(subsystem).map(v =>
-      VersionInfo(v.versionOpt, v.user, v.comment, v.date.toString))
+    //    val versions = db.versionManager.getVersions(subsystem).map(v => VersionInfo(v.versionOpt, v.user, v.comment, v.date.toString))
+    val versions = allApiVersions.flatMap(_.apis).map(a => VersionInfo(Some(a.version), a.user, a.comment, a.date))
     Ok(write(versions)).as(JSON)
   }
 
@@ -178,29 +228,28 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
    */
   def getVersionNames(subsystem: String) = Action {
     import upickle.default._
-    val versions = db.versionManager.getVersionNames(subsystem)
+    //    val versions = db.versionManager.getVersionNames(subsystem)
+    val versions = allApiVersions.find(_.subsystem == subsystem).toList.flatMap(_.apis).map(a => a.version)
     Ok(write(versions)).as(JSON)
   }
 
-  /**
-   * Publishes the given version of the given subsystem
-   */
-  def publishApi(subsystem: String, majorVersion: Boolean, comment: String, userName: String) = Action {
-    // XXX TODO FIXME: publish should go away
-    val now = new DateTime(DateTimeZone.UTC)
-    db.versionManager.publishApi(subsystem, None, majorVersion, comment, userName, now)
-    Ok.as(JSON)
-  }
+  //  /**
+  //   * Publishes the given version of the given subsystem
+  //   */
+  //  def publishApi(subsystem: String, majorVersion: Boolean, comment: String, userName: String) = Action {
+  //    val now = new DateTime(DateTimeZone.UTC)
+  //    db.versionManager.publishApi(subsystem, None, majorVersion, comment, userName, now)
+  //    Ok.as(JSON)
+  //  }
 
-  /**
-   * Publishes an ICD from the given version of the given subsystem to the target subsystem and version
-   */
-  def publishIcd(subsystem: String, version: String, target: String, targetVersion: String,
-                 majorVersion: Boolean, comment: String, userName: String) = Action {
-    // XXX error handling?
-    db.versionManager.publishIcd(subsystem, version, target, targetVersion, majorVersion, comment, userName)
-    Ok.as(JSON)
-  }
+  //  /**
+  //   * Publishes an ICD from the given version of the given subsystem to the target subsystem and version
+  //   */
+  //  def publishIcd(subsystem: String, version: String, target: String, targetVersion: String,
+  //                 majorVersion: Boolean, comment: String, userName: String) = Action {
+  //    db.versionManager.publishIcd(subsystem, version, target, targetVersion, majorVersion, comment, userName)
+  //    Ok.as(JSON)
+  //  }
 
   /**
    * Gets a list of ICD names as pairs of (subsystem, targetSubsystem)
@@ -208,7 +257,8 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
   def getIcdNames = Action {
     import upickle.default._
     // convert list to use shared IcdName class
-    val list = db.versionManager.getIcdNames.map(icd => IcdName(icd.subsystem, icd.target))
+    //    val list = db.versionManager.getIcdNames.map(icd => IcdName(icd.subsystem, icd.target))
+    val list = allIcdVersions.map(i => IcdName(i.subsystems.head, i.subsystems.tail.head))
     Ok(write(list)).as(JSON)
   }
 
@@ -218,11 +268,16 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
   def getIcdVersions(subsystem: String, target: String) = Action {
     import upickle.default._
     // convert list to use shared IcdVersion class
-    val list = db.versionManager.getIcdVersions(subsystem, target)
+    //        val list = db.versionManager.getIcdVersions(subsystem, target)
+    val list = allIcdVersions.find(i => i.subsystems.contains(subsystem) && i.subsystems.contains(target)).toList.flatMap(_.icds).map { icd =>
+      val icdVersion = IcdVersion(icd.icdVersion, subsystem, icd.versions.head, target, icd.versions.tail.head)
+      IcdVersionInfo(icdVersion, icd.user, icd.comment, icd.date)
+    }
     Ok(write(list)).as(JSON)
   }
 
   // Packages the diff information for return to browser
+  // XXX TODO FIXME: Use Git diff?
   private def getDiffInfo(diff: VersionDiff): DiffInfo = {
     def getValue(a: Any): String = {
       a match {

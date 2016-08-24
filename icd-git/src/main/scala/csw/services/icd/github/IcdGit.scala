@@ -220,7 +220,7 @@ object IcdGit extends App {
           println(s"\n- ICD Version ${icd.icdVersion} between $a and $b: published by ${icd.user} on ${icd.date}: ${icd.comment}\n")
         }
       }
-    } else {
+    } else if (options.subsystems.nonEmpty) {
       // list the publish history for each of the given subsystems
       options.subsystems.map(sv => IcdGitManager.getApiVersions(sv)).foreach {
         _.foreach { a =>
@@ -229,6 +229,9 @@ object IcdGit extends App {
           }
         }
       }
+    } else {
+      // list the publish history for all subsystems and icds?
+      //      XXX
     }
   }
 
@@ -284,7 +287,7 @@ object IcdGit extends App {
       case ex: Exception => error(s"Unable to drop the existing ICD database: $ex")
     }
 
-    IcdGitManager.ingest(db, options.subsystems)
+    IcdGitManager.ingest(db, options.subsystems, (s: String) => println(s))
   }
 }
 

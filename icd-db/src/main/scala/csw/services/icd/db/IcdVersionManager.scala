@@ -230,7 +230,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
   }
 
   /**
-   * Returns a list of published version names of the subsystem or component
+   * Returns a list of published version names of the subsystem
    *
    * @param subsystem the name of the subsystem
    */

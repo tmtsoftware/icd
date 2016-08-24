@@ -1,7 +1,7 @@
 package csw.services.icd.github
 
 import java.io.File
-import java.nio.file.{Files, Paths}
+import java.nio.file.{FileSystems, Files, Paths}
 
 import com.typesafe.config.ConfigFactory
 import csw.services.icd.db.ApiVersions.ApiEntry
@@ -48,6 +48,37 @@ object IcdGitManager {
   private val allSubsystems: Set[String] = {
     val config = ConfigFactory.parseResources("subsystem.conf")
     config.getStringList("enum").asScala.toSet
+  }
+
+  /**
+   * Gets a list of information about all of the published API and ICD versions by reading any
+   * apis/api-*.json and icds/icd-*.json files from the GitHub repo.
+   */
+  def getAllVersions: (List[ApiVersions], List[IcdVersions]) = {
+    // Checkout the main git repo in a temp dir
+    val gitWorkDir = Files.createTempDirectory("icds").toFile
+    try {
+      // Clone the repository containing the API version info files
+      val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
+      git.close()
+
+      val apisDir = new File(gitWorkDir, gitApisDir)
+      val icdsDir = new File(gitWorkDir, gitIcdsDir)
+      val apiMatcher = FileSystems.getDefault.getPathMatcher(s"glob:$apisDir/api-*.json")
+      val icdMatcher = FileSystems.getDefault.getPathMatcher(s"glob:$icdsDir/icd-*.json")
+
+      val apiVersions = Option(apisDir.listFiles).getOrElse(Array()).toList.map(_.toPath)
+        .filter(apiMatcher.matches)
+        .map(path => ApiVersions.fromJson(new String(Files.readAllBytes(path))))
+
+      val icdVersions = Option(icdsDir.listFiles).getOrElse(Array()).toList.map(_.toPath)
+        .filter(icdMatcher.matches)
+        .map(path => IcdVersions.fromJson(new String(Files.readAllBytes(path))))
+
+      (apiVersions, icdVersions)
+    } finally {
+      deleteDirectoryRecursively(gitWorkDir)
+    }
   }
 
   // Report an error
@@ -363,7 +394,7 @@ object IcdGitManager {
    * @param subsystemList     list of subsystems to ingest (two subsystems for an ICD, empty for all subsystems and ICDs)
    * @param feedback          function to display messages while working
    */
-  def ingest(db: IcdDb, subsystemList: List[SubsystemAndVersion], feedback: String => Unit = println): Unit = {
+  def ingest(db: IcdDb, subsystemList: List[SubsystemAndVersion], feedback: String => Unit): Unit = {
     // Get the list of subsystems to ingest
     val subsystems = {
       if (subsystemList.nonEmpty) {
@@ -372,19 +403,23 @@ object IcdGitManager {
         subsystemList.sorted
       } else {
         feedback(s"Ingesting all known subsystems")
+        // XXX TODO: call getAllVersions and use the cached results instead of cloning the repo multiple times!
         allSubsystems.map(s => SubsystemAndVersion(s, None)).toList
       }
     }
-
-    subsystems.foreach { sv =>
-      if (getSubsystemVersionNumbers(sv).nonEmpty)
-        ingest(sv, db, feedback)
-    }
+    subsystems.foreach(ingest(db, _, feedback))
     importIcdFiles(db, subsystems, feedback)
   }
 
-  // Ingests the given subsystem into the icd db
-  private def ingest(sv: SubsystemAndVersion, db: IcdDb, feedback: String => Unit): Unit = {
+  /**
+   * Ingests the given subsystem into the icd db
+   * (The given version, or all published versions, if no version was specified)
+   *
+   * @param db the database to use
+   * @param sv the subsystem and optional version
+   * @param feedback optional feedback function
+   */
+  def ingest(db: IcdDb, sv: SubsystemAndVersion, feedback: String => Unit): Unit = {
     val versionsFoundOpt = getApiVersions(sv)
     if (versionsFoundOpt.isEmpty) error(s"No published versions of ${sv.subsystem} were found in the repository")
     val versionsFound = versionsFoundOpt.get
@@ -393,6 +428,18 @@ object IcdGitManager {
     }
     def versionFilter(e: ApiEntry) = if (sv.versionOpt.isEmpty) true else sv.versionOpt.get == e.version
     val apiEntries = versionsFound.apis.filter(versionFilter)
+    ingest(db, sv, apiEntries, feedback)
+  }
+
+  /**
+   * Ingests the given versions of the given subsystem into the icd db
+   *
+   * @param db the database to use
+   * @param sv the subsystem and optional version
+   * @param apiEntries the (GitHub version) entries for the published versions to ingest
+   * @param feedback optional feedback function
+   */
+  def ingest(db: IcdDb, sv: SubsystemAndVersion, apiEntries: List[ApiEntry], feedback: String => Unit): Unit = {
     val url = getSubsystemGitHubUrl(sv.subsystem)
     // Checkout the subsystem repo in a temp dir
     val gitWorkDir = Files.createTempDirectory("icds").toFile

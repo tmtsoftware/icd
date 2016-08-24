@@ -1,12 +1,12 @@
 import com.typesafe.sbt.SbtNativePackager._
-import com.typesafe.sbt.SbtScalariform
-import com.typesafe.sbt.SbtScalariform.ScalariformKeys
+//import com.typesafe.sbt.SbtScalariform
+//import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import com.typesafe.sbt.jse.JsEngineImport.JsEngineKeys
 import com.typesafe.sbt.packager.Keys._
 import sbt.Keys._
 import sbt._
 
-import scalariform.formatter.preferences._
+//import scalariform.formatter.preferences._
 import com.typesafe.sbt.packager.docker._
 
 // Defines the global build settings so they don't need to be edited everywhere
@@ -41,21 +41,22 @@ object Settings {
     resolvers += Resolver.jcenterRepo
   )
 
-  // Automatic code formatting
-  def formattingPreferences: FormattingPreferences =
-    FormattingPreferences()
-      .setPreference(RewriteArrowSymbols, false)
-      .setPreference(AlignParameters, true)
-      .setPreference(AlignSingleLineCaseStatements, true)
-      .setPreference(DoubleIndentClassDeclaration, true)
-
-  lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
-    ScalariformKeys.preferences in Compile := formattingPreferences,
-    ScalariformKeys.preferences in Test := formattingPreferences
-  )
+//  // Automatic code formatting
+//  def formattingPreferences: FormattingPreferences =
+//    FormattingPreferences()
+//      .setPreference(RewriteArrowSymbols, false)
+//      .setPreference(AlignParameters, true)
+//      .setPreference(AlignSingleLineCaseStatements, true)
+//      .setPreference(DoubleIndentClassDeclaration, true)
+//
+//  lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
+//    ScalariformKeys.preferences in Compile := formattingPreferences,
+//    ScalariformKeys.preferences in Test := formattingPreferences
+//  )
 
   // Using java8
-  lazy val defaultSettings = buildSettings ++ formatSettings ++ Seq(
+//  lazy val defaultSettings = buildSettings ++ formatSettings ++ Seq(
+  lazy val defaultSettings = buildSettings ++ Seq(
     scalacOptions ++= Seq("-target:jvm-1.8", "-encoding", "UTF-8", "-feature", "-deprecation", "-unchecked"),
     javacOptions in Compile ++= Seq("-source", "1.8"),
     javacOptions in (Compile, compile) ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint:unchecked", "-Xlint:deprecation"),

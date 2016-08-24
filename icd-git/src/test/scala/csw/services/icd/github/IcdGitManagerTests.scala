@@ -95,7 +95,7 @@ class IcdGitManagerTests extends FunSuite with BeforeAndAfter {
     } catch {
       case ex: Exception => throw new RuntimeException("Unable to drop the existing ICD database", ex)
     }
-    IcdGitManager.ingest(db, subsysList)
+    IcdGitManager.ingest(db, subsysList, println(_))
     val icdNames = db.versionManager.getIcdNames
     assert(icdNames.size == 1)
     assert(icdNames.head.subsystem == "TEST")
@@ -128,5 +128,14 @@ class IcdGitManagerTests extends FunSuite with BeforeAndAfter {
     assert(icdVersionInfo.comment == comment + " 3")
     assert(icdVersionInfo.user == user)
     assert(icdVersionInfo.date == icd.date)
+
+    val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
+    assert(allApiVersions.size == 2)
+    assert(allIcdVersions.size == 1)
+    assert(allApiVersions.head.subsystem == "TEST")
+    assert(allApiVersions.tail.head.subsystem == "TEST2")
+    assert(allIcdVersions.head.subsystems == List("TEST", "TEST2"))
+    assert(allIcdVersions.head.icds.size == 1)
+    assert(allIcdVersions.head.icds.head.icdVersion == "1.0")
   }
 }
