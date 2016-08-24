@@ -17,6 +17,7 @@ import play.filters.csrf.{CSRF, CSRFAddToken, CSRFCheck}
 import spray.json._
 import play.api.mvc._
 import play.api.Environment
+import upickle.default._
 
 // Defines the database used
 object Application {
@@ -110,7 +111,11 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
    * Gets a list of components belonging to the given version of the given subsystem
    */
   def components(subsystem: String, versionOpt: Option[String]) = Action {
-    ingestPublishedSubsystem(subsystem, versionOpt) // Make sure subsystem is ingested from GitHub if needed
+    if (db.versionManager.getSubsystemModel(subsystem, versionOpt).isEmpty) {
+      // Not found in db, check if its a published version on GitHub, and if so, ingest it first
+      ingestPublishedSubsystem(subsystem, versionOpt) // Make sure subsystem is ingested from GitHub if needed
+    }
+
     val names = db.versionManager.getComponentNames(subsystem, versionOpt)
     Ok(Json.toJson(names))
   }
@@ -259,7 +264,9 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
     // convert list to use shared IcdName class
     //    val list = db.versionManager.getIcdNames.map(icd => IcdName(icd.subsystem, icd.target))
     val list = allIcdVersions.map(i => IcdName(i.subsystems.head, i.subsystems.tail.head))
-    Ok(write(list)).as(JSON)
+    val list2 = list.map(i => IcdName(i.target, i.subsystem))
+    val sorted = (list ++ list2).sortWith((a, b) => a.subsystem.compareTo(b.subsystem) < 0)
+    Ok(write(sorted)).as(JSON)
   }
 
   /**
