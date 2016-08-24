@@ -148,6 +148,9 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
                        target: String, targetVersionOpt: Option[String]) = Action {
     import upickle.default._
     val compNameList = compNames.split(",").toList
+    if (db.versionManager.getSubsystemModel(target, targetVersionOpt).isEmpty) {
+      ingestPublishedSubsystem(target, targetVersionOpt)
+    }
     val infoList = IcdComponentInfo.getComponentInfoList(db, subsystem, versionOpt, compNameList, target, targetVersionOpt)
     val json = write(infoList)
     Ok(json).as(JSON)
@@ -239,7 +242,7 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
   }
 
   //  /**
-  //   * Publishes the given version of the given subsystem
+  //   * Publishes the given version of the given subsystem (XXX Now done by icd-git)
   //   */
   //  def publishApi(subsystem: String, majorVersion: Boolean, comment: String, userName: String) = Action {
   //    val now = new DateTime(DateTimeZone.UTC)
