@@ -139,6 +139,10 @@ case class DetailedSubscribeInfo(
     alarmModel.map(_.description)
   }).getOrElse("")
 
+  val warning = if (telemetryModel.nonEmpty || alarmModel.nonEmpty) None else {
+    Some(s"${publisher.subsystem}.${publisher.component} does not publish $itemType ${subscribeModelInfo.name}")
+  }
+
   /**
    * Full path to subscribed item ($prefix.$name)
    */

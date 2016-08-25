@@ -142,6 +142,11 @@ case class IcdDbPrinter(db: IcdDb) {
     import scalatags.Text.all._
 
     def subscribeListMarkup(pubType: String, subscribeList: List[DetailedSubscribeInfo]): Text.TypedTag[String] = {
+      // Warn if no publisher found for subscibed item
+      def getWarning(info: DetailedSubscribeInfo) = info.warning.map { msg =>
+          p(em(raw("&#x26A0;"), " Warning: ", msg))
+      }
+
       if (subscribeList.isEmpty) div()
       else div(
         h4(a(s"$pubType Subscribed to by $compName")),
@@ -151,6 +156,7 @@ case class IcdDbPrinter(db: IcdDb) {
           div(cls := "nopagebreak")(
             h5(a(s"$compName subscribes to ${singlePubType(pubType)}: ${sInfo.name} $from")),
             raw(si.description),
+            getWarning(si),
             if (sInfo.usage.isEmpty) div() else div(strong("Usage:"), raw(sInfo.usage)),
             table(
               thead(

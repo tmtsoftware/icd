@@ -447,6 +447,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
 
     def subscribeListMarkup(pubType: String, subscribeList: List[DetailedSubscribeInfo]) = {
+      // Warn if no publisher found for subscibed item
+      def getWarning(info: DetailedSubscribeInfo) = info.warning.map { msg =>
+        div(cls := "alert alert-warning", role := "alert")(
+          span(cls := "glyphicon glyphicon-warning-sign", attr("aria-hidden") := "true"),
+          span(em(s" Warning: $msg"))
+        )
+      }
+
       if (subscribeList.isEmpty) div()
       else div(
         h4(s"$pubType Subscribed to by $compName"),
@@ -471,7 +479,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                 List(
                   tr(
                     td(Styles.attributeCell, p(btn, s.subscribeModelInfo.name)),
-                    td(raw(s.description), usage),
+                    td(raw(s.description), getWarning(s), usage),
                     td(p(makeLinkForPublisher(s)))
                   ),
                   row

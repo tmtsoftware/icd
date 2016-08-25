@@ -327,7 +327,7 @@ case class IcdDb(
   }
 
   /**
-   * Ingests the given ICD config objects (based on the contents of one ICD directory)
+   * Ingests the given ICD model config objects (based on the contents of one subsystem directory)
    *
    * @param list list of ICD model files packaged as StdConfig objects
    * @return a list describing the problems, if any
@@ -337,7 +337,7 @@ case class IcdDb(
   }
 
   /**
-   * Ingests the given ICD config objects (based on the contents of one ICD directory)
+   * Ingests the given ICD model objects (based on the contents of one subsystem API directory)
    *
    * @param stdConfig ICD model file packaged as a StdConfig object
    * @return a list describing the problems, if any
@@ -354,7 +354,7 @@ case class IcdDb(
   /**
    * Ingests the given input config into the database.
    *
-   * @param name   the name of the collection in which to store this part of the ICD
+   * @param name   the name of the collection in which to store this part of the API
    * @param config the config to be ingested into the datasbase
    */
   private def ingestConfig(name: String, config: Config): Unit = {
@@ -366,7 +366,7 @@ case class IcdDb(
   /**
    * Returns the MongoDB collection name to use for the given ICD config.
    *
-   * @param stdConfig ICD model file packaged as StdConfig object
+   * @param stdConfig API model file packaged as StdConfig object
    * @return the collection name
    */
   private def getCollectionName(stdConfig: StdConfig): String = {
@@ -380,9 +380,9 @@ case class IcdDb(
   }
 
   /**
-   * Returns the subsystem name for the given ICD config.
+   * Returns the subsystem name for the given API model config.
    *
-   * @param stdConfig ICD model file packaged as StdConfig object
+   * @param stdConfig API model file packaged as StdConfig object
    * @return the collection name
    */
   def getSubsystemName(stdConfig: StdConfig): String = {

@@ -1,6 +1,7 @@
 package csw.services.icd
 
-import java.io.{OutputStream, File, ByteArrayInputStream, FileOutputStream}
+import java.io.{ByteArrayInputStream, File, FileOutputStream, OutputStream}
+import java.nio.charset.Charset
 
 /**
  * Handles converting an ICD API from HTML to PDF format
@@ -65,7 +66,7 @@ object IcdToPdf {
     val writer = PdfWriter.getInstance(document, out)
     writer.setPageEvent(PageStamper)
     document.open()
-    XMLWorkerHelper.getInstance().parseXHtml(writer, document, new ByteArrayInputStream(html.getBytes))
+    XMLWorkerHelper.getInstance().parseXHtml(writer, document, new ByteArrayInputStream(html.getBytes), Charset.forName("UTF-8"))
     document.close()
     out.close()
   }
