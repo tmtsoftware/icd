@@ -144,7 +144,7 @@ case class DetailedSubscribeInfo(
   }
 
   /**
-   * Full path to subscribed item ($prefix.$name)
+   * Full path to subscribed item: prefix.name
    */
   val path: String = s"${publisher.prefix}.${subscribeModelInfo.name}"
 }

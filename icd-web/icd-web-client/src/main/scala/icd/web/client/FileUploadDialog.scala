@@ -77,10 +77,19 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   // Returns a pair of lists containing the valid and invalid ICD files
   def getIcdFiles(e: dom.Event): (Seq[WebkitFile], Seq[WebkitFile]) = {
     val files = e.target.files
-    val fileList = for (i <- 0 until files.length) yield files(i).asInstanceOf[WebkitFile]
-    fileList.filterNot { f =>
-      f.webkitRelativePath.contains(".git") || f.webkitRelativePath.contains(".idea") || f.name.endsWith(".md")
-    }.partition(isValidFile)
+    if (inputDirSupported) {
+      val fileList = for (i <- 0 until files.length) yield files(i).asInstanceOf[WebkitFile]
+      fileList.filterNot { f =>
+        f.webkitRelativePath.contains(".git") ||
+          f.webkitRelativePath.contains(".idea") ||
+          f.webkitRelativePath.contains("/apis/") ||
+          f.webkitRelativePath.contains("/icds/") ||
+          f.name.endsWith(".md")
+      }.partition(isValidFile)
+    } else {
+      val fileList = for (i <- 0 until files.length) yield files(i).asInstanceOf[WebkitFile]
+      fileList.filterNot(_.name.endsWith(".md")).partition(isValidFile)
+    }
   }
 
   def statusItem = $("#status")
