@@ -152,7 +152,7 @@ object IcdComponentInfo {
   private def getSubscribes(models: IcdModels, targetModelsList: List[IcdModels]): Option[Subscribes] = {
 
     // Gets additional information about the given subscription, including info from the publisher
-    def getInfo(publishType: PublishType, si: SubscribeModelInfo): Option[DetailedSubscribeInfo] = {
+    def getInfo(publishType: PublishType, si: SubscribeModelInfo): DetailedSubscribeInfo = {
       val x = for {
         t <- targetModelsList
         componentModel <- t.componentModel
@@ -163,9 +163,9 @@ object IcdComponentInfo {
           case Alarms => (None, publishModel.alarmList.find(a => a.name == si.name))
           case _      => (publishModel.telemetryList.find(t => t.name == si.name), None)
         }
-        DetailedSubscribeInfo(publishType, si, telem, alarm, componentModel)
+        DetailedSubscribeInfo(publishType, si, telem, alarm, Some(componentModel))
       }
-      x.headOption
+      x.headOption.getOrElse(DetailedSubscribeInfo(publishType, si, None, None, None))
     }
 
     models.subscribeModel match {
@@ -177,7 +177,7 @@ object IcdComponentInfo {
           m.alarmList.map(getInfo(Alarms, _))
         val desc = m.description
         if (subscribeInfo.nonEmpty)
-          Some(Subscribes(desc, subscribeInfo.flatten))
+          Some(Subscribes(desc, subscribeInfo))
         else None
     }
   }
@@ -253,11 +253,10 @@ object IcdComponentInfo {
       cmd <- models.commandModel.toList
       sent <- cmd.send
     } yield {
-      getCommand(sent.subsystem, sent.component, sent.name, targetModelsList).map { r =>
-        SentCommandInfo(r, Some(OtherComponent(sent.subsystem, sent.component)))
-      }
+      val recv = getCommand(sent.subsystem, sent.component, sent.name, targetModelsList)
+      SentCommandInfo(sent.name, sent.subsystem, sent.component, recv, Some(OtherComponent(sent.subsystem, sent.component)))
     }
-    result.flatten
+    result
   }
 
   /**

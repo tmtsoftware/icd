@@ -2,13 +2,14 @@ package icd.web.client
 
 import java.util.UUID
 
-import icd.web.shared.ComponentInfo.{EventStreams, Events, Telemetry, Alarms}
-import icd.web.shared.IcdModels.{ReceiveCommandModel, AttributeModel}
+import icd.web.shared.ComponentInfo.{Alarms, EventStreams, Events, Telemetry}
+import icd.web.shared.IcdModels.{AttributeModel, ReceiveCommandModel}
 import icd.web.shared._
 import org.scalajs.dom
 import org.scalajs.dom.ext.Ajax
-import org.scalajs.dom.raw.{HTMLTableRowElement, HTMLButtonElement, HTMLDivElement}
+import org.scalajs.dom.raw.{HTMLButtonElement, HTMLDivElement, HTMLTableRowElement}
 import upickle.default._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import Components._
@@ -20,19 +21,19 @@ object Components {
   def getComponentInfoId(compName: String) = s"$compName-info"
 
   /**
-   * Information about a link to a component
-   *
-   * @param subsystem the component's subsystem
-   * @param compName  the component name
-   */
+    * Information about a link to a component
+    *
+    * @param subsystem the component's subsystem
+    * @param compName  the component name
+    */
   case class ComponentLink(subsystem: String, compName: String)
 
   trait ComponentListener {
     /**
-     * Called when a link for the component is clicked
-     *
-     * @param link conatins the component's subsystem and name
-     */
+      * Called when a link for the component is clicked
+      *
+      * @param link conatins the component's subsystem and name
+      */
     def componentSelected(link: ComponentLink): Unit
   }
 
@@ -40,13 +41,13 @@ object Components {
   val unpublished = "(unpublished)"
 
   /**
-   * Returns a HTML table with the given column headings and list of rows
-   *
-   * @param headings   the table headings
-   * @param rowList    list of row data
-   * @param tableStyle optional table style
-   * @return an html table element
-   */
+    * Returns a HTML table with the given column headings and list of rows
+    *
+    * @param headings   the table headings
+    * @param rowList    list of row data
+    * @param tableStyle optional table style
+    * @return an html table element
+    */
   def mkTable(headings: List[String], rowList: List[List[String]],
               tableStyle: scalacss.StyleA = Styles.emptyStyle) = {
     import scalatags.JsDom.all._
@@ -80,24 +81,24 @@ object Components {
 }
 
 /**
- * Manages the component (Assembly, HCD) display
- *
- * @param mainContent used to display information about selected components
- * @param listener    called when the user clicks on a component link in the (subscriber, publisher, etc)
- */
+  * Manages the component (Assembly, HCD) display
+  *
+  * @param mainContent used to display information about selected components
+  * @param listener    called when the user clicks on a component link in the (subscriber, publisher, etc)
+  */
 case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   import Components._
 
   /**
-   * Gets information about the given components
-   *
-   * @param subsystem       the components' subsystem
-   * @param versionOpt      optional version (default: current version)
-   * @param compNames       list of component names
-   * @param targetSubsystem optional target subsystem and version
-   * @return future list of objects describing the components
-   */
+    * Gets information about the given components
+    *
+    * @param subsystem       the components' subsystem
+    * @param versionOpt      optional version (default: current version)
+    * @param compNames       list of component names
+    * @param targetSubsystem optional target subsystem and version
+    * @return future list of objects describing the components
+    */
   private def getComponentInfo(subsystem: String, versionOpt: Option[String], compNames: List[String],
                                targetSubsystem: SubsystemWithVersion): Future[List[ComponentInfo]] = {
     Ajax.get(Routes.icdComponentInfo(subsystem, versionOpt, compNames, targetSubsystem)).map { r =>
@@ -115,12 +116,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
-   * Adds (appends) a list of components to the display, in the order that they are given in the list.
-   *
-   * @param compNames       the names of the components
-   * @param sv              the selected subsystem and version
-   * @param targetSubsystem the target subsystem (might not be set)
-   */
+    * Adds (appends) a list of components to the display, in the order that they are given in the list.
+    *
+    * @param compNames       the names of the components
+    * @param sv              the selected subsystem and version
+    * @param targetSubsystem the target subsystem (might not be set)
+    */
   def addComponents(compNames: List[String], sv: SubsystemWithVersion, targetSubsystem: SubsystemWithVersion,
                     icdOpt: Option[IcdVersion]): Future[Unit] = {
     sv.subsystemOpt match {
@@ -141,12 +142,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
-   * Adds (appends) a component to the display
-   *
-   * @param compName        the name of the component
-   * @param sv              the selected subsystem
-   * @param targetSubsystem the target subsystem (might not be set)
-   */
+    * Adds (appends) a component to the display
+    *
+    * @param compName        the name of the component
+    * @param sv              the selected subsystem
+    * @param targetSubsystem the target subsystem (might not be set)
+    */
   def addComponent(compName: String, sv: SubsystemWithVersion,
                    targetSubsystem: SubsystemWithVersion): Unit = {
     sv.subsystemOpt.foreach { subsystem =>
@@ -159,11 +160,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
-   * Displays only the given component's information, ignoring any filter
-   *
-   * @param sv       the subsystem and version to use for the component
-   * @param compName the name of the component
-   */
+    * Displays only the given component's information, ignoring any filter
+    *
+    * @param sv       the subsystem and version to use for the component
+    * @param compName the name of the component
+    */
   def setComponent(sv: SubsystemWithVersion, compName: String): Unit = {
     if (sv.subsystemOpt.isDefined) {
       val path = Routes.componentInfo(sv.subsystemOpt.get, sv.versionOpt, List(compName))
@@ -190,10 +191,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
-   * Displays the information for a component, appending to the other selected components, if any.
-   *
-   * @param info contains the information to display
-   */
+    * Displays the information for a component, appending to the other selected components, if any.
+    *
+    * @param info contains the information to display
+    */
   private def displayComponentInfo(info: ComponentInfo): Unit = {
     if (info.publishes.isDefined && info.publishes.get.nonEmpty
       || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
@@ -210,12 +211,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
-   * Returns a table of attributes
-   *
-   * @param titleStr       title to display above the table
-   * @param attributesList list of attributes to display
-   * @return
-   */
+    * Returns a table of attributes
+    *
+    * @param titleStr       title to display above the table
+    * @param attributesList list of attributes to display
+    * @return
+    */
   private def attributeListMarkup(titleStr: String, attributesList: List[AttributeModel]): TypedTag[HTMLDivElement] = {
     import scalatags.JsDom.all._
     if (attributesList.isEmpty) div()
@@ -230,13 +231,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
-   * Returns a table of parameters
-   *
-   * @param titleStr       title to display above the table
-   * @param attributesList list of attributes to display
-   * @param requiredArgs   a list of required arguments
-   * @return
-   */
+    * Returns a table of parameters
+    *
+    * @param titleStr       title to display above the table
+    * @param attributesList list of attributes to display
+    * @param requiredArgs   a list of required arguments
+    * @return
+    */
   private def parameterListMarkup(titleStr: String, attributesList: List[AttributeModel], requiredArgs: List[String]): TypedTag[HTMLDivElement] = {
     import scalatags.JsDom.all._
     if (attributesList.isEmpty) div()
@@ -252,12 +253,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
-   * Returns a hidden, expandable table row containing the given div item
-   *
-   * @param item    the contents of the table row
-   * @param colSpan the number of columns to span
-   * @return a pair of (button, tr) elements, where the button toggles the visibility of the row
-   */
+    * Returns a hidden, expandable table row containing the given div item
+    *
+    * @param item    the contents of the table row
+    * @param colSpan the number of columns to span
+    * @return a pair of (button, tr) elements, where the button toggles the visibility of the row
+    */
   private def hiddenRowMarkup(item: TypedTag[HTMLDivElement], colSpan: Int): (TypedTag[HTMLButtonElement], TypedTag[HTMLTableRowElement]) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
@@ -269,8 +270,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       attr("data-target") := s"#$idStr",
       title := "Show/hide details"
     )(
-        span(cls := "glyphicon glyphicon-collapse-down")
-      )
+      span(cls := "glyphicon glyphicon-collapse-down")
+    )
     val row = tr(id := idStr, cls := "collapse panel-collapse")(td(colspan := colSpan)(item))
     (btn, row)
   }
@@ -586,6 +587,38 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       )
     }
 
+    // Warn if no receiver found for sent command
+    def getWarning(m: SentCommandInfo) = m.warning.map { msg =>
+      div(cls := "alert alert-warning", role := "alert")(
+        span(cls := "glyphicon glyphicon-warning-sign", attr("aria-hidden") := "true"),
+        span(em(s" Warning: $msg"))
+      )
+    }
+
+    // Returns the layout for an item describing a sent command
+    def makeItem(s: SentCommandInfo) = {
+      s.receiveCommandModel match {
+        case Some(r) =>
+          val (btn, row) = hiddenRowMarkup(makeDetailsRow(r), 3)
+          List(
+            tr(
+              td(Styles.attributeCell, p(btn, r.name)), // XXX TODO: Make link to command description page with details
+              td(raw(r.description)),
+              td(p(s.receiver.map(makeLinkForReceiver)))
+            ),
+            row
+          )
+        case None =>
+          List(
+            tr(
+              td(Styles.attributeCell, p(s.name)),
+              td(getWarning(s)),
+              td(p(s.receiver.map(makeLinkForReceiver)))
+            )
+          )
+      }
+    }
+
     // Only display non-empty tables
     if (info.isEmpty) div()
     else div(
@@ -600,18 +633,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           )
         ),
         tbody(
-          for (s <- info) yield {
-            val r = s.receiveCommandModel
-            val (btn, row) = hiddenRowMarkup(makeDetailsRow(r), 3)
-            List(
-              tr(
-                td(Styles.attributeCell, p(btn, r.name)), // XXX TODO: Make link to command description page with details
-                td(raw(r.description)),
-                td(p(s.receiver.map(makeLinkForReceiver)))
-              ),
-              row
-            )
-          }
+          for (s <- info) yield makeItem(s)
         ))
     )
   }

@@ -108,19 +108,18 @@ object ComponentInfoHelper {
   private def getSubscribes(query: IcdDbQuery, models: IcdModels): Option[Subscribes] = {
 
     // Gets additional information about the given subscription, including info from the publisher
-    def getInfo(publishType: PublishType, si: SubscribeModelInfo): Option[DetailedSubscribeInfo] = {
+    def getInfo(publishType: PublishType, si: SubscribeModelInfo): DetailedSubscribeInfo = {
       val x = for {
         t <- query.getModels(si.subsystem, Some(si.component))
-        componentModel <- t.componentModel
         publishModel <- t.publishModel
       } yield {
         val (telem, alarm) = publishType match {
           case Alarms => (None, publishModel.alarmList.find(a => a.name == si.name))
           case _      => (publishModel.telemetryList.find(t => t.name == si.name), None)
         }
-        DetailedSubscribeInfo(publishType, si, telem, alarm, componentModel)
+        DetailedSubscribeInfo(publishType, si, telem, alarm, t.componentModel)
       }
-      x.headOption
+      x.headOption.getOrElse(DetailedSubscribeInfo(publishType, si, None, None, None))
     }
 
     models.subscribeModel match {
@@ -132,7 +131,7 @@ object ComponentInfoHelper {
           m.alarmList.map(getInfo(Alarms, _))
         val desc = m.description
         if (desc.nonEmpty || subscribeInfo.nonEmpty)
-          Some(Subscribes(desc, subscribeInfo.flatten))
+          Some(Subscribes(desc, subscribeInfo))
         else None
     }
   }
@@ -167,11 +166,10 @@ object ComponentInfoHelper {
       cmd <- models.commandModel.toList
       sent <- cmd.send
     } yield {
-      query.getCommand(sent.subsystem, sent.component, sent.name).map { r =>
-        SentCommandInfo(r, Some(OtherComponent(sent.subsystem, sent.component)))
-      }
+      val recv = query.getCommand(sent.subsystem, sent.component, sent.name)
+      SentCommandInfo(sent.name, sent.subsystem, sent.component, recv, Some(OtherComponent(sent.subsystem, sent.component)))
     }
-    result.flatten
+    result
   }
 
   /**

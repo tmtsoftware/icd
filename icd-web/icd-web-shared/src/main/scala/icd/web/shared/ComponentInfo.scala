@@ -1,6 +1,6 @@
 package icd.web.shared
 
-import icd.web.shared.ComponentInfo.{Telemetry, PublishType}
+import icd.web.shared.ComponentInfo.{ Telemetry, PublishType }
 import icd.web.shared.IcdModels._
 
 object ComponentInfo {
@@ -19,12 +19,9 @@ object ComponentInfo {
   // For ICDs, we are only interested in the interface between the two subsystems.
   // Filter out any published commands with no subscribers,
   // and any commands received, with no senders
-  //
-  // XXX TODO: filter subscribe with no publisher, commands received with no sender!
-  //
   def applyIcdFilter(info: ComponentInfo): ComponentInfo = {
     val (oldTelemetryList, oldEventList, oldEventStreamList, oldAlarmList) = info.publishes match {
-      case None    => (Nil, Nil, Nil, Nil)
+      case None => (Nil, Nil, Nil, Nil)
       case Some(p) => (p.telemetryList, p.eventList, p.eventStreamList, p.alarmList)
     }
     val oldCommandsReceived = info.commands.toList.flatMap(_.commandsReceived)
@@ -40,8 +37,7 @@ object ComponentInfo {
       telemetryList = newTelemetryList,
       eventList = newEventList,
       eventStreamList = newEventStreamList,
-      alarmList = newAlarmList
-    ))
+      alarmList = newAlarmList))
 
     val commands = info.commands.map(c => c.copy(commandsReceived = newCommandsReceived))
 
@@ -59,10 +55,9 @@ object ComponentInfo {
  */
 case class ComponentInfo(
   componentModel: ComponentModel,
-  publishes:      Option[Publishes],
-  subscribes:     Option[Subscribes],
-  commands:       Option[Commands]
-)
+  publishes: Option[Publishes],
+  subscribes: Option[Subscribes],
+  commands: Option[Commands])
 
 /**
  * Describes a published telemetry, event or event stream item
@@ -72,8 +67,7 @@ case class ComponentInfo(
  */
 case class TelemetryInfo(
   telemetryModel: TelemetryModel,
-  subscribers:    List[SubscribeInfo]
-)
+  subscribers: List[SubscribeInfo])
 
 /**
  * Describes an alarm
@@ -82,9 +76,8 @@ case class TelemetryInfo(
  * @param subscribers list of components who subscribe to the alarm
  */
 case class AlarmInfo(
-  alarmModel:  AlarmModel,
-  subscribers: List[SubscribeInfo]
-)
+  alarmModel: AlarmModel,
+  subscribers: List[SubscribeInfo])
 
 /**
  * Describes what values a component publishes
@@ -96,12 +89,11 @@ case class AlarmInfo(
  * @param alarmList       list of published alarms
  */
 case class Publishes(
-    description:     String,
-    telemetryList:   List[TelemetryInfo],
-    eventList:       List[TelemetryInfo],
-    eventStreamList: List[TelemetryInfo],
-    alarmList:       List[AlarmInfo]
-) {
+  description: String,
+  telemetryList: List[TelemetryInfo],
+  eventList: List[TelemetryInfo],
+  eventStreamList: List[TelemetryInfo],
+  alarmList: List[AlarmInfo]) {
   /**
    * True if at the component publishes something
    */
@@ -127,26 +119,29 @@ case class SubscribeInfo(componentModel: ComponentModel, itemType: PublishType, 
  * @param publisher          the publisher's component model
  */
 case class DetailedSubscribeInfo(
-    itemType:           PublishType,
-    subscribeModelInfo: SubscribeModelInfo,
-    telemetryModel:     Option[TelemetryModel],
-    alarmModel:         Option[AlarmModel],
-    publisher:          ComponentModel
-) {
+  itemType: PublishType,
+  subscribeModelInfo: SubscribeModelInfo,
+  telemetryModel: Option[TelemetryModel],
+  alarmModel: Option[AlarmModel],
+  publisher: Option[ComponentModel]) {
   val description = (if (itemType == Telemetry) {
     telemetryModel.map(_.description)
   } else {
     alarmModel.map(_.description)
   }).getOrElse("")
 
-  val warning = if (telemetryModel.nonEmpty || alarmModel.nonEmpty) None else {
-    Some(s"${publisher.subsystem}.${publisher.component} does not publish $itemType ${subscribeModelInfo.name}")
+  val warning = if (telemetryModel.nonEmpty || alarmModel.nonEmpty) None
+  else {
+    Some(s"${subscribeModelInfo.subsystem}.${subscribeModelInfo.component} does not publish $itemType: ${subscribeModelInfo.name}")
   }
 
   /**
-   * Full path to subscribed item: prefix.name
+   * Full path to subscribed item: prefix.name (if publisher was found, otherwise subsystem.component.name)
    */
-  val path: String = s"${publisher.prefix}.${subscribeModelInfo.name}"
+  val path = publisher match {
+    case Some(p) => s"${p.prefix}.${subscribeModelInfo.name}"
+    case None => s"${subscribeModelInfo.subsystem}.${subscribeModelInfo.component}.${subscribeModelInfo.name}"
+  }
 }
 
 /**
@@ -156,9 +151,8 @@ case class DetailedSubscribeInfo(
  * @param subscribeInfo a list of subscribed items
  */
 case class Subscribes(
-  description:   String,
-  subscribeInfo: List[DetailedSubscribeInfo]
-)
+  description: String,
+  subscribeInfo: List[DetailedSubscribeInfo])
 
 /**
  * Describes another component (receiver, for sent commands, sender for received commands)
@@ -168,19 +162,30 @@ case class Subscribes(
  */
 case class OtherComponent(
   subsystem: String,
-  compName:  String
-)
+  compName: String)
+
 
 /**
  * Describes a configuration command sent to another component
  *
- * @param receiveCommandModel the model for receiving end of the command
+ * @param name                the command name
+ * @param subsystem           the subsystem that receives the command
+ * @param component           the component that receives the command
+ * @param receiveCommandModel the model for the receiving end of the command, if found
  * @param receiver            the receiving component, if found
  */
 case class SentCommandInfo(
-  receiveCommandModel: ReceiveCommandModel,
-  receiver:            Option[OtherComponent]
-)
+  name: String,
+  subsystem: String,
+  component: String,
+  receiveCommandModel: Option[ReceiveCommandModel],
+  receiver: Option[OtherComponent]) {
+
+  val warning = if (receiveCommandModel.nonEmpty) None
+  else {
+    Some(s"$subsystem.$component does not define configuration: $name")
+  }
+}
 
 /**
  * Describes a command config received by this component
@@ -190,8 +195,7 @@ case class SentCommandInfo(
  */
 case class ReceivedCommandInfo(
   receiveCommandModel: ReceiveCommandModel,
-  senders:             List[OtherComponent]
-)
+  senders: List[OtherComponent])
 
 /**
  * Describes commands the component sends and receives
@@ -201,7 +205,6 @@ case class ReceivedCommandInfo(
  * @param commandsSent     a list of commands sent by this component
  */
 case class Commands(
-  description:      String,
+  description: String,
   commandsReceived: List[ReceivedCommandInfo],
-  commandsSent:     List[SentCommandInfo]
-)
+  commandsSent: List[SentCommandInfo])

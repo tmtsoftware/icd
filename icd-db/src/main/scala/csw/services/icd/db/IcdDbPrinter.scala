@@ -144,7 +144,7 @@ case class IcdDbPrinter(db: IcdDb) {
     def subscribeListMarkup(pubType: String, subscribeList: List[DetailedSubscribeInfo]): Text.TypedTag[String] = {
       // Warn if no publisher found for subscibed item
       def getWarning(info: DetailedSubscribeInfo) = info.warning.map { msg =>
-          p(em(raw("&#x26A0;"), " Warning: ", msg))
+          p(em(" Warning: ", msg))
       }
 
       if (subscribeList.isEmpty) div()
@@ -152,7 +152,7 @@ case class IcdDbPrinter(db: IcdDb) {
         h4(a(s"$pubType Subscribed to by $compName")),
         for (si <- subscribeList) yield {
           val sInfo = si.subscribeModelInfo
-          val from = s"from ${si.publisher.subsystem}.${si.publisher.component}"
+          val from = s"from ${si.subscribeModelInfo.subsystem}.${si.subscribeModelInfo.component}"
           div(cls := "nopagebreak")(
             h5(a(s"$compName subscribes to ${singlePubType(pubType)}: ${sInfo.name} $from")),
             raw(si.description),
@@ -227,13 +227,18 @@ case class IcdDbPrinter(db: IcdDb) {
       div(
         h4(a(name := receivedCommandsId(compName))(receivedCommandsTitle(compName))),
         for (s <- info) yield {
-          val m = s.receiveCommandModel
+          val receiveCommandModel = s.receiveCommandModel
           val to = s.receiver.map(r => s"to ${r.subsystem}.${r.compName}").getOrElse("")
           div(cls := "nopagebreak")(
-            h5(a(s"$compName sends configuration: ${m.name} $to")),
-            if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
-            raw(m.description),
-            if (m.args.isEmpty) div() else parameterListMarkup(m.name, m.args, m.requiredArgs)
+            h5(a(s"$compName sends configuration: ${s.name} $to")),
+            receiveCommandModel match {
+              case Some(m) => div(
+                if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
+                raw(m.description),
+                if (m.args.isEmpty) div() else parameterListMarkup(m.name, m.args, m.requiredArgs)
+              )
+              case None => s.warning.map( msg => p(em(" Warning: ", msg)))
+            }
           )
         }
       )
