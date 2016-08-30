@@ -23,7 +23,7 @@ object IcdGitManager {
   //  (The model files are then in $gitParentUri/$subsystem-Model-Files)
   private val gitParentUri = {
     val uri = System.getProperty("csw.services.icd.github.parent.uri")
-    if (uri != null) uri else "https://github.com/tmtsoftware"
+    if (uri != null) uri else "https://github.com/tmt-icd"
   }
 
   //  For testing you can override the GitHub URI used to access the ICD and API version files
@@ -94,7 +94,7 @@ object IcdGitManager {
    */
   def getSubsystemGitHubUrl(s: String): String = {
     val subsystem = IcdVersionManager.SubsystemAndVersion(s).subsystem
-    s"https://github.com/tmtsoftware/$subsystem-Model-Files.git"
+    s"https://github.com/tmt-icd/$subsystem-Model-Files.git"
   }
 
   // Gets the commit id of the given repo

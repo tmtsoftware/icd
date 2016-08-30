@@ -8,7 +8,7 @@ The validation is based on [JSON Schema](http://json-schema.org/),
 however the schema descriptions as well as the ICDs themselves may also be written in
 the simpler [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md) format.
 
-Versions of ICDs are managed in [GitHub repositories](https://github.com/tmtsoftware/ICD-Model-Files.git) and 
+Versions of ICDs are managed in [GitHub repositories](https://github.com/tmt-icd/ICD-Model-Files.git) and 
 the subsystem model files can be imported (with version history) into a local MongoDB database, which is used
 by command line applications and a web app.
  
@@ -69,7 +69,7 @@ Publishing a subsystem or ICD adds an entry to a JSON file on GitHub which is us
 versions of the model files.
 
 The app also lets you import subsystem model files directly from the
-[GitHub repositories](https://github.com/tmtsoftware/ICD-Model-Files)  into a local MongoDB database
+[GitHub repositories](https://github.com/tmt-icd/ICD-Model-Files)  into a local MongoDB database
 for use with the icd tools. 
 
 Warning: The icd-git app will currently delete the current contents of the ICD database before

@@ -2,7 +2,7 @@ ICD GitHub Support
 ==================
 
 icd-git is a command line application that reads model files from the GitHub 
-[ICD-Model-Files](https://github.com/tmtsoftware/ICD-Model-Files.git) repositories and
+[ICD-Model-Files](https://github.com/tmt-icd/ICD-Model-Files.git) repositories and
 allows you to publish subsystem APIs and ICDs and ingest them into the ICD database.
 
 In order for a subsystem to be part of an ICD, the API for it first needs to be published:
@@ -16,8 +16,8 @@ The first two lines publish the TEST and TEST2 subsystems. The last line publish
 TEST and TEST2. 
 
 Publishing a subsystem API or ICD creates an entry in a JSON file in the 
-[ICD-Model-Files](https://github.com/tmtsoftware/ICD-Model-Files.git)/apis or 
-[ICD-Model-Files](https://github.com/tmtsoftware/ICD-Model-Files.git)/icds directory.
+[ICD-Model-Files](https://github.com/tmt-icd/ICD-Model-Files.git)/apis or 
+[ICD-Model-Files](https://github.com/tmt-icd/ICD-Model-Files.git)/icds directory.
 These files should not be manually edited. They are used to store version related information.
 
 An ICD version is defined by an entry in a JSON formatted file named `icd-$subsytem1-$subsystem2.json`
