@@ -17,7 +17,7 @@ object AttributeModelParser {
     val description = config.as[Option[String]]("description").map(HtmlMarkup.gfmToHtml).getOrElse("")
     val typeOpt = config.as[Option[String]]("type")
     val enumOpt = config.as[Option[List[String]]]("enum")
-    val units = config.as[Option[String]]("units").getOrElse("")
+    val units = config.as[Option[String]]("units").map(HtmlMarkup.gfmToHtml).getOrElse("")
     val maxItems = config.as[Option[String]]("maxItems")
     val minItems = config.as[Option[String]]("minItems")
     val minimum = config.as[Option[String]]("minimum").orElse(config.as[Option[String]]("items.minimum"))
