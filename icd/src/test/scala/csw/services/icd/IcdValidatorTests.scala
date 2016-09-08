@@ -112,7 +112,7 @@ class IcdValidatorTests extends FunSuite {
     assert(a1.typeOpt.get == "integer")
     assert(a1.minimum.contains("-100"))
     assert(a1.maximum.contains("100"))
-    assert(a1.units == "m")
+    assert(a1.units == "<p>m</p>")
 
     val a2 = attr1(1)
     assert(a2.name == "a2")
@@ -120,7 +120,7 @@ class IcdValidatorTests extends FunSuite {
     assert(a2.typeOpt.get == "array")
     assert(a2.minItems.contains("5"))
     assert(a2.maxItems.contains("5"))
-    assert(a2.units == "mm")
+    assert(a2.units == "<p>mm</p>")
 
     val a3 = attr1(2)
     assert(a3.name == "a3")

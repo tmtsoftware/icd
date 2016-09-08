@@ -94,7 +94,7 @@ object IcdGitManager {
    */
   def getSubsystemGitHubUrl(s: String): String = {
     val subsystem = IcdVersionManager.SubsystemAndVersion(s).subsystem
-    s"https://github.com/tmt-icd/$subsystem-Model-Files.git"
+    s"$gitParentUri/$subsystem-Model-Files.git"
   }
 
   // Gets the commit id of the given repo

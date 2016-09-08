@@ -102,6 +102,22 @@ Usage: icd-git [options]
   --version
 ```
 
+Additional Configuration Options for Testing
+--------------------------------------------
+
+For testing, you may want to use a repository other than the default (https://github.com/tmt-icd).
+There are two system properties (Java -D options) that you can use to override the default Git repository:
+
+* -Dcsw.services.icd.github.parent.uri=https://github.com/*yourRepo*
+
+This overrides the base URI used for the subsystem Git repositories (The default value is https://github.com/tmt-icd).
+
+* -Dcsw.services.icd.github.uri=https://github.com/*yourRepo*
+
+This overrides only the base URI containing ICD-Model-Files repository, which contains version information stored in JSON files in 
+the apis and icds subdirectories (The default value is also https://github.com/tmt-icd).
+You could override this URI in order to test making releases without actually publishing them on the official Git repository.
+
 Example Command Line Usage
 --------------------------
 

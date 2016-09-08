@@ -66,7 +66,7 @@ class IcdDbTests extends FunSuite {
     assert(temp_ngsWfs.name == "temp_ngsWfs")
     assert(temp_ngsWfs.description == "<p>NGS WFS temperature</p>")
     assert(temp_ngsWfs.typeStr == "float")
-    assert(temp_ngsWfs.units == "degC")
+    assert(temp_ngsWfs.units == "<p>degC</p>")
 
     // Test publish queries
     val published = db.query.getPublished(envCtrl).filter(p =>
