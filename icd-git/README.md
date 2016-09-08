@@ -118,6 +118,8 @@ This overrides only the base URI containing ICD-Model-Files repository, which co
 the apis and icds subdirectories (The default value is also https://github.com/tmt-icd).
 You could override this URI in order to test making releases without actually publishing them on the official Git repository.
 
+Note that these options / system properties will work for both the icd-git and icdwebserver applications.
+
 Example Command Line Usage
 --------------------------
 
