@@ -202,7 +202,7 @@ object IcdGitManager {
     try {
       val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
       git.close()
-      val (file, fileName) = getIcdFile(sv.subsystem, tv.subsystem, gitWorkDir)
+      val (file, _) = getIcdFile(sv.subsystem, tv.subsystem, gitWorkDir)
       val path = Paths.get(file.getPath)
 
       // Get the list of published ICDs for the subsystem and target from GitHub
@@ -229,8 +229,7 @@ object IcdGitManager {
     */
   def unpublish(icdVersion: String,
                 subsystem: String, target: String,
-                user: String, password: String, comment: String
-               ): Option[IcdVersions.IcdEntry] = {
+                user: String, password: String, comment: String): Option[IcdVersions.IcdEntry] = {
     import IcdVersions._
     import spray.json._
     // sort by convention to avoid duplicates
@@ -259,6 +258,51 @@ object IcdGitManager {
       }
       git.close()
       icdOpt
+    } finally {
+      deleteDirectoryRecursively(gitWorkDir)
+    }
+  }
+
+  /**
+    * Deletes the entry for a published API (in case one was made by error).
+    *
+    * @param sv       the subsystem and version
+    * @param user     the GitHub user
+    * @param password the GitHub password
+    * @param comment  the commit comment
+    * @return the entry for the removed API, if found
+    */
+  def unpublish(sv: SubsystemAndVersion, user: String, password: String, comment: String): Option[ApiVersions.ApiEntry] = {
+    import ApiVersions._
+    import spray.json._
+    // Checkout the apis repo in a temp dir
+    val gitWorkDir = Files.createTempDirectory("apis").toFile
+    try {
+      val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
+      val (file, fileName) = getApiFile(sv.subsystem, gitWorkDir)
+      val path = Paths.get(file.getPath)
+
+      // Get the list of published APIs for the subsystem from GitHub
+      val result = if (!file.exists()) None
+      else {
+        val apiVersions = Some(ApiVersions.fromJson(new String(Files.readAllBytes(path))))
+        val apis = apiVersions.map(_.apis).getOrElse(Nil)
+        val apiOpt = sv.versionOpt match {
+          case Some(version) => apis.find(_.version == version)
+          case None => apis.headOption
+        }
+        apiOpt.foreach { api =>
+          // Write the file without the given API version
+          val json = ApiVersions(sv.subsystem, apis.filter(_.version != api.version)).toJson.prettyPrint
+          Files.write(path, json.getBytes)
+          git.commit().setOnly(fileName).setMessage(comment).call
+          updateHistoryFile(git, gitWorkDir)
+          git.push.setCredentialsProvider(new UsernamePasswordCredentialsProvider(user, password)).call()
+        }
+        apiOpt
+      }
+      git.close()
+      result
     } finally {
       deleteDirectoryRecursively(gitWorkDir)
     }
@@ -549,7 +593,7 @@ object IcdGitManager {
         // Import one ICD if subsystem and target options were given
         val subsystem = subsystems.head.subsystem
         val target = subsystems.tail.head.subsystem
-        val (file, fileName) = getIcdFile(subsystem, target, gitWorkDir)
+        val (file, _) = getIcdFile(subsystem, target, gitWorkDir)
         if (file.exists()) db.importIcds(file)
       } else {
         // Import all ICD files
