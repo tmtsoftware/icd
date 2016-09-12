@@ -95,7 +95,7 @@ class IcdGitManagerTests extends FunSuite with BeforeAndAfter {
     } catch {
       case ex: Exception => throw new RuntimeException("Unable to drop the existing ICD database", ex)
     }
-    IcdGitManager.ingest(db, subsysList, println(_))
+    IcdGitManager.ingest(db, subsysList, (s: String) => println(s))
     val icdNames = db.versionManager.getIcdNames
     assert(icdNames.size == 1)
     assert(icdNames.head.subsystem == "TEST")
