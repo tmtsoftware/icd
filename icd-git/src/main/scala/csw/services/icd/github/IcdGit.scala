@@ -4,33 +4,33 @@ import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.db.{IcdDb, IcdDbDefaults, IcdVersionManager}
 
 /**
- * Implements the icd-git command line application, which is used to manage ICD versions in Git and
- * support importing from Git into the ICD database.
- */
+  * Implements the icd-git command line application, which is used to manage ICD versions in Git and
+  * support importing from Git into the ICD database.
+  */
 object IcdGit extends App {
 
   // Default user name if none given
   private val defaultUser = System.getProperty("user.name")
 
   /**
-   * Command line options ("icd-git --help" prints a usage message with descriptions of all the options)
-   */
+    * Command line options ("icd-git --help" prints a usage message with descriptions of all the options)
+    */
   private case class Options(
-    list:         Boolean                   = false,
-    subsystems:   List[SubsystemAndVersion] = Nil,
-    icdVersion:   Option[String]            = None,
-    interactive:  Boolean                   = false,
-    publish:      Boolean                   = false,
-    unpublish:    Boolean                   = false,
-    majorVersion: Boolean                   = false,
-    user:         Option[String]            = None,
-    password:     Option[String]            = None,
-    comment:      Option[String]            = None,
-    dbName:       String                    = IcdDbDefaults.defaultDbName,
-    host:         String                    = IcdDbDefaults.defaultHost,
-    port:         Int                       = IcdDbDefaults.defaultPort,
-    ingest:       Boolean                   = false
-  )
+                              list: Boolean = false,
+                              subsystems: List[SubsystemAndVersion] = Nil,
+                              icdVersion: Option[String] = None,
+                              interactive: Boolean = false,
+                              publish: Boolean = false,
+                              unpublish: Boolean = false,
+                              majorVersion: Boolean = false,
+                              user: Option[String] = None,
+                              password: Option[String] = None,
+                              comment: Option[String] = None,
+                              dbName: String = IcdDbDefaults.defaultDbName,
+                              host: String = IcdDbDefaults.defaultHost,
+                              port: Int = IcdDbDefaults.defaultPort,
+                              ingest: Boolean = false
+                            )
 
   private def parseSubsystemsArg(s: String): List[SubsystemAndVersion] = {
     s.split(',').toList.map(SubsystemAndVersion(_)).sorted
@@ -62,7 +62,7 @@ object IcdGit extends App {
 
     opt[Unit]("unpublish") action { (_, c) =>
       c.copy(unpublish = true)
-    } text "Deletes the entry for the given API or ICD version (Use together with --subsystem, --target and --icdversion)"
+    } text "Deletes the entry for the given API or ICD version (Use together with --subsystems, --icdversion)"
 
     opt[Unit]("major") action { (_, c) =>
       c.copy(majorVersion = true)
@@ -237,20 +237,41 @@ object IcdGit extends App {
 
   // --unpublish option
   private def unpublish(options: Options): Unit = {
-    if (options.subsystems.size != 2) error("Missing --subsystems option with two, comma separated subsystem names")
-    if (options.icdVersion.isEmpty) error("Missing required --icdVersion option")
     if (options.password.isEmpty) error("Missing required --password option")
+    if (options.subsystems.size != 1 && options.subsystems.size != 2)
+      error("Missing --subsystems option with one, or two, comma separated subsystem names")
+    if (options.subsystems.size == 2 && options.icdVersion.isEmpty)
+      error("Missing required --icdVersion option")
     val user = options.user.getOrElse(defaultUser)
-    val icdVersion = options.icdVersion.get
-    val subsystem = options.subsystems.head.subsystem
-    val target = options.subsystems.tail.head.subsystem
     val password = options.password.get
+    val subsystem = options.subsystems.head.subsystem
     val comment = options.comment.getOrElse("No comment")
-    val icd = IcdGitManager.unpublish(icdVersion, subsystem, target, user, password, comment)
-    if (icd.isEmpty)
-      error(s"ICD version $icdVersion for $subsystem and $target does not exist")
-    else
-      println(s"Removed ICD version $icdVersion from the list of ICDs for $subsystem and $target")
+
+    if (options.subsystems.size == 2) {
+      // unpublish ICD
+      val icdVersion = options.icdVersion.get
+      val target = options.subsystems.tail.head.subsystem
+      val icd = IcdGitManager.unpublish(icdVersion, subsystem, target, user, password, comment)
+      if (icd.isEmpty)
+        error(s"ICD version $icdVersion for $subsystem and $target does not exist")
+      else
+        println(s"Removed ICD version $icdVersion from the list of ICDs for $subsystem and $target")
+    } else {
+      // unpublish API
+      val sv = SubsystemAndVersion(subsystem)
+      val api = IcdGitManager.unpublish(sv, user, password, comment)
+      if (api.isEmpty) {
+        sv.versionOpt match {
+          case Some(version) =>
+            error(s"API version $version for $subsystem does not exist")
+          case None =>
+            error(s"No published API version for $subsystem was found")
+        }
+      }
+      else {
+        println(s"Removed API version ${api.get.version} from the list of published versions for $subsystem")
+      }
+    }
   }
 
   // --publish option

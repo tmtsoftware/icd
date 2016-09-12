@@ -1,6 +1,6 @@
 package csw.services.icd.github
 
-import java.io.File
+import java.io.{File, PrintWriter}
 import java.nio.file.{FileSystems, Files, Paths}
 
 import com.typesafe.config.ConfigFactory
@@ -15,9 +15,9 @@ import org.joda.time.{DateTime, DateTimeZone}
 import scala.collection.JavaConverters._
 
 /**
- * Provides methods for managing ICD versions in Git and
- * supports importing from Git into the ICD database.
- */
+  * Provides methods for managing ICD versions in Git and
+  * supports importing from Git into the ICD database.
+  */
 object IcdGitManager {
   //  For testing you can override the parent GitHub URI of the subsystem model file repos
   //  (The model files are then in $gitParentUri/$subsystem-Model-Files)
@@ -43,17 +43,17 @@ object IcdGitManager {
   private val tmpDir = System.getProperty("java.io.tmpdir")
 
   /**
-   * A list of all known TMT subsystems (read from the same resources file used in validating the ICDs)
-   */
+    * A list of all known TMT subsystems (read from the same resources file used in validating the ICDs)
+    */
   private val allSubsystems: Set[String] = {
     val config = ConfigFactory.parseResources("subsystem.conf")
     config.getStringList("enum").asScala.toSet
   }
 
   /**
-   * Gets a list of information about all of the published API and ICD versions by reading any
-   * apis/api-*.json and icds/icd-*.json files from the GitHub repo.
-   */
+    * Gets a list of information about all of the published API and ICD versions by reading any
+    * apis/api-*.json and icds/icd-*.json files from the GitHub repo.
+    */
   def getAllVersions: (List[ApiVersions], List[IcdVersions]) = {
     // Checkout the main git repo in a temp dir
     val gitWorkDir = Files.createTempDirectory("icds").toFile
@@ -61,24 +61,33 @@ object IcdGitManager {
       // Clone the repository containing the API version info files
       val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
       git.close()
-
-      val apisDir = new File(gitWorkDir, gitApisDir)
-      val icdsDir = new File(gitWorkDir, gitIcdsDir)
-      val apiMatcher = FileSystems.getDefault.getPathMatcher(s"glob:$apisDir/api-*.json")
-      val icdMatcher = FileSystems.getDefault.getPathMatcher(s"glob:$icdsDir/icd-*.json")
-
-      val apiVersions = Option(apisDir.listFiles).getOrElse(Array()).toList.map(_.toPath)
-        .filter(apiMatcher.matches)
-        .map(path => ApiVersions.fromJson(new String(Files.readAllBytes(path))))
-
-      val icdVersions = Option(icdsDir.listFiles).getOrElse(Array()).toList.map(_.toPath)
-        .filter(icdMatcher.matches)
-        .map(path => IcdVersions.fromJson(new String(Files.readAllBytes(path))))
-
-      (apiVersions, icdVersions)
+      getAllVersions(gitWorkDir)
     } finally {
       deleteDirectoryRecursively(gitWorkDir)
     }
+  }
+
+  /**
+    * Gets a list of information about all of the published API and ICD versions by reading any
+    * apis/api-*.json and icds/icd-*.json files from the GitHub repo.
+    *
+    * @param gitWorkDir the directory containing the cloned Git repo
+    */
+  private def getAllVersions(gitWorkDir: File): (List[ApiVersions], List[IcdVersions]) = {
+    val apisDir = new File(gitWorkDir, gitApisDir)
+    val icdsDir = new File(gitWorkDir, gitIcdsDir)
+    val apiMatcher = FileSystems.getDefault.getPathMatcher(s"glob:$apisDir/api-*.json")
+    val icdMatcher = FileSystems.getDefault.getPathMatcher(s"glob:$icdsDir/icd-*.json")
+
+    val apiVersions = Option(apisDir.listFiles).getOrElse(Array()).toList.map(_.toPath)
+      .filter(apiMatcher.matches)
+      .map(path => ApiVersions.fromJson(new String(Files.readAllBytes(path))))
+
+    val icdVersions = Option(icdsDir.listFiles).getOrElse(Array()).toList.map(_.toPath)
+      .filter(icdMatcher.matches)
+      .map(path => IcdVersions.fromJson(new String(Files.readAllBytes(path))))
+
+    (apiVersions, icdVersions)
   }
 
   // Report an error
@@ -87,11 +96,11 @@ object IcdGitManager {
   }
 
   /**
-   * Returns the GitHub URL for a subsystem string in the format "subsystem:version", where the ":version" part is optional.
-   *
-   * @param s the subsystem or subsystem:version string (the version is ignored here)
-   * @return the subsystem
-   */
+    * Returns the GitHub URL for a subsystem string in the format "subsystem:version", where the ":version" part is optional.
+    *
+    * @param s the subsystem or subsystem:version string (the version is ignored here)
+    * @return the subsystem
+    */
   def getSubsystemGitHubUrl(s: String): String = {
     val subsystem = IcdVersionManager.SubsystemAndVersion(s).subsystem
     s"$gitParentUri/$subsystem-Model-Files.git"
@@ -103,28 +112,28 @@ object IcdGitManager {
       .setHeads(true)
       .setRemote(url)
       .call().asScala.toList.map { ref =>
-        ref.getObjectId.getName
-      }
+      ref.getObjectId.getName
+    }
     list.head
   }
 
   /**
-   * Gets a list of version numbers for the given subsystem
-   */
+    * Gets a list of version numbers for the given subsystem
+    */
   def getSubsystemVersionNumbers(sv: SubsystemAndVersion): List[String] = {
     getApiVersions(sv).toList.flatMap(_.apis.map(_.version))
   }
 
   /**
-   * Gets a list of version numbers for the given subsystem from an already checked out working directory
-   */
+    * Gets a list of version numbers for the given subsystem from an already checked out working directory
+    */
   private def getSubsystemVersionNumbers(sv: SubsystemAndVersion, gitWorkDir: File): List[String] = {
     getApiVersions(sv, gitWorkDir).toList.flatMap(_.apis.map(_.version))
   }
 
   /**
-   * Gets a list of information about the published versions of the given subsystem
-   */
+    * Gets a list of information about the published versions of the given subsystem
+    */
   def getApiVersions(sv: SubsystemAndVersion): Option[ApiVersions] = {
     // Checkout the main git repo in a temp dir
     val gitWorkDir = Files.createTempDirectory("icds").toFile
@@ -139,26 +148,33 @@ object IcdGitManager {
   }
 
   /**
-   * Gets the file to use to store API versions for the given subsystem, and the relative pathname
-   */
+    * Gets the file to use to store API versions for the given subsystem, and the relative pathname
+    */
   private def getApiFile(subsystem: String, gitWorkDir: File): (File, String) = {
     val fileName = s"$gitApisDir/api-$subsystem.json"
     (new File(gitWorkDir, fileName), fileName)
   }
 
   /**
-   * Gets the file to use to store ICD versions for the given subsystems, and the relative pathname
-   */
+    * Gets the file to use to store ICD versions for the given subsystems, and the relative pathname
+    */
   private def getIcdFile(subsystem: String, target: String, gitWorkDir: File): (File, String) = {
     val fileName = s"$gitIcdsDir/icd-$subsystem-$target.json"
-    val file = new File(gitWorkDir, fileName)
     (new File(gitWorkDir, fileName), fileName)
   }
 
   /**
-   * Gets a list of information about the published versions of the given subsystem
-   * from an already checked out working directory
-   */
+    * Gets the History file and name (Holds a readable list of API and ICD versions)
+    */
+  private def getHistoryFile(gitWorkDir: File): (File, String) = {
+    val fileName = s"History.md"
+    (new File(gitWorkDir, fileName), fileName)
+  }
+
+  /**
+    * Gets a list of information about the published versions of the given subsystem
+    * from an already checked out working directory
+    */
   private def getApiVersions(sv: SubsystemAndVersion, gitWorkDir: File): Option[ApiVersions] = {
     val (file, _) = getApiFile(sv.subsystem, gitWorkDir)
     val path = Paths.get(file.getPath)
@@ -169,12 +185,12 @@ object IcdGitManager {
   }
 
   /**
-   * Returns information about the ICD versions between the given subsystems (The order of
-   * subsystems is not important)
-   *
-   * @param subsystems the subsystems that make up the ICD
-   * @return the ICD version info, if found
-   */
+    * Returns information about the ICD versions between the given subsystems (The order of
+    * subsystems is not important)
+    *
+    * @param subsystems the subsystems that make up the ICD
+    * @return the ICD version info, if found
+    */
   def list(subsystems: List[SubsystemAndVersion]): Option[IcdVersions] = {
     if (subsystems.size != 2) error("Expected two subsystems that make up an ICD")
     // sort by convention
@@ -186,11 +202,12 @@ object IcdGitManager {
     try {
       val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
       git.close()
-      val (file, fileName) = getIcdFile(sv.subsystem, tv.subsystem, gitWorkDir)
+      val (file, _) = getIcdFile(sv.subsystem, tv.subsystem, gitWorkDir)
       val path = Paths.get(file.getPath)
 
       // Get the list of published ICDs for the subsystem and target from GitHub
-      if (!file.exists()) None else {
+      if (!file.exists()) None
+      else {
         // XXX TODO: filter on s.versionOpt and t.versionOpt
         Some(IcdVersions.fromJson(new String(Files.readAllBytes(path))))
       }
@@ -200,21 +217,19 @@ object IcdGitManager {
   }
 
   /**
-   * Deletes the entry for a published ICD (in case one was made by error).
-   *
-   * @param icdVersion the version number of the ICD (for example: 1.0)
-   * @param subsystem  the first subsystem
-   * @param target     the second subsystem
-   * @param user       the GitHub user
-   * @param password   the GitHub password
-   * @param comment    the commit comment
-   * @return the ICD entry for the removed ICD, if found
-   */
-  def unpublish(
-    icdVersion: String,
-    subsystem:  String, target: String,
-    user: String, password: String, comment: String
-  ): Option[IcdVersions.IcdEntry] = {
+    * Deletes the entry for a published ICD (in case one was made by error).
+    *
+    * @param icdVersion the version number of the ICD (for example: 1.0)
+    * @param subsystem  the first subsystem
+    * @param target     the second subsystem
+    * @param user       the GitHub user
+    * @param password   the GitHub password
+    * @param comment    the commit comment
+    * @return the ICD entry for the removed ICD, if found
+    */
+  def unpublish(icdVersion: String,
+                subsystem: String, target: String,
+                user: String, password: String, comment: String): Option[IcdVersions.IcdEntry] = {
     import IcdVersions._
     import spray.json._
     // sort by convention to avoid duplicates
@@ -238,6 +253,7 @@ object IcdGitManager {
         Files.write(path, json.getBytes)
         if (!exists) git.add.addFilepattern(fileName).call()
         git.commit().setOnly(fileName).setMessage(comment).call
+        updateHistoryFile(git, gitWorkDir)
         git.push.setCredentialsProvider(new UsernamePasswordCredentialsProvider(user, password)).call()
       }
       git.close()
@@ -248,14 +264,59 @@ object IcdGitManager {
   }
 
   /**
-   * Publishes an API version for the given subsystem by adding an entry to the relevant file in the Git repository.
-   *
-   * @param subsystem        the subsystem
-   * @param majorVersion     if true, increment the major version of the subsystem API
-   * @param user             the GitHub user
-   * @param password         the GitHub password
-   * @param comment          the commit comment
-   */
+    * Deletes the entry for a published API (in case one was made by error).
+    *
+    * @param sv       the subsystem and version
+    * @param user     the GitHub user
+    * @param password the GitHub password
+    * @param comment  the commit comment
+    * @return the entry for the removed API, if found
+    */
+  def unpublish(sv: SubsystemAndVersion, user: String, password: String, comment: String): Option[ApiVersions.ApiEntry] = {
+    import ApiVersions._
+    import spray.json._
+    // Checkout the apis repo in a temp dir
+    val gitWorkDir = Files.createTempDirectory("apis").toFile
+    try {
+      val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
+      val (file, fileName) = getApiFile(sv.subsystem, gitWorkDir)
+      val path = Paths.get(file.getPath)
+
+      // Get the list of published APIs for the subsystem from GitHub
+      val result = if (!file.exists()) None
+      else {
+        val apiVersions = Some(ApiVersions.fromJson(new String(Files.readAllBytes(path))))
+        val apis = apiVersions.map(_.apis).getOrElse(Nil)
+        val apiOpt = sv.versionOpt match {
+          case Some(version) => apis.find(_.version == version)
+          case None => apis.headOption
+        }
+        apiOpt.foreach { api =>
+          // Write the file without the given API version
+          val json = ApiVersions(sv.subsystem, apis.filter(_.version != api.version)).toJson.prettyPrint
+          Files.write(path, json.getBytes)
+          git.commit().setOnly(fileName).setMessage(comment).call
+          updateHistoryFile(git, gitWorkDir)
+          git.push.setCredentialsProvider(new UsernamePasswordCredentialsProvider(user, password)).call()
+        }
+        apiOpt
+      }
+      git.close()
+      result
+    } finally {
+      deleteDirectoryRecursively(gitWorkDir)
+    }
+  }
+
+  /**
+    * Publishes an API version for the given subsystem by adding an entry to the relevant file in the Git repository.
+    *
+    * @param subsystem    the subsystem
+    * @param majorVersion if true, increment the major version of the subsystem API
+    * @param user         the GitHub user
+    * @param password     the GitHub password
+    * @param comment      the commit comment
+    */
   def publish(subsystem: String, majorVersion: Boolean, user: String, password: String, comment: String): ApiVersionInfo = {
     import spray.json._
     // Checkout the icds repo in a temp dir
@@ -290,12 +351,73 @@ object IcdGitManager {
       Files.write(path, json.getBytes)
       if (!exists) git.add.addFilepattern(fileName).call()
       git.commit().setOnly(fileName).setMessage(comment).call
+      updateHistoryFile(git, gitWorkDir)
       git.push.setCredentialsProvider(new UsernamePasswordCredentialsProvider(user, password)).call()
       git.close()
       ApiVersionInfo(subsystem, apiEntry.version, user, comment, date)
     } finally {
       deleteDirectoryRecursively(gitWorkDir)
     }
+  }
+
+  /**
+    * Updates the History.md file on the git repo to contain a readable release history in markdown format
+    */
+  private def updateHistoryFile(git: Git, gitWorkDir: File): Unit = {
+    val (apis, icds) = getAllVersions(gitWorkDir)
+    val (file, fileName) = getHistoryFile(gitWorkDir)
+    val exists = file.exists()
+    val pw = new PrintWriter(file)
+
+    pw.print(
+      """
+        |# Release History
+        |
+        |This file lists the published versions of TMT subsystem APIs and ICDs between subsystems
+        |and is automatically generated from the JSON files in the apis and icds subdirectories.
+        |
+        |## Subsystem API Release History
+        |
+        | """.stripMargin)
+
+    apis.foreach { api =>
+      pw.print(
+        s"""
+           |
+           |### Subsystem API: ${api.subsystem}
+           |
+           |${api.subsystem}<br>Version | User | Date | Comment
+           |--------|------|------|--------
+           |""".stripMargin)
+
+      api.apis.foreach { v =>
+        pw.println(s"${v.version}|${v.user}|${v.date}|${v.comment}")
+      }
+    }
+
+    pw.println("\n## ICD Release History\n")
+
+    icds.foreach { icd =>
+      val s1 = icd.subsystems.head
+      val s2 = icd.subsystems.tail.head
+      pw.print(
+        s"""
+           |
+           |### ICD between $s1 and $s2
+           |
+           |ICD<br>Version|$s1<br>Version | $s2<br> Version | User | Date | Comment
+           |--------|--------|------|------|--------|--------
+           |""".stripMargin)
+
+      icd.icds.foreach { v =>
+        val v1 = v.versions.head
+        val v2 = v.versions.tail.head
+        pw.println(s"${v.icdVersion}|$v1|$v2|${v.user}|${v.date}|${v.comment}")
+      }
+    }
+    pw.close()
+    if (!exists) git.add.addFilepattern(fileName).call()
+    git.commit().setOnly(fileName).setMessage("automatic update").call
   }
 
   private def getVersion(sv: SubsystemAndVersion, gitWorkDir: File): String = {
@@ -309,14 +431,14 @@ object IcdGitManager {
   }
 
   /**
-   * Publishes an ICD between the two subsystems by adding an entry to the relevant file in the Git repository.
-   *
-   * @param subsystems       list containing the two subsystems, both with versions, for the ICD
-   * @param majorVersion     if true, increment the major version of the ICD
-   * @param user             the GitHub user
-   * @param password         the GitHub password
-   * @param comment          the commit comment
-   */
+    * Publishes an ICD between the two subsystems by adding an entry to the relevant file in the Git repository.
+    *
+    * @param subsystems   list containing the two subsystems, both with versions, for the ICD
+    * @param majorVersion if true, increment the major version of the ICD
+    * @param user         the GitHub user
+    * @param password     the GitHub password
+    * @param comment      the commit comment
+    */
   def publish(subsystems: List[SubsystemAndVersion], majorVersion: Boolean,
               user: String, password: String, comment: String): IcdVersionInfo = {
     import IcdVersions._
@@ -356,6 +478,7 @@ object IcdGitManager {
       Files.write(path, json.getBytes)
       if (!exists) git.add.addFilepattern(fileName).call()
       git.commit().setOnly(fileName).setMessage(comment).call
+      updateHistoryFile(git, gitWorkDir)
       git.push.setCredentialsProvider(new UsernamePasswordCredentialsProvider(user, password)).call()
       git.close()
       IcdVersionInfo(IcdVersion(newIcdVersion, sv.subsystem, v1, tv.subsystem, v2), user, comment, date)
@@ -365,8 +488,8 @@ object IcdGitManager {
   }
 
   /**
-   * Deletes the contents of the given temporary directory (recursively).
-   */
+    * Deletes the contents of the given temporary directory (recursively).
+    */
   private[github] def deleteDirectoryRecursively(dir: File): Unit = {
     // just to be safe, don't delete anything that is not in /tmp/
     val p = dir.getPath
@@ -388,12 +511,12 @@ object IcdGitManager {
   }
 
   /**
-   * Ingests the given subsystems and ICD (or all subsystems and ICDs) into the ICD database.
-   *
-   * @param db                the database to use
-   * @param subsystemList     list of subsystems to ingest (two subsystems for an ICD, empty for all subsystems and ICDs)
-   * @param feedback          function to display messages while working
-   */
+    * Ingests the given subsystems and ICD (or all subsystems and ICDs) into the ICD database.
+    *
+    * @param db            the database to use
+    * @param subsystemList list of subsystems to ingest (two subsystems for an ICD, empty for all subsystems and ICDs)
+    * @param feedback      function to display messages while working
+    */
   def ingest(db: IcdDb, subsystemList: List[SubsystemAndVersion], feedback: String => Unit): Unit = {
     // Get the list of subsystems to ingest
     val subsystems = {
@@ -412,13 +535,13 @@ object IcdGitManager {
   }
 
   /**
-   * Ingests the given subsystem into the icd db
-   * (The given version, or all published versions, if no version was specified)
-   *
-   * @param db the database to use
-   * @param sv the subsystem and optional version
-   * @param feedback optional feedback function
-   */
+    * Ingests the given subsystem into the icd db
+    * (The given version, or all published versions, if no version was specified)
+    *
+    * @param db       the database to use
+    * @param sv       the subsystem and optional version
+    * @param feedback optional feedback function
+    */
   def ingest(db: IcdDb, sv: SubsystemAndVersion, feedback: String => Unit): Unit = {
     val versionsFoundOpt = getApiVersions(sv)
     if (versionsFoundOpt.isEmpty) error(s"No published versions of ${sv.subsystem} were found in the repository")
@@ -432,13 +555,13 @@ object IcdGitManager {
   }
 
   /**
-   * Ingests the given versions of the given subsystem into the icd db
-   *
-   * @param db the database to use
-   * @param sv the subsystem and optional version
-   * @param apiEntries the (GitHub version) entries for the published versions to ingest
-   * @param feedback optional feedback function
-   */
+    * Ingests the given versions of the given subsystem into the icd db
+    *
+    * @param db         the database to use
+    * @param sv         the subsystem and optional version
+    * @param apiEntries the (GitHub version) entries for the published versions to ingest
+    * @param feedback   optional feedback function
+    */
   def ingest(db: IcdDb, sv: SubsystemAndVersion, apiEntries: List[ApiEntry], feedback: String => Unit): Unit = {
     val url = getSubsystemGitHubUrl(sv.subsystem)
     // Checkout the subsystem repo in a temp dir
@@ -470,7 +593,7 @@ object IcdGitManager {
         // Import one ICD if subsystem and target options were given
         val subsystem = subsystems.head.subsystem
         val target = subsystems.tail.head.subsystem
-        val (file, fileName) = getIcdFile(subsystem, target, gitWorkDir)
+        val (file, _) = getIcdFile(subsystem, target, gitWorkDir)
         if (file.exists()) db.importIcds(file)
       } else {
         // Import all ICD files
