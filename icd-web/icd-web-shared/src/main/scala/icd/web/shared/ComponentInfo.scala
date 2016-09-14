@@ -25,6 +25,7 @@ object ComponentInfo {
       case Some(p) => (p.telemetryList, p.eventList, p.eventStreamList, p.alarmList)
     }
     val oldCommandsReceived = info.commands.toList.flatMap(_.commandsReceived)
+    val oldCommandsSent = info.commands.toList.flatMap(_.commandsSent)
 
     val newTelemetryList = oldTelemetryList.filter(p => p.subscribers.nonEmpty)
     val newEventList = oldEventList.filter(p => p.subscribers.nonEmpty)
@@ -32,6 +33,7 @@ object ComponentInfo {
     val newAlarmList = oldAlarmList.filter(p => p.subscribers.nonEmpty)
 
     val newCommandsReceived = oldCommandsReceived.filter(p => p.senders.nonEmpty)
+    val newCommandsSent = oldCommandsSent.filter(p => p.receiver.nonEmpty)
 
     val publishes = info.publishes.map(p => p.copy(
       telemetryList = newTelemetryList,
@@ -39,7 +41,9 @@ object ComponentInfo {
       eventStreamList = newEventStreamList,
       alarmList = newAlarmList))
 
-    val commands = info.commands.map(c => c.copy(commandsReceived = newCommandsReceived))
+    val commands = info.commands.map(c => c.copy(
+      commandsReceived = newCommandsReceived, commandsSent = newCommandsSent
+    ))
 
     ComponentInfo(info.componentModel, publishes, info.subscribes, commands)
   }
@@ -207,4 +211,11 @@ case class ReceivedCommandInfo(
 case class Commands(
   description: String,
   commandsReceived: List[ReceivedCommandInfo],
-  commandsSent: List[SentCommandInfo])
+  commandsSent: List[SentCommandInfo]) {
+
+  /**
+    * True if at the component sends or receives commands
+    */
+  def nonEmpty: Boolean = commandsReceived.nonEmpty || commandsSent.nonEmpty
+
+}

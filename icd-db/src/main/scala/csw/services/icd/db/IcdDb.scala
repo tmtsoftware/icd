@@ -4,10 +4,10 @@ import java.io.File
 import java.nio.file.Files
 
 import com.mongodb.casbah.Imports._
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{ Config, ConfigFactory }
 import csw.services.icd._
-import csw.services.icd.model.{BaseModelParser, SubsystemModelParser}
-import org.joda.time.{DateTime, DateTimeZone}
+import csw.services.icd.model.{ BaseModelParser, SubsystemModelParser }
+import org.joda.time.{ DateTime, DateTimeZone }
 
 import scala.io.StdIn
 
@@ -26,26 +26,25 @@ object IcdDb extends App {
    * Command line options ("icd-db --help" prints a usage message with descriptions of all the options)
    */
   case class Options(
-    dbName: String       = defaultDbName,
-    host:   String       = defaultHost,
-    port:   Int          = defaultPort,
+    dbName: String = defaultDbName,
+    host: String = defaultHost,
+    port: Int = defaultPort,
     ingest: Option[File] = None,
-    //    importIcds:   Option[File]   = None,
-    list:         Option[String] = None,
-    subsystem:    Option[String] = None,
-    target:       Option[String] = None,
-    icdVersion:   Option[String] = None,
-    component:    Option[String] = None,
-    outputFile:   Option[File]   = None,
-    drop:         Option[String] = None,
-    versions:     Option[String] = None,
-    diff:         Option[String] = None,
-    publish:      Boolean        = false,
-    majorVersion: Boolean        = false,
-    comment:      String         = "",
-    publishes:    Option[String] = None,
-    subscribes:   Option[String] = None
-  )
+    list: Option[String] = None,
+    subsystem: Option[String] = None,
+    target: Option[String] = None,
+    targetComponent: Option[String] = None,
+    icdVersion: Option[String] = None,
+    component: Option[String] = None,
+    outputFile: Option[File] = None,
+    drop: Option[String] = None,
+    versions: Option[String] = None,
+    diff: Option[String] = None,
+    publish: Boolean = false,
+    majorVersion: Boolean = false,
+    comment: String = "",
+    publishes: Option[String] = None,
+    subscribes: Option[String] = None)
 
   // Parser for the command line options
   private val parser = new scopt.OptionParser[Options]("icd-db") {
@@ -83,13 +82,13 @@ object IcdDb extends App {
       c.copy(target = Some(x))
     } text "Specifies the target subsystem (and optional version) to be used by any following options"
 
+    opt[String]("target-component") valueName "<name>" action { (x, c) =>
+      c.copy(targetComponent = Some(x))
+    } text "Specifies the target subsytem component to be used by any following options (target must also be specified)"
+
     opt[String]("icdversion") valueName "<icd-version>" action { (x, c) =>
       c.copy(icdVersion = Some(x))
     } text "Specifies the version to be used by any following options (overrides subsystem and target versions)"
-
-    //    opt[File]("import-icds") valueName "<file>" action { (x, c) =>
-    //      c.copy(importIcds = Some(x))
-    //    } text "Imports ICD release information from the given file (format: see icds-schema.conf)"
 
     opt[File]('o', "out") valueName "<outputFile>" action { (x, c) =>
       c.copy(outputFile = Some(x))
@@ -156,13 +155,6 @@ object IcdDb extends App {
       case _ =>
     }
 
-    //    options.importIcds.map(file => db.importIcds(file)) match {
-    //      case Some(problems) if problems.nonEmpty =>
-    //        problems.foreach(println(_))
-    //        System.exit(1)
-    //      case _ =>
-    //    }
-
     options.list.foreach(list)
     options.outputFile.foreach(output)
     options.drop.foreach(drop)
@@ -195,7 +187,8 @@ object IcdDb extends App {
     // --output option
     def output(file: File): Unit = {
       if (options.subsystem.isEmpty) error("Missing required subsystem name: Please specify --subsystem <name>")
-      IcdDbPrinter(db).saveToFile(options.subsystem.get, options.component, options.target, options.icdVersion, file)
+      IcdDbPrinter(db).saveToFile(options.subsystem.get, options.component,
+        options.target, options.targetComponent, options.icdVersion, file)
     }
 
     // --drop option
@@ -241,7 +234,7 @@ object IcdDb extends App {
           val versionRegex = """\d+\.\d+""".r
           version match {
             case versionRegex(_*) =>
-            case _                => error(s"Bad version format: $version, expected something like 1.0, 2.1")
+            case _ => error(s"Bad version format: $version, expected something like 1.0, 2.1")
           }
         case None =>
       }
@@ -285,10 +278,9 @@ object IcdDb extends App {
  * ICD Database (Mongodb) support
  */
 case class IcdDb(
-    dbName: String = IcdDbDefaults.defaultDbName,
-    host:   String = IcdDbDefaults.defaultHost,
-    port:   Int    = IcdDbDefaults.defaultPort
-) {
+  dbName: String = IcdDbDefaults.defaultDbName,
+  host: String = IcdDbDefaults.defaultHost,
+  port: Int = IcdDbDefaults.defaultPort) {
 
   val mongoClient = MongoClient(host, port)
 
@@ -415,8 +407,7 @@ case class IcdDb(
         icd.icdVersion,
         icdVersions.subsystems.head, icd.versions.head,
         icdVersions.subsystems(1), icd.versions(1),
-        icd.user, icd.comment, DateTime.parse(icd.date)
-      )
+        icd.user, icd.comment, DateTime.parse(icd.date))
     }
   }
 

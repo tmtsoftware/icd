@@ -20,14 +20,16 @@ object IcdComponentInfo {
    * @param compNames        the component names
    * @param target           the target subsystem of the ICD
    * @param targetVersionOpt the version of the target subsystem to use
+   * @param targetCompNameOpt optional name of target component (default is to use all target components)
    * @return an object containing information about the component
    */
   def getComponentInfoList(db: IcdDb, subsystem: String, versionOpt: Option[String], compNames: List[String],
-                           target: String, targetVersionOpt: Option[String]): List[ComponentInfo] = {
+                           target: String, targetVersionOpt: Option[String],
+                           targetCompNameOpt: Option[String] = None): List[ComponentInfo] = {
     // Use caching, since we need to look at all the components multiple times, in order to determine who
     // subscribes, who calls commands, etc.
     val query = new CachedIcdDbQuery(db.db)
-    compNames.flatMap(getComponentInfo(query, subsystem, versionOpt, _, target, targetVersionOpt))
+    compNames.flatMap(getComponentInfo(query, subsystem, versionOpt, _, target, targetVersionOpt, targetCompNameOpt))
   }
 
   /**
@@ -40,14 +42,16 @@ object IcdComponentInfo {
    * @param compName         the component name
    * @param target           the target subsystem of the ICD
    * @param targetVersionOpt the version of the target subsystem to use
+   * @param targetCompNameOpt optional name of target component (default is to use all target components)
    * @return an object containing information about the component
    */
   def getComponentInfo(query: IcdDbQuery, subsystem: String, versionOpt: Option[String], compName: String,
-                       target: String, targetVersionOpt: Option[String]): Option[ComponentInfo] = {
+                       target: String, targetVersionOpt: Option[String],
+                       targetCompNameOpt: Option[String]): Option[ComponentInfo] = {
     // get the models for this component
     val versionManager = new CachedIcdVersionManager(query)
     val modelsList = versionManager.getModels(subsystem, versionOpt, Some(compName))
-    val targetModelsList = versionManager.getModels(target, targetVersionOpt, None)
+    val targetModelsList = versionManager.getModels(target, targetVersionOpt, targetCompNameOpt)
 
     modelsList.headOption.flatMap { icdModels =>
       val componentModel = icdModels.componentModel
@@ -152,7 +156,7 @@ object IcdComponentInfo {
   private def getSubscribes(models: IcdModels, targetModelsList: List[IcdModels]): Option[Subscribes] = {
 
     // Gets additional information about the given subscription, including info from the publisher
-    def getInfo(publishType: PublishType, si: SubscribeModelInfo): DetailedSubscribeInfo = {
+    def getInfo(publishType: PublishType, si: SubscribeModelInfo): Option[DetailedSubscribeInfo] = {
       val x = for {
         t <- targetModelsList
         componentModel <- t.componentModel
@@ -160,21 +164,23 @@ object IcdComponentInfo {
         publishModel <- t.publishModel
       } yield {
         val (telem, alarm) = publishType match {
+          case Telemetry  => (publishModel.telemetryList.find(t => t.name == si.name), None)
+          case Events  => (publishModel.eventList.find(t => t.name == si.name), None)
+          case EventStreams  => (publishModel.eventStreamList.find(t => t.name == si.name), None)
           case Alarms => (None, publishModel.alarmList.find(a => a.name == si.name))
-          case _      => (publishModel.telemetryList.find(t => t.name == si.name), None)
         }
         DetailedSubscribeInfo(publishType, si, telem, alarm, Some(componentModel))
       }
-      x.headOption.getOrElse(DetailedSubscribeInfo(publishType, si, None, None, None))
+      x.headOption
     }
 
     models.subscribeModel match {
       case None => None
       case Some(m) =>
-        val subscribeInfo = m.telemetryList.map(getInfo(Telemetry, _)) ++
+        val subscribeInfo = (m.telemetryList.map(getInfo(Telemetry, _)) ++
           m.eventList.map(getInfo(Events, _)) ++
           m.eventStreamList.map(getInfo(EventStreams, _)) ++
-          m.alarmList.map(getInfo(Alarms, _))
+          m.alarmList.map(getInfo(Alarms, _))).flatten
         val desc = m.description
         if (subscribeInfo.nonEmpty)
           Some(Subscribes(desc, subscribeInfo))
@@ -252,9 +258,9 @@ object IcdComponentInfo {
     val result = for {
       cmd <- models.commandModel.toList
       sent <- cmd.send
+      recv <- getCommand(sent.subsystem, sent.component, sent.name, targetModelsList)
     } yield {
-      val recv = getCommand(sent.subsystem, sent.component, sent.name, targetModelsList)
-      SentCommandInfo(sent.name, sent.subsystem, sent.component, recv, Some(OtherComponent(sent.subsystem, sent.component)))
+      SentCommandInfo(sent.name, sent.subsystem, sent.component, Some(recv), Some(OtherComponent(sent.subsystem, sent.component)))
     }
     result
   }

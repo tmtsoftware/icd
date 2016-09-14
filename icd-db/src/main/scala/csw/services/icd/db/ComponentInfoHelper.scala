@@ -114,8 +114,10 @@ object ComponentInfoHelper {
         publishModel <- t.publishModel
       } yield {
         val (telem, alarm) = publishType match {
+          case Telemetry => (publishModel.telemetryList.find(t => t.name == si.name), None)
+          case Events => (publishModel.eventList.find(t => t.name == si.name), None)
+          case EventStreams => (publishModel.eventStreamList.find(t => t.name == si.name), None)
           case Alarms => (None, publishModel.alarmList.find(a => a.name == si.name))
-          case _      => (publishModel.telemetryList.find(t => t.name == si.name), None)
         }
         DetailedSubscribeInfo(publishType, si, telem, alarm, t.componentModel)
       }

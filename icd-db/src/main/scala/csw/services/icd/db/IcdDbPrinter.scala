@@ -11,10 +11,10 @@ import icd.web.shared._
 import scalatags.Text
 
 /**
- * Creates an HTML or PDF document for a subsystem, component or ICD based on data from the database
- *
- * @param db used to query the database
- */
+  * Creates an HTML or PDF document for a subsystem, component or ICD based on data from the database
+  *
+  * @param db used to query the database
+  */
 case class IcdDbPrinter(db: IcdDb) {
 
   // Note: You would think we could share parts of this code with the scala.js client, but
@@ -73,10 +73,10 @@ case class IcdDbPrinter(db: IcdDb) {
         div(
           h4(a(s"$pubType Published by $compName")),
           for (t <- telemetryList) yield {
-            val headings = List("Min Rate", "Max Rate", "Archive", "Archive Rate", "Subscribers")
+            val headings = List("Min Rate", "Max Rate", "Archive", "Archive Rate")
             val rowList = List(List(HtmlMarkup.formatRate(t.telemetryModel.minRate), HtmlMarkup.formatRate(t.telemetryModel.maxRate),
               HtmlMarkup.yesNo(t.telemetryModel.archive),
-              HtmlMarkup.formatRate(t.telemetryModel.archiveRate), t.subscribers.map(_.subscribeModelInfo.component).mkString(", ")))
+              HtmlMarkup.formatRate(t.telemetryModel.archiveRate)))
             val subscribers = t.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
             val subscriberDiv = if (t.subscribers.isEmpty) div() else p(strong("Subscribers: "), subscribers)
             div(cls := "nopagebreak")(
@@ -144,7 +144,7 @@ case class IcdDbPrinter(db: IcdDb) {
     def subscribeListMarkup(pubType: String, subscribeList: List[DetailedSubscribeInfo]): Text.TypedTag[String] = {
       // Warn if no publisher found for subscibed item
       def getWarning(info: DetailedSubscribeInfo) = info.warning.map { msg =>
-          p(em(" Warning: ", msg))
+        p(em(" Warning: ", msg))
       }
 
       if (subscribeList.isEmpty) div()
@@ -237,7 +237,7 @@ case class IcdDbPrinter(db: IcdDb) {
                 raw(m.description),
                 if (m.args.isEmpty) div() else parameterListMarkup(m.name, m.args, m.requiredArgs)
               )
-              case None => s.warning.map( msg => p(em(" Warning: ", msg)))
+              case None => s.warning.map(msg => p(em(" Warning: ", msg)))
             }
           )
         }
@@ -307,10 +307,10 @@ case class IcdDbPrinter(db: IcdDb) {
   }
 
   /**
-   * Displays the information for a component, appending to the other selected components, if any.
-   *
-   * @param info contains the information to display
-   */
+    * Displays the information for a component, appending to the other selected components, if any.
+    *
+    * @param info contains the information to display
+    */
   private def displayComponentInfo(info: ComponentInfo): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (info.publishes.isDefined && info.publishes.get.nonEmpty
@@ -321,25 +321,27 @@ case class IcdDbPrinter(db: IcdDb) {
   }
 
   /**
-   * Gets information about a named subsystem
-   */
+    * Gets information about a named subsystem
+    */
   private def getSubsystemInfo(subsystem: String, versionOpt: Option[String]): Option[SubsystemInfo] =
-    db.versionManager.getSubsystemModel(subsystem, versionOpt)
-      .map(m => SubsystemInfo(m.subsystem, versionOpt, m.title, m.description))
+  db.versionManager.getSubsystemModel(subsystem, versionOpt)
+    .map(m => SubsystemInfo(m.subsystem, versionOpt, m.title, m.description))
 
   /**
-   * Gets information about the given components
-   *
-   * @param subsystem       the components' subsystem
-   * @param versionOpt      optional version (default: current version)
-   * @param compNames       list of component names
-   * @param targetSubsystem optional target subsystem and version
-   * @return future list of objects describing the components
-   */
+    * Gets information about the given components
+    *
+    * @param subsystem       the components' subsystem
+    * @param versionOpt      optional version (default: current version)
+    * @param compNames       list of component names
+    * @param targetSubsystem optional target subsystem and version
+    * @param targetCompNameOpt optional name of target component (default is to use all target components)
+    * @return future list of objects describing the components
+    */
   private def getComponentInfo(subsystem: String, versionOpt: Option[String], compNames: List[String],
-                               targetSubsystem: SubsystemWithVersion): List[ComponentInfo] = {
+                               targetSubsystem: SubsystemWithVersion,
+                               targetCompNameOpt: Option[String]): List[ComponentInfo] = {
     for {
-      info <- icdComponentInfo(subsystem, versionOpt, compNames, targetSubsystem)
+      info <- icdComponentInfo(subsystem, versionOpt, compNames, targetSubsystem, targetCompNameOpt)
     } yield {
       // If there is a target subsystem, filter out any items not referenced by it
       if (targetSubsystem.subsystemOpt.isDefined) ComponentInfo.applyIcdFilter(info) else info
@@ -347,55 +349,60 @@ case class IcdDbPrinter(db: IcdDb) {
   }
 
   /**
-   * Returns information for each component.
-   * If the target subsystem is defined, the information is restricted to the ICD
-   * from subsystem to target, otherwise the component API is returned.
-   *
-   * @param subsystem       the component's subsystem
-   * @param versionOpt      the subsystem version (or use current)
-   * @param compNames       the component names
-   * @param targetSubsystem defines the optional target subsystem and version
-   * @return list of component info
-   */
+    * Returns information for each component.
+    * If the target subsystem is defined, the information is restricted to the ICD
+    * from subsystem to target, otherwise the component API is returned.
+    *
+    * @param subsystem       the component's subsystem
+    * @param versionOpt      the subsystem version (or use current)
+    * @param compNames       the component names
+    * @param targetSubsystem defines the optional target subsystem and version
+    * @param targetCompNameOpt optional name of target component (default is to use all target components)
+    * @return list of component info
+    */
   private def icdComponentInfo(subsystem: String, versionOpt: Option[String], compNames: List[String],
-                               targetSubsystem: SubsystemWithVersion): List[ComponentInfo] = {
+                               targetSubsystem: SubsystemWithVersion,
+                               targetCompNameOpt: Option[String] = None): List[ComponentInfo] = {
     targetSubsystem.subsystemOpt match {
-      case None         => ComponentInfoHelper.getComponentInfoList(db, subsystem, versionOpt, compNames)
-      case Some(target) => IcdComponentInfo.getComponentInfoList(db, subsystem, versionOpt, compNames, target, targetSubsystem.versionOpt)
+      case None =>
+        ComponentInfoHelper.getComponentInfoList(db, subsystem, versionOpt, compNames)
+      case Some(target) =>
+        IcdComponentInfo.getComponentInfoList(db, subsystem, versionOpt, compNames, target,
+          targetSubsystem.versionOpt, targetCompNameOpt)
     }
   }
 
   /**
-   * Generates a TOC entry for a component
-   */
+    * Generates a TOC entry for a component
+    */
   private def makeTocEntry(info: ComponentInfo): Text.TypedTag[String] = {
     import scalatags.Text.all._
     val compName = info.componentModel.component
     val commandsReceived = info.commands.toList.flatMap(_.commandsReceived)
     val commandsSent = info.commands.toList.flatMap(_.commandsSent)
     val sections = List(
-      info.publishes.map(_ => li(a(href := "#" + publishId(compName))(publishTitle(compName)))),
+      info.publishes.map(x => if (x.nonEmpty) li(a(href := "#" + publishId(compName))(publishTitle(compName))) else span()),
       info.subscribes.map(_ => li(a(href := "#" + subscribeId(compName))(subscribeTitle(compName)))),
-      info.commands.map(_ => li(a(href := "#" + commandsId(compName))(commandsTitle(compName)), ul(
+      info.commands.map(x => if (x.nonEmpty) li(a(href := "#" + commandsId(compName))(commandsTitle(compName)), ul(
         commandsReceived.headOption.map(_ => li(a(href := "#" + receivedCommandsId(compName))(receivedCommandsTitle(compName)))),
         commandsSent.headOption.map(_ => li(a(href := "#" + sentCommandsId(compName))(sentCommandsTitle(compName))))
-      )))
+      )) else span())
     ).flatten
 
     li(a(href := s"#$compName")(info.componentModel.title), ul(sections))
   }
 
   /**
-   * Generates the table of contents based on the list of component info
-   */
+    * Generates the table of contents based on the list of component info
+    */
   private def makeToc(titleStr: String, infoList: List[ComponentInfo]): Text.TypedTag[String] = {
     import scalatags.Text.all._
     ul(li(a(href := "#title")(titleStr), ul(infoList.map(makeTocEntry))))
   }
 
   /**
-   * Displays the subsystem title and description
-   */
+    * Displays the subsystem title and description
+    */
   private def makeIntro(titleInfo: TitleInfo): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (titleInfo.descriptionOpt.isDefined) {
@@ -404,27 +411,28 @@ case class IcdDbPrinter(db: IcdDb) {
   }
 
   /**
-   * Returns an HTML document describing the given components in the given subsystem.
-   * If a target subsystem is given, the information is restricted to the ICD from
-   * the subsystem to the target.
-   *
-   * @param compNames       the names of the components
-   * @param sv              the selected subsystem and version
-   * @param targetSubsystem the target subsystem (might not be set)
-   * @param icdVersionOpt   optional ICD version, to be displayed in the title
-   */
+    * Returns an HTML document describing the given components in the given subsystem.
+    * If a target subsystem is given, the information is restricted to the ICD from
+    * the subsystem to the target.
+    *
+    * @param compNames       the names of the components
+    * @param sv              the selected subsystem and version
+    * @param targetSubsystem the target subsystem (might not be set)
+    * @param icdVersionOpt   optional ICD version, to be displayed in the title
+    * @param targetCompNameOpt optional name of target component (default is to use all target components)
+    */
   def getAsHtml(
-    compNames:       List[String],
-    sv:              SubsystemWithVersion,
-    targetSubsystem: SubsystemWithVersion,
-    icdVersionOpt:   Option[IcdVersion]
-  ): Option[String] = {
+                 compNames: List[String],
+                 sv: SubsystemWithVersion,
+                 targetSubsystem: SubsystemWithVersion,
+                 icdVersionOpt: Option[IcdVersion],
+                 targetCompNameOpt: Option[String] = None): Option[String] = {
     val markup = for {
       subsystem <- sv.subsystemOpt
       subsystemInfo <- getSubsystemInfo(subsystem, sv.versionOpt)
     } yield {
       import scalatags.Text.all._
-      val infoList = getComponentInfo(subsystem, sv.versionOpt, compNames, targetSubsystem)
+      val infoList = getComponentInfo(subsystem, sv.versionOpt, compNames, targetSubsystem, targetCompNameOpt)
       val titleInfo = TitleInfo(subsystemInfo, targetSubsystem, icdVersionOpt)
       html(
         head(
@@ -445,17 +453,19 @@ case class IcdDbPrinter(db: IcdDb) {
   }
 
   /**
-   * Saves a document describing the ICD for the given component to the given file,
-   * in a format determined by the file's suffix, which should be one of (html, pdf).
-   *
-   * @param subsystemStr  the name of the subsystem (or component's subsystem) to print, followed by optional :version
-   * @param compNamesOpt  optional names of the component to print (separated by ",")
-   * @param targetOpt     optional target subsystem, followed by optional :version
-   * @param icdVersionOpt optional icd version (overrides source and target subsystem versions)
-   * @param file          the file in which to save the document (should end with .html or .pdf)
-   */
+    * Saves a document describing the ICD for the given component to the given file,
+    * in a format determined by the file's suffix, which should be one of (html, pdf).
+    *
+    * @param subsystemStr  the name of the subsystem (or component's subsystem) to print, followed by optional :version
+    * @param compNamesOpt  optional names of the component to print (separated by ",")
+    * @param targetOpt     optional target subsystem, followed by optional :version
+    * @param targetCompNameOpt optional name of target component (default is to use all target components)
+    * @param icdVersionOpt optional icd version (overrides source and target subsystem versions)
+    * @param file          the file in which to save the document (should end with .html or .pdf)
+    */
   def saveToFile(subsystemStr: String, compNamesOpt: Option[String],
-                 targetOpt: Option[String], icdVersionOpt: Option[String], file: File): Unit = {
+                 targetOpt: Option[String], targetCompNameOpt: Option[String],
+                 icdVersionOpt: Option[String], file: File): Unit = {
 
     def saveAsHtml(html: String): Unit = {
       val out = new FileOutputStream(file)
@@ -490,15 +500,15 @@ case class IcdDbPrinter(db: IcdDb) {
 
     val compNames = compNamesOpt match {
       case Some(str) => str.split(",").toList
-      case None      => db.versionManager.getComponentNames(s1.subsystem, s1.versionOpt)
+      case None => db.versionManager.getComponentNames(s1.subsystem, s1.versionOpt)
     }
 
-    IcdDbPrinter(db).getAsHtml(compNames, subsys, targ, icdV) match {
+    IcdDbPrinter(db).getAsHtml(compNames, subsys, targ, icdV, targetCompNameOpt) match {
       case Some(html) =>
         file.getName.split('.').drop(1).lastOption match {
           case Some("html") => saveAsHtml(html)
-          case Some("pdf")  => saveAsPdf(html)
-          case _            => println(s"Unsupported output format: Expected *.html or *.pdf")
+          case Some("pdf") => saveAsPdf(html)
+          case _ => println(s"Unsupported output format: Expected *.html or *.pdf")
         }
       case None =>
         println("Please specify source and optionally target subsystems to print")
