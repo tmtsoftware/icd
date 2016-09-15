@@ -22,46 +22,36 @@ Example files that can be ingested into the database for testing can be found
 in the [examples](../examples) directory.
 
 ```
+icd-db 0.9
 Usage: icd-db [options]
 
-  -d <name> | --db <name>
-        The name of the database to use (default: icds)
-  -h <hostname> | --host <hostname>
-        The host name where the database is running (default: localhost)
-  -p <number> | --port <number>
-        The port number to use for the database (default: 27017)
-  -i <dir> | --ingest <dir>
-        Directory containing ICD files to ingest into the database
-  --major
-        Increment the ICD's major version
-  -m <text> | --comment <text>
-        A comment describing the changes made (default: empty string)
-  -l [subsystems|assemblies|hcds|all] | --list [subsystems|assemblies|hcds|all]
-        Prints a list of ICD subsystems, assemblies, HCDs or all components
-  -c <name> | --component <name>
-        Specifies the component to be used by any following options (subsystem must also be specified)
-  -s <subsystem>[:version] | --subsystem <subsystem>[:version]
-        Specifies the subsystem (and optional version) to be used by any following options
-  -t <subsystem>[:version] | --target <subsystem>[:version]
-        Specifies the target subsystem (and optional version) to be used by any following options
+  -d, --db <name>          The name of the database to use (default: icds)
+  -h, --host <hostname>    The host name where the database is running (default: localhost)
+  -p, --port <number>      The port number to use for the database (default: 27017)
+  -i, --ingest <dir>       Top level directory containing files to ingest into the database
+  -l, --list [subsystems|assemblies|hcds|all]
+                           Prints a list of ICD subsystems, assemblies, HCDs or all components
+  -c, --component <name>   Specifies the component to be used by any following options (subsystem must also be specified)
+  -s, --subsystem <subsystem>[:version]
+                           Specifies the subsystem (and optional version) to be used by any following options
+  -t, --target <subsystem>[:version]
+                           Specifies the target subsystem (and optional version) to be used by any following options
+  --target-component <name>
+                           Specifies the target subsytem component to be used by any following options (target must also be specified)
   --icdversion <icd-version>
-        Specifies the ICD version to be used by any following options (overrides subsystem and target versions)
-  -o <outputFile> | --out <outputFile>
-        Saves the selected API or ICD to the given file in a format based on the file's suffix (html, pdf)
-  --drop [db|component]
-        Drops the specified component or database (use with caution!)
-  --versions <icdName>
-        List the version history of the given ICD
+                           Specifies the version to be used by any following options (overrides subsystem and target versions)
+  -o, --out <outputFile>   Saves the selected API or ICD to the given file in a format based on the file's suffix (html, pdf)
+  --drop [db|component]    Drops the specified component or database (use with caution!)
+  --versions <subsystem>   List the version history of the given subsystem
   --diff <subsystem>:<version1>[,version2]
-        For the given ICD, list the differences between <version1> and <version2> (or the current version)
-  --publishes <path>
-        Prints a list of ICD components that publish the given value (name with optional component prefix)
-  --subscribes <path>
-        Prints a list of ICD components that subscribe to the given value (name with optional component prefix)
+                           For the given subsystem, list the differences between <version1> and <version2> (or the current version)
+  --publish                Publish the selected subsystem (Use together with --subsystem, --major and --comment)
+  --major                  Use with --publish to increment the major version
+  -m, --comment <text>     Use with --publish to add a comment describing the changes made (default: empty string)
+  --publishes <path>       Prints a list of components that publish the given value (name with optional component prefix)
+  --subscribes <path>      Prints a list of components that subscribe to the given value (name with optional component prefix)
   --help
-        
-  --version
-        
+  --version        
 ```
 
 Example:

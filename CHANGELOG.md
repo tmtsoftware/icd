@@ -10,6 +10,10 @@ All notable changes to this project will be documented in this file.
   
 - Now warnings are displayed for subscribed items where there is no publisher, or sent commands/configurations, where no receiving end was defined.
 
+- New `--target-component` option to the [icd-db](icd-db) command line app: 
+  Can be used together with the `--component` option to create a PDF for an ICD between two components in different subsystems,
+  or just to restrict the document to items related to the target component.
+
 ### Changed
 
 - Removed the *Publish* feature from the icd web app. 
