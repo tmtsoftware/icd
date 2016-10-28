@@ -119,7 +119,6 @@ object IcdGit extends App {
   // Run the application
   private def run(opts: Options): Unit = {
     val options = if (opts.interactive) interact(opts) else opts
-    //    if (options.versions) listVersions(options)
     if (options.list) list(options)
     if (options.unpublish) unpublish(options)
     if (options.publish) publish(options)
@@ -193,11 +192,19 @@ object IcdGit extends App {
       }
     }
 
+    def askIfPublishingAnIcd(): Boolean = {
+      println("Do you want to publish an API for one subsystem or an ICD between two subsystems? [api] (Answer api or icd): ")
+      val ans = Option(readLine)
+      ans.isDefined && Set("i", "icd").contains(ans.get.toLowerCase())
+
+    }
+
     val ingestAll = if (options.ingest) askIngestAll(options) else false
-    val subsysOpt = if (options.ingest && ingestAll) None else readSubsystemAndVersion(options.subsystems.headOption, "first", options.publish)
+    val isIcd = options.publish && (options.subsystems.size == 2 || askIfPublishingAnIcd())
+    val subsysOpt = if (options.ingest && ingestAll) None else readSubsystemAndVersion(options.subsystems.headOption, "first", options.publish && isIcd)
     val needsTarget = options.publish || options.unpublish || options.list || (options.ingest && !ingestAll)
     val t = if (options.subsystems.size > 1) options.subsystems.tail.headOption else None
-    val targetOpt = if (needsTarget) readSubsystemAndVersion(t, "second", options.publish) else t
+    val targetOpt = if (needsTarget && isIcd) readSubsystemAndVersion(t, "second", options.publish) else t
     val rest = if (options.subsystems.size > 2) options.subsystems.tail.tail else Nil
     val subsysList = (subsysOpt ++ targetOpt ++ rest).toList
     val icdVersion = if (options.unpublish) readIcdVersion(options.copy(subsystems = subsysList)) else options.icdVersion
