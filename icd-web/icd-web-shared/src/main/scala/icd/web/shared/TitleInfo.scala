@@ -19,29 +19,37 @@ object TitleInfo {
    * @param subsystemInfo describes the source subsystem
    * @param targetSubsystem the optional target subsystem and version
    * @param icdOpt optional ICD related information
+   * @param part Optional string inserted before the title
    * @return the title related information
    */
   def apply(
     subsystemInfo:   SubsystemInfo,
     targetSubsystem: SubsystemWithVersion,
-    icdOpt:          Option[IcdVersion]
+    icdOpt:          Option[IcdVersion],
+    part:            String = ""
   ): TitleInfo = {
+    val subsystemName = subsystemInfo.subsystem
+    val targetName = targetSubsystem.subsystemOpt.getOrElse("")
     if (icdOpt.isDefined) {
       val icd = icdOpt.get
-      val title = s"ICD from ${icd.subsystem} to ${icd.target} (version ${icd.icdVersion})"
-      val subtitle = s"Based on ${icd.subsystem} ${icd.subsystemVersion} and ${icd.target} ${icd.targetVersion}"
+
+      val title = if (part.nonEmpty)
+        s"ICD $part $subsystemName -> $targetName (version ${icd.icdVersion})"
+      else
+        s"ICD $subsystemName / $targetName (version ${icd.icdVersion})"
+
+      val subtitle = s"Based on $subsystemName ${subsystemInfo.versionOpt.get} and $targetName ${targetSubsystem.versionOpt.get}"
       TitleInfo(title, Some(subtitle), None)
     } else {
       val version = subsystemInfo.versionOpt.getOrElse(unpublished)
       if (targetSubsystem.subsystemOpt.isDefined) {
-        val target = targetSubsystem.subsystemOpt.get
         val targetVersion = targetSubsystem.versionOpt.getOrElse(unpublished)
-        val title = s"ICD from ${subsystemInfo.subsystem} to $target $unpublished"
-        val subtitle = s"Based on ${subsystemInfo.subsystem} $version and $target $targetVersion"
+        val title = s"ICD $part $subsystemName -> $targetName $unpublished"
+        val subtitle = s"Based on $subsystemName $version and $targetName $targetVersion"
         TitleInfo(title, Some(subtitle), None)
       } else {
         TitleInfo(
-          s"API for ${subsystemInfo.subsystem} $version",
+          s"API for $subsystemName $version",
           Some(subsystemInfo.title), Some(subsystemInfo.description)
         )
       }

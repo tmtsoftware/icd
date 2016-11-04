@@ -583,7 +583,7 @@ object IcdGitManager {
   }
 
   // Imports the ICD release information for the two subsystems, or all subsystems
-  private def importIcdFiles(db: IcdDb, subsystems: List[SubsystemAndVersion], feedback: String => Unit): Unit = {
+  def importIcdFiles(db: IcdDb, subsystems: List[SubsystemAndVersion], feedback: String => Unit): Unit = {
     val gitWorkDir = Files.createTempDirectory("icds").toFile
     try {
       val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call

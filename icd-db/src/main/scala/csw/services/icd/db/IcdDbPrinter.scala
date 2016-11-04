@@ -22,13 +22,13 @@ case class IcdDbPrinter(db: IcdDb) {
   // The difference is that here we generate plain HTML text, while in scala.js you can
   // create a DOM structure with event handlers, etc.
 
-  private def getTitleMarkup(titleInfo: TitleInfo): Text.TypedTag[String] = {
+  private def getTitleMarkup(titleInfo: TitleInfo, titleName: String = "title"): Text.TypedTag[String] = {
     import scalatags.Text.all._
     titleInfo.subtitleOpt match {
       case Some(subtitle) =>
-        h3(a(name := "title"), cls := "page-header")(titleInfo.title, br, small(subtitle))
+        h3(a(name := titleName), cls := "page-header")(titleInfo.title, br, small(subtitle))
       case None =>
-        h3(a(name := "title"), cls := "page-header")(titleInfo.title)
+        h3(a(name := titleName), cls := "page-header")(titleInfo.title)
     }
   }
 
@@ -225,7 +225,7 @@ case class IcdDbPrinter(db: IcdDb) {
     if (info.isEmpty) div()
     else {
       div(
-        h4(a(name := receivedCommandsId(compName))(receivedCommandsTitle(compName))),
+        h4(a(name := sentCommandsId(compName))(sentCommandsTitle(compName))),
         for (s <- info) yield {
           val receiveCommandModel = s.receiveCommandModel
           val to = s.receiver.map(r => s"to ${r.subsystem}.${r.compName}").getOrElse("")
@@ -375,7 +375,7 @@ case class IcdDbPrinter(db: IcdDb) {
   /**
     * Generates a TOC entry for a component
     */
-  private def makeTocEntry(info: ComponentInfo): Text.TypedTag[String] = {
+  private def makeTocEntry(info: ComponentInfo, forApi: Boolean = true): Text.TypedTag[String] = {
     import scalatags.Text.all._
     val compName = info.componentModel.component
     val commandsReceived = info.commands.toList.flatMap(_.commandsReceived)
@@ -389,15 +389,36 @@ case class IcdDbPrinter(db: IcdDb) {
       )) else span())
     ).flatten
 
-    li(a(href := s"#$compName")(info.componentModel.title), ul(sections))
+    if (forApi || (info.publishes.isDefined && info.publishes.get.nonEmpty)
+      || info.subscribes.isDefined || commandsReceived.nonEmpty || commandsSent.nonEmpty)
+      li(a(href := s"#$compName")(info.componentModel.title), ul(sections))
+    else span()
   }
 
   /**
-    * Generates the table of contents based on the list of component info
+    * Generates the table of contents for an API document based on the list of component info
     */
   private def makeToc(titleStr: String, infoList: List[ComponentInfo]): Text.TypedTag[String] = {
     import scalatags.Text.all._
-    ul(li(a(href := "#title")(titleStr), ul(infoList.map(makeTocEntry))))
+    ul(li(a(href := "#title")(titleStr), ul(infoList.map(makeTocEntry(_)))))
+  }
+
+  /**
+    * Generates the table of contents for an ICD document based on the list of component info
+    */
+  private def makeToc(titleStr1: String,
+                      titleStr2: String,
+                      infoList1: List[ComponentInfo],
+                      infoList2: List[ComponentInfo]): Text.TypedTag[String] = {
+    import scalatags.Text.all._
+    ul(
+      li(
+        a(href := "#title")(titleStr1),
+        ul(infoList1.map(makeTocEntry(_, forApi = false))),
+        a(href := "#title2")(titleStr2),
+        ul(infoList2.map(makeTocEntry(_, forApi = false)))
+      )
+    )
   }
 
   /**
@@ -412,28 +433,19 @@ case class IcdDbPrinter(db: IcdDb) {
 
   /**
     * Returns an HTML document describing the given components in the given subsystem.
-    * If a target subsystem is given, the information is restricted to the ICD from
-    * the subsystem to the target.
     *
     * @param compNames       the names of the components
     * @param sv              the selected subsystem and version
-    * @param targetSubsystem the target subsystem (might not be set)
-    * @param icdVersionOpt   optional ICD version, to be displayed in the title
-    * @param targetCompNameOpt optional name of target component (default is to use all target components)
     */
-  def getAsHtml(
-                 compNames: List[String],
-                 sv: SubsystemWithVersion,
-                 targetSubsystem: SubsystemWithVersion,
-                 icdVersionOpt: Option[IcdVersion],
-                 targetCompNameOpt: Option[String] = None): Option[String] = {
+  def getApiAsHtml(compNames: List[String], sv: SubsystemWithVersion): Option[String] = {
+    val tv = SubsystemWithVersion(None, None)
     val markup = for {
       subsystem <- sv.subsystemOpt
       subsystemInfo <- getSubsystemInfo(subsystem, sv.versionOpt)
     } yield {
       import scalatags.Text.all._
-      val infoList = getComponentInfo(subsystem, sv.versionOpt, compNames, targetSubsystem, targetCompNameOpt)
-      val titleInfo = TitleInfo(subsystemInfo, targetSubsystem, icdVersionOpt)
+      val infoList = getComponentInfo(subsystem, sv.versionOpt, compNames, tv, None)
+      val titleInfo = TitleInfo(subsystemInfo, tv, None)
       html(
         head(
           scalatags.Text.tags2.title(titleInfo.title),
@@ -446,6 +458,68 @@ case class IcdDbPrinter(db: IcdDb) {
           makeToc(titleInfo.title, infoList),
           makeIntro(titleInfo),
           infoList.map(displayComponentInfo)
+        )
+      )
+    }
+    markup.map(_.render)
+  }
+
+  /**
+    * Returns an HTML document describing the given components in the given subsystem.
+    * If a target subsystem is given, the information is restricted to the ICD from
+    * the subsystem to the target.
+    *
+    * For ICDs, the complete document consists of two parts: subsystem to target and target to subsystem.
+    *
+    * @param compNames       the names of the subsystem components to include in the document
+    * @param sv              the selected subsystem and version
+    * @param tv              the target subsystem and version
+    * @param icdVersionOpt   optional ICD version, to be displayed in the title
+    * @param targetCompNameOpt optional name of target subsystem component (default: Use all target components)
+    */
+  def getIcdAsHtml(compNames: List[String],
+                   sv: SubsystemWithVersion,
+                   tv: SubsystemWithVersion,
+                   icdVersionOpt: Option[IcdVersion],
+                   targetCompNameOpt: Option[String] = None): Option[String] = {
+
+    val markup = for {
+      subsystem <- sv.subsystemOpt
+      subsystemInfo <- getSubsystemInfo(subsystem, sv.versionOpt)
+      targetSubsystem <- tv.subsystemOpt
+      targetSubsystemInfo <- getSubsystemInfo(targetSubsystem, tv.versionOpt)
+    } yield {
+      import scalatags.Text.all._
+      // XXX TODO: Fix targetCompNameOpt handling
+      val targetCompNames = if (targetCompNameOpt.isDefined)
+        targetCompNameOpt.toList
+      else
+        db.versionManager.getComponentNames(targetSubsystem, tv.versionOpt)
+
+      val infoList = getComponentInfo(subsystem, sv.versionOpt, compNames, tv, targetCompNameOpt)
+      val titleInfo = TitleInfo(subsystemInfo, tv, icdVersionOpt)
+      val titleInfo1 = TitleInfo(subsystemInfo, tv, icdVersionOpt, "(Part 1)")
+      val infoList2 = getComponentInfo(targetSubsystem, tv.versionOpt, targetCompNames, sv, None)
+      val titleInfo2 = TitleInfo(targetSubsystemInfo, sv, icdVersionOpt, "(Part 2)")
+      html(
+        head(
+          scalatags.Text.tags2.title(titleInfo.title),
+          scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss))
+        ),
+        body(
+          getTitleMarkup(titleInfo),
+          div(cls := "pagebreakBefore"),
+          h2("Table of Contents"),
+          makeToc(titleInfo1.title, titleInfo2.title, infoList, infoList2),
+
+          // ICD from subsystem to target
+          makeIntro(titleInfo1),
+          infoList.map(displayComponentInfo),
+
+          // ICD from target to subsystem
+          getTitleMarkup(titleInfo2, "title2"),
+          makeIntro(titleInfo2),
+          infoList2.map(displayComponentInfo)
         )
       )
     }
@@ -503,7 +577,14 @@ case class IcdDbPrinter(db: IcdDb) {
       case None => db.versionManager.getComponentNames(s1.subsystem, s1.versionOpt)
     }
 
-    IcdDbPrinter(db).getAsHtml(compNames, subsys, targ, icdV, targetCompNameOpt) match {
+    val icdPrinter = IcdDbPrinter(db)
+    val htmlOpt = if (targetOpt.isDefined) {
+      icdPrinter.getIcdAsHtml(compNames, subsys, targ, icdV, targetCompNameOpt)
+    } else {
+      icdPrinter.getApiAsHtml(compNames, subsys)
+    }
+
+    htmlOpt match {
       case Some(html) =>
         file.getName.split('.').drop(1).lastOption match {
           case Some("html") => saveAsHtml(html)

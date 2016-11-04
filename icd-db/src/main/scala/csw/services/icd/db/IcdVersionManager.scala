@@ -549,7 +549,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
       ).asDBObject
       db(icdCollName).insert(obj, WriteConcern.ACKNOWLEDGED)
     } else {
-      println(s"Warning: Not adding ICD version $icdVersion between $subsystem-$subsystemVersion and $target-$targetVersion, since not all referenecd subsystem versions exist")
+      println(s"Warning: Not adding ICD version $icdVersion between $subsystem-$subsystemVersion and $target-$targetVersion, since not all referenced subsystem versions exist")
     }
   }
 

@@ -11,7 +11,7 @@ import csw.services.icd.github.IcdGitManager
 import csw.services.icd.html.HtmlMarkup
 import gnieh.diffson.Operation
 import icd.web.shared.IcdModels.SubsystemModel
-import icd.web.shared._
+import icd.web.shared.{IcdVersion, _}
 import play.api.libs.json.Json
 import play.filters.csrf.{CSRF, CSRFAddToken, CSRFCheck}
 import spray.json._
@@ -31,8 +31,7 @@ object Application {
 class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToken: CSRFCheck) extends Controller {
   import Application._
 
-  // XXX TODO FIXME
-  // cache of API and ICD versions published on GitHub
+  // cache of API and ICD versions published on GitHub (until next browser refresh)
   val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
 
   def index = addToken(Action { implicit request =>
@@ -72,7 +71,6 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
         db.versionManager.getSubsystemModel(subsystem, versionOpt)
       case None => None
     }
-
   }
 
   /**
@@ -136,6 +134,20 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
   }
 
   /**
+    * Adds information about the ICD to the database if needed by ingesting it from the GitHub ICD repo
+    */
+  private def ingestPublishedIcd(icdVersion: IcdVersion): Unit = {
+    val v = icdVersion.icdVersion
+    if (v.nonEmpty && v != "*") {
+      val sv = SubsystemAndVersion(icdVersion.subsystem, Some(icdVersion.subsystemVersion))
+      val tv = SubsystemAndVersion(icdVersion.target, Some(icdVersion.targetVersion))
+      val icds = db.versionManager.getIcdVersions(icdVersion.subsystem, icdVersion.target)
+      if (!icds.toSet.contains(v))
+        IcdGitManager.importIcdFiles(db, List(sv, tv), println(_))
+    }
+  }
+
+  /**
    * Gets information about a component in a given version of a subsystem
    *
    * @param subsystem        the source subsystem
@@ -169,6 +181,7 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
   def icdAsPdf(subsystem: String, versionOpt: Option[String], compNamesOpt: Option[String],
                target: String, targetVersionOpt: Option[String],
                icdVersionOpt: Option[String]) = Action {
+
     val out = new ByteArrayOutputStream()
     val compNames = compNamesOpt match {
       case Some(s) => s.split(",").toList
@@ -178,7 +191,13 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
     // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
     // if only the subsystem or target versions were given, use those (default to latest versions)
     val v = icdVersionOpt.getOrElse("*")
-    val iv = db.versionManager.getIcdVersions(subsystem, target).find(_.icdVersion.icdVersion == v).map(_.icdVersion)
+
+    // Make sure the database has the ICDs that were published on GitHub
+    if (v != "*" && versionOpt.isDefined && targetVersionOpt.isDefined)
+      ingestPublishedIcd(IcdVersion(v, subsystem, versionOpt.get, target, targetVersionOpt.get))
+
+    val versions = db.versionManager.getIcdVersions(subsystem, target)
+    val iv = versions.find(_.icdVersion.icdVersion == v).map(_.icdVersion)
     val (sv, tv) = if (iv.isDefined) {
       val i = iv.get
       (SubsystemWithVersion(Some(i.subsystem), Some(i.subsystemVersion)), SubsystemWithVersion(Some(i.target), Some(i.targetVersion)))
@@ -186,7 +205,7 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
       (SubsystemWithVersion(Some(subsystem), versionOpt), SubsystemWithVersion(Some(target), targetVersionOpt))
     }
 
-    IcdDbPrinter(db).getAsHtml(compNames, sv, tv, iv) match {
+    IcdDbPrinter(db).getIcdAsHtml(compNames, sv, tv, iv) match {
       case Some(html) =>
         IcdToPdf.saveAsPdf(out, html)
         val bytes = out.toByteArray
@@ -210,8 +229,7 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
       case None    => db.versionManager.getComponentNames(subsystem, versionOpt)
     }
     val sv = SubsystemWithVersion(Some(subsystem), versionOpt)
-    val tv = SubsystemWithVersion(None, None)
-    IcdDbPrinter(db).getAsHtml(compNames, sv, tv, None) match {
+    IcdDbPrinter(db).getApiAsHtml(compNames, sv) match {
       case Some(html) =>
         IcdToPdf.saveAsPdf(out, html)
         val bytes = out.toByteArray
@@ -267,8 +285,7 @@ class Application @Inject() (env: Environment, addToken: CSRFAddToken, checkToke
     // convert list to use shared IcdName class
     //    val list = db.versionManager.getIcdNames.map(icd => IcdName(icd.subsystem, icd.target))
     val list = allIcdVersions.map(i => IcdName(i.subsystems.head, i.subsystems.tail.head))
-    val list2 = list.map(i => IcdName(i.target, i.subsystem))
-    val sorted = (list ++ list2).sortWith((a, b) => a.subsystem.compareTo(b.subsystem) < 0)
+    val sorted = list.sortWith((a, b) => a.subsystem.compareTo(b.subsystem) < 0)
     Ok(write(sorted)).as(JSON)
   }
 
