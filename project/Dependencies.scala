@@ -12,14 +12,14 @@ object Dependencies {
   val typesafeConfig = "com.typesafe" % "config" % "1.3.0"
   val scalaTest = "org.scalatest" %% "scalatest" % "3.0.0"
   val pegdown = "org.pegdown" % "pegdown" % "1.6.0"
-  val itextpdf = "com.itextpdf" % "itextpdf" % "5.5.9"
-  val xmlworker = "com.itextpdf.tool" % "xmlworker" % "5.5.9"
+  val itextpdf = "com.itextpdf" % "itextpdf" % "5.5.10"
+  val xmlworker = "com.itextpdf.tool" % "xmlworker" % "5.5.10"
   val casbah = "org.mongodb" %% "casbah" % "3.1.1"
   val diffson = "org.gnieh" %% "diffson" % "1.1.0" // tried newer version, but changes in API means more work needed on this side...
   val sprayJson = "io.spray" %%  "spray-json" % "1.3.2"
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.4.0"
   val logback = "ch.qos.logback" % "logback-classic" % "1.1.7"
-  val scalatags = "com.lihaoyi" %% "scalatags" % "0.6.0"
+  val scalatags = "com.lihaoyi" %% "scalatags" % "0.6.1"
   val jsoup = "org.jsoup" % "jsoup" % "1.9.2"
 //  val buhtig = "net.caoticode.buhtig" %% "buhtig" % "0.3.1"
   val jgit = "org.eclipse.jgit" % "org.eclipse.jgit" % "4.4.1.201607150455-r" // EDL (new-style BSD)
@@ -35,7 +35,7 @@ object Dependencies {
   // ScalaJS web client scala dependencies
   val clientDeps = Def.setting(Seq(
     "org.scala-js" %%% "scalajs-dom" % "0.9.1",
-    "com.lihaoyi" %%% "scalatags" % "0.6.0",
+    "com.lihaoyi" %%% "scalatags" % "0.6.1",
     "com.lihaoyi" %%% "upickle" % "0.4.1",
     "org.querki" %%% "jquery-facade" % "1.0-RC6",
     "com.github.japgolly.scalacss" %%% "core" % "0.4.1",
