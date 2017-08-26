@@ -5,6 +5,7 @@ import java.util.UUID
 import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
 import org.jsoup.nodes.Document.OutputSettings
+import org.pegdown.{Extensions, PegDownProcessor}
 
 import scalatags.Text.all._
 import scalatags.Text.TypedTag
@@ -57,6 +58,15 @@ object HtmlMarkup {
 
   private def isEmpty(x: String): Boolean = Option(x).forall(_.isEmpty)
 
+  private val pd = new PegDownProcessor(
+    Extensions.TABLES | Extensions.AUTOLINKS | Extensions.FENCED_CODE_BLOCKS
+      | Extensions.STRIKETHROUGH | Extensions.ATXHEADERSPACE | Extensions.TASKLISTITEMS,
+    Long.MaxValue
+  ) // last arg is to avoid pegdown timeouts
+
+  // Enforce self-closing tags (e.g. for <img> tags) so that PDF generator will not fail.
+  private val os = new OutputSettings().syntax(OutputSettings.Syntax.xml)
+
   def formatRate(rate: Double): String = if (rate == 0) "" else s"$rate Hz"
 
   // Strips leading spaces from each line, since people don't realize that indenting is like ``` blocks in markdown.
@@ -65,26 +75,28 @@ object HtmlMarkup {
     s.stripMargin.lines.map(_.trim).toList.mkString("\n")
   }
 
+//  // Try to save work by checking if string contains markdown before converting.
+//  // (Profiling and tests show that lots of time is spent in pd.markdownToHtml()!)
+//  private def markdownToHtml(gfm: String): String = {
+//    if (gfm.matches("[a-zA-Z0-9\\s\\.:!-]+"))
+//      s"<p>$gfm</p>"
+//    else pd.markdownToHtml(gfm)
+//  }
+
   /**
    * Returns the HTML snippet for the given markdown (GFM)
+   *
+   * Note: Profiling and tests show that lots of time is spent in pd.markdownToHtml(),
+   * but attempts to avoid calling it when the text looks simple did not improve peformance much.
    *
    * @param gfm the Git formatted markdown
    */
   def gfmToHtml(gfm: String): String = {
-    import org.pegdown.{Extensions, PegDownProcessor}
     if (isEmpty(gfm)) ""
     else {
-      val pd = new PegDownProcessor(
-        Extensions.TABLES | Extensions.AUTOLINKS | Extensions.FENCED_CODE_BLOCKS
-          | Extensions.STRIKETHROUGH | Extensions.ATXHEADERSPACE | Extensions.TASKLISTITEMS,
-        Long.MaxValue
-      ) // last arg is to avoid pegdown timeouts
-
-      // Enforce self-closing tags (e.g. for <img> tags) so that PDF generator will not fail.
-      val os = new OutputSettings().syntax(OutputSettings.Syntax.xml)
-
       // Convert markdown to HTML, then clean it up with jsoup to avoid issues with the pdf generator (and for security)
       Jsoup.clean(pd.markdownToHtml(stripLeadingWs(gfm)), "", Whitelist.basicWithImages(), os)
+//      Jsoup.clean(markdownToHtml(stripLeadingWs(gfm)), "", Whitelist.basicWithImages(), os)
     }
   }
 
