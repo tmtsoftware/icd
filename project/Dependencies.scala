@@ -2,8 +2,8 @@ import sbt._
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
 object Dependencies {
-  val Version = "0.9"
-  val ScalaVersion = "2.11.8"
+  val Version = "0.10"
+  val ScalaVersion = "2.12.3"
 
   // command line dependencies
   val scopt = "com.github.scopt" %% "scopt" % "3.7.0"
@@ -20,7 +20,8 @@ object Dependencies {
   val casbah = "org.mongodb" %% "casbah" % "3.1.1"
 
   // XXX: FIXME: tried newer version, but changes in API means more work needed on this side...
-  val diffson = "org.gnieh" %% "diffson" % "1.1.0"
+//  val diffson = "org.gnieh" %% "diffson" % "1.1.0"
+  val diffson = "org.gnieh" %% "diffson" % "2.2.1"
 
   val sprayJson = "io.spray" %%  "spray-json" % "1.3.3"
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2"
@@ -36,7 +37,7 @@ object Dependencies {
   val upickle = "com.lihaoyi" %% "upickle" % "0.4.1"
 
   val jqueryUi = "org.webjars" % "jquery-ui" % "1.12.1"
-  val webjarsPlay = "org.webjars" % "webjars-play_2.11" % "2.6.2"
+  val webjarsPlay = "org.webjars" %% "webjars-play" % "2.6.2"
   val bootstrap = "org.webjars" % "bootstrap" % "3.3.7-1"
   val bootstrapTable = "org.webjars.bower" % "bootstrap-table" % "1.11.1"
 

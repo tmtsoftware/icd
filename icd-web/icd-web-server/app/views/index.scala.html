@@ -1,10 +1,13 @@
 @import icd.web.shared.Csrf
 @import play.api.Environment
 
+@this(webJarsUtil: org.webjars.play.WebJarsUtil)
+
 @(csrfToken: Csrf)(implicit request: RequestHeader, environment: Environment)
 
 @main("TMT ICD Database") {
-    @playscalajs.html.scripts("icdwebclient")
+    @scalajs.html.scripts("icdwebclient", name => routes.Assets.at(name).toString,
+        name => getClass.getResource(s"/public/$name") != null)
 
     <script>
        var settings = {

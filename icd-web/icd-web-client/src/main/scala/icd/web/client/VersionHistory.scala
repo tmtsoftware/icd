@@ -3,11 +3,13 @@ package icd.web.client
 import icd.web.shared._
 import org.scalajs.dom
 import org.scalajs.dom.ext.Ajax
-import org.scalajs.dom.raw.{HTMLInputElement, HTMLElement}
+import org.scalajs.dom.raw.{HTMLElement, HTMLInputElement}
 import upickle.default._
+
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.querki.jquery._
+import org.scalajs.dom.html.Button
 
 import scalatags.JsDom.all._
 
@@ -39,7 +41,7 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
   private val contentDiv = div(id := "versionHistory").render
 
   // Displays the Compare button
-  private def compareButton(subsystem: String) = {
+  private def compareButton(subsystem: String): Button = {
     import scalatags.JsDom.all._
     button(
       title := "Compare two selected subsystem versions",
@@ -96,13 +98,13 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
 
   // Called when one of the version checkboxes is clicked to update the enabled state of the compare
   // button when exactly two items are selected
-  private def checkboxListener(compButton: HTMLElement)(e: dom.Event): Unit = {
+  private def checkboxListener(compButton: Button)(e: dom.Event): Unit = {
     val checked = $("input[name='version']:checked")
     compButton.disabled = checked.length != 2
   }
 
   // Returns a checkbox displaying the version (select two to compare versions)
-  private def makeVersionCheckBox(version: Option[String], compButton: HTMLElement) = {
+  private def makeVersionCheckBox(version: Option[String], compButton: Button) = {
     div(cls := "checkbox")(
       label(
         input(

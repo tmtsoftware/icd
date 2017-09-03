@@ -10,9 +10,10 @@
         <title>@title</title>
         <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
 
-        <link rel='stylesheet' href='@routes.WebJarAssets.at(WebJarAssets.locate("bootstrap.min.css"))'>
-        <link rel='stylesheet' href='@routes.WebJarAssets.at(WebJarAssets.locate("bootstrap-table.min.css"))'>
-        <link rel='stylesheet' href='@routes.WebJarAssets.at(WebJarAssets.locate("jquery-ui.min.css"))'>
+        @Html(webJarsUtil.css("bootstrap.min.css"))
+        @Html(webJarsUtil.css("bootstrap-table.min.css"))
+        @Html(webJarsUtil.css("jquery-ui.min.css"))
+
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/resize.css")">
         <link rel="stylesheet" href="@routes.Assets.at("stylesheets/icd.css")">
     </head>
