@@ -276,7 +276,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     (btn, row)
   }
 
-  private def formatRate(rate: Double): String = if (rate == 0) "" else s"$rate Hz"
+  private def formatRate(rate: Double): String = if (rate == 0.0) "" else s"$rate Hz"
 
   // Generates the HTML markup to display the component's publish information
   private def publishMarkup(compName: String, publishesOpt: Option[Publishes]) = {
@@ -434,13 +434,15 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     // Returns a table row displaying more details for the given subscription
     def makeDetailsRow(si: DetailedSubscribeInfo) = {
       val sInfo = si.subscribeModelInfo
-      val headings = List("Subsystem", "Component", "Prefix.Name", "Required Rate", "Max Rate")
+      val headings = List("Subsystem", "Component", "Prefix.Name", "Required Rate", "Max Rate", "Publisher's Min Rate", "Publisher's Max Rate")
       val rowList = List(List(
         sInfo.subsystem,
         sInfo.component,
         si.path,
         formatRate(sInfo.requiredRate),
-        formatRate(sInfo.maxRate)
+        formatRate(sInfo.maxRate),
+        formatRate(si.telemetryModel.map(_.minRate).getOrElse(0.0)),
+        formatRate(si.telemetryModel.map(_.maxRate).getOrElse(0.0))
       ))
 
       val attrTable = si.telemetryModel.map(t => attributeListMarkup("Attributes", t.attributesList)).getOrElse(div())

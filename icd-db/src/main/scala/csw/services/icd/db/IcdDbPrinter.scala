@@ -142,6 +142,8 @@ case class IcdDbPrinter(db: IcdDb) {
     import scalatags.Text.all._
 
     def subscribeListMarkup(pubType: String, subscribeList: List[DetailedSubscribeInfo]): Text.TypedTag[String] = {
+      def formatRate(rate: Double): String = if (rate == 0.0) "" else s"$rate Hz"
+
       // Warn if no publisher found for subscibed item
       def getWarning(info: DetailedSubscribeInfo) = info.warning.map { msg =>
         p(em(" Warning: ", msg))
@@ -160,10 +162,15 @@ case class IcdDbPrinter(db: IcdDb) {
             if (sInfo.usage.isEmpty) div() else div(strong("Usage:"), raw(sInfo.usage)),
             table(
               thead(
-                tr(th("Subsystem"), th("Component"), th("Prefix.Name"), th("Required Rate"), th("Max Rate"))
+                tr(th("Subsystem"), th("Component"), th("Prefix.Name"),
+                  th("Required Rate"), th("Max Rate"),
+                  th("Publisher's Min Rate"), th("Publisher's Max Rate"))
               ),
               tbody(
-                tr(td(sInfo.subsystem), td(sInfo.component), td(si.path), td(sInfo.requiredRate), td(sInfo.maxRate))
+                tr(td(sInfo.subsystem), td(sInfo.component), td(si.path),
+                  td(formatRate(sInfo.requiredRate)), td(formatRate(sInfo.maxRate)),
+                  td(formatRate(si.telemetryModel.map(_.minRate).getOrElse(0.0))),
+                  td(formatRate(si.telemetryModel.map(_.maxRate).getOrElse(0.0))))
               )
             ),
             si.telemetryModel.map(t => attributeListMarkup(t.name, t.attributesList))
