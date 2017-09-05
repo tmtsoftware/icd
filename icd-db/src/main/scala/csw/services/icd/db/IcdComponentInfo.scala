@@ -121,6 +121,7 @@ object IcdComponentInfo {
     // Returns the Subscribed object, if the component is a subscriber to the given path
     def subscribes(componentModel: ComponentModel, targetInfo: List[SubscribeModelInfo]): Option[Subscribed] = {
       targetInfo.find { subscribeInfo =>
+//        println(s"${subscribeInfo.name} == $name && ${subscribeInfo.subsystem} == $subsystem && ${subscribeInfo.component} == $component")
         subscribeInfo.name == name && subscribeInfo.subsystem == subsystem && subscribeInfo.component == component
       }.map { subscribeInfo =>
         Subscribed(componentModel, subscribeInfo, pubType, path)

@@ -37,8 +37,8 @@ object SubscribeInfoParser {
       component = config.as[String](BaseModelParser.componentKey),
       name = config.as[Option[String]]("name").getOrElse(""),
       usage = config.as[Option[String]]("usage").map(HtmlMarkup.gfmToHtml).getOrElse(""),
-      requiredRate = config.as[Option[Double]]("requiredRate").getOrElse(0),
-      maxRate = config.as[Option[Double]]("maxRate").getOrElse(0)
+      requiredRate = config.as[Option[Double]]("requiredRate").getOrElse(0.0),
+      maxRate = config.as[Option[Double]]("maxRate").getOrElse(0.0)
     )
 }
 
