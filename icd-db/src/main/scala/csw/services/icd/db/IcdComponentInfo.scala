@@ -83,7 +83,7 @@ object IcdComponentInfo {
               TelemetryInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, Telemetry, targetModelsList))
             }
             val eventList = m.eventList.map { t =>
-              TelemetryInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, EventStreams, targetModelsList))
+              TelemetryInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, Events, targetModelsList))
             }
             val eventStreamList = m.eventStreamList.map { t =>
               TelemetryInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, EventStreams, targetModelsList))
