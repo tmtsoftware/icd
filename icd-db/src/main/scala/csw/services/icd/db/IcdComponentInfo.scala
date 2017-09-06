@@ -83,7 +83,7 @@ object IcdComponentInfo {
               TelemetryInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, Telemetry, targetModelsList))
             }
             val eventList = m.eventList.map { t =>
-              TelemetryInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, EventStreams, targetModelsList))
+              TelemetryInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, Events, targetModelsList))
             }
             val eventStreamList = m.eventStreamList.map { t =>
               TelemetryInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, EventStreams, targetModelsList))
@@ -121,7 +121,6 @@ object IcdComponentInfo {
     // Returns the Subscribed object, if the component is a subscriber to the given path
     def subscribes(componentModel: ComponentModel, targetInfo: List[SubscribeModelInfo]): Option[Subscribed] = {
       targetInfo.find { subscribeInfo =>
-//        println(s"${subscribeInfo.name} == $name && ${subscribeInfo.subsystem} == $subsystem && ${subscribeInfo.component} == $component")
         subscribeInfo.name == name && subscribeInfo.subsystem == subsystem && subscribeInfo.component == component
       }.map { subscribeInfo =>
         Subscribed(componentModel, subscribeInfo, pubType, path)

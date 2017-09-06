@@ -84,7 +84,7 @@ object ComponentInfoHelper {
               TelemetryInfo(t, getSubscribers(query, prefix, t.name, t.description, Telemetry))
             }
             val eventList = m.eventList.map { t =>
-              TelemetryInfo(t, getSubscribers(query, prefix, t.name, t.description, EventStreams))
+              TelemetryInfo(t, getSubscribers(query, prefix, t.name, t.description, Events))
             }
             val eventStreamList = m.eventStreamList.map { t =>
               TelemetryInfo(t, getSubscribers(query, prefix, t.name, t.description, EventStreams))
