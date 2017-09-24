@@ -7,8 +7,8 @@ import icd.web.shared.IcdModels.SubsystemModel
 import icd.web.shared.{IcdModels, IcdVersion, IcdVersionInfo}
 import org.joda.time.{DateTime, DateTimeZone}
 import csw.services.icd.model._
-import gnieh.diffson.{JsonDiff, JsonPatch}
 import spray.json.{JsValue, JsonParser}
+import gnieh.diffson.sprayJson._
 
 /**
  * Manages Subsystem and component versioning in the database.
@@ -338,7 +338,7 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
 
   // Compares the two json values, returning None if equal, otherwise some VersionDiff
   private def diffJson(path: String, json1: JsValue, json2: JsValue): Option[VersionDiff] = {
-    if (json1 == json2) None else Some(VersionDiff(path, JsonDiff.diff(json1, json2)))
+    if (json1 == json2) None else Some(VersionDiff(path, JsonDiff.diff(json1, json2, remember=true)))
   }
 
   // Compares the given object with the current (head) version in the collection

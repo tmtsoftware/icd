@@ -2,21 +2,24 @@ package icd.web.client
 
 import java.util.UUID
 
-import icd.web.shared.ComponentInfo.{Alarms, EventStreams, Events, Telemetry}
-import icd.web.shared.IcdModels.{AttributeModel, ReceiveCommandModel}
+import icd.web.shared.ComponentInfo.{apply => _, unapply => _, _}
+import icd.web.shared.IcdModels._
 import icd.web.shared._
 import org.scalajs.dom
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.{HTMLButtonElement, HTMLDivElement, HTMLTableRowElement}
-import upickle.default._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import Components._
+import play.api.libs.json._
 
+import scala.util.Failure
 import scalatags.JsDom.TypedTag
 
 object Components {
+  import icd.web.shared.JsonSupport._
+
   // Id of component info for given component name
   def getComponentInfoId(compName: String) = s"$compName-info"
 
@@ -87,8 +90,8 @@ object Components {
   * @param listener    called when the user clicks on a component link in the (subscriber, publisher, etc)
   */
 case class Components(mainContent: MainContent, listener: ComponentListener) {
-
   import Components._
+  import icd.web.shared.JsonSupport._
 
   /**
     * Gets information about the given components
@@ -102,7 +105,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def getComponentInfo(subsystem: String, versionOpt: Option[String], compNames: List[String],
                                targetSubsystem: SubsystemWithVersion): Future[List[ComponentInfo]] = {
     Ajax.get(Routes.icdComponentInfo(subsystem, versionOpt, compNames, targetSubsystem)).map { r =>
-      val list = read[List[ComponentInfo]](r.responseText)
+      val list = Json.fromJson[List[ComponentInfo]](Json.parse(r.responseText)).getOrElse(Nil)
       if (targetSubsystem.subsystemOpt.isDefined) list.map(ComponentInfo.applyIcdFilter) else list
     }
   }
@@ -111,7 +114,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def getSubsystemInfo(subsystem: String, versionOpt: Option[String]): Future[SubsystemInfo] = {
     val path = Routes.subsystemInfo(subsystem, versionOpt)
     Ajax.get(path).map { r =>
-      read[SubsystemInfo](r.responseText)
+      Json.fromJson[SubsystemInfo](Json.parse(r.responseText)).get
     }
   }
 
@@ -136,7 +139,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           mainContent.setTitle(titleInfo.title, titleInfo.subtitleOpt, titleInfo.descriptionOpt)
           infoList.foreach(displayComponentInfo)
         }
-        f.onFailure { case ex => mainContent.displayInternalError(ex) }
+        f.onComplete {
+          case Failure(ex) => mainContent.displayInternalError(ex)
+          case _ =>
+        }
         f
     }
   }
@@ -169,7 +175,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     if (sv.subsystemOpt.isDefined) {
       val path = Routes.componentInfo(sv.subsystemOpt.get, sv.versionOpt, List(compName))
       Ajax.get(path).map { r =>
-        val infoList = read[List[ComponentInfo]](r.responseText)
+        val infoList = Json.fromJson[List[ComponentInfo]](Json.parse(r.responseText)).getOrElse(Nil)
         mainContent.clearContent()
         mainContent.scrollToTop()
         mainContent.setTitle(s"Component: $compName")

@@ -3,6 +3,7 @@ package icd.web.client
 import icd.web.client.FileUtils._
 import org.scalajs.dom
 import org.scalajs.dom._
+import play.api.libs.json._
 
 import scala.language.implicitConversions
 
@@ -13,6 +14,8 @@ import org.querki.jquery._
  * Displays the page for uploading ICD files and directories
  */
 case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, inputDirSupported: Boolean) extends Displayable {
+
+  implicit val problemFormat = Json.format[Problem]
 
   implicit def monkeyizeEventTarget(e: dom.EventTarget): EventTargetExt = e.asInstanceOf[EventTargetExt]
 
@@ -139,7 +142,6 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
 
     // Displays status after upload complete
     def onloadListener(e: dom.Event) = {
-      import upickle.default._
       busyStatusItem.addClass("hide")
       val statusClass = if (xhr.status == 200) "label-success" else "label-danger"
       if (!statusItem.hasClass("label-danger")) {
@@ -147,7 +149,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
         statusItem.removeClass("label-default").addClass(statusClass).text(statusMsg)
       }
       if (xhr.status != 200) {
-        val problems = read[List[Problem]](xhr.responseText)
+        val problems = Json.fromJson[List[Problem]](Json.parse(xhr.responseText)).getOrElse(Nil)
         for (problem <- problems)
           displayProblem(problem)
       }

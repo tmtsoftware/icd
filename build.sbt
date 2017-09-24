@@ -54,9 +54,9 @@ lazy val icdWebServer = (project in file("icd-web/icd-web-server"))
   .settings(
     scalaJSProjects := clients,
     pipelineStages := Seq(scalaJSProd, gzip),
-    includeFilter in(Assets, LessKeys.less) := "*.less",
+    includeFilter in(Assets, LessKeys.less) := "icd.less",
     libraryDependencies ++=
-      compile(filters, scalajsScripts, upickle, jqueryUi, webjarsPlay, bootstrap, bootstrapTable) ++
+      compile(filters, guice, scalajsScripts, playJson, jqueryUi, webjarsPlay, bootstrap, bootstrapTable) ++
         test(specs2)
   )
   .enablePlugins(PlayScala, SbtWeb, DockerPlugin)
@@ -74,12 +74,22 @@ lazy val icdWebClient = (project in file("icd-web/icd-web-client")).settings(
 ).enablePlugins(ScalaJSPlugin, ScalaJSWeb)
   .dependsOn(icdWebSharedJs)
 
+val sharedJvmSettings = List(
+  libraryDependencies ++= Seq(
+    playJson
+  )
+)
+
 // contains simple case classes used for data transfer that are shared between the client and server
 lazy val icdWebShared = (crossProject.crossType(CrossType.Pure) in file("icd-web/icd-web-shared"))
   .settings(scalaVersion := Dependencies.ScalaVersion)
-//  .settings(formatSettings: _*)
   .jsConfigure(_ enablePlugins ScalaJSWeb)
-
+  .jvmSettings(sharedJvmSettings: _*)
+  .jsSettings(
+    libraryDependencies ++= Seq(
+      "com.typesafe.play" %%% "play-json" % "2.6.3"
+    )
+  )
 lazy val icdWebSharedJvm = icdWebShared.jvm
 lazy val icdWebSharedJs = icdWebShared.js
 

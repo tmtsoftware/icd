@@ -1,12 +1,13 @@
 @import icd.web.shared.Csrf
 @import play.api.Environment
+@import org.webjars.play.WebJarsUtil
 
-@this(webJarsUtil: org.webjars.play.WebJarsUtil)
+@(assets: Assets, csrfToken: Csrf, webJarsUtil: WebJarsUtil)(implicit request: RequestHeader, environment: Environment)
 
-@(csrfToken: Csrf)(implicit request: RequestHeader, environment: Environment)
-
-@main("TMT ICD Database") {
-    @scalajs.html.scripts("icdwebclient", name => routes.Assets.at(name).toString,
+@main("TMT ICD Database", assets, webJarsUtil) {
+    @scalajs.html.scripts(
+        "icdwebclient",
+        name => routes.Assets.at(name).toString,
         name => getClass.getResource(s"/public/$name") != null)
 
     <script>

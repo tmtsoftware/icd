@@ -5,6 +5,7 @@
 dir=../install_icd
 
 hash sbt 2>/dev/null || { echo >&2 "Please install sbt first.  Aborting."; exit 1; }
+#hash node 2>/dev/null || { echo >&2 "Please install node (nodejs) first.  Aborting."; exit 1; }
 
 test -d $dir || mkdir -p $dir/bin $dir/lib $dir/conf
 

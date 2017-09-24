@@ -5,7 +5,7 @@ import org.scalajs.dom
 import org.scalajs.dom.PopStateEvent
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.HTMLStyleElement
-import upickle.default._
+import play.api.libs.json._
 import org.querki.jquery._
 
 import scala.concurrent.Future
@@ -265,7 +265,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     if (sv.subsystemOpt.isDefined) {
       val path = Routes.components(sv.subsystemOpt.get, sv.versionOpt)
       Ajax.get(path).map { r =>
-        read[List[String]](r.responseText)
+        Json.fromJson[List[String]](Json.parse(r.responseText)).get
       }.recover {
         case ex =>
           mainContent.displayInternalError(ex)

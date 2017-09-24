@@ -1,12 +1,19 @@
 package controllers
 
+import javax.inject.Inject
+
 import com.mongodb.MongoTimeoutException
 import com.typesafe.config.ConfigException
 import csw.services.icd.db.StdConfig
 import csw.services.icd.{IcdValidator, Problem}
-import play.api.mvc.{Action, Controller, Result}
+import icd.web.shared.JsonSupport
+import play.api.Environment
+import play.api.mvc._
+import play.api.libs.json._
+import org.webjars.play._
 
-class FileUploadController extends Controller {
+class FileUploadController @Inject()(env: Environment, webJarAssets: WebJarAssets, components: ControllerComponents) extends AbstractController(components) {
+  import JsonSupport._
 
   private val log = play.Logger.of("application")
   private lazy val db = Application.db
@@ -14,27 +21,26 @@ class FileUploadController extends Controller {
   // Server side of the upload ICD feature.
   // Supported file types: A directory containing icd config files (chrome)
   // or a .zip file containing directories with icd config files.
-  def uploadFiles = Action(parse.multipartFormData) { request =>
-    import upickle.default._
+  def uploadFiles = Action(parse.multipartFormData) { implicit request =>
     val files = request.body.files.toList
     try {
       // XXX TODO: Return config parse errors in StdConfig.get with file names!
-      val list = files.flatMap(filePart => StdConfig.get(filePart.ref.file, filePart.filename))
+      val list = files.flatMap(filePart => StdConfig.get(filePart.ref.path.toFile, filePart.filename))
       val comment = request.body.asFormUrlEncoded.getOrElse("comment", List("")).head
       ingestConfigs(list, comment)
     } catch {
       case e: MongoTimeoutException =>
         val msg = "Database seems to be down"
         log.error(msg, e)
-        ServiceUnavailable(write(List(Problem("error", msg)))).as(JSON)
+        ServiceUnavailable(Json.toJson(List(Problem("error", msg))))
       case e: ConfigException =>
         val msg = e.getMessage
         log.error(msg, e)
-        NotAcceptable(write(List(Problem("error", msg)))).as(JSON)
+        NotAcceptable(Json.toJson(List(Problem("error", msg))))
       case t: Throwable =>
         val msg = "Internal error"
         log.error(msg, t)
-        InternalServerError(write(List(Problem("error", msg)))).as(JSON)
+        InternalServerError(Json.toJson(List(Problem("error", msg))))
     }
   }
 
@@ -46,15 +52,14 @@ class FileUploadController extends Controller {
    * @return the HTTP result (OK, or NotAcceptable[list of Problems in JSON format])
    */
   private def ingestConfigs(list: List[StdConfig], comment: String): Result = {
-    import upickle.default._
     // Validate everything first
     val validateProblems = list.flatMap(sc => IcdValidator.validate(sc.config, sc.stdName))
     if (validateProblems.nonEmpty) {
-      NotAcceptable(write(validateProblems)).as(JSON)
+      NotAcceptable(Json.toJson(validateProblems))
     } else {
       val problems = list.flatMap(db.ingestConfig)
       if (problems.nonEmpty) {
-        NotAcceptable(write(problems)).as(JSON)
+        NotAcceptable(Json.toJson(problems))
       } else {
         Ok.as(JSON)
       }

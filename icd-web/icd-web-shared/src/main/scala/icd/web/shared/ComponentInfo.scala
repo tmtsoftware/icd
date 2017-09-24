@@ -1,6 +1,6 @@
 package icd.web.shared
 
-import icd.web.shared.ComponentInfo.{ Telemetry, PublishType }
+import icd.web.shared.ComponentInfo.{PublishType, Telemetry}
 import icd.web.shared.IcdModels._
 
 object ComponentInfo {

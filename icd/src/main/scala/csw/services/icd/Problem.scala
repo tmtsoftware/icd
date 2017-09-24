@@ -1,5 +1,11 @@
 package csw.services.icd
 
+import play.api.libs.json._
+
+object Problem {
+  implicit val ProblemFormat = Json.format[Problem]
+}
+
 /**
  * Describes any validation problems found
  * @param severity a string describing the error severity: fatal, error, warning, etc.

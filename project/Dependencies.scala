@@ -2,8 +2,9 @@ import sbt._
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
 object Dependencies {
-  val Version = "0.10"
+  val Version = "0.11"
   val ScalaVersion = "2.12.3"
+  val PlayVersion = "2.6.5"
 
   // command line dependencies
   val scopt = "com.github.scopt" %% "scopt" % "3.7.0"
@@ -20,8 +21,7 @@ object Dependencies {
   val casbah = "org.mongodb" %% "casbah" % "3.1.1"
 
   // XXX: FIXME: tried newer version, but changes in API means more work needed on this side...
-//  val diffson = "org.gnieh" %% "diffson" % "1.1.0"
-  val diffson = "org.gnieh" %% "diffson" % "2.2.1"
+  val diffson = "org.gnieh" %% "diffson-spray-json" % "2.2.2"
 
   val sprayJson = "io.spray" %%  "spray-json" % "1.3.3"
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2"
@@ -33,9 +33,7 @@ object Dependencies {
   // web server dependencies
   val scalajsScripts = "com.vmunier" %% "scalajs-scripts" % "1.1.1"
 
-  // XXX: FIXME: Deprecated: Use play-json macros instead
-  val upickle = "com.lihaoyi" %% "upickle" % "0.4.1"
-
+  val playJson = "com.typesafe.play" %% "play-json" % PlayVersion
   val jqueryUi = "org.webjars" % "jquery-ui" % "1.12.1"
   val webjarsPlay = "org.webjars" %% "webjars-play" % "2.6.2"
   val bootstrap = "org.webjars" % "bootstrap" % "3.3.7-1"
@@ -46,8 +44,7 @@ object Dependencies {
     "org.scala-js" %%% "scalajs-dom" % "0.9.2",
     "com.lihaoyi" %%% "scalatags" % "0.6.5",
 
-    // XXX: FIXME: Deprecated: Use play-json (Works in ScalaJS?)
-    "com.lihaoyi" %%% "upickle" % "0.4.1",
+    "com.typesafe.play" %%% "play-json" % PlayVersion,
     "org.querki" %%% "jquery-facade" % "1.0",
     "com.github.japgolly.scalacss" %%% "core" % "0.5.3",
     "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.5.3"

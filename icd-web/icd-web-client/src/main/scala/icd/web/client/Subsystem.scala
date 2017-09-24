@@ -238,9 +238,9 @@ case class Subsystem(
 
   // Gets the list of available versions for the given subsystem
   private def getSubsystemVersionOptions(subsystem: String): Future[List[String]] = {
-    import upickle.default._
+    import play.api.libs.json._
     Ajax.get(Routes.versionNames(subsystem)).map { r =>
-      read[List[String]](r.responseText)
+      Json.fromJson[List[String]](Json.parse(r.responseText)).get
     }.recover {
       case ex =>
         ex.printStackTrace() // XXX TODO

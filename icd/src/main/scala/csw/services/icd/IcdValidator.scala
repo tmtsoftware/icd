@@ -192,7 +192,7 @@ object IcdValidator {
   // Formats the error message for display to user.
   // 'source' is the name of the original input file.
   private def formatMsg(msg: ProcessingMessage, source: String): String = {
-    import scala.collection.JavaConversions._
+    import scala.collection.JavaConverters._
     val file = new File(source).getPath
 
     // try to get a nicely formatted error message that includes the necessary info
@@ -206,8 +206,9 @@ object IcdValidator {
     // try to get additional messages from the reports section
     val reports = json.get("reports")
     val messages = if (reports == null) "" else {
-      for (r <- reports.elements().toList) yield r
-      val msgElems = (for (r <- reports) yield r.elements().toList).flatten
+//      for (r <- reports.elements().asScala.toList) yield r
+//      val msgElems = (for (r <- reports) yield r.elements().toList).flatten
+      val msgElems = reports.elements().asScala
       val msgTexts = for (e <- msgElems) yield e.get("message").asText()
       "\n" + msgTexts.mkString("\n")
     }

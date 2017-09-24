@@ -108,6 +108,15 @@ case class MainContent() extends Displayable {
   }
 
   /**
+   * Displays an error message for the exception
+   */
+  def displayInternalError(s: String): Unit = {
+    // Display an error message
+    println(s"Internal error: $s")
+    setContent(errorDiv(s"Internal error. $s"), "Internal Error")
+  }
+
+  /**
    * Scroll the title to the top
    */
   def scrollToTop(): Unit = {

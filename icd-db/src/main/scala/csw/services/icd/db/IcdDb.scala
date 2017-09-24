@@ -350,8 +350,8 @@ case class IcdDb(
    * @param config the config to be ingested into the datasbase
    */
   private def ingestConfig(name: String, config: Config): Unit = {
-    import collection.JavaConversions._
-    val dbObj = config.root().unwrapped().toMap.asDBObject
+    import scala.collection.JavaConverters._
+    val dbObj = config.root().unwrapped().asScala.asDBObject
     manager.ingest(name, dbObj)
   }
 

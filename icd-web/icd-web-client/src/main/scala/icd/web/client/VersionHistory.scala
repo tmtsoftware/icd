@@ -3,8 +3,8 @@ package icd.web.client
 import icd.web.shared._
 import org.scalajs.dom
 import org.scalajs.dom.ext.Ajax
-import org.scalajs.dom.raw.{HTMLElement, HTMLInputElement}
-import upickle.default._
+import org.scalajs.dom.raw.HTMLInputElement
+import play.api.libs.json._
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -36,6 +36,7 @@ object VersionHistory {
  */
 case class VersionHistory(mainContent: MainContent) extends Displayable {
   import VersionHistory._
+  import icd.web.shared.JsonSupport._
 
   // Main version div
   private val contentDiv = div(id := "versionHistory").render
@@ -59,7 +60,7 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
       val versions = checked.mapElems(elem => elem.asInstanceOf[HTMLInputElement].value).sortWith(compareVersions).toList
       val route = Routes.diff(subsystem, versions)
       Ajax.get(route).map { r =>
-        val list = read[List[DiffInfo]](r.responseText)
+        val list = Json.fromJson[List[DiffInfo]](Json.parse(r.responseText)).getOrElse(Nil)
         diffDiv.innerHTML = ""
         diffDiv.appendChild(markupDiff(subsystem, list))
       }
@@ -186,7 +187,13 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
   // Gets the subsystem version info from the server
   private def getSubsystemVersionInfo(subsystem: String): Future[List[VersionInfo]] =
     Ajax.get(Routes.versions(subsystem)).map { r =>
-      read[List[VersionInfo]](r.responseText)
+      Json.fromJson[List[VersionInfo]](Json.parse(r.responseText)) match {
+        case JsSuccess(list: List[VersionInfo], _: JsPath) =>
+          list
+        case e: JsError =>
+          mainContent.displayInternalError(JsError.toJson(e).toString())
+          Nil
+      }
     }.recover {
       case ex =>
         mainContent.displayInternalError(ex)
@@ -195,9 +202,15 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
 
   // Gets the ICD version info from the server
   private def getIcdVersionInfo(icdName: IcdName): Future[List[IcdVersionInfo]] = {
-    import upickle.default._
+    import play.api.libs.json._
     Ajax.get(Routes.icdVersions(icdName)).map { r =>
-      read[List[IcdVersionInfo]](r.responseText)
+      Json.fromJson[List[IcdVersionInfo]](Json.parse(r.responseText)) match {
+        case JsSuccess(list: List[IcdVersionInfo], _: JsPath) =>
+          list
+        case e: JsError =>
+          mainContent.displayInternalError(JsError.toJson(e).toString())
+          Nil
+      }
     }.recover {
       case ex =>
         mainContent.displayInternalError(ex)
