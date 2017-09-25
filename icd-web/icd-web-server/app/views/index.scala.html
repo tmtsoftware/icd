@@ -2,12 +2,14 @@
 @import play.api.Environment
 @import org.webjars.play.WebJarsUtil
 
-@(assets: AssetsFinder, csrfToken: Csrf, webJarsUtil: WebJarsUtil)(implicit request: RequestHeader, environment: Environment)
+@(debug: Boolean, assets: AssetsFinder, csrfToken: Csrf, webJarsUtil: WebJarsUtil)(implicit request: RequestHeader, environment: Environment)
 
 @main("TMT ICD Database", assets, webJarsUtil) {
-    <script src="@assets.path("icdwebclient-jsdeps.js")"></script>
-    @*<script src="@assets.path("icdwebclient-fastopt.js")"></script>*@
-    <script src="@assets.path("icdwebclient-opt.js")"></script>
+
+    @scalajs.html.scripts(
+        "icdwebclient",
+        name => assets.path(name).toString,
+        name => getClass.getResource(s"/public/$name") != null)
 
     <script>
             var settings = {

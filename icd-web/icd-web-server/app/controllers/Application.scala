@@ -16,7 +16,7 @@ import play.api.libs.json.Json
 import play.filters.csrf.{CSRF, CSRFAddToken, CSRFCheck}
 import spray.json._
 import play.api.mvc._
-import play.api.Environment
+import play.api.{Environment, Mode}
 import gnieh.diffson.sprayJson._
 
 // Defines the database used
@@ -29,7 +29,7 @@ object Application {
   * Provides the interface between the web client and the server
   */
 @Singleton
-class Application @Inject()(env: Environment, assets: AssetsFinder, webJarsUtil: WebJarsUtil, webJarAssets: WebJarAssets, components: ControllerComponents) extends AbstractController(components) {
+class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken: CSRFCheck, assets: AssetsFinder, webJarsUtil: WebJarsUtil, webJarAssets: WebJarAssets, components: ControllerComponents) extends AbstractController(components) {
 
   import Application._
   import JsonSupport._
@@ -37,17 +37,22 @@ class Application @Inject()(env: Environment, assets: AssetsFinder, webJarsUtil:
   // cache of API and ICD versions published on GitHub (until next browser refresh)
   val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
 
-//    def index = addToken(Action { implicit request => implicit request =>
-//      implicit val environment: Environment = env
-//      val token = Csrf(CSRF.getToken.get.value)
-//      Ok(views.html.index(assets, token, webJarsUtil))
-//    })
-
-  def index = Action { implicit request =>
+  // Somehow disabling the CSRF filter in application.conf and adding it here was needed to make this work
+  // (The CSRF token is needed for the file upload dialog in the client)
+  def index = addToken(Action { implicit request =>
     implicit val environment: Environment = env
     val token = Csrf(CSRF.getToken.get.value)
-    Ok(views.html.index(assets, token, webJarsUtil))
-  }
+    val debug = env.mode == Mode.Dev
+    Ok(views.html.index(debug, assets, token, webJarsUtil))
+  })
+
+  // This version didn't work: [CSRF] Check failed because no or invalid token found in body for /uploadFiles
+  //  def index = Action { implicit request =>
+  //    implicit val environment: Environment = env
+  //    val token = Csrf(CSRF.getToken.get.value)
+  //    val debug = env.mode == Mode.Dev
+  //    Ok(views.html.index(debug, assets, token, webJarsUtil))
+  //  }
 
   /**
     * Gets a list of top level subsystem names

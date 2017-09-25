@@ -21,14 +21,15 @@ import IcdChooser._
 import Components._
 
 /**
- * Main class for the ICD web app.
- *
- * @param csrfToken         server token used for file upload (for security)
- * @param inputDirSupported true if uploading directories is supported (currently only for Chrome)
- */
+  * Main class for the ICD web app.
+  *
+  * @param csrfToken         server token used for file upload (for security)
+  * @param inputDirSupported true if uploading directories is supported (currently only for Chrome)
+  */
 case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   private val cssSettings = scalacss.devOrProdDefaults
+
   import cssSettings._
 
   private val head = dom.document.head
@@ -107,19 +108,12 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Hide or show the sidebar
   private def setSidebarVisible(show: Boolean): Unit = {
-    println(s"XXX setSidebarVisible $show")
-    try {
-      val s = $("#sidebar")
-      println(s"XXX setSidebarVisible s = $s")
-      if (show) {
-        s.removeClass("hide")
-      } else {
-        s.addClass("hide")
-      }
-    } catch {
-      case ex: Throwable => println(s"XXX error: $ex")
+    val s = $("#sidebar")
+    if (show) {
+      s.removeClass("hide")
+    } else {
+      s.addClass("hide")
     }
-    println(s"XXX setSidebarVisible done")
   }
 
   // Called when the Upload item is selected
@@ -152,10 +146,10 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   /**
-   * Called when a component is selected in one of the publisher/subscriber/command tables.
-   * If the linked subsystem is the source or target subsystem, use the component from the
-   * selected version of the subsystem, otherwise use the latest version.
-   */
+    * Called when a component is selected in one of the publisher/subscriber/command tables.
+    * If the linked subsystem is the source or target subsystem, use the component from the
+    * selected version of the subsystem, otherwise use the latest version.
+    */
   private object ComponentLinkSelectionHandler extends ComponentListener {
     def componentSelected(link: ComponentLink): Unit = {
       val source = subsystem.getSubsystemWithVersion
@@ -163,7 +157,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       val sv = Some(link.subsystem) match {
         case source.subsystemOpt => source
         case target.subsystemOpt => target
-        case _                   => SubsystemWithVersion(Some(link.subsystem), None)
+        case _ => SubsystemWithVersion(Some(link.subsystem), None)
       }
       val newTarget = SubsystemWithVersion(None, None)
       for {
@@ -188,12 +182,12 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   /**
-   * Push (or replace) the current app state for the browser history.
-   * (Replace is needed if the browser is following a link, in which case the browser automatically pushes something
-   * on the stack that we don't want.)
-   *
-   * If a single component is selected, it should be passed as compName.
-   */
+    * Push (or replace) the current app state for the browser history.
+    * (Replace is needed if the browser is following a link, in which case the browser automatically pushes something
+    * on the stack that we don't want.)
+    *
+    * If a single component is selected, it should be passed as compName.
+    */
   private def pushState(viewType: ViewType, compName: Option[String] = None, replace: Boolean = false): Unit = {
     val hist = BrowserHistory(
       subsystem.getSubsystemWithVersion,
@@ -212,8 +206,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   /**
-   * Called when the user presses the Back button in the browser
-   */
+    * Called when the user presses the Back button in the browser
+    */
   private def popState(e: PopStateEvent): Unit = {
     BrowserHistory.popState(e).foreach { hist =>
       e.preventDefault()
@@ -225,7 +219,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       } {
         sidebar.setSelectedComponents(hist.sourceComponents)
         hist.viewType match {
-          case UploadView  => uploadSelected(saveHistory = false)()
+          case UploadView => uploadSelected(saveHistory = false)()
           //          case PublishView => publishItemSelected(saveHistory = false)()
           case VersionView => showVersionHistory(saveHistory = false)()
           case ComponentView | IcdView =>
@@ -245,10 +239,10 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   /**
-   * Updates the main display to match the selected components
-   *
-   * @return a future indicating when the changes are done
-   */
+    * Updates the main display to match the selected components
+    *
+    * @return a future indicating when the changes are done
+    */
   private def updateComponentDisplay(sv: SubsystemWithVersion, targetSv: SubsystemWithVersion, compNames: List[String]): Future[Unit] = {
     val icdOpt = icdChooser.getSelectedIcdVersion
     setSidebarVisible(true)
@@ -286,7 +280,9 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
           for {
             _ <- icdChooser.selectMatchingIcd(sv, targetSv)
             names <- getComponentNames(sv)
-            _ <- Future.successful { names.foreach(sidebar.addComponent) }
+            _ <- Future.successful {
+              names.foreach(sidebar.addComponent)
+            }
             _ <- updateComponentDisplay(sv, targetSv, names)
           } yield {
             if (saveHistory) pushState(viewType = ComponentView) else ()
@@ -412,17 +408,18 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 }
 
 /**
- * Main entry object for the web app
- */
+  * Main entry object for the web app
+  */
 object IcdWebClient extends JSApp {
+
   import scala.scalajs.js.Dynamic.global
 
   /**
-   * Main entry point from Play
-   *
-   * @param settings a JavaScript object containing settings (see class IcdWebClient)
-   * @return
-   */
+    * Main entry point from Play
+    *
+    * @param settings a JavaScript object containing settings (see class IcdWebClient)
+    * @return
+    */
   @JSExport
   def init(settings: js.Dynamic) = {
     val csrfToken = settings.csrfToken.toString
