@@ -46,6 +46,7 @@ object Dependencies {
 
     "com.typesafe.play" %%% "play-json" % PlayVersion,
     "org.querki" %%% "jquery-facade" % "1.0",
+//    "be.doeraene" %%% "scalajs-jquery" % "0.9.2",
     "com.github.japgolly.scalacss" %%% "core" % "0.5.3",
     "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.5.3"
   ))

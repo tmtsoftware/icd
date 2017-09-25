@@ -1,4 +1,4 @@
-@(title: String, assets: Assets, webJarsUtil: org.webjars.play.WebJarsUtil)(content: Html)
+@(title: String, assets: AssetsFinder, webJarsUtil: org.webjars.play.WebJarsUtil)(content: Html)
 
 <!DOCTYPE html>
 
@@ -6,14 +6,14 @@
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>@title</title>
-        <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
+        <link rel="shortcut icon" type="image/png" href="@assets.path("images/favicon.png")">
 
         @Html(webJarsUtil.css("bootstrap.min.css"))
         @Html(webJarsUtil.css("bootstrap-table.min.css"))
         @Html(webJarsUtil.css("jquery-ui.min.css"))
 
-        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/resize.css")">
-        <link rel="stylesheet" href="@routes.Assets.at("stylesheets/icd.css")">
+        <link rel="stylesheet" media="screen" href="@assets.path("stylesheets/resize.css")">
+        <link rel="stylesheet" href="@assets.path("stylesheets/icd.css")">
     </head>
     <body>
         @content

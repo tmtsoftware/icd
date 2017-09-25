@@ -98,7 +98,9 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
       case `unpublishedVersion` | null | "" => None
       case json => Json.fromJson[IcdVersion](Json.parse(json)) match {
         case JsSuccess(icdVersion: IcdVersion, _: JsPath) => Some(icdVersion)
-        case _: JsError => None
+        case e: JsError =>
+          println(s"Error: ${e.errors}")
+          None
       }
     }
   }

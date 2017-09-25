@@ -13,7 +13,6 @@ import scala.scalajs.js
 import scala.scalajs.js.JSApp
 import scala.scalajs.js.annotation.JSExport
 import scalatags.JsDom.TypedTag
-import scalacss.Defaults._
 import scalacss.ScalatagsCss._
 import scala.concurrent.ExecutionContext.Implicits.global
 import BrowserHistory._
@@ -28,6 +27,9 @@ import Components._
  * @param inputDirSupported true if uploading directories is supported (currently only for Chrome)
  */
 case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
+
+  private val cssSettings = scalacss.devOrProdDefaults
+  import cssSettings._
 
   private val head = dom.document.head
   private val body = dom.document.body
@@ -44,9 +46,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val mainContent = MainContent()
   private val components = Components(mainContent, ComponentLinkSelectionHandler)
   private val sidebar = Sidebar(LeftSidebarListener)
-
-  //  private val publishItem = NavbarItem("Publish", publishItemSelected())
-  //  private val publishDialog = PublishDialog(subsystem, targetSubsystem, icdChooser)
 
   private val historyItem = NavbarItem("History", showVersionHistory())
   private val versionHistory = VersionHistory(mainContent)
@@ -83,7 +82,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     navbar.addItem(icdChooser)
 
     navbar.addItem(fileUploadItem)
-    //    navbar.addItem(publishItem)
     navbar.addItem(historyItem)
     navbar.addItem(pdfItem)
     navbar.addItem(expandToggler)
@@ -109,8 +107,19 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Hide or show the sidebar
   private def setSidebarVisible(show: Boolean): Unit = {
-    val s = $("#sidebar")
-    if (show) s.removeClass("hide") else s.addClass("hide")
+    println(s"XXX setSidebarVisible $show")
+    try {
+      val s = $("#sidebar")
+      println(s"XXX setSidebarVisible s = $s")
+      if (show) {
+        s.removeClass("hide")
+      } else {
+        s.addClass("hide")
+      }
+    } catch {
+      case ex: Throwable => println(s"XXX error: $ex")
+    }
+    println(s"XXX setSidebarVisible done")
   }
 
   // Called when the Upload item is selected
@@ -119,17 +128,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     mainContent.setContent(fileUploadDialog, "Upload ICD Files")
     if (saveHistory) pushState(viewType = UploadView)
   }
-
-  //  // Called when the Publish item is selected
-  //  private def publishItemSelected(saveHistory: Boolean = true)(): Unit = {
-  //    val title = if (targetSubsystem.getSubsystemWithVersion.subsystemOpt.isDefined)
-  //      "Publish ICD"
-  //    else "Publish API"
-  //    publishDialog.subsystemChanged()
-  //    setSidebarVisible(false)
-  //    mainContent.setContent(publishDialog, title)
-  //    if (saveHistory) pushState(viewType = PublishView)
-  //  }
 
   // Listener for sidebar component checkboxes
   private object LeftSidebarListener extends SidebarListener {
@@ -417,6 +415,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
  * Main entry object for the web app
  */
 object IcdWebClient extends JSApp {
+  import scala.scalajs.js.Dynamic.global
 
   /**
    * Main entry point from Play

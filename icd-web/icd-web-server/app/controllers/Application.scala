@@ -29,7 +29,7 @@ object Application {
   * Provides the interface between the web client and the server
   */
 @Singleton
-class Application @Inject()(env: Environment, assets: Assets, webJarsUtil: WebJarsUtil, webJarAssets: WebJarAssets, components: ControllerComponents) extends AbstractController(components) {
+class Application @Inject()(env: Environment, assets: AssetsFinder, webJarsUtil: WebJarsUtil, webJarAssets: WebJarAssets, components: ControllerComponents) extends AbstractController(components) {
 
   import Application._
   import JsonSupport._
@@ -309,7 +309,6 @@ class Application @Inject()(env: Environment, assets: Assets, webJarsUtil: WebJa
     //    def getDiffItem(op: Operation) = DiffItem(op.path, op.toJson.fields.map(getDiff).toList)
     // XXX TODO: FIXME: Replace with normal diff? jsonDiff output is not very informative...
     def getDiffItem(op: Operation) = {
-      println(s"XXX jsondiff: op = $op")
       DiffItem(Nil, Nil)
     }
 

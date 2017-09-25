@@ -2,21 +2,20 @@
 @import play.api.Environment
 @import org.webjars.play.WebJarsUtil
 
-@(assets: Assets, csrfToken: Csrf, webJarsUtil: WebJarsUtil)(implicit request: RequestHeader, environment: Environment)
+@(assets: AssetsFinder, csrfToken: Csrf, webJarsUtil: WebJarsUtil)(implicit request: RequestHeader, environment: Environment)
 
 @main("TMT ICD Database", assets, webJarsUtil) {
-    @scalajs.html.scripts(
-        "icdwebclient",
-        name => routes.Assets.at(name).toString,
-        name => getClass.getResource(s"/public/$name") != null)
+    <script src="@assets.path("icdwebclient-jsdeps.js")"></script>
+    @*<script src="@assets.path("icdwebclient-fastopt.js")"></script>*@
+    <script src="@assets.path("icdwebclient-opt.js")"></script>
 
     <script>
-       var settings = {
-            "csrfToken": "@csrfToken",
-            "inputDirSupported": !!('webkitdirectory' in document.createElement('input'))
-        };
+            var settings = {
+                "csrfToken": "@csrfToken",
+                "inputDirSupported": !!('webkitdirectory' in document.createElement('input'))
+            };
 
-        // Main entry to scala.js code
-        icd.web.client.IcdWebClient().init(settings);
+            // Main entry to scala.js code
+            icd.web.client.IcdWebClient().init(settings);
     </script>
 }
