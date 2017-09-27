@@ -7,8 +7,6 @@ import icd.web.shared.{SubsystemWithVersion, IcdName}
  * (See icd-web-server/conf/routes file for server side)
  */
 object Routes {
-  // XXX TODO: Need a URI builder for scala.js (last I checked, scala-uri did not work here)
-
   /**
    * Gets a list of top level subsystem names
    */
@@ -164,14 +162,6 @@ object Routes {
    * Gets a list of version names for a component or subsystem
    */
   def versionNames(name: String) = s"/versionNames/$name"
-
-  //  def publishApi(path: String, majorVersion: Boolean, comment: String, userName: String) =
-  //    s"/publishApi/$path?majorVersion=$majorVersion&comment=$comment&userName=$userName"
-
-  //  def publishIcd(subsystem: String, version: String,
-  //                 target: String, targetVersion: String,
-  //                 majorVersion: Boolean, comment: String, userName: String) =
-  //    s"/publishIcd/$subsystem/$version/$target/$targetVersion?majorVersion=$majorVersion&comment=$comment&userName=$userName"
 
   /**
    * Gets a list of published ICD names

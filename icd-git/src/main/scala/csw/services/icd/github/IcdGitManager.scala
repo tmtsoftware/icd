@@ -95,6 +95,11 @@ object IcdGitManager {
     throw new IllegalArgumentException(msg)
   }
 
+  // Report a warning
+  private[github] def warning(msg: String): Unit = {
+    println(s"Warning: $msg")
+  }
+
   /**
     * Returns the GitHub URL for a subsystem string in the format "subsystem:version", where the ":version" part is optional.
     *
@@ -543,15 +548,19 @@ object IcdGitManager {
     * @param feedback optional feedback function
     */
   def ingest(db: IcdDb, sv: SubsystemAndVersion, feedback: String => Unit): Unit = {
-    val versionsFoundOpt = getApiVersions(sv)
-    if (versionsFoundOpt.isEmpty) error(s"No published versions of ${sv.subsystem} were found in the repository")
-    val versionsFound = versionsFoundOpt.get
-    sv.versionOpt.foreach { v =>
-      if (!versionsFound.apis.exists(_.version == v)) error(s"No published version $v of ${sv.subsystem} was found in the repository")
+    getApiVersions(sv) match {
+      case Some(versionsFound) =>
+        sv.versionOpt.foreach { v =>
+          if (!versionsFound.apis.exists(_.version == v)) warning(s"No published version $v of ${sv.subsystem} was found in the repository")
+        }
+        def versionFilter(e: ApiEntry) = if (sv.versionOpt.isEmpty) true else sv.versionOpt.get == e.version
+        val apiEntries = versionsFound.apis.filter(versionFilter)
+        ingest(db, sv, apiEntries, feedback)
+
+      case None =>
+        warning(s"No published versions of ${sv.subsystem} were found in the repository")
     }
-    def versionFilter(e: ApiEntry) = if (sv.versionOpt.isEmpty) true else sv.versionOpt.get == e.version
-    val apiEntries = versionsFound.apis.filter(versionFilter)
-    ingest(db, sv, apiEntries, feedback)
+
   }
 
   /**

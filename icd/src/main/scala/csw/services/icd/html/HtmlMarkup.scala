@@ -14,12 +14,12 @@ import scalatags.Text.TypedTag
  * Defines HTML markup
  */
 trait HtmlMarkup {
-  protected val idStr = UUID.randomUUID().toString
+  protected val idStr: String = UUID.randomUUID().toString
 
   /**
    * Returns an HTML heading with the given depth, text and id
    */
-  protected def mkHeading(depth: Int, text: String) = {
+  protected def mkHeading(depth: Int, text: String): TypedTag[String] = {
     val heading = tag(s"h$depth")
     heading(a(name := idStr)(text))
   }
@@ -27,7 +27,7 @@ trait HtmlMarkup {
   /**
    * Returns an HTML table of contents entry for the text and id
    */
-  protected def mkTocEntry(text: String) = {
+  protected def mkTocEntry(text: String): TypedTag[String] = {
     import scalatags.Text.all._
     li(a(href := s"#$idStr")(text.trim))
   }
@@ -75,14 +75,6 @@ object HtmlMarkup {
     s.stripMargin.lines.map(_.trim).toList.mkString("\n")
   }
 
-//  // Try to save work by checking if string contains markdown before converting.
-//  // (Profiling and tests show that lots of time is spent in pd.markdownToHtml()!)
-//  private def markdownToHtml(gfm: String): String = {
-//    if (gfm.matches("[a-zA-Z0-9\\s\\.:!-]+"))
-//      s"<p>$gfm</p>"
-//    else pd.markdownToHtml(gfm)
-//  }
-
   /**
    * Returns the HTML snippet for the given markdown (GFM)
    *
@@ -96,7 +88,6 @@ object HtmlMarkup {
     else {
       // Convert markdown to HTML, then clean it up with jsoup to avoid issues with the pdf generator (and for security)
       Jsoup.clean(pd.markdownToHtml(stripLeadingWs(gfm)), "", Whitelist.basicWithImages(), os)
-//      Jsoup.clean(markdownToHtml(stripLeadingWs(gfm)), "", Whitelist.basicWithImages(), os)
     }
   }
 
@@ -124,7 +115,7 @@ object HtmlMarkup {
   /**
    * Returns a HTML table with the given column headings and list of rows
    */
-  def mkTable(head: List[String], rows: List[List[String]]) = {
+  def mkTable(head: List[String], rows: List[List[String]]): TypedTag[String] = {
     if (rows.isEmpty) p("n/a")
     else {
       val (newHead, newRows) = compact(head, rows)

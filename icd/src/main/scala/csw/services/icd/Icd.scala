@@ -28,7 +28,7 @@ object Icd extends App {
 
     opt[File]('i', "in") valueName "<inputFile>" action { (x, c) =>
       c.copy(inputFile = Some(x))
-    } text "Single input file to be verified, assumed to be in HOCON (*.conf) format"
+    } text "Single input file to be validated, assumed to be in HOCON (*.conf) format"
 
     opt[File]('s', "schema") valueName "<jsonSchemaFile>" action { (x, c) =>
       c.copy(schemaFile = Some(x))

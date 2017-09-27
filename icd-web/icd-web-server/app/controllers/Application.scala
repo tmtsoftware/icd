@@ -280,7 +280,6 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
     */
   def getIcdVersions(subsystem: String, target: String) = Action { implicit request =>
     // convert list to use shared IcdVersion class
-    //        val list = db.versionManager.getIcdVersions(subsystem, target)
     val list = allIcdVersions.find(i => i.subsystems.contains(subsystem) && i.subsystems.contains(target)).toList.flatMap(_.icds).map { icd =>
       val icdVersion = IcdVersion(icd.icdVersion, subsystem, icd.versions.head, target, icd.versions.tail.head)
       IcdVersionInfo(icdVersion, icd.user, icd.comment, icd.date)
