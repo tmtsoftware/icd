@@ -312,7 +312,6 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
     val obj = JsonParser(json).asJsObject
     val fields = obj.fields - idKey - versionKey
     obj.copy(fields)
-    //    JsonParser(json).replace(idKey :: Nil, JsNull).replace(versionKey :: Nil, JsNull)
   }
 
   // Returns the contents of the given version of the collection path
@@ -322,7 +321,8 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
     if (version == currentVersion) {
       coll.head.toString
     } else {
-      v.find(versionKey -> version).one().toString
+      val f = v.find(versionKey -> version)
+      if (f.count() == 0) "{}" else f.one().toString
     }
   }
 
