@@ -4,7 +4,7 @@ import scalatags.Text
 import scalatags.Text.all._
 
 /**
-  * Adds automatic numbering to HTML headings
+  * Adds automatic numbering to HTML headings.
   */
 class NumberedHeadings {
   private var h2Counter = 0
@@ -12,6 +12,7 @@ class NumberedHeadings {
   private var h4Counter = 0
   private var h5Counter = 0
   private var h6Counter = 0
+
 
   def H2(content: Text.TypedTag[String]): Text.TypedTag[String] = {
     h2Counter = h2Counter + 1
@@ -41,5 +42,4 @@ class NumberedHeadings {
     h6Counter = h6Counter + 1
     h6(s"$h2Counter.$h3Counter.$h4Counter.$h5Counter.$h6Counter ", content)
   }
-
 }
