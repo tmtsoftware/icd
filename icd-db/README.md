@@ -22,7 +22,7 @@ Example files that can be ingested into the database for testing can be found
 in the [examples](../examples) directory.
 
 ```
-icd-db 0.9
+icd-db 0.11
 Usage: icd-db [options]
 
   -d, --db <name>          The name of the database to use (default: icds)
@@ -45,13 +45,10 @@ Usage: icd-db [options]
   --versions <subsystem>   List the version history of the given subsystem
   --diff <subsystem>:<version1>[,version2]
                            For the given subsystem, list the differences between <version1> and <version2> (or the current version)
-  --publish                Publish the selected subsystem (Use together with --subsystem, --major and --comment)
-  --major                  Use with --publish to increment the major version
-  -m, --comment <text>     Use with --publish to add a comment describing the changes made (default: empty string)
   --publishes <path>       Prints a list of components that publish the given value (name with optional component prefix)
   --subscribes <path>      Prints a list of components that subscribe to the given value (name with optional component prefix)
-  --help
-  --version        
+  --help                   
+  --version                
 ```
 
 Example:
