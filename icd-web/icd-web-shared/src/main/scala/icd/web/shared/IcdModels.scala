@@ -27,6 +27,14 @@ object IcdModels {
   case class BaseModel(subsystem: String, component: String)
 
   /**
+    * Common trait of items with a name and description.
+    */
+  trait NameDesc {
+    val name: String
+    val description: String
+  }
+
+  /**
    * Description of an alarm
    *
    * @param name         alarm name
@@ -41,7 +49,7 @@ object IcdModels {
     requirements: List[String],
     severity:     String,
     archive:      Boolean
-  )
+  ) extends NameDesc
 
   /**
    * Defines the properties of an attribute
@@ -74,7 +82,7 @@ object IcdModels {
     exclusiveMaximum: Boolean,
     defaultValue:     String,
     typeStr:          String
-  )
+  ) extends NameDesc
 
   /**
    * Model for a commands configuration that a component receives
@@ -90,7 +98,7 @@ object IcdModels {
     requirements: List[String],
     requiredArgs: List[String],
     args:         List[AttributeModel]
-  )
+  ) extends NameDesc
 
   /**
    * Describes command configurations that the component sends
@@ -204,5 +212,5 @@ object IcdModels {
     archive:        Boolean,
     archiveRate:    Double,
     attributesList: List[AttributeModel]
-  )
+  ) extends NameDesc
 }

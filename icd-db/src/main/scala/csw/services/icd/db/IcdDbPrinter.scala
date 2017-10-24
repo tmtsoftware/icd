@@ -71,7 +71,7 @@ case class IcdDbPrinter(db: IcdDb) {
       if (telemetryList.isEmpty) div()
       else {
         div(
-          nh.H4(a(s"$pubType Published by $compName")),
+          nh.H4(s"$pubType Published by $compName"),
           for (t <- telemetryList) yield {
             val headings = List("Min Rate", "Max Rate", "Archive", "Archive Rate")
             val rowList = List(List(HtmlMarkup.formatRate(t.telemetryModel.minRate), HtmlMarkup.formatRate(t.telemetryModel.maxRate),
@@ -80,7 +80,7 @@ case class IcdDbPrinter(db: IcdDb) {
             val subscribers = t.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
             val subscriberDiv = if (t.subscribers.isEmpty) div() else p(strong("Subscribers: "), subscribers)
             div(cls := "nopagebreak")(
-              nh.H5(a(s"$compName publishes ${singlePubType(pubType)}: ${t.telemetryModel.name}")),
+              nh.H5(s"$compName publishes ${singlePubType(pubType)}: ${t.telemetryModel.name}"),
               if (t.telemetryModel.requirements.isEmpty) div() else p(strong("Requirements: "), t.telemetryModel.requirements.mkString(", ")),
               subscriberDiv,
               raw(t.telemetryModel.description),
@@ -96,13 +96,13 @@ case class IcdDbPrinter(db: IcdDb) {
       if (alarmList.isEmpty) div()
       else {
         div(
-          nh.H4(a(s"Alarms Published by $compName")),
+          nh.H4(s"Alarms Published by $compName"),
           for (t <- alarmList) yield {
             val headings = List("Severity", "Archive", "Subscribers")
             val rowList = List(List(t.alarmModel.severity, HtmlMarkup.yesNo(t.alarmModel.archive),
               t.subscribers.map(_.subscribeModelInfo.component).mkString(", ")))
             div(cls := "nopagebreak")(
-              nh.H5(a(s"$compName publishes Alarm: ${t.alarmModel.name}")),
+              nh.H5(s"$compName publishes Alarm: ${t.alarmModel.name}"),
               if (t.alarmModel.requirements.isEmpty) div() else p(strong("Requirements: "), t.alarmModel.requirements.mkString(", ")),
               raw(t.alarmModel.description),
               HtmlMarkup.mkTable(headings, rowList), hr
@@ -117,7 +117,7 @@ case class IcdDbPrinter(db: IcdDb) {
       case Some(publishes) =>
         if (publishesOpt.nonEmpty && publishesOpt.get.nonEmpty) {
           div(
-            nh.H3(a(name := publishId(compName))(publishTitle(compName))),
+            nh.H3(publishTitle(compName)),
             raw(publishes.description), hr,
             publishTelemetryListMarkup("Telemetry", publishes.telemetryList),
             publishTelemetryListMarkup("Events", publishes.eventList),
@@ -151,12 +151,12 @@ case class IcdDbPrinter(db: IcdDb) {
 
       if (subscribeList.isEmpty) div()
       else div(
-        nh.H4(a(s"$pubType Subscribed to by $compName")),
+        nh.H4(s"$pubType Subscribed to by $compName"),
         for (si <- subscribeList) yield {
           val sInfo = si.subscribeModelInfo
           val from = s"from ${si.subscribeModelInfo.subsystem}.${si.subscribeModelInfo.component}"
           div(cls := "nopagebreak")(
-            nh.H5(a(s"$compName subscribes to ${singlePubType(pubType)}: ${sInfo.name} $from")),
+            nh.H5(s"$compName subscribes to ${singlePubType(pubType)}: ${sInfo.name} $from"),
             raw(si.description),
             getWarning(si),
             if (sInfo.usage.isEmpty) div() else div(strong("Usage:"), raw(sInfo.usage)),
@@ -184,7 +184,7 @@ case class IcdDbPrinter(db: IcdDb) {
       case Some(subscribes) =>
         if (subscribes.subscribeInfo.nonEmpty) {
           div(
-            nh.H3(a(name := subscribeId(compName))(subscribeTitle(compName))),
+            nh.H3(subscribeTitle(compName)),
             raw(subscribes.description),
             subscribeListMarkup("Telemetry", subscribes.subscribeInfo.filter(_.itemType == Telemetry)),
             subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == Events)),
@@ -205,13 +205,13 @@ case class IcdDbPrinter(db: IcdDb) {
     if (info.isEmpty) div()
     else {
       div(
-        nh.H4(a(name := receivedCommandsId(compName))(receivedCommandsTitle(compName))),
+        nh.H4(receivedCommandsTitle(compName)),
         for (r <- info) yield {
           val m = r.receiveCommandModel
           val from = r.senders.map(s => s"${s.subsystem}.${s.compName}").mkString(", ")
           val senders = if (from.isEmpty) div() else p(strong("Senders: "), from)
           div(cls := "nopagebreak")(
-            nh.H5(a(s"$compName receives configuration: ${m.name}")),
+            nh.H5(s"$compName receives configuration: ${m.name}"),
             senders,
             if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
             raw(m.description),
@@ -232,12 +232,12 @@ case class IcdDbPrinter(db: IcdDb) {
     if (info.isEmpty) div()
     else {
       div(
-        nh.H4(a(name := sentCommandsId(compName))(sentCommandsTitle(compName))),
+        nh.H4(sentCommandsTitle(compName)),
         for (s <- info) yield {
           val receiveCommandModel = s.receiveCommandModel
           val to = s.receiver.map(r => s"to ${r.subsystem}.${r.compName}").getOrElse("")
           div(cls := "nopagebreak")(
-            nh.H5(a(s"$compName sends configuration: ${s.name} $to")),
+            nh.H5(s"$compName sends configuration: ${s.name} $to"),
             receiveCommandModel match {
               case Some(m) => div(
                 if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
@@ -264,7 +264,7 @@ case class IcdDbPrinter(db: IcdDb) {
       case Some(commands) =>
         if (commands.commandsReceived.nonEmpty || commands.commandsSent.nonEmpty) {
           div(
-            nh.H3(a(name := commandsId(compName))(commandsTitle(compName))),
+            nh.H3(commandsTitle(compName)),
             raw(commands.description),
             receivedCommandsMarkup(compName, commands.commandsReceived, nh),
             sentCommandsMarkup(compName, commands.commandsSent, nh)
@@ -304,7 +304,7 @@ case class IcdDbPrinter(db: IcdDb) {
   private def markupForComponent(info: ComponentInfo, nh: NumberedHeadings): Text.TypedTag[String] = {
     import scalatags.Text.all._
     div(cls := "pagebreakBefore")(
-      nh.H2(a(name := info.componentModel.component)(info.componentModel.title)),
+      nh.H2(info.componentModel.title),
       componentInfoTableMarkup(info),
       raw(info.componentModel.description),
       publishMarkup(info.componentModel.component, info.publishes, nh),
@@ -403,14 +403,14 @@ case class IcdDbPrinter(db: IcdDb) {
     else span()
   }
 
-  /**
-    * Generates the table of contents for an API document based on the list of component info
-    */
-  private def makeToc(titleStr: String, infoList: List[ComponentInfo]): Text.TypedTag[String] = {
-    import scalatags.Text.all._
-    val ntoc = new NumberedTocEntry
-    ul(li(a(href := "#title")(titleStr), ul(infoList.map(makeTocEntry(_, ntoc)))))
-  }
+//  /**
+//    * Generates the table of contents for an API document based on the list of component info
+//    */
+//  private def makeToc(titleStr: String, infoList: List[ComponentInfo]): Text.TypedTag[String] = {
+//    import scalatags.Text.all._
+//    val ntoc = new NumberedTocEntry
+//    ul(li(a(href := "#title")(titleStr), ul(infoList.map(makeTocEntry(_, ntoc)))))
+//  }
 
   /**
     * Generates the table of contents for an ICD document based on the list of component info
@@ -442,6 +442,88 @@ case class IcdDbPrinter(db: IcdDb) {
   }
 
   /**
+    * Displays a summary of the events published and commands received by the subsystem
+    * @param subsystem subsystem name
+    * @param infoList list of component info
+    * @param nh used for numbered headings and TOC
+    * @return the HTML
+    */
+  private def displaySummary(subsystem: String, infoList: List[ComponentInfo], nh: NumberedHeadings): Text.TypedTag[String] = {
+    import scalatags.Text.all._
+
+    def firstParagraph(s: String): String = {
+      val i = s.indexOf("</p>")
+      if (i == -1) s else s.substring(0, i+4)
+    }
+
+    // Displays a summary for a given event type.
+    def summary(eventType: String, list: List[PublishedItem]): Text.TypedTag[String] = {
+      if (list.isEmpty) div() else {
+        div(
+          nh.H3(s"$eventType published by $subsystem"),
+          table(
+            thead(
+              tr(
+                th("Prefix"),
+                th("Name"),
+                th("Description")
+              )
+            ),
+            tbody(
+              for {
+                info <- list
+              } yield {
+                tr(
+                  td(p(info.component.prefix)),
+                  td(p(info.item.name)),
+                  td(raw(firstParagraph(info.item.description))))
+              }
+            )
+          )
+        )
+      }
+    }
+
+    val allEvents = for {
+      info <- infoList
+      pub <- info.publishes.toList
+      event <- pub.eventList
+    } yield PublishedItem(info.componentModel, event.telemetryModel)
+
+    val allEventStreams = for {
+      info <- infoList
+      pub <- info.publishes.toList
+      event <- pub.eventStreamList
+    } yield PublishedItem(info.componentModel, event.telemetryModel)
+
+    val allTelemetry = for {
+      info <- infoList
+      pub <- info.publishes.toList
+      event <- pub.telemetryList
+    } yield PublishedItem(info.componentModel, event.telemetryModel)
+
+    val allAlarms = for {
+      info <- infoList
+      pub <- info.publishes.toList
+      event <- pub.alarmList
+    } yield PublishedItem(info.componentModel, event.alarmModel)
+
+    div(
+      nh.H2(s"Summary of items published by $subsystem"),
+      summary("Events", allEvents),
+      summary("Event Streams", allEventStreams),
+      summary("Telemetry", allTelemetry),
+      summary("Alarms", allAlarms)
+    )
+  }
+
+
+  def displayDetails(subsystem: String, infoList: List[ComponentInfo], nh: NumberedHeadings): Text.TypedTag[String] = {
+    import scalatags.Text.all._
+    div()
+  }
+
+  /**
     * Returns an HTML document describing the given components in the given subsystem.
     *
     * @param compNames the names of the components
@@ -458,6 +540,12 @@ case class IcdDbPrinter(db: IcdDb) {
       val titleInfo = TitleInfo(subsystemInfo, tv, None)
       val titleMarkup = getTitleMarkup(titleInfo)
       val nh = new NumberedHeadings
+      val mainContent = div(
+        displaySummary(subsystem, infoList, nh),
+        displayDetails(subsystem, infoList, nh)
+      )
+      val toc = nh.mkToc()
+      val intro = makeIntro(titleInfo)
       html(
         head(
           scalatags.Text.tags2.title(titleInfo.title),
@@ -467,11 +555,15 @@ case class IcdDbPrinter(db: IcdDb) {
           titleMarkup,
           div(cls := "pagebreakBefore"),
           h2("Table of Contents"),
-          makeToc(titleInfo.title, infoList),
+//          makeToc(titleInfo.title, infoList),
+          toc,
           div(cls := "pagebreakBefore"),
           titleMarkup,
-          makeIntro(titleInfo),
-          infoList.map(displayComponentInfo(_, nh))
+          intro,
+          mainContent
+
+          // TODO: replace with event/command overview followed by details
+//          infoList.map(displayComponentInfo(_, nh))
         )
       )
     }

@@ -84,6 +84,15 @@ case class AlarmInfo(
   subscribers: List[SubscribeInfo])
 
 /**
+  * Summary of a published item.
+  * @param component the publishing component
+  * @param item name and description of the published item
+  */
+case class PublishedItem(
+    component: ComponentModel,
+    item: NameDesc)
+
+/**
  * Describes what values a component publishes
  *
  * @param description     optional top level description of published items (in html format, after markdown processing)
@@ -128,13 +137,13 @@ case class DetailedSubscribeInfo(
   telemetryModel: Option[TelemetryModel],
   alarmModel: Option[AlarmModel],
   publisher: Option[ComponentModel]) {
-  val description = (if (itemType == Telemetry) {
+  val description: String = (if (itemType == Telemetry) {
     telemetryModel.map(_.description)
   } else {
     alarmModel.map(_.description)
   }).getOrElse("")
 
-  val warning = if (telemetryModel.nonEmpty || alarmModel.nonEmpty) None
+  val warning: Option[String] = if (telemetryModel.nonEmpty || alarmModel.nonEmpty) None
   else {
     Some(s"${subscribeModelInfo.subsystem}.${subscribeModelInfo.component} does not publish $itemType: ${subscribeModelInfo.name}")
   }
@@ -142,7 +151,7 @@ case class DetailedSubscribeInfo(
   /**
    * Full path to subscribed item: prefix.name (if publisher was found, otherwise subsystem.component.name)
    */
-  val path = publisher match {
+  val path: String = publisher match {
     case Some(p) => s"${p.prefix}.${subscribeModelInfo.name}"
     case None => s"${subscribeModelInfo.subsystem}.${subscribeModelInfo.component}.${subscribeModelInfo.name}"
   }
@@ -185,7 +194,7 @@ case class SentCommandInfo(
   receiveCommandModel: Option[ReceiveCommandModel],
   receiver: Option[OtherComponent]) {
 
-  val warning = if (receiveCommandModel.nonEmpty) None
+  val warning: Option[String] = if (receiveCommandModel.nonEmpty) None
   else {
     Some(s"$subsystem.$component does not define configuration: $name")
   }
