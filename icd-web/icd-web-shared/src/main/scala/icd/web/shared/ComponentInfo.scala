@@ -84,15 +84,6 @@ case class AlarmInfo(
   subscribers: List[SubscribeInfo])
 
 /**
-  * Summary of a published item.
-  * @param component the publishing component
-  * @param item name and description of the published item
-  */
-case class PublishedItem(
-    component: ComponentModel,
-    item: NameDesc)
-
-/**
  * Describes what values a component publishes
  *
  * @param description     optional top level description of published items (in html format, after markdown processing)
