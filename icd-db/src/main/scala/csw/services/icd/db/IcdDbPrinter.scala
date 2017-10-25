@@ -3,7 +3,7 @@ package csw.services.icd.db
 import java.io.{File, FileOutputStream}
 
 import csw.services.icd.IcdToPdf
-import csw.services.icd.html.{HtmlMarkup, IcdToHtml, NumberedHeadings, NumberedTocEntry}
+import csw.services.icd.html.{HtmlMarkup, IcdToHtml, NumberedHeadings}
 import icd.web.shared.ComponentInfo.{Alarms, EventStreams, Events, Telemetry}
 import icd.web.shared.IcdModels.AttributeModel
 import icd.web.shared._
@@ -31,8 +31,6 @@ case class IcdDbPrinter(db: IcdDb) {
         h3(a(name := titleName), cls := "page-header")(titleInfo.title)
     }
   }
-
-  private def publishId(compName: String): String = s"pub-$compName"
 
   private def publishTitle(compName: String): String = s"Items published by $compName"
 
@@ -128,8 +126,6 @@ case class IcdDbPrinter(db: IcdDb) {
     }
   }
 
-  private def subscribeId(compName: String): String = s"sub-$compName"
-
   private def subscribeTitle(compName: String): String = s"Items subscribed to by $compName"
 
   private def singlePubType(pubType: String): String = {
@@ -195,8 +191,6 @@ case class IcdDbPrinter(db: IcdDb) {
     }
   }
 
-  private def receivedCommandsId(compName: String): String = s"rec-$compName"
-
   private def receivedCommandsTitle(compName: String): String = s"Command Configurations Received by $compName"
 
   // Generates the HTML markup to display the commands a component receives
@@ -252,8 +246,6 @@ case class IcdDbPrinter(db: IcdDb) {
     }
   }
 
-  private def commandsId(compName: String): String = s"commands-$compName"
-
   private def commandsTitle(compName: String): String = s"Commands for $compName"
 
   // Generates the markup for the commands section (description plus received and sent)
@@ -304,7 +296,7 @@ case class IcdDbPrinter(db: IcdDb) {
   private def markupForComponent(info: ComponentInfo, nh: NumberedHeadings): Text.TypedTag[String] = {
     import scalatags.Text.all._
     div(cls := "pagebreakBefore")(
-      nh.H2(info.componentModel.title),
+      nh.H2(info.componentModel.title, info.componentModel.component),
       componentInfoTableMarkup(info),
       raw(info.componentModel.description),
       publishMarkup(info.componentModel.component, info.publishes, nh),
@@ -381,57 +373,6 @@ case class IcdDbPrinter(db: IcdDb) {
   }
 
   /**
-    * Generates a TOC entry for a component
-    */
-  private def makeTocEntry(info: ComponentInfo, ntoc: NumberedTocEntry, forApi: Boolean = true): Text.TypedTag[String] = {
-    import scalatags.Text.all._
-    val compName = info.componentModel.component
-    val commandsReceived = info.commands.toList.flatMap(_.commandsReceived)
-    val commandsSent = info.commands.toList.flatMap(_.commandsSent)
-    lazy val sections = List(
-      info.publishes.map(x => if (x.nonEmpty) li(ntoc.toc3(href := "#" + publishId(compName))(publishTitle(compName))) else span()),
-      info.subscribes.map(_ => li(ntoc.toc3(href := "#" + subscribeId(compName))(subscribeTitle(compName)))),
-      info.commands.map(x => if (x.nonEmpty) li(ntoc.toc3(href := "#" + commandsId(compName))(commandsTitle(compName)), ul(
-        commandsReceived.headOption.map(_ => li(ntoc.toc4(href := "#" + receivedCommandsId(compName))(receivedCommandsTitle(compName)))),
-        commandsSent.headOption.map(_ => li(ntoc.toc4(href := "#" + sentCommandsId(compName))(sentCommandsTitle(compName))))
-      )) else span())
-    ).flatten
-
-    if (forApi || (info.publishes.isDefined && info.publishes.get.nonEmpty)
-      || info.subscribes.isDefined || commandsReceived.nonEmpty || commandsSent.nonEmpty)
-      li(ntoc.toc2(href := s"#$compName")(info.componentModel.title), ul(sections))
-    else span()
-  }
-
-//  /**
-//    * Generates the table of contents for an API document based on the list of component info
-//    */
-//  private def makeToc(titleStr: String, infoList: List[ComponentInfo]): Text.TypedTag[String] = {
-//    import scalatags.Text.all._
-//    val ntoc = new NumberedTocEntry
-//    ul(li(a(href := "#title")(titleStr), ul(infoList.map(makeTocEntry(_, ntoc)))))
-//  }
-
-  /**
-    * Generates the table of contents for an ICD document based on the list of component info
-    */
-  private def makeToc(titleStr1: String,
-                      titleStr2: String,
-                      infoList1: List[ComponentInfo],
-                      infoList2: List[ComponentInfo]): Text.TypedTag[String] = {
-    import scalatags.Text.all._
-    val ntoc = new NumberedTocEntry
-    ul(
-      li(
-        a(href := "#title")(titleStr1),
-        ul(infoList1.map(makeTocEntry(_, ntoc, forApi = false))),
-        a(href := "#title2")(titleStr2),
-        ul(infoList2.map(makeTocEntry(_, ntoc, forApi = false)))
-      )
-    )
-  }
-
-  /**
     * Displays the subsystem title and description
     */
   private def makeIntro(titleInfo: TitleInfo): Text.TypedTag[String] = {
@@ -457,10 +398,10 @@ case class IcdDbPrinter(db: IcdDb) {
     }
 
     // Displays a summary for a given event type.
-    def summary(eventType: String, list: List[PublishedItem]): Text.TypedTag[String] = {
+    def summary(itemType: String, list: List[PublishedItem], heading: String = "published by"): Text.TypedTag[String] = {
       if (list.isEmpty) div() else {
         div(
-          nh.H3(s"$eventType published by $subsystem"),
+          nh.H3(s"$itemType $heading $subsystem"),
           table(
             thead(
               tr(
@@ -508,19 +449,35 @@ case class IcdDbPrinter(db: IcdDb) {
       event <- pub.alarmList
     } yield PublishedItem(info.componentModel, event.alarmModel)
 
+    val allCommands = for {
+      info <- infoList
+      commands <- info.commands.toList
+      command <- commands.commandsReceived
+    } yield PublishedItem(info.componentModel, command.receiveCommandModel)
+
     div(
-      nh.H2(s"Summary of items published by $subsystem"),
+      nh.H2(s"Summary of events published and commands received by $subsystem"),
       summary("Events", allEvents),
       summary("Event Streams", allEventStreams),
       summary("Telemetry", allTelemetry),
-      summary("Alarms", allAlarms)
+      summary("Alarms", allAlarms),
+      summary("Commands", allCommands, "accepted by")
     )
   }
 
-
-  def displayDetails(subsystem: String, infoList: List[ComponentInfo], nh: NumberedHeadings): Text.TypedTag[String] = {
+  /**
+    * Displays the details of the events published and commands received by the subsystem
+    * @param subsystem subsystem name
+    * @param infoList list of component info
+    * @param nh used for numbered headings and TOC
+    * @return the HTML
+    */
+  private def displayDetails(subsystem: String, infoList: List[ComponentInfo], nh: NumberedHeadings): Text.TypedTag[String] = {
     import scalatags.Text.all._
-    div()
+    div(
+      // TODO: Should this still be ordered by assembly?
+      infoList.map(displayComponentInfo(_, nh))
+    )
   }
 
   /**
@@ -555,15 +512,11 @@ case class IcdDbPrinter(db: IcdDb) {
           titleMarkup,
           div(cls := "pagebreakBefore"),
           h2("Table of Contents"),
-//          makeToc(titleInfo.title, infoList),
           toc,
           div(cls := "pagebreakBefore"),
           titleMarkup,
           intro,
           mainContent
-
-          // TODO: replace with event/command overview followed by details
-//          infoList.map(displayComponentInfo(_, nh))
         )
       )
     }
@@ -608,6 +561,16 @@ case class IcdDbPrinter(db: IcdDb) {
       val infoList2 = getComponentInfo(targetSubsystem, tv.versionOpt, targetCompNames, sv, None)
       val titleInfo2 = TitleInfo(targetSubsystemInfo, sv, icdVersionOpt, "(Part 2)")
       val nh = new NumberedHeadings
+      val mainContent = div(
+        displaySummary(subsystem, infoList, nh),
+        displaySummary(targetSubsystem, infoList2, nh),
+        makeIntro(titleInfo1),
+        displayDetails(subsystem, infoList, nh),
+        makeIntro(titleInfo2),
+        displayDetails(targetSubsystem, infoList2, nh)
+      )
+      val toc = nh.mkToc()
+
       html(
         head(
           scalatags.Text.tags2.title(titleInfo.title),
@@ -617,16 +580,10 @@ case class IcdDbPrinter(db: IcdDb) {
           getTitleMarkup(titleInfo),
           div(cls := "pagebreakBefore"),
           h2("Table of Contents"),
-          makeToc(titleInfo1.title, titleInfo2.title, infoList, infoList2),
-
-          // ICD from subsystem to target
-          makeIntro(titleInfo1),
-          infoList.map(displayComponentInfo(_, nh)),
-
-          // ICD from target to subsystem
-          getTitleMarkup(titleInfo2, "title2"),
-          makeIntro(titleInfo2),
-          infoList2.map(displayComponentInfo(_, nh))
+          toc,
+          div(cls := "pagebreakBefore"),
+          getTitleMarkup(titleInfo),
+          mainContent
         )
       )
     }
