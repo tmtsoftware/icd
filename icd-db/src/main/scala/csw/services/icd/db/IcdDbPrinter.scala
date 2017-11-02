@@ -21,20 +21,6 @@ object IcdPrinter {
   }
 
   /**
-    * Used where information from the other subsystem may not be available
-    */
-  def optionalComponentModel(subsys: String, comp: String, opt: Option[ComponentModel]) =
-    ComponentModel(
-      componentType = opt.map(_.componentType).getOrElse(""),
-      subsystem = opt.map(_.subsystem).getOrElse(subsys),
-      component = opt.map(_.component).getOrElse(comp),
-      prefix = opt.map(_.prefix).getOrElse(""),
-      title = opt.map(_.title).getOrElse(""),
-      description = opt.map(_.description).getOrElse(""),
-      modelVersion = opt.map(_.modelVersion).getOrElse(""),
-      wbsId = opt.map(_.wbsId).getOrElse(""))
-
-  /**
     * Summary of a published item or received command.
     *
     * @param component the publishing or receiving component
@@ -45,11 +31,17 @@ object IcdPrinter {
   /**
     * Summary of a subscribed item.
     *
-    * @param publisher  the publishing component
-    * @param subscriber the subscribing component
-    * @param item       name and description of the published item
+    * @param publisherSubsystem the publisher's subsystem
+    * @param publisherComponent the publisher's component
+    * @param publisherOpt       the publisher's component model, if known
+    * @param warningOpt         a warning, in case the publisher's component model, is not known
+    * @param subscriber         the subscriber's component model
+    * @param item               name and description of the published item
     */
-  case class SubscribedItem(publisher: ComponentModel, subscriber: ComponentModel, item: NameDesc)
+  case class SubscribedItem(publisherSubsystem: String, publisherComponent: String,
+                            publisherOpt: Option[ComponentModel],
+                            warningOpt: Option[String],
+                            subscriber: ComponentModel, item: NameDesc)
 
 }
 
@@ -508,16 +500,26 @@ case class IcdDbPrinter(db: IcdDb) {
                 info <- list
               } yield {
                 // If this is an ICD or the publisher is in the same subsystem, we can link to it, since it is in this doc
+                val prefixItem = info.publisherOpt match {
+                  case Some(componentModel) => span(componentModel.prefix)
+                  case None => em("unknown")
+                }
                 val publisherPrefix =
-                  if (isIcd || info.publisher.subsystem == info.subscriber.subsystem)
-                    a(href := s"#${info.publisher.component}")(info.publisher.prefix)
-                  else span(info.publisher.prefix)
+                  if (isIcd || info.publisherSubsystem == info.subscriber.subsystem)
+                    a(href := s"#${info.publisherComponent}")(prefixItem)
+                  else span(prefixItem)
+
+                val description = info.warningOpt match {
+                  case Some(msg) => p(em("Warning: ", msg))
+                  case None => raw(firstParagraph(info.item.description))
+                }
 
                 tr(
                   td(p(a(href := s"#${info.subscriber.component}")(info.subscriber.component))),
                   td(p(publisherPrefix)),
                   td(p(a(href := s"#${idFor(info.subscriber.component, action, itemType, info.item.name)}")(info.item.name))),
-                  td(raw(firstParagraph(info.item.description))))
+                  td(description)
+                )
               }
             )
           )
@@ -561,7 +563,10 @@ case class IcdDbPrinter(db: IcdDb) {
       sub <- info.subscribes.toList
       event <- sub.subscribeInfo
     } yield (event.itemType, SubscribedItem(
-      optionalComponentModel(event.subscribeModelInfo.subsystem, event.subscribeModelInfo.component, event.publisher),
+      event.subscribeModelInfo.subsystem,
+      event.subscribeModelInfo.component,
+      event.publisher,
+      event.warning,
       info.componentModel,
       OptionalNameDesc(event.subscribeModelInfo.name, event.telemetryModel)))
     val subscribedEvents = allSubscribed.filter(_._1 == Events).map(_._2)
@@ -574,7 +579,10 @@ case class IcdDbPrinter(db: IcdDb) {
       commands <- info.commands.toList
       command <- commands.commandsSent
     } yield SubscribedItem(
-      optionalComponentModel(command.subsystem, command.component, command.receiver),
+      command.subsystem,
+      command.component,
+      command.receiver,
+      command.warning,
       info.componentModel,
       OptionalNameDesc(command.name, command.receiveCommandModel))
 
