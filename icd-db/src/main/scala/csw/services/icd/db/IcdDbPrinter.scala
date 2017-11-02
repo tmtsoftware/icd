@@ -273,7 +273,7 @@ case class IcdDbPrinter(db: IcdDb) {
         nh.H3(sentCommandsTitle(compName)),
         for (s <- info) yield {
           val receiveCommandModel = s.receiveCommandModel
-          val to = s.receiver.map(r => s"to ${r.subsystem}.${r.compName}").getOrElse("")
+          val to = s.receiver.map(r => s"to ${r.subsystem}.${r.component}").getOrElse("")
           div(cls := "nopagebreak")(
             nh.H4(s"$compName sends configuration: ${s.name} $to",
               idFor(compName, "sends", "Commands", s.name)),
@@ -574,7 +574,7 @@ case class IcdDbPrinter(db: IcdDb) {
       commands <- info.commands.toList
       command <- commands.commandsSent
     } yield SubscribedItem(
-      optionalComponentModel(command.subsystem, command.component, None),
+      optionalComponentModel(command.subsystem, command.component, command.receiver),
       info.componentModel,
       OptionalNameDesc(command.name, command.receiveCommandModel))
 

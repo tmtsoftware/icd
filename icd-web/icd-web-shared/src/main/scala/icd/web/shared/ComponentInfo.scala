@@ -183,7 +183,7 @@ case class SentCommandInfo(
   subsystem: String,
   component: String,
   receiveCommandModel: Option[ReceiveCommandModel],
-  receiver: Option[OtherComponent]) {
+  receiver: Option[ComponentModel]) {
 
   val warning: Option[String] = if (receiveCommandModel.nonEmpty) None
   else {

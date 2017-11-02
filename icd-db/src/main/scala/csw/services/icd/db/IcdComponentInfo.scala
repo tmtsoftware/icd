@@ -6,23 +6,23 @@ import icd.web.shared.IcdModels._
 import icd.web.shared._
 
 /**
- * Gathers information related to a component in a given version of an ICD.
- * Only information related to the component and the target subsystem version is included.
- */
+  * Gathers information related to a component in a given version of an ICD.
+  * Only information related to the component and the target subsystem version is included.
+  */
 object IcdComponentInfo {
   /**
-   * Query the database for information about the given component
-   *
-   * @param db               used to access the database
-   * @param subsystem        the subsystem containing the component
-   * @param versionOpt       the version of the subsystem to use (determines the version of the component):
-   *                         None for unpublished working version
-   * @param compNames        the component names
-   * @param target           the target subsystem of the ICD
-   * @param targetVersionOpt the version of the target subsystem to use
-   * @param targetCompNameOpt optional name of target component (default is to use all target components)
-   * @return an object containing information about the component
-   */
+    * Query the database for information about the given component
+    *
+    * @param db                used to access the database
+    * @param subsystem         the subsystem containing the component
+    * @param versionOpt        the version of the subsystem to use (determines the version of the component):
+    *                          None for unpublished working version
+    * @param compNames         the component names
+    * @param target            the target subsystem of the ICD
+    * @param targetVersionOpt  the version of the target subsystem to use
+    * @param targetCompNameOpt optional name of target component (default is to use all target components)
+    * @return an object containing information about the component
+    */
   def getComponentInfoList(db: IcdDb, subsystem: String, versionOpt: Option[String], compNames: List[String],
                            target: String, targetVersionOpt: Option[String],
                            targetCompNameOpt: Option[String] = None): List[ComponentInfo] = {
@@ -33,18 +33,18 @@ object IcdComponentInfo {
   }
 
   /**
-   * Query the database for information about the given component
-   *
-   * @param query            used to access the database
-   * @param subsystem        the subsystem containing the component
-   * @param versionOpt       the version of the subsystem to use (determines the version of the component):
-   *                         None for unpublished working version
-   * @param compName         the component name
-   * @param target           the target subsystem of the ICD
-   * @param targetVersionOpt the version of the target subsystem to use
-   * @param targetCompNameOpt optional name of target component (default is to use all target components)
-   * @return an object containing information about the component
-   */
+    * Query the database for information about the given component
+    *
+    * @param query             used to access the database
+    * @param subsystem         the subsystem containing the component
+    * @param versionOpt        the version of the subsystem to use (determines the version of the component):
+    *                          None for unpublished working version
+    * @param compName          the component name
+    * @param target            the target subsystem of the ICD
+    * @param targetVersionOpt  the version of the target subsystem to use
+    * @param targetCompNameOpt optional name of target component (default is to use all target components)
+    * @return an object containing information about the component
+    */
   def getComponentInfo(query: IcdDbQuery, subsystem: String, versionOpt: Option[String], compName: String,
                        target: String, targetVersionOpt: Option[String],
                        targetCompNameOpt: Option[String]): Option[ComponentInfo] = {
@@ -57,19 +57,19 @@ object IcdComponentInfo {
       val componentModel = icdModels.componentModel
       val publishes = getPublishes(subsystem, icdModels, targetModelsList)
       val subscribes = getSubscribes(icdModels, targetModelsList)
-      val commands = getCommands(icdModels, targetModelsList)
+      val commands = getCommands(query, icdModels, targetModelsList)
 
       componentModel.map { model => ComponentInfo(model, publishes, subscribes, commands) }
     }
   }
 
   /**
-   * Gets information about the items published by a component
-   *
-   * @param subsystem        the source (publisher) subsystem
-   * @param models           the model objects for the component
-   * @param targetModelsList the target model objects
-   */
+    * Gets information about the items published by a component
+    *
+    * @param subsystem        the source (publisher) subsystem
+    * @param models           the model objects for the component
+    * @param targetModelsList the target model objects
+    */
   private def getPublishes(subsystem: String, models: IcdModels, targetModelsList: List[IcdModels]): Option[Publishes] = {
     models.componentModel match {
       case None => None
@@ -99,16 +99,16 @@ object IcdComponentInfo {
   }
 
   /**
-   * Gets information about who subscribes to the given published items
-   *
-   * @param subsystem        the publisher's subsystem
-   * @param component        the publisher's component
-   * @param prefix           the publisher component's prefix
-   * @param name             simple name of the published item
-   * @param desc             description of the item
-   * @param pubType          One of Telemetry, Event, EventStream, Alarm.
-   * @param targetModelsList the target model objects for the ICD
-   */
+    * Gets information about who subscribes to the given published items
+    *
+    * @param subsystem        the publisher's subsystem
+    * @param component        the publisher's component
+    * @param prefix           the publisher component's prefix
+    * @param name             simple name of the published item
+    * @param desc             description of the item
+    * @param pubType          One of Telemetry, Event, EventStream, Alarm.
+    * @param targetModelsList the target model objects for the ICD
+    */
   private def getSubscribers(subsystem: String, component: String, prefix: String, name: String, desc: String,
                              pubType: PublishType, targetModelsList: List[IcdModels]): List[SubscribeInfo] = {
 
@@ -130,10 +130,10 @@ object IcdComponentInfo {
     // Gets the list of subscribed items from the model given the publish type
     def getSubscribeInfoByType(subscribeModel: SubscribeModel, pubType: PublishType): List[SubscribeModelInfo] = {
       pubType match {
-        case Telemetry    => subscribeModel.telemetryList
-        case Events       => subscribeModel.eventList
+        case Telemetry => subscribeModel.telemetryList
+        case Events => subscribeModel.eventList
         case EventStreams => subscribeModel.eventStreamList
-        case Alarms       => subscribeModel.alarmList
+        case Alarms => subscribeModel.alarmList
       }
     }
 
@@ -148,11 +148,11 @@ object IcdComponentInfo {
   }
 
   /**
-   * Gets information about the items the component subscribes to, along with the publisher of each item
-   *
-   * @param models           the model objects for the component
-   * @param targetModelsList the target model objects
-   */
+    * Gets information about the items the component subscribes to, along with the publisher of each item
+    *
+    * @param models           the model objects for the component
+    * @param targetModelsList the target model objects
+    */
   private def getSubscribes(models: IcdModels, targetModelsList: List[IcdModels]): Option[Subscribes] = {
 
     // Gets additional information about the given subscription, including info from the publisher
@@ -164,9 +164,9 @@ object IcdComponentInfo {
         publishModel <- t.publishModel
       } yield {
         val (telem, alarm) = publishType match {
-          case Telemetry  => (publishModel.telemetryList.find(t => t.name == si.name), None)
-          case Events  => (publishModel.eventList.find(t => t.name == si.name), None)
-          case EventStreams  => (publishModel.eventStreamList.find(t => t.name == si.name), None)
+          case Telemetry => (publishModel.telemetryList.find(t => t.name == si.name), None)
+          case Events => (publishModel.eventList.find(t => t.name == si.name), None)
+          case EventStreams => (publishModel.eventStreamList.find(t => t.name == si.name), None)
           case Alarms => (None, publishModel.alarmList.find(a => a.name == si.name))
         }
         DetailedSubscribeInfo(publishType, si, telem, alarm, Some(componentModel))
@@ -189,14 +189,14 @@ object IcdComponentInfo {
   }
 
   /**
-   * Returns a list of the names of target components that send the given command to the given component/subsystem
-   *
-   * @param subsystem        the subsystem that contains the component that defines the command
-   * @param component        the component that defines the command
-   * @param commandName      the command name
-   * @param targetModelsList the target model objects
-   * @return
-   */
+    * Returns a list of the names of target components that send the given command to the given component/subsystem
+    *
+    * @param subsystem        the subsystem that contains the component that defines the command
+    * @param component        the component that defines the command
+    * @param commandName      the command name
+    * @param targetModelsList the target model objects
+    * @return
+    */
   private def getCommandSenders(subsystem: String, component: String, commandName: String,
                                 targetModelsList: List[IcdModels]): List[ComponentModel] = {
     for {
@@ -209,12 +209,12 @@ object IcdComponentInfo {
   }
 
   /**
-   * Gets a list of commands received by the component, including information about which components
-   * send each command.
-   *
-   * @param models           the model objects for the component
-   * @param targetModelsList the target model objects
-   */
+    * Gets a list of commands received by the component, including information about which components
+    * send each command.
+    *
+    * @param models           the model objects for the component
+    * @param targetModelsList the target model objects
+    */
   private def getCommandsReceived(models: IcdModels, targetModelsList: List[IcdModels]): List[ReceivedCommandInfo] = {
     for {
       cmd <- models.commandModel.toList
@@ -227,14 +227,14 @@ object IcdComponentInfo {
   }
 
   /**
-   * Returns an object describing a command, defined to be received by the given component in the given subsystem,
-   * if found.
-   *
-   * @param subsystem        the subsystem that contains the component that defines the command
-   * @param component        the component that defines the command
-   * @param commandName      the command name
-   * @param targetModelsList the target model objects
-   */
+    * Returns an object describing a command, defined to be received by the given component in the given subsystem,
+    * if found.
+    *
+    * @param subsystem        the subsystem that contains the component that defines the command
+    * @param component        the component that defines the command
+    * @param commandName      the command name
+    * @param targetModelsList the target model objects
+    */
   private def getCommand(subsystem: String, component: String, commandName: String,
                          targetModelsList: List[IcdModels]): Option[ReceiveCommandModel] = {
     val result = for {
@@ -248,32 +248,35 @@ object IcdComponentInfo {
   }
 
   /**
-   * Gets a list of commands sent by the component, including information about the components
-   * that receive each command.
-   *
-   * @param models           the model objects for the component
-   * @param targetModelsList the target model objects
-   */
-  private def getCommandsSent(models: IcdModels, targetModelsList: List[IcdModels]): List[SentCommandInfo] = {
+    * Gets a list of commands sent by the component, including information about the components
+    * that receive each command.
+    *
+    * @param query            used to query the db
+    * @param models           the model objects for the component
+    * @param targetModelsList the target model objects
+    */
+  private def getCommandsSent(query: IcdDbQuery, models: IcdModels, targetModelsList: List[IcdModels]): List[SentCommandInfo] = {
     val result = for {
       cmd <- models.commandModel.toList
       sent <- cmd.send
       recv <- getCommand(sent.subsystem, sent.component, sent.name, targetModelsList)
     } yield {
-      SentCommandInfo(sent.name, sent.subsystem, sent.component, Some(recv), Some(OtherComponent(sent.subsystem, sent.component)))
+      SentCommandInfo(sent.name, sent.subsystem, sent.component, Some(recv),
+        query.getComponentModel(sent.subsystem, sent.component))
     }
     result
   }
 
   /**
-   * Gets a list of commands sent or received by the component.
-   *
-   * @param models           the model objects for the component
-   * @param targetModelsList the target model objects
-   */
-  private def getCommands(models: IcdModels, targetModelsList: List[IcdModels]): Option[Commands] = {
+    * Gets a list of commands sent or received by the component.
+    *
+    * @param query            used to query the db
+    * @param models           the model objects for the component
+    * @param targetModelsList the target model objects
+    */
+  private def getCommands(query: IcdDbQuery, models: IcdModels, targetModelsList: List[IcdModels]): Option[Commands] = {
     val received = getCommandsReceived(models, targetModelsList)
-    val sent = getCommandsSent(models, targetModelsList)
+    val sent = getCommandsSent(query, models, targetModelsList)
     models.commandModel match {
       case None => None
       case Some(m) =>

@@ -169,7 +169,7 @@ object ComponentInfoHelper {
       sent <- cmd.send
     } yield {
       val recv = query.getCommand(sent.subsystem, sent.component, sent.name)
-      SentCommandInfo(sent.name, sent.subsystem, sent.component, recv, Some(OtherComponent(sent.subsystem, sent.component)))
+      SentCommandInfo(sent.name, sent.subsystem, sent.component, recv, query.getComponentModel(sent.subsystem, sent.component))
     }
     result
   }

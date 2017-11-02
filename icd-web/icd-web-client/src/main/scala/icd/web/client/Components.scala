@@ -7,7 +7,7 @@ import icd.web.shared.IcdModels._
 import icd.web.shared._
 import org.scalajs.dom
 import org.scalajs.dom.ext.Ajax
-import org.scalajs.dom.raw.{HTMLButtonElement, HTMLDivElement, HTMLTableRowElement}
+import org.scalajs.dom.raw.{HTMLButtonElement, HTMLDivElement, HTMLElement, HTMLTableRowElement}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -52,7 +52,7 @@ object Components {
     * @return an html table element
     */
   def mkTable(headings: List[String], rowList: List[List[String]],
-              tableStyle: scalacss.StyleA = Styles.emptyStyle) = {
+              tableStyle: scalacss.StyleA = Styles.emptyStyle): TypedTag[HTMLElement] = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
@@ -290,7 +290,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalacss.ScalatagsCss._
 
     // Action when user clicks on a subscriber link
-    def clickedOnSubscriber(info: SubscribeInfo)(e: dom.Event) = {
+    def clickedOnSubscriber(info: SubscribeInfo)(e: dom.Event): Unit = {
       e.preventDefault()
       listener.componentSelected(ComponentLink(info.componentModel.subsystem, info.componentModel.component))
     }
@@ -418,7 +418,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalacss.ScalatagsCss._
 
     // Action when user clicks on a subscriber link
-    def clickedOnPublisher(info: DetailedSubscribeInfo)(e: dom.Event) = {
+    def clickedOnPublisher(info: DetailedSubscribeInfo)(e: dom.Event): Unit = {
       e.preventDefault()
       listener.componentSelected(ComponentLink(
         info.subscribeModelInfo.subsystem,
@@ -522,7 +522,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalacss.ScalatagsCss._
 
     // Action when user clicks on a sender link
-    def clickedOnSender(sender: OtherComponent)(e: dom.Event) = {
+    def clickedOnSender(sender: OtherComponent)(e: dom.Event): Unit = {
       e.preventDefault()
       listener.componentSelected(ComponentLink(sender.subsystem, sender.compName))
     }
@@ -577,14 +577,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalacss.ScalatagsCss._
 
     // Action when user clicks on a receiver link
-    def clickedOnReceiver(receiver: OtherComponent)(e: dom.Event) = {
+    def clickedOnReceiver(receiver: ComponentModel)(e: dom.Event): Unit = {
       e.preventDefault()
-      listener.componentSelected(ComponentLink(receiver.subsystem, receiver.compName))
+      listener.componentSelected(ComponentLink(receiver.subsystem, receiver.component))
     }
 
     // Makes the link for a receiver component in the table
-    def makeLinkForReceiver(receiver: OtherComponent) = {
-      a(s"${receiver.subsystem}.${receiver.compName} ", href := "#", onclick := clickedOnReceiver(receiver) _)
+    def makeLinkForReceiver(receiver: ComponentModel) = {
+      a(s"${receiver.subsystem}.${receiver.component} ", href := "#", onclick := clickedOnReceiver(receiver) _)
     }
 
     // Returns a table row displaying more details for the given command
