@@ -43,6 +43,10 @@ object IcdDb extends App {
       c.copy(list = Some(x))
     } text "Prints a list of ICD subsystems, assemblies, HCDs or all components"
 
+    opt[String]('a', "listData") valueName "<subsystem>" action { (x, c) =>
+      c.copy(listData = Some(x))
+    } text "Specifies the subsystem of which the data rates are calculated."
+
     opt[String]('c', "component") valueName "<name>" action { (x, c) =>
       c.copy(component = Some(x))
     } text "Specifies the component to be used by any following options (subsystem must also be specified)"
@@ -134,6 +138,88 @@ object IcdDb extends App {
         db.query.getHcdNames
       else db.query.getComponentNames
       for (name <- list) println(name)
+    }
+
+
+    def listData(subsystem: String): Unit = {
+      val publishInfo = db.query.getPublishInfo(subsystem)
+      publishInfo.foreach { componentPublishInfo =>
+         println(s" ----  ${componentPublishInfo.componentName} ----- ")
+
+        val componentModel = db.query.getComponentModel(subsystem, componentPublishInfo.componentName)
+        componentModel.foreach { cm =>
+          db.query.getPublishModel(cm).foreach { cpm =>
+            listTelemetryData(cpm.eventList)
+          }
+
+        }
+      }
+    }
+
+    def listTelemetryData(items: List[TelemetryModel]): Unit = {
+      val DEFAULT_RATE = 0.1 // TODO move somewhere
+      items.foreach { item =>
+        println(s"Item Name: ${item.name}, min rate = ${item.minRate}, max rate=${item.maxRate}, archiveRate=${item.archiveRate}, archive=${item.archive}")
+        if (item.archive) {
+          val rate = if (item.archiveRate > 0.0) {
+            item.archiveRate
+          } else if (item.maxRate > 0.0) {
+            item.maxRate
+          } else if (item.minRate > 0.0) {
+            item.minRate
+          } else {
+            DEFAULT_RATE
+          }
+          println(s"Item is archived at a rate of $rate Hz")
+          var itemData=0
+          item.attributesList.foreach { att =>
+            print(s"-- Attribute ${att.name}: type=${att.typeStr}")
+            val eventSize = getSizeOfType(att.typeStr)
+            eventSize match {
+              case Some(s) =>
+                println(s", size=$s byte(s)")
+                itemData += s
+              case None => println(", cannot determine event size.  Skipping")
+            }
+          }
+          val dataRate = itemData * rate * 3600.0 / 1000000.0
+          println(s"Total size of event: $itemData.  data rate: $dataRate MB/hour")
+        }
+      }
+    }
+
+    def getSizeOfType(dtype: String): Option[Int] = dtype match {
+      case s if s.startsWith("boolean") => Some(1)
+      case s if s.startsWith("byte") => Some(1)
+      case s if s.startsWith("short") => Some(2)
+      case s if s.startsWith("enum") => Some(4)
+      case s if s.startsWith("integer") => Some(4)
+      case s if s.startsWith("float") => Some(4)
+      case s if s.startsWith("long") => Some(8)
+      case s if s.startsWith("double") => Some(8)
+      case s if s.startsWith("string") => Some(80)
+      case s if s.startsWith("array") =>
+        var s1 = s.drop(6)
+        var numElements = 1
+        var commaLoc = s1.indexOf(',')
+        val endLoc = s1.indexOf(']')
+        if (commaLoc < endLoc) {
+          while (commaLoc != -1) {
+            val s2 = s1.take(commaLoc)
+            numElements *= s2.toInt
+            s1 = s1.drop(commaLoc + 1)
+            commaLoc = s1.indexOf(',')
+          }
+        }
+        val newEndLoc = s1.indexOf(']')
+        val s3 = s1.substring(0, newEndLoc)
+        numElements *= s3.toInt
+        s1 = s1.drop(newEndLoc + 5)
+        getSizeOfType(s1) match {
+          case Some(i) => Some(i * numElements)
+          case None => None
+        }
+      case _ => None
     }
 
     def error(msg: String): Unit = {
