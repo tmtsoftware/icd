@@ -22,8 +22,8 @@ case class Diff(key: String, value: String)
 case class DiffItem(pointer: List[String], changes: List[Diff])
 
 /**
- * Top level diff of two subsystems
+ * Top level diff of two subsystem versions
  * @param path path to the top level part that changed (subsystem.component.publish, for example)
- * @param items list of objects describing the changes
+ * @param jsonDiff JsonDiff formatted JSON (See https://github.com/gnieh/diffson)
  */
-case class DiffInfo(path: String, items: List[DiffItem])
+case class DiffInfo(path: String, jsonDiff: String)

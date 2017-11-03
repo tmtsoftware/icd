@@ -20,7 +20,6 @@ object Dependencies {
   val xmlworker = "com.itextpdf.tool" % "xmlworker" % "5.5.12"
   val casbah = "org.mongodb" %% "casbah" % "3.1.1"
 
-  // XXX: FIXME: tried newer version, but changes in API means more work needed on this side...
   val diffson = "org.gnieh" %% "diffson-spray-json" % "2.2.2"
 
   val sprayJson = "io.spray" %%  "spray-json" % "1.3.3"
@@ -48,7 +47,8 @@ object Dependencies {
     "org.querki" %%% "jquery-facade" % "1.0",
 //    "be.doeraene" %%% "scalajs-jquery" % "0.9.2",
     "com.github.japgolly.scalacss" %%% "core" % "0.5.3",
-    "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.5.3"
+    "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.5.3",
+    "eu.unicredit" %%% "shocon" % "0.2.0"
   ))
 
   // ScalaJS client JavaScript dependencies

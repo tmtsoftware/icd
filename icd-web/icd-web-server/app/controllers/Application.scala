@@ -8,16 +8,13 @@ import csw.services.icd.db.ApiVersions.ApiEntry
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
 import csw.services.icd.db._
 import csw.services.icd.github.IcdGitManager
-import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.SubsystemModel
 import icd.web.shared.{IcdVersion, _}
 import org.webjars.play._
 import play.api.libs.json.Json
 import play.filters.csrf.{CSRF, CSRFAddToken, CSRFCheck}
-import spray.json._
 import play.api.mvc._
 import play.api.{Environment, Mode}
-import gnieh.diffson.sprayJson._
 
 // Defines the database used
 object Application {
@@ -45,14 +42,6 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
     val debug = env.mode == Mode.Dev
     Ok(views.html.index(debug, assets, token, webJarsUtil))
   })
-
-  // This version didn't work: [CSRF] Check failed because no or invalid token found in body for /uploadFiles
-  //  def index = Action { implicit request =>
-  //    implicit val environment: Environment = env
-  //    val token = Csrf(CSRF.getToken.get.value)
-  //    val debug = env.mode == Mode.Dev
-  //    Ok(views.html.index(debug, assets, token, webJarsUtil))
-  //  }
 
   /**
     * Gets a list of top level subsystem names
@@ -251,7 +240,6 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
     * Returns a detailed list of the versions of the given subsystem
     */
   def getVersions(subsystem: String) = Action { implicit request =>
-    //    val versions = db.versionManager.getVersions(subsystem).map(v => VersionInfo(v.versionOpt, v.user, v.comment, v.date.toString))
     val versions = allApiVersions.filter(_.subsystem == subsystem).flatMap(_.apis).map(a => VersionInfo(Some(a.version), a.user, a.comment, a.date))
     Ok(Json.toJson(versions))
   }
@@ -268,8 +256,6 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
     * Gets a list of ICD names as pairs of (subsystem, targetSubsystem)
     */
   def getIcdNames = Action { implicit request =>
-    // convert list to use shared IcdName class
-    //    val list = db.versionManager.getIcdNames.map(icd => IcdName(icd.subsystem, icd.target))
     val list = allIcdVersions.map(i => IcdName(i.subsystems.head, i.subsystems.tail.head))
     val sorted = list.sortWith((a, b) => a.subsystem.compareTo(b.subsystem) < 0)
     Ok(Json.toJson(sorted))
@@ -288,35 +274,8 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
   }
 
   // Packages the diff information for return to browser
-  // XXX TODO FIXME: Use Git diff?
   private def getDiffInfo(diff: VersionDiff): DiffInfo = {
-    def getValue(a: Any): String = {
-      a match {
-        case o: JsObject =>
-          val header = List("Attribute", "Value")
-          val rows = o.fields.toList.map(p => List(getValue(p._1), getValue(p._2)))
-          HtmlMarkup.mkTable(header, rows).render
-        case ar: JsArray =>
-          ar.elements.map(getValue).mkString(", ")
-        case s: JsString =>
-          s.value.stripMargin
-        case n: JsNumber =>
-          n.value.toString()
-        case _ =>
-          a.toString
-      }
-    }
-
-    def getDiff(p: (String, Any)) = Diff(p._1, getValue(p._2))
-
-    //        def getDiffItem(op: Operation) = DiffItem(op.path, op.toJson.values.map(getDiff).toList)
-    //    def getDiffItem(op: Operation) = DiffItem(op.path, op.toJson.fields.map(getDiff).toList)
-    // XXX TODO: FIXME: Replace with normal diff? jsonDiff output is not very informative...
-    def getDiffItem(op: Operation) = {
-      DiffItem(Nil, Nil)
-    }
-
-    DiffInfo(diff.path, diff.patch.ops.map(getDiffItem))
+    DiffInfo(diff.path, diff.patch.toString())
   }
 
   /**

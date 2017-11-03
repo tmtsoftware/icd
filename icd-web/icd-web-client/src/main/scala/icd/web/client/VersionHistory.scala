@@ -32,9 +32,10 @@ object VersionHistory {
 }
 
 /**
- * Manages the main content section
- */
+  * Manages the main content section
+  */
 case class VersionHistory(mainContent: MainContent) extends Displayable {
+
   import VersionHistory._
   import icd.web.shared.JsonSupport._
 
@@ -70,10 +71,33 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
   // Display the results of comparing two versions
   private def markupDiff(subsystem: String, list: List[DiffInfo]) = {
 
-    def diffItemMarkup(diffItem: DiffItem) = {
-      val headings = diffItem.changes.map(_.key)
-      val rows = List(diffItem.changes.map(_.value))
-      Components.mkTable(headings, rows)
+    def jsonDiffMarkup(infoList: List[JsonDiff]) = {
+      import scalacss.ScalatagsCss._
+      val headings = List("Operation", "Path", "Old Value", "New Value")
+
+      def displayJson(json: String) = {
+        if (json.startsWith("\"")) {
+          div(json.substring(1, json.length-1).replace("\\n", "\n").trim.split("\n").map(s => p(s)))
+        } else {
+          div(pre(code(span(Styles.unstyledPre, Json.prettyPrint(Json.parse(json))))))
+        }
+      }
+
+      table(attr("data-toggle") := "table",
+        thead(
+          tr(headings.map(th(_)))
+        ),
+        tbody(
+          for (i <- infoList) yield {
+            tr(
+              td(p(i.op)),
+              td(p(i.path)),
+              td(div(Styles.scrollableDiv, displayJson(i.old))),
+              td(div(Styles.scrollableDiv, displayJson(i.value)))
+            )
+          }
+        ))
+
     }
 
     def formatPath(path: String): String = {
@@ -85,9 +109,16 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
     }
 
     def diffInfoMarkup(diffInfo: DiffInfo) = {
+      val infoList = Json.fromJson[List[JsonDiff]](Json.parse(diffInfo.jsonDiff)) match {
+        case JsSuccess(list: List[JsonDiff], _: JsPath) =>
+          list
+        case e: JsError =>
+          println(s"${JsError.toJson(e).toString()}")
+          Nil
+      }
       div(
         h3(formatPath(diffInfo.path)),
-        diffInfo.items.map(diffItemMarkup)
+        jsonDiffMarkup(infoList)
       )
     }
 

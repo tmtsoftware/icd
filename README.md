@@ -39,6 +39,16 @@ There are currently these ICD subprojects:
 Build and Install
 -----------------
 
+Note: The build requires that [node.js](https://nodejs.org/en/) be installed on the system
+and this environment variable set:
+
+    SBT_OPTS=-Dsbt.jse.engineType=Node -Dsbt.jse.command=/usr/bin/node
+
+(Change `node` to `nodejs` if that is the name of the executable on your system.) 
+
+This is checked in the install.sh script, which automatically sets the SBT_OPTS environment variable if node.js is found 
+and gives an error otherwise. 
+
 An install.sh script is provided that builds and installs all of the subprojects into the ../install_icd directory.
 This is basically just the command `sbt stage` in each project followed by copying the products to the
 install directory. A binary is installed for each subproject, with the same name as the subproject

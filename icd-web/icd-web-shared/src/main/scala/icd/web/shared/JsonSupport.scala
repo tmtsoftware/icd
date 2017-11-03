@@ -2,7 +2,7 @@ package icd.web.shared
 
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels._
-import play.api.libs.json._
+import play.api.libs.json.{JsValue, _}
 
 object JsonSupport {
   implicit val publishTypeWrites = new Writes[PublishType] {
@@ -16,13 +16,30 @@ object JsonSupport {
   implicit val publishTypeReads: Reads[PublishType] = {
     case JsString(s) => JsSuccess(s match {
       case "Telemetry" => Telemetry
-      case "Events"  => Events
+      case "Events" => Events
       case "EventStreams" => EventStreams
       case "Alarms" => Alarms
       case x => throw new RuntimeException(s"Bad publish type: $x")
     })
     case x => throw new RuntimeException(s"JSon parse error: $x")
   }
+
+  // Represents an entry in the list of differences between two JSON versions
+  case class JsonDiff(op: String, path: String, old: String, value: String)
+
+  implicit val jsonDiffReads: Reads[JsonDiff] = {
+    case JsObject(obj) =>
+      JsSuccess(
+        JsonDiff(obj("op").asInstanceOf[JsString].value,
+          obj("path").asInstanceOf[JsString].value,
+          obj.getOrElse("old", JsString("")).toString(),
+          obj.getOrElse("value", JsString("")).toString()
+        )
+      )
+    case x => throw new RuntimeException(s"JSon parse error: $x")
+  }
+
+
   implicit val componentModelFormat = Json.format[ComponentModel]
   implicit val attributeModelFormat = Json.format[AttributeModel]
   implicit val telemetryModelFormat = Json.format[TelemetryModel]

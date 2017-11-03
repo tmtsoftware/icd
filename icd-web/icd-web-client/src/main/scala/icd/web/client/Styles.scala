@@ -1,5 +1,7 @@
 package icd.web.client
 
+import scalacss.internal.mutable.StyleSheet
+
 import scalacss.Defaults._
 
 // CSS styles
@@ -127,5 +129,21 @@ object Styles extends StyleSheet.Inline {
 
   val attributeCell = style(
     whiteSpace.nowrap
+  )
+
+  val scrollableDiv = style(
+    width(100 %%),
+    height(100 %%),
+    maxHeight(300 px),
+    maxWidth(600 px),
+    margin(0 px),
+    padding(0 px),
+    overflow.auto
+  )
+
+  val unstyledPre = style(
+    border(0 px),
+    color.black,
+    backgroundColor.transparent
   )
 }

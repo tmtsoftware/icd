@@ -4,11 +4,24 @@
 
 dir=../install_icd
 
+# Make sure we can find sbt
 hash sbt 2>/dev/null || { echo >&2 "Please install sbt first.  Aborting."; exit 1; }
-#hash node 2>/dev/null || { echo >&2 "Please install node (nodejs) first.  Aborting."; exit 1; }
+
+# Some scalajs related sbt plugins depend on node.js,
+# but the executable has different names on different systems
+if hash nodejs 2>/dev/null ; then
+    NODEJS=`hash -t nodejs`
+elif hash node 2>/dev/null ; then
+    NODEJS=`hash -t node`
+else
+    echo >&2 "Please install node.js first.  Aborting."
+    exit 1
+fi
+export SBT_OPTS="-Dsbt.jse.engineType=Node -Dsbt.jse.command=$NODEJS"
 
 test -d $dir || mkdir -p $dir/bin $dir/lib $dir/conf
 
+#sbt clean "project root" clean
 sbt stage "project root" stage
 
 for i in bin lib; do
