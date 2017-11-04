@@ -143,21 +143,34 @@ object IcdDb extends App {
 
     def listData(subsystem: String): Unit = {
       val publishInfo = db.query.getPublishInfo(subsystem)
+      var componentTotalDataRate = 0.0
       publishInfo.foreach { componentPublishInfo =>
          println(s" ----  ${componentPublishInfo.componentName} ----- ")
-
+        componentTotalDataRate = 0.0
         val componentModel = db.query.getComponentModel(subsystem, componentPublishInfo.componentName)
         componentModel.foreach { cm =>
           db.query.getPublishModel(cm).foreach { cpm =>
-            listTelemetryData(cpm.eventList)
+            if (!cpm.eventList.isEmpty) {
+              println("--- Event Data")
+              componentTotalDataRate += listTelemetryData(cpm.eventList)
+            }
+            if (!cpm.telemetryList.isEmpty) {
+              println("--- Telemetry Data")
+              componentTotalDataRate += listTelemetryData(cpm.telemetryList)
+            }
+            if (!cpm.eventStreamList.isEmpty) {
+              println("--- EventSteam Data")
+              componentTotalDataRate += listTelemetryData(cpm.eventStreamList)
+            }
           }
-
         }
+        println(s"==== Total archived data rate for ${componentPublishInfo.componentName}: $componentTotalDataRate MB/hour")
       }
     }
 
-    def listTelemetryData(items: List[TelemetryModel]): Unit = {
+    def listTelemetryData(items: List[TelemetryModel]): Double = {
       val DEFAULT_RATE = 0.1 // TODO move somewhere
+      var totalDataRate = 0.0
       items.foreach { item =>
         println(s"Item Name: ${item.name}, min rate = ${item.minRate}, max rate=${item.maxRate}, archiveRate=${item.archiveRate}, archive=${item.archive}")
         if (item.archive) {
@@ -183,9 +196,14 @@ object IcdDb extends App {
             }
           }
           val dataRate = itemData * rate * 3600.0 / 1000000.0
-          println(s"Total size of event: $itemData.  data rate: $dataRate MB/hour")
+          if (itemData > 0) {
+            totalDataRate += dataRate
+            println(s"Total size of event: $itemData.  data rate: $dataRate MB/hour")
+          }
         }
       }
+      println(s"Total data rate for this component model: $totalDataRate")
+      totalDataRate
     }
 
     def getSizeOfType(dtype: String): Option[Int] = dtype match {
