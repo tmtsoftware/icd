@@ -75,6 +75,7 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
       import scalacss.ScalatagsCss._
       val headings = List("Operation", "Path", "Old Value", "New Value")
 
+      // Display quoted strings as just the text, but display json objects as objects
       def displayJson(json: String) = {
         if (json.startsWith("\"")) {
           div(json.substring(1, json.length-1).replace("\\n", "\n").trim.split("\n").map(s => p(s)))
