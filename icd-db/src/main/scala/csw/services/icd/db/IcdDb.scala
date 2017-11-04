@@ -6,9 +6,7 @@ import java.nio.file.Files
 import com.mongodb.casbah.Imports._
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd._
-import csw.services.icd.db.IcdDbQuery.Published
 import csw.services.icd.model.{BaseModelParser, SubsystemModelParser}
-import icd.web.shared.ComponentInfo.{Alarms, EventStreams, Events, Telemetry}
 import icd.web.shared.IcdModels.TelemetryModel
 import org.joda.time.{DateTime, DateTimeZone}
 
@@ -16,9 +14,9 @@ import scala.io.StdIn
 
 object IcdDbDefaults {
   private val conf = ConfigFactory.load
-  val defaultPort = conf.getInt("icd.db.port")
-  val defaultHost = conf.getString("icd.db.host")
-  val defaultDbName = conf.getString("icd.db.name")
+  val defaultPort: Int = conf.getInt("icd.db.port")
+  val defaultHost: String = conf.getString("icd.db.host")
+  val defaultDbName: String = conf.getString("icd.db.name")
 }
 
 object IcdDb extends App {
@@ -198,15 +196,15 @@ object IcdDb extends App {
         val componentModel = db.query.getComponentModel(subsystem, componentPublishInfo.componentName)
         componentModel.foreach { cm =>
           db.query.getPublishModel(cm).foreach { cpm =>
-            if (!cpm.eventList.isEmpty) {
+            if (cpm.eventList.nonEmpty) {
               println("--- Event Data")
               componentTotalDataRate += listTelemetryData(cpm.eventList)
             }
-            if (!cpm.telemetryList.isEmpty) {
+            if (cpm.telemetryList.nonEmpty) {
               println("--- Telemetry Data")
               componentTotalDataRate += listTelemetryData(cpm.telemetryList)
             }
-            if (!cpm.eventStreamList.isEmpty) {
+            if (cpm.eventStreamList.nonEmpty) {
               println("--- EventSteam Data")
               componentTotalDataRate += listTelemetryData(cpm.eventStreamList)
             }
