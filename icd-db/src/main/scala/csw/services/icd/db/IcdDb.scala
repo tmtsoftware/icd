@@ -47,7 +47,7 @@ object IcdDb extends App {
 
   // Parser for the command line options
   private val parser = new scopt.OptionParser[Options]("icd-db") {
-    head("icd-db", System.getProperty("CSW_VERSION"))
+    head("icd-db", System.getProperty("ICD_VERSION"))
 
     opt[String]('d', "db") valueName "<name>" action { (x, c) =>
       c.copy(dbName = x)

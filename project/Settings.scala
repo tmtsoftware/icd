@@ -12,13 +12,15 @@ import com.typesafe.sbt.packager.docker._
 // Defines the global build settings so they don't need to be edited everywhere
 object Settings {
 
-  // Basic settings
-  val buildSettings = Seq(
+  val commonSettings = Seq(
     organization := "org.tmt",
     organizationName := "TMT",
     organizationHomepage := Some(url("http://www.tmt.org")),
     version := Dependencies.Version,
-    scalaVersion := Dependencies.ScalaVersion,
+    scalaVersion := Dependencies.ScalaVersion)
+
+  // Basic settings
+  val buildSettings = commonSettings ++ Seq(
     crossPaths := true,
 
     // Note: "parallelExecution in Test := false" doesn't seem to prevent parallel execution when all tests are run,
@@ -41,26 +43,13 @@ object Settings {
     resolvers += Resolver.jcenterRepo
   )
 
-//  // Automatic code formatting
-//  def formattingPreferences: FormattingPreferences =
-//    FormattingPreferences()
-//      .setPreference(RewriteArrowSymbols, false)
-//      .setPreference(AlignParameters, true)
-//      .setPreference(AlignSingleLineCaseStatements, true)
-//      .setPreference(DoubleIndentClassDeclaration, true)
-//
-//  lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
-//    ScalariformKeys.preferences in Compile := formattingPreferences,
-//    ScalariformKeys.preferences in Test := formattingPreferences
-//  )
-
   // Using java8
 //  lazy val defaultSettings = buildSettings ++ formatSettings ++ Seq(
   lazy val defaultSettings = buildSettings ++ Seq(
     scalacOptions ++= Seq("-target:jvm-1.8", "-encoding", "UTF-8", "-feature", "-deprecation", "-unchecked"),
     javacOptions in Compile ++= Seq("-source", "1.8"),
     javacOptions in (Compile, compile) ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint:unchecked", "-Xlint:deprecation"),
-    bashScriptExtraDefines ++= Seq(s"addJava -DCSW_VERSION=${Dependencies.Version}")
+    bashScriptExtraDefines ++= Seq(s"addJava -DICD_VERSION=${Dependencies.Version}")
   )
 
   // Customize the Docker install

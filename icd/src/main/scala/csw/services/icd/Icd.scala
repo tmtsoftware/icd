@@ -20,7 +20,7 @@ object Icd extends App {
   )
 
   private val parser = new scopt.OptionParser[Options]("icd") {
-    head("icd", System.getProperty("CSW_VERSION"))
+    head("icd", System.getProperty("ICD_VERSION"))
 
     opt[File]("validate") valueName "<dir>" action { (x, c) => // Note: -v is already taken by the shell script!
       c.copy(validateDir = Some(x))

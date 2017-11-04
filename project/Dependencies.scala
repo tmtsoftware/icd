@@ -40,11 +40,11 @@ object Dependencies {
 
   // ScalaJS web client scala dependencies
   val clientDeps = Def.setting(Seq(
-    "org.scala-js" %%% "scalajs-dom" % "0.9.2",
-    "com.lihaoyi" %%% "scalatags" % "0.6.5",
+    "org.scala-js" %%% "scalajs-dom" % "0.9.3",
+    "com.lihaoyi" %%% "scalatags" % "0.6.7",
 
     "com.typesafe.play" %%% "play-json" % PlayVersion,
-    "org.querki" %%% "jquery-facade" % "1.0",
+    "org.querki" %%% "jquery-facade" % "1.2",
 //    "be.doeraene" %%% "scalajs-jquery" % "0.9.2",
     "com.github.japgolly.scalacss" %%% "core" % "0.5.3",
     "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.5.3"

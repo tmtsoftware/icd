@@ -38,7 +38,7 @@ object IcdGit extends App {
 
   // Parser for the command line options
   private val parser = new scopt.OptionParser[Options]("icd-git") {
-    head("icd-git", System.getProperty("CSW_VERSION"))
+    head("icd-git", System.getProperty("ICD_VERSION"))
 
     opt[Unit]('l', "list") action { (x, c) =>
       c.copy(list = true)

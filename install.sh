@@ -17,12 +17,13 @@ else
     echo >&2 "Please install node.js first.  Aborting."
     exit 1
 fi
+# Should not be needed? See https://github.com/sbt/sbt-less/issues/95
 export SBT_OPTS="-Dsbt.jse.engineType=Node -Dsbt.jse.command=$NODEJS"
 
 test -d $dir || mkdir -p $dir/bin $dir/lib $dir/conf
 
-#sbt clean "project root" clean
-sbt stage "project root" stage
+#sbt "project root" clean
+sbt "project root" stage
 
 for i in bin lib; do
     for j in */target/universal/stage/$i/* ; do
@@ -31,7 +32,7 @@ for i in bin lib; do
 done
 
 for i in bin lib conf; do
-    for j in icd-web/icd-web-server/target/universal/stage/$i/* ; do
+    for j in icd-web-server/target/universal/stage/$i/* ; do
         cp -f $j $dir/$i
     done
 done
