@@ -34,7 +34,10 @@ There are currently these ICD subprojects:
 * [icd](icd) - supports validating an API against the JSON schema as well as saving it as a Markdown, HTML or PDF document
 * [icd-db](icd-db) - supports ingesting API files into a MongoDB database, querying the db and saving an API or ICD as a document
 * [icd-git](icd-git) - work directly with ICD model files stored on GitHub, publish ICDs, ingest ICD releases into the ICD database
-* [icd-web](icd-web) - a Play/Scala.js based web app for working with ICDs
+* [icd-web-server](icd-web-server) - a Play web server for working with ICDs
+* [icd-web-client](icd-web-client) - a Scala.JS based web client for the Play server
+                                     (The main client class is [IcdWebClient](icd-web-client/src/main/scala/icd/web/client/IcdWebClient.scala).
+* [icd-web-shared](icd-web-shared) - contains shared classes that can be used by both web client and server
 
 Build and Install
 -----------------
@@ -63,13 +66,13 @@ Note that the build is set up so that the Play subproject is selected on start.
 So to run any commands (like sbt clean or sbt stage) that should apply to the other projects,
 you need to first switch to that project or the root project. For example `sbt clean "project root" clean`. 
 
-Play Project icd-web
---------------------
+Play Project icd-web-server
+---------------------------
 
 To start the server for the web app during development, you can use `sbt run` from this directory.
 Then go to http://localhost:9000 in a web browser.
 
-See [icd-web/README.md](icd-web/README.md) for more information.
+See [icd-web-server/README.md](icd-web-server/README.md) for more information.
 
 Importing ICD-Model-Files from GitHub into the ICD Database with Version History
 --------------------------------------------------------------------------------

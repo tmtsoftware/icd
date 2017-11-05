@@ -24,7 +24,7 @@ user=$USER
 version=latest
 
 sbt docker:stage || exit 1
-cd icd-web/icd-web-server/target/docker/stage
+cd icd-web-server/target/docker/stage
 docker build -t $user/icdwebserver:$version .  || exit 1
 
 # Push to docker hub...
