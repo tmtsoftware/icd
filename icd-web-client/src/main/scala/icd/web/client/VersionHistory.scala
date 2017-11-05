@@ -80,7 +80,7 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
         if (json.startsWith("\"")) {
           div(json.substring(1, json.length-1).replace("\\n", "\n").trim.split("\n").map(s => p(s)))
         } else {
-          div(pre(code(span(Styles.unstyledPre, Json.prettyPrint(Json.parse(json))))))
+          pre(code(Styles.unstyledPre, Json.prettyPrint(Json.parse(json))))
         }
       }
 
