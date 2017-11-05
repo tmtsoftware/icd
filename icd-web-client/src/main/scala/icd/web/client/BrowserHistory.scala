@@ -10,23 +10,23 @@ object BrowserHistory {
   // JSON support
   import icd.web.shared.JsonSupport._
 
-  implicit val viewTypeWrites = new Writes[ViewType] {
-    def writes(v: ViewType) = JsString(v match {
+  implicit val viewTypeWrites: Writes[ViewType] =
+    (v: ViewType) => JsString(v match {
       case ComponentView => "ComponentView"
       case IcdView => "IcdView"
       case UploadView => "UploadView"
       case VersionView => "VersionView"
     })
-  }
   implicit val viewTypeReads: Reads[ViewType] = {
     case JsString(s) => JsSuccess(s match {
       case "ComponentView" => ComponentView
-      case "IcdView"  => IcdView
+      case "IcdView" => IcdView
       case "UploadView" => UploadView
       case "VersionView" => VersionView
     })
+    case _ => JsError("bad ViewType")
   }
-  implicit val browserHistoryFormat = Json.format[BrowserHistory]
+  implicit val browserHistoryFormat: OFormat[BrowserHistory] = Json.format[BrowserHistory]
 
   // Type of a view in the application, used to restore the view
   sealed trait ViewType
@@ -51,7 +51,7 @@ object BrowserHistory {
     if (e.state == null) None
     else {
       Json.fromJson[BrowserHistory](Json.parse(e.state.toString)) match {
-        case JsSuccess(h: BrowserHistory, path: JsPath) => Some(h)
+        case JsSuccess(h: BrowserHistory, _: JsPath) => Some(h)
         case _ => None
       }
     }

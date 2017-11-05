@@ -45,14 +45,14 @@ object Dependencies {
 
     "com.typesafe.play" %%% "play-json" % PlayVersion,
     "org.querki" %%% "jquery-facade" % "1.2",
-//    "be.doeraene" %%% "scalajs-jquery" % "0.9.2",
     "com.github.japgolly.scalacss" %%% "core" % "0.5.3",
     "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.5.3"
   ))
 
   // ScalaJS client JavaScript dependencies
   val clientJsDeps = Def.setting(Seq(
-    "org.webjars" % "jquery" % "3.2.1" / "jquery.js" minified "jquery.min.js",
+    "org.webjars" % "jquery" % "2.2.1" / "jquery.js" minified "jquery.min.js",
+//    "org.webjars" % "jquery" % "3.2.1" / "jquery.js" minified "jquery.min.js",
     "org.webjars" % "jquery-ui" % "1.12.1" / "jquery-ui.min.js" dependsOn "jquery.js",
     "org.webjars" % "bootstrap" % "3.3.7-1" / "bootstrap.min.js" dependsOn "jquery.js",
     "org.webjars.bower" % "bootstrap-table" % "1.11.1" / "bootstrap-table.min.js",

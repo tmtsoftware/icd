@@ -45,7 +45,8 @@ POST        /uploadFiles                                                  contro
 GET         /diff/:subsystem/:versions                                    controllers.Application.diff(subsystem, versions)
 
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file                                                 controllers.Assets.at(file)
+#GET         /assets/*file                                                 controllers.Assets.at(file)
+GET         /assets/*file                                                 controllers.Assets.versioned(file)
 
 # WebJars
 ->          /webjars                webjars.Routes

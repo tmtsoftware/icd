@@ -1,6 +1,6 @@
 package icd.web.client
 
-import icd.web.shared.{SubsystemWithVersion, IcdVersion}
+import icd.web.shared.{IcdVersion, SubsystemWithVersion}
 import org.scalajs.dom
 import org.scalajs.dom.PopStateEvent
 import org.scalajs.dom.ext.Ajax
@@ -9,9 +9,7 @@ import play.api.libs.json._
 import org.querki.jquery._
 
 import scala.concurrent.Future
-import scala.scalajs.js
-import scala.scalajs.js.JSApp
-import scala.scalajs.js.annotation.JSExport
+import scala.scalajs.js.annotation.JSExportTopLevel
 import scalatags.JsDom.TypedTag
 import scalacss.ScalatagsCss._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -26,6 +24,7 @@ import Components._
   * @param csrfToken         server token used for file upload (for security)
   * @param inputDirSupported true if uploading directories is supported (currently only for Chrome)
   */
+@JSExportTopLevel("IcdWebClient")
 case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   private val cssSettings = scalacss.devOrProdDefaults
@@ -223,8 +222,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
           //          case PublishView => publishItemSelected(saveHistory = false)()
           case VersionView => showVersionHistory(saveHistory = false)()
           case ComponentView | IcdView =>
-            updateComponentDisplay(hist.sourceSubsystem, hist.targetSubsystem, hist.sourceComponents).onSuccess {
-              case _ => hist.currentCompnent.foreach(compName => goToComponent(compName, replace = true))
+            updateComponentDisplay(hist.sourceSubsystem, hist.targetSubsystem, hist.sourceComponents).foreach { _ =>
+              hist.currentCompnent.foreach(compName => goToComponent(compName, replace = true))
             }
         }
       }
@@ -357,8 +356,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
             // Update the display
             sidebar.clearComponents()
             mainContent.clearContent()
-            getComponentNames(sv).onSuccess {
-              case names => // Future!
+            getComponentNames(sv).foreach { names => // Future!
                 names.foreach(sidebar.addComponent)
                 updateComponentDisplay(sv, tv, names).map { _ =>
                   if (saveHistory) pushState(viewType = IcdView)
@@ -407,28 +405,29 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 }
 
-/**
-  * Main entry object for the web app
-  */
-object IcdWebClient extends JSApp {
-
-  import scala.scalajs.js.Dynamic.global
-
-  /**
-    * Main entry point from Play
-    *
-    * @param settings a JavaScript object containing settings (see class IcdWebClient)
-    * @return
-    */
-  @JSExport
-  def init(settings: js.Dynamic) = {
-    val csrfToken = settings.csrfToken.toString
-    val inputDirSupported = settings.inputDirSupported.toString == "true"
-    IcdWebClient(csrfToken, inputDirSupported)
-  }
-
-  // Main entry point (not used, see init() above)
-  @JSExport
-  override def main(): Unit = {
-  }
-}
+///**
+//  * Main entry object for the web app
+//  */
+//object IcdWebClient {
+//
+//  import scala.scalajs.js.Dynamic.global
+//
+////  /**
+////    * Main entry point from Play
+////    *
+////    * @param settings a JavaScript object containing settings (see class IcdWebClient)
+////    * @return
+////    */
+////  def init(settings: js.Dynamic) = {
+////    val csrfToken = settings.csrfToken.toString
+////    val inputDirSupported = settings.inputDirSupported.toString == "true"
+////    IcdWebClient(csrfToken, inputDirSupported)
+////  }
+//
+//  // Main entry point
+//  def main(args: Array[String]): Unit = {
+//    val csrfToken = args(0)
+//    val inputDirSupported = args(1) == "true"
+//    IcdWebClient(csrfToken, inputDirSupported)
+//  }
+//}

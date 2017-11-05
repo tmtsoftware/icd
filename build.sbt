@@ -47,7 +47,6 @@ lazy val `icd-git` = project
 
 // a Play framework based web server that goes between icd-db and the web client
 lazy val icdWebServer = (project in file("icd-web-server"))
-//  .enablePlugins(DeployApp)
   .settings(defaultSettings: _*)
   .settings(dockerSettings: _*)
   .settings(
@@ -62,18 +61,17 @@ lazy val icdWebServer = (project in file("icd-web-server"))
         testScope(specs2)
   )
   .enablePlugins(PlayScala, SbtWeb, DockerPlugin)
-//  .aggregate(clients.map(projectToRef): _*)
   .dependsOn(`icd-db`, `icd-git`)
 
 // a Scala.js based web client that talks to the Play server
 lazy val icdWebClient = (project in file("icd-web-client"))
   .settings(commonSettings)
   .settings(
-  scalaJSUseMainModuleInitializer := true,
-//  unmanagedSourceDirectories in Compile := Seq((scalaSource in Compile).value),
-//  skip in packageJSDependencies := false,
-//  jsDependencies ++= clientJsDeps.value
-  libraryDependencies ++= clientDeps.value,
+  scalaJSUseMainModuleInitializer := false,
+  unmanagedSourceDirectories in Compile := Seq((scalaSource in Compile).value),
+  skip in packageJSDependencies := false,
+  jsDependencies ++= clientJsDeps.value,
+  libraryDependencies ++= clientDeps.value
 ).enablePlugins(ScalaJSPlugin, ScalaJSWeb)
   .dependsOn(icdWebSharedJs)
 
@@ -87,18 +85,8 @@ lazy val icdWebShared = (crossProject.crossType(CrossType.Pure) in file("icd-web
     )
   )
 
-//  .jsConfigure(_ enablePlugins ScalaJSWeb)
-//  .jvmSettings(sharedJvmSettings: _*)
-//  .jsSettings(
-//    libraryDependencies ++= Seq(
-//      "com.typesafe.play" %%% "play-json" % "2.6.5"
-//    )
-
 lazy val icdWebSharedJvm = icdWebShared.jvm
 lazy val icdWebSharedJs = icdWebShared.js
-
-// loads the Play project at sbt startup
-//onLoad in Global := (Command.process("project icdWebServer", _: State)) compose (onLoad in Global).value
 
 // loads the server project at sbt startup
 onLoad in Global := (onLoad in Global).value andThen {s: State => "project icdWebServer" :: s}
