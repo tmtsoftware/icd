@@ -45,8 +45,10 @@ Usage: icd-db [options]
   --versions <subsystem>   List the version history of the given subsystem
   --diff <subsystem>:<version1>[,version2]
                            For the given subsystem, list the differences between <version1> and <version2> (or the current version)
-  --publishes <path>       Prints a list of components that publish the given value (name with optional component prefix)
-  --subscribes <path>      Prints a list of components that subscribe to the given value (name with optional component prefix)
+  --publishes <path>       Prints a list of components that publish the given value (name with optional component prefix) (TODO)
+  --subscribes <path>      Prints a list of components that subscribe to the given value (name with optional component prefix) (TODO)
+  -a, --archived <outputFile>
+                           Writes an 'Archived Items' report to the given file in a format based on the file's suffix (html, pdf)
   --help                   
   --version                
 ```
