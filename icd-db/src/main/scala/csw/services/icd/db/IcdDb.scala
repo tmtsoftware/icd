@@ -14,8 +14,8 @@ import scala.io.StdIn
 object IcdDbDefaults {
   private val conf = ConfigFactory.load
   val defaultPort: Int = conf.getInt("icd.db.port")
-  val defaultHost: JSFunction = conf.getString("icd.db.host")
-  val defaultDbName: JSFunction = conf.getString("icd.db.name")
+  val defaultHost: String = conf.getString("icd.db.host")
+  val defaultDbName: String = conf.getString("icd.db.name")
 }
 
 object IcdDb extends App {
@@ -40,10 +40,9 @@ object IcdDb extends App {
     drop: Option[String] = None,
     versions: Option[String] = None,
     diff: Option[String] = None,
-//    publish: Boolean = false,
-//    comment: String = "",
     publishes: Option[String] = None,
-    subscribes: Option[String] = None)
+    subscribes: Option[String] = None,
+    archived: Option[File] = None)
 
   // Parser for the command line options
   private val parser = new scopt.OptionParser[Options]("icd-db") {
@@ -105,25 +104,19 @@ object IcdDb extends App {
       c.copy(diff = Some(x))
     } text "For the given subsystem, list the differences between <version1> and <version2> (or the current version)"
 
-//    opt[Unit]("publish") action { (_, c) =>
-//      c.copy(publish = true)
-//    } text "Publish the selected subsystem (Use together with --subsystem, --major and --comment)"
-
-//    opt[Unit]("major") action { (_, c) =>
-//      c.copy(majorVersion = true)
-//    } text "Use with --publish to increment the major version"
-
-//    opt[String]('m', "comment") valueName "<text>" action { (x, c) =>
-//      c.copy(comment = x)
-//    } text "Use with --publish to add a comment describing the changes made (default: empty string)"
-
+    // XXX TODO: Implement this
     opt[String]("publishes") valueName "<path>" action { (x, c) =>
       c.copy(publishes = Some(x))
-    } text "Prints a list of components that publish the given value (name with optional component prefix)"
+    } text "Prints a list of components that publish the given value (name with optional component prefix) (TODO)"
 
+    // XXX TODO: Implement this
     opt[String]("subscribes") valueName "<path>" action { (x, c) =>
       c.copy(subscribes = Some(x))
-    } text "Prints a list of components that subscribe to the given value (name with optional component prefix)"
+    } text "Prints a list of components that subscribe to the given value (name with optional component prefix) (TODO)"
+
+    opt[File]('a', "archived") valueName "<outputFile>" action { (x, c) =>
+      c.copy(archived = Some(x))
+    } text "Writes an 'Archived Items' report to the given file in a format based on the file's suffix (html, pdf)"
 
     help("help")
     version("version")
@@ -136,7 +129,6 @@ object IcdDb extends App {
         run(options)
       } catch {
         case e: Throwable =>
-          //          println(e)
           e.printStackTrace()
           System.exit(1)
       }
@@ -161,9 +153,7 @@ object IcdDb extends App {
     options.diff.foreach(diffVersions)
     options.publishes.foreach(listPublishes)
     options.subscribes.foreach(listSubscribes)
-
-//    if (options.publish)
-//      options.subsystem.foreach(publish(options.majorVersion, options.comment))
+    options.archived.foreach(archivedItemsReport)
 
     // --list option
     def list(componentType: String): Unit = {
@@ -263,13 +253,10 @@ object IcdDb extends App {
       // XXX TODO
     }
 
-//    // --publish option
-//    def publish(majorVersion: Boolean, comment: String)(subsystemStr: String): Unit = {
-//      val sv = IcdVersionManager.SubsystemAndVersion(subsystemStr)
-//      checkVersion(sv.versionOpt)
-//      val date = new DateTime(DateTimeZone.UTC)
-//      db.versionManager.publishApi(sv.subsystem, sv.versionOpt, majorVersion, comment, System.getProperty("user.name"), date)
-//    }
+    // --archive option
+    def archivedItemsReport(file: File): Unit = {
+      ArchivedItemsReport(db).saveToFile(file)
+    }
   }
 }
 

@@ -753,7 +753,7 @@ case class IcdDbPrinter(db: IcdDb) {
       out.close()
     }
 
-    def saveAsPdf(html: String): Unit = IcdToPdf.saveAsPdf(file, html)
+    def saveAsPdf(html: String): Unit = IcdToPdf.saveAsPdf(file, html, showLogo = true)
 
     val s1 = IcdVersionManager.SubsystemAndVersion(subsystemStr)
 
@@ -783,11 +783,10 @@ case class IcdDbPrinter(db: IcdDb) {
       case None => db.versionManager.getComponentNames(s1.subsystem, s1.versionOpt)
     }
 
-    val icdPrinter = IcdDbPrinter(db)
     val htmlOpt = if (targetOpt.isDefined) {
-      icdPrinter.getIcdAsHtml(compNames, subsys, targ, icdV, targetCompNameOpt)
+      getIcdAsHtml(compNames, subsys, targ, icdV, targetCompNameOpt)
     } else {
-      icdPrinter.getApiAsHtml(compNames, subsys)
+      getApiAsHtml(compNames, subsys)
     }
 
     htmlOpt match {

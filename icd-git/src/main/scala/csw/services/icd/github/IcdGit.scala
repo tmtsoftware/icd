@@ -40,7 +40,7 @@ object IcdGit extends App {
   private val parser = new scopt.OptionParser[Options]("icd-git") {
     head("icd-git", System.getProperty("ICD_VERSION"))
 
-    opt[Unit]('l', "list") action { (x, c) =>
+    opt[Unit]('l', "list") action { (_, c) =>
       c.copy(list = true)
     } text "Prints the list of API or ICD versions defined on GitHub for the given subsystem options"
 

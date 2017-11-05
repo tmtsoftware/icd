@@ -44,6 +44,6 @@ object IcdPrinter {
       out.close()
     }
 
-    def saveAsPdf(): Unit = IcdToPdf.saveAsPdf(file, IcdToHtml.getAsHtml(models))
+    def saveAsPdf(): Unit = IcdToPdf.saveAsPdf(file, IcdToHtml.getAsHtml(models), showLogo = true)
   }
 }

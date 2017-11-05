@@ -35,6 +35,13 @@ object IcdModels {
   }
 
   /**
+    * Common trait of archived items with a name and description.
+    */
+  trait ArchivedNameDesc extends NameDesc {
+    val archive: Boolean
+  }
+
+  /**
    * Description of an alarm
    *
    * @param name         alarm name
@@ -49,7 +56,7 @@ object IcdModels {
     requirements: List[String],
     severity:     String,
     archive:      Boolean
-  ) extends NameDesc
+  ) extends ArchivedNameDesc
 
   /**
    * Defines the properties of an attribute
@@ -212,5 +219,5 @@ object IcdModels {
     archive:        Boolean,
     archiveRate:    Double,
     attributesList: List[AttributeModel]
-  ) extends NameDesc
+  ) extends ArchivedNameDesc
 }

@@ -4,15 +4,16 @@ import java.io.{ByteArrayInputStream, File, FileOutputStream, OutputStream}
 import java.nio.charset.Charset
 
 /**
- * Handles converting an ICD API from HTML to PDF format
- */
+  * Handles converting an ICD API from HTML to PDF format
+  */
 object IcdToPdf {
+
   import com.itextpdf.tool.xml.XMLWorkerHelper
   import com.itextpdf.text._
   import com.itextpdf.text.pdf._
 
   // Adds page number to al the pages except the first.
-  private object PageStamper extends PdfPageEventHelper {
+  private case class PageStamper(showLogo: Boolean) extends PdfPageEventHelper {
     override def onEndPage(writer: PdfWriter, document: Document) {
       try {
         val pageNumber = writer.getPageNumber
@@ -29,7 +30,7 @@ object IcdToPdf {
         )
 
         // Add the TMT logo on the first page
-        if (pageNumber == 1) {
+        if (showLogo && pageNumber == 1) {
           val url = getClass.getClassLoader.getResource("tmt.png")
           val image = Image.getInstance(url)
           image.setAbsolutePosition(
@@ -46,25 +47,29 @@ object IcdToPdf {
   }
 
   /**
-   * Converts the given HTML to PDF and saves it in the given file.
-   * @param file the name of the file in which to save the PDF
-   * @param html the input doc in HTML format
-   */
-  def saveAsPdf(file: File, html: String): Unit = {
+    * Converts the given HTML to PDF and saves it in the given file.
+    *
+    * @param file     the name of the file in which to save the PDF
+    * @param html     the input doc in HTML format
+    * @param showLogo if true insert the TMT logo
+    */
+  def saveAsPdf(file: File, html: String, showLogo: Boolean): Unit = {
     val out = new FileOutputStream(file)
-    saveAsPdf(out, html)
+    saveAsPdf(out, html, showLogo)
     out.close()
   }
 
   /**
-   * Converts the given HTML to PDF and saves it in the given file.
-   * @param out the output stream in which to save the PDF
-   * @param html the input doc in HTML format
-   */
-  def saveAsPdf(out: OutputStream, html: String): Unit = {
+    * Converts the given HTML to PDF and saves it in the given file.
+    *
+    * @param out      the output stream in which to save the PDF
+    * @param html     the input doc in HTML format
+    * @param showLogo if true insert the TMT logo
+    */
+  def saveAsPdf(out: OutputStream, html: String, showLogo: Boolean): Unit = {
     val document = new Document(PageSize.LETTER)
     val writer = PdfWriter.getInstance(document, out)
-    writer.setPageEvent(PageStamper)
+    writer.setPageEvent(PageStamper(showLogo))
     document.open()
     XMLWorkerHelper.getInstance().parseXHtml(writer, document, new ByteArrayInputStream(html.getBytes), Charset.forName("UTF-8"))
     document.close()

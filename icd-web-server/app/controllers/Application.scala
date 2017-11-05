@@ -204,7 +204,7 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
 
     IcdDbPrinter(db).getIcdAsHtml(compNames, sv, tv, iv) match {
       case Some(html) =>
-        IcdToPdf.saveAsPdf(out, html)
+        IcdToPdf.saveAsPdf(out, html, showLogo = true)
         val bytes = out.toByteArray
         Ok(bytes).as("application/pdf")
       case None =>
@@ -228,7 +228,7 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
     val sv = SubsystemWithVersion(Some(subsystem), versionOpt)
     IcdDbPrinter(db).getApiAsHtml(compNames, sv) match {
       case Some(html) =>
-        IcdToPdf.saveAsPdf(out, html)
+        IcdToPdf.saveAsPdf(out, html, showLogo = true)
         val bytes = out.toByteArray
         Ok(bytes).as("application/pdf")
       case None =>
