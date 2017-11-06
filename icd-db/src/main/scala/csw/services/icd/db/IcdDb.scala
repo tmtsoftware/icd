@@ -198,7 +198,7 @@ object IcdDb extends App {
           val dataRate = itemData * rate * 3600.0 / 1000000.0
           if (itemData > 0) {
             totalDataRate += dataRate
-            println(s"Total size of event: $itemData.  data rate: $dataRate MB/hour")
+            println(s"Total size of event: $itemData bytes.  data rate: $dataRate MB/hour")
           }
         }
       }
