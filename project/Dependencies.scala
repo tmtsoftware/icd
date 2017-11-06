@@ -2,7 +2,7 @@ import sbt._
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
 object Dependencies {
-  val Version = "0.11"
+  val Version = "0.12"
   val ScalaVersion = "2.12.3"
   val PlayVersion = "2.6.5"
 

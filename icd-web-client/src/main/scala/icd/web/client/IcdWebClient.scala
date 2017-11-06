@@ -118,7 +118,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Called when the Upload item is selected
   private def uploadSelected(saveHistory: Boolean = true)(): Unit = {
     setSidebarVisible(false)
-    mainContent.setContent(fileUploadDialog, "Upload ICD Files")
+    mainContent.setContent(fileUploadDialog, "Upload Subsystem Model Files")
     if (saveHistory) pushState(viewType = UploadView)
   }
 

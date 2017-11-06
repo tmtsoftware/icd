@@ -48,7 +48,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   }
 
   // Adds an error (or warning) message to the upload messages
-  def displayProblem(problem: Problem): Unit = {
+  private def displayProblem(problem: Problem): Unit = {
     if (problem.message != null && !problemSet.contains(problem)) {
       val msg = if (problem.message.trim.startsWith("<!DOCTYPE html>")) {
         problem.message
@@ -64,21 +64,21 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   }
 
   // Clears the problem messages display
-  def clearProblems(): Unit = {
+  private def clearProblems(): Unit = {
     messagesItem.innerHTML = ""
   }
 
   // Gets the full path, if supported (webkit/chrome), otherwise the simple file name
-  def getFilePath(file: WebkitFile): String = {
+  private def getFilePath(file: WebkitFile): String = {
     if (inputDirSupported) file.webkitRelativePath else file.name
   }
 
   // Returns true if the file is a valid ICD file name
-  def isValidFile(file: dom.File): Boolean =
+  private def isValidFile(file: dom.File): Boolean =
     if (inputDirSupported) isStdFile(file) else file.name.endsWith(".zip")
 
   // Returns a pair of lists containing the valid and invalid ICD files
-  def getIcdFiles(e: dom.Event): (Seq[WebkitFile], Seq[WebkitFile]) = {
+  private def getIcdFiles(e: dom.Event): (Seq[WebkitFile], Seq[WebkitFile]) = {
     val files = e.target.files
     if (inputDirSupported) {
       val fileList = for (i <- 0 until files.length) yield files(i).asInstanceOf[WebkitFile]
@@ -95,20 +95,20 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     }
   }
 
-  def statusItem = $("#status")
+  private def statusItem = $("#status")
 
-  def busyStatusItem = $("#busyStatus")
+  private def busyStatusItem = $("#busyStatus")
 
   // Called when user clicks on input item.
   // Reset the value (Otherwise you can't upload the same file twice,
   // since it won't fire the change event)
-  def fileSelectReset(e: dom.Event): Unit = {
+  private def fileSelectReset(e: dom.Event): Unit = {
     clearProblems()
     inputItem.value = ""
   }
 
   // Called when a file selection has been made
-  def fileSelectHandler(e: dom.Event): Unit = {
+  private def fileSelectHandler(e: dom.Event): Unit = {
     clearProblems()
     statusItem.removeClass("label-danger")
     val (validFiles, invalidFiles) = getIcdFiles(e)
@@ -125,7 +125,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   }
 
   // Starts uploading the selected files (or files in selected directory) to the server
-  def uploadFiles(files: List[WebkitFile]) = {
+  private def uploadFiles(files: List[WebkitFile]): Unit = {
     val formData = new FormData()
     for (file <- files if isValidFile(file)) {
       formData.append(getFilePath(file), file)
@@ -176,7 +176,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
       "Here you can select the top level directory containing the subsystem or component files to upload."
     else
       "Here you can select a zip file of the top level directory containing the subsystem or component files to upload."
-    val dirLabel = if (inputDirSupported) "ICD Directory" else "Zip file containing ICD Directory"
+    val dirLabel = if (inputDirSupported) "Model File Directory" else "Zip file containing Model File Directory"
 
     val acceptSuffix = if (inputDirSupported) "" else ".zip,application/zip"
 
