@@ -2,7 +2,7 @@
 #
 # Creates a single install directory from all the csw stage directories.
 #
-# Use install.sh -c to do a clean build.
+# By default does a clean install. Use `install.sh -nc` to not do a clean build.
 
 dir=../install_icd
 
@@ -24,7 +24,7 @@ export SBT_OPTS="-Dsbt.jse.engineType=Node -Dsbt.jse.command=$NODEJS"
 
 for i in $dir $dir/bin $dir/lib $dir/conf; do test -d $i || mkdir $i; done
 
-test "$1" == "-c" && sbt "project root" clean
+test "$1" == "-nc" || sbt "project root" clean
 
 sbt "project root" stage
 

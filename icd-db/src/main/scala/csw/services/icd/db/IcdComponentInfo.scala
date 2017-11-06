@@ -53,13 +53,15 @@ object IcdComponentInfo {
     val modelsList = versionManager.getModels(subsystem, versionOpt, Some(compName))
     val targetModelsList = versionManager.getModels(target, targetVersionOpt, targetCompNameOpt)
 
-    modelsList.headOption.flatMap { icdModels =>
+   modelsList.headOption.flatMap { icdModels =>
       val componentModel = icdModels.componentModel
       val publishes = getPublishes(subsystem, icdModels, targetModelsList)
       val subscribes = getSubscribes(icdModels, targetModelsList)
       val commands = getCommands(query, icdModels, targetModelsList)
 
-      componentModel.map { model => ComponentInfo(model, publishes, subscribes, commands) }
+      if (publishes.isDefined || subscribes.isDefined || commands.isDefined)
+        componentModel.map(ComponentInfo(_, publishes, subscribes, commands))
+      else None
     }
   }
 
@@ -203,9 +205,10 @@ object IcdComponentInfo {
       icdModels <- targetModelsList
       componentModel <- icdModels.componentModel
       commandModel <- icdModels.commandModel
-      sendCommandModel <- commandModel.send.find(s =>
-        s.subsystem == subsystem && s.component == component && s.name == commandName)
-    } yield componentModel
+      if commandModel.send.exists(s => s.subsystem == subsystem && s.component == component && s.name == commandName)
+    } yield {
+      componentModel
+    }
   }
 
   /**

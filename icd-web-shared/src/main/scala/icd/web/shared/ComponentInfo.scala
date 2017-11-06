@@ -19,6 +19,7 @@ object ComponentInfo {
   // For ICDs, we are only interested in the interface between the two subsystems.
   // Filter out any published commands with no subscribers,
   // and any commands received, with no senders
+  // XXX TODO: Do this earlier, while collecting the data?
   def applyIcdFilter(info: ComponentInfo): ComponentInfo = {
     val (oldTelemetryList, oldEventList, oldEventStreamList, oldAlarmList) = info.publishes match {
       case None => (Nil, Nil, Nil, Nil)

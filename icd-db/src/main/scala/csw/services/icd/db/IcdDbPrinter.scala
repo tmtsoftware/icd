@@ -344,7 +344,7 @@ case class IcdDbPrinter(db: IcdDb) {
     *
     * @param info contains the information to display
     */
-  private def displayComponentInfo(info: ComponentInfo, nh: NumberedHeadings, forApi: Boolean = true): Text.TypedTag[String] = {
+  private def displayComponentInfo(info: ComponentInfo, nh: NumberedHeadings, forApi: Boolean): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (forApi || (info.publishes.isDefined && info.publishes.get.nonEmpty
       || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
@@ -433,12 +433,15 @@ case class IcdDbPrinter(db: IcdDb) {
     * Displays a summary of the events published and commands received by the subsystem
     *
     * @param subsystem subsystem name
+    * @param targetSubsystem optional target subsystem name (for ICD)
     * @param infoList  list of component info
     * @param nh        used for numbered headings and TOC
     * @return the HTML
     */
-  private def displaySummary(subsystem: String, infoList: List[ComponentInfo], nh: NumberedHeadings, isIcd: Boolean): Text.TypedTag[String] = {
+  private def displaySummary(subsystem: String, targetSubsystem: Option[String], infoList: List[ComponentInfo], nh: NumberedHeadings): Text.TypedTag[String] = {
     import scalatags.Text.all._
+
+    val isIcd = targetSubsystem.isDefined
 
     def firstParagraph(s: String): String = {
       val i = s.indexOf("</p>")
@@ -446,14 +449,15 @@ case class IcdDbPrinter(db: IcdDb) {
     }
 
     // Displays a summary for published items of a given event type or commands received.
-    def summary1(itemType: String, list: List[PublishedItem], heading: String): Text.TypedTag[String] = {
+    def summary1(itemType: String, list: List[PublishedItem], heading: String, prep: String): Text.TypedTag[String] = {
       val action = heading.toLowerCase() match {
         case "published by" => "publishes"
         case "received by" => "receives"
       }
+      val targetStr = if (targetSubsystem.isDefined) s" $prep ${targetSubsystem.get}" else ""
       if (list.isEmpty) div() else {
         div(
-          nh.H3(s"$itemType $heading $subsystem"),
+          nh.H3(s"$itemType $heading $subsystem$targetStr"),
           table(
             thead(
               tr(
@@ -478,14 +482,15 @@ case class IcdDbPrinter(db: IcdDb) {
     }
 
     // Displays a summary for subscribed items of a given event type or commands sent.
-    def summary2(itemType: String, list: List[SubscribedItem], heading: String): Text.TypedTag[String] = {
+    def summary2(itemType: String, list: List[SubscribedItem], heading: String, prep: String): Text.TypedTag[String] = {
       val (action, subscriber) = heading.toLowerCase() match {
         case "subscribed to by" => ("subscribes", "Subscriber")
         case "sent by" => ("sends", "Sender")
       }
+      val targetStr = if (targetSubsystem.isDefined) s" $prep ${targetSubsystem.get}" else ""
       if (list.isEmpty) div() else {
         div(
-          nh.H3(s"$itemType $heading $subsystem"),
+          nh.H3(s"$itemType $heading $subsystem$targetStr"),
           table(
             thead(
               tr(
@@ -589,20 +594,20 @@ case class IcdDbPrinter(db: IcdDb) {
     div(
       nh.H2(s"$subsystem Event and Command Summary"),
 
-      summary1("Events", publishedEvents, "Published by"),
-      summary2("Events", subscribedEvents, "Subscribed to by"),
+      summary1("Events", publishedEvents, "Published by", "for"),
+      summary2("Events", subscribedEvents, "Subscribed to by", "from"),
 
-      summary1("Event Streams", publishedEventStreams, "Published by"),
-      summary2("Event Streams", subscribedEventStreams, "Subscribed to by"),
+      summary1("Event Streams", publishedEventStreams, "Published by", "for"),
+      summary2("Event Streams", subscribedEventStreams, "Subscribed to by", "from"),
 
-      summary1("Telemetry", publishedTelemetry, "Published by"),
-      summary2("Telemetry", subscribedTelemetry, "Subscribed to by"),
+      summary1("Telemetry", publishedTelemetry, "Published by", "for"),
+      summary2("Telemetry", subscribedTelemetry, "Subscribed to by", "from"),
 
-      summary1("Alarms", publishedAlarms, "Published by"),
-      summary2("Alarms", subscribedAlarms, "Subscribed to by"),
+      summary1("Alarms", publishedAlarms, "Published by", "for"),
+      summary2("Alarms", subscribedAlarms, "Subscribed to by", "from"),
 
-      summary1("Commands", receivedCommands, "Received by"),
-      summary2("Commands", sentCommands, "Sent by")
+      summary1("Commands", receivedCommands, "Received by", "from"),
+      summary2("Commands", sentCommands, "Sent by", "to")
     )
   }
 
@@ -614,11 +619,11 @@ case class IcdDbPrinter(db: IcdDb) {
     * @param nh        used for numbered headings and TOC
     * @return the HTML
     */
-  private def displayDetails(subsystem: String, infoList: List[ComponentInfo], nh: NumberedHeadings): Text.TypedTag[String] = {
+  private def displayDetails(subsystem: String, infoList: List[ComponentInfo], nh: NumberedHeadings, forApi: Boolean): Text.TypedTag[String] = {
     import scalatags.Text.all._
     div(
       // TODO: Should this still be ordered by assembly?
-      infoList.map(displayComponentInfo(_, nh))
+      infoList.map(displayComponentInfo(_, nh, forApi))
     )
   }
 
@@ -640,8 +645,8 @@ case class IcdDbPrinter(db: IcdDb) {
       val titleMarkup = getTitleMarkup(titleInfo)
       val nh = new NumberedHeadings
       val mainContent = div(
-        displaySummary(subsystem, infoList, nh, isIcd = false),
-        displayDetails(subsystem, infoList, nh)
+        displaySummary(subsystem, None, infoList, nh),
+        displayDetails(subsystem, infoList, nh, forApi = true)
       )
       val toc = nh.mkToc()
       val intro = makeIntro(titleInfo)
@@ -704,12 +709,12 @@ case class IcdDbPrinter(db: IcdDb) {
       val titleInfo2 = TitleInfo(targetSubsystemInfo, sv, icdVersionOpt, "(Part 2)")
       val nh = new NumberedHeadings
       val mainContent = div(
-        displaySummary(subsystem, infoList, nh, isIcd = true),
-        displaySummary(targetSubsystem, infoList2, nh, isIcd = true),
+        displaySummary(subsystem, Some(targetSubsystem), infoList, nh),
+        displaySummary(targetSubsystem, Some(subsystem), infoList2, nh),
         makeIntro(titleInfo1),
-        displayDetails(subsystem, infoList, nh),
+        displayDetails(subsystem, infoList, nh, forApi = false),
         makeIntro(titleInfo2),
-        displayDetails(targetSubsystem, infoList2, nh)
+        displayDetails(targetSubsystem, infoList2, nh, forApi = false)
       )
       val toc = nh.mkToc()
 
