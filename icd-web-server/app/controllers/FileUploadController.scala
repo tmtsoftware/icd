@@ -61,6 +61,7 @@ class FileUploadController @Inject()(env: Environment, webJarAssets: WebJarAsset
       if (problems.nonEmpty) {
         NotAcceptable(Json.toJson(problems))
       } else {
+        // XXX TODO: Check if all referenced component names are valid
         Ok.as(JSON)
       }
     }

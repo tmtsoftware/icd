@@ -6,6 +6,7 @@ import csw.services.icd.IcdToPdf
 import csw.services.icd.html.{HtmlMarkup, IcdToHtml, NumberedHeadings}
 import icd.web.shared.ComponentInfo.{Alarms, EventStreams, Events, Telemetry}
 import icd.web.shared.IcdModels.{AttributeModel, ComponentModel, NameDesc}
+import icd.web.shared.TitleInfo.unpublished
 import icd.web.shared._
 
 import scalatags.Text
@@ -432,15 +433,17 @@ case class IcdDbPrinter(db: IcdDb) {
   /**
     * Displays a summary of the events published and commands received by the subsystem
     *
-    * @param subsystem subsystem name
+    * @param subsystemInfo subsystem to use
     * @param targetSubsystem optional target subsystem name (for ICD)
     * @param infoList  list of component info
     * @param nh        used for numbered headings and TOC
     * @return the HTML
     */
-  private def displaySummary(subsystem: String, targetSubsystem: Option[String], infoList: List[ComponentInfo], nh: NumberedHeadings): Text.TypedTag[String] = {
+  private def displaySummary(subsystemInfo: SubsystemInfo, targetSubsystem: Option[String], infoList: List[ComponentInfo], nh: NumberedHeadings): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
+    val subsystem = subsystemInfo.subsystem
+    val subsystemVersion = subsystemInfo.versionOpt.getOrElse(unpublished)
     val isIcd = targetSubsystem.isDefined
 
     def firstParagraph(s: String): String = {
@@ -594,6 +597,13 @@ case class IcdDbPrinter(db: IcdDb) {
     div(
       nh.H2(s"$subsystem Event and Command Summary"),
 
+      if (isIcd) {
+        div(
+          p(strong(s"${subsystemInfo.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
+          raw(subsystemInfo.description)
+        )
+      } else div(),
+
       summary1("Events", publishedEvents, "Published by", "for"),
       summary2("Events", subscribedEvents, "Subscribed to by", "from"),
 
@@ -645,7 +655,7 @@ case class IcdDbPrinter(db: IcdDb) {
       val titleMarkup = getTitleMarkup(titleInfo)
       val nh = new NumberedHeadings
       val mainContent = div(
-        displaySummary(subsystem, None, infoList, nh),
+        displaySummary(subsystemInfo, None, infoList, nh),
         displayDetails(subsystem, infoList, nh, forApi = true)
       )
       val toc = nh.mkToc()
@@ -709,8 +719,8 @@ case class IcdDbPrinter(db: IcdDb) {
       val titleInfo2 = TitleInfo(targetSubsystemInfo, sv, icdVersionOpt, "(Part 2)")
       val nh = new NumberedHeadings
       val mainContent = div(
-        displaySummary(subsystem, Some(targetSubsystem), infoList, nh),
-        displaySummary(targetSubsystem, Some(subsystem), infoList2, nh),
+        displaySummary(subsystemInfo, Some(targetSubsystem), infoList, nh),
+        displaySummary(targetSubsystemInfo, Some(subsystem), infoList2, nh),
         makeIntro(titleInfo1),
         displayDetails(subsystem, infoList, nh, forApi = false),
         makeIntro(titleInfo2),
