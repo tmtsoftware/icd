@@ -184,7 +184,7 @@ object IcdDb extends App {
             DEFAULT_RATE
           }
           println(s"Item is archived at a rate of $rate Hz")
-          var itemData=0
+          var itemData=8  // 8-bytes for timestamp
           item.attributesList.foreach { att =>
             print(s"-- Attribute ${att.name}: type=${att.typeStr}")
             val eventSize = getSizeOfType(att.typeStr)
