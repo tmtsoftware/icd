@@ -24,7 +24,8 @@ case class ArchivedItemsReport(db: IcdDb) {
   private def getArchivedItems: List[ArchiveInfo] = {
     // Gets the archived items from the list
     def getItems(c: ComponentModel, eventType: String, list: List[ArchivedNameDesc]): List[ArchiveInfo] = {
-      list.filter(_.archive).map(e => ArchiveInfo(c.component, c.prefix, eventType, e.name, e.description))
+      val comp = c.component.replace("-", "-\n") // save horizontal space
+      list.filter(_.archive).map(e => ArchiveInfo(comp, c.prefix, eventType, e.name, e.description))
     }
     val result = for {
       component <- query.getComponents if ! component.subsystem.startsWith("TEST")

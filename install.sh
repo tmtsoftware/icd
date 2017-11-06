@@ -1,6 +1,8 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
 # Creates a single install directory from all the csw stage directories.
+#
+# Use install.sh -c to do a clean build.
 
 dir=../install_icd
 
@@ -20,9 +22,10 @@ fi
 # Should not be needed? See https://github.com/sbt/sbt-less/issues/95
 export SBT_OPTS="-Dsbt.jse.engineType=Node -Dsbt.jse.command=$NODEJS"
 
-test -d $dir || mkdir -p $dir/bin $dir/lib $dir/conf
+for i in $dir $dir/bin $dir/lib $dir/conf; do test -d $i || mkdir $i; done
 
-#sbt "project root" clean
+test "$1" == "-c" && sbt "project root" clean
+
 sbt "project root" stage
 
 for i in bin lib; do
