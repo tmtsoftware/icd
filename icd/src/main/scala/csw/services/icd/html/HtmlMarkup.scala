@@ -2,10 +2,12 @@ package csw.services.icd.html
 
 import java.util.UUID
 
+import com.vladsch.flexmark.html.HtmlRenderer
+import com.vladsch.flexmark.parser.Parser
+import com.vladsch.flexmark.profiles.pegdown.{Extensions, PegdownOptionsAdapter}
 import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
 import org.jsoup.nodes.Document.OutputSettings
-import org.pegdown.{Extensions, PegDownProcessor}
 
 import scalatags.Text.all._
 import scalatags.Text.TypedTag
@@ -58,11 +60,13 @@ object HtmlMarkup {
 
   private def isEmpty(x: String): Boolean = Option(x).forall(_.isEmpty)
 
-  private val pd = new PegDownProcessor(
+  // Markdown to HTML support
+  private val options = PegdownOptionsAdapter.flexmarkOptions(
     Extensions.TABLES | Extensions.AUTOLINKS | Extensions.FENCED_CODE_BLOCKS
-      | Extensions.STRIKETHROUGH | Extensions.ATXHEADERSPACE | Extensions.TASKLISTITEMS,
-    Long.MaxValue
-  ) // last arg is to avoid pegdown timeouts
+      | Extensions.STRIKETHROUGH | Extensions.ATXHEADERSPACE | Extensions.TASKLISTITEMS)
+
+  private val parser = Parser.builder(options).build()
+  private val renderer = HtmlRenderer.builder(options).build()
 
   // Enforce self-closing tags (e.g. for <img> tags) so that PDF generator will not fail.
   private val os = new OutputSettings().syntax(OutputSettings.Syntax.xml)
@@ -85,9 +89,15 @@ object HtmlMarkup {
    */
   def gfmToHtml(gfm: String): String = {
     if (isEmpty(gfm)) ""
-    else {
-      // Convert markdown to HTML, then clean it up with jsoup to avoid issues with the pdf generator (and for security)
-      Jsoup.clean(pd.markdownToHtml(stripLeadingWs(gfm)), "", Whitelist.basicWithImages(), os)
+    else try {
+      // Convert markdown to HTML
+      val html = renderer.render(parser.parse(stripLeadingWs(gfm)))
+      // Then clean it up with jsoup to avoid issues with the pdf generator (and for security)
+      Jsoup.clean(html, "", Whitelist.basicWithImages(), os)
+    } catch {
+      case ex: Throwable =>
+        println(s"Error converting markdown to HTML: $ex: Input was:\n$gfm")
+        gfm
     }
   }
 

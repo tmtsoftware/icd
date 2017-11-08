@@ -14,7 +14,8 @@ object Dependencies {
   val scalaTest = "org.scalatest" %% "scalatest" % "3.0.1"
 
   // XXX: FIXME: Deprecated! replace with https://github.com/vsch/flexmark-java
-  val pegdown = "org.pegdown" % "pegdown" % "1.6.0"
+//  val pegdown = "org.pegdown" % "pegdown" % "1.6.0"
+  val flexmarkAll = "com.vladsch.flexmark" % "flexmark-all" % "0.28.2"
 
   val itextpdf = "com.itextpdf" % "itextpdf" % "5.5.12"
   val xmlworker = "com.itextpdf.tool" % "xmlworker" % "5.5.12"
