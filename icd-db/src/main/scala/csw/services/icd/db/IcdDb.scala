@@ -40,8 +40,7 @@ object IcdDb extends App {
     drop: Option[String] = None,
     versions: Option[String] = None,
     diff: Option[String] = None,
-    publishes: Option[String] = None,
-    subscribes: Option[String] = None,
+    missing: Option[File] = None,
     archived: Option[File] = None)
 
   // Parser for the command line options
@@ -104,19 +103,13 @@ object IcdDb extends App {
       c.copy(diff = Some(x))
     } text "For the given subsystem, list the differences between <version1> and <version2> (or the current version)"
 
-    // XXX TODO: Implement this
-    opt[String]("publishes") valueName "<path>" action { (x, c) =>
-      c.copy(publishes = Some(x))
-    } text "Prints a list of components that publish the given value (name with optional component prefix) (TODO)"
-
-    // XXX TODO: Implement this
-    opt[String]("subscribes") valueName "<path>" action { (x, c) =>
-      c.copy(subscribes = Some(x))
-    } text "Prints a list of components that subscribe to the given value (name with optional component prefix) (TODO)"
+    opt[File]('m', "missing") valueName "<outputFile>" action { (x, c) =>
+      c.copy(missing = Some(x))
+    } text "Generates a 'Missing Items' report to the given file in a format based on the file's suffix (html, pdf)"
 
     opt[File]('a', "archived") valueName "<outputFile>" action { (x, c) =>
       c.copy(archived = Some(x))
-    } text "Writes an 'Archived Items' report to the given file in a format based on the file's suffix (html, pdf)"
+    } text "Generates an 'Archived Items' report to the given file in a format based on the file's suffix (html, pdf)"
 
     help("help")
     version("version")
@@ -151,8 +144,7 @@ object IcdDb extends App {
     options.drop.foreach(drop)
     options.versions.foreach(listVersions)
     options.diff.foreach(diffVersions)
-    options.publishes.foreach(listPublishes)
-    options.subscribes.foreach(listSubscribes)
+    options.missing.foreach(missingItemsReport)
     options.archived.foreach(archivedItemsReport)
 
     // --list option
@@ -251,6 +243,11 @@ object IcdDb extends App {
     // --subscribes option
     def listSubscribes(path: String): Unit = {
       // XXX TODO
+    }
+
+    // --missing option
+    def missingItemsReport(file: File): Unit = {
+      MissingItemsReport(db).saveToFile(file)
     }
 
     // --archive option

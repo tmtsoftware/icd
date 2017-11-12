@@ -2,18 +2,19 @@ package csw.services.icd.db
 
 import com.mongodb.casbah.{MongoCollection, MongoDB}
 import com.mongodb.casbah.commons.Imports._
-import com.mongodb.casbah.commons.MongoDBObject
-import com.typesafe.config.{ConfigFactory, Config}
+import com.mongodb.casbah.commons.{Imports, MongoDBObject}
+import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd.StdName._
 import csw.services.icd.model._
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels
 import icd.web.shared.IcdModels._
+
 import scala.language.implicitConversions
 
 object IcdDbQuery {
   // Set of standard ICD model parts: subsystem, component, publish, subscribe, command
-  val stdSet = stdNames.map(_.modelBaseName).toSet
+  val stdSet: Set[JSFunction] = stdNames.map(_.modelBaseName).toSet
 
   // True if the named collection represents an ICD model (has one of the standard names)
   def isStdSet(name: String): Boolean =
@@ -21,13 +22,13 @@ object IcdDbQuery {
 
   // for working with dot separated paths
   private[db] case class IcdPath(path: String) {
-    lazy val parts = path.split("\\.").toList
+    lazy val parts: List[JSFunction] = path.split("\\.").toList
 
     // The common path for an assembly, HCD, sequencer, etc.
-    lazy val component = parts.dropRight(1).mkString(".")
+    lazy val component: String = parts.dropRight(1).mkString(".")
 
     // The top level subsystem collection name
-    lazy val subsystem = parts.head
+    lazy val subsystem: Imports.JSFunction = parts.head
   }
 
   // Lists available db collections related to an ICD
@@ -316,8 +317,11 @@ case class IcdDbQuery(db: MongoDB) {
   /**
    * Returns an object describing the "commands" defined for the named component in the named subsystem
    */
-  def getCommandModel(subsystem: String, componentName: String): Option[CommandModel] = {
-    val collName = getCommandCollectionName(subsystem, componentName)
+  def getCommandModel(component: ComponentModel): Option[CommandModel] =
+    getCommandModel(component.subsystem, component.component)
+
+  def getCommandModel(subsystem: String, component: String): Option[CommandModel] = {
+    val collName = getCommandCollectionName(subsystem, component)
     if (collectionExists(collName))
       Some(CommandModelParser(getConfig(db(collName).head.toString)))
     else None
@@ -341,7 +345,7 @@ case class IcdDbQuery(db: MongoDB) {
   def getCommandSenders(subsystem: String, component: String, commandName: String): List[ComponentModel] = {
     for {
       componentModel <- getComponents
-      commandModel <- getCommandModel(componentModel.subsystem, componentModel.component)
+      commandModel <- getCommandModel(componentModel)
       sendCommandModel <- commandModel.send.find(s =>
         s.subsystem == subsystem && s.component == component && s.name == commandName)
     } yield componentModel

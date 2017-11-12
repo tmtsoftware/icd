@@ -41,7 +41,7 @@ class IcdDbTests extends FunSuite {
     assert(envCtrl.componentType == "Assembly")
     assert(envCtrl.prefix == "nfiraos.ncc.envCtrl")
 
-    val commands = db.query.getCommandModel(envCtrl.subsystem, envCtrl.component).get
+    val commands = db.query.getCommandModel(envCtrl).get
     assert(commands.receive.size == 2)
 
     assert(commands.receive.head.name == "ENVIRONMENTAL_CONTROL_INITIALIZE")

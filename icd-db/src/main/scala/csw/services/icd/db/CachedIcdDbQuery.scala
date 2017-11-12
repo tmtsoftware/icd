@@ -69,7 +69,7 @@ class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
   private def getCommandModelMap(components: List[ComponentModel]): Map[Component, CommandModel] = {
     val list = for {
       componentModel <- components
-      commandModel <- super.getCommandModel(componentModel.subsystem, componentModel.component)
+      commandModel <- super.getCommandModel(componentModel)
     } yield Component(componentModel.subsystem, componentModel.component) -> commandModel
     list.toMap
   }
@@ -88,8 +88,8 @@ class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
   override def getSubscribeModel(component: ComponentModel): Option[SubscribeModel] =
     subscribeModelMap.get(Component(component.subsystem, component.component))
 
-  override def getCommandModel(subsystem: String, componentName: String): Option[CommandModel] =
-    commandModelMap.get(Component(subsystem, componentName))
+  override def getCommandModel(component: ComponentModel): Option[CommandModel] =
+    commandModelMap.get(Component(component.subsystem, component.component))
 
   override def getSubscribeInfo: List[SubscribeInfo] = subscribeInfo
 }

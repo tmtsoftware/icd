@@ -35,6 +35,15 @@ object IcdModels {
   }
 
   /**
+    * Common trait of items with a subsystem, component and name.
+    */
+  trait SubsystemComponentName {
+    val subsystem: String
+    val component: String
+    val name: String
+  }
+
+  /**
     * Common trait of archived items with a name and description.
     */
   trait ArchivedNameDesc extends NameDesc {
@@ -117,7 +126,7 @@ object IcdModels {
     name:      String,
     subsystem: String,
     component: String
-  )
+  ) extends SubsystemComponentName
 
   /**
    * Model for commands received and sent by component: See resources/command-schema.conf
@@ -195,7 +204,7 @@ object IcdModels {
     usage:        String,
     requiredRate: Double,
     maxRate:      Double
-  )
+  ) extends SubsystemComponentName
 
   /**
    * Models the component's subsystem
