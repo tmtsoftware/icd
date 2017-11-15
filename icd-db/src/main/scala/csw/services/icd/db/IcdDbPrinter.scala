@@ -453,9 +453,9 @@ case class IcdDbPrinter(db: IcdDb) {
 
     // Displays a summary for published items of a given event type or commands received.
     def publishedSummaryMarkup(itemType: String, list: List[PublishedItem], heading: String, prep: String): Text.TypedTag[String] = {
-      val action = heading.toLowerCase() match {
-        case "published by" => "publishes"
-        case "received by" => "receives"
+      val (action, publisher) = heading.toLowerCase() match {
+        case "published by" => ("publishes", "Publisher")
+        case "received by" => ("receives", "Receiver")
       }
       val targetStr = if (targetSubsystem.isDefined) s" $prep ${targetSubsystem.get}" else ""
       if (list.isEmpty) div() else {
@@ -464,6 +464,7 @@ case class IcdDbPrinter(db: IcdDb) {
           table(
             thead(
               tr(
+                th(publisher),
                 th("Prefix"),
                 th("Name"),
                 th("Description")
@@ -474,6 +475,7 @@ case class IcdDbPrinter(db: IcdDb) {
                 info <- list
               } yield {
                 tr(
+                  td(p(a(href := s"#${info.component.component}")(info.component.component))),
                   td(p(a(href := s"#${info.component.component}")(info.component.prefix))),
                   td(p(a(href := s"#${idFor(info.component.component, action, itemType, info.item.name)}")(info.item.name))),
                   td(raw(firstParagraph(info.item.description))))
@@ -486,10 +488,10 @@ case class IcdDbPrinter(db: IcdDb) {
 
     // Displays a summary for subscribed items of a given event type or commands sent.
     def subscribedSummaryMarkup(itemType: String, list: List[SubscribedItem], heading: String, prep: String): Text.TypedTag[String] = {
-      if (isIcd || list.isEmpty) div() else {
-        val (action, subscriber) = heading.toLowerCase() match {
-          case "subscribed to by" => ("subscribes", "Subscriber")
-          case "sent by" => ("sends", "Sender")
+      if (list.isEmpty) div() else {
+        val (subscribes, publishes, subscriber) = heading.toLowerCase() match {
+          case "subscribed to by" => ("subscribes", "publishes", "Subscriber")
+          case "sent by" => ("sends", "receives", "Sender")
         }
         val targetStr = if (targetSubsystem.isDefined) s" $prep ${targetSubsystem.get}" else ""
         div(
@@ -522,12 +524,23 @@ case class IcdDbPrinter(db: IcdDb) {
                   case None => raw(firstParagraph(info.item.description))
                 }
 
-                tr(
-                  td(p(a(href := s"#${info.subscriber.component}")(info.subscriber.component))),
-                  td(p(publisherPrefix)),
-                  td(p(a(href := s"#${idFor(info.subscriber.component, action, itemType, info.item.name)}")(info.item.name))),
-                  td(description)
-                )
+                // ICDs contain both subsystems, so we can link to them
+                // XXX TODO: Link targets should contain subsystem names!
+                if (isIcd) {
+                  tr(
+                    td(p(a(href := s"#${info.subscriber.component}")(info.subscriber.component))),
+                    td(p(a(href := s"#${info.publisherComponent}")(prefixItem))),
+                    td(p(a(href := s"#${idFor(info.publisherComponent, publishes, itemType, info.item.name)}")(info.item.name))),
+                    td(description)
+                  )
+                } else {
+                  tr(
+                    td(p(a(href := s"#${info.subscriber.component}")(info.subscriber.component))),
+                    td(p(publisherPrefix)),
+                    td(p(a(href := s"#${idFor(info.subscriber.component, subscribes, itemType, info.item.name)}")(info.item.name))),
+                    td(description)
+                  )
+                }
               }
             )
           )
@@ -622,10 +635,9 @@ case class IcdDbPrinter(db: IcdDb) {
       )
     }
 
-    // For APIs display the published and subscribed items, for ICDs, only the published
     div(
       publishedSummary(),
-      if (isIcd) div() else subscribedSummary()
+      subscribedSummary()
     )
   }
 
