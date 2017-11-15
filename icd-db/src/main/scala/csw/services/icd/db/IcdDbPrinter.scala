@@ -348,9 +348,10 @@ case class IcdDbPrinter(db: IcdDb) {
   private def displayComponentInfo(info: ComponentInfo, nh: NumberedHeadings, forApi: Boolean): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (forApi || (info.publishes.isDefined && info.publishes.get.nonEmpty
-      || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
+//      || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
       || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
-      || info.commands.get.commandsSent.nonEmpty))) {
+//      || info.commands.get.commandsSent.nonEmpty
+      ))) {
       markupForComponent(info, nh, forApi)
     } else div()
   }
@@ -580,7 +581,7 @@ case class IcdDbPrinter(db: IcdDb) {
       } yield PublishedItem(info.componentModel, command.receiveCommandModel)
 
       div(
-        nh.H2(s"$subsystem Event and Command Summary"),
+        nh.H2(s"$subsystem Summary"),
 
         if (isIcd) {
           div(
@@ -593,7 +594,7 @@ case class IcdDbPrinter(db: IcdDb) {
         publishedSummaryMarkup("Event Streams", publishedEventStreams, "Published by", "for"),
         publishedSummaryMarkup("Telemetry", publishedTelemetry, "Published by", "for"),
         publishedSummaryMarkup("Alarms", publishedAlarms, "Published by", "for"),
-        publishedSummaryMarkup("Commands", receivedCommands, "Received by", "from"),
+        publishedSummaryMarkup("Commands", receivedCommands, "Received by", "from")
       )
     }
 
