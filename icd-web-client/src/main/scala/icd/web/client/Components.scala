@@ -19,10 +19,11 @@ import scala.util.Failure
 import scalatags.JsDom.TypedTag
 
 object Components {
+
   import icd.web.shared.JsonSupport._
 
   // Id of component info for given component name
-//  def getComponentInfoId(compName: String): String = s"$compName-info"
+  //  def getComponentInfoId(compName: String): String = s"$compName-info"
   def getComponentInfoId(compName: String): String = compName
 
   /**
@@ -105,6 +106,7 @@ object Components {
   * @param listener    called when the user clicks on a component link in the (subscriber, publisher, etc)
   */
 case class Components(mainContent: MainContent, listener: ComponentListener) {
+
   import Components._
   import icd.web.shared.JsonSupport._
 
@@ -361,7 +363,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           mainContent.clearContent()
           mainContent.setTitle(titleInfo.title, titleInfo.subtitleOpt, titleInfo.descriptionOpt)
           mainContent.appendElement(displaySummary(subsystemInfo, targetSubsystem.subsystemOpt, infoList).render)
-          infoList.foreach(displayComponentInfo)
+          infoList.foreach(i => displayComponentInfo(i, targetSubsystem.subsystemOpt.isEmpty))
         }
         f.onComplete {
           case Failure(ex) => mainContent.displayInternalError(ex)
@@ -382,7 +384,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                    targetSubsystem: SubsystemWithVersion): Unit = {
     sv.subsystemOpt.foreach { subsystem =>
       getComponentInfo(subsystem, sv.versionOpt, List(compName), targetSubsystem).map { list =>
-        list.foreach(displayComponentInfo)
+        list.foreach(i => displayComponentInfo(i, targetSubsystem.subsystemOpt.isEmpty))
       }.recover {
         case ex => mainContent.displayInternalError(ex)
       }
@@ -403,7 +405,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         mainContent.clearContent()
         mainContent.scrollToTop()
         mainContent.setTitle(s"Component: $compName")
-        displayComponentInfo(infoList.head)
+        displayComponentInfo(infoList.head, forApi = true)
       }.recover {
         case ex =>
           mainContent.displayInternalError(ex)
@@ -425,11 +427,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     *
     * @param info contains the information to display
     */
-  private def displayComponentInfo(info: ComponentInfo): Unit = {
-    if (info.publishes.isDefined && info.publishes.get.nonEmpty
-      || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
-      || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty || info.commands.get.commandsSent.nonEmpty)) {
-      val markup = markupForComponent(info).render
+  private def displayComponentInfo(info: ComponentInfo, forApi: Boolean): Unit = {
+    if (forApi || (info.publishes.isDefined && info.publishes.get.nonEmpty
+      //      || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
+      || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
+      //      || info.commands.get.commandsSent.nonEmpty
+      ))) {
+      val markup = markupForComponent(info, forApi).render
       val oldElement = $id(getComponentInfoId(info.componentModel.component))
       if (oldElement == null) {
         mainContent.appendElement(markup)
@@ -878,7 +882,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Generates the markup for the commands section (description plus received and sent)
-  private def commandsMarkup(compName: String, commandsOpt: Option[Commands]) = {
+  private def commandsMarkup(compName: String, commandsOpt: Option[Commands], forApi: Boolean) = {
     import scalatags.JsDom.all._
     commandsOpt match {
       case None => div()
@@ -888,7 +892,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           h3(s"Commands for $compName"),
           raw(commands.description),
           receivedCommandsMarkup(compName, commands.commandsReceived),
-          sentCommandsMarkup(compName, commands.commandsSent)
+          if (forApi) sentCommandsMarkup(compName, commands.commandsSent) else div()
         )
     }
   }
@@ -921,7 +925,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Generates the HTML markup to display the component information
-  private def markupForComponent(info: ComponentInfo): TypedTag[Div] = {
+  private def markupForComponent(info: ComponentInfo, forApi: Boolean): TypedTag[Div] = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
@@ -932,8 +936,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       componentInfoTableMarkup(info),
       raw(info.componentModel.description),
       publishMarkup(info.componentModel.component, info.publishes),
-      subscribeMarkup(info.componentModel.component, info.subscribes),
-      commandsMarkup(info.componentModel.component, info.commands)
+      if (forApi) subscribeMarkup(info.componentModel.component, info.subscribes) else div(),
+      commandsMarkup(info.componentModel.component, info.commands, forApi)
     )
   }
 
