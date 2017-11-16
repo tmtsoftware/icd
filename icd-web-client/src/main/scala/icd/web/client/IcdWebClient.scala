@@ -219,7 +219,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         sidebar.setSelectedComponents(hist.sourceComponents)
         hist.viewType match {
           case UploadView => uploadSelected(saveHistory = false)()
-          //          case PublishView => publishItemSelected(saveHistory = false)()
           case VersionView => showVersionHistory(saveHistory = false)()
           case ComponentView | IcdView =>
             updateComponentDisplay(hist.sourceSubsystem, hist.targetSubsystem, hist.sourceComponents).foreach { _ =>

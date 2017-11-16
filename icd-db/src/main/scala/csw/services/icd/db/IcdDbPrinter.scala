@@ -12,39 +12,6 @@ import icd.web.shared._
 import scalatags.Text
 
 
-object IcdPrinter {
-
-  /**
-    * Used where the item description from the other subsystem may not be available
-    */
-  case class OptionalNameDesc(name: String, opt: Option[NameDesc]) extends NameDesc {
-    override val description: String = opt.map(_.description).getOrElse("")
-  }
-
-  /**
-    * Summary of a published item or received command.
-    *
-    * @param component the publishing or receiving component
-    * @param item      name and description of the item or command
-    */
-  case class PublishedItem(component: ComponentModel, item: NameDesc)
-
-  /**
-    * Summary of a subscribed item.
-    *
-    * @param publisherSubsystem the publisher's subsystem
-    * @param publisherComponent the publisher's component
-    * @param publisherOpt       the publisher's component model, if known
-    * @param warningOpt         a warning, in case the publisher's component model, is not known
-    * @param subscriber         the subscriber's component model
-    * @param item               name and description of the published item
-    */
-  case class SubscribedItem(publisherSubsystem: String, publisherComponent: String,
-                            publisherOpt: Option[ComponentModel],
-                            warningOpt: Option[String],
-                            subscriber: ComponentModel, item: NameDesc)
-
-}
 
 /**
   * Creates an HTML or PDF document for a subsystem, component or ICD based on data from the database
@@ -52,8 +19,6 @@ object IcdPrinter {
   * @param db used to query the database
   */
 case class IcdDbPrinter(db: IcdDb) {
-
-  import IcdPrinter._
 
   // Note: You would think we could share parts of this code with the scala.js client, but
   // here we import scalatags.Text.all._ and in scala.js its scalatags.JsDom.all._.
@@ -442,6 +407,7 @@ case class IcdDbPrinter(db: IcdDb) {
     */
   private def displaySummary(subsystemInfo: SubsystemInfo, targetSubsystem: Option[String], infoList: List[ComponentInfo], nh: NumberedHeadings): Text.TypedTag[String] = {
     import scalatags.Text.all._
+    import SummaryInfo._
 
     val subsystem = subsystemInfo.subsystem
     val subsystemVersion = subsystemInfo.versionOpt.getOrElse(unpublished)
@@ -526,7 +492,7 @@ case class IcdDbPrinter(db: IcdDb) {
                 }
 
                 // ICDs contain both subsystems, so we can link to them
-                // XXX TODO: Link targets should contain subsystem names!
+                // XXX TODO: Link targets should contain subsystem names!?
                 if (isIcd) {
                   tr(
                     td(p(a(href := s"#${info.subscriber.component}")(info.subscriber.component))),
