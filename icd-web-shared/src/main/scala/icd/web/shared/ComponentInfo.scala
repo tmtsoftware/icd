@@ -1,6 +1,6 @@
 package icd.web.shared
 
-import icd.web.shared.ComponentInfo.{PublishType, Telemetry}
+import icd.web.shared.ComponentInfo.{Alarms, PublishType, Telemetry}
 import icd.web.shared.IcdModels._
 
 object ComponentInfo {
@@ -129,10 +129,10 @@ case class DetailedSubscribeInfo(
   telemetryModel: Option[TelemetryModel],
   alarmModel: Option[AlarmModel],
   publisher: Option[ComponentModel]) {
-  val description: String = (if (itemType == Telemetry) {
-    telemetryModel.map(_.description)
-  } else {
+  val description: String = (if (itemType == Alarms) {
     alarmModel.map(_.description)
+  } else {
+    telemetryModel.map(_.description)
   }).getOrElse("")
 
   val warning: Option[String] = if (telemetryModel.nonEmpty || alarmModel.nonEmpty) None
