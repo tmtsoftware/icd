@@ -287,7 +287,8 @@ case class MissingItemsReport(db: IcdDb) {
     file.getName.split('.').drop(1).lastOption match {
       case Some("html") => saveAsHtml(html)
       case Some("pdf") => saveAsPdf(html)
-      case _ => println(s"Unsupported output format: Expected *.html or *.pdf")
+      case _ => // XXX TODO: Save tables in csv format separated by blank lines?
+        println(s"Unsupported output format: Expected *.html or *.pdf")
     }
   }
 }
