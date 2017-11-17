@@ -12,6 +12,7 @@ import org.scalajs.dom.raw.{HTMLButtonElement, HTMLDivElement, HTMLElement, HTML
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import Components._
+import icd.web.shared.TitleInfo.unpublished
 import org.scalajs.dom.html.Div
 import play.api.libs.json._
 
@@ -151,7 +152,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import SummaryInfo._
 
     val subsystem = subsystemInfo.subsystem
-    val subsystemVersion = subsystemInfo.versionOpt.getOrElse(unpublished)
+    val subsystemVersion = subsystemInfo.versionOpt.getOrElse(TitleInfo.unpublished)
     val isIcd = targetSubsystem.isDefined
 
     def firstParagraph(s: String): String = {
@@ -232,23 +233,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                   case None => raw(firstParagraph(info.item.description))
                 }
 
-                // ICDs contain both subsystems, so we can link to them
-                // XXX TODO: Link targets should contain subsystem names!?
-                if (isIcd) {
-                  tr(
-                    td(p(a(href := s"#${info.subscriber.component}")(info.subscriber.component))),
-                    td(p(a(href := s"#${info.publisherComponent}")(prefixItem))),
-                    td(p(a(href := s"#${idFor(info.publisherComponent, publishes, itemType, info.item.name)}")(info.item.name))),
-                    td(description)
-                  )
-                } else {
-                  tr(
-                    td(p(a(href := s"#${info.subscriber.component}")(info.subscriber.component))),
-                    td(p(publisherPrefix)),
-                    td(p(a(href := s"#${idFor(info.subscriber.component, subscribes, itemType, info.item.name)}")(info.item.name))),
-                    td(description)
-                  )
-                }
+                tr(
+                  td(p(a(href := s"#${info.subscriber.component}")(info.subscriber.component))),
+                  td(p(publisherPrefix)),
+                  td(p(a(href := s"#${idFor(info.subscriber.component, subscribes, itemType, info.item.name)}")(info.item.name))),
+                  td(description)
+                )
               }
             )
           )
@@ -288,8 +278,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       } yield PublishedItem(info.componentModel, command.receiveCommandModel)
 
       div(
-        h2(s"$subsystem Summary"),
-
         publishedSummaryMarkup("Events", publishedEvents, "Published by", "for"),
         publishedSummaryMarkup("Event Streams", publishedEventStreams, "Published by", "for"),
         publishedSummaryMarkup("Telemetry", publishedTelemetry, "Published by", "for"),
@@ -337,6 +325,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
 
     div(Styles.component, id := "Summary")(
+      h2("Summary"),
       publishedSummary(),
       subscribedSummary()
     )
@@ -352,16 +341,36 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     */
   def addComponents(compNames: List[String], sv: SubsystemWithVersion, targetSubsystem: SubsystemWithVersion,
                     icdOpt: Option[IcdVersion]): Future[Unit] = {
+    import scalatags.JsDom.all._
+    import scalacss.ScalatagsCss._
+
     sv.subsystemOpt match {
       case None => Future.successful()
       case Some(subsystem) =>
         val f = for {
           subsystemInfo <- getSubsystemInfo(subsystem, sv.versionOpt)
+          targetSubsystemInfo <-
+            if (targetSubsystem.subsystemOpt.isDefined)
+              getSubsystemInfo(targetSubsystem.subsystemOpt.get, targetSubsystem.versionOpt)
+            else Future.successful(null)
           infoList <- getComponentInfo(subsystem, sv.versionOpt, compNames, targetSubsystem)
         } yield {
           val titleInfo = TitleInfo(subsystemInfo, targetSubsystem, icdOpt)
+          val subsystemVersion = subsystemInfo.versionOpt.getOrElse(TitleInfo.unpublished)
           mainContent.clearContent()
           mainContent.setTitle(titleInfo.title, titleInfo.subtitleOpt, titleInfo.descriptionOpt)
+          // For ICDs, add the descriptions of the two subsystems at top
+          if (targetSubsystem.subsystemOpt.isDefined) {
+            val targetSubsystemVersion = targetSubsystemInfo.versionOpt.getOrElse(TitleInfo.unpublished)
+            mainContent.appendElement(
+              div(Styles.component,
+                p(strong(s"${subsystemInfo.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
+                raw(subsystemInfo.description),
+                p(strong(s"${targetSubsystemInfo.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
+                raw(targetSubsystemInfo.description)
+              ).render
+            )
+          }
           mainContent.appendElement(displaySummary(subsystemInfo, targetSubsystem.subsystemOpt, infoList).render)
           infoList.foreach(i => displayComponentInfo(i, targetSubsystem.subsystemOpt.isEmpty))
         }
@@ -429,9 +438,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     */
   private def displayComponentInfo(info: ComponentInfo, forApi: Boolean): Unit = {
     if (forApi || (info.publishes.isDefined && info.publishes.get.nonEmpty
-      //      || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
+      || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
       || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
-      //      || info.commands.get.commandsSent.nonEmpty
+      || info.commands.get.commandsSent.nonEmpty
       ))) {
       val markup = markupForComponent(info, forApi).render
       val oldElement = $id(getComponentInfoId(info.componentModel.component))
@@ -554,7 +563,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     def publishTelemetryListMarkup(pubType: String, telemetryList: List[TelemetryInfo]) = {
       if (telemetryList.isEmpty) div()
       else div(
-        h4(s"$pubType Published by $compName"),
+        h3(s"$pubType Published by $compName"),
         table(
           attr("data-toggle") := "table",
           thead(
@@ -597,7 +606,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     def publishAlarmListMarkup(alarmList: List[AlarmInfo]) = {
       if (alarmList.isEmpty) div()
       else div(
-        h4(s"Alarms Published by $compName"),
+        h3(s"Alarms Published by $compName"),
         table(
           attr("data-toggle") := "table",
           thead(
@@ -631,7 +640,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         if (publishes.nonEmpty) {
           div(
             Styles.componentSection,
-            h3(s"Items published by $compName"),
             raw(publishes.description),
             publishTelemetryListMarkup("Telemetry", publishes.telemetryList),
             publishTelemetryListMarkup("Events", publishes.eventList),
@@ -696,7 +704,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
       if (subscribeList.isEmpty) div()
       else div(
-        h4(s"$pubType Subscribed to by $compName"),
+        h3(s"$pubType Subscribed to by $compName"),
         div(
           Styles.componentSection,
           table(Styles.componentTable, attr("data-toggle") := "table",
@@ -736,7 +744,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         if (subscribes.subscribeInfo.nonEmpty) {
           div(
             Styles.componentSection,
-            h3(s"Items subscribed to by $compName"),
             raw(subscribes.description),
             subscribeListMarkup("Telemetry", subscribes.subscribeInfo.filter(_.itemType == Telemetry)),
             subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == Events)),
@@ -892,7 +899,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           h3(s"Commands for $compName"),
           raw(commands.description),
           receivedCommandsMarkup(compName, commands.commandsReceived),
-          if (forApi) sentCommandsMarkup(compName, commands.commandsSent) else div()
+          sentCommandsMarkup(compName, commands.commandsSent)
         )
     }
   }
@@ -936,7 +943,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       componentInfoTableMarkup(info),
       raw(info.componentModel.description),
       publishMarkup(info.componentModel.component, info.publishes),
-      if (forApi) subscribeMarkup(info.componentModel.component, info.subscribes) else div(),
+      subscribeMarkup(info.componentModel.component, info.subscribes),
       commandsMarkup(info.componentModel.component, info.commands, forApi)
     )
   }

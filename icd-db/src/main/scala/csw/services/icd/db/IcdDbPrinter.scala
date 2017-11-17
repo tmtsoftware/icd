@@ -12,7 +12,6 @@ import icd.web.shared._
 import scalatags.Text
 
 
-
 /**
   * Creates an HTML or PDF document for a subsystem, component or ICD based on data from the database
   *
@@ -313,9 +312,9 @@ case class IcdDbPrinter(db: IcdDb) {
   private def displayComponentInfo(info: ComponentInfo, nh: NumberedHeadings, forApi: Boolean): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (forApi || (info.publishes.isDefined && info.publishes.get.nonEmpty
-//      || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
+      //      || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
       || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
-//      || info.commands.get.commandsSent.nonEmpty
+      //      || info.commands.get.commandsSent.nonEmpty
       ))) {
       markupForComponent(info, nh, forApi)
     } else div()
@@ -410,7 +409,6 @@ case class IcdDbPrinter(db: IcdDb) {
     import SummaryInfo._
 
     val subsystem = subsystemInfo.subsystem
-    val subsystemVersion = subsystemInfo.versionOpt.getOrElse(unpublished)
     val isIcd = targetSubsystem.isDefined
 
     def firstParagraph(s: String): String = {
@@ -547,15 +545,6 @@ case class IcdDbPrinter(db: IcdDb) {
       } yield PublishedItem(info.componentModel, command.receiveCommandModel)
 
       div(
-        nh.H2(s"$subsystem Summary"),
-
-        if (isIcd) {
-          div(
-            p(strong(s"${subsystemInfo.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
-            raw(subsystemInfo.description)
-          )
-        } else div(),
-
         publishedSummaryMarkup("Events", publishedEvents, "Published by", "for"),
         publishedSummaryMarkup("Event Streams", publishedEventStreams, "Published by", "for"),
         publishedSummaryMarkup("Telemetry", publishedTelemetry, "Published by", "for"),
@@ -603,6 +592,7 @@ case class IcdDbPrinter(db: IcdDb) {
     }
 
     div(
+      nh.H2("Summary"),
       publishedSummary(),
       subscribedSummary()
     )
@@ -708,9 +698,15 @@ case class IcdDbPrinter(db: IcdDb) {
       val infoList2 = getComponentInfo(targetSubsystem, tv.versionOpt, targetCompNames, sv, None)
       val titleInfo2 = TitleInfo(targetSubsystemInfo, sv, icdVersionOpt, "(Part 2)")
       val nh = new NumberedHeadings
+      val subsystemVersion = subsystemInfo.versionOpt.getOrElse(unpublished)
+      val targetSubsystemVersion = targetSubsystemInfo.versionOpt.getOrElse(unpublished)
       val mainContent = div(
+        p(strong(s"${subsystemInfo.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
+        raw(subsystemInfo.description),
+        p(strong(s"${targetSubsystemInfo.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
+        raw(targetSubsystemInfo.description),
         displaySummary(subsystemInfo, Some(targetSubsystem), infoList, nh),
-        displaySummary(targetSubsystemInfo, Some(subsystem), infoList2, nh),
+        // displaySummary(targetSubsystemInfo, Some(subsystem), infoList2, nh),
         makeIntro(titleInfo1),
         displayDetails(subsystem, infoList, nh, forApi = false),
         makeIntro(titleInfo2),
