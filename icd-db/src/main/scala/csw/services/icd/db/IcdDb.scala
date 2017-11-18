@@ -105,7 +105,7 @@ object IcdDb extends App {
 
     opt[File]('m', "missing") valueName "<outputFile>" action { (x, c) =>
       c.copy(missing = Some(x))
-    } text "Generates a 'Missing Items' report to the given file (dir for csv) in a format based on the file's suffix (html, pdf, csv)"
+    } text "Generates a 'Missing Items' report to the given file (dir for csv) in a format based on the file's suffix (html, pdf, otherwise text/csv formatted files are generated in given dir)"
 
     opt[File]('a', "archived") valueName "<outputFile>" action { (x, c) =>
       c.copy(archived = Some(x))
