@@ -53,12 +53,13 @@ object MissingItemsReport {
         sentCommands.isEmpty &&
         badComponentNames.isEmpty
   }
+
 }
 
 /**
   * Supports generating a "Missing Items" report.
   *
-  * @param db the database to use
+  * @param db      the database to use
   * @param options command line options used to narrow the scope of the report to given subsystems and components
   */
 case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
@@ -82,7 +83,20 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
         p.name))
     }
 
-    val components = query.getComponents.filter(!_.subsystem.startsWith("TEST"))
+    // Note that the report always works with the latest, unpublished versions of subsystems
+    val selectedSubsystems = (options.subsystem ++ options.target).toList.map(IcdVersionManager.SubsystemAndVersion(_).subsystem)
+    val selectedComponents = (options.component ++ options.targetComponent).toList
+
+    // Filter components based on the command line options
+    def componentFilter(component: ComponentModel): Boolean = {
+      if (component.component.startsWith("TEST")) false
+      else if (selectedComponents.isEmpty && selectedSubsystems.isEmpty) true
+      else if (selectedSubsystems.nonEmpty && !selectedSubsystems.contains(component.subsystem)) false
+      else if (selectedComponents.nonEmpty && !selectedComponents.contains(component.component)) false
+      else true
+    }
+
+    val components = query.getComponents.filter(componentFilter)
 
     def getItems: List[Items] = {
       for {
@@ -294,6 +308,10 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
   // Generates the text/CSV formatted report
   private def makeCsvReport(dir: File): Unit = {
     import com.github.tototoshi.csv._
+
+    implicit object MyFormat extends DefaultCSVFormat {
+      override val lineTerminator = "\n"
+    }
 
     def missingPubItemCsv(dir: File, title: String, info: List[PublishedItemInfo]): Unit = {
       if (info.nonEmpty) {

@@ -369,11 +369,16 @@ case class IcdDbQuery(db: MongoDB) {
   def getModels(subsystem: String, component: Option[String] = None): List[IcdModels] = {
     // Holds all the model classes associated with a single ICD entry.
     case class Models(entry: IcdEntry) extends IcdModels {
-      override val subsystemModel = entry.subsystem.map(s => SubsystemModelParser(getConfig(s.head.toString)))
-      override val publishModel = entry.publish.map(s => PublishModelParser(getConfig(s.head.toString)))
-      override val subscribeModel = entry.subscribe.map(s => SubscribeModelParser(getConfig(s.head.toString)))
-      override val commandModel = entry.command.map(s => CommandModelParser(getConfig(s.head.toString)))
-      override val componentModel = entry.component.map(s => ComponentModelParser(getConfig(s.head.toString)))
+      override val subsystemModel: Option[SubsystemModel] =
+        entry.subsystem.map(s => SubsystemModelParser(getConfig(s.head.toString)))
+      override val publishModel: Option[PublishModel] =
+        entry.publish.map(s => PublishModelParser(getConfig(s.head.toString)))
+      override val subscribeModel: Option[SubscribeModel] =
+        entry.subscribe.map(s => SubscribeModelParser(getConfig(s.head.toString)))
+      override val commandModel: Option[CommandModel] =
+        entry.command.map(s => CommandModelParser(getConfig(s.head.toString)))
+      override val componentModel: Option[ComponentModel] =
+        entry.component.map(s => ComponentModelParser(getConfig(s.head.toString)))
     }
 
     val e = if (component.isDefined)

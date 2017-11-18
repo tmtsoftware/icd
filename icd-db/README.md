@@ -22,7 +22,7 @@ Example files that can be ingested into the database for testing can be found
 in the [examples](../examples) directory.
 
 ```
-icd-db 0.11
+icd-db 0.12
 Usage: icd-db [options]
 
   -d, --db <name>          The name of the database to use (default: icds)
@@ -45,10 +45,10 @@ Usage: icd-db [options]
   --versions <subsystem>   List the version history of the given subsystem
   --diff <subsystem>:<version1>[,version2]
                            For the given subsystem, list the differences between <version1> and <version2> (or the current version)
-  --publishes <path>       Prints a list of components that publish the given value (name with optional component prefix) (TODO)
-  --subscribes <path>      Prints a list of components that subscribe to the given value (name with optional component prefix) (TODO)
+  -m, --missing <outputFile>
+                           Generates a 'Missing Items' report to the given file (dir for csv) in a format based on the file's suffix (html, pdf, otherwise text/csv formatted files are generated in given dir)
   -a, --archived <outputFile>
-                           Writes an 'Archived Items' report to the given file in a format based on the file's suffix (html, pdf)
+                           Generates an 'Archived Items' report to the given file in a format based on the file's suffix (html, pdf)
   --help                   
   --version                
 ```

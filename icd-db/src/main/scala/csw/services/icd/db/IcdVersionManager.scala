@@ -397,11 +397,16 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
       // Parses the data from collection s (or an older version of it) and returns a Config object for it
       private def parse(coll: MongoCollection): Config = getConfig(getVersionOf(coll, versionMap(coll.name)))
 
-      override val subsystemModel = entry.subsystem.map(coll => SubsystemModelParser(parse(coll)))
-      override val publishModel = entry.publish.map(coll => PublishModelParser(parse(coll)))
-      override val subscribeModel = entry.subscribe.map(coll => SubscribeModelParser(parse(coll)))
-      override val commandModel = entry.command.map(coll => CommandModelParser(parse(coll)))
-      override val componentModel = entry.component.map(coll => ComponentModelParser(parse(coll)))
+      override val subsystemModel: Option[SubsystemModel] =
+        entry.subsystem.map(coll => SubsystemModelParser(parse(coll)))
+      override val publishModel: Option[IcdModels.PublishModel] =
+        entry.publish.map(coll => PublishModelParser(parse(coll)))
+      override val subscribeModel: Option[IcdModels.SubscribeModel] =
+        entry.subscribe.map(coll => SubscribeModelParser(parse(coll)))
+      override val commandModel: Option[IcdModels.CommandModel] =
+        entry.command.map(coll => CommandModelParser(parse(coll)))
+      override val componentModel: Option[IcdModels.ComponentModel] =
+        entry.component.map(coll => ComponentModelParser(parse(coll)))
     }
 
     getVersion(subsystem, versionOpt, compNameOpt) match {
@@ -474,45 +479,45 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
     }
   }
 
-  /**
-   * Returns the version name of the latest, published ICD from subsystem to target
-   *
-   * @param subsystem the source subsystem
-   * @param target the target subsystem
-   */
-  def getLatestPublishedIcdVersion(subsystem: String, target: String): Option[String] = {
-    if (collectionExists(icdCollName)) {
-      val result = db(icdCollName).find(MongoDBObject(subsystemKey -> subsystem, targetKey -> target)).sort(idKey -> -1).one()
-      try {
-        if (result.isEmpty)
-          None
-        else
-          Some(result.get(versionStrKey).toString)
-      } catch {
-        // Seems like a casbah/mongodb bug that result.isEmpty above can throw this...
-        case e: NullPointerException => None
-      }
-    } else None
-  }
+//  /**
+//   * Returns the version name of the latest, published ICD from subsystem to target
+//   *
+//   * @param subsystem the source subsystem
+//   * @param target the target subsystem
+//   */
+//  def getLatestPublishedIcdVersion(subsystem: String, target: String): Option[String] = {
+//    if (collectionExists(icdCollName)) {
+//      val result = db(icdCollName).find(MongoDBObject(subsystemKey -> subsystem, targetKey -> target)).sort(idKey -> -1).one()
+//      try {
+//        if (result.isEmpty)
+//          None
+//        else
+//          Some(result.get(versionStrKey).toString)
+//      } catch {
+//        // Seems like a casbah/mongodb bug that result.isEmpty above can throw this...
+//        case e: NullPointerException => None
+//      }
+//    } else None
+//  }
 
-  /**
-   * Publishes an ICD from the given version of the given subsystem to the target subsystem and version
-   *
-   * @param subsystem the source subsystem
-   * @param subsystemVersion the source subsystem version
-   * @param target the target subsystem
-   * @param targetVersion the target subsystem version
-   * @param majorVersion if true, incr major version
-   * @param comment comment to go with this version
-   */
-  def publishIcd(subsystem: String, subsystemVersion: String,
-                 target: String, targetVersion: String,
-                 majorVersion: Boolean, comment: String, userName: String): Unit = {
-    val icdVersion = incrVersion(getLatestPublishedIcdVersion(subsystem, target), majorVersion)
-    val date = new DateTime(DateTimeZone.UTC)
-    val user = if (userName.nonEmpty) userName else System.getProperty("user.name")
-    addIcdVersion(icdVersion, subsystem, subsystemVersion, target, targetVersion, user, comment, date)
-  }
+//  /**
+//   * Publishes an ICD from the given version of the given subsystem to the target subsystem and version
+//   *
+//   * @param subsystem the source subsystem
+//   * @param subsystemVersion the source subsystem version
+//   * @param target the target subsystem
+//   * @param targetVersion the target subsystem version
+//   * @param majorVersion if true, incr major version
+//   * @param comment comment to go with this version
+//   */
+//  def publishIcd(subsystem: String, subsystemVersion: String,
+//                 target: String, targetVersion: String,
+//                 majorVersion: Boolean, comment: String, userName: String): Unit = {
+//    val icdVersion = incrVersion(getLatestPublishedIcdVersion(subsystem, target), majorVersion)
+//    val date = new DateTime(DateTimeZone.UTC)
+//    val user = if (userName.nonEmpty) userName else System.getProperty("user.name")
+//    addIcdVersion(icdVersion, subsystem, subsystemVersion, target, targetVersion, user, comment, date)
+//  }
 
   /**
    * Adds an entry for a published ICD with the given version,
