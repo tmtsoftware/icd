@@ -13,10 +13,8 @@ object Dependencies {
   val typesafeConfig = "com.typesafe" % "config" % "1.3.1"
   val scalaTest = "org.scalatest" %% "scalatest" % "3.0.1"
 
-  // XXX: FIXME: Deprecated! replace with https://github.com/vsch/flexmark-java
-//  val pegdown = "org.pegdown" % "pegdown" % "1.6.0"
   val flexmarkAll = "com.vladsch.flexmark" % "flexmark-all" % "0.28.2"
-
+  val scalaCsv = "com.github.tototoshi" %% "scala-csv" % "1.3.5"
   val itextpdf = "com.itextpdf" % "itextpdf" % "5.5.12"
   val xmlworker = "com.itextpdf.tool" % "xmlworker" % "5.5.12"
   val casbah = "org.mongodb" %% "casbah" % "3.1.1"

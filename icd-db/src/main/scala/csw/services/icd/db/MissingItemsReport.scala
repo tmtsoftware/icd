@@ -1,6 +1,6 @@
 package csw.services.icd.db
 
-import java.io.{File, FileOutputStream}
+import java.io._
 
 import csw.services.icd.IcdToPdf
 import csw.services.icd.html.IcdToHtml
@@ -36,11 +36,28 @@ object MissingItemsReport {
                    subscribedTelemetry: List[SubscribedItemInfo],
                    receivedCommands: List[PublishedItemInfo],
                    sentCommands: List[SubscribedItemInfo],
-                   badComponentNames: Set[String])
+                   badComponentNames: Set[String]) {
+    def isEmpty: Boolean =
+      publishedAlarms.isEmpty &&
+        publishedEvents.isEmpty &&
+        publishedEventStreams.isEmpty &&
+        publishedTelemetry.isEmpty &&
+        subscribedAlarms.isEmpty &&
+        subscribedEvents.isEmpty &&
+        subscribedEventStreams.isEmpty &&
+        subscribedTelemetry.isEmpty &&
+        receivedCommands.isEmpty &&
+        sentCommands.isEmpty &&
+        badComponentNames.isEmpty
+  }
 
 }
 
-case class MissingItemsReport(db: IcdDb) {
+case class MissingItemsReport(db: IcdDb,
+                              subsystem: Option[String],
+                              component: Option[String],
+                              targetSubsystem: Option[String],
+                              targetComponent: Option[String]) {
 
   import MissingItemsReport._
 
@@ -270,6 +287,97 @@ case class MissingItemsReport(db: IcdDb) {
     markup.render
   }
 
+  // Generates the text/CSV formatted report
+  private def makeCsvReport(dir: File): Unit = {
+    import com.github.tototoshi.csv._
+
+    def missingPubItemCsv(dir: File, title: String, info: List[PublishedItemInfo]): Unit = {
+      if (info.nonEmpty) {
+        val f = new File(dir, title.replace(' ', '-'))
+        val writer = CSVWriter.open(f)
+        writer.writeRow(List("Subsystem", "Component", "Prefix", "Name"))
+        info.foreach(i => writer.writeRow(List(i.publisherSubsystem, i.publisherComponent, i.prefix, i.name)))
+        writer.close()
+        println(s"Wrote $f")
+      }
+    }
+
+    def missingSubItemCsv(dir: File, title: String, info: List[SubscribedItemInfo],
+                          publisherTitle: String = "Publisher",
+                          subscriberTitle: String = "Subscriber"): Unit = {
+      if (info.nonEmpty) {
+        val f = new File(dir, title.replace(' ', '-'))
+        val writer = CSVWriter.open(f)
+        writer.writeRow(List(
+          s"$subscriberTitle Subsystem",
+          s"$subscriberTitle Component",
+          s"Declared $publisherTitle Subsystem",
+          s"Declared $publisherTitle Component",
+          "Prefix",
+          "Name"
+        ))
+        info.foreach(i => writer.writeRow(List(
+          i.subscriberSubsystem,
+          i.subscriberComponent,
+          i.publisherSubsystem,
+          i.publisherComponent,
+          i.prefix,
+          i.name)))
+
+        writer.close()
+        println(s"Wrote $f")
+      }
+    }
+
+    def badComponentNamesCsv(dir: File, title: String, info: List[String]): Unit = {
+      if (info.nonEmpty) {
+        val f = new File(dir, title.replace(' ', '-'))
+        val writer = CSVWriter.open(f)
+        writer.writeRow(List("Name"))
+        info.foreach(i => writer.writeRow(List(i)))
+      }
+    }
+
+    val missingItems = getMissingItems
+    if (missingItems.isEmpty) {
+      println(s"No missing items were found.")
+      System.exit(0)
+    }
+    if (dir.exists()) {
+      if (dir.list().nonEmpty)
+        println(s"Warning: Directory $dir already exists and contains files.")
+    } else if (!dir.mkdirs()) {
+      println(s"Could not create directory: $dir")
+      System.exit(1)
+    }
+
+    missingPubItemCsv(dir, "Published Alarms with no Subscribers",
+      missingItems.publishedAlarms)
+    missingPubItemCsv(dir, "Published Events with no Subscribers",
+      missingItems.publishedEvents)
+    missingPubItemCsv(dir, "Published Event Streams with no Subscribers",
+      missingItems.publishedEventStreams)
+    missingPubItemCsv(dir, "Published Telemetry with no Subscribers",
+      missingItems.publishedTelemetry)
+
+    missingSubItemCsv(dir, "Subscribed Alarms that are not Published Anywhere",
+      missingItems.subscribedAlarms)
+    missingSubItemCsv(dir, "Subscribed Events that are not Published Anywhere",
+      missingItems.subscribedEvents)
+    missingSubItemCsv(dir, "Subscribed Event Streams that are not Published Anywhere",
+      missingItems.subscribedEventStreams)
+    missingSubItemCsv(dir, "Subscribed Telemetry that is not Published Anywhere",
+      missingItems.subscribedTelemetry)
+
+    missingPubItemCsv(dir, "Received Commands with no Senders",
+      missingItems.receivedCommands)
+    missingSubItemCsv(dir, "Sent Commands that are not Defined Anywhere",
+      missingItems.sentCommands, "Receiver", "Sender")
+
+    badComponentNamesCsv(dir, "Component names that were Referenced but not Defined Anywhere",
+      missingItems.badComponentNames.toList)
+  }
+
   /**
     * Saves the report in HTML or PDF, depending on the file suffix
     */
@@ -283,12 +391,10 @@ case class MissingItemsReport(db: IcdDb) {
 
     def saveAsPdf(html: String): Unit = IcdToPdf.saveAsPdf(file, html, showLogo = false)
 
-    val html = makeReport()
     file.getName.split('.').drop(1).lastOption match {
-      case Some("html") => saveAsHtml(html)
-      case Some("pdf") => saveAsPdf(html)
-      case _ => // XXX TODO: Save tables in csv format separated by blank lines?
-        println(s"Unsupported output format: Expected *.html or *.pdf")
+      case Some("html") => saveAsHtml(makeReport())
+      case Some("pdf") => saveAsPdf(makeReport())
+      case _ => makeCsvReport(file)
     }
   }
 }
