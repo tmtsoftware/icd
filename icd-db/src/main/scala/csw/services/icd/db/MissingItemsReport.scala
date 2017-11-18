@@ -8,6 +8,9 @@ import icd.web.shared.IcdModels._
 
 import scalatags.Text
 
+/**
+  * Defines classes used to generate the "missing items" report
+  */
 object MissingItemsReport {
 
   case class PublishedItemInfo(publisherSubsystem: String,
@@ -50,14 +53,15 @@ object MissingItemsReport {
         sentCommands.isEmpty &&
         badComponentNames.isEmpty
   }
-
 }
 
-case class MissingItemsReport(db: IcdDb,
-                              subsystem: Option[String],
-                              component: Option[String],
-                              targetSubsystem: Option[String],
-                              targetComponent: Option[String]) {
+/**
+  * Supports generating a "Missing Items" report.
+  *
+  * @param db the database to use
+  * @param options command line options used to narrow the scope of the report to given subsystems and components
+  */
+case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
 
   import MissingItemsReport._
 

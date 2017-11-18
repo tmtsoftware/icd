@@ -20,31 +20,8 @@ object IcdDbDefaults {
 
 object IcdDb extends App {
 
-  import IcdDbDefaults._
-
-  /**
-   * Command line options ("icd-db --help" prints a usage message with descriptions of all the options)
-   */
-  case class Options(
-    dbName: String = defaultDbName,
-    host: String = defaultHost,
-    port: Int = defaultPort,
-    ingest: Option[File] = None,
-    list: Option[String] = None,
-    subsystem: Option[String] = None,
-    target: Option[String] = None,
-    targetComponent: Option[String] = None,
-    icdVersion: Option[String] = None,
-    component: Option[String] = None,
-    outputFile: Option[File] = None,
-    drop: Option[String] = None,
-    versions: Option[String] = None,
-    diff: Option[String] = None,
-    missing: Option[File] = None,
-    archived: Option[File] = None)
-
   // Parser for the command line options
-  private val parser = new scopt.OptionParser[Options]("icd-db") {
+  private val parser = new scopt.OptionParser[IcdDbOptions]("icd-db") {
     head("icd-db", System.getProperty("ICD_VERSION"))
 
     opt[String]('d', "db") valueName "<name>" action { (x, c) =>
@@ -116,7 +93,7 @@ object IcdDb extends App {
   }
 
   // Parse the command line options
-  parser.parse(args, Options()) match {
+  parser.parse(args, IcdDbOptions()) match {
     case Some(options) =>
       try {
         run(options)
@@ -129,7 +106,7 @@ object IcdDb extends App {
   }
 
   // Run the application
-  private def run(options: Options): Unit = {
+  private def run(options: IcdDbOptions): Unit = {
     val db = IcdDb(options.dbName, options.host, options.port)
 
     options.ingest.map(dir => db.ingest(dir)) match {
@@ -235,19 +212,9 @@ object IcdDb extends App {
         println(s"\n${diff.path}:\n${diff.patch.toString()}") // XXX TODO: work on the format?
     }
 
-    // --publishes option
-    def listPublishes(path: String): Unit = {
-      // XXX TODO
-    }
-
-    // --subscribes option
-    def listSubscribes(path: String): Unit = {
-      // XXX TODO
-    }
-
     // --missing option
     def missingItemsReport(file: File): Unit = {
-      MissingItemsReport(db, options.subsystem, options.component, options.target, options.targetComponent).saveToFile(file)
+      MissingItemsReport(db, options).saveToFile(file)
     }
 
     // --archive option
