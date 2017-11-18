@@ -181,7 +181,6 @@ object IcdDb extends App {
     def listVersions(subsystem: String): Unit = {
       for (v <- db.versionManager.getVersions(subsystem)) {
         println(s"${v.versionOpt.getOrElse("*")}\t${v.date.withZone(DateTimeZone.getDefault)}\t${v.comment}")
-        println(s"${v.versionOpt.getOrElse("*")}\t${v.date.withZone(DateTimeZone.getDefault)}\t${v.comment}")
       }
     }
 
