@@ -43,7 +43,7 @@ case class IcdDbPrinter(db: IcdDb) {
       val headings = List("Name", "Description", "Type", "Units", "Default")
       val rowList = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
       div(cls := "nopagebreak")(
-        h6(a(s"Attributes for $nameStr")),
+        p(strong(a(s"Attributes for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList)
       )
     }
@@ -57,7 +57,7 @@ case class IcdDbPrinter(db: IcdDb) {
       val rowList = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue,
         HtmlMarkup.yesNo(requiredArgs.contains(a.name)))
       div(cls := "nopagebreak")(
-        h6(a(s"Arguments for $nameStr")),
+        p(strong(a(s"Arguments for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList)
       )
     }
