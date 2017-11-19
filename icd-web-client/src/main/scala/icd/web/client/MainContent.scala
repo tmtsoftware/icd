@@ -1,6 +1,7 @@
 package icd.web.client
 
 import org.scalajs.dom.Element
+import org.scalajs.dom.html.Div
 
 import scalatags.JsDom.all._
 
@@ -102,17 +103,13 @@ case class MainContent() extends Displayable {
    * Displays an error message for the exception
    */
   def displayInternalError(ex: Throwable): Unit = {
-    // Display an error message
-    println(s"Internal error: $ex")
-    setContent(errorDiv("Internal error. The database may be down."), "Internal Error")
+    setContent(errorDiv("Internal error: See server log file for more information."), "Internal Error")
   }
 
   /**
    * Displays an error message for the exception
    */
   def displayInternalError(s: String): Unit = {
-    // Display an error message
-    println(s"Internal error: $s")
     setContent(errorDiv(s"Internal error. $s"), "Internal Error")
   }
 
@@ -123,7 +120,7 @@ case class MainContent() extends Displayable {
     contentTitle.scrollTop = 0
   }
 
-  def markup() = {
+  override def markup(): Element = {
     import scalacss.ScalatagsCss._
     div(Styles.mainContent)(
       div(Styles.main)(contentTitle, contentDescription, contentDiv)
