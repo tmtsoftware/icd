@@ -142,7 +142,7 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
       val tv = SubsystemAndVersion(icdVersion.target, Some(icdVersion.targetVersion))
       val icds = db.versionManager.getIcdVersions(icdVersion.subsystem, icdVersion.target)
       if (!icds.toSet.contains(v))
-        IcdGitManager.importIcdFiles(db, List(sv, tv), println(_))
+        IcdGitManager.importIcdFiles(db, List(sv, tv), println(_), allIcdVersions)
     }
   }
 
@@ -181,7 +181,6 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
 
     val out = new ByteArrayOutputStream()
     val compNames = compNamesOpt match {
-      case Some(s) => s.split(",").toList
       case None => db.versionManager.getComponentNames(subsystem, versionOpt)
     }
 

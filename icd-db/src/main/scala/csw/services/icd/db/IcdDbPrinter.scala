@@ -818,7 +818,7 @@ case class IcdDbPrinter(db: IcdDb) {
           case _ => println(s"Unsupported output format: Expected *.html or *.pdf")
         }
       case None =>
-        println("Please specify source and optionally target subsystems to print")
+        println(s"Failed to generate $file. You might need to run: 'icd-git --ingest' first to update the database.")
     }
   }
 }

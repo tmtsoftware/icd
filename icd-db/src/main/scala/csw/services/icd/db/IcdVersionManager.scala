@@ -415,7 +415,10 @@ case class IcdVersionManager(db: MongoDB, query: IcdDbQuery) {
         val allEntries = getEntries(versionInfo.parts)
         val entries = if (subsystemOnly) allEntries.take(1) else allEntries
         entries.map(Models(versionMap, _))
-      case None => Nil
+      case None =>
+        val v = versionOpt.map("-"+_).getOrElse("")
+        println(s"Error: $subsystem$v not found in the icd database.")
+        Nil
     }
   }
 

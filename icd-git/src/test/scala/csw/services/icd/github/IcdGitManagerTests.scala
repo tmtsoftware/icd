@@ -11,13 +11,13 @@ import org.scalatest.{BeforeAndAfter, FunSuite}
 
 class IcdGitManagerTests extends FunSuite with BeforeAndAfter {
 
-  var repoDir: File = _
-  var git: Git = _
+  private var repoDir: File = _
+  private var git: Git = _
 
-  val user = System.getProperty("user.name")
-  val password = ""
-  val comment = "test comment"
-  val subsysList = List(SubsystemAndVersion("TEST", Some("1.0")), SubsystemAndVersion("TEST2", Some("1.0")))
+  private val user = System.getProperty("user.name")
+  private val password = ""
+  private val comment = "test comment"
+  private val subsysList = List(SubsystemAndVersion("TEST", Some("1.0")), SubsystemAndVersion("TEST2", Some("1.0")))
 
   // Use a dummy repo for the icd and api versions
   before {
@@ -34,8 +34,11 @@ class IcdGitManagerTests extends FunSuite with BeforeAndAfter {
   }
 
   test("Test publishing") {
+    // Note: Normally the return value from IcdGitManager.getAllVersions could be cached and reused for a while,
+    // but not here, since we are modifying the test repository with new versions.
+
     // List should return empty
-    assert(IcdGitManager.list(subsysList).isEmpty)
+    assert(IcdGitManager.list(subsysList, IcdGitManager.getAllVersions._2).isEmpty)
 
     // Publish API for TEST subsystem
     val i1 = IcdGitManager.publish("TEST", majorVersion = false, user, password, comment)
@@ -44,7 +47,7 @@ class IcdGitManagerTests extends FunSuite with BeforeAndAfter {
     assert(i1.user == user)
     assert(i1.subsystem == "TEST")
 
-    val apiVersionOpt = IcdGitManager.getApiVersions(subsysList.head)
+    val apiVersionOpt = IcdGitManager.getApiVersions(subsysList.head, IcdGitManager.getAllVersions._1)
     assert(apiVersionOpt.isDefined)
     val apiVersion = apiVersionOpt.get
     assert(apiVersion.subsystem == "TEST")
@@ -61,7 +64,7 @@ class IcdGitManagerTests extends FunSuite with BeforeAndAfter {
     assert(i2.user == user)
     assert(i2.subsystem == "TEST2")
 
-    val apiVersionOpt2 = IcdGitManager.getApiVersions(subsysList.tail.head)
+    val apiVersionOpt2 = IcdGitManager.getApiVersions(subsysList.tail.head, IcdGitManager.getAllVersions._1)
     assert(apiVersionOpt2.isDefined)
     val apiVersion2 = apiVersionOpt2.get
     assert(apiVersion2.subsystem == "TEST2")
@@ -77,7 +80,7 @@ class IcdGitManagerTests extends FunSuite with BeforeAndAfter {
     assert(i3.comment == comment + " 3")
     assert(i3.user == user)
 
-    val icdVersionsOpt = IcdGitManager.list(subsysList)
+    val icdVersionsOpt = IcdGitManager.list(subsysList, IcdGitManager.getAllVersions._2)
     assert(icdVersionsOpt.isDefined)
     val icdVersions = icdVersionsOpt.get
     assert(icdVersions.subsystems == List("TEST", "TEST2"))
@@ -95,7 +98,8 @@ class IcdGitManagerTests extends FunSuite with BeforeAndAfter {
     } catch {
       case ex: Exception => throw new RuntimeException("Unable to drop the existing ICD database", ex)
     }
-    IcdGitManager.ingest(db, subsysList, (s: String) => println(s))
+    val (apis, icds) = IcdGitManager.getAllVersions
+    IcdGitManager.ingest(db, subsysList, (s: String) => println(s), apis, icds)
     val icdNames = db.versionManager.getIcdNames
     assert(icdNames.size == 1)
     assert(icdNames.head.subsystem == "TEST")

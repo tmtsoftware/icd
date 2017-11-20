@@ -12,25 +12,26 @@ object IcdGit extends App {
   // Default user name if none given
   private val defaultUser = System.getProperty("user.name")
 
+  // cache of API and ICD versions published on GitHub (to avoid cloning the same repo multiple times)
+  private val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
+
   /**
     * Command line options ("icd-git --help" prints a usage message with descriptions of all the options)
     */
-  private case class Options(
-                              list: Boolean = false,
-                              subsystems: List[SubsystemAndVersion] = Nil,
-                              icdVersion: Option[String] = None,
-                              interactive: Boolean = false,
-                              publish: Boolean = false,
-                              unpublish: Boolean = false,
-                              majorVersion: Boolean = false,
-                              user: Option[String] = None,
-                              password: Option[String] = None,
-                              comment: Option[String] = None,
-                              dbName: String = IcdDbDefaults.defaultDbName,
-                              host: String = IcdDbDefaults.defaultHost,
-                              port: Int = IcdDbDefaults.defaultPort,
-                              ingest: Boolean = false
-                            )
+  private case class Options(list: Boolean = false,
+                             subsystems: List[SubsystemAndVersion] = Nil,
+                             icdVersion: Option[String] = None,
+                             interactive: Boolean = false,
+                             publish: Boolean = false,
+                             unpublish: Boolean = false,
+                             majorVersion: Boolean = false,
+                             user: Option[String] = None,
+                             password: Option[String] = None,
+                             comment: Option[String] = None,
+                             dbName: String = IcdDbDefaults.defaultDbName,
+                             host: String = IcdDbDefaults.defaultHost,
+                             port: Int = IcdDbDefaults.defaultPort,
+                             ingest: Boolean = false)
 
   private def parseSubsystemsArg(s: String): List[SubsystemAndVersion] = {
     s.split(',').toList.map(SubsystemAndVersion(_)).sorted
@@ -139,7 +140,7 @@ object IcdGit extends App {
         if (s == null || s.isEmpty) sv
         else Option(s).map { subsys =>
           if (needsVersion) {
-            val versions = IcdGitManager.getSubsystemVersionNumbers(SubsystemAndVersion(subsys, None))
+            val versions = IcdGitManager.getSubsystemVersionNumbers(SubsystemAndVersion(subsys, None), allApiVersions)
             if (versions.isEmpty) error(s"No published versions of $subsys were found. Please use --publish option.")
             val version = if (versions.size == 1) versions.head
             else {
@@ -217,9 +218,8 @@ object IcdGit extends App {
   // --list option (print API and ICD versions for subsystem and target)
   private def list(options: Options): Unit = {
     if (options.subsystems.size == 2) {
-      // XXX TODO: Get all pairs of subsystems?
       for {
-        icdVersions <- IcdGitManager.list(options.subsystems)
+        icdVersions <- IcdGitManager.list(options.subsystems, allIcdVersions)
       } {
         icdVersions.icds.foreach { icd =>
           val a = s"${icdVersions.subsystems.head}-${icd.versions.head}"
@@ -229,7 +229,7 @@ object IcdGit extends App {
       }
     } else if (options.subsystems.nonEmpty) {
       // list the publish history for each of the given subsystems
-      options.subsystems.map(sv => IcdGitManager.getApiVersions(sv)).foreach {
+      options.subsystems.map(sv => IcdGitManager.getApiVersions(sv, allApiVersions)).foreach {
         _.foreach { a =>
           a.apis.foreach { api =>
             println(s"\nSubsystem ${a.subsystem}-${api.version}: created by ${api.user} on ${api.date}:\n${api.comment}\n")
@@ -315,7 +315,7 @@ object IcdGit extends App {
       case ex: Exception => error(s"Unable to drop the existing ICD database: $ex")
     }
 
-    IcdGitManager.ingest(db, options.subsystems, (s: String) => println(s))
+    IcdGitManager.ingest(db, options.subsystems, (s: String) => println(s), allApiVersions, allIcdVersions)
   }
 }
 

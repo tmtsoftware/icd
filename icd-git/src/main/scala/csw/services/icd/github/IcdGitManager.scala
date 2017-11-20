@@ -125,8 +125,8 @@ object IcdGitManager {
   /**
     * Gets a list of version numbers for the given subsystem
     */
-  def getSubsystemVersionNumbers(sv: SubsystemAndVersion): List[String] = {
-    getApiVersions(sv).toList.flatMap(_.apis.map(_.version))
+  def getSubsystemVersionNumbers(sv: SubsystemAndVersion, allApiVersions: List[ApiVersions]): List[String] = {
+    getApiVersions(sv, allApiVersions).toList.flatMap(_.apis.map(_.version))
   }
 
   /**
@@ -138,18 +138,12 @@ object IcdGitManager {
 
   /**
     * Gets a list of information about the published versions of the given subsystem
+    *
+    * @param sv             indicates the subsystem
+    * @param allApiVersions cached list of all API versions (see getAllVersions)
     */
-  def getApiVersions(sv: SubsystemAndVersion): Option[ApiVersions] = {
-    // Checkout the main git repo in a temp dir
-    val gitWorkDir = Files.createTempDirectory("icds").toFile
-    try {
-      // Clone the repository containing the API version info files
-      val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
-      git.close()
-      getApiVersions(sv, gitWorkDir)
-    } finally {
-      deleteDirectoryRecursively(gitWorkDir)
-    }
+  def getApiVersions(sv: SubsystemAndVersion, allApiVersions: List[ApiVersions]): Option[ApiVersions] = {
+    allApiVersions.find(_.subsystem == sv.subsystem)
   }
 
   /**
@@ -193,32 +187,13 @@ object IcdGitManager {
     * Returns information about the ICD versions between the given subsystems (The order of
     * subsystems is not important)
     *
-    * @param subsystems the subsystems that make up the ICD
+    * @param subsystems     the subsystems that make up the ICD
+    * @param allIcdVersions cached list of ICD versions (from getAllVersions)
     * @return the ICD version info, if found
     */
-  def list(subsystems: List[SubsystemAndVersion]): Option[IcdVersions] = {
+  def list(subsystems: List[SubsystemAndVersion], allIcdVersions: List[IcdVersions]): Option[IcdVersions] = {
     if (subsystems.size != 2) error("Expected two subsystems that make up an ICD")
-    // sort by convention
-    val sorted = subsystems.sorted
-    val sv = sorted.head
-    val tv = sorted.tail.head
-    // Checkout the icds repo in a temp dir
-    val gitWorkDir = Files.createTempDirectory("icds").toFile
-    try {
-      val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
-      git.close()
-      val (file, _) = getIcdFile(sv.subsystem, tv.subsystem, gitWorkDir)
-      val path = Paths.get(file.getPath)
-
-      // Get the list of published ICDs for the subsystem and target from GitHub
-      if (!file.exists()) None
-      else {
-        // XXX TODO: filter on s.versionOpt and t.versionOpt
-        Some(IcdVersions.fromJson(new String(Files.readAllBytes(path))))
-      }
-    } finally {
-      deleteDirectoryRecursively(gitWorkDir)
-    }
+    allIcdVersions.find(i => i.subsystems == subsystems.sorted.map(_.subsystem))
   }
 
   /**
@@ -518,11 +493,14 @@ object IcdGitManager {
   /**
     * Ingests the given subsystems and ICD (or all subsystems and ICDs) into the ICD database.
     *
-    * @param db            the database to use
-    * @param subsystemList list of subsystems to ingest (two subsystems for an ICD, empty for all subsystems and ICDs)
-    * @param feedback      function to display messages while working
+    * @param db             the database to use
+    * @param subsystemList  list of subsystems to ingest (two subsystems for an ICD, empty for all subsystems and ICDs)
+    * @param feedback       function to display messages while working
+    * @param allApiVersions cached API version info (see getAllVersions)
+    * @param allIcdVersions cached ICD version info (see getAllVersions)
     */
-  def ingest(db: IcdDb, subsystemList: List[SubsystemAndVersion], feedback: String => Unit): Unit = {
+  def ingest(db: IcdDb, subsystemList: List[SubsystemAndVersion], feedback: String => Unit,
+             allApiVersions: List[ApiVersions], allIcdVersions: List[IcdVersions]): Unit = {
     // Get the list of subsystems to ingest
     val subsystems = {
       if (subsystemList.nonEmpty) {
@@ -530,13 +508,12 @@ object IcdGitManager {
         feedback(s"Ingesting ${subsystemList.mkString(" and ")}")
         subsystemList.sorted
       } else {
-        feedback(s"Ingesting all known subsystems")
-        // XXX TODO: call getAllVersions and use the cached results instead of cloning the repo multiple times!
+        feedback(s"Ingesting all published subsystems from $gitBaseUri")
         allSubsystems.map(s => SubsystemAndVersion(s, None)).toList
       }
     }
-    subsystems.foreach(ingest(db, _, feedback))
-    importIcdFiles(db, subsystems, feedback)
+    subsystems.foreach(ingest(db, _, feedback, allApiVersions))
+    importIcdFiles(db, subsystems, feedback, allIcdVersions)
   }
 
   /**
@@ -547,13 +524,15 @@ object IcdGitManager {
     * @param sv       the subsystem and optional version
     * @param feedback optional feedback function
     */
-  def ingest(db: IcdDb, sv: SubsystemAndVersion, feedback: String => Unit): Unit = {
-    getApiVersions(sv) match {
+  def ingest(db: IcdDb, sv: SubsystemAndVersion, feedback: String => Unit, allApiVersions: List[ApiVersions]): Unit = {
+    getApiVersions(sv, allApiVersions) match {
       case Some(versionsFound) =>
         sv.versionOpt.foreach { v =>
           if (!versionsFound.apis.exists(_.version == v)) warning(s"No published version $v of ${sv.subsystem} was found in the repository")
         }
+
         def versionFilter(e: ApiEntry) = if (sv.versionOpt.isEmpty) true else sv.versionOpt.get == e.version
+
         val apiEntries = versionsFound.apis.filter(versionFilter)
         ingest(db, sv, apiEntries, feedback)
 
@@ -577,8 +556,8 @@ object IcdGitManager {
     val gitWorkDir = Files.createTempDirectory("icds").toFile
     try {
       val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(url).call()
-      apiEntries.foreach { e =>
-        feedback(s"Checking out ${sv.subsystem}-${e.version}")
+      apiEntries.reverse.foreach { e =>
+        feedback(s"Checking out ${sv.subsystem}-${e.version} (commit: ${e.commit})")
         git.checkout().setName(e.commit).call
         feedback(s"Ingesting ${sv.subsystem}-${e.version}")
         db.ingest(gitWorkDir)
@@ -592,28 +571,14 @@ object IcdGitManager {
   }
 
   // Imports the ICD release information for the two subsystems, or all subsystems
-  def importIcdFiles(db: IcdDb, subsystems: List[SubsystemAndVersion], feedback: String => Unit): Unit = {
+  def importIcdFiles(db: IcdDb, subsystems: List[SubsystemAndVersion],
+                     feedback: String => Unit, allIcdVersions: List[IcdVersions]): Unit = {
     val gitWorkDir = Files.createTempDirectory("icds").toFile
-    try {
-      val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
-      git.close()
-      // XXX Should look for pairs of subsystems?
-      if (subsystems.size == 2) {
-        // Import one ICD if subsystem and target options were given
-        val subsystem = subsystems.head.subsystem
-        val target = subsystems.tail.head.subsystem
-        val (file, _) = getIcdFile(subsystem, target, gitWorkDir)
-        if (file.exists()) db.importIcds(file)
-      } else {
-        // Import all ICD files
-        val dir = new File(gitWorkDir, gitIcdsDir)
-        if (dir.exists && dir.isDirectory) {
-          val files = dir.listFiles.filter(f => f.isFile && f.getName.endsWith(".json")).toList
-          files.foreach(file => db.importIcds(file))
-        }
-      }
-    } finally {
-      deleteDirectoryRecursively(gitWorkDir)
+    if (subsystems.size == 2) {
+      // Import one ICD if subsystem and target options were given
+      allIcdVersions.find(_.subsystems == subsystems.map(_.subsystem)).foreach(db.importIcds(_, feedback))
+    } else {
+      allIcdVersions.foreach(db.importIcds(_, feedback))
     }
   }
 }
