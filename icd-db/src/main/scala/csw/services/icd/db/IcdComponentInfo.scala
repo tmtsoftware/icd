@@ -223,8 +223,7 @@ object IcdComponentInfo {
       cmd <- models.commandModel.toList
       received <- cmd.receive
     } yield {
-      val senders = getCommandSenders(cmd.subsystem, cmd.component, received.name, targetModelsList).map(comp =>
-        OtherComponent(comp.subsystem, comp.component))
+      val senders = getCommandSenders(cmd.subsystem, cmd.component, received.name, targetModelsList)
       ReceivedCommandInfo(received, senders)
     }
   }

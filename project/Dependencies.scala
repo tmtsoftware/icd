@@ -5,6 +5,7 @@ object Dependencies {
   val Version = "0.12"
   val ScalaVersion = "2.12.3"
   val PlayVersion = "2.6.5"
+  val ScalaTagsVersion = "0.6.7"
 
   // command line dependencies
   val scopt = "com.github.scopt" %% "scopt" % "3.7.0"
@@ -24,7 +25,7 @@ object Dependencies {
   val sprayJson = "io.spray" %%  "spray-json" % "1.3.3"
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2"
   val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
-  val scalatags = "com.lihaoyi" %% "scalatags" % "0.6.5"
+  val scalatags = "com.lihaoyi" %% "scalatags" % ScalaTagsVersion
   val jsoup = "org.jsoup" % "jsoup" % "1.10.3"
   val jgit = "org.eclipse.jgit" % "org.eclipse.jgit" % "4.8.0.201706111038-r"
 
@@ -40,7 +41,7 @@ object Dependencies {
   // ScalaJS web client scala dependencies
   val clientDeps = Def.setting(Seq(
     "org.scala-js" %%% "scalajs-dom" % "0.9.3",
-    "com.lihaoyi" %%% "scalatags" % "0.6.7",
+    "com.lihaoyi" %%% "scalatags" % ScalaTagsVersion,
 
     "com.typesafe.play" %%% "play-json" % PlayVersion,
     "org.querki" %%% "jquery-facade" % "1.2",

@@ -200,7 +200,7 @@ case class SentCommandInfo(
  */
 case class ReceivedCommandInfo(
   receiveCommandModel: ReceiveCommandModel,
-  senders: List[OtherComponent])
+  senders: List[ComponentModel])
 
 /**
  * Describes commands the component sends and receives
@@ -235,10 +235,10 @@ object SummaryInfo {
   /**
     * Summary of a published item or received command.
     *
-    * @param component the publishing or receiving component
+    * @param publisher the publishing (or receiving, for commands) component
     * @param item      name and description of the item or command
     */
-  case class PublishedItem(component: ComponentModel, item: NameDesc)
+  case class PublishedItem(publisher: ComponentModel, item: NameDesc, subscribers: List[ComponentModel])
 
   /**
     * Summary of a subscribed item.

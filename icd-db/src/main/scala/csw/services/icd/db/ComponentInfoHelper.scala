@@ -150,8 +150,7 @@ object ComponentInfoHelper {
       cmd <- models.commandModel.toList
       received <- cmd.receive
     } yield {
-      val senders = query.getCommandSenders(cmd.subsystem, cmd.component, received.name).map(comp =>
-        OtherComponent(comp.subsystem, comp.component))
+      val senders = query.getCommandSenders(cmd.subsystem, cmd.component, received.name)
       ReceivedCommandInfo(received, senders)
     }
   }

@@ -81,7 +81,8 @@ lazy val icdWebShared = (crossProject.crossType(CrossType.Pure) in file("icd-web
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe.play" %%% "play-json" % PlayVersion
+      "com.typesafe.play" %%% "play-json" % PlayVersion,
+      "com.lihaoyi" %%% "scalatags" % ScalaTagsVersion
     )
   )
 

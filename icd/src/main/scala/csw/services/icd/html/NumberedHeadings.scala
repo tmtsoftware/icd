@@ -1,5 +1,7 @@
 package csw.services.icd.html
 
+import icd.web.shared.Headings
+
 import scalatags.Text
 import scalatags.Text.all._
 
@@ -7,7 +9,7 @@ import scalatags.Text.all._
   * Adds automatic numbering to HTML headings and,
   * as a side effect, saves entries for generating a TOC.
   */
-class NumberedHeadings {
+class NumberedHeadings extends Headings {
   private var h2Counter = 0
   private var h3Counter = 0
   private var h4Counter = 0
@@ -36,9 +38,6 @@ class NumberedHeadings {
     * Called after the headings have been generated and returns the TOC
     */
   def mkToc(): Text.TypedTag[String] = mkToc(toc)
-
-  private def makeId(title: String, optionalId: String): String =
-    if (optionalId.nonEmpty) optionalId else title.replace(' ', '-')
 
   /**
     * A level 2 numbered heading
