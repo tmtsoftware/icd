@@ -78,17 +78,72 @@ object SummaryTable {
 
     // Displays a summary for subscribed items of a given event type or commands sent.
     def subscribedSummaryMarkup(itemType: String, list: List[SubscribedItem], heading: String, prep: String): Text.TypedTag[String] = {
-      if (list.isEmpty) div() else {
-        val (subscribes, publishes, subscriber) = heading.toLowerCase() match {
-          case "subscribed to by" => ("subscribes", "publishes", "Subscriber")
-          case "sent by" => ("sends", "receives", "Sender")
+      if (isIcd) {
+        // For ICDs, display subscribed items from the publisher's point of view
+        if (list.isEmpty) div() else {
+          val (action, publisher, subscriber) = heading.toLowerCase() match {
+            case "published by" => ("publishes", "Publisher", "Subscriber")
+            case "received by" => ("receives", "Receiver", "Senders")
+          }
+
+          val target = targetSubsystem.get
+
+          div(
+            nh.H3(s"$itemType $heading $target $prep $subsystem"),
+            table(
+              thead(
+                tr(
+                  th(publisher),
+                  th(subscriber),
+                  th("Prefix"),
+                  th("Name"),
+                  th("Description")
+                )
+              ),
+              tbody(
+                for {
+                  info <- list
+                } yield {
+                  // If this is an ICD or the publisher is in the same subsystem, we can link to it, since it is in this doc
+                  val prefixItem = info.publisherOpt match {
+                    case Some(componentModel) => span(componentModel.prefix)
+                    case None => em("unknown")
+                  }
+                  val description = info.warningOpt match {
+                    case Some(msg) => p(em("Warning: ", msg))
+                    case None => raw(firstParagraph(info.item.description))
+                  }
+
+                  // ICDs contain both subsystems, so we can link to them
+                  // XXX TODO: Link targets should contain subsystem names!?
+                  tr(
+                    td(p(a(href := s"#${info.publisherComponent}")(info.publisherComponent))),
+                    td(p(a(href := s"#${info.subscriber.component}")(info.subscriber.component))),
+                    td(p(a(href := s"#${info.publisherComponent}")(prefixItem))),
+                    td(p(a(href := s"#${idFor(info.publisherComponent, action, itemType, info.item.name)}")(info.item.name))),
+                    td(description)
+                  )
+                }
+              )
+            )
+          )
         }
+      } else {
+        val (subscribes, publishes, subscriber, publisher) = heading.toLowerCase() match {
+          case "subscribed to by" => ("subscribes", "publishes", "Subscriber", "Publisher")
+          case "sent by" => ("sends", "receives", "Sender", "Receiver")
+        }
+        //        val (subscribes, publishes, subscriber) = heading.toLowerCase() match {
+        //          case "subscribed to by" => ("subscribes", "publishes", "Subscriber")
+        //          case "sent by" => ("sends", "receives", "Sender")
+        //        }
         val targetStr = if (targetSubsystem.isDefined) s" $prep ${targetSubsystem.get}" else ""
         div(
           nh.H3(s"$itemType $heading $subsystem$targetStr"),
           table(
             thead(
               tr(
+                th(publisher),
                 th(subscriber),
                 th("Prefix"),
                 th("Name"),
@@ -104,6 +159,12 @@ object SummaryTable {
                   case Some(componentModel) => span(componentModel.prefix)
                   case None => em("unknown")
                 }
+
+                val publisherComponent =
+                  if (info.publisherSubsystem == info.subscriber.subsystem)
+                    a(href := s"#${info.publisherComponent}")(info.publisherComponent)
+                  else span(s"${info.publisherSubsystem}.${info.publisherComponent}")
+
                 val publisherPrefix =
                   if (info.publisherSubsystem == info.subscriber.subsystem)
                     a(href := s"#${info.publisherComponent}")(prefixItem)
@@ -116,21 +177,13 @@ object SummaryTable {
 
                 // ICDs contain both subsystems, so we can link to them
                 // XXX TODO: Link targets should contain subsystem names!?
-                if (isIcd) {
-                  tr(
-                    td(p(a(href := s"#${info.subscriber.component}")(info.subscriber.component))),
-                    td(p(a(href := s"#${info.publisherComponent}")(prefixItem))),
-                    td(p(a(href := s"#${idFor(info.publisherComponent, publishes, itemType, info.item.name)}")(info.item.name))),
-                    td(description)
-                  )
-                } else {
-                  tr(
-                    td(p(a(href := s"#${info.subscriber.component}")(info.subscriber.component))),
-                    td(p(publisherPrefix)),
-                    td(p(a(href := s"#${idFor(info.subscriber.component, subscribes, itemType, info.item.name)}")(info.item.name))),
-                    td(description)
-                  )
-                }
+                tr(
+                  td(p(publisherComponent)),
+                  td(p(a(href := s"#${info.subscriber.component}")(info.subscriber.component))),
+                  td(p(publisherPrefix)),
+                  td(p(a(href := s"#${idFor(info.subscriber.component, subscribes, itemType, info.item.name)}")(info.item.name))),
+                  td(description)
+                )
               }
             )
           )
@@ -208,11 +261,20 @@ object SummaryTable {
         info.componentModel,
         OptionalNameDesc(command.name, command.receiveCommandModel))
       div(
-        subscribedSummaryMarkup("Events", subscribedEvents, "Subscribed to by", "from"),
-        subscribedSummaryMarkup("Event Streams", subscribedEventStreams, "Subscribed to by", "from"),
-        subscribedSummaryMarkup("Telemetry", subscribedTelemetry, "Subscribed to by", "from"),
-        subscribedSummaryMarkup("Alarms", subscribedAlarms, "Subscribed to by", "from"),
-        subscribedSummaryMarkup("Commands", sentCommands, "Sent by", "to")
+        if (isIcd) div(
+          subscribedSummaryMarkup("Events", subscribedEvents, "Published by", "for"),
+          subscribedSummaryMarkup("Event Streams", subscribedEventStreams, "Published by", "for"),
+          subscribedSummaryMarkup("Telemetry", subscribedTelemetry, "Published by", "for"),
+          subscribedSummaryMarkup("Alarms", subscribedAlarms, "Published by", "for"),
+          subscribedSummaryMarkup("Commands", sentCommands, "Received by", "from")
+        )
+        else div(
+          subscribedSummaryMarkup("Events", subscribedEvents, "Subscribed to by", "from"),
+          subscribedSummaryMarkup("Event Streams", subscribedEventStreams, "Subscribed to by", "from"),
+          subscribedSummaryMarkup("Telemetry", subscribedTelemetry, "Subscribed to by", "from"),
+          subscribedSummaryMarkup("Alarms", subscribedAlarms, "Subscribed to by", "from"),
+          subscribedSummaryMarkup("Commands", sentCommands, "Sent by", "to")
+        )
       )
     }
 

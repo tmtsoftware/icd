@@ -181,6 +181,7 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
 
     val out = new ByteArrayOutputStream()
     val compNames = compNamesOpt match {
+      case Some(s) => s.split(",").toList
       case None => db.versionManager.getComponentNames(subsystem, versionOpt)
     }
 
