@@ -78,65 +78,61 @@ object SummaryTable {
 
     // Displays a summary for subscribed items of a given event type or commands sent.
     def subscribedSummaryMarkup(itemType: String, list: List[SubscribedItem], heading: String, prep: String): Text.TypedTag[String] = {
-      if (isIcd) {
+      if (list.isEmpty) div() else if (isIcd) {
         // For ICDs, display subscribed items from the publisher's point of view
-        if (list.isEmpty) div() else {
-          val (action, publisher, subscriber) = heading.toLowerCase() match {
-            case "published by" => ("publishes", "Publisher", "Subscriber")
-            case "received by" => ("receives", "Receiver", "Senders")
-          }
 
-          val target = targetSubsystem.get
+        val (action, publisher, subscriber) = heading.toLowerCase() match {
+          case "published by" => ("publishes", "Publisher", "Subscriber")
+          case "received by" => ("receives", "Receiver", "Senders")
+        }
 
-          div(
-            nh.H3(s"$itemType $heading $target $prep $subsystem"),
-            table(
-              thead(
-                tr(
-                  th(publisher),
-                  th(subscriber),
-                  th("Prefix"),
-                  th("Name"),
-                  th("Description")
-                )
-              ),
-              tbody(
-                for {
-                  info <- list
-                } yield {
-                  // If this is an ICD or the publisher is in the same subsystem, we can link to it, since it is in this doc
-                  val prefixItem = info.publisherOpt match {
-                    case Some(componentModel) => span(componentModel.prefix)
-                    case None => em("unknown")
-                  }
-                  val description = info.warningOpt match {
-                    case Some(msg) => p(em("Warning: ", msg))
-                    case None => raw(firstParagraph(info.item.description))
-                  }
+        val target = targetSubsystem.get
 
-                  // ICDs contain both subsystems, so we can link to them
-                  // XXX TODO: Link targets should contain subsystem names!?
-                  tr(
-                    td(p(a(href := s"#${info.publisherComponent}")(info.publisherComponent))),
-                    td(p(a(href := s"#${info.subscriber.component}")(info.subscriber.component))),
-                    td(p(a(href := s"#${info.publisherComponent}")(prefixItem))),
-                    td(p(a(href := s"#${idFor(info.publisherComponent, action, itemType, info.item.name)}")(info.item.name))),
-                    td(description)
-                  )
-                }
+        div(
+          nh.H3(s"$itemType $heading $target $prep $subsystem"),
+          table(
+            thead(
+              tr(
+                th(publisher),
+                th(subscriber),
+                th("Prefix"),
+                th("Name"),
+                th("Description")
               )
+            ),
+            tbody(
+              for {
+                info <- list
+              } yield {
+                // If this is an ICD or the publisher is in the same subsystem, we can link to it, since it is in this doc
+                val prefixItem = info.publisherOpt match {
+                  case Some(componentModel) => span(componentModel.prefix)
+                  case None => em("unknown")
+                }
+                val description = info.warningOpt match {
+                  case Some(msg) => p(em("Warning: ", msg))
+                  case None => raw(firstParagraph(info.item.description))
+                }
+
+                // ICDs contain both subsystems, so we can link to them
+                // XXX TODO: Link targets should contain subsystem names!?
+                tr(
+                  td(p(a(href := s"#${info.publisherComponent}")(info.publisherComponent))),
+                  td(p(a(href := s"#${info.subscriber.component}")(info.subscriber.component))),
+                  td(p(a(href := s"#${info.publisherComponent}")(prefixItem))),
+                  td(p(a(href := s"#${idFor(info.publisherComponent, action, itemType, info.item.name)}")(info.item.name))),
+                  td(description)
+                )
+              }
             )
           )
-        }
+        )
       } else {
+        // For APIs, display the list of subscribed items
         val (subscribes, publishes, subscriber, publisher) = heading.toLowerCase() match {
           case "subscribed to by" => ("subscribes", "publishes", "Subscriber", "Publisher")
           case "sent by" => ("sends", "receives", "Sender", "Receiver")
         }
-        //        val (subscribes, publishes, subscriber) = heading.toLowerCase() match {
-        //          case "subscribed to by" => ("subscribes", "publishes", "Subscriber")
-        //          case "sent by" => ("sends", "receives", "Sender")
-        //        }
         val targetStr = if (targetSubsystem.isDefined) s" $prep ${targetSubsystem.get}" else ""
         div(
           nh.H3(s"$itemType $heading $subsystem$targetStr"),
