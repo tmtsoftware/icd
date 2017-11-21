@@ -78,9 +78,9 @@ object SummaryTable {
 
     // Displays a summary for subscribed items of a given event type or commands sent.
     def subscribedSummaryMarkup(itemType: String, list: List[SubscribedItem], heading: String, prep: String): Text.TypedTag[String] = {
-      if (list.isEmpty) div() else if (isIcd) {
-        // For ICDs, display subscribed items from the publisher's point of view
 
+      // For ICDs, display subscribed items from the publisher's point of view
+      def publisherView(): Text.TypedTag[String] = {
         val (action, publisher, subscriber) = heading.toLowerCase() match {
           case "published by" => ("publishes", "Publisher", "Subscriber")
           case "received by" => ("receives", "Receiver", "Senders")
@@ -127,11 +127,13 @@ object SummaryTable {
             )
           )
         )
-      } else {
-        // For APIs, display the list of subscribed items
-        val (subscribes, publishes, subscriber, publisher) = heading.toLowerCase() match {
-          case "subscribed to by" => ("subscribes", "publishes", "Subscriber", "Publisher")
-          case "sent by" => ("sends", "receives", "Sender", "Receiver")
+      }
+
+      // For APIs, display the list of subscribed items
+      def subscriberView(): Text.TypedTag[String] = {
+        val (subscribes, subscriber, publisher) = heading.toLowerCase() match {
+          case "subscribed to by" => ("subscribes", "Subscriber", "Publisher")
+          case "sent by" => ("sends", "Sender", "Receiver")
         }
         val targetStr = if (targetSubsystem.isDefined) s" $prep ${targetSubsystem.get}" else ""
         div(
@@ -150,7 +152,6 @@ object SummaryTable {
               for {
                 info <- list
               } yield {
-                // If this is an ICD or the publisher is in the same subsystem, we can link to it, since it is in this doc
                 val prefixItem = info.publisherOpt match {
                   case Some(componentModel) => span(componentModel.prefix)
                   case None => em("unknown")
@@ -171,7 +172,6 @@ object SummaryTable {
                   case None => raw(firstParagraph(info.item.description))
                 }
 
-                // ICDs contain both subsystems, so we can link to them
                 // XXX TODO: Link targets should contain subsystem names!?
                 tr(
                   td(p(publisherComponent)),
@@ -185,6 +185,12 @@ object SummaryTable {
           )
         )
       }
+
+      if (list.isEmpty)
+        div()
+      else if (isIcd)
+        publisherView()
+      else subscriberView()
     }
 
     def publishedSummary(): Text.TypedTag[String] = {
