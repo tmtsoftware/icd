@@ -112,6 +112,37 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
+  /**
+    * Gets the list of component names for the given subsystem
+    */
+  private def getComponentNames(sv: SubsystemWithVersion): Future[List[String]] = {
+    if (sv.subsystemOpt.isDefined) {
+      val path = Routes.components(sv.subsystemOpt.get, sv.versionOpt)
+      Ajax.get(path).map { r =>
+        Json.fromJson[List[String]](Json.parse(r.responseText)).get
+      }.recover {
+        case ex =>
+          ex.printStackTrace()
+          Nil
+      }
+    } else Future.successful(Nil)
+  }
+
+  /**
+    * Gets the list of components for the given subsystem and then gets the information for them
+    * @param sv the subsystem
+    * @param targetSubsystem the target subsystem
+    * @return future list of component info
+    */
+  private def getComponentInfo(sv: SubsystemWithVersion, targetSubsystem: SubsystemWithVersion): Future[List[ComponentInfo]] = {
+    sv.subsystemOpt match {
+      case None =>
+        Future.successful(Nil)
+      case Some(subsystem) =>
+        getComponentNames(sv).flatMap(getComponentInfo(subsystem, sv.versionOpt, _, targetSubsystem))
+    }
+  }
+
   // Gets top level subsystem info from the server
   private def getSubsystemInfo(subsystem: String, versionOpt: Option[String]): Future[SubsystemInfo] = {
     val path = Routes.subsystemInfo(subsystem, versionOpt)
@@ -132,23 +163,24 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
+    val isIcd = targetSubsystem.subsystemOpt.isDefined
     sv.subsystemOpt match {
       case None => Future.successful()
       case Some(subsystem) =>
         val f = for {
           subsystemInfo <- getSubsystemInfo(subsystem, sv.versionOpt)
-          targetSubsystemInfo <-
-            if (targetSubsystem.subsystemOpt.isDefined)
-              getSubsystemInfo(targetSubsystem.subsystemOpt.get, targetSubsystem.versionOpt)
-            else Future.successful(null)
+          targetSubsystemInfo <- if (isIcd)
+            getSubsystemInfo(targetSubsystem.subsystemOpt.get, targetSubsystem.versionOpt)
+          else Future.successful(null)
           infoList <- getComponentInfo(subsystem, sv.versionOpt, compNames, targetSubsystem)
+          targetInfoList <- getComponentInfo(targetSubsystem, sv)
         } yield {
           val titleInfo = TitleInfo(subsystemInfo, targetSubsystem, icdOpt)
           val subsystemVersion = subsystemInfo.versionOpt.getOrElse(TitleInfo.unpublished)
           mainContent.clearContent()
           mainContent.setTitle(titleInfo.title, titleInfo.subtitleOpt, titleInfo.descriptionOpt)
           // For ICDs, add the descriptions of the two subsystems at top
-          if (targetSubsystem.subsystemOpt.isDefined) {
+          if (isIcd) {
             val targetSubsystemVersion = targetSubsystemInfo.versionOpt.getOrElse(TitleInfo.unpublished)
             mainContent.appendElement(
               div(Styles.component,
@@ -161,7 +193,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           }
           val summaryTable = SummaryTable.displaySummary(subsystemInfo, targetSubsystem.subsystemOpt, infoList).render
           mainContent.appendElement(div(Styles.component, id := "Summary")(raw(summaryTable)).render)
-          infoList.foreach(i => displayComponentInfo(i, targetSubsystem.subsystemOpt.isEmpty))
+          infoList.foreach(i => displayComponentInfo(i, !isIcd))
+          if (isIcd) targetInfoList.foreach(i => displayComponentInfo(i, forApi = false))
         }
         f.onComplete {
           case Failure(ex) => mainContent.displayInternalError(ex)
