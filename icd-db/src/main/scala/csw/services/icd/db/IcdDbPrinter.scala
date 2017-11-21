@@ -77,19 +77,28 @@ case class IcdDbPrinter(db: IcdDb) {
       else {
         div(
           for (t <- telemetryList) yield {
-            val headings = List("Min Rate", "Max Rate", "Archive", "Archive Rate")
+            val subscribers = t.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
+            val subscriberInfo = span(strong(s"$subscriberStr: "), if (subscribers.isEmpty) "none" else subscribers)
+            val headings = List("Min Rate", "Max Rate", "Archive", "Archive Rate", "Required Rate")
             val rowList = List(List(
               HtmlMarkup.formatRate(t.telemetryModel.minRate),
               HtmlMarkup.formatRate(t.telemetryModel.maxRate),
               HtmlMarkup.yesNo(t.telemetryModel.archive),
-              HtmlMarkup.formatRate(t.telemetryModel.archiveRate)))
-            val subscribers = t.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
-            val subscriberInfo = span(strong(s"$subscriberStr: "), if (subscribers.isEmpty) "none" else subscribers)
+              HtmlMarkup.formatRate(t.telemetryModel.archiveRate),
+              t.subscribers.map(s => // Add required rate for subscribers that set it
+                HtmlMarkup.formatRate(s"${s.componentModel.subsystem}.${s.componentModel.component}",
+                  s.subscribeModelInfo.requiredRate)).mkString(" ").trim()
+            ))
             div(cls := "nopagebreak")(
               nh.H4(s"${singlePubType(pubType)}: ${t.telemetryModel.name}", idFor(compName, "publishes", pubType, t.telemetryModel.name)),
               if (t.telemetryModel.requirements.isEmpty) div() else p(strong("Requirements: "), t.telemetryModel.requirements.mkString(", ")),
               p(publisherInfo, ", ", subscriberInfo),
               raw(t.telemetryModel.description),
+              // Include usage text from subscribers that define it
+              div(t.subscribers.map(s =>
+                if (s.subscribeModelInfo.usage.isEmpty) div()
+                else div(strong(s"Usage by ${s.componentModel.subsystem}.${s.componentModel.component}: "),
+                  raw(s.subscribeModelInfo.usage)))),
               HtmlMarkup.mkTable(headings, rowList),
               attributeListMarkup(t.telemetryModel.name, t.telemetryModel.attributesList, nh), hr
             )
@@ -333,8 +342,13 @@ case class IcdDbPrinter(db: IcdDb) {
     */
   private def displayComponentInfo(info: ComponentInfo, nh: NumberedHeadings, forApi: Boolean): Text.TypedTag[String] = {
     import scalatags.Text.all._
-    if (forApi || (info.publishes.isDefined && info.publishes.get.nonEmpty
-      || info.commands.isDefined && info.commands.get.commandsReceived.nonEmpty)) {
+    // For ICDs, only display published items/received commands, for APIs show everything
+    // (Note: Need to include even if only subscribed items are defined, to keep summary links from breaking)
+    if (forApi ||
+      (info.publishes.isDefined && info.publishes.get.nonEmpty
+        || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
+        || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
+        || info.commands.get.commandsSent.nonEmpty))) {
       markupForComponent(info, nh, forApi)
     } else div()
   }

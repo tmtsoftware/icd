@@ -72,6 +72,7 @@ object HtmlMarkup {
   private val os = new OutputSettings().syntax(OutputSettings.Syntax.xml)
 
   def formatRate(rate: Double): String = if (rate == 0) "" else s"$rate Hz"
+  def formatRate(compName: String, rate: Double): String = if (rate == 0) "" else s"<strong>$compName:</strong> $rate Hz"
 
   // Strips leading spaces from each line, since people don't realize that indenting is like ``` blocks in markdown.
   // Note: We could preserve the leading spaces after "|", but that was thought to be too scala specific...
