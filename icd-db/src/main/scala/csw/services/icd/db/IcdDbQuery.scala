@@ -287,12 +287,9 @@ case class IcdDbQuery(db: MongoDB) {
    */
   def getComponentModel(subsystem: String, componentName: String): Option[ComponentModel] = {
     val collName = getComponentCollectionName(subsystem, componentName)
-    if (collectionExists(collName)) {
-      // TODO check other instances of this.  does collectionExists not work?
-      val collHead = db(collName).headOption
-      if (collHead.isEmpty) None
-      else Some(ComponentModelParser(getConfig(db(collName).head.toString)))
-  } else None
+    if (collectionExists(collName))
+      Some(ComponentModelParser(getConfig(db(collName).head.toString)))
+    else None
   }
 
   /**
@@ -427,12 +424,11 @@ case class IcdDbQuery(db: MongoDB) {
   /**
    * Returns a list describing what each component publishes
    */
-  // TODO ask allan about this.  is subsystem used?  looks like info for all components is returned.
   def getPublishInfo(subsystem: String): List[PublishInfo] = {
     def getPublishInfo(c: ComponentModel): PublishInfo =
       PublishInfo(c.component, c.prefix, getPublished(c))
 
-    getComponents.map(c => getPublishInfo(c))
+    getComponents.filter(m => m.subsystem == subsystem).map(c => getPublishInfo(c))
   }
 
   /**
