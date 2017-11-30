@@ -3,10 +3,11 @@ package csw.services.icd.db
 import java.io.File
 
 import com.mongodb.casbah.Imports._
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd._
-import csw.services.icd.model.{ BaseModelParser, SubsystemModelParser }
-import org.joda.time.{ DateTime, DateTimeZone }
+import csw.services.icd.model.{BaseModelParser, SubsystemModelParser}
+import icd.web.shared.IcdModels.TelemetryModel
+import org.joda.time.{DateTime, DateTimeZone}
 
 import scala.io.StdIn
 
