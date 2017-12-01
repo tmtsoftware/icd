@@ -44,7 +44,7 @@ object IcdDb extends App {
       c.copy(list = Some(x))
     } text "Prints a list of ICD subsystems, assemblies, HCDs or all components"
 
-    opt[String]('a', "listData") valueName "<subsystem>" action { (x, c) =>
+    opt[String]("listData") valueName "<subsystem>" action { (x, c) =>
       c.copy(listData = Some(x))
     } text "Specifies the subsystem of which the data rates are calculated."
 
