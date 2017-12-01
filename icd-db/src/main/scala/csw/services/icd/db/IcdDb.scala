@@ -13,9 +13,9 @@ import scala.io.StdIn
 
 object IcdDbDefaults {
   private val conf = ConfigFactory.load
-  val defaultPort = conf.getInt("icd.db.port")
-  val defaultHost = conf.getString("icd.db.host")
-  val defaultDbName = conf.getString("icd.db.name")
+  val defaultPort: Int = conf.getInt("icd.db.port")
+  val defaultHost: String = conf.getString("icd.db.host")
+  val defaultDbName: String = conf.getString("icd.db.name")
 }
 
 object IcdDb extends App {
@@ -127,6 +127,7 @@ object IcdDb extends App {
     options.diff.foreach(diffVersions)
     options.missing.foreach(missingItemsReport)
     options.archived.foreach(archivedItemsReport)
+    options.listData.foreach(listData)
 
     // --list option
     def list(componentType: String): Unit = {
