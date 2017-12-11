@@ -143,7 +143,11 @@ object IcdDb extends App {
     }
 
 
-    def listData(subsystem: String): Unit = {
+    // --listData option
+    def listData(subsystemStr: String): Unit = {
+      val s = IcdVersionManager.SubsystemAndVersion(subsystemStr)
+      val subsystem = s.subsystem
+      val versionOpt = s.versionOpt
       val publishInfo = db.query.getPublishInfo(subsystem)
       var componentTotalDataRate = 0.0
       publishInfo.foreach { componentPublishInfo =>
