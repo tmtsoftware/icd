@@ -92,6 +92,16 @@ The icd web app lists the published versions of subsystems and ICDs from GitHub 
 files are checked out and ingested into the database automatoically as needed (when you select a subsystem 
 from the menu, for example).
 
+Known Issues
+------------
+
+Including a comma in an unquoted string in an ICD model file can cause a NullPointerException.
+For example, don't do this: 
+
+    description = The beam-splitter stage has an unacceptable position error, datum may be lost.
+
+This is a known bug in the Config class: See https://github.com/lightbend/config/issues/367.
+
 Docker Install
 --------------
 
