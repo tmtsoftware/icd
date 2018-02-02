@@ -23,4 +23,5 @@ case class IcdDbOptions(dbName: String = defaultDbName,
                         diff: Option[String] = None,
                         missing: Option[File] = None,
                         archived: Option[File] = None,
-                        listData: Option[String] = None)
+                        listData: Option[String] = None,
+                        allUnits: Option[Unit] = None)

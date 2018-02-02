@@ -1,8 +1,52 @@
 package csw.services.icd.db
 
 import icd.web.shared.IcdModels.TelemetryModel
+import collection.immutable.Set
 
 object ComponentDataReporter {
+    def printAllUsedUnits(db: IcdDb): Unit = {
+      var units = Set[String]()
+      val components = db.query.getComponents
+      components.foreach { componentModel =>
+        println(s"--------- Component ${componentModel.component} --------")
+        val publishModel = db.query.getPublishModel(componentModel)
+        publishModel.foreach { model =>
+          model.eventList.foreach { item =>
+            println(s"----- Item ${item.name}")
+            item.attributesList.foreach { att =>
+              print(s"-- Attribute ${att.name}: type=${att.typeStr}")
+              units = units + att.units
+            }
+          }
+          model.telemetryList.foreach { item =>
+            println(s"----- Item ${item.name}")
+            item.attributesList.foreach { att =>
+              print(s"-- Attribute ${att.name}: type=${att.typeStr}")
+              units = units + att.units
+            }
+          }
+          model.eventStreamList.foreach { item =>
+            println(s"----- Item ${item.name}")
+            item.attributesList.foreach { att =>
+              println(s"-- Attribute ${att.name}: type=${att.typeStr}")
+              units = units + att.units
+            }
+          }
+        }
+        val commandModel = db.query.getCommandModel(componentModel)
+        commandModel.foreach( model =>
+          model.receive.foreach { command =>
+            println(s"----- Command ${command.name}")
+            command.args.foreach { arg =>
+              println(s"-- Argument ${arg.name}: type=${arg.typeStr}")
+              units = units + arg.units
+            }
+          }
+        )
+      }
+      println(units.toSeq.sorted.mkString("\n\n\n----- Units -----\n", "\n", "\n------------"))
+    }
+
     def listData(db: IcdDb, subsystem: String): Unit = {
       val publishInfo = db.query.getPublishInfo(subsystem)
       var componentTotalDataRate = 0.0

@@ -48,6 +48,10 @@ object IcdDb extends App {
       c.copy(listData = Some(x))
     } text "Prints a list of total data rates for components of specified subsystem."
 
+    opt[Unit]('u', "allUnits")  action { (x, c) =>
+      c.copy(allUnits = Some(Unit))
+    } text "Prints the set of unique units used in all received commands and published events/telemetry for all components in DB."
+
     opt[String]('c', "component") valueName "<name>" action { (x, c) =>
       c.copy(component = Some(x))
     } text "Specifies the component to be used by any following options (subsystem must also be specified)"
@@ -128,6 +132,7 @@ object IcdDb extends App {
     options.missing.foreach(missingItemsReport)
     options.archived.foreach(archivedItemsReport)
     options.listData.foreach(s => listData(db, s))
+    options.allUnits.foreach(Unit => printAllUsedUnits(db))
 
     // --list option
     def list(componentType: String): Unit = {
