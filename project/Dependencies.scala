@@ -11,7 +11,7 @@ object Dependencies {
   val scopt = "com.github.scopt" %% "scopt" % "3.7.0"
   val jsonSchemaValidator = "com.github.fge" % "json-schema-validator" % "2.2.6"
   val ficus = "com.iheart" %% "ficus" % "1.4.1"
-  val typesafeConfig = "com.typesafe" % "config" % "1.3.1"
+  val typesafeConfig = "com.typesafe" % "config" % "1.3.2"
   val scalaTest = "org.scalatest" %% "scalatest" % "3.0.1"
 
   val flexmarkAll = "com.vladsch.flexmark" % "flexmark-all" % "0.28.2"

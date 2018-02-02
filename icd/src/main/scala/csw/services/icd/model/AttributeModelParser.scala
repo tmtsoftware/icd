@@ -39,10 +39,8 @@ object AttributeModelParser {
         "enum: (" + e.get.mkString(", ") + ")"
       } else "?"
 
-      if (dimsOpt.isDefined)
-        s"array[${dimsOpt.get.mkString(",")}] of $s"
-      else
-        s"array of $s"
+      val dimensions = dimsOpt.getOrElse(List("1"))
+      s"array[${dimensions.mkString(",")}] of $s"
     }
 
     // Returns a string describing the given type or enum

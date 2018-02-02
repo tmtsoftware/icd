@@ -12,6 +12,7 @@ import com.github.fge.jsonschema.main.{JsonSchema, JsonSchemaFactory}
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions, ConfigResolveOptions}
 
 import scala.io.Source
+import scala.util.{Failure, Success, Try}
 
 /**
  * An ICD API validator
@@ -87,12 +88,18 @@ object IcdValidator {
         if (!inputFile.exists()) {
           Nil
         } else {
-          val inputConfig = ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())
-          val schemaConfig = ConfigFactory.parseResources(stdName.schema)
-          if (schemaConfig == null) {
-            List(Problem("error", s"Missing schema resource: ${stdName.schema}"))
-          } else {
-            validate(inputConfig, schemaConfig, inputFile.toString)
+          Try(ConfigFactory.parseFile(inputFile)) match {
+            case Success(parsedConfigFile) =>
+              val inputConfig = parsedConfigFile.resolve(ConfigResolveOptions.noSystem())
+              val schemaConfig = ConfigFactory.parseResources(stdName.schema)
+              if (schemaConfig == null) {
+                List(Problem("error", s"Missing schema resource: ${stdName.schema}"))
+              } else {
+                validate(inputConfig, schemaConfig, inputFile.toString)
+              }
+            case Failure(ex) =>
+              ex.printStackTrace()
+              List(Problem("error", s"Fatal config parsing error in $inputFile: $ex"))
           }
         }
       }
