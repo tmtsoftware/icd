@@ -91,12 +91,12 @@ object IcdValidator {
           Try(ConfigFactory.parseFile(inputFile)) match {
             case Success(parsedConfigFile) =>
               val inputConfig = parsedConfigFile.resolve(ConfigResolveOptions.noSystem())
-              val schemaConfig = ConfigFactory.parseResources(stdName.schema)
-              if (schemaConfig == null) {
-                List(Problem("error", s"Missing schema resource: ${stdName.schema}"))
-              } else {
-                validate(inputConfig, schemaConfig, inputFile.toString)
-              }
+          val schemaConfig = ConfigFactory.parseResources(stdName.schema)
+          if (schemaConfig == null) {
+            List(Problem("error", s"Missing schema resource: ${stdName.schema}"))
+          } else {
+            validate(inputConfig, schemaConfig, inputFile.toString)
+          }
             case Failure(ex) =>
               ex.printStackTrace()
               List(Problem("error", s"Fatal config parsing error in $inputFile: $ex"))
