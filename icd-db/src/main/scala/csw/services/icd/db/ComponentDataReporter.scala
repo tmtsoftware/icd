@@ -1,7 +1,9 @@
 package csw.services.icd.db
 
 import icd.web.shared.IcdModels.TelemetryModel
+
 import collection.immutable.Set
+import scala.util.Try
 
 object ComponentDataReporter {
     def printAllUsedUnits(db: IcdDb): Unit = {
@@ -90,15 +92,26 @@ object ComponentDataReporter {
             DEFAULT_RATE
           }
           println(s"Item is archived at a rate of $rate Hz")
-          var itemData=8  // 8-bytes for timestamp
+          var itemData = 8 // 8-bytes for timestamp
           item.attributesList.foreach { att =>
             print(s"-- Attribute ${att.name}: type=${att.typeStr}")
-            val eventSize = getSizeOfType(att.typeStr)
-            eventSize match {
-              case Some(s) =>
-                println(s", size=$s byte(s)")
-                itemData += s
-              case None => println(", cannot determine event size.  Skipping")
+            if (att.typeStr.startsWith("array of ")) {
+              // if dimensions not specified, use maxItems.  If that is not specified, use 1
+              val numItems = Try(att.maxItems.getOrElse("1").toInt).getOrElse(1)
+              getSizeOfType(att.typeStr.drop(9)) match {
+                case Some(s) =>
+                  val sz = s * numItems
+                  println(s", size=$sz byte(s)")
+                  itemData += sz
+                case None => println(", cannot determine event size.  Skipping")
+              }
+            } else {
+              getSizeOfType(att.typeStr) match {
+                case Some(s) =>
+                  println(s", size=$s byte(s)")
+                  itemData += s
+                case None => println(", cannot determine event size.  Skipping")
+              }
             }
           }
           val dataRate = itemData * rate * 3600.0 / 1000000.0
@@ -122,7 +135,7 @@ object ComponentDataReporter {
       case s if s.startsWith("long") => Some(8)
       case s if s.startsWith("double") => Some(8)
       case s if s.startsWith("string") => Some(80)
-      case s if s.startsWith("array") =>
+      case s if s.startsWith("array[") =>
         var s1 = s.drop(6)
         var numElements = 1
         var commaLoc = s1.indexOf(',')
