@@ -213,10 +213,13 @@ object IcdValidator {
     // try to get additional messages from the reports section
     val reports = json.get("reports")
     val messages = if (reports == null) "" else {
-//      for (r <- reports.elements().asScala.toList) yield r
-//      val msgElems = (for (r <- reports) yield r.elements().toList).flatten
       val msgElems = reports.elements().asScala
-      val msgTexts = for (e <- msgElems) yield e.get("message").asText()
+      val msgTexts = for (e <- msgElems) yield {
+        if (e.has("message"))
+          e.get("message").asText()
+        else
+          e.asText("")
+      }
       "\n" + msgTexts.mkString("\n")
     }
 
