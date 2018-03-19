@@ -16,10 +16,11 @@ object ComponentInfo {
 
   case object Alarms extends PublishType
 
-  // For ICDs, we are only interested in the interface between the two subsystems.
-  // Filter out any published commands with no subscribers,
-  // and any commands received, with no senders
-  // XXX TODO: Do this earlier, while collecting the data?
+  /**
+    * Filters out any published commands with no subscribers, and any commands received, with no senders
+    * @param info all the information for a component
+    * @return a new ComponentInfo with empty items removed
+    */
   def applyIcdFilter(info: ComponentInfo): ComponentInfo = {
     val (oldTelemetryList, oldEventList, oldEventStreamList, oldAlarmList) = info.publishes match {
       case None => (Nil, Nil, Nil, Nil)

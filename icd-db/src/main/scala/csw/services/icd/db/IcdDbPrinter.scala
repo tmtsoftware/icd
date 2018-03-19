@@ -373,12 +373,7 @@ case class IcdDbPrinter(db: IcdDb) {
   private def getComponentInfo(subsystem: String, versionOpt: Option[String], compNames: List[String],
                                targetSubsystem: SubsystemWithVersion,
                                targetCompNameOpt: Option[String]): List[ComponentInfo] = {
-    for {
-      info <- icdComponentInfo(subsystem, versionOpt, compNames, targetSubsystem, targetCompNameOpt)
-    } yield {
-      // If there is a target subsystem, filter out any items not referenced by it
-      if (targetSubsystem.subsystemOpt.isDefined) ComponentInfo.applyIcdFilter(info) else info
-    }
+      icdComponentInfo(subsystem, versionOpt, compNames, targetSubsystem, targetCompNameOpt)
   }
 
   /**

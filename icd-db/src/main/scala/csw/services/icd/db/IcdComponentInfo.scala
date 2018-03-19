@@ -11,7 +11,7 @@ import icd.web.shared._
   */
 object IcdComponentInfo {
   /**
-    * Query the database for information about the given component
+    * Query the database for information about the given components in an ICD
     *
     * @param db                used to access the database
     * @param subsystem         the subsystem containing the component
@@ -30,6 +30,7 @@ object IcdComponentInfo {
     // subscribes, who calls commands, etc.
     val query = new CachedIcdDbQuery(db.db)
     compNames.flatMap(getComponentInfo(query, subsystem, versionOpt, _, target, targetVersionOpt, targetCompNameOpt))
+      .map(ComponentInfo.applyIcdFilter)
   }
 
   /**
@@ -101,7 +102,7 @@ object IcdComponentInfo {
   }
 
   /**
-    * Gets information about who subscribes to the given published items
+    * Gets information about who subscribes to the given published item
     *
     * @param subsystem        the publisher's subsystem
     * @param component        the publisher's component

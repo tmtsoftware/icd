@@ -55,6 +55,16 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
     select(hidden := true, onchange := icdVersionSelected _).render
   }
 
+  def setEnabled(enabled: Boolean): Unit = {
+    if (enabled) {
+      icdItem.removeAttribute("disabled")
+      versionItem.removeAttribute("disabled")
+    } else {
+      icdItem.setAttribute("disabled", "true")
+      versionItem.setAttribute("disabled", "true")
+    }
+  }
+
   /**
     * Returns true if the combobox is displaying the default item (i.e.: the initial item, no selection)
     */

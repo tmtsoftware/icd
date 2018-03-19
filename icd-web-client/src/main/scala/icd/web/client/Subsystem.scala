@@ -179,6 +179,16 @@ case class Subsystem(
     }
   }
 
+  def setEnabled(enabled: Boolean): Unit = {
+    if (enabled) {
+      subsystemItem.removeAttribute("disabled")
+      versionItem.removeAttribute("disabled")
+    } else {
+      subsystemItem.setAttribute("disabled", "true")
+      versionItem.setAttribute("disabled", "true")
+    }
+  }
+
   /**
    * Sets the selected subsystem version.
    *
