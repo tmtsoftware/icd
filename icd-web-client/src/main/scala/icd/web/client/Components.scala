@@ -107,7 +107,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def getComponentInfo(subsystem: String, versionOpt: Option[String], compNames: List[String],
                                targetSubsystem: SubsystemWithVersion): Future[List[ComponentInfo]] = {
     Ajax.get(Routes.icdComponentInfo(subsystem, versionOpt, compNames, targetSubsystem)).map { r =>
-      Json.fromJson[List[ComponentInfo]](Json.parse(r.responseText)).getOrElse(Nil).map(ComponentInfo.applyIcdFilter)
+      val list = Json.fromJson[List[ComponentInfo]](Json.parse(r.responseText)).getOrElse(Nil)
+      if (targetSubsystem.subsystemOpt.isDefined) list.map(ComponentInfo.applyIcdFilter) else list
     }
   }
 
