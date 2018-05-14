@@ -230,7 +230,7 @@ object IcdDb extends App {
 
     // --archive option
     def archivedItemsReport(file: File): Unit = {
-      ArchivedItemsReport(db).saveToFile(file)
+      ArchivedItemsReport(db, options.subsystem).saveToFile(file)
     }
   }
 }
