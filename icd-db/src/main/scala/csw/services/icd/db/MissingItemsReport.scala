@@ -87,36 +87,37 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
     val selectedSubsystems = (options.subsystem ++ options.target).toList.map(IcdVersionManager.SubsystemAndVersion(_).subsystem)
     val selectedComponents = (options.component ++ options.targetComponent).toList
 
-    // Filter components based on the command line options
-    def componentFilter(component: ComponentModel): Boolean = {
-      if (component.component.startsWith("TEST")) false
-      else if (selectedComponents.isEmpty && selectedSubsystems.isEmpty) true
-      else if (selectedSubsystems.nonEmpty && !selectedSubsystems.contains(component.subsystem)) false
-      else if (selectedComponents.nonEmpty && !selectedComponents.contains(component.component)) false
-      else true
-    }
+//    // Filter components based on the command line options
+//    def componentFilter(component: ComponentModel): Boolean = {
+//      if (component.component.startsWith("TEST")) false
+//      else if (selectedComponents.isEmpty && selectedSubsystems.isEmpty) true
+//      else if (selectedSubsystems.nonEmpty && !selectedSubsystems.contains(component.subsystem)) false
+//      else if (selectedComponents.nonEmpty && !selectedComponents.contains(component.component)) false
+//      else true
+//    }
 
-    val components = query.getComponents.filter(componentFilter)
+//    val components = query.getComponents.filter(componentFilter)
+    val components = query.getComponents
 
     def getItems: List[Items] = {
       for {
         component <- components
-        publishModel <- query.getPublishModel(component)
-        subscribeModel <- query.getSubscribeModel(component)
-        commandModel <- query.getCommandModel(component)
       } yield {
-        val publishedAlarms = getPublishedItems(component, publishModel.alarmList.map(_.name))
-        val publishedEvents = getPublishedItems(component, publishModel.eventList.map(_.name))
-        val publishedEventStreams = getPublishedItems(component, publishModel.eventStreamList.map(_.name))
-        val publishedTelemetry = getPublishedItems(component, publishModel.telemetryList.map(_.name))
+        val publishModel = query.getPublishModel(component)
+        val subscribeModel = query.getSubscribeModel(component)
+        val commandModel = query.getCommandModel(component)
+        val publishedAlarms = getPublishedItems(component, publishModel.map(_.alarmList.map(_.name)).getOrElse(Nil))
+        val publishedEvents = getPublishedItems(component, publishModel.map(_.eventList.map(_.name)).getOrElse(Nil))
+        val publishedEventStreams = getPublishedItems(component, publishModel.map(_.eventStreamList.map(_.name)).getOrElse(Nil))
+        val publishedTelemetry = getPublishedItems(component, publishModel.map(_.telemetryList.map(_.name)).getOrElse(Nil))
 
-        val subscribedAlarms = getSubscribedItems(component, subscribeModel.alarmList)
-        val subscribedEvents = getSubscribedItems(component, subscribeModel.eventList)
-        val subscribedEventStreams = getSubscribedItems(component, subscribeModel.eventStreamList)
-        val subscribedTelemetry = getSubscribedItems(component, subscribeModel.telemetryList)
+        val subscribedAlarms = getSubscribedItems(component, subscribeModel.map(_.alarmList).getOrElse(Nil))
+        val subscribedEvents = getSubscribedItems(component, subscribeModel.map(_.eventList).getOrElse(Nil))
+        val subscribedEventStreams = getSubscribedItems(component, subscribeModel.map(_.eventStreamList).getOrElse(Nil))
+        val subscribedTelemetry = getSubscribedItems(component, subscribeModel.map(_.telemetryList).getOrElse(Nil))
 
-        val receivedCommands = getPublishedItems(component, commandModel.receive.map(_.name))
-        val sentCommands = getSubscribedItems(component, commandModel.send)
+        val receivedCommands = getPublishedItems(component, commandModel.map(_.receive.map(_.name)).getOrElse(Nil))
+        val sentCommands = getSubscribedItems(component, commandModel.map(_.send).getOrElse(Nil))
 
         val compRefs =
           publishedAlarms.map(_.publisherComponent) ++
