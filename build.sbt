@@ -1,5 +1,4 @@
 import sbt._
-//import sbt.Project.projectToRef
 import Dependencies._
 import Settings._
 import sbtcrossproject.{crossProject, CrossType}
@@ -72,17 +71,6 @@ val clientJsDeps = Def.setting(Seq(
   "org.webjars.bower" % "bootstrap-table" % "1.11.1" / "bootstrap-table.min.js",
   ProvidedJS / "resize.js" dependsOn "jquery-ui.min.js"
 ))
-
-  // ScalaJS web client scala dependencies
-  val clientDeps = Def.setting(Seq(
-    "org.scala-js" %%% "scalajs-dom" % "0.9.5",
-    "com.lihaoyi" %%% "scalatags" % ScalaTagsVersion,
-
-    "com.typesafe.play" %%% "play-json" % PlayJsonVersion,
-    "org.querki" %%% "jquery-facade" % "1.2",
-    "com.github.japgolly.scalacss" %%% "core" % "0.5.3",
-    "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.5.3"
-  ))
 
 // a Scala.js based web client that talks to the Play server
 lazy val icdWebClient = (project in file("icd-web-client"))

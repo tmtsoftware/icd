@@ -1,6 +1,4 @@
 import com.typesafe.sbt.SbtNativePackager._
-//import com.typesafe.sbt.SbtScalariform
-//import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import com.typesafe.sbt.jse.JsEngineImport.JsEngineKeys
 import com.typesafe.sbt.packager.Keys._
 import sbt.Keys._
@@ -44,7 +42,6 @@ object Settings {
   )
 
   // Using java8
-//  lazy val defaultSettings = buildSettings ++ formatSettings ++ Seq(
   lazy val defaultSettings = buildSettings ++ Seq(
     scalacOptions ++= Seq("-target:jvm-1.8", "-encoding", "UTF-8", "-feature", "-deprecation", "-unchecked"),
     javacOptions in Compile ++= Seq("-source", "1.8"),
