@@ -1,10 +1,11 @@
 import sbt._
-import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
+//import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
+//import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 
 object Dependencies {
-  val Version = "0.12"
-  val ScalaVersion = "2.12.3"
-  val PlayVersion = "2.6.5"
+  val Version = "0.13"
+  val ScalaVersion = "2.12.5"
+  val PlayJsonVersion = "2.6.5"
   val ScalaTagsVersion = "0.6.7"
 
   // command line dependencies
@@ -24,39 +25,40 @@ object Dependencies {
 
   val sprayJson = "io.spray" %%  "spray-json" % "1.3.3"
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2"
-  val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
+  val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val scalatags = "com.lihaoyi" %% "scalatags" % ScalaTagsVersion
   val jsoup = "org.jsoup" % "jsoup" % "1.10.3"
   val jgit = "org.eclipse.jgit" % "org.eclipse.jgit" % "4.8.0.201706111038-r"
 
   // web server dependencies
-  val scalajsScripts = "com.vmunier" %% "scalajs-scripts" % "1.1.1"
+  val scalajsScripts = "com.vmunier" %% "scalajs-scripts" % "1.1.2"
 
-  val playJson = "com.typesafe.play" %% "play-json" % PlayVersion
+  val playJson = "com.typesafe.play" %% "play-json" % PlayJsonVersion
   val jqueryUi = "org.webjars" % "jquery-ui" % "1.12.1"
   val webjarsPlay = "org.webjars" %% "webjars-play" % "2.6.2"
   val bootstrap = "org.webjars" % "bootstrap" % "3.3.7-1"
   val bootstrapTable = "org.webjars.bower" % "bootstrap-table" % "1.11.1"
 
-  // ScalaJS web client scala dependencies
-  val clientDeps = Def.setting(Seq(
-    "org.scala-js" %%% "scalajs-dom" % "0.9.3",
-    "com.lihaoyi" %%% "scalatags" % ScalaTagsVersion,
+//  // ScalaJS web client scala dependencies
+//  val clientDeps = Seq(
+//    "org.scala-js" %%% "scalajs-dom" % "0.9.5",
+//    "com.lihaoyi" %%% "scalatags" % ScalaTagsVersion,
+//
+//    "com.typesafe.play" %%% "play-json" % PlayJsonVersion,
+//    "org.querki" %%% "jquery-facade" % "1.2",
+//    "com.github.japgolly.scalacss" %%% "core" % "0.5.3",
+//    "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.5.3"
+//  )
 
-    "com.typesafe.play" %%% "play-json" % PlayVersion,
-    "org.querki" %%% "jquery-facade" % "1.2",
-    "com.github.japgolly.scalacss" %%% "core" % "0.5.3",
-    "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.5.3"
-  ))
-
-  // ScalaJS client JavaScript dependencies
-  val clientJsDeps = Def.setting(Seq(
-    "org.webjars" % "jquery" % "2.2.1" / "jquery.js" minified "jquery.min.js",
-//    "org.webjars" % "jquery" % "3.2.1" / "jquery.js" minified "jquery.min.js",
-    "org.webjars" % "jquery-ui" % "1.12.1" / "jquery-ui.min.js" dependsOn "jquery.js",
-    "org.webjars" % "bootstrap" % "3.3.7-1" / "bootstrap.min.js" dependsOn "jquery.js",
-    "org.webjars.bower" % "bootstrap-table" % "1.11.1" / "bootstrap-table.min.js",
-    ProvidedJS / "resize.js" dependsOn "jquery-ui.min.js"
-  ))
+//  // ScalaJS client JavaScript dependencies
+//  val clientJsDeps = Seq(
+//    "org.webjars" % "jquery" % "2.2.1" / "jquery.js" minified "jquery.min.js",
+//    "org.webjars" % "jquery-ui" % "1.12.1" / "jquery-ui.min.js" dependsOn "jquery.js",
+//    "org.webjars" % "bootstrap" % "3.3.7-1" / "bootstrap.min.js" dependsOn "jquery.js",
+//    "org.webjars.bower" % "bootstrap-table" % "1.11.1" / "bootstrap-table.min.js",
+//    ProvidedJS / "resize.js" dependsOn "jquery-ui.min.js"
+//  )
+  
+  
 }
 

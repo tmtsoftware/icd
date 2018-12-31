@@ -1,7 +1,8 @@
 import sbt._
-import sbt.Project.projectToRef
+//import sbt.Project.projectToRef
 import Dependencies._
 import Settings._
+import sbtcrossproject.{crossProject, CrossType}
 
 def compileScope(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 def testScope(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test")
@@ -18,7 +19,7 @@ lazy val icd = project
   .enablePlugins(DeployApp)
   .settings(defaultSettings: _*)
   .settings(libraryDependencies ++=
-    compileScope(jsonSchemaValidator, scopt, scalatags, typesafeConfig, ficus, flexmarkAll, itextpdf, xmlworker, diffson, sprayJson, scalaLogging, logback, jsoup) ++
+    compileScope(jsonSchemaValidator, scopt, scalatags, typesafeConfig, ficus, flexmarkAll, itextpdf, xmlworker, diffson, sprayJson, scalaLogging, logbackClassic, jsoup) ++
       testScope(scalaTest)
   ) dependsOn icdWebSharedJvm
 
@@ -63,6 +64,26 @@ lazy val icdWebServer = (project in file("icd-web-server"))
   .enablePlugins(PlayScala, SbtWeb, DockerPlugin)
   .dependsOn(`icd-db`, `icd-git`)
 
+// ScalaJS client JavaScript dependencies
+val clientJsDeps = Def.setting(Seq(
+  "org.webjars" % "jquery" % "2.2.1" / "jquery.js" minified "jquery.min.js",
+  "org.webjars" % "jquery-ui" % "1.12.1" / "jquery-ui.min.js" dependsOn "jquery.js",
+  "org.webjars" % "bootstrap" % "3.3.7-1" / "bootstrap.min.js" dependsOn "jquery.js",
+  "org.webjars.bower" % "bootstrap-table" % "1.11.1" / "bootstrap-table.min.js",
+  ProvidedJS / "resize.js" dependsOn "jquery-ui.min.js"
+))
+
+  // ScalaJS web client scala dependencies
+  val clientDeps = Def.setting(Seq(
+    "org.scala-js" %%% "scalajs-dom" % "0.9.5",
+    "com.lihaoyi" %%% "scalatags" % ScalaTagsVersion,
+
+    "com.typesafe.play" %%% "play-json" % PlayJsonVersion,
+    "org.querki" %%% "jquery-facade" % "1.2",
+    "com.github.japgolly.scalacss" %%% "core" % "0.5.3",
+    "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.5.3"
+  ))
+
 // a Scala.js based web client that talks to the Play server
 lazy val icdWebClient = (project in file("icd-web-client"))
   .settings(commonSettings)
@@ -77,11 +98,11 @@ lazy val icdWebClient = (project in file("icd-web-client"))
 
 
 // contains simple case classes used for data transfer that are shared between the client and server
-lazy val icdWebShared = (crossProject.crossType(CrossType.Pure) in file("icd-web-shared"))
+lazy val icdWebShared = (crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Pure) in file("icd-web-shared"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe.play" %%% "play-json" % PlayVersion,
+      "com.typesafe.play" %%% "play-json" % PlayJsonVersion,
       "com.lihaoyi" %%% "scalatags" % ScalaTagsVersion
     )
   )
