@@ -2,6 +2,7 @@ package csw.services.icd.db
 
 import java.io.File
 
+import csw.services.icd.IcdValidator
 import icd.web.shared.ComponentInfo.Telemetry
 import org.scalatest.{DoNotDiscover, FunSuite}
 
@@ -10,6 +11,8 @@ import org.scalatest.{DoNotDiscover, FunSuite}
  */
 //@DoNotDiscover
 class IcdDbTests extends FunSuite {
+  val examplesDir = s"examples/${IcdValidator.currentSchemaVersion}"
+
   // The relative location of the the examples directory can change depending on how the test is run
   def getTestDir(path: String): File = {
     val dir = new File(path)
@@ -21,7 +24,7 @@ class IcdDbTests extends FunSuite {
     db.dropDatabase() // start with a clean db for test
 
     // ingest examples/NFIRAOS into the DB
-    val problems = db.ingest(getTestDir("examples/NFIRAOS"))
+    val problems = db.ingest(getTestDir(s"${examplesDir}/NFIRAOS"))
     for (p <- problems) println(p)
     assert(problems.isEmpty)
 

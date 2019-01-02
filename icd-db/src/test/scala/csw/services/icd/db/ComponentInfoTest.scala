@@ -2,10 +2,12 @@ package csw.services.icd.db
 
 import java.io.File
 
+import csw.services.icd.IcdValidator
 import org.scalatest.FunSuite
 
 // XXX TODO: Add more detailed test, add IcdComponentInfo tests
 class ComponentInfoTest extends FunSuite {
+  val examplesDir = s"examples/${IcdValidator.currentSchemaVersion}"
 
   // The relative location of the the examples directory can change depending on how the test is run
   def getTestDir(path: String): File = {
@@ -18,10 +20,10 @@ class ComponentInfoTest extends FunSuite {
     db.dropDatabase() // start with a clean db for test
 
     // ingest examples/NFIRAOS into the DB
-    val problems = db.ingest(getTestDir("examples/NFIRAOS"))
+    val problems = db.ingest(getTestDir(s"$examplesDir/NFIRAOS"))
     for (p <- problems) println(p)
 
-    val problems2 = db.ingest(getTestDir("examples/TCS"))
+    val problems2 = db.ingest(getTestDir(s"$examplesDir/TCS"))
     for (p <- problems2) println(p)
 
     ComponentInfoHelper.getComponentInfo(db.query, "NFIRAOS", None, "lgsWfs").foreach { info =>

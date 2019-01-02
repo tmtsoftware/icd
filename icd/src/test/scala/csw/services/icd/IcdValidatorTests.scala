@@ -44,7 +44,7 @@ class IcdValidatorTests extends FunSuite {
   }
 
   def runTest(good: String, bad: String, schema: String): Unit = {
-    runTest(getConfig(good), getConfig(bad), getConfig(schema))
+    runTest(getConfig(good), getConfig(bad), getConfig(s"${IcdValidator.currentSchemaVersion}/$schema"))
   }
 
   // ---
@@ -72,7 +72,7 @@ class IcdValidatorTests extends FunSuite {
 
   def checkSubsystemModel(models: IcdModels): Unit = {
     val subsystemModel = models.subsystemModel.get
-    assert(subsystemModel.modelVersion == "1.1")
+    assert(subsystemModel.modelVersion == IcdValidator.currentSchemaVersion)
     assert(subsystemModel.subsystem == "WFOS")
     assert(subsystemModel.title == "Wide-Field Optical Spectrometer (WFOS)")
     assert(subsystemModel.description.startsWith("<p>The Wide Field"))
@@ -87,7 +87,7 @@ class IcdValidatorTests extends FunSuite {
     assert(componentModel.componentType == "Assembly")
     assert(componentModel.description == "<p>This is the metadata description of the WFOS filter Assembly</p>")
     assert(componentModel.wbsId == "TMT.INS.INST.WFOS.SWE")
-    assert(componentModel.modelVersion == "1.1")
+    assert(componentModel.modelVersion == IcdValidator.currentSchemaVersion)
   }
 
   def checkPublishModel(models: IcdModels): Unit = {

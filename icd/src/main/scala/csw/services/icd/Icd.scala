@@ -16,7 +16,9 @@ object Icd extends App {
    */
   case class Options(
     validateDir: Option[File] = None,
-    inputFile:   Option[File] = None, schemaFile: Option[File] = None, outputFile: Option[File] = None
+    inputFile:   Option[File] = None,
+    schemaFile: Option[File] = None,
+    outputFile: Option[File] = None
   )
 
   private val parser = new scopt.OptionParser[Options]("icd") {
@@ -78,7 +80,7 @@ object Icd extends App {
         validate(inputFile, options.schemaFile.get)
       } else {
         val inputConfig = ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())
-        validate(inputConfig, inputFile.getName)
+        validate(inputConfig, inputFile.getName, currentSchemaVersion)
       }
       printProblems(problems)
       if (errorCount(problems) != 0) System.exit(1)

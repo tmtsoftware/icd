@@ -25,6 +25,7 @@ object Application {
 /**
   * Provides the interface between the web client and the server
   */
+//noinspection TypeAnnotation
 @Singleton
 class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken: CSRFCheck, assets: AssetsFinder, webJarsUtil: WebJarsUtil, webJarAssets: WebJarAssets, components: ControllerComponents) extends AbstractController(components) {
 
@@ -141,7 +142,7 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
       val sv = SubsystemAndVersion(icdVersion.subsystem, Some(icdVersion.subsystemVersion))
       val tv = SubsystemAndVersion(icdVersion.target, Some(icdVersion.targetVersion))
       val icds = db.versionManager.getIcdVersions(icdVersion.subsystem, icdVersion.target)
-      if (!icds.toSet.contains(v))
+      if (!icds.exists(_.icdVersion.icdVersion == v))
         IcdGitManager.importIcdFiles(db, List(sv, tv), println(_), allIcdVersions)
     }
   }

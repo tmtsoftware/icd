@@ -65,10 +65,11 @@ lazy val icdWebServer = (project in file("icd-web-server"))
 
 // ScalaJS client JavaScript dependencies
 val clientJsDeps = Def.setting(Seq(
-  "org.webjars" % "jquery" % "2.2.1" / "jquery.js" minified "jquery.min.js",
-  "org.webjars" % "jquery-ui" % "1.12.1" / "jquery-ui.min.js" dependsOn "jquery.js",
-  "org.webjars" % "bootstrap" % "3.3.7-1" / "bootstrap.min.js" dependsOn "jquery.js",
-  "org.webjars.bower" % "bootstrap-table" % "1.11.1" / "bootstrap-table.min.js",
+  "org.webjars" % "jquery" % JQueryVersion / "jquery.js" minified "jquery.min.js",
+  "org.webjars" % "jquery-ui" % JQueryUiVersion / "jquery-ui.min.js" dependsOn "jquery.js",
+  // Note: Updating to bootstrap-4 could be a lot of work...
+  "org.webjars" % "bootstrap" % BootstrapVersion / "bootstrap.min.js" dependsOn "jquery.js",
+  "org.webjars.bower" % "bootstrap-table" % BootstrapTableVersion / "bootstrap-table.min.js",
   ProvidedJS / "resize.js" dependsOn "jquery-ui.min.js"
 ))
 

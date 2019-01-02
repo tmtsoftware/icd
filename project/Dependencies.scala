@@ -7,6 +7,10 @@ object Dependencies {
   val PlayVersion = "2.6.20"
   val PlayJsonVersion = "2.6.13"
   val ScalaTagsVersion = "0.6.7"
+  val BootstrapVersion = "3.3.7-1"
+  val JQueryVersion = "2.2.1"
+  val JQueryUiVersion = "1.12.1"
+  val BootstrapTableVersion = "1.11.1"
 
   // command line dependencies
   val scopt = "com.github.scopt" %% "scopt" % "3.7.1"
@@ -34,10 +38,11 @@ object Dependencies {
   val scalajsScripts = "com.vmunier" %% "scalajs-scripts" % "1.1.2"
 
   val playJson = "com.typesafe.play" %% "play-json" % PlayJsonVersion
-  val jqueryUi = "org.webjars" % "jquery-ui" % "1.12.1"
+  val jqueryUi = "org.webjars" % "jquery-ui" % JQueryUiVersion
   val webjarsPlay = "org.webjars" %% "webjars-play" % "2.6.3"
-  val bootstrap = "org.webjars" % "bootstrap" % "3.3.7-1"
-  val bootstrapTable = "org.webjars.bower" % "bootstrap-table" % "1.11.1"
+  // Note: Updating to bootstrap-4 could be a lot of work...
+  val bootstrap = "org.webjars" % "bootstrap" % BootstrapVersion
+  val bootstrapTable = "org.webjars.bower" % "bootstrap-table" % BootstrapTableVersion
 
   // ScalaJS web client scala dependencies
   val clientDeps = Def.setting(Seq(
