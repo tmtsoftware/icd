@@ -1,6 +1,6 @@
 package csw.services.icd.db
 
-import icd.web.shared.IcdModels.TelemetryModel
+import icd.web.shared.IcdModels.EventModel
 
 import collection.immutable.Set
 import scala.util.Try
@@ -20,14 +20,7 @@ object ComponentDataReporter {
               units = units + att.units
             }
           }
-          model.telemetryList.foreach { item =>
-            println(s"----- Item ${item.name}")
-            item.attributesList.foreach { att =>
-              print(s"-- Attribute ${att.name}: type=${att.typeStr}")
-              units = units + att.units
-            }
-          }
-          model.eventStreamList.foreach { item =>
+          model.observeEventList.foreach { item =>
             println(s"----- Item ${item.name}")
             item.attributesList.foreach { att =>
               println(s"-- Attribute ${att.name}: type=${att.typeStr}")
@@ -60,15 +53,11 @@ object ComponentDataReporter {
           db.query.getPublishModel(cm).foreach { cpm =>
             if (cpm.eventList.nonEmpty) {
               println("--- Event Data")
-              componentTotalDataRate += listTelemetryData(cpm.eventList)
+              componentTotalDataRate += listEventData(cpm.eventList)
             }
-            if (cpm.telemetryList.nonEmpty) {
-              println("--- Telemetry Data")
-              componentTotalDataRate += listTelemetryData(cpm.telemetryList)
-            }
-            if (cpm.eventStreamList.nonEmpty) {
-              println("--- EventSteam Data")
-              componentTotalDataRate += listTelemetryData(cpm.eventStreamList)
+            if (cpm.observeEventList.nonEmpty) {
+              println("--- Observe Event Data")
+              componentTotalDataRate += listEventData(cpm.observeEventList)
             }
           }
         }
@@ -76,7 +65,7 @@ object ComponentDataReporter {
       }
     }
 
-    def listTelemetryData(items: List[TelemetryModel]): Double = {
+    def listEventData(items: List[EventModel]): Double = {
       val DEFAULT_RATE = 0.1 // TODO move somewhere
       var totalDataRate = 0.0
       items.foreach { item =>

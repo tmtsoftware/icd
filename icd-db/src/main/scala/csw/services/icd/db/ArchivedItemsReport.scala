@@ -44,8 +44,7 @@ case class ArchivedItemsReport(db: IcdDb, subsystemOpt: Option[String]) {
     } yield {
       getItems(component, "Alarm", publishModel.alarmList) ++
         getItems(component, "Events", publishModel.eventList) ++
-        getItems(component, "EventStreams", publishModel.eventStreamList) ++
-        getItems(component, "Telemetry", publishModel.telemetryList)
+        getItems(component, "ObserveEvents", publishModel.observeEventList)
     }
     result.flatten
   }

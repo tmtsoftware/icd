@@ -3,7 +3,7 @@ package csw.services.icd.db
 import java.io.File
 
 import csw.services.icd.IcdValidator
-import icd.web.shared.ComponentInfo.Telemetry
+import icd.web.shared.ComponentInfo.Events
 import org.scalatest.{DoNotDiscover, FunSuite}
 
 /**
@@ -24,7 +24,7 @@ class IcdDbTests extends FunSuite {
     db.dropDatabase() // start with a clean db for test
 
     // ingest examples/NFIRAOS into the DB
-    val problems = db.ingest(getTestDir(s"${examplesDir}/NFIRAOS"))
+    val problems = db.ingest(getTestDir(s"$examplesDir/NFIRAOS"))
     for (p <- problems) println(p)
     assert(problems.isEmpty)
 
@@ -54,13 +54,13 @@ class IcdDbTests extends FunSuite {
     assert(commands.receive.last.requirements.head == "INT-NFIRAOS-AOESW-0405")
 
     val publish = db.query.getPublishModel(envCtrl).get
-    val telemetryList = publish.telemetryList
-    assert(telemetryList.size == 2)
-    val logging = telemetryList.head
+    val eventList = publish.eventList
+    assert(eventList.size == 5)
+    val logging = eventList.head
     assert(logging.name == "logToFile")
     assert(!logging.archive)
 
-    val sensors = telemetryList.last
+    val sensors = eventList.find(_.name == "sensors").get
     assert(sensors.name == "sensors")
     assert(sensors.archive)
     val attrList = sensors.attributesList
@@ -73,14 +73,14 @@ class IcdDbTests extends FunSuite {
 
     // Test publish queries
     val published = db.query.getPublished(envCtrl).filter(p =>
-      p.name == "sensors" && p.publishType == Telemetry)
+      p.name == "sensors" && p.publishType == Events)
     assert(published.size == 1)
-    assert(published.head.publishType == Telemetry)
+    assert(published.head.publishType == Events)
 
-    //    val sensorList = db.query.publishes("nfiraos.ncc.envCtrl.sensors", "NFIRAOS", Telemetry)
+    //    val sensorList = db.query.publishes("nfiraos.ncc.envCtrl.sensors", "NFIRAOS", Events)
     //    assert(sensorList.size == 1)
     //    assert(sensorList.head.componentName == "envCtrl")
-    //    assert(sensorList.head.item.publishType == Telemetry)
+    //    assert(sensorList.head.item.publishType == Events)
     //    assert(sensorList.head.prefix == "nfiraos.ncc.envCtrl")
     //    assert(sensorList.head.item.name == "sensors")
 
@@ -116,7 +116,7 @@ class IcdDbTests extends FunSuite {
   //    val subscribeInfoList = db.query.subscribes("tcs.parallacticAngle")
   //    assert(subscribeInfoList.size == 1)
   //    assert(subscribeInfoList.head.componentName == "NFIRAOS")
-  //    assert(subscribeInfoList.head.subscribeType == Telemetry)
+  //    assert(subscribeInfoList.head.subscribeType == Events)
   //    assert(subscribeInfoList.head.name == "tcs.parallacticAngle")
   //    assert(subscribeInfoList.head.subsystem == "TCS")
   //
@@ -152,13 +152,13 @@ class IcdDbTests extends FunSuite {
     val modelsList = db.query.getModels("NFIRAOS")
     val publishInfo = for (models <- modelsList) yield {
       models.publishModel.foreach { publishModel =>
-        publishModel.telemetryList.foreach { telemetryModel =>
-          // println(s"${publishModel.component} publishes telemetry ${telemetryModel.name}: ${telemetryModel.description}")
+        publishModel.eventList.foreach { eventModel =>
+          // println(s"${publishModel.component} publishes event ${eventModel.name}: ${eventModel.description}")
         }
       }
       models.subscribeModel.foreach { subscribeModel =>
-        subscribeModel.telemetryList.foreach { telemetryModel =>
-          // println(s"${subscribeModel.component} subscribes to telemetry ${telemetryModel.name} from ${telemetryModel.subsystem}")
+        subscribeModel.eventList.foreach { eventModel =>
+          // println(s"${subscribeModel.component} subscribes to event ${eventModel.name} from ${eventModel.subsystem}")
         }
       }
     }

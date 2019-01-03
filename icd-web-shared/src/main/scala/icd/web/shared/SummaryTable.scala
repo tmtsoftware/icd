@@ -2,7 +2,7 @@ package icd.web.shared
 
 import scalatags.Text
 import scalatags.Text.all._
-import icd.web.shared.ComponentInfo.{Alarms, EventStreams, Events, Telemetry}
+import icd.web.shared.ComponentInfo.{Alarms, Events, ObserveEvents}
 import icd.web.shared.IcdModels.ComponentModel
 import Headings.idFor
 
@@ -198,19 +198,13 @@ object SummaryTable {
         info <- infoList
         pub <- info.publishes.toList
         event <- pub.eventList
-      } yield PublishedItem(info.componentModel, event.telemetryModel, event.subscribers.map(_.componentModel))
+      } yield PublishedItem(info.componentModel, event.eventModel, event.subscribers.map(_.componentModel))
 
-      val publishedEventStreams = for {
+      val publishedObserveEvents = for {
         info <- infoList
         pub <- info.publishes.toList
-        event <- pub.eventStreamList
-      } yield PublishedItem(info.componentModel, event.telemetryModel, event.subscribers.map(_.componentModel))
-
-      val publishedTelemetry = for {
-        info <- infoList
-        pub <- info.publishes.toList
-        event <- pub.telemetryList
-      } yield PublishedItem(info.componentModel, event.telemetryModel, event.subscribers.map(_.componentModel))
+        event <- pub.observeEventList
+      } yield PublishedItem(info.componentModel, event.eventModel, event.subscribers.map(_.componentModel))
 
       val publishedAlarms = for {
         info <- infoList
@@ -226,8 +220,7 @@ object SummaryTable {
 
       div(
         publishedSummaryMarkup("Events", publishedEvents, "Published by", "for"),
-        publishedSummaryMarkup("Event Streams", publishedEventStreams, "Published by", "for"),
-        publishedSummaryMarkup("Telemetry", publishedTelemetry, "Published by", "for"),
+        publishedSummaryMarkup("Observe Events", publishedObserveEvents, "Published by", "for"),
         publishedSummaryMarkup("Alarms", publishedAlarms, "Published by", "for"),
         publishedSummaryMarkup("Commands", receivedCommands, "Received by", "from")
       )
@@ -245,10 +238,9 @@ object SummaryTable {
         event.publisher,
         event.warning,
         info.componentModel,
-        OptionalNameDesc(event.subscribeModelInfo.name, event.telemetryModel)))
+        OptionalNameDesc(event.subscribeModelInfo.name, event.eventModel)))
       val subscribedEvents = allSubscribed.filter(_._1 == Events).map(_._2)
-      val subscribedEventStreams = allSubscribed.filter(_._1 == EventStreams).map(_._2)
-      val subscribedTelemetry = allSubscribed.filter(_._1 == Telemetry).map(_._2)
+      val subscribedObserveEvents = allSubscribed.filter(_._1 == ObserveEvents).map(_._2)
       val subscribedAlarms = allSubscribed.filter(_._1 == Alarms).map(_._2)
 
       val sentCommands = for {
@@ -265,15 +257,13 @@ object SummaryTable {
       div(
         if (isIcd) div(
           subscribedSummaryMarkup("Events", subscribedEvents, "Published by", "for"),
-          subscribedSummaryMarkup("Event Streams", subscribedEventStreams, "Published by", "for"),
-          subscribedSummaryMarkup("Telemetry", subscribedTelemetry, "Published by", "for"),
+          subscribedSummaryMarkup("Observe Events", subscribedObserveEvents, "Published by", "for"),
           subscribedSummaryMarkup("Alarms", subscribedAlarms, "Published by", "for"),
           subscribedSummaryMarkup("Commands", sentCommands, "Received by", "from")
         )
         else div(
           subscribedSummaryMarkup("Events", subscribedEvents, "Subscribed to by", "from"),
-          subscribedSummaryMarkup("Event Streams", subscribedEventStreams, "Subscribed to by", "from"),
-          subscribedSummaryMarkup("Telemetry", subscribedTelemetry, "Subscribed to by", "from"),
+          subscribedSummaryMarkup("Observe Events", subscribedObserveEvents, "Subscribed to by", "from"),
           subscribedSummaryMarkup("Alarms", subscribedAlarms, "Subscribed to by", "from"),
           subscribedSummaryMarkup("Commands", sentCommands, "Sent by", "to")
         )

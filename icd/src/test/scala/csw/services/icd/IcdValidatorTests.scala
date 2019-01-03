@@ -10,6 +10,7 @@ import org.scalatest.FunSuite
 /**
  * Tests ICD schema validation
  */
+//noinspection TypeAnnotation
 class IcdValidatorTests extends FunSuite {
 
   val testDir = {
@@ -92,10 +93,10 @@ class IcdValidatorTests extends FunSuite {
 
   def checkPublishModel(models: IcdModels): Unit = {
     val publishModel = models.publishModel.get
-    val telemetryList = publishModel.telemetryList
-    assert(telemetryList.size == 2)
+    val eventList = publishModel.eventList
+    assert(eventList.size == 2)
 
-    val status1 = telemetryList.head
+    val status1 = eventList.head
     assert(status1.name == "status1")
     assert(status1.description == "<p>status1 description</p>")
     assert(status1.minRate == 0)

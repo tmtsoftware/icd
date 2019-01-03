@@ -7,9 +7,9 @@ object PerfTest extends App {
   ComponentInfoHelper.getComponentInfo(new CachedIcdDbQuery(db.db), "NFIRAOS", None, compName).foreach { info =>
     assert(info.componentModel.component == compName)
     assert(info.publishes.nonEmpty)
-    assert(info.publishes.get.telemetryList.nonEmpty)
-    info.publishes.get.telemetryList.foreach { pubInfo =>
-      println(s"lgsWfs publishes ${pubInfo.telemetryModel.name}")
+    assert(info.publishes.get.eventList.nonEmpty)
+    info.publishes.get.eventList.foreach { pubInfo =>
+      println(s"lgsWfs publishes ${pubInfo.eventModel.name}")
       pubInfo.subscribers.foreach { subInfo =>
         println(s"${subInfo.subscribeModelInfo.component} from ${subInfo.subscribeModelInfo.subsystem} subscribes to ${subInfo.subscribeModelInfo.name}")
       }

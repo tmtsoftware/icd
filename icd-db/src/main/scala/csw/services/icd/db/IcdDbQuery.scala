@@ -74,7 +74,7 @@ object IcdDbQuery {
   /**
    * Describes a published item
    *
-   * @param publishType one of Telemetry, Events, Alarms, etc.
+   * @param publishType one of ObserveEvents, Events, Alarms, etc.
    * @param name        the name of the item being published
    * @param description description of the published item
    */
@@ -85,7 +85,7 @@ object IcdDbQuery {
    *
    * @param componentName component (HCD, assembly, ...) name
    * @param prefix        component prefix
-   * @param publishes     list of names (without prefix) of published items (telemetry, events, alarms, etc.)
+   * @param publishes     list of names (without prefix) of published items (events, alarms, etc.)
    */
   case class PublishInfo(componentName: String, prefix: String, publishes: List[Published])
 
@@ -102,7 +102,7 @@ object IcdDbQuery {
    *
    * @param component          The subscriber's component model
    * @param subscribeModelInfo from the subscribe model
-   * @param subscribeType      one of Telemetry, Events, Alarms, etc.
+   * @param subscribeType      one of ObserveEvents, Events, Alarms, etc.
    * @param path               the path name (component-prefix.name) of the item being subscribed to
    */
   case class Subscribed(
@@ -387,7 +387,7 @@ case class IcdDbQuery(db: MongoDB) {
 
     // Get the prefix for the related db sub-collections
     val prefix = e.name + "."
-    val list = for (entry <- getEntries if entry.name.startsWith(prefix)) yield new Models(entry)
+    val list = for (entry <- getEntries if entry.name.startsWith(prefix)) yield Models(entry)
     Models(e) :: list
   }
 
@@ -412,9 +412,8 @@ case class IcdDbQuery(db: MongoDB) {
     getPublishModel(component) match {
       case Some(publishModel) =>
         List(
-          publishModel.telemetryList.map(i => Published(Telemetry, i.name, i.description)),
           publishModel.eventList.map(i => Published(Events, i.name, i.description)),
-          publishModel.eventStreamList.map(i => Published(EventStreams, i.name, i.description)),
+          publishModel.observeEventList.map(i => Published(ObserveEvents, i.name, i.description)),
           publishModel.alarmList.map(i => Published(Alarms, i.name, i.description))
         ).flatten
       case None => Nil
@@ -447,9 +446,8 @@ case class IcdDbQuery(db: MongoDB) {
     getSubscribeModel(component) match {
       case Some(subscribeModel) =>
         List(
-          subscribeModel.telemetryList.map(i => Subscribed(component, i, Telemetry, getPath(i))),
           subscribeModel.eventList.map(i => Subscribed(component, i, Events, getPath(i))),
-          subscribeModel.eventStreamList.map(i => Subscribed(component, i, EventStreams, getPath(i))),
+          subscribeModel.observeEventList.map(i => Subscribed(component, i, ObserveEvents, getPath(i))),
           subscribeModel.alarmList.map(i => Subscribed(component, i, Alarms, getPath(i)))
         ).flatten
       case None => Nil
@@ -472,7 +470,7 @@ case class IcdDbQuery(db: MongoDB) {
    * Returns a list describing the components that subscribe to the given value.
    *
    * @param path          full path name of value (prefix + name)
-   * @param subscribeType telemetry, alarm, etc...
+   * @param subscribeType events, alarm, etc...
    */
   def subscribes(path: String, subscribeType: PublishType): List[Subscribed] = {
     for {

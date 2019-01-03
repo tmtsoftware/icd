@@ -50,7 +50,7 @@ object IcdDb extends App {
 
     opt[Unit]('u', "allUnits")  action { (x, c) =>
       c.copy(allUnits = Some(Unit))
-    } text "Prints the set of unique units used in all received commands and published events/telemetry for all components in DB."
+    } text "Prints the set of unique units used in all received commands and published events for all components in DB."
 
     opt[String]('c', "component") valueName "<name>" action { (x, c) =>
       c.copy(component = Some(x))

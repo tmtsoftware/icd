@@ -82,20 +82,17 @@ object IcdComponentInfo {
         models.publishModel match {
           case None => None
           case Some(m) =>
-            val telemetryList = m.telemetryList.map { t =>
-              TelemetryInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, Telemetry, targetModelsList))
-            }
             val eventList = m.eventList.map { t =>
-              TelemetryInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, Events, targetModelsList))
+              EventInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, Events, targetModelsList))
             }
-            val eventStreamList = m.eventStreamList.map { t =>
-              TelemetryInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, EventStreams, targetModelsList))
+            val observeEventList = m.observeEventList.map { t =>
+              EventInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, ObserveEvents, targetModelsList))
             }
             val alarmList = m.alarmList.map { al =>
               AlarmInfo(al, getSubscribers(subsystem, component, prefix, al.name, al.description, Alarms, targetModelsList))
             }
-            if (telemetryList.nonEmpty || eventList.nonEmpty || eventStreamList.nonEmpty || alarmList.nonEmpty)
-              Some(Publishes(m.description, telemetryList, eventList, eventStreamList, alarmList))
+            if (eventList.nonEmpty || observeEventList.nonEmpty || alarmList.nonEmpty)
+              Some(Publishes(m.description, eventList, observeEventList, alarmList))
             else None
         }
     }
@@ -109,7 +106,7 @@ object IcdComponentInfo {
     * @param prefix           the publisher component's prefix
     * @param name             simple name of the published item
     * @param desc             description of the item
-    * @param pubType          One of Telemetry, Event, EventStream, Alarm.
+    * @param pubType          One of Event, ObserveEvent, Alarm.
     * @param targetModelsList the target model objects for the ICD
     */
   private def getSubscribers(subsystem: String, component: String, prefix: String, name: String, desc: String,
@@ -133,9 +130,8 @@ object IcdComponentInfo {
     // Gets the list of subscribed items from the model given the publish type
     def getSubscribeInfoByType(subscribeModel: SubscribeModel, pubType: PublishType): List[SubscribeModelInfo] = {
       pubType match {
-        case Telemetry => subscribeModel.telemetryList
         case Events => subscribeModel.eventList
-        case EventStreams => subscribeModel.eventStreamList
+        case ObserveEvents => subscribeModel.observeEventList
         case Alarms => subscribeModel.alarmList
       }
     }
@@ -167,9 +163,8 @@ object IcdComponentInfo {
         publishModel <- t.publishModel
       } yield {
         val (telem, alarm) = publishType match {
-          case Telemetry => (publishModel.telemetryList.find(t => t.name == si.name), None)
           case Events => (publishModel.eventList.find(t => t.name == si.name), None)
-          case EventStreams => (publishModel.eventStreamList.find(t => t.name == si.name), None)
+          case ObserveEvents => (publishModel.observeEventList.find(t => t.name == si.name), None)
           case Alarms => (None, publishModel.alarmList.find(a => a.name == si.name))
         }
         DetailedSubscribeInfo(publishType, si, telem, alarm, Some(componentModel))
@@ -180,9 +175,9 @@ object IcdComponentInfo {
     models.subscribeModel match {
       case None => None
       case Some(m) =>
-        val subscribeInfo = (m.telemetryList.map(getInfo(Telemetry, _)) ++
+        val subscribeInfo = (
           m.eventList.map(getInfo(Events, _)) ++
-          m.eventStreamList.map(getInfo(EventStreams, _)) ++
+          m.observeEventList.map(getInfo(ObserveEvents, _)) ++
           m.alarmList.map(getInfo(Alarms, _))).flatten
         val desc = m.description
         if (subscribeInfo.nonEmpty)

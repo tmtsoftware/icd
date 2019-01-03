@@ -4,7 +4,7 @@ import java.io.{File, FileOutputStream}
 
 import csw.services.icd.IcdToPdf
 import csw.services.icd.html.{HtmlMarkup, IcdToHtml, NumberedHeadings}
-import icd.web.shared.ComponentInfo.{Alarms, EventStreams, Events, Telemetry}
+import icd.web.shared.ComponentInfo.{Alarms, ObserveEvents, Events}
 import icd.web.shared.IcdModels.{AttributeModel, ComponentModel}
 import icd.web.shared.TitleInfo.unpublished
 import icd.web.shared._
@@ -72,35 +72,36 @@ case class IcdDbPrinter(db: IcdDb) {
     val subscriberStr = if (forApi) "Subscribers" else "Subscriber"
     val publisherInfo = span(strong("Publisher: "), s"${component.subsystem}.$compName")
 
-    def publishTelemetryListMarkup(pubType: String, telemetryList: List[TelemetryInfo]): Text.TypedTag[String] = {
-      if (telemetryList.isEmpty) div()
+    def publishEventListMarkup(pubType: String, eventList: List[EventInfo]): Text.TypedTag[String] = {
+      if (eventList.isEmpty) div()
       else {
         div(
-          for (t <- telemetryList) yield {
-            val subscribers = t.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
+          for (eventInfo <- eventList) yield {
+            val subscribers = eventInfo.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
             val subscriberInfo = span(strong(s"$subscriberStr: "), if (subscribers.isEmpty) "none" else subscribers)
-            val headings = List("Min Rate", "Max Rate", "Archive", "Archive Rate", "Required Rate")
+            val headings = List("Min Rate", "Max Rate", "Archive", "Archive Duration", "Archive Rate", "Required Rate")
             val rowList = List(List(
-              HtmlMarkup.formatRate(t.telemetryModel.minRate),
-              HtmlMarkup.formatRate(t.telemetryModel.maxRate),
-              HtmlMarkup.yesNo(t.telemetryModel.archive),
-              HtmlMarkup.formatRate(t.telemetryModel.archiveRate),
-              t.subscribers.map(s => // Add required rate for subscribers that set it
+              HtmlMarkup.formatRate(eventInfo.eventModel.minRate),
+              HtmlMarkup.formatRate(eventInfo.eventModel.maxRate),
+              HtmlMarkup.yesNo(eventInfo.eventModel.archive),
+              eventInfo.eventModel.archiveDuration,
+              HtmlMarkup.formatRate(eventInfo.eventModel.archiveRate),
+              eventInfo.subscribers.map(s => // Add required rate for subscribers that set it
                 HtmlMarkup.formatRate(s"${s.componentModel.subsystem}.${s.componentModel.component}",
                   s.subscribeModelInfo.requiredRate)).mkString(" ").trim()
             ))
             div(cls := "nopagebreak")(
-              nh.H4(s"${singlePubType(pubType)}: ${t.telemetryModel.name}", idFor(compName, "publishes", pubType, t.telemetryModel.name)),
-              if (t.telemetryModel.requirements.isEmpty) div() else p(strong("Requirements: "), t.telemetryModel.requirements.mkString(", ")),
+              nh.H4(s"${singlePubType(pubType)}: ${eventInfo.eventModel.name}", idFor(compName, "publishes", pubType, eventInfo.eventModel.name)),
+              if (eventInfo.eventModel.requirements.isEmpty) div() else p(strong("Requirements: "), eventInfo.eventModel.requirements.mkString(", ")),
               p(publisherInfo, ", ", subscriberInfo),
-              raw(t.telemetryModel.description),
+              raw(eventInfo.eventModel.description),
               // Include usage text from subscribers that define it
-              div(t.subscribers.map(s =>
+              div(eventInfo.subscribers.map(s =>
                 if (s.subscribeModelInfo.usage.isEmpty) div()
                 else div(strong(s"Usage by ${s.componentModel.subsystem}.${s.componentModel.component}: "),
                   raw(s.subscribeModelInfo.usage)))),
               HtmlMarkup.mkTable(headings, rowList),
-              attributeListMarkup(t.telemetryModel.name, t.telemetryModel.attributesList, nh), hr
+              attributeListMarkup(eventInfo.eventModel.name, eventInfo.eventModel.attributesList, nh), hr
             )
           }
         )
@@ -135,9 +136,8 @@ case class IcdDbPrinter(db: IcdDb) {
           div(
             nh.H3(publishTitle(compName)),
             raw(publishes.description), hr,
-            publishTelemetryListMarkup("Telemetry", publishes.telemetryList),
-            publishTelemetryListMarkup("Events", publishes.eventList),
-            publishTelemetryListMarkup("Event Streams", publishes.eventStreamList),
+            publishEventListMarkup("Events", publishes.eventList),
+            publishEventListMarkup("Observe Events", publishes.observeEventList),
             publishAlarmListMarkup(publishes.alarmList)
           )
         } else div()
@@ -185,11 +185,11 @@ case class IcdDbPrinter(db: IcdDb) {
               tbody(
                 tr(td(sInfo.subsystem), td(sInfo.component), td(si.path),
                   td(formatRate(sInfo.requiredRate)), td(formatRate(sInfo.maxRate)),
-                  td(formatRate(si.telemetryModel.map(_.minRate).getOrElse(0.0))),
-                  td(formatRate(si.telemetryModel.map(_.maxRate).getOrElse(0.0))))
+                  td(formatRate(si.eventModel.map(_.minRate).getOrElse(0.0))),
+                  td(formatRate(si.eventModel.map(_.maxRate).getOrElse(0.0))))
               )
             ),
-            si.telemetryModel.map(t => attributeListMarkup(t.name, t.attributesList, nh))
+            si.eventModel.map(t => attributeListMarkup(t.name, t.attributesList, nh))
           )
         }
       )
@@ -202,9 +202,8 @@ case class IcdDbPrinter(db: IcdDb) {
           div(
             nh.H3(subscribeTitle(compName)),
             raw(subscribes.description),
-            subscribeListMarkup("Telemetry", subscribes.subscribeInfo.filter(_.itemType == Telemetry)),
             subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == Events)),
-            subscribeListMarkup("Event Streams", subscribes.subscribeInfo.filter(_.itemType == EventStreams)),
+            subscribeListMarkup("Observe Events", subscribes.subscribeInfo.filter(_.itemType == ObserveEvents)),
             subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == Alarms))
           )
         } else div()

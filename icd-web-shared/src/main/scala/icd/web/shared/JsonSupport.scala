@@ -2,22 +2,21 @@ package icd.web.shared
 
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels._
-import play.api.libs.json.{JsValue, _}
+import play.api.libs.json._
 
+//noinspection TypeAnnotation
 object JsonSupport {
   implicit val publishTypeWrites = new Writes[PublishType] {
     def writes(v: PublishType) = JsString(v match {
-      case Telemetry => "Telemetry"
       case Events => "Events"
-      case EventStreams => "EventStreams"
+      case ObserveEvents => "ObserveEvents"
       case Alarms => "Alarms"
     })
   }
   implicit val publishTypeReads: Reads[PublishType] = {
     case JsString(s) => JsSuccess(s match {
-      case "Telemetry" => Telemetry
       case "Events" => Events
-      case "EventStreams" => EventStreams
+      case "ObserveEvents" => ObserveEvents
       case "Alarms" => Alarms
       case x => throw new RuntimeException(s"Bad publish type: $x")
     })
@@ -42,10 +41,10 @@ object JsonSupport {
 
   implicit val componentModelFormat = Json.format[ComponentModel]
   implicit val attributeModelFormat = Json.format[AttributeModel]
-  implicit val telemetryModelFormat = Json.format[TelemetryModel]
+  implicit val eventModelFormat = Json.format[EventModel]
   implicit val subscribeModelInfoFormat = Json.format[SubscribeModelInfo]
   implicit val subscribeInfoFormat = Json.format[SubscribeInfo]
-  implicit val telemetryInfoFormat = Json.format[TelemetryInfo]
+  implicit val eventInfoFormat = Json.format[EventInfo]
   implicit val alarmModelFormat = Json.format[AlarmModel]
   implicit val alarmInfoFormat = Json.format[AlarmInfo]
   implicit val detailedSubscribeInfoFormat = Json.format[DetailedSubscribeInfo]

@@ -57,7 +57,7 @@ object ComponentInfoHelper {
    * @param prefix        component's prefix
    * @param name          simple name of the published item
    * @param desc          description of the item
-   * @param subscribeType telemetry, alarm, etc...
+   * @param subscribeType event, alarm, etc...
    */
   private def getSubscribers(query: IcdDbQuery, prefix: String, name: String, desc: String,
                              subscribeType: PublishType): List[SubscribeInfo] = {
@@ -80,20 +80,17 @@ object ComponentInfoHelper {
         models.publishModel match {
           case None => None
           case Some(m) =>
-            val telemetryList = m.telemetryList.map { t =>
-              TelemetryInfo(t, getSubscribers(query, prefix, t.name, t.description, Telemetry))
-            }
             val eventList = m.eventList.map { t =>
-              TelemetryInfo(t, getSubscribers(query, prefix, t.name, t.description, Events))
+              EventInfo(t, getSubscribers(query, prefix, t.name, t.description, Events))
             }
-            val eventStreamList = m.eventStreamList.map { t =>
-              TelemetryInfo(t, getSubscribers(query, prefix, t.name, t.description, EventStreams))
+            val observeEventList = m.observeEventList.map { t =>
+              EventInfo(t, getSubscribers(query, prefix, t.name, t.description, ObserveEvents))
             }
             val alarmList = m.alarmList.map { al =>
               AlarmInfo(al, getSubscribers(query, prefix, al.name, al.description, Alarms))
             }
-            if (m.description.nonEmpty || telemetryList.nonEmpty || eventList.nonEmpty || eventStreamList.nonEmpty || alarmList.nonEmpty)
-              Some(Publishes(m.description, telemetryList, eventList, eventStreamList, alarmList))
+            if (m.description.nonEmpty || eventList.nonEmpty || observeEventList.nonEmpty || alarmList.nonEmpty)
+              Some(Publishes(m.description, eventList, observeEventList, alarmList))
             else None
         }
     }
@@ -114,9 +111,8 @@ object ComponentInfoHelper {
         publishModel <- t.publishModel
       } yield {
         val (telem, alarm) = publishType match {
-          case Telemetry => (publishModel.telemetryList.find(t => t.name == si.name), None)
           case Events => (publishModel.eventList.find(t => t.name == si.name), None)
-          case EventStreams => (publishModel.eventStreamList.find(t => t.name == si.name), None)
+          case ObserveEvents => (publishModel.observeEventList.find(t => t.name == si.name), None)
           case Alarms => (None, publishModel.alarmList.find(a => a.name == si.name))
         }
         DetailedSubscribeInfo(publishType, si, telem, alarm, t.componentModel)
@@ -127,9 +123,8 @@ object ComponentInfoHelper {
     models.subscribeModel match {
       case None => None
       case Some(m) =>
-        val subscribeInfo = m.telemetryList.map(getInfo(Telemetry, _)) ++
-          m.eventList.map(getInfo(Events, _)) ++
-          m.eventStreamList.map(getInfo(EventStreams, _)) ++
+        val subscribeInfo = m.eventList.map(getInfo(Events, _)) ++
+          m.observeEventList.map(getInfo(ObserveEvents, _)) ++
           m.alarmList.map(getInfo(Alarms, _))
         val desc = m.description
         if (desc.nonEmpty || subscribeInfo.nonEmpty)

@@ -20,9 +20,8 @@ object SubscribeModelParser {
       subsystem = config.as[String](BaseModelParser.subsystemKey),
       component = config.as[String](BaseModelParser.componentKey),
       description = subscribeConfig.as[Option[String]]("description").map(HtmlMarkup.gfmToHtml).getOrElse(""),
-      telemetryList = getItems("telemetry"),
       eventList = getItems("events"),
-      eventStreamList = getItems("eventStreams"),
+      observeEventList = getItems("observeEvents"),
       alarmList = getItems("alarms")
     )
   }

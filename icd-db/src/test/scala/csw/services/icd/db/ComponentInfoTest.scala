@@ -29,9 +29,9 @@ class ComponentInfoTest extends FunSuite {
     ComponentInfoHelper.getComponentInfo(db.query, "NFIRAOS", None, "lgsWfs").foreach { info =>
       assert(info.componentModel.component == "lgsWfs")
       assert(info.publishes.nonEmpty)
-      assert(info.publishes.get.telemetryList.nonEmpty)
-      info.publishes.get.telemetryList.foreach { pubInfo =>
-        println(s"envCtrl publishes telemetry: ${pubInfo.telemetryModel.name}")
+      assert(info.publishes.get.eventList.nonEmpty)
+      info.publishes.get.eventList.foreach { pubInfo =>
+        println(s"envCtrl publishes event: ${pubInfo.eventModel.name}")
         pubInfo.subscribers.foreach { subInfo =>
           println(s"${subInfo.subscribeModelInfo.component} from ${subInfo.subscribeModelInfo.subsystem} subscribes to ${subInfo.subscribeModelInfo.name}")
         }

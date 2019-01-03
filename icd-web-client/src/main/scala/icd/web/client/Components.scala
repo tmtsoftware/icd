@@ -364,26 +364,27 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       )
     }
 
-    // Returns a table row displaying more details for the given telemetry
-    def makeTelemetryDetailsRow(t: TelemetryInfo) = {
-      val headings = List("Min Rate", "Max Rate", "Archive", "Archive Rate")
+    // Returns a table row displaying more details for the given event
+    def makeEventDetailsRow(eventInfo: EventInfo) = {
+      val headings = List("Min Rate", "Max Rate", "Archive", "Archive Duration", "Archive Rate")
       val rowList = List(List(
-        formatRate(t.telemetryModel.minRate),
-        formatRate(t.telemetryModel.maxRate),
-        if (t.telemetryModel.archive) "Yes" else "No",
-        formatRate(t.telemetryModel.archiveRate)
+        formatRate(eventInfo.eventModel.minRate),
+        formatRate(eventInfo.eventModel.maxRate),
+        if (eventInfo.eventModel.archive) "Yes" else "No",
+        eventInfo.eventModel.archiveDuration,
+        formatRate(eventInfo.eventModel.archiveRate)
       ))
 
       div(
-        if (t.telemetryModel.requirements.isEmpty) div() else p(strong("Requirements: "), t.telemetryModel.requirements.mkString(", ")),
+        if (eventInfo.eventModel.requirements.isEmpty) div() else p(strong("Requirements: "), eventInfo.eventModel.requirements.mkString(", ")),
         mkTable(headings, rowList),
-        attributeListMarkup("Attributes", t.telemetryModel.attributesList)
+        attributeListMarkup("Attributes", eventInfo.eventModel.attributesList)
       )
     }
 
-    // Returns the markup for the published telemetry
-    def publishTelemetryListMarkup(pubType: String, telemetryList: List[TelemetryInfo]) = {
-      if (telemetryList.isEmpty) div()
+    // Returns the markup for the published event
+    def publishEventListMarkup(pubType: String, eventList: List[EventInfo]) = {
+      if (eventList.isEmpty) div()
       else div(
         h3(s"$pubType Published by $compName"),
         table(
@@ -396,13 +397,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             )
           ),
           tbody(
-            for (t <- telemetryList) yield {
-              val (btn, row) = hiddenRowMarkup(makeTelemetryDetailsRow(t), 3)
+            for (t <- eventList) yield {
+              val (btn, row) = hiddenRowMarkup(makeEventDetailsRow(t), 3)
               List(
                 tr(
                   td(Styles.attributeCell, p(btn,
-                    a(name := idFor(compName, "publishes", pubType, t.telemetryModel.name))(t.telemetryModel.name))),
-                  td(raw(t.telemetryModel.description)),
+                    a(name := idFor(compName, "publishes", pubType, t.eventModel.name))(t.eventModel.name))),
+                  td(raw(t.eventModel.description)),
                   td(p(t.subscribers.map(makeLinkForSubscriber)))
                 ),
                 row
@@ -463,9 +464,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           div(
             Styles.componentSection,
             raw(publishes.description),
-            publishTelemetryListMarkup("Telemetry", publishes.telemetryList),
-            publishTelemetryListMarkup("Events", publishes.eventList),
-            publishTelemetryListMarkup("Event Streams", publishes.eventStreamList),
+            publishEventListMarkup("Events", publishes.eventList),
+            publishEventListMarkup("Observe Events", publishes.observeEventList),
             publishAlarmListMarkup(publishes.alarmList)
           )
         } else div()
@@ -507,11 +507,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         si.path,
         formatRate(sInfo.requiredRate),
         formatRate(sInfo.maxRate),
-        formatRate(si.telemetryModel.map(_.minRate).getOrElse(0.0)),
-        formatRate(si.telemetryModel.map(_.maxRate).getOrElse(0.0))
+        formatRate(si.eventModel.map(_.minRate).getOrElse(0.0)),
+        formatRate(si.eventModel.map(_.maxRate).getOrElse(0.0))
       ))
 
-      val attrTable = si.telemetryModel.map(t => attributeListMarkup("Attributes", t.attributesList)).getOrElse(div())
+      val attrTable = si.eventModel.map(t => attributeListMarkup("Attributes", t.attributesList)).getOrElse(div())
       div(mkTable(headings, rowList), attrTable)
     }
 
@@ -567,9 +567,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           div(
             Styles.componentSection,
             raw(subscribes.description),
-            subscribeListMarkup("Telemetry", subscribes.subscribeInfo.filter(_.itemType == Telemetry)),
             subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == Events)),
-            subscribeListMarkup("Event Streams", subscribes.subscribeInfo.filter(_.itemType == EventStreams)),
+            subscribeListMarkup("Observe Events", subscribes.subscribeInfo.filter(_.itemType == ObserveEvents)),
             subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == Alarms))
           )
         } else div()

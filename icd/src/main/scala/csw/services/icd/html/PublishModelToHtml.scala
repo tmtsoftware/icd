@@ -15,9 +15,8 @@ case class PublishModelToHtml(m: PublishModel) extends HtmlMarkup {
   private val desc = mkParagraph(m.description)
 
   private val parts: List[HtmlMarkup] = List(
-    TelemetryListToHtml(m.telemetryList, "Telemetry", m.component),
-    TelemetryListToHtml(m.eventList, "Events", m.component),
-    TelemetryListToHtml(m.eventStreamList, "Event Streams", m.component),
+    EventListToHtml(m.eventList, "Events", m.component),
+    EventListToHtml(m.observeEventList, "Observe Events", m.component),
     AlarmListToHtml(m.alarmList, m.component)
   )
 

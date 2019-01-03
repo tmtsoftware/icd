@@ -211,6 +211,9 @@ object IcdValidator {
   private def validate(schema: JsonSchema,
                        jsonInput: JsonNode,
                        source: String): List[Problem] = {
+
+    // XXX TODO: Could add some custom validation checks here!
+
     try {
       validateResult(schema.validate(jsonInput, true), source)
     } catch {
