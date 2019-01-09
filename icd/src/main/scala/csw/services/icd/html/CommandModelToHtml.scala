@@ -30,21 +30,25 @@ case class CommandModelToHtml(m: CommandModel) extends HtmlMarkup {
 }
 
 private case class ReceiveCommandModelToHtml(m: ReceiveCommandModel) extends HtmlMarkup {
+  import scalatags.Text.all._
   private val name = s"Configuration: ${m.name}"
   private val head = mkHeading(3, name)
 
   private val desc = mkParagraph(m.description)
 
-  private val requirements = mkParagraph(bold("Requirements:"), m.requirements.mkString(", "))
+  private val requirements = mkParagraph(strong("Requirements: "), m.requirements.mkString(", "))
 
-  private val argsHead = mkParagraph(bold("Arguments:"))
+  private val preconditions = div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc))))))
+  private val postconditions = div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc))))))
+
+  private val argsHead = mkParagraph(strong("Arguments:"))
 
   private val argsTable = mkTable(
     List("Name", "Description", "Type", "Default", "Units", "Required"),
     m.args.map(a => List(a.name, a.description, a.typeStr, a.defaultValue, a.units, yesNo(m.requiredArgs.contains(a.name))))
   )
 
-  override val tags = List(head, requirements, desc, argsHead, argsTable)
+  override val tags = List(head, requirements, preconditions, postconditions, desc, argsHead, argsTable)
 
   override val tocEntry = Some(mkTocEntry(name))
 }

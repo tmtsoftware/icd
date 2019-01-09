@@ -596,6 +596,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       val m = r.receiveCommandModel
       div(
         if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
+        if (m.preconditions.isEmpty) div() else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
+        if (m.postconditions.isEmpty) div() else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
         parameterListMarkup("Arguments", m.args, m.requiredArgs)
       )
     }
@@ -649,10 +651,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
 
     // Returns a table row displaying more details for the given command
-    def makeDetailsRow(r: ReceiveCommandModel) = {
+    def makeDetailsRow(m: ReceiveCommandModel) = {
       div(
-        if (r.requirements.isEmpty) div() else p(strong("Requirements: "), r.requirements.mkString(", ")),
-        parameterListMarkup("Arguments", r.args, r.requiredArgs)
+        if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
+        if (m.preconditions.isEmpty) div() else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
+        if (m.postconditions.isEmpty) div() else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
+        parameterListMarkup("Arguments", m.args, m.requiredArgs)
       )
     }
 

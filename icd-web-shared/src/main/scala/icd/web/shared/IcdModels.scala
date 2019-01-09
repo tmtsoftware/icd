@@ -109,6 +109,8 @@ object IcdModels {
     * @param name         command name
     * @param description  command desc
     * @param requirements an array of requirement ids
+    * @param preconditions an array of preconditions
+    * @param postconditions an array of postconditions
     * @param requiredArgs list of names of required args
     * @param args         describes the command argumemnts (configuration fields)
     */
@@ -116,6 +118,8 @@ object IcdModels {
                                   name: String,
                                   description: String,
                                   requirements: List[String],
+                                  preconditions: List[String],
+                                  postconditions: List[String],
                                   requiredArgs: List[String],
                                   args: List[AttributeModel]
                                 ) extends NameDesc
