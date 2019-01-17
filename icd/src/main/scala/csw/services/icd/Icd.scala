@@ -41,7 +41,7 @@ object Icd extends App {
     } text
       """Saves the API doc (or single input or schema file) to the given file in a format based on
         |        the file's suffix (html, pdf, json).
-        |        Only single files can be saved to JSON, only whole directories as html, pdf""".stripMargin
+        |        Only single files can be saved to JSON, only the contents of the current directory as html, pdf""".stripMargin
 
     help("help")
     version("version")
