@@ -414,6 +414,7 @@ case class IcdDbQuery(db: MongoDB) {
         List(
           publishModel.eventList.map(i => Published(Events, i.name, i.description)),
           publishModel.observeEventList.map(i => Published(ObserveEvents, i.name, i.description)),
+          publishModel.currentStateList.map(i => Published(CurrentStates, i.name, i.description)),
           publishModel.alarmList.map(i => Published(Alarms, i.name, i.description))
         ).flatten
       case None => Nil
@@ -448,6 +449,7 @@ case class IcdDbQuery(db: MongoDB) {
         List(
           subscribeModel.eventList.map(i => Subscribed(component, i, Events, getPath(i))),
           subscribeModel.observeEventList.map(i => Subscribed(component, i, ObserveEvents, getPath(i))),
+          subscribeModel.currentStateList.map(i => Subscribed(component, i, CurrentStates, getPath(i))),
           subscribeModel.alarmList.map(i => Subscribed(component, i, Alarms, getPath(i)))
         ).flatten
       case None => Nil

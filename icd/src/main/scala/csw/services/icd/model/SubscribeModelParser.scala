@@ -22,6 +22,7 @@ object SubscribeModelParser {
       description = subscribeConfig.as[Option[String]]("description").map(HtmlMarkup.gfmToHtml).getOrElse(""),
       eventList = getItems("events"),
       observeEventList = getItems("observeEvents"),
+      currentStateList = getItems("currentStates"),
       alarmList = getItems("alarms")
     )
   }

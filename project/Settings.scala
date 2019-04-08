@@ -43,9 +43,8 @@ object Settings {
 
   // Using java8
   lazy val defaultSettings = buildSettings ++ Seq(
-    scalacOptions ++= Seq("-target:jvm-1.8", "-encoding", "UTF-8", "-feature", "-deprecation", "-unchecked"),
-    javacOptions in Compile ++= Seq("-source", "1.8"),
-    javacOptions in (Compile, compile) ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint:unchecked", "-Xlint:deprecation"),
+    scalacOptions ++= Seq("-encoding", "UTF-8", "-feature", "-deprecation", "-unchecked"),
+    javacOptions in (Compile, compile) ++= Seq("-Xlint:unchecked", "-Xlint:deprecation"),
     bashScriptExtraDefines ++= Seq(s"addJava -DICD_VERSION=${Dependencies.Version}")
   )
 

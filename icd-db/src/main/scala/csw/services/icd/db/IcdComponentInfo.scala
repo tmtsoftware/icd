@@ -88,11 +88,14 @@ object IcdComponentInfo {
             val observeEventList = m.observeEventList.map { t =>
               EventInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, ObserveEvents, targetModelsList))
             }
+            val currentStateList = m.currentStateList.map { t =>
+              EventInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, CurrentStates, targetModelsList))
+            }
             val alarmList = m.alarmList.map { al =>
               AlarmInfo(al, getSubscribers(subsystem, component, prefix, al.name, al.description, Alarms, targetModelsList))
             }
             if (eventList.nonEmpty || observeEventList.nonEmpty || alarmList.nonEmpty)
-              Some(Publishes(m.description, eventList, observeEventList, alarmList))
+              Some(Publishes(m.description, eventList, observeEventList, currentStateList, alarmList))
             else None
         }
     }
@@ -132,6 +135,7 @@ object IcdComponentInfo {
       pubType match {
         case Events => subscribeModel.eventList
         case ObserveEvents => subscribeModel.observeEventList
+        case CurrentStates => subscribeModel.currentStateList
         case Alarms => subscribeModel.alarmList
       }
     }
@@ -165,6 +169,7 @@ object IcdComponentInfo {
         val (telem, alarm) = publishType match {
           case Events => (publishModel.eventList.find(t => t.name == si.name), None)
           case ObserveEvents => (publishModel.observeEventList.find(t => t.name == si.name), None)
+          case CurrentStates => (publishModel.currentStateList.find(t => t.name == si.name), None)
           case Alarms => (None, publishModel.alarmList.find(a => a.name == si.name))
         }
         DetailedSubscribeInfo(publishType, si, telem, alarm, Some(componentModel))
@@ -178,6 +183,7 @@ object IcdComponentInfo {
         val subscribeInfo = (
           m.eventList.map(getInfo(Events, _)) ++
           m.observeEventList.map(getInfo(ObserveEvents, _)) ++
+          m.currentStateList.map(getInfo(CurrentStates, _)) ++
           m.alarmList.map(getInfo(Alarms, _))).flatten
         val desc = m.description
         if (subscribeInfo.nonEmpty)

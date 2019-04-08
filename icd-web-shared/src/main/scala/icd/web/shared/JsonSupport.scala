@@ -10,6 +10,7 @@ object JsonSupport {
     def writes(v: PublishType) = JsString(v match {
       case Events => "Events"
       case ObserveEvents => "ObserveEvents"
+      case CurrentStates => "CurrentStates"
       case Alarms => "Alarms"
     })
   }
@@ -17,6 +18,7 @@ object JsonSupport {
     case JsString(s) => JsSuccess(s match {
       case "Events" => Events
       case "ObserveEvents" => ObserveEvents
+      case "CurrentStates" => CurrentStates
       case "Alarms" => Alarms
       case x => throw new RuntimeException(s"Bad publish type: $x")
     })

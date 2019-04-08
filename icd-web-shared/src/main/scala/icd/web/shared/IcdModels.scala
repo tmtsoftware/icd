@@ -171,6 +171,7 @@ object IcdModels {
                            description: String,
                            eventList: List[EventModel],
                            observeEventList: List[EventModel],
+                           currentStateList: List[EventModel],
                            alarmList: List[AlarmModel]
                          )
 
@@ -190,6 +191,7 @@ object IcdModels {
                              description: String,
                              eventList: List[SubscribeModelInfo],
                              observeEventList: List[SubscribeModelInfo],
+                             currentStateList: List[SubscribeModelInfo],
                              alarmList: List[SubscribeModelInfo]
                            )
 

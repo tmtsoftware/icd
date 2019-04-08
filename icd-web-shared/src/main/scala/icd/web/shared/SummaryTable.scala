@@ -2,7 +2,7 @@ package icd.web.shared
 
 import scalatags.Text
 import scalatags.Text.all._
-import icd.web.shared.ComponentInfo.{Alarms, Events, ObserveEvents}
+import icd.web.shared.ComponentInfo.{Alarms, CurrentStates, Events, ObserveEvents}
 import icd.web.shared.IcdModels.ComponentModel
 import Headings.idFor
 
@@ -206,6 +206,12 @@ object SummaryTable {
         event <- pub.observeEventList
       } yield PublishedItem(info.componentModel, event.eventModel, event.subscribers.map(_.componentModel))
 
+      val publishedCurrentStates = for {
+        info <- infoList
+        pub <- info.publishes.toList
+        event <- pub.currentStateList
+      } yield PublishedItem(info.componentModel, event.eventModel, event.subscribers.map(_.componentModel))
+
       val publishedAlarms = for {
         info <- infoList
         pub <- info.publishes.toList
@@ -221,6 +227,7 @@ object SummaryTable {
       div(
         publishedSummaryMarkup("Events", publishedEvents, "Published by", "for"),
         publishedSummaryMarkup("Observe Events", publishedObserveEvents, "Published by", "for"),
+        publishedSummaryMarkup("Current States", publishedCurrentStates, "Published by", "for"),
         publishedSummaryMarkup("Alarms", publishedAlarms, "Published by", "for"),
         publishedSummaryMarkup("Commands", receivedCommands, "Received by", "from")
       )
@@ -241,6 +248,7 @@ object SummaryTable {
         OptionalNameDesc(event.subscribeModelInfo.name, event.eventModel)))
       val subscribedEvents = allSubscribed.filter(_._1 == Events).map(_._2)
       val subscribedObserveEvents = allSubscribed.filter(_._1 == ObserveEvents).map(_._2)
+      val subscribedCurrentStates = allSubscribed.filter(_._1 == CurrentStates).map(_._2)
       val subscribedAlarms = allSubscribed.filter(_._1 == Alarms).map(_._2)
 
       val sentCommands = for {
@@ -258,12 +266,14 @@ object SummaryTable {
         if (isIcd) div(
           subscribedSummaryMarkup("Events", subscribedEvents, "Published by", "for"),
           subscribedSummaryMarkup("Observe Events", subscribedObserveEvents, "Published by", "for"),
+          subscribedSummaryMarkup("Current States", subscribedCurrentStates, "Published by", "for"),
           subscribedSummaryMarkup("Alarms", subscribedAlarms, "Published by", "for"),
           subscribedSummaryMarkup("Commands", sentCommands, "Received by", "from")
         )
         else div(
           subscribedSummaryMarkup("Events", subscribedEvents, "Subscribed to by", "from"),
           subscribedSummaryMarkup("Observe Events", subscribedObserveEvents, "Subscribed to by", "from"),
+          subscribedSummaryMarkup("Current States", subscribedCurrentStates, "Subscribed to by", "from"),
           subscribedSummaryMarkup("Alarms", subscribedAlarms, "Subscribed to by", "from"),
           subscribedSummaryMarkup("Commands", sentCommands, "Sent by", "to")
         )

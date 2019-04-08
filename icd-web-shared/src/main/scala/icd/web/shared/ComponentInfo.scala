@@ -12,6 +12,8 @@ object ComponentInfo {
 
   case object ObserveEvents extends PublishType
 
+  case object CurrentStates extends PublishType
+
   case object Alarms extends PublishType
 
   /**
@@ -91,11 +93,13 @@ case class AlarmInfo(alarmModel: AlarmModel, subscribers: List[SubscribeInfo])
   * @param description      optional top level description of published items (in html format, after markdown processing)
   * @param eventList        list of published events
   * @param observeEventList list of published observe events
+  * @param currentStateList list of published current states
   * @param alarmList        list of published alarms
   */
 case class Publishes(description: String,
                      eventList: List[EventInfo],
                      observeEventList: List[EventInfo],
+                     currentStateList: List[EventInfo],
                      alarmList: List[AlarmInfo]) {
 
   /**

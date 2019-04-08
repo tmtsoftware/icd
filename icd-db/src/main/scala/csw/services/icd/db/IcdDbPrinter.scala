@@ -4,11 +4,10 @@ import java.io.{File, FileOutputStream}
 
 import csw.services.icd.IcdToPdf
 import csw.services.icd.html.{HtmlMarkup, IcdToHtml, NumberedHeadings}
-import icd.web.shared.ComponentInfo.{Alarms, ObserveEvents, Events}
+import icd.web.shared.ComponentInfo.{Alarms, CurrentStates, Events, ObserveEvents}
 import icd.web.shared.IcdModels.{AttributeModel, ComponentModel}
 import icd.web.shared.TitleInfo.unpublished
 import icd.web.shared._
-
 import scalatags.Text
 import Headings.idFor
 
@@ -204,6 +203,7 @@ case class IcdDbPrinter(db: IcdDb) {
             raw(subscribes.description),
             subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == Events)),
             subscribeListMarkup("Observe Events", subscribes.subscribeInfo.filter(_.itemType == ObserveEvents)),
+            subscribeListMarkup("Current States", subscribes.subscribeInfo.filter(_.itemType == CurrentStates)),
             subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == Alarms))
           )
         } else div()

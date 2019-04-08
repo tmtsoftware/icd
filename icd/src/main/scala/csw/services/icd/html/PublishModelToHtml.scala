@@ -5,6 +5,7 @@ import icd.web.shared.IcdModels.PublishModel
 /**
  * Converts a PublishModel instance to a HTML formatted string
  */
+//noinspection TypeAnnotation
 case class PublishModelToHtml(m: PublishModel) extends HtmlMarkup {
 
   import HtmlMarkup._
@@ -17,6 +18,7 @@ case class PublishModelToHtml(m: PublishModel) extends HtmlMarkup {
   private val parts: List[HtmlMarkup] = List(
     EventListToHtml(m.eventList, "Events", m.component),
     EventListToHtml(m.observeEventList, "Observe Events", m.component),
+    EventListToHtml(m.currentStateList, "Current States", m.component),
     AlarmListToHtml(m.alarmList, m.component)
   )
 

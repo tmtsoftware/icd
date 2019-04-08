@@ -34,6 +34,7 @@ case class SubscribeModelToHtml(m: SubscribeModel) extends HtmlMarkup {
   private val parts = List(
     SubscribeInfoToHtml(m.eventList, s"Events Subscribed to by ${m.component}"),
     SubscribeInfoToHtml(m.observeEventList, s"Observe Events Subscribed to by ${m.component}"),
+    SubscribeInfoToHtml(m.currentStateList, s"Current States Subscribed to by ${m.component}"),
     SubscribeInfoToHtml(m.alarmList, s"Alarms Subscribed to by ${m.component}")
   )
 

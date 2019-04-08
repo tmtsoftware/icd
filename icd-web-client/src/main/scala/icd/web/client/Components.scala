@@ -466,6 +466,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             raw(publishes.description),
             publishEventListMarkup("Events", publishes.eventList),
             publishEventListMarkup("Observe Events", publishes.observeEventList),
+            publishEventListMarkup("Current States", publishes.currentStateList),
             publishAlarmListMarkup(publishes.alarmList)
           )
         } else div()
@@ -569,6 +570,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             raw(subscribes.description),
             subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == Events)),
             subscribeListMarkup("Observe Events", subscribes.subscribeInfo.filter(_.itemType == ObserveEvents)),
+            subscribeListMarkup("Current States", subscribes.subscribeInfo.filter(_.itemType == CurrentStates)),
             subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == Alarms))
           )
         } else div()

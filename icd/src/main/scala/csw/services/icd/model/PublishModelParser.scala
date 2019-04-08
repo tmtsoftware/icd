@@ -26,6 +26,7 @@ object PublishModelParser {
       description = publishConfig.as[Option[String]]("description").map(HtmlMarkup.gfmToHtml).getOrElse(""),
       eventList = oldEvents ++ getItems("events", EventModelParser(_)),
       observeEventList = getItems("observeEvents", EventModelParser(_)),
+      currentStateList = getItems("currentStates", EventModelParser(_)),
       alarmList = getItems("alarms", AlarmModelParser(_))
     )
   }

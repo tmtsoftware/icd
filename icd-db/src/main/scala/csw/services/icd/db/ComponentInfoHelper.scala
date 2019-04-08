@@ -86,11 +86,14 @@ object ComponentInfoHelper {
             val observeEventList = m.observeEventList.map { t =>
               EventInfo(t, getSubscribers(query, prefix, t.name, t.description, ObserveEvents))
             }
+            val currentStateList = m.currentStateList.map { t =>
+              EventInfo(t, getSubscribers(query, prefix, t.name, t.description, CurrentStates))
+            }
             val alarmList = m.alarmList.map { al =>
               AlarmInfo(al, getSubscribers(query, prefix, al.name, al.description, Alarms))
             }
             if (m.description.nonEmpty || eventList.nonEmpty || observeEventList.nonEmpty || alarmList.nonEmpty)
-              Some(Publishes(m.description, eventList, observeEventList, alarmList))
+              Some(Publishes(m.description, eventList, observeEventList, currentStateList, alarmList))
             else None
         }
     }
@@ -113,6 +116,7 @@ object ComponentInfoHelper {
         val (telem, alarm) = publishType match {
           case Events => (publishModel.eventList.find(t => t.name == si.name), None)
           case ObserveEvents => (publishModel.observeEventList.find(t => t.name == si.name), None)
+          case CurrentStates => (publishModel.currentStateList.find(t => t.name == si.name), None)
           case Alarms => (None, publishModel.alarmList.find(a => a.name == si.name))
         }
         DetailedSubscribeInfo(publishType, si, telem, alarm, t.componentModel)
@@ -125,6 +129,7 @@ object ComponentInfoHelper {
       case Some(m) =>
         val subscribeInfo = m.eventList.map(getInfo(Events, _)) ++
           m.observeEventList.map(getInfo(ObserveEvents, _)) ++
+          m.currentStateList.map(getInfo(CurrentStates, _)) ++
           m.alarmList.map(getInfo(Alarms, _))
         val desc = m.description
         if (desc.nonEmpty || subscribeInfo.nonEmpty)
