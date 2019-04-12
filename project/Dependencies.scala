@@ -1,16 +1,26 @@
 import sbt._
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 
+
+//  [info]   com.typesafe.play:filters-helpers:compile : 2.6.20  -> 2.6.21 -> 2.7.0
+//  [info]   com.typesafe.play:play-guice:compile      : 2.6.20  -> 2.6.21 -> 2.7.0
+//  [info]   com.typesafe.play:play-json:compile       : 2.6.13            -> 2.7.2
+//  [info]   com.typesafe.play:play-specs2:test        : 2.6.20  -> 2.6.21 -> 2.7.0
+//  [info]   org.webjars.bower:bootstrap-table:compile : 1.11.1            -> 1.14.1
+//  [info]   org.webjars:bootstrap:compile             : 3.3.7-1 -> 3.3.7  -> 3.4.1  -> 4.3.1
+//  [info]   org.webjars:webjars-play:compile          : 2.6.3             -> 2.7.0
+
+
 object Dependencies {
   val Version = "0.13"
   val ScalaVersion = "2.12.8"
-  val PlayVersion = "2.6.20"
-  val PlayJsonVersion = "2.6.13"
+  val PlayVersion = "2.7.0"
+  val PlayJsonVersion = "2.7.2"
   val ScalaTagsVersion = "0.6.7"
   val BootstrapVersion = "3.3.7-1"
   val JQueryVersion = "2.2.1"
   val JQueryUiVersion = "1.12.1"
-  val BootstrapTableVersion = "1.11.1"
+  val BootstrapTableVersion = " 1.14.1"
 
   // command line dependencies
   val scopt = "com.github.scopt" %% "scopt" % "3.7.1"
@@ -39,7 +49,7 @@ object Dependencies {
 
   val playJson = "com.typesafe.play" %% "play-json" % PlayJsonVersion
   val jqueryUi = "org.webjars" % "jquery-ui" % JQueryUiVersion
-  val webjarsPlay = "org.webjars" %% "webjars-play" % "2.6.3"
+  val webjarsPlay = "org.webjars" %% "webjars-play" % "2.7.0"
   // Note: Updating to bootstrap-4 could be a lot of work...
   val bootstrap = "org.webjars" % "bootstrap" % BootstrapVersion
   val bootstrapTable = "org.webjars.bower" % "bootstrap-table" % BootstrapTableVersion
