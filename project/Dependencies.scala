@@ -20,7 +20,7 @@ object Dependencies {
   val BootstrapVersion = "3.3.7-1"
   val JQueryVersion = "2.2.1"
   val JQueryUiVersion = "1.12.1"
-  val BootstrapTableVersion = " 1.14.1"
+  val BootstrapTableVersion = "1.14.1"
 
   // command line dependencies
   val scopt = "com.github.scopt" %% "scopt" % "3.7.1"
