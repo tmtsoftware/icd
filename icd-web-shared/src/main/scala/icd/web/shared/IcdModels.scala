@@ -121,7 +121,10 @@ object IcdModels {
                                   preconditions: List[String],
                                   postconditions: List[String],
                                   requiredArgs: List[String],
-                                  args: List[AttributeModel]
+                                  args: List[AttributeModel],
+                                  completionType: String,
+                                  resultType: List[AttributeModel],
+                                  completionConditions: List[String]
                                 ) extends NameDesc
 
   /**

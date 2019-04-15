@@ -48,7 +48,19 @@ private case class ReceiveCommandModelToHtml(m: ReceiveCommandModel) extends Htm
     m.args.map(a => List(a.name, a.description, a.typeStr, a.defaultValue, a.units, yesNo(m.requiredArgs.contains(a.name))))
   )
 
-  override val tags = List(head, requirements, preconditions, postconditions, desc, argsHead, argsTable)
+  private val completionType = mkParagraph(strong("Completion Type: "), m.completionType)
+
+  private val resultTypeHead = mkParagraph(strong("Result Type Fields:"))
+
+  private val resultTypeTable = mkTable(
+    List("Name", "Description", "Type", "Units"),
+    m.args.map(a => List(a.name, a.description, a.typeStr, a.units))
+  )
+
+  private val completionCondition = div(p(strong("Completion Conditions: "), ol(m.completionConditions.map(cc => li(raw(cc))))))
+
+  override val tags = List(head, requirements, preconditions, postconditions, desc, argsHead, argsTable,
+    completionType, resultTypeHead, resultTypeTable, completionCondition)
 
   override val tocEntry = Some(mkTocEntry(name))
 }

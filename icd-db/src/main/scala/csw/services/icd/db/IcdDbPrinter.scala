@@ -63,6 +63,19 @@ case class IcdDbPrinter(db: IcdDb) {
     }
   }
 
+  private def resultTypeMarkup(attributesList: List[AttributeModel], nh: NumberedHeadings): Text.TypedTag[String] = {
+    import scalatags.Text.all._
+    if (attributesList.isEmpty) div()
+    else {
+      val headings = List("Name", "Description", "Type", "Units")
+      val rowList = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units)
+      div(cls := "nopagebreak")(
+        p(strong(a("Result Type Fields"))),
+        HtmlMarkup.mkTable(headings, rowList)
+      )
+    }
+  }
+
   // Generates the HTML markup to display the component's publish information
   private def publishMarkup(component: ComponentModel, publishesOpt: Option[Publishes], nh: NumberedHeadings, forApi: Boolean): Text.TypedTag[String] = {
     import scalatags.Text.all._
@@ -239,7 +252,10 @@ case class IcdDbPrinter(db: IcdDb) {
             if (m.preconditions.isEmpty) div() else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
             if (m.postconditions.isEmpty) div() else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
             raw(m.description),
-            if (m.args.isEmpty) div() else parameterListMarkup(m.name, m.args, m.requiredArgs, nh)
+            parameterListMarkup(m.name, m.args, m.requiredArgs, nh),
+            p(strong("Completion Type: "), m.completionType),
+            resultTypeMarkup(m.resultType, nh),
+            if (m.completionConditions.isEmpty) div() else div(p(strong("Completion Conditions: "), ol(m.completionConditions.map(cc => li(raw(cc))))))
           )
         }
       )

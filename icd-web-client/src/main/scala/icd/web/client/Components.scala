@@ -301,17 +301,34 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     * @param titleStr       title to display above the table
     * @param attributesList list of attributes to display
     * @param requiredArgs   a list of required arguments
-    * @return
     */
   private def parameterListMarkup(titleStr: String, attributesList: List[AttributeModel], requiredArgs: List[String]): TypedTag[HTMLDivElement] = {
     import scalatags.JsDom.all._
     if (attributesList.isEmpty) div()
     else {
-      val headings = List("Name", "Description", "Type", "Units", "Default")
+      val headings = List("Name", "Description", "Type", "Units", "Default", "Required")
       val rowList = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue,
         if (requiredArgs.contains(a.name)) "yes" else "no")
       div(
         strong(titleStr),
+        mkTable(headings, rowList, tableStyle = Styles.attributeTable)
+      )
+    }
+  }
+
+  /**
+    * Returns a table listing the attributes of a command result
+    *
+    * @param attributesList list of attributes to display
+    */
+  private def resultTypeMarkup(attributesList: List[AttributeModel]): TypedTag[HTMLDivElement] = {
+    import scalatags.JsDom.all._
+    if (attributesList.isEmpty) div()
+    else {
+      val headings = List("Name", "Description", "Type", "Units")
+      val rowList = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units)
+      div(
+        strong("Result Type Fields"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable)
       )
     }
@@ -577,6 +594,20 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
+  // Returns a table row displaying more details for the given command
+  private def makeReceivedCommandDetailsRow(m: ReceiveCommandModel) = {
+    import scalatags.JsDom.all._
+    div(
+      if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
+      if (m.preconditions.isEmpty) div() else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
+      if (m.postconditions.isEmpty) div() else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
+      parameterListMarkup("Arguments", m.args, m.requiredArgs),
+      p(strong("Completion Type: "), m.completionType),
+      resultTypeMarkup(m.resultType),
+      if (m.completionConditions.isEmpty) div() else div(p(strong("Completion Conditions: "), ol(m.completionConditions.map(cc => li(raw(cc))))))
+    )
+  }
+
   // Generates the HTML markup to display the commands a component receives
   private def receivedCommandsMarkup(compName: String, info: List[ReceivedCommandInfo]) = {
     import scalatags.JsDom.all._
@@ -591,17 +622,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     // Makes the link for a sender component in the table
     def makeLinkForSender(sender: ComponentModel) = {
       a(s"${sender.subsystem}.${sender.component} ", href := "#", onclick := clickedOnSender(sender) _)
-    }
-
-    // Returns a table row displaying more details for the given command
-    def makeDetailsRow(r: ReceivedCommandInfo) = {
-      val m = r.receiveCommandModel
-      div(
-        if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
-        if (m.preconditions.isEmpty) div() else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
-        if (m.postconditions.isEmpty) div() else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
-        parameterListMarkup("Arguments", m.args, m.requiredArgs)
-      )
     }
 
     // Only display non-empty tables
@@ -620,7 +640,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         tbody(
           for (r <- info) yield {
             val rc = r.receiveCommandModel
-            val (btn, row) = hiddenRowMarkup(makeDetailsRow(r), 3)
+            val (btn, row) = hiddenRowMarkup(makeReceivedCommandDetailsRow(r.receiveCommandModel), 3)
             List(
               tr(
                 td(Styles.attributeCell, p(btn,
@@ -652,16 +672,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       a(s"${receiver.subsystem}.${receiver.component} ", href := "#", onclick := clickedOnReceiver(receiver) _)
     }
 
-    // Returns a table row displaying more details for the given command
-    def makeDetailsRow(m: ReceiveCommandModel) = {
-      div(
-        if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
-        if (m.preconditions.isEmpty) div() else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
-        if (m.postconditions.isEmpty) div() else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
-        parameterListMarkup("Arguments", m.args, m.requiredArgs)
-      )
-    }
-
     // Warn if no receiver found for sent command
     def getWarning(m: SentCommandInfo) = m.warning.map { msg =>
       div(cls := "alert alert-warning", role := "alert")(
@@ -674,7 +684,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     def makeItem(s: SentCommandInfo) = {
       s.receiveCommandModel match {
         case Some(r) =>
-          val (btn, row) = hiddenRowMarkup(makeDetailsRow(r), 3)
+          val (btn, row) = hiddenRowMarkup(makeReceivedCommandDetailsRow(r), 3)
           List(
             tr(
               td(Styles.attributeCell, p(btn,
