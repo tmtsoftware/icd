@@ -15,7 +15,8 @@ object Dependencies {
 
   // command line dependencies
   val scopt = "com.github.scopt" %% "scopt" % "3.7.1"
-  val jsonSchemaValidator = "com.github.fge" % "json-schema-validator" % "2.2.6"
+//  val jsonSchemaValidator = "com.github.fge" % "json-schema-validator" % "2.2.6"
+  val jsonSchemaValidator = "com.github.everit-org.json-schema" % "org.everit.json.schema" % "1.11.1"
   val ficus = "com.iheart" %% "ficus" % "1.4.4"
   val typesafeConfig = "com.typesafe" % "config" % "1.3.3"
   val scalaTest = "org.scalatest" %% "scalatest" % "3.0.5"

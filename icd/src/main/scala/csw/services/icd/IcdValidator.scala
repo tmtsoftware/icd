@@ -3,24 +3,20 @@ package csw.services.icd
 import java.io._
 import java.net.URI
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.github.fge.jackson.JsonLoader
-import com.github.fge.jsonschema.core.load.configuration.LoadingConfiguration
-import com.github.fge.jsonschema.core.load.download.URIDownloader
-import com.github.fge.jsonschema.core.report.{
-  ProcessingMessage,
-  ProcessingReport
-}
-import com.github.fge.jsonschema.main.{JsonSchema, JsonSchemaFactory}
 import com.typesafe.config.{
   Config,
   ConfigFactory,
   ConfigRenderOptions,
   ConfigResolveOptions
 }
+import org.everit.json.schema.loader.SchemaClient
 
 import scala.io.Source
 import scala.util.{Failure, Success, Try}
+import org.everit.json.schema.{Schema, ValidationException}
+import org.everit.json.schema.loader.SchemaLoader
+import org.json.JSONObject
+import scala.collection.JavaConverters._
 
 /**
   * An ICD API validator
@@ -40,7 +36,10 @@ object IcdValidator {
   def toJson(file: File): String = {
     if (!file.exists()) throw new FileNotFoundException(file.getName)
     if (file.getName.endsWith(".json")) {
-      Source.fromFile(file).mkString
+      val source = Source.fromFile(file)
+      val json = source.mkString
+      source.close()
+      json
     } else {
       val config =
         ConfigFactory.parseFile(file).resolve(ConfigResolveOptions.noSystem())
@@ -64,19 +63,15 @@ object IcdValidator {
   // Adds a custom URI scheme, so that config:/... loads the config file as a resource
   // and converts it to JSON. In this way you can use "$ref": "config:/myfile.conf"
   // to refer to external JSON schemas in HOCON format.
-  private case object ConfigDownloader extends URIDownloader {
-    override def fetch(uri: URI): InputStream = {
+  object HoconSchemaClient extends SchemaClient {
+    override def get(url: String): InputStream = {
+      val uri = URI.create(url)
       val config = ConfigFactory.parseResources(uri.getPath.substring(1))
       if (config == null)
         throw new IOException(s"Resource not found: ${uri.getPath}")
       new ByteArrayInputStream(toJson(config).getBytes)
     }
   }
-
-  private val cfg =
-    LoadingConfiguration.newBuilder.addScheme("config", ConfigDownloader).freeze
-  private val factory =
-    JsonSchemaFactory.newBuilder.setLoadingConfiguration(cfg).freeze
 
   /**
     * Validates all the files with the standard names (stdNames) in the given directory and recursively
@@ -123,7 +118,7 @@ object IcdValidator {
               ex.printStackTrace()
               List(
                 Problem("error",
-                  s"Fatal config parsing error in $inputFile: $ex"))
+                        s"Fatal config parsing error in $inputFile: $ex"))
           }
         }
       }
@@ -140,9 +135,15 @@ object IcdValidator {
     * @return a list of problems, if any were found
     */
   def validate(inputFile: File, schemaFile: File): List[Problem] = {
-    val jsonSchema = JsonLoader.fromString(toJson(schemaFile))
-    val schema = factory.getJsonSchema(jsonSchema)
-    val jsonInput = JsonLoader.fromString(toJson(inputFile))
+    val jsonSchema = new JSONObject(toJson(schemaFile))
+    val schemaLoader = SchemaLoader
+      .builder()
+      .schemaClient(HoconSchemaClient)
+      .schemaJson(jsonSchema)
+      .resolutionScope("classpath:/")
+      .build()
+    val schema = schemaLoader.load().build()
+    val jsonInput = new JSONObject(toJson(inputFile))
     validate(schema, jsonInput, inputFile.getName)
   }
 
@@ -179,7 +180,9 @@ object IcdValidator {
     * @param stdName     holds the file and schema name
     * @return a list of problems, if any were found
     */
-  def validate(inputConfig: Config, stdName: StdName, schemaVersion: String): List[Problem] = {
+  def validate(inputConfig: Config,
+               stdName: StdName,
+               schemaVersion: String): List[Problem] = {
     val schemaPath = s"$schemaVersion/${stdName.schema}"
     val schemaConfig = ConfigFactory.parseResources(schemaPath)
     if (schemaConfig == null) {
@@ -200,70 +203,32 @@ object IcdValidator {
   def validate(inputConfig: Config,
                schemaConfig: Config,
                inputFileName: String): List[Problem] = {
-    val jsonSchema = JsonLoader.fromString(toJson(schemaConfig))
-    val schema = factory.getJsonSchema(jsonSchema)
-    val jsonInput = JsonLoader.fromString(toJson(inputConfig))
+    val jsonSchema = new JSONObject(toJson(schemaConfig))
+    val schemaLoader = SchemaLoader
+      .builder()
+      .schemaClient(HoconSchemaClient)
+      .schemaJson(jsonSchema)
+      .resolutionScope("classpath:/")
+      .build()
+    val schema = schemaLoader.load().build()
+    val jsonInput = new JSONObject(toJson(inputConfig))
     validate(schema, jsonInput, inputFileName)
   }
 
   // Runs the validation and handles any internal exceptions
   // 'source' is the name of the input file for use in error messages.
-  private def validate(schema: JsonSchema,
-                       jsonInput: JsonNode,
+  private def validate(schema: Schema,
+                       jsonInput: JSONObject,
                        source: String): List[Problem] = {
-
-    // XXX TODO: Could add some custom validation checks here!
-
     try {
-      validateResult(schema.validate(jsonInput, true), source)
+      schema.validate(jsonInput)
+      Nil
     } catch {
+      case e: ValidationException =>
+        e.getAllMessages.asScala.toList.map(msg => Problem("error", msg))
       case e: Exception =>
         e.printStackTrace()
         List(Problem("fatal", e.toString))
     }
   }
-
-  // Packages the validation results for return to caller.
-  // 'source' is the name of the input file for use in error messages.
-  private def validateResult(report: ProcessingReport,
-                             source: String): List[Problem] = {
-    import scala.collection.JavaConverters._
-    val result = for (msg <- report.asScala)
-      yield Problem(msg.getLogLevel.toString, formatMsg(msg, source))
-    result.toList
-  }
-
-  // Formats the error message for display to user.
-  // 'source' is the name of the original input file.
-  private def formatMsg(msg: ProcessingMessage, source: String): String = {
-    import scala.collection.JavaConverters._
-    val file = new File(source).getPath
-
-    // try to get a nicely formatted error message that includes the necessary info
-    val json = msg.asJson()
-    val pointer = json.get("instance").get("pointer").asText()
-    val loc = if (pointer.isEmpty) s"$file" else s"$file, at path: $pointer"
-    val schemaUri = json.get("schema").get("loadingURI").asText()
-    val schemaPointer = json.get("schema").get("pointer").asText()
-    val schemaStr =
-      if (schemaUri == "#") "" else s" (schema: $schemaUri:$schemaPointer)"
-
-    // try to get additional messages from the reports section
-    val reports = json.get("reports")
-    val messages =
-      if (reports == null) ""
-      else {
-        val msgElems = reports.elements().asScala
-        val msgTexts = for (e <- msgElems) yield {
-          if (e.has("message"))
-            e.get("message").asText()
-          else
-            e.asText("")
-        }
-        "\n" + msgTexts.mkString("\n")
-      }
-
-    s"$loc: ${msg.getLogLevel.toString}: ${msg.getMessage}$schemaStr$messages"
-  }
-
 }
