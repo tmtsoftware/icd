@@ -2,15 +2,6 @@ import sbt._
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 
 
-//  [info]   com.typesafe.play:filters-helpers:compile : 2.6.20  -> 2.6.21 -> 2.7.0
-//  [info]   com.typesafe.play:play-guice:compile      : 2.6.20  -> 2.6.21 -> 2.7.0
-//  [info]   com.typesafe.play:play-json:compile       : 2.6.13            -> 2.7.2
-//  [info]   com.typesafe.play:play-specs2:test        : 2.6.20  -> 2.6.21 -> 2.7.0
-//  [info]   org.webjars.bower:bootstrap-table:compile : 1.11.1            -> 1.14.1
-//  [info]   org.webjars:bootstrap:compile             : 3.3.7-1 -> 3.3.7  -> 3.4.1  -> 4.3.1
-//  [info]   org.webjars:webjars-play:compile          : 2.6.3             -> 2.7.0
-
-
 object Dependencies {
   val Version = "0.13"
   val ScalaVersion = "2.12.8"
