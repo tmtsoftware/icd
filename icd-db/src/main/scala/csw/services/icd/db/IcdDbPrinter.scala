@@ -120,6 +120,8 @@ case class IcdDbPrinter(db: IcdDb) {
       }
     }
 
+    XXX TODO: Add new alarm fields!!!!
+
     def publishAlarmListMarkup(alarmList: List[AlarmInfo]): Text.TypedTag[String] = {
       if (alarmList.isEmpty) div()
       else {
@@ -128,7 +130,7 @@ case class IcdDbPrinter(db: IcdDb) {
             val subscribers = t.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
             val subscriberInfo = span(strong(s"$subscriberStr: "), if (subscribers.isEmpty) "none" else subscribers)
             val headings = List("Severity", "Archive")
-            val rowList = List(List(t.alarmModel.severity, HtmlMarkup.yesNo(t.alarmModel.archive)))
+            val rowList = List(List(t.alarmModel.severityLevels.mkString(","), HtmlMarkup.yesNo(t.alarmModel.archive)))
             div(cls := "nopagebreak")(
               nh.H4(s"Alarm: ${t.alarmModel.name}", idFor(compName, "publishes", "Alarms", t.alarmModel.name)),
               if (t.alarmModel.requirements.isEmpty) div() else p(strong("Requirements: "), t.alarmModel.requirements.mkString(", ")),

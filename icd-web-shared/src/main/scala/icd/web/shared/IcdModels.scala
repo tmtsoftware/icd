@@ -56,19 +56,32 @@ object IcdModels {
   /**
     * Description of an alarm
     *
-    * @param name         alarm name
-    * @param description  alarm descrption
-    * @param requirements list of requirements that flow to this alarm
-    * @param severity     severity of the alarm
-    * @param archive      true if publisher recommends archiving this alarm
+    * @param name             alarm name
+    * @param description      alarm descrption
+    * @param requirements     list of requirements that flow to this alarm
+    * @param severityLevels   Severity levels that the alarm can have (besides Disconnected, Indeterminate, Okay)
+    * @param archive          true if publisher recommends archiving this alarm
+    * @param location         A text description of where the alarming condition is located
+    * @param alarmType        The general category for the alarm one of (Absolute, BitPattern, Calculated, Deviation,
+    *                         Discrepancy, Instrument, RateChange, RecipeDriven, Safety, Statistical, System)
+    * @param probableCause    The probable cause for each level or for all levels
+    * @param operatorResponse Instructions or information to help the operator respond to the alarm
+    * @param acknowledge      Does this alarm require an acknowledge by the operator?
+    * @param latched          Should this alarm be latched?
     */
   case class AlarmModel(
-                         name: String,
-                         description: String,
-                         requirements: List[String],
-                         severity: String,
-                         archive: Boolean
-                       ) extends ArchivedNameDesc
+      name: String,
+      description: String,
+      requirements: List[String],
+      severityLevels: List[String],
+      archive: Boolean,
+      location: String,
+      alarmType: String,
+      probableCause: String,
+      operatorResponse: String,
+      acknowledge: Boolean,
+      latched: Boolean
+  ) extends ArchivedNameDesc
 
   /**
     * Defines the properties of an attribute
@@ -88,44 +101,44 @@ object IcdModels {
     * @param typeStr          a generated text description of the type
     */
   case class AttributeModel(
-                             name: String,
-                             description: String,
-                             typeOpt: Option[String],
-                             enumOpt: Option[List[String]],
-                             units: String,
-                             maxItems: Option[String],
-                             minItems: Option[String],
-                             minimum: Option[String],
-                             maximum: Option[String],
-                             exclusiveMinimum: Boolean,
-                             exclusiveMaximum: Boolean,
-                             defaultValue: String,
-                             typeStr: String
-                           ) extends NameDesc
+      name: String,
+      description: String,
+      typeOpt: Option[String],
+      enumOpt: Option[List[String]],
+      units: String,
+      maxItems: Option[String],
+      minItems: Option[String],
+      minimum: Option[String],
+      maximum: Option[String],
+      exclusiveMinimum: Boolean,
+      exclusiveMaximum: Boolean,
+      defaultValue: String,
+      typeStr: String
+  ) extends NameDesc
 
   /**
     * Model for a commands configuration that a component receives
     *
-    * @param name         command name
-    * @param description  command desc
-    * @param requirements an array of requirement ids
-    * @param preconditions an array of preconditions
+    * @param name           command name
+    * @param description    command desc
+    * @param requirements   an array of requirement ids
+    * @param preconditions  an array of preconditions
     * @param postconditions an array of postconditions
-    * @param requiredArgs list of names of required args
-    * @param args         describes the command argumemnts (configuration fields)
+    * @param requiredArgs   list of names of required args
+    * @param args           describes the command argumemnts (configuration fields)
     */
   case class ReceiveCommandModel(
-                                  name: String,
-                                  description: String,
-                                  requirements: List[String],
-                                  preconditions: List[String],
-                                  postconditions: List[String],
-                                  requiredArgs: List[String],
-                                  args: List[AttributeModel],
-                                  completionType: String,
-                                  resultType: List[AttributeModel],
-                                  completionConditions: List[String]
-                                ) extends NameDesc
+      name: String,
+      description: String,
+      requirements: List[String],
+      preconditions: List[String],
+      postconditions: List[String],
+      requiredArgs: List[String],
+      args: List[AttributeModel],
+      completionType: String,
+      resultType: List[AttributeModel],
+      completionConditions: List[String]
+  ) extends NameDesc
 
   /**
     * Describes command configurations that the component sends
@@ -135,48 +148,48 @@ object IcdModels {
     * @param component the target component
     */
   case class SendCommandModel(
-                               name: String,
-                               subsystem: String,
-                               component: String
-                             ) extends SubsystemComponentName
+      name: String,
+      subsystem: String,
+      component: String
+  ) extends SubsystemComponentName
 
   /**
     * Model for commands received and sent by component: See resources/command-schema.conf
     */
   case class CommandModel(
-                           subsystem: String,
-                           component: String,
-                           description: String,
-                           receive: List[ReceiveCommandModel],
-                           send: List[SendCommandModel]
-                         )
+      subsystem: String,
+      component: String,
+      description: String,
+      receive: List[ReceiveCommandModel],
+      send: List[SendCommandModel]
+  )
 
   /**
     * The basic component model
     */
   case class ComponentModel(
-                             componentType: String,
-                             subsystem: String,
-                             component: String,
-                             prefix: String,
-                             title: String,
-                             description: String,
-                             modelVersion: String,
-                             wbsId: String
-                           )
+      componentType: String,
+      subsystem: String,
+      component: String,
+      prefix: String,
+      title: String,
+      description: String,
+      modelVersion: String,
+      wbsId: String
+  )
 
   /**
     * The component's publish model
     */
   case class PublishModel(
-                           subsystem: String,
-                           component: String,
-                           description: String,
-                           eventList: List[EventModel],
-                           observeEventList: List[EventModel],
-                           currentStateList: List[EventModel],
-                           alarmList: List[AlarmModel]
-                         )
+      subsystem: String,
+      component: String,
+      description: String,
+      eventList: List[EventModel],
+      observeEventList: List[EventModel],
+      currentStateList: List[EventModel],
+      alarmList: List[AlarmModel]
+  )
 
   /**
     * Describes the items a component subscribes to
@@ -189,14 +202,14 @@ object IcdModels {
     * @param alarmList        list of subscribed alarms
     */
   case class SubscribeModel(
-                             subsystem: String,
-                             component: String,
-                             description: String,
-                             eventList: List[SubscribeModelInfo],
-                             observeEventList: List[SubscribeModelInfo],
-                             currentStateList: List[SubscribeModelInfo],
-                             alarmList: List[SubscribeModelInfo]
-                           )
+      subsystem: String,
+      component: String,
+      description: String,
+      eventList: List[SubscribeModelInfo],
+      observeEventList: List[SubscribeModelInfo],
+      currentStateList: List[SubscribeModelInfo],
+      alarmList: List[SubscribeModelInfo]
+  )
 
   /**
     * Describes an item the component subscribes to
@@ -209,37 +222,37 @@ object IcdModels {
     * @param maxRate      the max rate
     */
   case class SubscribeModelInfo(
-                                 subsystem: String,
-                                 component: String,
-                                 name: String,
-                                 usage: String,
-                                 requiredRate: Double,
-                                 maxRate: Double
-                               ) extends SubsystemComponentName
+      subsystem: String,
+      component: String,
+      name: String,
+      usage: String,
+      requiredRate: Double,
+      maxRate: Double
+  ) extends SubsystemComponentName
 
   /**
     * Models the component's subsystem
     */
   case class SubsystemModel(
-                             subsystem: String,
-                             title: String,
-                             description: String,
-                             modelVersion: String
-                           )
+      subsystem: String,
+      title: String,
+      description: String,
+      modelVersion: String
+  )
 
   /**
     * Models the event published by a component
     */
   case class EventModel(
-                         name: String,
-                         description: String,
-                         requirements: List[String],
-                         minRate: Double,
-                         maxRate: Double,
-                         archive: Boolean,
-                         archiveDuration: String,
-                         archiveRate: Double,
-                         attributesList: List[AttributeModel]
-                       ) extends ArchivedNameDesc
+      name: String,
+      description: String,
+      requirements: List[String],
+      minRate: Double,
+      maxRate: Double,
+      archive: Boolean,
+      archiveDuration: String,
+      archiveRate: Double,
+      attributesList: List[AttributeModel]
+  ) extends ArchivedNameDesc
 
 }
