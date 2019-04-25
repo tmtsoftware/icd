@@ -168,9 +168,9 @@ case class Subsystem(
 
   // XXX TODO: Should it be allowed to view an ICD between a subsystem and itself?
   def disableOption(name: String): Unit = {
-    subsystemItem.options.drop(1).find(_.value == name).foreach { option =>
-      option.setAttribute("disabled", "true")
-    }
+//    subsystemItem.options.drop(1).find(_.value == name).foreach { option =>
+//      option.setAttribute("disabled", "true")
+//    }
   }
 
   def setAllOptionsEnabled(): Unit = {
