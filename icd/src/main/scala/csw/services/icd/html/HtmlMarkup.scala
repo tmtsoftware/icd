@@ -56,6 +56,7 @@ trait HtmlMarkup {
 /**
  * HTML markup utils
  */
+//noinspection TypeAnnotation
 object HtmlMarkup {
 
   private def isEmpty(x: String): Boolean = Option(x).forall(_.isEmpty)

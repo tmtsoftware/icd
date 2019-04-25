@@ -70,8 +70,6 @@ object IcdToHtml {
   def getApiAsHtml(maybeSubsystemInfo: Option[SubsystemInfo], infoList: List[ComponentInfo]): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
-    //case class TitleInfo(title: String, subtitleOpt: Option[String], descriptionOpt: Option[String])
-
     val nh = new NumberedHeadings
     val (titleInfo, titleMarkup, summaryTable) =
       if (maybeSubsystemInfo.isDefined) {
@@ -489,29 +487,4 @@ object IcdToHtml {
 
 }
 
-/**
- * Converts an ICD model to HTML.
- */
-//noinspection TypeAnnotation
-case class IcdToHtml(models: IcdModels) extends HtmlMarkup {
-
-  import scalatags.Text.all._
-
-  private val markupList: List[HtmlMarkup] = List(
-    models.subsystemModel.map(SubsystemModelToHtml),
-    models.componentModel.map(ComponentModelToHtml),
-    models.publishModel.map(PublishModelToHtml),
-    models.subscribeModel.map(SubscribeModelToHtml),
-    models.commandModel.map(CommandModelToHtml)
-  ).flatten
-
-  override val tags = {
-    div(cls := "pagebreak") :: markupList.map(_.markup)
-  }
-
-  override val tocEntry = {
-    Some(ul(markupList.flatMap(_.tocEntry)))
-  }
-
-}
 
