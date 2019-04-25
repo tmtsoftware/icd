@@ -10,6 +10,7 @@ import icd.web.shared.TitleInfo.unpublished
 import icd.web.shared._
 import scalatags.Text
 import Headings.idFor
+import HtmlMarkup.yesNo
 
 
 /**
@@ -55,7 +56,7 @@ case class IcdDbPrinter(db: IcdDb) {
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default", "Required")
       val rowList = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue,
-        HtmlMarkup.yesNo(requiredArgs.contains(a.name)))
+        yesNo(requiredArgs.contains(a.name)))
       div(cls := "nopagebreak")(
         p(strong(a(s"Arguments for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList)
@@ -95,7 +96,7 @@ case class IcdDbPrinter(db: IcdDb) {
             val rowList = List(List(
               HtmlMarkup.formatRate(eventInfo.eventModel.minRate),
               HtmlMarkup.formatRate(eventInfo.eventModel.maxRate),
-              HtmlMarkup.yesNo(eventInfo.eventModel.archive),
+              yesNo(eventInfo.eventModel.archive),
               eventInfo.eventModel.archiveDuration,
               HtmlMarkup.formatRate(eventInfo.eventModel.archiveRate),
               eventInfo.subscribers.map(s => // Add required rate for subscribers that set it
@@ -120,23 +121,27 @@ case class IcdDbPrinter(db: IcdDb) {
       }
     }
 
-    XXX TODO: Add new alarm fields!!!!
-
     def publishAlarmListMarkup(alarmList: List[AlarmInfo]): Text.TypedTag[String] = {
       if (alarmList.isEmpty) div()
       else {
         div(
           for (t <- alarmList) yield {
+            val m = t.alarmModel
             val subscribers = t.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
             val subscriberInfo = span(strong(s"$subscriberStr: "), if (subscribers.isEmpty) "none" else subscribers)
-            val headings = List("Severity", "Archive")
-            val rowList = List(List(t.alarmModel.severityLevels.mkString(","), HtmlMarkup.yesNo(t.alarmModel.archive)))
+            val headings = List("Severity Levels", "Archive", "Location", "Alarm Type", "Acknowledge", "Latched")
+            val rowList = List(List(m.severityLevels.mkString(", "), yesNo(m.archive),
+              m.location, m.alarmType, yesNo(m.acknowledge), yesNo(m.latched)
+            ))
             div(cls := "nopagebreak")(
-              nh.H4(s"Alarm: ${t.alarmModel.name}", idFor(compName, "publishes", "Alarms", t.alarmModel.name)),
-              if (t.alarmModel.requirements.isEmpty) div() else p(strong("Requirements: "), t.alarmModel.requirements.mkString(", ")),
+              nh.H4(s"Alarm: ${m.name}", idFor(compName, "publishes", "Alarms", m.name)),
+              if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
               p(publisherInfo, ", ", subscriberInfo),
-              raw(t.alarmModel.description),
-              HtmlMarkup.mkTable(headings, rowList), hr
+              raw(m.description),
+              p(strong("Probable Cause: "), raw(m.probableCause)),
+              p(strong("Operator Response: "), raw(m.operatorResponse)),
+              HtmlMarkup.mkTable(headings, rowList),
+              hr
             )
           }
         )

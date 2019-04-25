@@ -44,6 +44,8 @@ object Components {
   // Displayed version for unpublished APIs
   val unpublished = "(unpublished)"
 
+  def yesNo(b: Boolean): String = if (b) "yes" else "no"
+
   /**
     * Returns a HTML table with the given column headings and list of rows
     *
@@ -308,7 +310,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default", "Required")
       val rowList = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue,
-        if (requiredArgs.contains(a.name)) "yes" else "no")
+        yesNo(requiredArgs.contains(a.name)))
       div(
         strong(titleStr),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable)
@@ -387,7 +389,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       val rowList = List(List(
         formatRate(eventInfo.eventModel.minRate),
         formatRate(eventInfo.eventModel.maxRate),
-        if (eventInfo.eventModel.archive) "Yes" else "No",
+        yesNo(eventInfo.eventModel.archive),
         eventInfo.eventModel.archiveDuration,
         formatRate(eventInfo.eventModel.archiveRate)
       ))
@@ -433,11 +435,15 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Returns a table row displaying more details for the given alarm
     def makeAlarmDetailsRow(t: AlarmInfo) = {
-      val headings = List("Severity", "Archive")
-      val rowList = List(List(t.alarmModel.severity, if (t.alarmModel.archive) "Yes" else "No"))
+      val headings = List("Severity Levels", "Archive", "Location", "Alarm Type", "Acknowledge", "Latched")
+      val m = t.alarmModel
+      val rowList = List(List(m.severityLevels.mkString(", "), yesNo(m.archive),
+        m.location, m.alarmType, yesNo(m.acknowledge), yesNo(m.latched)))
 
       div(
-        if (t.alarmModel.requirements.isEmpty) div() else p(strong("Requirements: "), t.alarmModel.requirements.mkString(", ")),
+        if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
+        p(strong("Probable Cause: "), raw(m.probableCause)),
+        p(strong("Operator Response: "), raw(m.operatorResponse)),
         mkTable(headings, rowList)
       )
     }
@@ -458,12 +464,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           ),
           tbody(
             for (t <- alarmList) yield {
+              val m = t.alarmModel
               val (btn, row) = hiddenRowMarkup(makeAlarmDetailsRow(t), 3)
               List(
                 tr(
                   td(Styles.attributeCell, p(btn,
-                    a(name := idFor(compName, "publishes", "Alarms", t.alarmModel.name))(t.alarmModel.name))),
-                  td(raw(t.alarmModel.description)),
+                    a(name := idFor(compName, "publishes", "Alarms", m.name))(m.name))),
+                  td(raw(m.description)),
                   td(p(t.subscribers.map(makeLinkForSubscriber)))
                 ),
                 row
