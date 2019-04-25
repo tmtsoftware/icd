@@ -128,12 +128,14 @@ case class SubscribeInfo(componentModel: ComponentModel,
   * @param eventModel         set only if itemType is not Alarms
   * @param alarmModel         set only if itemType is Alarms
   * @param publisher          the publisher's component model
+  * @param warnings           if true, display a warning if no publisher event or alarm model was specified
   */
 case class DetailedSubscribeInfo(itemType: PublishType,
                                  subscribeModelInfo: SubscribeModelInfo,
                                  eventModel: Option[EventModel],
                                  alarmModel: Option[AlarmModel],
-                                 publisher: Option[ComponentModel]) {
+                                 publisher: Option[ComponentModel],
+                                 warnings: Boolean = true) {
   val description: String = (if (itemType == Alarms) {
     alarmModel.map(_.description)
   } else {
@@ -141,7 +143,7 @@ case class DetailedSubscribeInfo(itemType: PublishType,
   }).getOrElse("")
 
   val warning: Option[String] =
-    if (eventModel.nonEmpty || alarmModel.nonEmpty) None
+    if (!warnings || eventModel.nonEmpty || alarmModel.nonEmpty) None
     else {
       Some(
         s"${subscribeModelInfo.subsystem}.${subscribeModelInfo.component} does not publish $itemType: ${subscribeModelInfo.name}")

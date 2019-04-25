@@ -3,14 +3,10 @@ package csw.services.icd.db
 import java.io.{File, FileOutputStream}
 
 import csw.services.icd.IcdToPdf
-import csw.services.icd.html.{HtmlMarkup, IcdToHtml, NumberedHeadings}
-import icd.web.shared.ComponentInfo.{Alarms, CurrentStates, Events, ObserveEvents}
-import icd.web.shared.IcdModels.{AttributeModel, ComponentModel}
+import csw.services.icd.html.{IcdToHtml, NumberedHeadings}
 import icd.web.shared.TitleInfo.unpublished
 import icd.web.shared._
-import scalatags.Text
-import Headings.idFor
-import HtmlMarkup.yesNo
+import IcdToHtml._
 
 
 /**
@@ -25,359 +21,6 @@ case class IcdDbPrinter(db: IcdDb) {
   // The difference is that here we generate plain HTML text, while in scala.js you can
   // create a DOM structure with event handlers, etc.
 
-  private def getTitleMarkup(titleInfo: TitleInfo, titleName: String = "title"): Text.TypedTag[String] = {
-    import scalatags.Text.all._
-    titleInfo.subtitleOpt match {
-      case Some(subtitle) =>
-        h3(a(name := titleName), cls := "page-header")(titleInfo.title, br, small(subtitle))
-      case None =>
-        h3(a(name := titleName), cls := "page-header")(titleInfo.title)
-    }
-  }
-
-  private def publishTitle(compName: String): String = s"Items published by $compName"
-
-  private def attributeListMarkup(nameStr: String, attributesList: List[AttributeModel], nh: NumberedHeadings): Text.TypedTag[String] = {
-    import scalatags.Text.all._
-    if (attributesList.isEmpty) div()
-    else {
-      val headings = List("Name", "Description", "Type", "Units", "Default")
-      val rowList = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
-      div(cls := "nopagebreak")(
-        p(strong(a(s"Attributes for $nameStr"))),
-        HtmlMarkup.mkTable(headings, rowList)
-      )
-    }
-  }
-
-  private def parameterListMarkup(nameStr: String, attributesList: List[AttributeModel], requiredArgs: List[String], nh: NumberedHeadings): Text.TypedTag[String] = {
-    import scalatags.Text.all._
-    if (attributesList.isEmpty) div()
-    else {
-      val headings = List("Name", "Description", "Type", "Units", "Default", "Required")
-      val rowList = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue,
-        yesNo(requiredArgs.contains(a.name)))
-      div(cls := "nopagebreak")(
-        p(strong(a(s"Arguments for $nameStr"))),
-        HtmlMarkup.mkTable(headings, rowList)
-      )
-    }
-  }
-
-  private def resultTypeMarkup(attributesList: List[AttributeModel], nh: NumberedHeadings): Text.TypedTag[String] = {
-    import scalatags.Text.all._
-    if (attributesList.isEmpty) div()
-    else {
-      val headings = List("Name", "Description", "Type", "Units")
-      val rowList = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units)
-      div(cls := "nopagebreak")(
-        p(strong(a("Result Type Fields"))),
-        HtmlMarkup.mkTable(headings, rowList)
-      )
-    }
-  }
-
-  // Generates the HTML markup to display the component's publish information
-  private def publishMarkup(component: ComponentModel, publishesOpt: Option[Publishes], nh: NumberedHeadings, forApi: Boolean): Text.TypedTag[String] = {
-    import scalatags.Text.all._
-
-    val compName = component.component
-    val subscriberStr = if (forApi) "Subscribers" else "Subscriber"
-    val publisherInfo = span(strong("Publisher: "), s"${component.subsystem}.$compName")
-
-    def publishEventListMarkup(pubType: String, eventList: List[EventInfo]): Text.TypedTag[String] = {
-      if (eventList.isEmpty) div()
-      else {
-        div(
-          for (eventInfo <- eventList) yield {
-            val subscribers = eventInfo.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
-            val subscriberInfo = span(strong(s"$subscriberStr: "), if (subscribers.isEmpty) "none" else subscribers)
-            val headings = List("Min Rate", "Max Rate", "Archive", "Archive Duration", "Archive Rate", "Required Rate")
-            val rowList = List(List(
-              HtmlMarkup.formatRate(eventInfo.eventModel.minRate),
-              HtmlMarkup.formatRate(eventInfo.eventModel.maxRate),
-              yesNo(eventInfo.eventModel.archive),
-              eventInfo.eventModel.archiveDuration,
-              HtmlMarkup.formatRate(eventInfo.eventModel.archiveRate),
-              eventInfo.subscribers.map(s => // Add required rate for subscribers that set it
-                HtmlMarkup.formatRate(s"${s.componentModel.subsystem}.${s.componentModel.component}",
-                  s.subscribeModelInfo.requiredRate)).mkString(" ").trim()
-            ))
-            div(cls := "nopagebreak")(
-              nh.H4(s"${singlePubType(pubType)}: ${eventInfo.eventModel.name}", idFor(compName, "publishes", pubType, eventInfo.eventModel.name)),
-              if (eventInfo.eventModel.requirements.isEmpty) div() else p(strong("Requirements: "), eventInfo.eventModel.requirements.mkString(", ")),
-              p(publisherInfo, ", ", subscriberInfo),
-              raw(eventInfo.eventModel.description),
-              // Include usage text from subscribers that define it
-              div(eventInfo.subscribers.map(s =>
-                if (s.subscribeModelInfo.usage.isEmpty) div()
-                else div(strong(s"Usage by ${s.componentModel.subsystem}.${s.componentModel.component}: "),
-                  raw(s.subscribeModelInfo.usage)))),
-              HtmlMarkup.mkTable(headings, rowList),
-              attributeListMarkup(eventInfo.eventModel.name, eventInfo.eventModel.attributesList, nh), hr
-            )
-          }
-        )
-      }
-    }
-
-    def publishAlarmListMarkup(alarmList: List[AlarmInfo]): Text.TypedTag[String] = {
-      if (alarmList.isEmpty) div()
-      else {
-        div(
-          for (t <- alarmList) yield {
-            val m = t.alarmModel
-            val subscribers = t.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
-            val subscriberInfo = span(strong(s"$subscriberStr: "), if (subscribers.isEmpty) "none" else subscribers)
-            val headings = List("Severity Levels", "Archive", "Location", "Alarm Type", "Acknowledge", "Latched")
-            val rowList = List(List(m.severityLevels.mkString(", "), yesNo(m.archive),
-              m.location, m.alarmType, yesNo(m.acknowledge), yesNo(m.latched)
-            ))
-            div(cls := "nopagebreak")(
-              nh.H4(s"Alarm: ${m.name}", idFor(compName, "publishes", "Alarms", m.name)),
-              if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
-              p(publisherInfo, ", ", subscriberInfo),
-              raw(m.description),
-              p(strong("Probable Cause: "), raw(m.probableCause)),
-              p(strong("Operator Response: "), raw(m.operatorResponse)),
-              HtmlMarkup.mkTable(headings, rowList),
-              hr
-            )
-          }
-        )
-      }
-    }
-
-    publishesOpt match {
-      case None => div()
-      case Some(publishes) =>
-        if (publishesOpt.nonEmpty && publishesOpt.get.nonEmpty) {
-          div(
-            nh.H3(publishTitle(compName)),
-            raw(publishes.description), hr,
-            publishEventListMarkup("Events", publishes.eventList),
-            publishEventListMarkup("Observe Events", publishes.observeEventList),
-            publishAlarmListMarkup(publishes.alarmList)
-          )
-        } else div()
-    }
-  }
-
-  private def subscribeTitle(compName: String): String = s"Items subscribed to by $compName"
-
-  private def singlePubType(pubType: String): String = {
-    if (pubType.endsWith("s")) pubType.dropRight(1) else pubType
-  }
-
-  // Generates the HTML markup to display the component's subscribe information
-  private def subscribeMarkup(component: ComponentModel, subscribesOpt: Option[Subscribes], nh: NumberedHeadings): Text.TypedTag[String] = {
-    import scalatags.Text.all._
-
-    val compName = component.component
-    val subscriberInfo = span(strong("Subscriber: "), s"${component.subsystem}.$compName")
-
-    def subscribeListMarkup(pubType: String, subscribeList: List[DetailedSubscribeInfo]): Text.TypedTag[String] = {
-      def formatRate(rate: Double): String = if (rate == 0.0) "" else s"$rate Hz"
-
-      // Warn if no publisher found for subscibed item
-      def getWarning(info: DetailedSubscribeInfo) = info.warning.map { msg =>
-        p(em(" Warning: ", msg))
-      }
-
-      if (subscribeList.isEmpty) div()
-      else div(
-        for (si <- subscribeList) yield {
-          val sInfo = si.subscribeModelInfo
-          val publisherInfo = span(strong("Publisher: "), s"${si.subscribeModelInfo.subsystem}.${si.subscribeModelInfo.component}")
-          div(cls := "nopagebreak")(
-            nh.H4(s"${singlePubType(pubType)}: ${sInfo.name}", idFor(compName, "subscribes", pubType, sInfo.name)),
-            p(publisherInfo, ", ", subscriberInfo),
-            raw(si.description),
-            getWarning(si),
-            if (sInfo.usage.isEmpty) div() else div(strong("Usage:"), raw(sInfo.usage)),
-            table(
-              thead(
-                tr(th("Subsystem"), th("Component"), th("Prefix.Name"),
-                  th("Required Rate"), th("Max Rate"),
-                  th("Publisher's Min Rate"), th("Publisher's Max Rate"))
-              ),
-              tbody(
-                tr(td(sInfo.subsystem), td(sInfo.component), td(si.path),
-                  td(formatRate(sInfo.requiredRate)), td(formatRate(sInfo.maxRate)),
-                  td(formatRate(si.eventModel.map(_.minRate).getOrElse(0.0))),
-                  td(formatRate(si.eventModel.map(_.maxRate).getOrElse(0.0))))
-              )
-            ),
-            si.eventModel.map(t => attributeListMarkup(t.name, t.attributesList, nh))
-          )
-        }
-      )
-    }
-
-    subscribesOpt match {
-      case None => div()
-      case Some(subscribes) =>
-        if (subscribes.subscribeInfo.nonEmpty) {
-          div(
-            nh.H3(subscribeTitle(compName)),
-            raw(subscribes.description),
-            subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == Events)),
-            subscribeListMarkup("Observe Events", subscribes.subscribeInfo.filter(_.itemType == ObserveEvents)),
-            subscribeListMarkup("Current States", subscribes.subscribeInfo.filter(_.itemType == CurrentStates)),
-            subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == Alarms))
-          )
-        } else div()
-    }
-  }
-
-  private def receivedCommandsTitle(compName: String): String = s"Command Configurations Received by $compName"
-
-  // Generates the HTML markup to display the commands a component receives
-  private def receivedCommandsMarkup(component: ComponentModel,
-                                     info: List[ReceivedCommandInfo],
-                                     nh: NumberedHeadings,
-                                     forApi: Boolean): Text.TypedTag[String] = {
-    import scalatags.Text.all._
-
-    val compName = component.component
-    val senderStr = if (forApi) "Senders" else "Sender"
-    val receiverInfo = span(strong("Receiver: "), s"${component.subsystem}.$compName")
-
-    if (info.isEmpty) div()
-    else {
-      div(
-        nh.H3(receivedCommandsTitle(compName)),
-        for (r <- info) yield {
-          val m = r.receiveCommandModel
-          val senders = r.senders.map(s => s"${s.subsystem}.${s.component}").mkString(", ")
-          val senderInfo = span(strong(s"$senderStr: "), if (senders.isEmpty) "none" else senders)
-          div(cls := "nopagebreak")(
-            nh.H4(m.name,
-              idFor(compName, "receives", "Commands", m.name)),
-            p(senderInfo, ", ", receiverInfo),
-            if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
-            if (m.preconditions.isEmpty) div() else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
-            if (m.postconditions.isEmpty) div() else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
-            raw(m.description),
-            parameterListMarkup(m.name, m.args, m.requiredArgs, nh),
-            p(strong("Completion Type: "), m.completionType),
-            resultTypeMarkup(m.resultType, nh),
-            if (m.completionConditions.isEmpty) div() else div(p(strong("Completion Conditions: "), ol(m.completionConditions.map(cc => li(raw(cc))))))
-          )
-        }
-      )
-    }
-  }
-
-  private def sentCommandsTitle(compName: String): String = s"Command Configurations Sent by $compName"
-
-  // Generates the HTML markup to display the commands a component sends
-  private def sentCommandsMarkup(component: ComponentModel, info: List[SentCommandInfo], nh: NumberedHeadings): Text.TypedTag[String] = {
-    import scalatags.Text.all._
-
-    val compName = component.component
-    val senderInfo = span(strong("Sender: "), s"${component.subsystem}.$compName")
-
-    if (info.isEmpty) div()
-    else {
-      div(
-        nh.H3(sentCommandsTitle(compName)),
-        for (s <- info) yield {
-          val receiveCommandModel = s.receiveCommandModel
-          val receiverStr = s.receiver.map(r => s"${r.subsystem}.${r.component}").getOrElse("none")
-          val receiverInfo = span(strong("Receiver: "), receiverStr)
-          div(cls := "nopagebreak")(
-            nh.H4(s.name, idFor(compName, "sends", "Commands", s.name)),
-            p(senderInfo, ", ", receiverInfo),
-            receiveCommandModel match {
-              case Some(m) => div(
-                if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
-                if (m.preconditions.isEmpty) div() else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
-                if (m.postconditions.isEmpty) div() else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
-                raw(m.description),
-                if (m.args.isEmpty) div() else parameterListMarkup(m.name, m.args, m.requiredArgs, nh)
-              )
-              case None => s.warning.map(msg => p(em(" Warning: ", msg)))
-            }
-          )
-        }
-      )
-    }
-  }
-
-  // Generates the markup for the commands section (description plus received and sent)
-  private def commandsMarkup(component: ComponentModel, commandsOpt: Option[Commands], nh: NumberedHeadings, forApi: Boolean): Text.TypedTag[String] = {
-    import scalatags.Text.all._
-    commandsOpt match {
-      case None => div()
-      case Some(commands) =>
-        if (commands.commandsReceived.nonEmpty || commands.commandsSent.nonEmpty) {
-          div(
-            raw(commands.description),
-            receivedCommandsMarkup(component, commands.commandsReceived, nh, forApi),
-            if (forApi) sentCommandsMarkup(component, commands.commandsSent, nh) else div()
-          )
-        } else div()
-    }
-  }
-
-  // Generates a one line table with basic component informationdiv(
-  private def componentInfoTableMarkup(info: ComponentInfo): Text.TypedTag[String] = {
-    import scalatags.Text.all._
-    div(
-      table(
-        thead(
-          tr(
-            th("Subsystem"),
-            th("Name"),
-            th("Prefix"),
-            th("Type"),
-            th("WBS ID")
-          )
-        ),
-        tbody(
-          tr(
-            td(info.componentModel.subsystem),
-            td(info.componentModel.component),
-            td(info.componentModel.prefix),
-            td(info.componentModel.componentType),
-            td(info.componentModel.wbsId)
-          )
-        )
-      )
-    )
-  }
-
-  // Generates the HTML markup to display the component information
-  private def markupForComponent(info: ComponentInfo, nh: NumberedHeadings, forApi: Boolean): Text.TypedTag[String] = {
-    import scalatags.Text.all._
-    div(cls := "pagebreakBefore")(
-      nh.H2(info.componentModel.title, info.componentModel.component),
-      componentInfoTableMarkup(info),
-      raw(info.componentModel.description),
-      publishMarkup(info.componentModel, info.publishes, nh, forApi),
-      if (forApi) subscribeMarkup(info.componentModel, info.subscribes, nh) else div(),
-      commandsMarkup(info.componentModel, info.commands, nh, forApi)
-    )
-  }
-
-  /**
-    * Displays the information for a component
-    *
-    * @param info contains the information to display
-    */
-  private def displayComponentInfo(info: ComponentInfo, nh: NumberedHeadings, forApi: Boolean): Text.TypedTag[String] = {
-    import scalatags.Text.all._
-    // For ICDs, only display published items/received commands, for APIs show everything
-    // (Note: Need to include even if only subscribed items are defined, to keep summary links from breaking)
-    if (forApi ||
-      (info.publishes.isDefined && info.publishes.get.nonEmpty
-        || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
-        || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
-        || info.commands.get.commandsSent.nonEmpty))) {
-      markupForComponent(info, nh, forApi)
-    } else div()
-  }
 
   /**
     * Gets information about a named subsystem
@@ -426,33 +69,7 @@ case class IcdDbPrinter(db: IcdDb) {
     }
   }
 
-  /**
-    * Displays the subsystem title and description
-    */
-  private def makeIntro(titleInfo: TitleInfo): Text.TypedTag[String] = {
-    import scalatags.Text.all._
-    if (titleInfo.descriptionOpt.isDefined) {
-      div(raw(titleInfo.descriptionOpt.get))
-    } else div
-  }
 
-  /**
-    * Displays the details of the events published and commands received by the subsystem
-    *
-    * @param subsystem subsystem name
-    * @param infoList  list of component info
-    * @param nh        used for numbered headings and TOC
-    * @return the HTML
-    */
-  private def displayDetails(subsystem: String,
-                             infoList: List[ComponentInfo],
-                             nh: NumberedHeadings,
-                             forApi: Boolean): Text.TypedTag[String] = {
-    import scalatags.Text.all._
-    div(
-      infoList.map(displayComponentInfo(_, nh, forApi))
-    )
-  }
 
   /**
     * Returns an HTML document describing the given components in the given subsystem.
@@ -461,41 +78,17 @@ case class IcdDbPrinter(db: IcdDb) {
     * @param sv        the selected subsystem and version
     */
   def getApiAsHtml(compNames: List[String], sv: SubsystemWithVersion): Option[String] = {
-    val tv = SubsystemWithVersion(None, None)
     val markup = for {
       subsystem <- sv.subsystemOpt
       subsystemInfo <- getSubsystemInfo(subsystem, sv.versionOpt)
     } yield {
-      import scalatags.Text.all._
+      val tv = SubsystemWithVersion(None, None)
       val infoList = getComponentInfo(subsystem, sv.versionOpt, compNames, tv, None)
-      val titleInfo = TitleInfo(subsystemInfo, tv, None)
-      val titleMarkup = getTitleMarkup(titleInfo)
-      val nh = new NumberedHeadings
-      val mainContent = div(
-        SummaryTable.displaySummary(subsystemInfo, None, infoList, nh),
-        displayDetails(subsystem, infoList, nh, forApi = true)
-      )
-      val toc = nh.mkToc()
-      val intro = makeIntro(titleInfo)
-      html(
-        head(
-          scalatags.Text.tags2.title(titleInfo.title),
-          scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss))
-        ),
-        body(
-          titleMarkup,
-          div(cls := "pagebreakBefore"),
-          h2("Table of Contents"),
-          toc,
-          div(cls := "pagebreakBefore"),
-          titleMarkup,
-          intro,
-          mainContent
-        )
-      )
+      IcdToHtml.getApiAsHtml(Some(subsystemInfo), infoList)
     }
     markup.map(_.render)
   }
+
 
   /**
     * Returns an HTML document describing the given components in the given subsystem.
@@ -543,9 +136,9 @@ case class IcdDbPrinter(db: IcdDb) {
         raw(targetSubsystemInfo.description),
         SummaryTable.displaySummary(subsystemInfo, Some(targetSubsystem), infoList, nh),
         makeIntro(titleInfo1),
-        displayDetails(subsystem, infoList, nh, forApi = false),
+        displayDetails(infoList, nh, forApi = false),
         makeIntro(titleInfo2),
-        displayDetails(targetSubsystem, infoList2, nh, forApi = false)
+        displayDetails(infoList2, nh, forApi = false)
       )
       val toc = nh.mkToc()
 

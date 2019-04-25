@@ -40,7 +40,7 @@ object SummaryTable {
       val targetStr = if (targetSubsystem.isDefined) s" $prep ${targetSubsystem.get}" else ""
 
       def linkToSubscriber(subscriber: ComponentModel) = {
-        if ((isIcd && subscriber.subsystem == targetSubsystem.get) || subscriber.subsystem == subsystemInfo.subsystem)
+        if ((isIcd && subscriber.subsystem == targetSubsystem.get) || subscriber.subsystem == subsystem)
           span(a(href := s"#${subscriber.component}")(subscriber.component), " ")
         else
           span(s"${subscriber.subsystem}.${subscriber.component}", " ")
@@ -107,7 +107,7 @@ object SummaryTable {
                 // If this is an ICD or the publisher is in the same subsystem, we can link to it, since it is in this doc
                 val prefixItem = info.publisherOpt match {
                   case Some(componentModel) => span(componentModel.prefix)
-                  case None => em("unknown")
+                  case None => span()
                 }
                 val description = info.warningOpt match {
                   case Some(msg) => p(em("Warning: ", msg))
@@ -154,7 +154,7 @@ object SummaryTable {
               } yield {
                 val prefixItem = info.publisherOpt match {
                   case Some(componentModel) => span(componentModel.prefix)
-                  case None => em("unknown")
+                  case None => span()
                 }
 
                 val publisherComponent =
