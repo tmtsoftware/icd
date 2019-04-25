@@ -16,12 +16,6 @@ import IcdToHtml._
   */
 case class IcdDbPrinter(db: IcdDb) {
 
-  // Note: You would think we could share parts of this code with the scala.js client, but
-  // here we import scalatags.Text.all._ and in scala.js its scalatags.JsDom.all._.
-  // The difference is that here we generate plain HTML text, while in scala.js you can
-  // create a DOM structure with event handlers, etc.
-
-
   /**
     * Gets information about a named subsystem
     */
@@ -68,7 +62,6 @@ case class IcdDbPrinter(db: IcdDb) {
           targetSubsystem.versionOpt, targetCompNameOpt)
     }
   }
-
 
 
   /**

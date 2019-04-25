@@ -76,8 +76,15 @@ object IcdToHtml {
         val si = maybeSubsystemInfo.get
         val ti = TitleInfo(si, SubsystemWithVersion(None, None), None)
         (ti, getTitleMarkup(ti), SummaryTable.displaySummary(si, None, infoList, nh))
+      } else if (infoList.size == 1) {
+        val componentModel = infoList.head.componentModel
+        val subsys = componentModel.subsystem
+        val comp = componentModel.component
+        val desc = componentModel.description
+        val ti = TitleInfo(s"API for $subsys.$comp", None, Some(desc))
+        val si = SubsystemInfo(s"$subsys.$comp", None, "", "")
+        (ti, getTitleMarkup(ti), SummaryTable.displaySummary(si, None, infoList, nh))
       } else {
-        // XXX FIXME: Title when there is no subsystem?
         (TitleInfo("", None, None), div(), div())
       }
     val mainContent = div(
@@ -119,6 +126,7 @@ object IcdToHtml {
    *
    * @param infoList list of component info
    * @param nh       used for numbered headings and TOC
+   * @param forApi   true if this is for an API document, false for ICD
    * @return the HTML
    */
   def displayDetails(infoList: List[ComponentInfo],
@@ -134,6 +142,8 @@ object IcdToHtml {
    * Displays the information for a component
    *
    * @param info contains the information to display
+   * @param nh       used for numbered headings and TOC
+   * @param forApi   true if this is for an API document, false for ICD
    */
   private def displayComponentInfo(info: ComponentInfo, nh: NumberedHeadings, forApi: Boolean): Text.TypedTag[String] = {
     import scalatags.Text.all._
