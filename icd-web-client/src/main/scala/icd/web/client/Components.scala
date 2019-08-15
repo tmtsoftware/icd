@@ -177,7 +177,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           infoList <- getComponentInfo(subsystem, sv.versionOpt, compNames, targetSubsystem)
           targetInfoList <- getComponentInfo(targetSubsystem, sv)
         } yield {
-          val titleInfo = TitleInfo(subsystemInfo, targetSubsystem, icdOpt)
+          // TODO: Update web app to allow selecting component to component ICDs
+          val titleInfo = TitleInfo(subsystemInfo, targetSubsystem, icdOpt, None, None)
           val subsystemVersion = subsystemInfo.versionOpt.getOrElse(TitleInfo.unpublished)
           mainContent.clearContent()
           mainContent.setTitle(titleInfo.title, titleInfo.subtitleOpt, titleInfo.descriptionOpt)
@@ -193,7 +194,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               ).render
             )
           }
-          val summaryTable = SummaryTable.displaySummary(subsystemInfo, targetSubsystem.subsystemOpt, infoList).render
+          // XXX TODO: Add support for comp to comp ICD in web app GUI
+          val summaryTable = SummaryTable.displaySummary(subsystemInfo, targetSubsystem.subsystemOpt, None, None, infoList).render
           mainContent.appendElement(div(Styles.component, id := "Summary")(raw(summaryTable)).render)
           infoList.foreach(i => displayComponentInfo(i, !isIcd))
           if (isIcd) targetInfoList.foreach(i => displayComponentInfo(i, forApi = false))

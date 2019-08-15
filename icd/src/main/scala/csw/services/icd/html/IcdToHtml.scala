@@ -18,9 +18,6 @@ object IcdToHtml {
     lines.mkString("\n")
   }
 
-//  private def getTitle(models: IcdModels): String =
-//    models.subsystemModel.map(_.title).getOrElse(models.componentModel.map(_.title).getOrElse(""))
-
   /**
    * Gets the HTML for the document
    *
@@ -55,7 +52,7 @@ object IcdToHtml {
       ComponentInfo(componentModel, publishes, subscribes, commands)
     }
 
-    val markup = getApiAsHtml(subsystemInfo, infoList)
+    val markup = getApiAsHtml(subsystemInfo, None, infoList)
     markup.render
   }
 
@@ -67,15 +64,15 @@ object IcdToHtml {
    * @param infoList           details about each component and what it publishes, subscribes to, etc.
    * @return the html tags
    */
-  def getApiAsHtml(maybeSubsystemInfo: Option[SubsystemInfo], infoList: List[ComponentInfo]): Text.TypedTag[String] = {
+  def getApiAsHtml(maybeSubsystemInfo: Option[SubsystemInfo], compNameOpt: Option[String], infoList: List[ComponentInfo]): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
     val nh = new NumberedHeadings
     val (titleInfo, titleMarkup, summaryTable) =
       if (maybeSubsystemInfo.isDefined) {
         val si = maybeSubsystemInfo.get
-        val ti = TitleInfo(si, SubsystemWithVersion(None, None), None)
-        (ti, getTitleMarkup(ti), SummaryTable.displaySummary(si, None, infoList, nh))
+        val ti = TitleInfo(si, SubsystemWithVersion(None, None), None, compNameOpt, None)
+        (ti, getTitleMarkup(ti), SummaryTable.displaySummary(si, None, compNameOpt, None, infoList, nh))
       } else if (infoList.size == 1) {
         val componentModel = infoList.head.componentModel
         val subsys = componentModel.subsystem
@@ -83,7 +80,7 @@ object IcdToHtml {
         val desc = componentModel.description
         val ti = TitleInfo(s"API for $subsys.$comp", None, Some(desc))
         val si = SubsystemInfo(s"$subsys.$comp", None, "", "")
-        (ti, getTitleMarkup(ti), SummaryTable.displaySummary(si, None, infoList, nh))
+        (ti, getTitleMarkup(ti), SummaryTable.displaySummary(si, None, compNameOpt, None, infoList, nh))
       } else {
         (TitleInfo("", None, None), div(), div())
       }
