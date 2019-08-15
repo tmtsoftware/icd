@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [ICD v0.12] - 2019-08-15
+
 ### Added
 
 - New `icd-git` command line tool and features in the icd web app. 
@@ -29,6 +31,17 @@ All notable changes to this project will be documented in this file.
 
 - Changed the ICD PDF layout to display the published items from both subsystems, with links to the subscribers
   (instead of showing a list of the subscribed items)
+
+- Changed the way the PDF document titles are created, so that (for the command line
+  at least) you can have component to component ICDs. 
+  For example, these two commands will generate an ICD PDF from a single component of IRIS to
+  a single component oof NFIRAOS and another one between two components in NFIRAOS 
+  (*Note that if the versions are not specified, you get the latest unpublished version*):
+```$xslt
+   icd-db -s IRIS:1.5 -t NFIRAOS:1.3 --component csro-env-assembly --target-component encl -o csro-env-assembly-encl.pdf
+
+   icd-db -s NFIRAOS -t NFIRAOS --component dm --target-component rtc -o dm-rtc.pdf
+```  
   
 ## [ICD v0.11] - 2016-02-22
 
