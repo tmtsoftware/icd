@@ -61,12 +61,9 @@ publish the subsystem or ICD version (making an entry in a JSON file under `apis
 Install
 -------
 
-Use the install.sh script in the parent directory to install everything into ../../install/.
+Use the install.sh script in the parent directory to install everything into ../../install_icd/.
 After that, you can use the `icdwebserver` command to start the web app on the server.
+By default this starts the server on http://localhost:9000, however you can override the HTTP host and port on
+the command line. For example:
 
-
-
-
-
-
-
+    icdwebserver -Dhttp.port=9898 -Dhttp.host=192.168.178.77

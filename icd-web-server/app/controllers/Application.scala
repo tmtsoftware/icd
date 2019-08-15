@@ -31,6 +31,8 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
   import Application._
   import JsonSupport._
 
+  println(s"icdwebserver running on http://${System.getProperty("http.host", "localhost")}:${System.getProperty("http.port", "9000")}")
+
   // cache of API and ICD versions published on GitHub (until next browser refresh)
   val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
 

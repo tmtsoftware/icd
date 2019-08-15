@@ -8,22 +8,28 @@ import Headings.idFor
 
 object SummaryTable {
   /**
-    * Displays a summary of the events published and commands received by the subsystem
-    *
-    * @param subsystemInfo   subsystem to use
-    * @param targetSubsystem optional target subsystem name (for ICD)
-    * @param infoList        list of component info
-    * @param nh              used for numbered headings and TOC, if needed
-    * @return the HTML
-    */
+   * Displays a summary of the events published and commands received by the subsystem
+   *
+   * @param subsystemInfo   subsystem to use
+   * @param targetSubsystem optional target subsystem name (for ICD)
+   * @param component       optional subsystem component (restrict output to parts related to this component)
+   * @param targetComponent optional target subsystem component (restrict output to parts related to this component)
+   * @param infoList        list of component info
+   * @param nh              used for numbered headings and TOC, if needed
+   * @return the HTML
+   */
   def displaySummary(subsystemInfo: SubsystemInfo,
                      targetSubsystem: Option[String],
+                     component: Option[String],
+                     targetComponent: Option[String],
                      infoList: List[ComponentInfo],
                      nh: Headings = new HtmlHeadings): Text.TypedTag[String] = {
     import SummaryInfo._
 
-    val subsystem = subsystemInfo.subsystem
     val isIcd = targetSubsystem.isDefined
+    val componentPart = component.map("." + _).getOrElse("")
+    val targetComponentPart = targetComponent.map("." + _).getOrElse("")
+    val subsystem = subsystemInfo.subsystem + componentPart
 
     def firstParagraph(s: String): String = {
       val i = s.indexOf("</p>")
@@ -37,7 +43,7 @@ object SummaryTable {
         case "received by" => ("receives", "Receiver", "Senders")
       }
 
-      val targetStr = if (targetSubsystem.isDefined) s" $prep ${targetSubsystem.get}" else ""
+      val targetStr = if (targetSubsystem.isDefined) s" $prep ${targetSubsystem.get}$targetComponentPart" else ""
 
       def linkToSubscriber(subscriber: ComponentModel) = {
         if ((isIcd && subscriber.subsystem == targetSubsystem.get) || subscriber.subsystem == subsystemInfo.subsystem)
@@ -89,7 +95,7 @@ object SummaryTable {
         val target = targetSubsystem.get
 
         div(
-          nh.H3(s"$itemType $heading $target $prep $subsystem"),
+          nh.H3(s"$itemType $heading $target$targetComponentPart $prep $subsystem"),
           table(
             thead(
               tr(
@@ -135,7 +141,7 @@ object SummaryTable {
           case "subscribed to by" => ("subscribes", "Subscriber", "Publisher")
           case "sent by" => ("sends", "Sender", "Receiver")
         }
-        val targetStr = if (targetSubsystem.isDefined) s" $prep ${targetSubsystem.get}" else ""
+        val targetStr = if (targetSubsystem.isDefined) s" $prep ${targetSubsystem.get}$targetComponentPart" else ""
         div(
           nh.H3(s"$itemType $heading $subsystem$targetStr"),
           table(

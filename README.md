@@ -42,13 +42,7 @@ There are currently these ICD subprojects:
 Build and Install
 -----------------
 
-Note: The build requires that [node.js](https://nodejs.org/en/) be installed on the system
-and this environment variable set:
-
-    SBT_OPTS=-Dsbt.jse.engineType=Node -Dsbt.jse.command=/usr/bin/node
-
-(Change `node` to `nodejs` if that is the name of the executable on your system.) 
-
+Note: The build requires that [node.js](https://nodejs.org/en/) be installed on the system.
 This is checked in the install.sh script, which automatically sets the SBT_OPTS environment variable if node.js is found 
 and gives an error otherwise. 
 

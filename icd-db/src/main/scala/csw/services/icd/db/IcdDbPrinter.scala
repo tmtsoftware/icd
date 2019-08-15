@@ -436,17 +436,19 @@ case class IcdDbPrinter(db: IcdDb) {
     */
   def getApiAsHtml(compNames: List[String], sv: SubsystemWithVersion): Option[String] = {
     val tv = SubsystemWithVersion(None, None)
+    // TODO: FIXME
+    val compNameOpt = if (compNames.size == 1) compNames.headOption else None
     val markup = for {
       subsystem <- sv.subsystemOpt
       subsystemInfo <- getSubsystemInfo(subsystem, sv.versionOpt)
     } yield {
       import scalatags.Text.all._
       val infoList = getComponentInfo(subsystem, sv.versionOpt, compNames, tv, None)
-      val titleInfo = TitleInfo(subsystemInfo, tv, None)
+      val titleInfo = TitleInfo(subsystemInfo, tv, None, compNameOpt, None)
       val titleMarkup = getTitleMarkup(titleInfo)
       val nh = new NumberedHeadings
       val mainContent = div(
-        SummaryTable.displaySummary(subsystemInfo, None, infoList, nh),
+        SummaryTable.displaySummary(subsystemInfo, None, compNameOpt, None, infoList, nh),
         displayDetails(subsystem, infoList, nh, forApi = true)
       )
       val toc = nh.mkToc()
@@ -490,6 +492,9 @@ case class IcdDbPrinter(db: IcdDb) {
                    icdVersionOpt: Option[IcdVersion],
                    targetCompNameOpt: Option[String] = None): Option[String] = {
 
+    // TODO: FIXME
+    val compNameOpt = if (compNames.size == 1) compNames.headOption else None
+
     val markup = for {
       subsystem <- sv.subsystemOpt
       subsystemInfo <- getSubsystemInfo(subsystem, sv.versionOpt)
@@ -503,10 +508,10 @@ case class IcdDbPrinter(db: IcdDb) {
         db.versionManager.getComponentNames(targetSubsystem, tv.versionOpt)
 
       val infoList = getComponentInfo(subsystem, sv.versionOpt, compNames, tv, targetCompNameOpt)
-      val titleInfo = TitleInfo(subsystemInfo, tv, icdVersionOpt)
-      val titleInfo1 = TitleInfo(subsystemInfo, tv, icdVersionOpt, "(Part 1)")
+      val titleInfo = TitleInfo(subsystemInfo, tv, icdVersionOpt, compNameOpt, targetCompNameOpt)
+      val titleInfo1 = TitleInfo(subsystemInfo, tv, icdVersionOpt, compNameOpt, targetCompNameOpt, "(Part 1)")
       val infoList2 = getComponentInfo(targetSubsystem, tv.versionOpt, targetCompNames, sv, None)
-      val titleInfo2 = TitleInfo(targetSubsystemInfo, sv, icdVersionOpt, "(Part 2)")
+      val titleInfo2 = TitleInfo(targetSubsystemInfo, sv, icdVersionOpt, compNameOpt, targetCompNameOpt, "(Part 2)")
       val nh = new NumberedHeadings
       val subsystemVersion = subsystemInfo.versionOpt.getOrElse(unpublished)
       val targetSubsystemVersion = targetSubsystemInfo.versionOpt.getOrElse(unpublished)
@@ -515,7 +520,7 @@ case class IcdDbPrinter(db: IcdDb) {
         raw(subsystemInfo.description),
         p(strong(s"${targetSubsystemInfo.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
         raw(targetSubsystemInfo.description),
-        SummaryTable.displaySummary(subsystemInfo, Some(targetSubsystem), infoList, nh),
+        SummaryTable.displaySummary(subsystemInfo, Some(targetSubsystem), compNameOpt, targetCompNameOpt, infoList, nh),
         makeIntro(titleInfo1),
         displayDetails(subsystem, infoList, nh, forApi = false),
         makeIntro(titleInfo2),
