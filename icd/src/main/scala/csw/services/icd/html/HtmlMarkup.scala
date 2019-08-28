@@ -78,7 +78,7 @@ object HtmlMarkup {
   // Strips leading spaces from each line, since people don't realize that indenting is like ``` blocks in markdown.
   // Note: We could preserve the leading spaces after "|", but that was thought to be too scala specific...
   private def stripLeadingWs(s: String): String = {
-    s.stripMargin.linesIterator.toList.map(_.trim).mkString("\n")
+    s.stripMargin.lines.map(_.trim).mkString("\n")
   }
 
   /**
