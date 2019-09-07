@@ -15,7 +15,7 @@ object IcdPrinter {
    * and saves a document describing them to the given file in a format determined by the
    * file's suffix, which should be one of (md, html, pdf).
    *
-   * @param dir the root directory containing the standard ICD files and optional subdirectories, also containing ICD files
+   * @param dir  the root directory containing the standard ICD files and optional subdirectories, also containing ICD files
    * @param file the file in which to save the document
    */
   def saveToFile(dir: File, file: File): Unit = {
@@ -29,13 +29,13 @@ object IcdPrinter {
    * file's suffix, which should be one of (md, html, pdf).
    *
    * @param models a list of objects describing the parsed ICD, one for each directory in the ICD
-   * @param file the file in which to save the document
+   * @param file   the file in which to save the document
    */
   def saveToFile(models: List[IcdModels], file: File): Unit = {
     file.getName.split('.').drop(1).lastOption match {
       case Some("html") => saveAsHtml()
-      case Some("pdf")  => saveAsPdf()
-      case _            => println(s"Unsupported output format: Expected *.md. *.html or *.pdf")
+      case Some("pdf") => saveAsPdf()
+      case _ => println(s"Unsupported output format: Expected *.md. *.html or *.pdf")
     }
 
     def saveAsHtml(): Unit = {

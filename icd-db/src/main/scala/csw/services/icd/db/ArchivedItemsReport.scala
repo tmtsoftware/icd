@@ -17,12 +17,12 @@ object ArchivedItemsReport {
 
 }
 
-case class ArchivedItemsReport(db: IcdDb, subsystemOpt: Option[String]) {
+case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
   val query = new CachedIcdDbQuery(db.db)
 
   // Returns true if the given subsystem should be included in the report
   private def subsystemFilter(subsystem: String): Boolean = {
-    if (subsystemOpt.isDefined) subsystemOpt.contains(subsystem)
+    if (maybeSubsystem.isDefined) maybeSubsystem.contains(subsystem)
     else !subsystem.startsWith("TEST")
   }
 
@@ -37,6 +37,7 @@ case class ArchivedItemsReport(db: IcdDb, subsystemOpt: Option[String]) {
         .filter(_.archive)
         .map(e => ArchiveInfo(comp, c.prefix, eventType, e.name, e.description))
     }
+
     val result = for {
       component <- query.getComponents
       if subsystemFilter(component.subsystem)
@@ -81,10 +82,10 @@ case class ArchivedItemsReport(db: IcdDb, subsystemOpt: Option[String]) {
                 item <- getArchivedItems
               } yield {
                 tr(td(p(item.component)),
-                   td(p(item.prefix)),
-                   td(p(item.eventType)),
-                   td(p(item.name)),
-                   td(raw(firstParagraph(item.description))))
+                  td(p(item.prefix)),
+                  td(p(item.eventType)),
+                  td(p(item.name)),
+                  td(raw(firstParagraph(item.description))))
               }
             )
           )
@@ -95,8 +96,8 @@ case class ArchivedItemsReport(db: IcdDb, subsystemOpt: Option[String]) {
   }
 
   /**
-    * Saves the report in HTML or PDF, depending on the file suffix
-    */
+   * Saves the report in HTML or PDF, depending on the file suffix
+   */
   def saveToFile(file: File): Unit = {
 
     def saveAsHtml(html: String): Unit = {
@@ -111,8 +112,8 @@ case class ArchivedItemsReport(db: IcdDb, subsystemOpt: Option[String]) {
     val html = makeReport()
     file.getName.split('.').drop(1).lastOption match {
       case Some("html") => saveAsHtml(html)
-      case Some("pdf")  => saveAsPdf(html)
-      case _            => println(s"Unsupported output format: Expected *.html or *.pdf")
+      case Some("pdf") => saveAsPdf(html)
+      case _ => println(s"Unsupported output format: Expected *.html or *.pdf")
     }
   }
 }

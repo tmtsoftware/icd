@@ -15,7 +15,9 @@ class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
 
   // --- Cached values ---
   private val collectionNames = db.getCollectionNames().toSet
+
   override def getCollectionNames: Set[String] = collectionNames
+
   // Note: this was 99% of the bottleneck: db.collectionExists calls db.getCollectionNames every time!
   override def collectionExists(name: String): Boolean = collectionNames.contains(name)
 
@@ -40,6 +42,7 @@ class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
 
   /**
    * Returns a map of component to subscribe model, for each component in the list that defines one
+   *
    * @param components a list of component models
    */
   private def getSubscribeModelMap(components: List[ComponentModel]): Map[Component, SubscribeModel] = {
@@ -52,6 +55,7 @@ class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
 
   /**
    * Returns a map of component to publish model, for each component in the list that defines one
+   *
    * @param components a list of component models
    */
   private def getPublishModelMap(components: List[ComponentModel]): Map[Component, PublishModel] = {
@@ -64,6 +68,7 @@ class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
 
   /**
    * Returns a map of component to command model, for each component in the list that defines one
+   *
    * @param components a list of component models
    */
   private def getCommandModelMap(components: List[ComponentModel]): Map[Component, CommandModel] = {

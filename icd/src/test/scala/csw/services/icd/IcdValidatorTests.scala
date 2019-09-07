@@ -110,7 +110,7 @@ class IcdValidatorTests extends FunSuite {
     val a1 = attr1.head
     assert(a1.name == "a1")
     assert(a1.description == "<p>single value with min/max</p>")
-    assert(a1.typeOpt.get == "integer")
+    assert(a1.maybeType.get == "integer")
     assert(a1.minimum.contains("-100"))
     assert(a1.maximum.contains("100"))
     assert(a1.units == "<p>m</p>")
@@ -118,7 +118,7 @@ class IcdValidatorTests extends FunSuite {
     val a2 = attr1(1)
     assert(a2.name == "a2")
     assert(a2.description == "<p>array of float</p>")
-    assert(a2.typeOpt.get == "array")
+    assert(a2.maybeType.get == "array")
     assert(a2.minItems.contains("5"))
     assert(a2.maxItems.contains("5"))
     assert(a2.units == "<p>mm</p>")
@@ -126,7 +126,7 @@ class IcdValidatorTests extends FunSuite {
     val a3 = attr1(2)
     assert(a3.name == "a3")
     assert(a3.description == "<p>enum choice</p>")
-    assert(a3.enumOpt.get == List("red", "green", "blue"))
+    assert(a3.maybeEnum.get == List("red", "green", "blue"))
     assert(a3.defaultValue == "green")
     // ... XXX TODO continue
   }

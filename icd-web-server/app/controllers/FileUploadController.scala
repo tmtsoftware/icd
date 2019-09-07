@@ -5,17 +5,16 @@ import com.mongodb.MongoTimeoutException
 import com.typesafe.config.ConfigException
 import csw.services.icd.db.StdConfig
 import csw.services.icd.{IcdValidator, Problem, StdName}
-import icd.web.shared.JsonSupport
 import play.api.Environment
 import play.api.mvc._
 import play.api.libs.json._
 import org.webjars.play._
+import play.api.libs.Files
 
 class FileUploadController @Inject()(env: Environment,
                                      webJarAssets: WebJarAssets,
                                      components: ControllerComponents)
-    extends AbstractController(components) {
-  import JsonSupport._
+  extends AbstractController(components) {
 
   private val log = play.Logger.of("application")
   private lazy val db = Application.db
@@ -23,7 +22,7 @@ class FileUploadController @Inject()(env: Environment,
   // Server side of the upload ICD feature.
   // Supported file types: A directory containing icd config files (chrome)
   // or a .zip file containing directories with icd config files.
-  def uploadFiles = Action(parse.multipartFormData) { implicit request =>
+  def uploadFiles: Action[MultipartFormData[Files.TemporaryFile]] = Action(parse.multipartFormData) { implicit request =>
     val files = request.body.files.toList
     try {
       // XXX TODO: Return config parse errors in StdConfig.get with file names!
@@ -49,12 +48,12 @@ class FileUploadController @Inject()(env: Environment,
   }
 
   /**
-    * Uploads/ingests the given API config files
-    *
-    * @param list         list of objects based on uploaded ICD files
-    * @param comment      change comment from user
-    * @return the HTTP result (OK, or NotAcceptable[list of Problems in JSON format])
-    */
+   * Uploads/ingests the given API config files
+   *
+   * @param list    list of objects based on uploaded ICD files
+   * @param comment change comment from user
+   * @return the HTTP result (OK, or NotAcceptable[list of Problems in JSON format])
+   */
   private def ingestConfigs(list: List[StdConfig], comment: String): Result = {
     import net.ceedubs.ficus.Ficus._
     // Get the schema version

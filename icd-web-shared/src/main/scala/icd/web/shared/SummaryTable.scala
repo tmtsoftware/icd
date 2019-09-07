@@ -6,30 +6,27 @@ import icd.web.shared.ComponentInfo.{Alarms, CurrentStates, Events, ObserveEvent
 import icd.web.shared.IcdModels.ComponentModel
 import Headings.idFor
 
+//noinspection DuplicatedCode
 object SummaryTable {
   /**
    * Displays a summary of the events published and commands received by the subsystem
    *
-   * @param subsystemInfo   subsystem to use
-   * @param targetSubsystem optional target subsystem name (for ICD)
-   * @param component       optional subsystem component (restrict output to parts related to this component)
-   * @param targetComponent optional target subsystem component (restrict output to parts related to this component)
-   * @param infoList        list of component info
-   * @param nh              used for numbered headings and TOC, if needed
+   * @param subsystemInfo subsystem to use
+   * @param maybeTargetSv optional target subsystem and version
+   * @param infoList      list of component info
+   * @param nh            used for numbered headings and TOC, if needed
    * @return the HTML
    */
   def displaySummary(subsystemInfo: SubsystemInfo,
-                     targetSubsystem: Option[String],
-                     component: Option[String],
-                     targetComponent: Option[String],
+                     maybeTargetSv: Option[SubsystemWithVersion],
                      infoList: List[ComponentInfo],
                      nh: Headings = new HtmlHeadings): Text.TypedTag[String] = {
     import SummaryInfo._
 
-    val isIcd = targetSubsystem.isDefined
-    val componentPart = component.map("." + _).getOrElse("")
-    val targetComponentPart = targetComponent.map("." + _).getOrElse("")
-    val subsystem = subsystemInfo.subsystem + componentPart
+    val isIcd = maybeTargetSv.isDefined
+    val componentPart = subsystemInfo.sv.maybeComponent.map("." + _).getOrElse("")
+    val targetComponentPart = maybeTargetSv.flatMap(_.maybeComponent.map("." + _)).getOrElse("")
+    val sourceStr = subsystemInfo.sv.subsystem + componentPart
 
     def firstParagraph(s: String): String = {
       val i = s.indexOf("</p>")
@@ -43,10 +40,10 @@ object SummaryTable {
         case "received by" => ("receives", "Receiver", "Senders")
       }
 
-      val targetStr = if (targetSubsystem.isDefined) s" $prep ${targetSubsystem.get}$targetComponentPart" else ""
+      val targetStr = if (maybeTargetSv.isDefined) s" $prep ${maybeTargetSv.get.subsystem}$targetComponentPart" else ""
 
       def linkToSubscriber(subscriber: ComponentModel) = {
-        if ((isIcd && subscriber.subsystem == targetSubsystem.get) || subscriber.subsystem == subsystem)
+        if ((isIcd && subscriber.subsystem == maybeTargetSv.get.subsystem) || subscriber.subsystem == subsystemInfo.sv.subsystem)
           span(a(href := s"#${subscriber.component}")(subscriber.component), " ")
         else
           span(s"${subscriber.subsystem}.${subscriber.component}", " ")
@@ -54,7 +51,7 @@ object SummaryTable {
 
       if (list.isEmpty) div() else {
         div(
-          nh.H3(s"$itemType $heading $subsystem$targetStr"),
+          nh.H3(s"$itemType $heading $sourceStr$targetStr"),
           table(
             thead(
               tr(
@@ -92,10 +89,10 @@ object SummaryTable {
           case "received by" => ("receives", "Receiver", "Senders")
         }
 
-        val target = targetSubsystem.get
+        val target = maybeTargetSv.get.subsystem
 
         div(
-          nh.H3(s"$itemType $heading $target$targetComponentPart $prep $subsystem"),
+          nh.H3(s"$itemType $heading $target$targetComponentPart $prep $sourceStr"),
           table(
             thead(
               tr(
@@ -111,11 +108,11 @@ object SummaryTable {
                 info <- list
               } yield {
                 // If this is an ICD or the publisher is in the same subsystem, we can link to it, since it is in this doc
-                val prefixItem = info.publisherOpt match {
+                val prefixItem = info.maybePublisher match {
                   case Some(componentModel) => span(componentModel.prefix)
                   case None => span()
                 }
-                val description = info.warningOpt match {
+                val description = info.maybeWarning match {
                   case Some(msg) => p(em("Warning: ", msg))
                   case None => raw(firstParagraph(info.item.description))
                 }
@@ -141,9 +138,9 @@ object SummaryTable {
           case "subscribed to by" => ("subscribes", "Subscriber", "Publisher")
           case "sent by" => ("sends", "Sender", "Receiver")
         }
-        val targetStr = if (targetSubsystem.isDefined) s" $prep ${targetSubsystem.get}$targetComponentPart" else ""
+        val targetStr = if (maybeTargetSv.isDefined) s" $prep ${maybeTargetSv.get.subsystem}$targetComponentPart" else ""
         div(
-          nh.H3(s"$itemType $heading $subsystem$targetStr"),
+          nh.H3(s"$itemType $heading $sourceStr$targetStr"),
           table(
             thead(
               tr(
@@ -158,7 +155,7 @@ object SummaryTable {
               for {
                 info <- list
               } yield {
-                val prefixItem = info.publisherOpt match {
+                val prefixItem = info.maybePublisher match {
                   case Some(componentModel) => span(componentModel.prefix)
                   case None => span()
                 }
@@ -173,7 +170,7 @@ object SummaryTable {
                     a(href := s"#${info.publisherComponent}")(prefixItem)
                   else span(prefixItem)
 
-                val description = info.warningOpt match {
+                val description = info.maybeWarning match {
                   case Some(msg) => p(em("Warning: ", msg))
                   case None => raw(firstParagraph(info.item.description))
                 }

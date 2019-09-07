@@ -73,6 +73,7 @@ object HtmlMarkup {
   private val os = new OutputSettings().syntax(OutputSettings.Syntax.xml)
 
   def formatRate(rate: Double): String = if (rate == 0) "" else s"$rate Hz"
+
   def formatRate(compName: String, rate: Double): String = if (rate == 0) "" else s"<strong>$compName:</strong> $rate Hz"
 
   // Strips leading spaces from each line, since people don't realize that indenting is like ``` blocks in markdown.
@@ -158,6 +159,7 @@ object HtmlMarkup {
       val l = for (r <- rows) yield r(i).length
       l.sum != 0
     }
+
     val hh = for {
       (h, i) <- head.zipWithIndex
       if notAllEmpty(rows, i)
@@ -167,9 +169,11 @@ object HtmlMarkup {
     } else {
       val newHead = hh.map(_._1)
       val indexes = hh.map(_._2)
+
       def newRow(row: List[String]): List[String] = {
         row.zipWithIndex.filter(p => indexes.contains(p._2)).map(_._1)
       }
+
       val newRows = rows.map(newRow)
       (newHead, newRows)
     }

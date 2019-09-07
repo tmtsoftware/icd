@@ -13,7 +13,7 @@ import csw.services.icd.StdName._
  * where name is the value returned by StdName.modelBaseName.
  *
  * @param stdName indicates which of the ICD model files the config represents
- * @param config the model file parsed into a Config
+ * @param config  the model file parsed into a Config
  */
 case class StdConfig(stdName: StdName, config: Config)
 
@@ -55,6 +55,7 @@ object StdConfig {
   def get(zipFile: ZipFile): List[StdConfig] = {
     import scala.collection.JavaConverters._
     def isValid(f: ZipEntry) = stdSet.contains(new File(f.getName).getName)
+
     val list = for (e <- zipFile.entries().asScala.filter(isValid)) yield {
       val reader = new InputStreamReader(zipFile.getInputStream(e))
       val config = ConfigFactory.parseReader(reader)

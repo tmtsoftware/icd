@@ -25,19 +25,19 @@ object Components {
   def getComponentInfoId(compName: String): String = compName
 
   /**
-    * Information about a link to a component
-    *
-    * @param subsystem the component's subsystem
-    * @param compName  the component name
-    */
+   * Information about a link to a component
+   *
+   * @param subsystem the component's subsystem
+   * @param compName  the component name
+   */
   case class ComponentLink(subsystem: String, compName: String)
 
   trait ComponentListener {
     /**
-      * Called when a link for the component is clicked
-      *
-      * @param link conatins the component's subsystem and name
-      */
+     * Called when a link for the component is clicked
+     *
+     * @param link conatins the component's subsystem and name
+     */
     def componentSelected(link: ComponentLink): Unit
   }
 
@@ -47,13 +47,13 @@ object Components {
   def yesNo(b: Boolean): String = if (b) "yes" else "no"
 
   /**
-    * Returns a HTML table with the given column headings and list of rows
-    *
-    * @param headings   the table headings
-    * @param rowList    list of row data
-    * @param tableStyle optional table style
-    * @return an html table element
-    */
+   * Returns a HTML table with the given column headings and list of rows
+   *
+   * @param headings   the table headings
+   * @param rowList    list of row data
+   * @param tableStyle optional table style
+   * @return an html table element
+   */
   def mkTable(headings: List[String], rowList: List[List[String]],
               tableStyle: scalacss.StyleA = Styles.emptyStyle): TypedTag[HTMLElement] = {
     import scalatags.JsDom.all._
@@ -87,154 +87,132 @@ object Components {
 }
 
 /**
-  * Manages the component (Assembly, HCD) display
-  *
-  * @param mainContent used to display information about selected components
-  * @param listener    called when the user clicks on a component link in the (subscriber, publisher, etc)
-  */
+ * Manages the component (Assembly, HCD) display
+ *
+ * @param mainContent used to display information about selected components
+ * @param listener    called when the user clicks on a component link in the (subscriber, publisher, etc)
+ */
+//noinspection DuplicatedCode
 case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   import Components._
   import icd.web.shared.JsonSupport._
 
   /**
-    * Gets information about the given components
-    *
-    * @param subsystem       the components' subsystem
-    * @param versionOpt      optional version (default: current version)
-    * @param compNames       list of component names
-    * @param targetSubsystem optional target subsystem and version
-    * @return future list of objects describing the components
-    */
-  private def getComponentInfo(subsystem: String, versionOpt: Option[String], compNames: List[String],
-                               targetSubsystem: SubsystemWithVersion): Future[List[ComponentInfo]] = {
-    Ajax.get(Routes.icdComponentInfo(subsystem, versionOpt, compNames, targetSubsystem)).map { r =>
+   * Gets information about the given components
+   *
+   * @param sv            the subsystem
+   * @param maybeTargetSv optional target subsystem and version
+   * @return future list of objects describing the components
+   */
+  private def getComponentInfo(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): Future[List[ComponentInfo]] = {
+    Ajax.get(Routes.icdComponentInfo(sv, maybeTargetSv)).map { r =>
       val list = Json.fromJson[List[ComponentInfo]](Json.parse(r.responseText)).getOrElse(Nil)
-      if (targetSubsystem.subsystemOpt.isDefined) list.map(ComponentInfo.applyIcdFilter) else list
+      if (maybeTargetSv.isDefined) list.map(ComponentInfo.applyIcdFilter) else list
     }
   }
 
   /**
-    * Gets the list of component names for the given subsystem
-    */
-  private def getComponentNames(sv: SubsystemWithVersion): Future[List[String]] = {
-    if (sv.subsystemOpt.isDefined) {
-      val path = Routes.components(sv.subsystemOpt.get, sv.versionOpt)
-      Ajax.get(path).map { r =>
-        Json.fromJson[List[String]](Json.parse(r.responseText)).get
-      }.recover {
-        case ex =>
-          ex.printStackTrace()
-          Nil
-      }
-    } else Future.successful(Nil)
-  }
-
-  /**
-    * Gets the list of components for the given subsystem and then gets the information for them
-    * @param sv the subsystem
-    * @param targetSubsystem the target subsystem
-    * @return future list of component info
-    */
-  private def getComponentInfo(sv: SubsystemWithVersion, targetSubsystem: SubsystemWithVersion): Future[List[ComponentInfo]] = {
-    sv.subsystemOpt match {
+   * Gets the list of components for the given subsystem and then gets the information for them
+   *
+   * @param maybeSubsystem       optional subsystem
+   * @param maybeTargetSubsystem optional target subsystem
+   * @return future list of component info
+   */
+  private def getComponentInfo(maybeSubsystem: Option[SubsystemWithVersion], maybeTargetSubsystem: Option[SubsystemWithVersion]): Future[List[ComponentInfo]] = {
+    maybeSubsystem match {
       case None =>
         Future.successful(Nil)
-      case Some(subsystem) =>
-        getComponentNames(sv).flatMap(getComponentInfo(subsystem, sv.versionOpt, _, targetSubsystem))
+      case Some(sv) =>
+        getComponentInfo(sv, maybeTargetSubsystem)
     }
   }
 
   // Gets top level subsystem info from the server
-  private def getSubsystemInfo(subsystem: String, versionOpt: Option[String]): Future[SubsystemInfo] = {
-    val path = Routes.subsystemInfo(subsystem, versionOpt)
+  private def getSubsystemInfo(subsystem: String, maybeVersion: Option[String]): Future[SubsystemInfo] = {
+    val path = Routes.subsystemInfo(subsystem, maybeVersion)
     Ajax.get(path).map { r =>
       Json.fromJson[SubsystemInfo](Json.parse(r.responseText)).get
     }
   }
 
   /**
-    * Adds (appends) a list of components to the display, in the order that they are given in the list.
-    *
-    * @param compNames       the names of the components
-    * @param sv              the selected subsystem and version
-    * @param targetSubsystem the target subsystem (might not be set)
-    */
-  def addComponents(compNames: List[String], sv: SubsystemWithVersion, targetSubsystem: SubsystemWithVersion,
-                    icdOpt: Option[IcdVersion]): Future[Unit] = {
+   * Adds (appends) components to the display.
+   *
+   * @param sv                   the selected subsystem, version and optional single component
+   * @param maybeTargetSubsystem optional target subsystem, version, optional component
+   * @param maybeIcd             optional icd version
+   */
+  def addComponents(sv: SubsystemWithVersion,
+                    maybeTargetSubsystem: Option[SubsystemWithVersion],
+                    maybeIcd: Option[IcdVersion]): Future[Unit] = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
-    val isIcd = targetSubsystem.subsystemOpt.isDefined
-    sv.subsystemOpt match {
-      case None => Future.successful()
-      case Some(subsystem) =>
-        val f = for {
-          subsystemInfo <- getSubsystemInfo(subsystem, sv.versionOpt)
-          targetSubsystemInfo <- if (isIcd)
-            getSubsystemInfo(targetSubsystem.subsystemOpt.get, targetSubsystem.versionOpt)
-          else Future.successful(null)
-          infoList <- getComponentInfo(subsystem, sv.versionOpt, compNames, targetSubsystem)
-          targetInfoList <- getComponentInfo(targetSubsystem, sv)
-        } yield {
-          // TODO: Update web app to allow selecting component to component ICDs
-          val titleInfo = TitleInfo(subsystemInfo, targetSubsystem, icdOpt, None, None)
-          val subsystemVersion = subsystemInfo.versionOpt.getOrElse(TitleInfo.unpublished)
-          mainContent.clearContent()
-          mainContent.setTitle(titleInfo.title, titleInfo.subtitleOpt, titleInfo.descriptionOpt)
-          // For ICDs, add the descriptions of the two subsystems at top
-          if (isIcd) {
-            val targetSubsystemVersion = targetSubsystemInfo.versionOpt.getOrElse(TitleInfo.unpublished)
-            mainContent.appendElement(
-              div(Styles.component,
-                p(strong(s"${subsystemInfo.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
-                raw(subsystemInfo.description),
-                p(strong(s"${targetSubsystemInfo.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
-                raw(targetSubsystemInfo.description)
-              ).render
-            )
-          }
-          // XXX TODO: Add support for comp to comp ICD in web app GUI
-          val summaryTable = SummaryTable.displaySummary(subsystemInfo, targetSubsystem.subsystemOpt, None, None, infoList).render
-          mainContent.appendElement(div(Styles.component, id := "Summary")(raw(summaryTable)).render)
-          infoList.foreach(i => displayComponentInfo(i, !isIcd))
-          if (isIcd) targetInfoList.foreach(i => displayComponentInfo(i, forApi = false))
-        }
-        f.onComplete {
-          case Failure(ex) => mainContent.displayInternalError(ex)
-          case _ =>
-        }
-        f
+    val isIcd = maybeTargetSubsystem.isDefined
+    val f = for {
+      subsystemInfo <- getSubsystemInfo(sv.subsystem, sv.maybeVersion)
+      targetSubsystemInfo <- if (isIcd)
+        getSubsystemInfo(maybeTargetSubsystem.get.subsystem, maybeTargetSubsystem.get.maybeVersion)
+      else Future.successful(null) // XXX TODO FIXME
+      infoList <- getComponentInfo(sv, maybeTargetSubsystem)
+      targetInfoList <- getComponentInfo(maybeTargetSubsystem, Some(sv))
+    } yield {
+      // TODO: Update web app to allow selecting component to component ICDs
+      val titleInfo = TitleInfo(subsystemInfo, maybeTargetSubsystem, maybeIcd)
+      val subsystemVersion = sv.maybeVersion.getOrElse(TitleInfo.unpublished)
+      mainContent.clearContent()
+      mainContent.setTitle(titleInfo.title, titleInfo.maybeSubtitle, titleInfo.maybeDescription)
+      // For ICDs, add the descriptions of the two subsystems at top
+      if (isIcd) {
+        val targetSubsystemVersion = maybeTargetSubsystem.map(_.maybeVersion).getOrElse(TitleInfo.unpublished)
+        mainContent.appendElement(
+          div(Styles.component,
+            p(strong(s"${subsystemInfo.sv}: ${subsystemInfo.title} $subsystemVersion")),
+            raw(subsystemInfo.description),
+            p(strong(s"${targetSubsystemInfo.sv}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
+            raw(targetSubsystemInfo.description)
+          ).render
+        )
+      }
+      // XXX TODO: Add support for comp to comp ICD in web app GUI
+      val summaryTable = SummaryTable.displaySummary(subsystemInfo, maybeTargetSubsystem, infoList).render
+      mainContent.appendElement(div(Styles.component, id := "Summary")(raw(summaryTable)).render)
+      infoList.foreach(i => displayComponentInfo(i, !isIcd))
+      if (isIcd) targetInfoList.foreach(i => displayComponentInfo(i, forApi = false))
     }
+    f.onComplete {
+      case Failure(ex) => mainContent.displayInternalError(ex)
+      case _ =>
+    }
+    f
   }
 
+  // XXX TODO FIXME: Is this method still called?
   /**
-    * Adds (appends) a component to the display
-    *
-    * @param compName        the name of the component
-    * @param sv              the selected subsystem
-    * @param targetSubsystem the target subsystem (might not be set)
-    */
-  def addComponent(compName: String, sv: SubsystemWithVersion,
-                   targetSubsystem: SubsystemWithVersion): Unit = {
-    sv.subsystemOpt.foreach { subsystem =>
-      getComponentInfo(subsystem, sv.versionOpt, List(compName), targetSubsystem).map { list =>
-        list.foreach(i => displayComponentInfo(i, targetSubsystem.subsystemOpt.isEmpty))
+   * Adds (appends) a component to the display
+   *
+   * @param sv              the selected subsystem
+   * @param maybeTargetSv optional target subsystem
+   */
+  def addComponent(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): Unit = {
+      getComponentInfo(sv, maybeTargetSv).map { list =>
+        list.foreach(i => displayComponentInfo(i, maybeTargetSv.isEmpty))
       }.recover {
         case ex => mainContent.displayInternalError(ex)
       }
-    }
   }
 
+  // XXX TODO FIXME: Is this method still called?
   /**
-    * Displays only the given component's information, ignoring any filter
-    *
-    * @param sv       the subsystem and version to use for the component
-    * @param compName the name of the component
-    */
+   * Displays only the given component's information, ignoring any filter
+   *
+   * @param sv       the subsystem and version to use for the component
+   * @param compName the name of the component
+   */
   def setComponent(sv: SubsystemWithVersion, compName: String): Unit = {
-    if (sv.subsystemOpt.isDefined) {
-      val path = Routes.componentInfo(sv.subsystemOpt.get, sv.versionOpt, List(compName))
+    val svc = sv.copy(maybeComponent = Some(compName))
+      val path = Routes.componentInfo(svc)
       Ajax.get(path).map { r =>
         val infoList = Json.fromJson[List[ComponentInfo]](Json.parse(r.responseText)).getOrElse(Nil)
         mainContent.clearContent()
@@ -245,7 +223,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         case ex =>
           mainContent.displayInternalError(ex)
       }
-    }
   }
 
   // Removes the component display
@@ -258,10 +235,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
-    * Displays the information for a component, appending to the other selected components, if any.
-    *
-    * @param info contains the information to display
-    */
+   * Displays the information for a component, appending to the other selected components, if any.
+   *
+   * @param info contains the information to display
+   */
   private def displayComponentInfo(info: ComponentInfo, forApi: Boolean): Unit = {
     if (forApi || (info.publishes.isDefined && info.publishes.get.nonEmpty
       || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
@@ -280,12 +257,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
-    * Returns a table of attributes
-    *
-    * @param titleStr       title to display above the table
-    * @param attributesList list of attributes to display
-    * @return
-    */
+   * Returns a table of attributes
+   *
+   * @param titleStr       title to display above the table
+   * @param attributesList list of attributes to display
+   * @return
+   */
   private def attributeListMarkup(titleStr: String, attributesList: List[AttributeModel]): TypedTag[HTMLDivElement] = {
     import scalatags.JsDom.all._
     if (attributesList.isEmpty) div()
@@ -300,12 +277,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
-    * Returns a table of parameters
-    *
-    * @param titleStr       title to display above the table
-    * @param attributesList list of attributes to display
-    * @param requiredArgs   a list of required arguments
-    */
+   * Returns a table of parameters
+   *
+   * @param titleStr       title to display above the table
+   * @param attributesList list of attributes to display
+   * @param requiredArgs   a list of required arguments
+   */
   private def parameterListMarkup(titleStr: String, attributesList: List[AttributeModel], requiredArgs: List[String]): TypedTag[HTMLDivElement] = {
     import scalatags.JsDom.all._
     if (attributesList.isEmpty) div()
@@ -321,10 +298,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
-    * Returns a table listing the attributes of a command result
-    *
-    * @param attributesList list of attributes to display
-    */
+   * Returns a table listing the attributes of a command result
+   *
+   * @param attributesList list of attributes to display
+   */
   private def resultTypeMarkup(attributesList: List[AttributeModel]): TypedTag[HTMLDivElement] = {
     import scalatags.JsDom.all._
     if (attributesList.isEmpty) div()
@@ -339,12 +316,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
-    * Returns a hidden, expandable table row containing the given div item
-    *
-    * @param item    the contents of the table row
-    * @param colSpan the number of columns to span
-    * @return a pair of (button, tr) elements, where the button toggles the visibility of the row
-    */
+   * Returns a hidden, expandable table row containing the given div item
+   *
+   * @param item    the contents of the table row
+   * @param colSpan the number of columns to span
+   * @return a pair of (button, tr) elements, where the button toggles the visibility of the row
+   */
   private def hiddenRowMarkup(item: TypedTag[HTMLDivElement], colSpan: Int): (TypedTag[HTMLButtonElement], TypedTag[HTMLTableRowElement]) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
@@ -365,7 +342,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def formatRate(rate: Double): String = if (rate == 0.0) "" else s"$rate Hz"
 
   // Generates the HTML markup to display the component's publish information
-  private def publishMarkup(compName: String, publishesOpt: Option[Publishes]) = {
+  private def publishMarkup(compName: String, maybePublishes: Option[Publishes]) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
@@ -483,7 +460,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       )
     }
 
-    publishesOpt match {
+    maybePublishes match {
       case None => div()
       case Some(publishes) =>
         if (publishes.nonEmpty) {
@@ -500,7 +477,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Generates the HTML markup to display the component's subscribe information
-  private def subscribeMarkup(compName: String, subscribesOpt: Option[Subscribes]) = {
+  private def subscribeMarkup(compName: String, maybeSubscribes: Option[Subscribes]) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
@@ -587,7 +564,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       )
     }
 
-    subscribesOpt match {
+    maybeSubscribes match {
       case None => div()
       case Some(subscribes) =>
         if (subscribes.subscribeInfo.nonEmpty) {
@@ -735,9 +712,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Generates the markup for the commands section (description plus received and sent)
-  private def commandsMarkup(compName: String, commandsOpt: Option[Commands], forApi: Boolean) = {
+  private def commandsMarkup(compName: String, maybeCommands: Option[Commands], forApi: Boolean) = {
     import scalatags.JsDom.all._
-    commandsOpt match {
+    maybeCommands match {
       case None => div()
       case Some(commands) =>
         if (commands.commandsReceived.isEmpty && commands.commandsSent.isEmpty) div()

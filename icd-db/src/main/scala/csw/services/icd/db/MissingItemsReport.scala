@@ -9,8 +9,8 @@ import icd.web.shared.IcdModels._
 import scalatags.Text
 
 /**
-  * Defines classes used to generate the "missing items" report
-  */
+ * Defines classes used to generate the "missing items" report
+ */
 object MissingItemsReport {
 
   case class PublishedItemInfo(publisherSubsystem: String,
@@ -57,11 +57,12 @@ object MissingItemsReport {
 }
 
 /**
-  * Supports generating a "Missing Items" report.
-  *
-  * @param db      the database to use
-  * @param options command line options used to narrow the scope of the report to given subsystems and components
-  */
+ * Supports generating a "Missing Items" report.
+ *
+ * @param db      the database to use
+ * @param options command line options used to narrow the scope of the report to given subsystems and components
+ */
+//noinspection DuplicatedCode
 case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
 
   import MissingItemsReport._
@@ -83,9 +84,9 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
         p.name))
     }
 
-    // Note that the report always works with the latest, unpublished versions of subsystems
-    val selectedSubsystems = (options.subsystem ++ options.target).toList.map(IcdVersionManager.SubsystemAndVersion(_).subsystem)
-    val selectedComponents = (options.component ++ options.targetComponent).toList
+//    // Note that the report always works with the latest, unpublished versions of subsystems
+//    val selectedSubsystems = (options.subsystem ++ options.target).toList.map(IcdVersionManager.SubsystemAndVersion(_).subsystem)
+//    val selectedComponents = (options.component ++ options.targetComponent).toList
 
     val components = query.getComponents
 
@@ -370,7 +371,7 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
       missingItems.publishedEvents)
     missingPubItemCsv(dir, "Published Observe Events with no Subscribers",
       missingItems.publishedObserveEvents)
-   missingPubItemCsv(dir, "Published Current States with no Subscribers",
+    missingPubItemCsv(dir, "Published Current States with no Subscribers",
       missingItems.publishedCurrentStates)
 
     missingSubItemCsv(dir, "Subscribed Alarms that are not Published Anywhere",
@@ -392,8 +393,8 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
   }
 
   /**
-    * Saves the report in HTML or PDF, depending on the file suffix
-    */
+   * Saves the report in HTML or PDF, depending on the file suffix
+   */
   def saveToFile(file: File): Unit = {
 
     def saveAsHtml(html: String): Unit = {

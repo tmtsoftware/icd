@@ -9,8 +9,8 @@ import play.api.libs.json._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.querki.jquery._
+import org.scalajs.dom.Element
 import org.scalajs.dom.html.Button
-
 import scalatags.JsDom.all._
 
 object VersionHistory {
@@ -32,8 +32,8 @@ object VersionHistory {
 }
 
 /**
-  * Manages the main content section
-  */
+ * Manages the main content section
+ */
 case class VersionHistory(mainContent: MainContent) extends Displayable {
 
   import VersionHistory._
@@ -78,7 +78,7 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
       // Display quoted strings as just the text, but display json objects as objects
       def displayJson(json: String) = {
         if (json.startsWith("\"")) {
-          div(json.substring(1, json.length-1).replace("\\n", "\n").trim.split("\n").map(s => p(s)))
+          div(json.substring(1, json.length - 1).replace("\\n", "\n").trim.split("\n").map(s => p(s)))
         } else {
           pre(code(Styles.unstyledPre, Json.prettyPrint(Json.parse(json))))
         }
@@ -266,5 +266,5 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
     }
   }
 
-  def markup() = contentDiv
+  def markup(): Element = contentDiv
 }

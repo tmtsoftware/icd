@@ -4,8 +4,8 @@ import java.io.{ByteArrayInputStream, File, FileOutputStream, OutputStream}
 import java.nio.charset.Charset
 
 /**
-  * Handles converting an ICD API from HTML to PDF format
-  */
+ * Handles converting an ICD API from HTML to PDF format
+ */
 object IcdToPdf {
 
   import com.itextpdf.tool.xml.XMLWorkerHelper
@@ -47,12 +47,12 @@ object IcdToPdf {
   }
 
   /**
-    * Converts the given HTML to PDF and saves it in the given file.
-    *
-    * @param file     the name of the file in which to save the PDF
-    * @param html     the input doc in HTML format
-    * @param showLogo if true insert the TMT logo
-    */
+   * Converts the given HTML to PDF and saves it in the given file.
+   *
+   * @param file     the name of the file in which to save the PDF
+   * @param html     the input doc in HTML format
+   * @param showLogo if true insert the TMT logo
+   */
   def saveAsPdf(file: File, html: String, showLogo: Boolean): Unit = {
     val out = new FileOutputStream(file)
     saveAsPdf(out, html, showLogo)
@@ -60,12 +60,12 @@ object IcdToPdf {
   }
 
   /**
-    * Converts the given HTML to PDF and saves it in the given file.
-    *
-    * @param out      the output stream in which to save the PDF
-    * @param html     the input doc in HTML format
-    * @param showLogo if true insert the TMT logo
-    */
+   * Converts the given HTML to PDF and saves it in the given file.
+   *
+   * @param out      the output stream in which to save the PDF
+   * @param html     the input doc in HTML format
+   * @param showLogo if true insert the TMT logo
+   */
   def saveAsPdf(out: OutputStream, html: String, showLogo: Boolean): Unit = {
     val document = new Document(PageSize.LETTER)
     val writer = PdfWriter.getInstance(document, out)

@@ -5,8 +5,8 @@ import java.io.File
 import csw.services.icd.db.IcdDbDefaults.{defaultDbName, defaultHost, defaultPort}
 
 /**
-  * Command line options ("icd-db --help" prints a usage message with descriptions of all the options)
-  */
+ * Command line options ("icd-db --help" prints a usage message with descriptions of all the options)
+ */
 case class IcdDbOptions(dbName: String = defaultDbName,
                         host: String = defaultHost,
                         port: Int = defaultPort,

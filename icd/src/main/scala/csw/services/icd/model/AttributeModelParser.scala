@@ -15,8 +15,8 @@ object AttributeModelParser {
   def apply(config: Config): AttributeModel = {
     val name = config.as[Option[String]]("name").getOrElse("")
     val description = config.as[Option[String]]("description").map(HtmlMarkup.gfmToHtml).getOrElse("")
-    val typeOpt = config.as[Option[String]]("type")
-    val enumOpt = config.as[Option[List[String]]]("enum")
+    val maybeType = config.as[Option[String]]("type")
+    val maybeEnum = config.as[Option[List[String]]]("enum")
     val units = config.as[Option[String]]("units").map(HtmlMarkup.gfmToHtml).getOrElse("")
     val maxItems = config.as[Option[String]]("maxItems")
     val minItems = config.as[Option[String]]("minItems")
@@ -48,18 +48,18 @@ object AttributeModelParser {
     // Returns a string describing the given type or enum
     def parseTypeStr(opt: Option[String], itemPath: String = "items", dimPath: String = ""): String = {
       opt match {
-        case Some("array")   => parseArrayTypeStr(itemPath, dimPath)
+        case Some("array") => parseArrayTypeStr(itemPath, dimPath)
         case Some("integer") => numberTypeStr("integer")
-        case Some("number")  => numberTypeStr("double")
-        case Some("short")   => numberTypeStr("short")
-        case Some("long")    => numberTypeStr("long")
-        case Some("float")   => numberTypeStr("float")
-        case Some("double")  => numberTypeStr("double")
-        case Some("byte")    => numberTypeStr("byte")
+        case Some("number") => numberTypeStr("double")
+        case Some("short") => numberTypeStr("short")
+        case Some("long") => numberTypeStr("long")
+        case Some("float") => numberTypeStr("float")
+        case Some("double") => numberTypeStr("double")
+        case Some("byte") => numberTypeStr("byte")
         case Some(otherType) => otherType
-        case None => enumOpt match {
+        case None => maybeEnum match {
           case Some(list) => "enum: (" + list.mkString(", ") + ")"
-          case None       => ""
+          case None => ""
         }
       }
     }
@@ -77,7 +77,7 @@ object AttributeModelParser {
 
     val typeStr = parseTypeStr(config.as[Option[String]]("type"))
 
-    AttributeModel(name, description, typeOpt, enumOpt, units,
+    AttributeModel(name, description, maybeType, maybeEnum, units,
       maxItems, minItems, minimum, maximum, exclusiveMinimum, exclusiveMaximum,
       defaultValue, typeStr)
   }

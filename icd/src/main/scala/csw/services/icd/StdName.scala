@@ -6,11 +6,11 @@ import java.io.File
  * Standard file names expected for a complete ICD API description
  */
 object StdName {
-  val subsystemFileNames = StdName("subsystem-model.conf", "subsystem-schema.conf")
-  val componentFileNames = StdName("component-model.conf", "component-schema.conf")
-  val publishFileNames = StdName("publish-model.conf", "publish-schema.conf")
-  val subscribeFileNames = StdName("subscribe-model.conf", "subscribe-schema.conf")
-  val commandFileNames = StdName("command-model.conf", "command-schema.conf")
+  val subsystemFileNames: StdName = StdName("subsystem-model.conf", "subsystem-schema.conf")
+  val componentFileNames: StdName = StdName("component-model.conf", "component-schema.conf")
+  val publishFileNames: StdName = StdName("publish-model.conf", "publish-schema.conf")
+  val subscribeFileNames: StdName = StdName("subscribe-model.conf", "subscribe-schema.conf")
+  val commandFileNames: StdName = StdName("command-model.conf", "command-schema.conf")
 
   /**
    * List of standard ICD files and schemas
@@ -20,7 +20,7 @@ object StdName {
   /**
    * Set of standard ICD file names
    */
-  val stdSet = stdNames.map(_.name).toSet
+  val stdSet: Set[String] = stdNames.map(_.name).toSet
 
   /**
    * True if the argument is a directory containing icd files with the standard names
@@ -37,9 +37,10 @@ case class StdName(name: String, schema: String) {
   /**
    * Base name: For example icd, component, publish, etc.
    */
-  val modelBaseName = name.substring(0, name.length - 11)
+  val modelBaseName: String = name.substring(0, name.length - 11)
 
-  def isSubsystemModel = modelBaseName == "subsystem"
-  def isComponentModel = modelBaseName == "component"
+  def isSubsystemModel: Boolean = modelBaseName == "subsystem"
+
+  def isComponentModel: Boolean = modelBaseName == "component"
 }
 

@@ -8,39 +8,39 @@ import icd.web.shared._
  * Support for creating instances of the shared (scala/scala.js) ComponentInfo class.
  * (This code can't be shared, since it accesses the database, which is on the server.)
  */
+//noinspection DuplicatedCode
 object ComponentInfoHelper {
 
   /**
-   * Query the database for information about the given components
+   * Query the database for information about the subsystem's components
    *
-   * @param db         used to access the database
-   * @param subsystem  the subsystem containing the component
-   * @param versionOpt the version of the subsystem to use (determines the version of the component):
-   *                   None for unpublished working version
-   * @param compNames  list of component names to get information about
+   * @param db used to access the database
+   * @param sv the subsystem
    * @return a list of objects containing information about the components
    */
-  def getComponentInfoList(db: IcdDb, subsystem: String, versionOpt: Option[String], compNames: List[String]): List[ComponentInfo] = {
+  def getComponentInfoList(db: IcdDb, sv: SubsystemWithVersion): List[ComponentInfo] = {
     // Use caching, since we need to look at all the components multiple times, in order to determine who
     // subscribes, who calls commands, etc.
     val query = new CachedIcdDbQuery(db.db)
-    compNames.flatMap(getComponentInfo(query, subsystem, versionOpt, _))
+    val compNames = sv.maybeComponent match {
+      case None => db.versionManager.getComponentNames(sv)
+      case Some(compName) => List(compName)
+    }
+    compNames.flatMap(component => getComponentInfo(query,
+      SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component))))
   }
 
   /**
    * Query the database for information about the given component
    *
-   * @param query      used to access the database
-   * @param subsystem  the subsystem containing the component
-   * @param versionOpt the version of the subsystem to use (determines the version of the component):
-   *                   None for unpublished working version
-   * @param compName   the component name
+   * @param query    used to access the database
+   * @param sv       the subsystem and component
    * @return an object containing information about the component, if found
    */
-  def getComponentInfo(query: IcdDbQuery, subsystem: String, versionOpt: Option[String], compName: String): Option[ComponentInfo] = {
+  def getComponentInfo(query: IcdDbQuery, sv: SubsystemWithVersion): Option[ComponentInfo] = {
     // get the models for this component
     val versionManager = IcdVersionManager(query.db, query)
-    val modelsList = versionManager.getModels(subsystem, versionOpt, Some(compName))
+    val modelsList = versionManager.getModels(sv)
     modelsList.headOption.flatMap { icdModels =>
       val componentModel = icdModels.componentModel
       val publishes = getPublishes(query, icdModels)

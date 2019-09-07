@@ -13,5 +13,6 @@ class CachedIcdVersionManager(query: IcdDbQuery) extends IcdVersionManager(query
   private val collectionNames = query.getCollectionNames
 
   override def getCollectionNames: Set[String] = collectionNames
+
   override def collectionExists(name: String): Boolean = collectionNames.contains(name)
 }

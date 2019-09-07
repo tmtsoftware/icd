@@ -37,16 +37,16 @@ object Settings {
     resolvers += "jitpack" at "https://jitpack.io",
 
     //    resolvers += Resolver.typesafeRepo("releases"),
-//    resolvers += Resolver.sonatypeRepo("releases"),
-//    resolvers += sbtResolver.value,
-//    resolvers += "Scalaz Bintray Repo" at "https://dl.bintray.com/scalaz/releases",
-//    resolvers += Resolver.jcenterRepo
+    //    resolvers += Resolver.sonatypeRepo("releases"),
+    //    resolvers += sbtResolver.value,
+    //    resolvers += "Scalaz Bintray Repo" at "https://dl.bintray.com/scalaz/releases",
+    //    resolvers += Resolver.jcenterRepo
   )
 
   // Using java8
   lazy val defaultSettings = buildSettings ++ Seq(
     scalacOptions ++= Seq("-encoding", "UTF-8", "-feature", "-deprecation", "-unchecked"),
-    javacOptions in (Compile, compile) ++= Seq("-Xlint:unchecked", "-Xlint:deprecation"),
+    javacOptions in(Compile, compile) ++= Seq("-Xlint:unchecked", "-Xlint:deprecation"),
     bashScriptExtraDefines ++= Seq(s"addJava -DICD_VERSION=${Dependencies.Version}")
   )
 

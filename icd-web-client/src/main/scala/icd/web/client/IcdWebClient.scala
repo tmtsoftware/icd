@@ -19,11 +19,12 @@ import IcdChooser._
 import Components._
 
 /**
-  * Main class for the ICD web app.
-  *
-  * @param csrfToken         server token used for file upload (for security)
-  * @param inputDirSupported true if uploading directories is supported (currently only for Chrome)
-  */
+ * Main class for the ICD web app.
+ *
+ * @param csrfToken         server token used for file upload (for security)
+ * @param inputDirSupported true if uploading directories is supported (currently only for Chrome)
+ */
+//noinspection DuplicatedCode
 @JSExportTopLevel("IcdWebClient")
 case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
@@ -96,13 +97,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Update the list of Subsystem options
   private def updateSubsystemOptions(items: List[String]): Unit = {
     subsystem.updateSubsystemOptions(items)
-    subsystem.getSelectedSubsystem match {
-      case Some(subsys) =>
-        targetSubsystem.updateSubsystemOptions(items)
-        targetSubsystem.disableOption(subsys)
-      case None =>
-        targetSubsystem.updateSubsystemOptions(items)
-    }
+    targetSubsystem.updateSubsystemOptions(items)
   }
 
   // Hide or show the sidebar
@@ -124,19 +119,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Listener for sidebar component checkboxes
   private object LeftSidebarListener extends SidebarListener {
-    override def componentCheckboxChanged(componentName: String, checked: Boolean): Unit = {
-      if (checked)
-        components.addComponent(
-          componentName,
-          subsystem.getSubsystemWithVersion,
-          targetSubsystem.getSubsystemWithVersion
-        )
-      else
-        components.removeComponentInfo(componentName)
-
-      pushState(viewType = ComponentView)
-    }
-
     // Called when a component link is selected in the sidebar
     override def componentSelected(componentName: String): Unit = {
       goToComponent(componentName)
@@ -145,23 +127,24 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   /**
-    * Called when a component is selected in one of the publisher/subscriber/command tables.
-    * If the linked subsystem is the source or target subsystem, use the component from the
-    * selected version of the subsystem, otherwise use the latest version.
-    */
+   * Called when a component is selected in one of the publisher/subscriber/command tables.
+   * If the linked subsystem is the source or target subsystem, use the component from the
+   * selected version of the subsystem, otherwise use the latest version.
+   */
   private object ComponentLinkSelectionHandler extends ComponentListener {
     def componentSelected(link: ComponentLink): Unit = {
-      val source = subsystem.getSubsystemWithVersion
-      val target = targetSubsystem.getSubsystemWithVersion
-      val sv = Some(link.subsystem) match {
-        case source.subsystemOpt => source
-        case target.subsystemOpt => target
-        case _ => SubsystemWithVersion(Some(link.subsystem), None)
+      val maybeSv = subsystem.getSubsystemWithVersion
+      val maybeTargetSv = targetSubsystem.getSubsystemWithVersion
+      val maybeSubsystem = maybeSv.map(_.subsystem)
+      val maybeTargetSubsystem = maybeTargetSv.map(_.subsystem)
+      val maybeLinkSv = Some(link.subsystem) match {
+        case `maybeSubsystem` => maybeSv
+        case `maybeTargetSubsystem` => maybeTargetSv
+        case _ => Some(SubsystemWithVersion(link.subsystem, None, None))
       }
-      val newTarget = SubsystemWithVersion(None, None)
       for {
-        _ <- targetSubsystem.setSubsystemWithVersion(newTarget, saveHistory = false)
-        _ <- subsystem.setSubsystemWithVersion(sv, saveHistory = false)
+        _ <- targetSubsystem.setSubsystemWithVersion(None, saveHistory = false)
+        _ <- subsystem.setSubsystemWithVersion(maybeLinkSv, saveHistory = false)
       } yield {
         goToComponent(link.compName)
         pushState(viewType = ComponentView, compName = Some(link.compName), replace = true)
@@ -181,19 +164,18 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   /**
-    * Push (or replace) the current app state for the browser history.
-    * (Replace is needed if the browser is following a link, in which case the browser automatically pushes something
-    * on the stack that we don't want.)
-    *
-    * If a single component is selected, it should be passed as compName.
-    */
+   * Push (or replace) the current app state for the browser history.
+   * (Replace is needed if the browser is following a link, in which case the browser automatically pushes something
+   * on the stack that we don't want.)
+   *
+   * If a single component is selected, it should be passed as compName.
+   */
   private def pushState(viewType: ViewType, compName: Option[String] = None, replace: Boolean = false): Unit = {
     val hist = BrowserHistory(
       subsystem.getSubsystemWithVersion,
       targetSubsystem.getSubsystemWithVersion,
       icdChooser.getSelectedIcdVersion,
-      sidebar.getSelectedComponents,
-      viewType = viewType,
+      viewType,
       compName
     )
 
@@ -205,24 +187,25 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   /**
-    * Called when the user presses the Back button in the browser
-    */
+   * Called when the user presses the Back button in the browser
+   */
   private def popState(e: PopStateEvent): Unit = {
     BrowserHistory.popState(e).foreach { hist =>
       e.preventDefault()
       // Make sure to wait for futures to complete, so things happen in the right order
       for {
-        _ <- subsystem.setSubsystemWithVersion(hist.sourceSubsystem, saveHistory = false)
-        _ <- targetSubsystem.setSubsystemWithVersion(hist.targetSubsystem, saveHistory = false)
-        _ <- icdChooser.setIcdWithVersion(hist.icdOpt, saveHistory = false)
+        _ <- subsystem.setSubsystemWithVersion(hist.maybeSourceSubsystem, saveHistory = false)
+        _ <- targetSubsystem.setSubsystemWithVersion(hist.maybeTargetSubsystem, saveHistory = false)
+        _ <- icdChooser.setIcdWithVersion(hist.maybeIcd, saveHistory = false)
       } {
-        sidebar.setSelectedComponents(hist.sourceComponents)
         hist.viewType match {
           case UploadView => uploadSelected(saveHistory = false)()
           case VersionView => showVersionHistory(saveHistory = false)()
           case ComponentView | IcdView =>
-            updateComponentDisplay(hist.sourceSubsystem, hist.targetSubsystem, hist.sourceComponents).foreach { _ =>
-              hist.currentCompnent.foreach(compName => goToComponent(compName, replace = true))
+            hist.maybeSourceSubsystem.foreach { sv =>
+              updateComponentDisplay(sv, hist.maybeTargetSubsystem).foreach { _ =>
+                hist.currentCompnent.foreach(compName => goToComponent(compName, replace = true))
+              }
             }
         }
       }
@@ -237,23 +220,26 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   /**
-    * Updates the main display to match the selected components
-    *
-    * @return a future indicating when the changes are done
-    */
-  private def updateComponentDisplay(sv: SubsystemWithVersion, targetSv: SubsystemWithVersion, compNames: List[String]): Future[Unit] = {
-    val icdOpt = icdChooser.getSelectedIcdVersion
+   * Updates the main display to match the selected subsystem and component(s)
+   *
+   * @return a future indicating when the changes are done
+   */
+  private def updateComponentDisplay(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): Future[Unit] = {
+    val maybeIcd = icdChooser.getSelectedIcdVersion
     setSidebarVisible(true)
     mainContent.clearContent()
     showBusyCursorWhile {
-      components.addComponents(compNames, sv, targetSv, icdOpt)
+      components.addComponents(sv, maybeTargetSv, maybeIcd)
     }
   }
 
   // Gets the list of subcomponents for the selected subsystem
+  // XXX TODO FIXME: Is this needed? Done on the server side!
   private def getComponentNames(sv: SubsystemWithVersion): Future[List[String]] = {
-    if (sv.subsystemOpt.isDefined) {
-      val path = Routes.components(sv.subsystemOpt.get, sv.versionOpt)
+    if (sv.maybeComponent.isDefined) {
+      Future(List(sv.maybeComponent.get))
+    } else {
+      val path = Routes.components(sv.subsystem, sv.maybeVersion)
       Ajax.get(path).map { r =>
         Json.fromJson[List[String]](Json.parse(r.responseText)).get
       }.recover {
@@ -261,124 +247,101 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
           mainContent.displayInternalError(ex)
           Nil
       }
-    } else Future.successful(Nil)
+    }
   }
 
   private object UI {
     def setEnabled(enabled: Boolean): Unit = {
-      subsystem.setEnabled(enabled)
       subsystemSwapper.setEnabled(enabled)
-      targetSubsystem.setEnabled(enabled)
       icdChooser.setEnabled(enabled)
     }
   }
 
+  // XXX TODO FIXME: Replace for {} with async?
   private object SourceSubsystemListener extends SubsystemListener {
     // Called when the source subsystem (or version) combobox selection is changed
-    override def subsystemSelected(sv: SubsystemWithVersion, saveHistory: Boolean): Future[Unit] = {
+    override def subsystemSelected(maybeSv: Option[SubsystemWithVersion], saveHistory: Boolean): Future[Unit] = {
       sidebar.clearComponents()
       mainContent.clearContent()
-      sv.subsystemOpt match {
-        case Some(selectedSubsystem) =>
-          // Target subsystem can't be the same as the selected subsystem
-          targetSubsystem.setAllOptionsEnabled()
-          targetSubsystem.disableOption(selectedSubsystem)
-          UI.setEnabled(false)
-          val targetSv = targetSubsystem.getSubsystemWithVersion
-          for {
-            _ <- icdChooser.selectMatchingIcd(sv, targetSv)
-            names <- getComponentNames(sv)
-            _ <- Future.successful {
-              names.foreach(sidebar.addComponent)
-            }
-            _ <- updateComponentDisplay(sv, targetSv, names)
-          } yield {
-            if (saveHistory) pushState(viewType = ComponentView) else ()
-            UI.setEnabled(true)
+      // Target subsystem can't be the same as the selected subsystem
+      UI.setEnabled(false)
+      val maybeTargetSv = targetSubsystem.getSubsystemWithVersion
+      maybeSv.map {sv =>
+        for {
+          _ <- icdChooser.selectMatchingIcd(sv, maybeTargetSv)
+          names <- getComponentNames(sv)
+          _ <- Future.successful {
+            names.foreach(sidebar.addComponent)
           }
-        case None =>
-          targetSubsystem.setAllOptionsEnabled()
-          Future.successful()
-      }
+          _ <- updateComponentDisplay(sv, maybeTargetSv)
+        } yield {
+          if (saveHistory) pushState(viewType = ComponentView) else ()
+          UI.setEnabled(true)
+        }
+      }.getOrElse(Future.successful())
     }
   }
 
   private object TargetSubsystemListener extends SubsystemListener {
     // Called when the target subsystem or version combobox selection is changed
-    override def subsystemSelected(targSv: SubsystemWithVersion, saveHistory: Boolean): Future[Unit] = {
-      // Target subsystem can't be the same as the selected subsystem
-      targSv.subsystemOpt match {
-        case Some(selectedTarget) =>
-          subsystem.setAllOptionsEnabled()
-          subsystem.disableOption(selectedTarget)
-        case None =>
-          subsystem.setAllOptionsEnabled()
-      }
-      val sv = subsystem.getSubsystemWithVersion
+    override def subsystemSelected(maybeTargSv: Option[SubsystemWithVersion], saveHistory: Boolean): Future[Unit] = {
+      val maybeSv = subsystem.getSubsystemWithVersion
       UI.setEnabled(false)
-      for {
-        _ <- icdChooser.selectMatchingIcd(sv, targSv)
-        _ <- updateComponentDisplay(sv, targSv, sidebar.getSelectedComponents)
-      } yield {
-        if (saveHistory) pushState(viewType = ComponentView)
-        UI.setEnabled(true)
-      }
+      maybeSv.map {sv =>
+        for {
+          _ <- icdChooser.selectMatchingIcd(sv, maybeTargSv)
+          _ <- updateComponentDisplay(sv, maybeTargSv)
+        } yield {
+          if (saveHistory) pushState(viewType = ComponentView)
+          UI.setEnabled(true)
+        }
+      }.getOrElse(Future.successful())
     }
   }
 
   // Swap source and target subsystems
   private def swapSubsystems(): Unit = {
-    val sv2 = targetSubsystem.getSubsystemWithVersion
-    if (sv2.subsystemOpt.isDefined) {
-      val sv1 = subsystem.getSubsystemWithVersion
+    for {
+      sv2 <- targetSubsystem.getSubsystemWithVersion
+      sv1 <- subsystem.getSubsystemWithVersion
+    } {
       sidebar.clearComponents()
       mainContent.clearContent()
       UI.setEnabled(false)
       for {
-        _ <- icdChooser.selectMatchingIcd(sv2, sv1)
-        _ <- targetSubsystem.setSubsystemWithVersion(sv1, notifyListener = false, saveHistory = false)
-        _ <- subsystem.setSubsystemWithVersion(sv2)
+        _ <- icdChooser.selectMatchingIcd(sv2, Some(sv1))
+        _ <- targetSubsystem.setSubsystemWithVersion(Some(sv1), notifyListener = false, saveHistory = false)
+        _ <- subsystem.setSubsystemWithVersion(Some(sv2))
       } {
         UI.setEnabled(true)
-        sv1.subsystemOpt match {
-          case Some(selectedTarget) =>
-            subsystem.setAllOptionsEnabled()
-            subsystem.disableOption(selectedTarget)
-          case None =>
-            subsystem.setAllOptionsEnabled()
-        }
       }
     }
   }
 
   private object IcdChooserListener extends IcdListener {
     // Called when the ICD (or ICD version) combobox selection is changed
-    override def icdSelected(icdVersionOpt: Option[IcdVersion], saveHistory: Boolean = true): Future[Unit] = {
-      icdVersionOpt match {
+    override def icdSelected(maybeIcdVersion: Option[IcdVersion], saveHistory: Boolean = true): Future[Unit] = {
+      maybeIcdVersion match {
         case Some(icdVersion) =>
-          val sv = SubsystemWithVersion(Some(icdVersion.subsystem), Some(icdVersion.subsystemVersion))
-          val tv = SubsystemWithVersion(Some(icdVersion.target), Some(icdVersion.targetVersion))
+          // XXX TODO FIXME add optional selected component
+          val sv = SubsystemWithVersion(icdVersion.subsystem, Some(icdVersion.subsystemVersion), None)
+          val targetSv = SubsystemWithVersion(icdVersion.target, Some(icdVersion.targetVersion), None)
           UI.setEnabled(false)
           for {
-            _ <- subsystem.setSubsystemWithVersion(sv, notifyListener = false, saveHistory = false)
-            _ <- targetSubsystem.setSubsystemWithVersion(tv, notifyListener = false, saveHistory = false)
+            _ <- subsystem.setSubsystemWithVersion(Some(sv), notifyListener = false, saveHistory = false)
+            _ <- targetSubsystem.setSubsystemWithVersion(Some(targetSv), notifyListener = false, saveHistory = false)
           } yield {
-            // Prevent selecting the same subsystem for source and target
-            subsystem.setAllOptionsEnabled()
-            subsystem.disableOption(icdVersion.target)
-            targetSubsystem.setAllOptionsEnabled()
-            targetSubsystem.disableOption(icdVersion.subsystem)
             // Update the display
             sidebar.clearComponents()
             mainContent.clearContent()
             val f = getComponentNames(sv).flatMap { names => // Future!
-                names.foreach(sidebar.addComponent)
-                updateComponentDisplay(sv, tv, names).map { _ =>
-                  if (saveHistory) pushState(viewType = IcdView)
-                }
+              names.foreach(sidebar.addComponent)
+              updateComponentDisplay(sv, Some(targetSv)).map { _ =>
+                if (saveHistory) pushState(viewType = IcdView)
+              }
             }
             f.onComplete {
-              _ =>  UI.setEnabled(true)
+              _ => UI.setEnabled(true)
             }
           }
         case None => Future.successful()
@@ -411,12 +374,11 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Gets a PDF of the currently selected ICD or subsystem API
   private def makePdf(): Unit = {
-    val sv = subsystem.getSubsystemWithVersion
-    sv.subsystemOpt.foreach { subsys =>
-      val compNames = sidebar.getSelectedComponents
-      val tv = targetSubsystem.getSubsystemWithVersion
-      val icdVersion = icdChooser.getSelectedIcdVersion.map(_.icdVersion)
-      val uri = Routes.icdAsPdf(subsys, sv.versionOpt, compNames, tv, icdVersion)
+    val maybeSv = subsystem.getSubsystemWithVersion
+    maybeSv.foreach { sv =>
+      val maybeTargetSv = targetSubsystem.getSubsystemWithVersion
+      val maybeIcdVersion = icdChooser.getSelectedIcdVersion.map(_.icdVersion)
+      val uri = Routes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion)
       // dom.window.location.assign(uri) // opens in same window
       dom.window.open(uri) // opens in new window or tab
     }

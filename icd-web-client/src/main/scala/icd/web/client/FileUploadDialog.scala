@@ -185,16 +185,16 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
       p(dirMsg),
       form(id := "upload", action := "/upload", attr("role") := "form",
         attr("method") := "POST", attr("enctype") := "multipart/form-data")(
-          input(`type` := "hidden", name := "csrfToken", value := csrfToken, accept := acceptSuffix),
-          div(cls := "panel panel-info")(
-            div(cls := "panel-body")(
-              div(label(s"$dirLabel to upload:")(inputItem)),
-              div(cls := "hide")(
-                button(`type` := "submit")("Upload Files")
-              )
+        input(`type` := "hidden", name := "csrfToken", value := csrfToken, accept := acceptSuffix),
+        div(cls := "panel panel-info")(
+          div(cls := "panel-body")(
+            div(label(s"$dirLabel to upload:")(inputItem)),
+            div(cls := "hide")(
+              button(`type` := "submit")("Upload Files")
             )
           )
-        ),
+        )
+      ),
       div(cls := "progress")(
         div(id := "progress", cls := "progress-bar progress-bar-info progress-bar-striped",
           role := "progressbar", attr("aria-valuenow") := "0", attr("aria-valuemin") := "0",

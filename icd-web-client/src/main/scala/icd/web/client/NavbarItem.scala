@@ -4,6 +4,7 @@ import org.scalajs.dom._
 
 /**
  * A simple navbar item with the given label.
+ *
  * @param labelStr the label to display
  * @param listener called when the item is clicked
  */

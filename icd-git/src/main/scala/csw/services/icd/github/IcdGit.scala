@@ -4,9 +4,10 @@ import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.db.{IcdDb, IcdDbDefaults, IcdVersionManager}
 
 /**
-  * Implements the icd-git command line application, which is used to manage ICD versions in Git and
-  * support importing from Git into the ICD database.
-  */
+ * Implements the icd-git command line application, which is used to manage ICD versions in Git and
+ * support importing from Git into the ICD database.
+ */
+//noinspection DuplicatedCode
 object IcdGit extends App {
 
   // Default user name if none given
@@ -16,8 +17,8 @@ object IcdGit extends App {
   private val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
 
   /**
-    * Command line options ("icd-git --help" prints a usage message with descriptions of all the options)
-    */
+   * Command line options ("icd-git --help" prints a usage message with descriptions of all the options)
+   */
   private case class Options(list: Boolean = false,
                              subsystems: List[SubsystemAndVersion] = Nil,
                              icdVersion: Option[String] = None,
@@ -202,12 +203,12 @@ object IcdGit extends App {
 
     val ingestAll = if (options.ingest) askIngestAll(options) else false
     val isIcd = options.publish && (options.subsystems.size == 2 || askIfPublishingAnIcd())
-    val subsysOpt = if (options.ingest && ingestAll) None else readSubsystemAndVersion(options.subsystems.headOption, "first", options.publish && isIcd)
+    val maybeSubsys = if (options.ingest && ingestAll) None else readSubsystemAndVersion(options.subsystems.headOption, "first", options.publish && isIcd)
     val needsTarget = options.publish || options.unpublish || options.list || (options.ingest && !ingestAll)
     val t = if (options.subsystems.size > 1) options.subsystems.tail.headOption else None
-    val targetOpt = if (needsTarget && isIcd) readSubsystemAndVersion(t, "second", options.publish) else t
+    val maybeTarget = if (needsTarget && isIcd) readSubsystemAndVersion(t, "second", options.publish) else t
     val rest = if (options.subsystems.size > 2) options.subsystems.tail.tail else Nil
-    val subsysList = (subsysOpt ++ targetOpt ++ rest).toList
+    val subsysList = (maybeSubsys ++ maybeTarget ++ rest).toList
     val icdVersion = if (options.unpublish) readIcdVersion(options.copy(subsystems = subsysList)) else options.icdVersion
     val needsPassword = options.publish || options.unpublish
     val (user, password) = if (needsPassword) readCredentials(options) else (options.user, options.password)
@@ -268,7 +269,7 @@ object IcdGit extends App {
       val sv = SubsystemAndVersion(subsystem)
       val api = IcdGitManager.unpublish(sv, user, password, comment)
       if (api.isEmpty) {
-        sv.versionOpt match {
+        sv.maybeVersion match {
           case Some(version) =>
             error(s"API version $version for $subsystem does not exist")
           case None =>
@@ -293,15 +294,15 @@ object IcdGit extends App {
     if (options.subsystems.size == 1) {
       // publish subsystem API
       val sv = options.subsystems.head
-      if (sv.versionOpt.isDefined) error(s"Invalid use of :version in ${sv.subsystem}:${sv.versionOpt}")
+      if (sv.maybeVersion.isDefined) error(s"Invalid use of :version in ${sv.subsystem}:${sv.maybeVersion}")
       val info = IcdGitManager.publish(sv.subsystem, options.majorVersion, user, password, comment)
       println(s"Created API version ${info.version} of ${sv.subsystem}")
     } else if (options.subsystems.size == 2) {
       // publish ICD between two subsystems
       val sv = options.subsystems.head
-      val tv = options.subsystems.tail.head
+      val targetSv = options.subsystems.tail.head
       val info = IcdGitManager.publish(options.subsystems, options.majorVersion, user, password, comment)
-      println(s"Created ICD version ${info.icdVersion.icdVersion} based on $sv and $tv")
+      println(s"Created ICD version ${info.icdVersion.icdVersion} based on $sv and $targetSv")
     }
   }
 

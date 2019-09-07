@@ -106,11 +106,11 @@ object IcdDbQuery {
    * @param path               the path name (component-prefix.name) of the item being subscribed to
    */
   case class Subscribed(
-    component:          ComponentModel,
-    subscribeModelInfo: SubscribeModelInfo,
-    subscribeType:      PublishType,
-    path:               String
-  )
+                         component: ComponentModel,
+                         subscribeModelInfo: SubscribeModelInfo,
+                         subscribeType: PublishType,
+                         path: String
+                       )
 
   implicit def toDbObject(query: (String, Any)): DBObject = MongoDBObject(query)
 
@@ -131,6 +131,7 @@ object IcdDbQuery {
  *
  * @param db the MongoDB handle
  */
+//noinspection DuplicatedCode
 case class IcdDbQuery(db: MongoDB) {
 
   import IcdDbQuery._
@@ -346,7 +347,7 @@ case class IcdDbQuery(db: MongoDB) {
     for {
       componentModel <- getComponents
       commandModel <- getCommandModel(componentModel)
-      sendCommandModel <- commandModel.send.find(s =>
+      _ <- commandModel.send.find(s =>
         s.subsystem == subsystem && s.component == component && s.name == commandName)
     } yield componentModel
   }

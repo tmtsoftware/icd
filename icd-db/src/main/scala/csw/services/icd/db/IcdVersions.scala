@@ -10,17 +10,18 @@ object IcdVersions extends DefaultJsonProtocol {
 
   /**
    * Describes a single ICD version between two subsystems
+   *
    * @param icdVersion the version of the ICD
-   * @param versions the versions of the two subsystems
-   * @param user the user that made the version
-   * @param comment a comment describing the version
-   * @param date the date the version was made
+   * @param versions   the versions of the two subsystems
+   * @param user       the user that made the version
+   * @param comment    a comment describing the version
+   * @param date       the date the version was made
    */
   case class IcdEntry(icdVersion: String, versions: List[String], user: String, comment: String, date: String)
 
   // JSON support
-  implicit val icdEntryFormat = jsonFormat5(IcdEntry.apply)
-  implicit val icdVersionsFormat = jsonFormat2(IcdVersions.apply)
+  implicit val icdEntryFormat: RootJsonFormat[IcdEntry] = jsonFormat5(IcdEntry.apply)
+  implicit val icdVersionsFormat: RootJsonFormat[IcdVersions] = jsonFormat2(IcdVersions.apply)
 
   /**
    * Creates an IcdVersions object from a string in JSON format
@@ -38,20 +39,21 @@ case class IcdVersions(subsystems: List[String], icds: List[IcdVersions.IcdEntry
  * (Be careful to make any changes backward compatible, once in production!)
  */
 object ApiVersions extends DefaultJsonProtocol {
+
   /**
    * Describes a single subsystem API version
    *
    * @param version the version of the subsystem API
-   * @param commit the git commit id to use for this version
-   * @param user the user that made the version
+   * @param commit  the git commit id to use for this version
+   * @param user    the user that made the version
    * @param comment a comment describing the version
-   * @param date the date the version was made
+   * @param date    the date the version was made
    */
   case class ApiEntry(version: String, commit: String, user: String, comment: String, date: String)
 
   // JSON support
-  implicit val apiEntryFormat = jsonFormat5(ApiEntry.apply)
-  implicit val apiVersionsFormat = jsonFormat2(ApiVersions.apply)
+  implicit val apiEntryFormat: RootJsonFormat[ApiEntry] = jsonFormat5(ApiEntry.apply)
+  implicit val apiVersionsFormat: RootJsonFormat[ApiVersions] = jsonFormat2(ApiVersions.apply)
 
   /**
    * Creates an IcdVersions object from a string in JSON format

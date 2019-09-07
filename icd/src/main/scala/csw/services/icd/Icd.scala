@@ -7,7 +7,9 @@ import com.typesafe.config.{ConfigResolveOptions, ConfigFactory}
 /**
  * An ICD API validator application
  */
+//noinspection DuplicatedCode
 object Icd extends App {
+
   import csw.services.icd.IcdValidator._
 
   /**
@@ -15,11 +17,11 @@ object Icd extends App {
    * (Some options may be abbreviated to a single letter: -i, -s, -o)
    */
   case class Options(
-    validateDir: Option[File] = None,
-    inputFile:   Option[File] = None,
-    schemaFile: Option[File] = None,
-    outputFile: Option[File] = None
-  )
+                      validateDir: Option[File] = None,
+                      inputFile: Option[File] = None,
+                      schemaFile: Option[File] = None,
+                      outputFile: Option[File] = None
+                    )
 
   private val parser = new scopt.OptionParser[Options]("icd") {
     head("icd", System.getProperty("ICD_VERSION"))
@@ -34,7 +36,8 @@ object Icd extends App {
 
     opt[File]('s', "schema") valueName "<jsonSchemaFile>" action { (x, c) =>
       c.copy(schemaFile = Some(x))
-    } text s"""JSON schema file to use to validate the input file, assumed to be in HOCON (*.conf) or JSON (*.json) format
+    } text
+      s"""JSON schema file to use to validate the input file, assumed to be in HOCON (*.conf) or JSON (*.json) format
          |        (Default uses schema based on input file name (${StdName.stdSet.mkString(", ")})""".stripMargin
     opt[File]('o', "out") valueName "<outputFile>" action { (x, c) =>
       c.copy(outputFile = Some(x))

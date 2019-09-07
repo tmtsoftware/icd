@@ -19,8 +19,8 @@ case class ExpandToggler() extends Displayable {
       id := "expand-init",
       cls := "glyphicon glyphicon-lg glyphicon-collapse-down",
       title := "Expand or collapse all detailed information"
-    // XXX Its easier to do this in JavaScript directly, see resources/resize.js: navbarExpandAll
-    //      onclick := listener
+      // XXX Its easier to do this in JavaScript directly, see resources/resize.js: navbarExpandAll
+      //      onclick := listener
     ))).render
   }
 }

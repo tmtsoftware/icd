@@ -8,13 +8,15 @@ import com.mongodb.casbah.Imports._
  * previous versions.
  */
 case class IcdDbManager(db: MongoDB, versionManager: IcdVersionManager) {
+
   import IcdVersionManager._
 
   /**
    * Ingests the given object into the database in the named collection,
    * creating a new one if it does not already exist.
+   *
    * @param name name of the collection to use
-   * @param obj the object to insert
+   * @param obj  the object to insert
    */
   private[db] def ingest(name: String, obj: DBObject): Unit = {
     if (db.collectionExists(name))
