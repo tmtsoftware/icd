@@ -12,19 +12,21 @@ object BrowserHistory {
   import icd.web.shared.JsonSupport._
 
   implicit val viewTypeWrites: Writes[ViewType] =
-    (v: ViewType) => JsString(v match {
-      case ComponentView => "ComponentView"
-      case IcdView => "IcdView"
-      case UploadView => "UploadView"
-      case VersionView => "VersionView"
-    })
+    (v: ViewType) =>
+      JsString(v match {
+        case ComponentView => "ComponentView"
+        case IcdView       => "IcdView"
+        case UploadView    => "UploadView"
+        case VersionView   => "VersionView"
+      })
   implicit val viewTypeReads: Reads[ViewType] = {
-    case JsString(s) => JsSuccess(s match {
-      case "ComponentView" => ComponentView
-      case "IcdView" => IcdView
-      case "UploadView" => UploadView
-      case "VersionView" => VersionView
-    })
+    case JsString(s) =>
+      JsSuccess(s match {
+        case "ComponentView" => ComponentView
+        case "IcdView"       => IcdView
+        case "UploadView"    => UploadView
+        case "VersionView"   => VersionView
+      })
     case _ => JsError("bad ViewType")
   }
   implicit val browserHistoryFormat: OFormat[BrowserHistory] = Json.format[BrowserHistory]
@@ -54,7 +56,7 @@ object BrowserHistory {
     else {
       Json.fromJson[BrowserHistory](Json.parse(e.state.toString)) match {
         case JsSuccess(h: BrowserHistory, _: JsPath) => Some(h)
-        case _ => None
+        case _                                       => None
       }
     }
   }
@@ -70,11 +72,12 @@ object BrowserHistory {
  * @param currentCompnent  optional current component
  */
 case class BrowserHistory(
-                           maybeSourceSubsystem: Option[SubsystemWithVersion],
-                           maybeTargetSubsystem: Option[SubsystemWithVersion],
-                           maybeIcd: Option[IcdVersion],
-                           viewType: ViewType,
-                           currentCompnent: Option[String]) {
+    maybeSourceSubsystem: Option[SubsystemWithVersion],
+    maybeTargetSubsystem: Option[SubsystemWithVersion],
+    maybeIcd: Option[IcdVersion],
+    viewType: ViewType,
+    currentCompnent: Option[String]
+) {
 
   // Pushes the current application history state (Note that the title is ignored in some browsers)
   def pushState(): Unit = {
@@ -88,4 +91,3 @@ case class BrowserHistory(
     dom.window.history.replaceState(json, dom.document.title, dom.document.documentURI)
   }
 }
-

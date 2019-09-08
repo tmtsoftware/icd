@@ -8,9 +8,9 @@ import java.io.File
 object StdName {
   val subsystemFileNames: StdName = StdName("subsystem-model.conf", "subsystem-schema.conf")
   val componentFileNames: StdName = StdName("component-model.conf", "component-schema.conf")
-  val publishFileNames: StdName = StdName("publish-model.conf", "publish-schema.conf")
+  val publishFileNames: StdName   = StdName("publish-model.conf", "publish-schema.conf")
   val subscribeFileNames: StdName = StdName("subscribe-model.conf", "subscribe-schema.conf")
-  val commandFileNames: StdName = StdName("command-model.conf", "command-schema.conf")
+  val commandFileNames: StdName   = StdName("command-model.conf", "command-schema.conf")
 
   /**
    * List of standard ICD files and schemas
@@ -34,6 +34,7 @@ object StdName {
  * Holds name of input file and matching schema
  */
 case class StdName(name: String, schema: String) {
+
   /**
    * Base name: For example icd, component, publish, etc.
    */
@@ -43,4 +44,3 @@ case class StdName(name: String, schema: String) {
 
   def isComponentModel: Boolean = modelBaseName == "component"
 }
-

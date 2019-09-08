@@ -15,12 +15,12 @@ object Settings {
     organizationName := "TMT",
     organizationHomepage := Some(url("http://www.tmt.org")),
     version := Dependencies.Version,
-    scalaVersion := Dependencies.ScalaVersion)
+    scalaVersion := Dependencies.ScalaVersion
+  )
 
   // Basic settings
   val buildSettings = commonSettings ++ Seq(
     crossPaths := true,
-
     // Note: "parallelExecution in Test := false" doesn't seem to prevent parallel execution when all tests are run,
     // which can be a problem in some cases. Besides the fact that all the test output is mixed up,
     // some tests access external resources, such as the location service, redis, hornetq, the config service, etc.,
@@ -32,10 +32,8 @@ object Settings {
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),
     // Don't buffer test log output (since not parallel)
     logBuffered in Test := false,
-
     fork := true,
-    resolvers += "jitpack" at "https://jitpack.io",
-
+    resolvers += "jitpack" at "https://jitpack.io"
     //    resolvers += Resolver.typesafeRepo("releases"),
     //    resolvers += Resolver.sonatypeRepo("releases"),
     //    resolvers += sbtResolver.value,
@@ -46,7 +44,7 @@ object Settings {
   // Using java8
   lazy val defaultSettings = buildSettings ++ Seq(
     scalacOptions ++= Seq("-encoding", "UTF-8", "-feature", "-deprecation", "-unchecked"),
-    javacOptions in(Compile, compile) ++= Seq("-Xlint:unchecked", "-Xlint:deprecation"),
+    javacOptions in (Compile, compile) ++= Seq("-Xlint:unchecked", "-Xlint:deprecation"),
     bashScriptExtraDefines ++= Seq(s"addJava -DICD_VERSION=${Dependencies.Version}")
   )
 

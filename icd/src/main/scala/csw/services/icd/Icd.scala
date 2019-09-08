@@ -17,11 +17,11 @@ object Icd extends App {
    * (Some options may be abbreviated to a single letter: -i, -s, -o)
    */
   case class Options(
-                      validateDir: Option[File] = None,
-                      inputFile: Option[File] = None,
-                      schemaFile: Option[File] = None,
-                      outputFile: Option[File] = None
-                    )
+      validateDir: Option[File] = None,
+      inputFile: Option[File] = None,
+      schemaFile: Option[File] = None,
+      outputFile: Option[File] = None
+  )
 
   private val parser = new scopt.OptionParser[Options]("icd") {
     head("icd", System.getProperty("ICD_VERSION"))
@@ -68,7 +68,7 @@ object Icd extends App {
 
     // Validate the standard set of ICD files in the given (or current) dir
     if (options.inputFile.isEmpty && options.schemaFile.isEmpty) {
-      val dir = options.validateDir.getOrElse(new File("."))
+      val dir      = options.validateDir.getOrElse(new File("."))
       val problems = validateDir(dir)
       if (errorCount(problems) == 0) {
         for (outputFile <- options.outputFile if !outputFile.getName.endsWith(".json")) {
@@ -95,9 +95,10 @@ object Icd extends App {
         options.inputFile match {
           // JSON output
           case Some(inputFile) => saveAsJson(inputFile, outputFile)
-          case None => options.schemaFile foreach { schemaFile =>
-            saveAsJson(schemaFile, outputFile)
-          }
+          case None =>
+            options.schemaFile foreach { schemaFile =>
+              saveAsJson(schemaFile, outputFile)
+            }
         }
       } else if (options.inputFile.isDefined)
         println("Only JSON output is supported for single input files")
@@ -130,4 +131,3 @@ object Icd extends App {
   }
 
 }
-

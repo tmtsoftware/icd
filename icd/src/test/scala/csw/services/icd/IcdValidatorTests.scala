@@ -93,7 +93,7 @@ class IcdValidatorTests extends FunSuite {
 
   def checkPublishModel(models: IcdModels): Unit = {
     val publishModel = models.publishModel.get
-    val eventList = publishModel.eventList
+    val eventList    = publishModel.eventList
     assert(eventList.size == 2)
 
     val status1 = eventList.head

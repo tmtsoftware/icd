@@ -9,11 +9,7 @@ import icd.web.shared.IcdModels.{ArchivedNameDesc, ComponentModel}
 
 object ArchivedItemsReport {
 
-  case class ArchiveInfo(component: String,
-                         prefix: String,
-                         eventType: String,
-                         name: String,
-                         description: String)
+  case class ArchiveInfo(component: String, prefix: String, eventType: String, name: String, description: String)
 
 }
 
@@ -29,9 +25,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
   // Gets all the archived items
   private def getArchivedItems: List[ArchiveInfo] = {
     // Gets the archived items from the list
-    def getItems(c: ComponentModel,
-                 eventType: String,
-                 list: List[ArchivedNameDesc]): List[ArchiveInfo] = {
+    def getItems(c: ComponentModel, eventType: String, list: List[ArchivedNameDesc]): List[ArchiveInfo] = {
       val comp = c.component.replace("-", "-\n") // save horizontal space
       list
         .filter(_.archive)
@@ -44,8 +38,8 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
       publishModel <- query.getPublishModel(component)
     } yield {
       getItems(component, "Alarm", publishModel.alarmList) ++
-        getItems(component, "Events", publishModel.eventList) ++
-        getItems(component, "ObserveEvents", publishModel.observeEventList)
+      getItems(component, "Events", publishModel.eventList) ++
+      getItems(component, "ObserveEvents", publishModel.observeEventList)
     }
     result.flatten
   }
@@ -81,11 +75,13 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
               for {
                 item <- getArchivedItems
               } yield {
-                tr(td(p(item.component)),
+                tr(
+                  td(p(item.component)),
                   td(p(item.prefix)),
                   td(p(item.eventType)),
                   td(p(item.name)),
-                  td(raw(firstParagraph(item.description))))
+                  td(raw(firstParagraph(item.description)))
+                )
               }
             )
           )
@@ -112,8 +108,8 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
     val html = makeReport()
     file.getName.split('.').drop(1).lastOption match {
       case Some("html") => saveAsHtml(html)
-      case Some("pdf") => saveAsPdf(html)
-      case _ => println(s"Unsupported output format: Expected *.html or *.pdf")
+      case Some("pdf")  => saveAsPdf(html)
+      case _            => println(s"Unsupported output format: Expected *.html or *.pdf")
     }
   }
 }

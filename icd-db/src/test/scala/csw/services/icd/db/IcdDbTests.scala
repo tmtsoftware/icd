@@ -53,7 +53,7 @@ class IcdDbTests extends FunSuite {
     assert(commands.receive.last.name == "ENVIRONMENTAL_CONTROL_STOP")
     assert(commands.receive.last.requirements.head == "INT-NFIRAOS-AOESW-0405")
 
-    val publish = db.query.getPublishModel(envCtrl).get
+    val publish   = db.query.getPublishModel(envCtrl).get
     val eventList = publish.eventList
     assert(eventList.size == 5)
     val logging = eventList.head
@@ -72,8 +72,7 @@ class IcdDbTests extends FunSuite {
     assert(temp_ngsWfs.units == "<p>degC</p>")
 
     // Test publish queries
-    val published = db.query.getPublished(envCtrl).filter(p =>
-      p.name == "sensors" && p.publishType == Events)
+    val published = db.query.getPublished(envCtrl).filter(p => p.name == "sensors" && p.publishType == Events)
     assert(published.size == 1)
     assert(published.head.publishType == Events)
 
@@ -168,7 +167,8 @@ class IcdDbTests extends FunSuite {
         commandModel.receive.foreach { receiveCommandModel =>
           val opt = db.query.getCommand(commandModel.subsystem, commandModel.component, receiveCommandModel.name)
           assert(opt.get == receiveCommandModel)
-          val senders = db.query.getCommandSenders(commandModel.subsystem, commandModel.component, receiveCommandModel.name)
+          val senders = db.query
+            .getCommandSenders(commandModel.subsystem, commandModel.component, receiveCommandModel.name)
             .map(_.component)
         }
       }

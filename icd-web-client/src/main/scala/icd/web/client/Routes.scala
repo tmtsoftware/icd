@@ -7,21 +7,26 @@ import icd.web.shared.{SubsystemWithVersion, IcdName}
  * (See icd-web-server/conf/routes file for server side)
  */
 object Routes {
+
   /**
    * Gets a list of top level subsystem names
    */
   val subsystems = "/subsystems"
 
   // Return the attributes string based on the options
-  private def getAttrs(maybeVersion: Option[String], maybeComponent: Option[String],
-                       maybeTargetVersion: Option[String] = None, maybeTargetCompName: Option[String] = None,
-                       maybeIcdVersion: Option[String] = None): String = {
-    val versionAttr = maybeVersion.map(v => s"version=$v")
-    val componentAttr = maybeComponent.map(c => s"component=$c")
-    val targetVersionAttr = maybeTargetVersion.map(v => s"tagetVersion=$v")
+  private def getAttrs(
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      maybeTargetVersion: Option[String] = None,
+      maybeTargetCompName: Option[String] = None,
+      maybeIcdVersion: Option[String] = None
+  ): String = {
+    val versionAttr         = maybeVersion.map(v => s"version=$v")
+    val componentAttr       = maybeComponent.map(c => s"component=$c")
+    val targetVersionAttr   = maybeTargetVersion.map(v => s"tagetVersion=$v")
     val targetComponentAttr = maybeTargetCompName.map(c => s"targetComponent=$c")
-    val icdVersionAttr = maybeIcdVersion.map(v => s"icdVersion=$v")
-    val attrs = (versionAttr ++ componentAttr ++ targetVersionAttr ++ targetComponentAttr ++ icdVersionAttr).mkString("&")
+    val icdVersionAttr      = maybeIcdVersion.map(v => s"icdVersion=$v")
+    val attrs               = (versionAttr ++ componentAttr ++ targetVersionAttr ++ targetComponentAttr ++ icdVersionAttr).mkString("&")
     if (attrs.isEmpty) "" else s"?$attrs"
   }
 
@@ -30,7 +35,7 @@ object Routes {
    */
   def subsystemInfo(subsystem: String, maybeVersion: Option[String]): String = maybeVersion match {
     case Some("*") | None => s"/subsystemInfo/$subsystem"
-    case Some(version) => s"/subsystemInfo/$subsystem?version=$version"
+    case Some(version)    => s"/subsystemInfo/$subsystem?version=$version"
   }
 
   /**
@@ -38,7 +43,7 @@ object Routes {
    */
   def components(subsystem: String, maybeVersion: Option[String]): String = maybeVersion match {
     case Some("*") | None => s"/components/$subsystem"
-    case Some(version) => s"/components/$subsystem?version=$version"
+    case Some(version)    => s"/components/$subsystem?version=$version"
   }
 
   /**

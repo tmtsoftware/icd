@@ -30,7 +30,7 @@ object ComponentInfo {
           (p.eventList, p.observeEventList, p.alarmList)
       }
     val oldCommandsReceived = info.commands.toList.flatMap(_.commandsReceived)
-    val oldCommandsSent = info.commands.toList.flatMap(_.commandsSent)
+    val oldCommandsSent     = info.commands.toList.flatMap(_.commandsSent)
 
     val newEventList = oldEventList.filter(p => p.subscribers.nonEmpty)
     val newObserveEventList =
@@ -41,18 +41,16 @@ object ComponentInfo {
       oldCommandsReceived.filter(p => p.senders.nonEmpty)
     val newCommandsSent = oldCommandsSent.filter(p => p.receiver.nonEmpty)
 
-    val publishes = info.publishes.map(
-      p =>
-        p.copy(eventList = newEventList,
-          observeEventList = newObserveEventList,
-          alarmList = newAlarmList))
+    val publishes =
+      info.publishes.map(p => p.copy(eventList = newEventList, observeEventList = newObserveEventList, alarmList = newAlarmList))
 
     val commands = info.commands.map(
       c =>
         c.copy(
           commandsReceived = newCommandsReceived,
           commandsSent = newCommandsSent
-        ))
+        )
+    )
 
     ComponentInfo(info.componentModel, publishes, info.subscribes, commands)
   }
@@ -66,10 +64,12 @@ object ComponentInfo {
  * @param subscribes     describes items the component subscribes to
  * @param commands       describes commands the component can send and receive
  */
-case class ComponentInfo(componentModel: ComponentModel,
-                         publishes: Option[Publishes],
-                         subscribes: Option[Subscribes],
-                         commands: Option[Commands])
+case class ComponentInfo(
+    componentModel: ComponentModel,
+    publishes: Option[Publishes],
+    subscribes: Option[Subscribes],
+    commands: Option[Commands]
+)
 
 /**
  * Describes a published event
@@ -96,11 +96,13 @@ case class AlarmInfo(alarmModel: AlarmModel, subscribers: List[SubscribeInfo])
  * @param currentStateList list of published current states
  * @param alarmList        list of published alarms
  */
-case class Publishes(description: String,
-                     eventList: List[EventInfo],
-                     observeEventList: List[EventInfo],
-                     currentStateList: List[EventInfo],
-                     alarmList: List[AlarmInfo]) {
+case class Publishes(
+    description: String,
+    eventList: List[EventInfo],
+    observeEventList: List[EventInfo],
+    currentStateList: List[EventInfo],
+    alarmList: List[AlarmInfo]
+) {
 
   /**
    * True if at the component publishes something
@@ -116,9 +118,7 @@ case class Publishes(description: String,
  * @param itemType           the publish type (Event, Alarm, ObserveEvent, etc.)
  * @param subscribeModelInfo data from the input subscribe model
  */
-case class SubscribeInfo(componentModel: ComponentModel,
-                         itemType: PublishType,
-                         subscribeModelInfo: SubscribeModelInfo)
+case class SubscribeInfo(componentModel: ComponentModel, itemType: PublishType, subscribeModelInfo: SubscribeModelInfo)
 
 /**
  * Describes an item that a component subscribes to, including information from the publisher
@@ -130,23 +130,26 @@ case class SubscribeInfo(componentModel: ComponentModel,
  * @param publisher          the publisher's component model
  * @param warnings           if true, display a warning if no publisher event or alarm model was specified
  */
-case class DetailedSubscribeInfo(itemType: PublishType,
-                                 subscribeModelInfo: SubscribeModelInfo,
-                                 eventModel: Option[EventModel],
-                                 alarmModel: Option[AlarmModel],
-                                 publisher: Option[ComponentModel],
-                                 warnings: Boolean = true) {
+case class DetailedSubscribeInfo(
+    itemType: PublishType,
+    subscribeModelInfo: SubscribeModelInfo,
+    eventModel: Option[EventModel],
+    alarmModel: Option[AlarmModel],
+    publisher: Option[ComponentModel],
+    warnings: Boolean = true
+) {
   val description: String = (if (itemType == Alarms) {
-    alarmModel.map(_.description)
-  } else {
-    eventModel.map(_.description)
-  }).getOrElse("")
+                               alarmModel.map(_.description)
+                             } else {
+                               eventModel.map(_.description)
+                             }).getOrElse("")
 
   val warning: Option[String] =
     if (!warnings || eventModel.nonEmpty || alarmModel.nonEmpty) None
     else {
       Some(
-        s"${subscribeModelInfo.subsystem}.${subscribeModelInfo.component} does not publish $itemType: ${subscribeModelInfo.name}")
+        s"${subscribeModelInfo.subsystem}.${subscribeModelInfo.component} does not publish $itemType: ${subscribeModelInfo.name}"
+      )
     }
 
   /**
@@ -165,8 +168,7 @@ case class DetailedSubscribeInfo(itemType: PublishType,
  * @param description   optional top level description of subscribed items (in html format, after markdown processing)
  * @param subscribeInfo a list of subscribed items
  */
-case class Subscribes(description: String,
-                      subscribeInfo: List[DetailedSubscribeInfo])
+case class Subscribes(description: String, subscribeInfo: List[DetailedSubscribeInfo])
 
 /**
  * Describes another component (receiver, for sent commands, sender for received commands)
@@ -185,11 +187,13 @@ case class OtherComponent(subsystem: String, compName: String)
  * @param receiveCommandModel the model for the receiving end of the command, if found
  * @param receiver            the receiving component, if found
  */
-case class SentCommandInfo(name: String,
-                           subsystem: String,
-                           component: String,
-                           receiveCommandModel: Option[ReceiveCommandModel],
-                           receiver: Option[ComponentModel]) {
+case class SentCommandInfo(
+    name: String,
+    subsystem: String,
+    component: String,
+    receiveCommandModel: Option[ReceiveCommandModel],
+    receiver: Option[ComponentModel]
+) {
 
   val warning: Option[String] =
     if (receiveCommandModel.nonEmpty) None
@@ -204,8 +208,7 @@ case class SentCommandInfo(name: String,
  * @param receiveCommandModel the basic model for the command
  * @param senders             list of components that send the command
  */
-case class ReceivedCommandInfo(receiveCommandModel: ReceiveCommandModel,
-                               senders: List[ComponentModel])
+case class ReceivedCommandInfo(receiveCommandModel: ReceiveCommandModel, senders: List[ComponentModel])
 
 /**
  * Describes commands the component sends and receives
@@ -214,9 +217,7 @@ case class ReceivedCommandInfo(receiveCommandModel: ReceiveCommandModel,
  * @param commandsReceived a list of commands received be this component
  * @param commandsSent     a list of commands sent by this component
  */
-case class Commands(description: String,
-                    commandsReceived: List[ReceivedCommandInfo],
-                    commandsSent: List[SentCommandInfo]) {
+case class Commands(description: String, commandsReceived: List[ReceivedCommandInfo], commandsSent: List[SentCommandInfo]) {
 
   /**
    * True if at the component sends or receives commands
@@ -233,8 +234,7 @@ object SummaryInfo {
   /**
    * Used where the item description from the other subsystem may not be available
    */
-  case class OptionalNameDesc(name: String, opt: Option[NameDesc])
-    extends NameDesc {
+  case class OptionalNameDesc(name: String, opt: Option[NameDesc]) extends NameDesc {
     override val description: String = opt.map(_.description).getOrElse("")
   }
 
@@ -244,9 +244,7 @@ object SummaryInfo {
    * @param publisher the publishing (or receiving, for commands) component
    * @param item      name and description of the item or command
    */
-  case class PublishedItem(publisher: ComponentModel,
-                           item: NameDesc,
-                           subscribers: List[ComponentModel])
+  case class PublishedItem(publisher: ComponentModel, item: NameDesc, subscribers: List[ComponentModel])
 
   /**
    * Summary of a subscribed item.
@@ -258,11 +256,13 @@ object SummaryInfo {
    * @param subscriber         the subscriber's component model
    * @param item               name and description of the published item
    */
-  case class SubscribedItem(publisherSubsystem: String,
-                            publisherComponent: String,
-                            maybePublisher: Option[ComponentModel],
-                            maybeWarning: Option[String],
-                            subscriber: ComponentModel,
-                            item: NameDesc)
+  case class SubscribedItem(
+      publisherSubsystem: String,
+      publisherComponent: String,
+      maybePublisher: Option[ComponentModel],
+      maybeWarning: Option[String],
+      subscriber: ComponentModel,
+      item: NameDesc
+  )
 
 }

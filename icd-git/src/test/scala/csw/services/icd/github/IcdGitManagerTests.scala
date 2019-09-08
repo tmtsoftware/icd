@@ -12,11 +12,11 @@ import org.scalatest.{BeforeAndAfter, FunSuite}
 class IcdGitManagerTests extends FunSuite with BeforeAndAfter {
 
   private var repoDir: File = _
-  private var git: Git = _
+  private var git: Git      = _
 
-  private val user = System.getProperty("user.name")
-  private val password = ""
-  private val comment = "test comment"
+  private val user       = System.getProperty("user.name")
+  private val password   = ""
+  private val comment    = "test comment"
   private val subsysList = List(SubsystemAndVersion("TEST", Some("1.0")), SubsystemAndVersion("TEST2", Some("1.0")))
 
   // Use a dummy repo for the icd and api versions

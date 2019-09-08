@@ -13,33 +13,34 @@ import scalatags.Text
  */
 object MissingItemsReport {
 
-  case class PublishedItemInfo(publisherSubsystem: String,
-                               publisherComponent: String,
-                               prefix: String,
-                               name: String) {
+  case class PublishedItemInfo(publisherSubsystem: String, publisherComponent: String, prefix: String, name: String) {
     val key = s"$prefix.$name"
   }
 
-  case class SubscribedItemInfo(subscriberSubsystem: String,
-                                subscriberComponent: String,
-                                publisherSubsystem: String,
-                                publisherComponent: String,
-                                prefix: String,
-                                name: String) {
+  case class SubscribedItemInfo(
+      subscriberSubsystem: String,
+      subscriberComponent: String,
+      publisherSubsystem: String,
+      publisherComponent: String,
+      prefix: String,
+      name: String
+  ) {
     val key = s"$prefix.$name"
   }
 
-  case class Items(publishedAlarms: List[PublishedItemInfo],
-                   publishedEvents: List[PublishedItemInfo],
-                   publishedObserveEvents: List[PublishedItemInfo],
-                   publishedCurrentStates: List[PublishedItemInfo],
-                   subscribedAlarms: List[SubscribedItemInfo],
-                   subscribedEvents: List[SubscribedItemInfo],
-                   subscribedObserveEvents: List[SubscribedItemInfo],
-                   subscribedCurrentStates: List[SubscribedItemInfo],
-                   receivedCommands: List[PublishedItemInfo],
-                   sentCommands: List[SubscribedItemInfo],
-                   badComponentNames: Set[String]) {
+  case class Items(
+      publishedAlarms: List[PublishedItemInfo],
+      publishedEvents: List[PublishedItemInfo],
+      publishedObserveEvents: List[PublishedItemInfo],
+      publishedCurrentStates: List[PublishedItemInfo],
+      subscribedAlarms: List[SubscribedItemInfo],
+      subscribedEvents: List[SubscribedItemInfo],
+      subscribedObserveEvents: List[SubscribedItemInfo],
+      subscribedCurrentStates: List[SubscribedItemInfo],
+      receivedCommands: List[PublishedItemInfo],
+      sentCommands: List[SubscribedItemInfo],
+      badComponentNames: Set[String]
+  ) {
     def isEmpty: Boolean =
       publishedAlarms.isEmpty &&
         publishedEvents.isEmpty &&
@@ -77,11 +78,17 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
     }
 
     def getSubscribedItems(c: ComponentModel, list: List[SubsystemComponentName]): List[SubscribedItemInfo] = {
-      list.map(p => SubscribedItemInfo(
-        c.subsystem, c.component,
-        p.subsystem, p.component,
-        query.getComponentModel(p.subsystem, p.component).map(_.prefix).getOrElse(""),
-        p.name))
+      list.map(
+        p =>
+          SubscribedItemInfo(
+            c.subsystem,
+            c.component,
+            p.subsystem,
+            p.component,
+            query.getComponentModel(p.subsystem, p.component).map(_.prefix).getOrElse(""),
+            p.name
+          )
+      )
     }
 
 //    // Note that the report always works with the latest, unpublished versions of subsystems
@@ -94,21 +101,21 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
       for {
         component <- components
       } yield {
-        val publishModel = query.getPublishModel(component)
-        val subscribeModel = query.getSubscribeModel(component)
-        val commandModel = query.getCommandModel(component)
-        val publishedAlarms = getPublishedItems(component, publishModel.map(_.alarmList.map(_.name)).getOrElse(Nil))
-        val publishedEvents = getPublishedItems(component, publishModel.map(_.eventList.map(_.name)).getOrElse(Nil))
+        val publishModel           = query.getPublishModel(component)
+        val subscribeModel         = query.getSubscribeModel(component)
+        val commandModel           = query.getCommandModel(component)
+        val publishedAlarms        = getPublishedItems(component, publishModel.map(_.alarmList.map(_.name)).getOrElse(Nil))
+        val publishedEvents        = getPublishedItems(component, publishModel.map(_.eventList.map(_.name)).getOrElse(Nil))
         val publishedObserveEvents = getPublishedItems(component, publishModel.map(_.observeEventList.map(_.name)).getOrElse(Nil))
         val publishedCurrentStates = getPublishedItems(component, publishModel.map(_.currentStateList.map(_.name)).getOrElse(Nil))
 
-        val subscribedAlarms = getSubscribedItems(component, subscribeModel.map(_.alarmList).getOrElse(Nil))
-        val subscribedEvents = getSubscribedItems(component, subscribeModel.map(_.eventList).getOrElse(Nil))
+        val subscribedAlarms        = getSubscribedItems(component, subscribeModel.map(_.alarmList).getOrElse(Nil))
+        val subscribedEvents        = getSubscribedItems(component, subscribeModel.map(_.eventList).getOrElse(Nil))
         val subscribedObserveEvents = getSubscribedItems(component, subscribeModel.map(_.observeEventList).getOrElse(Nil))
         val subscribedCurrentStates = getSubscribedItems(component, subscribeModel.map(_.currentStateList).getOrElse(Nil))
 
         val receivedCommands = getPublishedItems(component, commandModel.map(_.receive.map(_.name)).getOrElse(Nil))
-        val sentCommands = getSubscribedItems(component, commandModel.map(_.send).getOrElse(Nil))
+        val sentCommands     = getSubscribedItems(component, commandModel.map(_.send).getOrElse(Nil))
 
         val compRefs =
           publishedAlarms.map(_.publisherComponent) ++
@@ -121,12 +128,22 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
             subscribedCurrentStates.map(_.publisherComponent) ++ subscribedCurrentStates.map(_.subscriberComponent) ++
             receivedCommands.map(_.publisherComponent) ++
             sentCommands.map(_.publisherComponent) ++ sentCommands.map(_.subscriberComponent)
-        val compSet = components.map(_.component).toSet
+        val compSet           = components.map(_.component).toSet
         val badComponentNames = compRefs.filter(!compSet.contains(_)).toSet
 
-        Items(publishedAlarms, publishedEvents, publishedObserveEvents, publishedCurrentStates,
-          subscribedAlarms, subscribedEvents, subscribedObserveEvents, subscribedCurrentStates,
-          receivedCommands, sentCommands, badComponentNames)
+        Items(
+          publishedAlarms,
+          publishedEvents,
+          publishedObserveEvents,
+          publishedCurrentStates,
+          subscribedAlarms,
+          subscribedEvents,
+          subscribedObserveEvents,
+          subscribedCurrentStates,
+          receivedCommands,
+          sentCommands,
+          badComponentNames
+        )
       }
     }
 
@@ -142,41 +159,41 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
 
     val items = getItems
 
-    val publishedAlarms = items.flatMap(_.publishedAlarms)
-    val publishedAlarmMap = publishedAlarms.map(a => a.key -> a).toMap
-    val publishedEvents = items.flatMap(_.publishedEvents)
-    val publishedEventsMap = publishedEvents.map(e => e.key -> e).toMap
-    val publishedObserveEvents = items.flatMap(_.publishedObserveEvents)
+    val publishedAlarms           = items.flatMap(_.publishedAlarms)
+    val publishedAlarmMap         = publishedAlarms.map(a => a.key -> a).toMap
+    val publishedEvents           = items.flatMap(_.publishedEvents)
+    val publishedEventsMap        = publishedEvents.map(e => e.key -> e).toMap
+    val publishedObserveEvents    = items.flatMap(_.publishedObserveEvents)
     val publishedObserveEventsMap = publishedObserveEvents.map(e => e.key -> e).toMap
-    val publishedCurrentStates = items.flatMap(_.publishedCurrentStates)
+    val publishedCurrentStates    = items.flatMap(_.publishedCurrentStates)
     val publishedCurrentStatesMap = publishedCurrentStates.map(e => e.key -> e).toMap
 
-    val subscribedAlarms = items.flatMap(_.subscribedAlarms)
-    val subscribedAlarmsMap = subscribedAlarms.map(a => a.key -> a).toMap
-    val subscribedEvents = items.flatMap(_.subscribedEvents)
-    val subscribedEventsMap = subscribedEvents.map(e => e.key -> e).toMap
-    val subscribedObserveEvents = items.flatMap(_.subscribedObserveEvents)
+    val subscribedAlarms           = items.flatMap(_.subscribedAlarms)
+    val subscribedAlarmsMap        = subscribedAlarms.map(a => a.key -> a).toMap
+    val subscribedEvents           = items.flatMap(_.subscribedEvents)
+    val subscribedEventsMap        = subscribedEvents.map(e => e.key -> e).toMap
+    val subscribedObserveEvents    = items.flatMap(_.subscribedObserveEvents)
     val subscribedObserveEventsMap = subscribedObserveEvents.map(e => e.key -> e).toMap
-    val subscribedCurrentStates = items.flatMap(_.subscribedCurrentStates)
+    val subscribedCurrentStates    = items.flatMap(_.subscribedCurrentStates)
     val subscribedCurrentStatesMap = subscribedCurrentStates.map(e => e.key -> e).toMap
 
-    val receivedCommands = items.flatMap(_.receivedCommands)
+    val receivedCommands   = items.flatMap(_.receivedCommands)
     val receivedCommandMap = receivedCommands.map(c => c.key -> c).toMap
-    val sentCommands = items.flatMap(_.sentCommands)
-    val sentCommandsMap = sentCommands.map(c => c.key -> c).toMap
+    val sentCommands       = items.flatMap(_.sentCommands)
+    val sentCommandsMap    = sentCommands.map(c => c.key -> c).toMap
 
-    val publishedAlarmsWithNoSubscribers = getPubNoSub(publishedAlarms, subscribedAlarmsMap)
-    val publishedEventsWithNoSubscribers = getPubNoSub(publishedEvents, subscribedEventsMap)
+    val publishedAlarmsWithNoSubscribers        = getPubNoSub(publishedAlarms, subscribedAlarmsMap)
+    val publishedEventsWithNoSubscribers        = getPubNoSub(publishedEvents, subscribedEventsMap)
     val publishedObserveEventsWithNoSubscribers = getPubNoSub(publishedObserveEvents, subscribedObserveEventsMap)
     val publishedCurrentStatesWithNoSubscribers = getPubNoSub(publishedCurrentStates, subscribedCurrentStatesMap)
 
-    val subscribedAlarmsWithNoPublisher = getSubNoPub(subscribedAlarms, publishedAlarmMap)
-    val subscribedEventsWithNoPublisher = getSubNoPub(subscribedEvents, publishedEventsMap)
+    val subscribedAlarmsWithNoPublisher        = getSubNoPub(subscribedAlarms, publishedAlarmMap)
+    val subscribedEventsWithNoPublisher        = getSubNoPub(subscribedEvents, publishedEventsMap)
     val subscribedObserveEventsWithNoPublisher = getSubNoPub(subscribedObserveEvents, publishedObserveEventsMap)
     val subscribedCurrentStatesWithNoPublisher = getSubNoPub(subscribedCurrentStates, publishedCurrentStatesMap)
 
     val receivedCommandsWithNoSenders = getPubNoSub(receivedCommands, sentCommandsMap)
-    val sentCommandsWithNoReceivers = getSubNoPub(sentCommands, receivedCommandMap)
+    val sentCommandsWithNoReceivers   = getSubNoPub(sentCommands, receivedCommandMap)
 
     val badComponentNames = items.flatMap(_.badComponentNames).toSet
 
@@ -200,7 +217,8 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
     import scalatags.Text.all._
 
     def missingPubItemMarkup(title: String, info: List[PublishedItemInfo]): Text.TypedTag[String] = {
-      if (info.isEmpty) div() else
+      if (info.isEmpty) div()
+      else
         div(
           h3(title),
           div(
@@ -210,18 +228,14 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
                   th("Subsystem"),
                   th("Component"),
                   th("Prefix"),
-                  th("Name"),
+                  th("Name")
                 )
               ),
               tbody(
                 for {
                   item <- info
                 } yield {
-                  tr(
-                    td(p(item.publisherSubsystem)),
-                    td(p(item.publisherComponent)),
-                    td(p(item.prefix)),
-                    td(p(item.name)))
+                  tr(td(p(item.publisherSubsystem)), td(p(item.publisherComponent)), td(p(item.prefix)), td(p(item.name)))
                 }
               )
             )
@@ -229,10 +243,14 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
         )
     }
 
-    def missingSubItemMarkup(title: String, info: List[SubscribedItemInfo],
-                             publisherTitle: String = "Publisher",
-                             subscriberTitle: String = "Subscriber"): Text.TypedTag[String] = {
-      if (info.isEmpty) div() else
+    def missingSubItemMarkup(
+        title: String,
+        info: List[SubscribedItemInfo],
+        publisherTitle: String = "Publisher",
+        subscriberTitle: String = "Subscriber"
+    ): Text.TypedTag[String] = {
+      if (info.isEmpty) div()
+      else
         div(
           h3(title),
           div(
@@ -244,7 +262,7 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
                   th(s"Declared $publisherTitle Subsystem"),
                   th(s"Declared $publisherTitle Component"),
                   th("Prefix"),
-                  th("Name"),
+                  th("Name")
                 )
               ),
               tbody(
@@ -257,7 +275,8 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
                     td(p(item.publisherSubsystem)),
                     td(p(item.publisherComponent)),
                     td(p(item.prefix)),
-                    td(p(item.name)))
+                    td(p(item.name))
+                  )
                 }
               )
             )
@@ -277,15 +296,12 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
         missingPubItemMarkup("Published Events with no Subscribers", missingItems.publishedEvents),
         missingPubItemMarkup("Published Observe Events with no Subscribers", missingItems.publishedObserveEvents),
         missingPubItemMarkup("Published Current States with no Subscribers", missingItems.publishedCurrentStates),
-
         missingSubItemMarkup("Subscribed Alarms that are not Published Anywhere", missingItems.subscribedAlarms),
         missingSubItemMarkup("Subscribed Events that are not Published Anywhere", missingItems.subscribedEvents),
         missingSubItemMarkup("Subscribed Observe Events that are not Published Anywhere", missingItems.subscribedObserveEvents),
         missingSubItemMarkup("Subscribed CurrentStates that are not Published Anywhere", missingItems.subscribedCurrentStates),
-
         missingPubItemMarkup("Received Commands with no Senders", missingItems.receivedCommands),
         missingSubItemMarkup("Sent Commands that are not Defined Anywhere", missingItems.sentCommands, "Receiver", "Sender"),
-
         div(
           h3("Component names that were Referenced but not Defined Anywhere"),
           ul(
@@ -307,7 +323,7 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
 
     def missingPubItemCsv(dir: File, title: String, info: List[PublishedItemInfo]): Unit = {
       if (info.nonEmpty) {
-        val f = new File(dir, title.replace(' ', '-'))
+        val f      = new File(dir, title.replace(' ', '-'))
         val writer = CSVWriter.open(f)
         writer.writeRow(List("Subsystem", "Component", "Prefix", "Name"))
         info.foreach(i => writer.writeRow(List(i.publisherSubsystem, i.publisherComponent, i.prefix, i.name)))
@@ -316,27 +332,32 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
       }
     }
 
-    def missingSubItemCsv(dir: File, title: String, info: List[SubscribedItemInfo],
-                          publisherTitle: String = "Publisher",
-                          subscriberTitle: String = "Subscriber"): Unit = {
+    def missingSubItemCsv(
+        dir: File,
+        title: String,
+        info: List[SubscribedItemInfo],
+        publisherTitle: String = "Publisher",
+        subscriberTitle: String = "Subscriber"
+    ): Unit = {
       if (info.nonEmpty) {
-        val f = new File(dir, title.replace(' ', '-'))
+        val f      = new File(dir, title.replace(' ', '-'))
         val writer = CSVWriter.open(f)
-        writer.writeRow(List(
-          s"$subscriberTitle Subsystem",
-          s"$subscriberTitle Component",
-          s"Declared $publisherTitle Subsystem",
-          s"Declared $publisherTitle Component",
-          "Prefix",
-          "Name"
-        ))
-        info.foreach(i => writer.writeRow(List(
-          i.subscriberSubsystem,
-          i.subscriberComponent,
-          i.publisherSubsystem,
-          i.publisherComponent,
-          i.prefix,
-          i.name)))
+        writer.writeRow(
+          List(
+            s"$subscriberTitle Subsystem",
+            s"$subscriberTitle Component",
+            s"Declared $publisherTitle Subsystem",
+            s"Declared $publisherTitle Component",
+            "Prefix",
+            "Name"
+          )
+        )
+        info.foreach(
+          i =>
+            writer.writeRow(
+              List(i.subscriberSubsystem, i.subscriberComponent, i.publisherSubsystem, i.publisherComponent, i.prefix, i.name)
+            )
+        )
 
         writer.close()
         println(s"Wrote $f")
@@ -345,7 +366,7 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
 
     def badComponentNamesCsv(dir: File, title: String, info: List[String]): Unit = {
       if (info.nonEmpty) {
-        val f = new File(dir, title.replace(' ', '-'))
+        val f      = new File(dir, title.replace(' ', '-'))
         val writer = CSVWriter.open(f)
         writer.writeRow(List("Name"))
         info.foreach(i => writer.writeRow(List(i)))
@@ -365,31 +386,24 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
       System.exit(1)
     }
 
-    missingPubItemCsv(dir, "Published Alarms with no Subscribers",
-      missingItems.publishedAlarms)
-    missingPubItemCsv(dir, "Published Events with no Subscribers",
-      missingItems.publishedEvents)
-    missingPubItemCsv(dir, "Published Observe Events with no Subscribers",
-      missingItems.publishedObserveEvents)
-    missingPubItemCsv(dir, "Published Current States with no Subscribers",
-      missingItems.publishedCurrentStates)
+    missingPubItemCsv(dir, "Published Alarms with no Subscribers", missingItems.publishedAlarms)
+    missingPubItemCsv(dir, "Published Events with no Subscribers", missingItems.publishedEvents)
+    missingPubItemCsv(dir, "Published Observe Events with no Subscribers", missingItems.publishedObserveEvents)
+    missingPubItemCsv(dir, "Published Current States with no Subscribers", missingItems.publishedCurrentStates)
 
-    missingSubItemCsv(dir, "Subscribed Alarms that are not Published Anywhere",
-      missingItems.subscribedAlarms)
-    missingSubItemCsv(dir, "Subscribed Events that are not Published Anywhere",
-      missingItems.subscribedEvents)
-    missingSubItemCsv(dir, "Subscribed Observe Events that are not Published Anywhere",
-      missingItems.subscribedObserveEvents)
-    missingSubItemCsv(dir, "Subscribed Current States that are not Published Anywhere",
-      missingItems.subscribedCurrentStates)
+    missingSubItemCsv(dir, "Subscribed Alarms that are not Published Anywhere", missingItems.subscribedAlarms)
+    missingSubItemCsv(dir, "Subscribed Events that are not Published Anywhere", missingItems.subscribedEvents)
+    missingSubItemCsv(dir, "Subscribed Observe Events that are not Published Anywhere", missingItems.subscribedObserveEvents)
+    missingSubItemCsv(dir, "Subscribed Current States that are not Published Anywhere", missingItems.subscribedCurrentStates)
 
-    missingPubItemCsv(dir, "Received Commands with no Senders",
-      missingItems.receivedCommands)
-    missingSubItemCsv(dir, "Sent Commands that are not Defined Anywhere",
-      missingItems.sentCommands, "Receiver", "Sender")
+    missingPubItemCsv(dir, "Received Commands with no Senders", missingItems.receivedCommands)
+    missingSubItemCsv(dir, "Sent Commands that are not Defined Anywhere", missingItems.sentCommands, "Receiver", "Sender")
 
-    badComponentNamesCsv(dir, "Component names that were Referenced but not Defined Anywhere",
-      missingItems.badComponentNames.toList)
+    badComponentNamesCsv(
+      dir,
+      "Component names that were Referenced but not Defined Anywhere",
+      missingItems.badComponentNames.toList
+    )
   }
 
   /**
@@ -407,8 +421,8 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
 
     file.getName.split('.').drop(1).lastOption match {
       case Some("html") => saveAsHtml(makeReport())
-      case Some("pdf") => saveAsPdf(makeReport())
-      case _ => makeCsvReport(file)
+      case Some("pdf")  => saveAsPdf(makeReport())
+      case _            => makeCsvReport(file)
     }
   }
 }

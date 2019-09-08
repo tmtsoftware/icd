@@ -11,6 +11,7 @@ import icd.web.shared._
  */
 //noinspection DuplicatedCode
 object IcdComponentInfo {
+
   /**
    * Query the database for information about the given components in an ICD
    *
@@ -24,11 +25,13 @@ object IcdComponentInfo {
     // subscribes, who calls commands, etc.
     val query = new CachedIcdDbQuery(db.db)
     val compNames = sv.maybeComponent match {
-      case None => db.versionManager.getComponentNames(sv)
+      case None           => db.versionManager.getComponentNames(sv)
       case Some(compName) => List(compName)
     }
-    compNames.flatMap(component =>
-      getComponentInfo(query, SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component)), targetSv))
+    compNames
+      .flatMap(
+        component => getComponentInfo(query, SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component)), targetSv)
+      )
       .map(ComponentInfo.applyIcdFilter)
   }
 
@@ -42,15 +45,15 @@ object IcdComponentInfo {
    */
   def getComponentInfo(query: IcdDbQuery, sv: SubsystemWithVersion, targetSv: SubsystemWithVersion): Option[ComponentInfo] = {
     // get the models for this component
-    val versionManager = new CachedIcdVersionManager(query)
-    val modelsList = versionManager.getModels(sv)
+    val versionManager   = new CachedIcdVersionManager(query)
+    val modelsList       = versionManager.getModels(sv)
     val targetModelsList = versionManager.getModels(targetSv)
 
     modelsList.headOption.flatMap { icdModels =>
       val componentModel = icdModels.componentModel
-      val publishes = getPublishes(sv.subsystem, icdModels, targetModelsList)
-      val subscribes = getSubscribes(icdModels, targetModelsList)
-      val commands = getCommands(query, icdModels, targetModelsList)
+      val publishes      = getPublishes(sv.subsystem, icdModels, targetModelsList)
+      val subscribes     = getSubscribes(icdModels, targetModelsList)
+      val commands       = getCommands(query, icdModels, targetModelsList)
 
       if (publishes.isDefined || subscribes.isDefined || commands.isDefined)
         componentModel.map(ComponentInfo(_, publishes, subscribes, commands))
@@ -69,7 +72,7 @@ object IcdComponentInfo {
     models.componentModel match {
       case None => None
       case Some(componentModel) =>
-        val prefix = componentModel.prefix
+        val prefix    = componentModel.prefix
         val component = componentModel.component
         models.publishModel match {
           case None => None
@@ -104,8 +107,15 @@ object IcdComponentInfo {
    * @param pubType          One of Event, ObserveEvent, Alarm.
    * @param targetModelsList the target model objects for the ICD
    */
-  private def getSubscribers(subsystem: String, component: String, prefix: String, name: String, desc: String,
-                             pubType: PublishType, targetModelsList: List[IcdModels]): List[SubscribeInfo] = {
+  private def getSubscribers(
+      subsystem: String,
+      component: String,
+      prefix: String,
+      name: String,
+      desc: String,
+      pubType: PublishType,
+      targetModelsList: List[IcdModels]
+  ): List[SubscribeInfo] = {
 
     // Full path of the published item
     val path = s"$prefix.$name"
@@ -115,28 +125,30 @@ object IcdComponentInfo {
     // targetInfo: list of items the target subscriber subscribes to
     // Returns the Subscribed object, if the component is a subscriber to the given path
     def subscribes(componentModel: ComponentModel, targetInfo: List[SubscribeModelInfo]): Option[Subscribed] = {
-      targetInfo.find { subscribeInfo =>
-        subscribeInfo.name == name && subscribeInfo.subsystem == subsystem && subscribeInfo.component == component
-      }.map { subscribeInfo =>
-        Subscribed(componentModel, subscribeInfo, pubType, path)
-      }
+      targetInfo
+        .find { subscribeInfo =>
+          subscribeInfo.name == name && subscribeInfo.subsystem == subsystem && subscribeInfo.component == component
+        }
+        .map { subscribeInfo =>
+          Subscribed(componentModel, subscribeInfo, pubType, path)
+        }
     }
 
     // Gets the list of subscribed items from the model given the publish type
     def getSubscribeInfoByType(subscribeModel: SubscribeModel, pubType: PublishType): List[SubscribeModelInfo] = {
       pubType match {
-        case Events => subscribeModel.eventList
+        case Events        => subscribeModel.eventList
         case ObserveEvents => subscribeModel.observeEventList
         case CurrentStates => subscribeModel.currentStateList
-        case Alarms => subscribeModel.alarmList
+        case Alarms        => subscribeModel.alarmList
       }
     }
 
     for {
-      icdModel <- targetModelsList
+      icdModel       <- targetModelsList
       componentModel <- icdModel.componentModel
       subscribeModel <- icdModel.subscribeModel
-      s <- subscribes(componentModel, getSubscribeInfoByType(subscribeModel, pubType))
+      s              <- subscribes(componentModel, getSubscribeInfoByType(subscribeModel, pubType))
     } yield {
       SubscribeInfo(componentModel, s.subscribeType, s.subscribeModelInfo)
     }
@@ -153,16 +165,16 @@ object IcdComponentInfo {
     // Gets additional information about the given subscription, including info from the publisher
     def getInfo(publishType: PublishType, si: SubscribeModelInfo): Option[DetailedSubscribeInfo] = {
       val x = for {
-        t <- targetModelsList
+        t              <- targetModelsList
         componentModel <- t.componentModel
         if componentModel.component == si.component && componentModel.subsystem == si.subsystem
         publishModel <- t.publishModel
       } yield {
         val (telem, alarm) = publishType match {
-          case Events => (publishModel.eventList.find(t => t.name == si.name), None)
+          case Events        => (publishModel.eventList.find(t => t.name == si.name), None)
           case ObserveEvents => (publishModel.observeEventList.find(t => t.name == si.name), None)
           case CurrentStates => (publishModel.currentStateList.find(t => t.name == si.name), None)
-          case Alarms => (None, publishModel.alarmList.find(a => a.name == si.name))
+          case Alarms        => (None, publishModel.alarmList.find(a => a.name == si.name))
         }
         DetailedSubscribeInfo(publishType, si, telem, alarm, Some(componentModel))
       }
@@ -172,11 +184,10 @@ object IcdComponentInfo {
     models.subscribeModel match {
       case None => None
       case Some(m) =>
-        val subscribeInfo = (
-          m.eventList.map(getInfo(Events, _)) ++
-            m.observeEventList.map(getInfo(ObserveEvents, _)) ++
-            m.currentStateList.map(getInfo(CurrentStates, _)) ++
-            m.alarmList.map(getInfo(Alarms, _))).flatten
+        val subscribeInfo = (m.eventList.map(getInfo(Events, _)) ++
+          m.observeEventList.map(getInfo(ObserveEvents, _)) ++
+          m.currentStateList.map(getInfo(CurrentStates, _)) ++
+          m.alarmList.map(getInfo(Alarms, _))).flatten
         val desc = m.description
         if (subscribeInfo.nonEmpty)
           Some(Subscribes(desc, subscribeInfo))
@@ -193,12 +204,16 @@ object IcdComponentInfo {
    * @param targetModelsList the target model objects
    * @return
    */
-  private def getCommandSenders(subsystem: String, component: String, commandName: String,
-                                targetModelsList: List[IcdModels]): List[ComponentModel] = {
+  private def getCommandSenders(
+      subsystem: String,
+      component: String,
+      commandName: String,
+      targetModelsList: List[IcdModels]
+  ): List[ComponentModel] = {
     for {
-      icdModels <- targetModelsList
+      icdModels      <- targetModelsList
       componentModel <- icdModels.componentModel
-      commandModel <- icdModels.commandModel
+      commandModel   <- icdModels.commandModel
       if commandModel.send.exists(s => s.subsystem == subsystem && s.component == component && s.name == commandName)
     } yield {
       componentModel
@@ -214,7 +229,7 @@ object IcdComponentInfo {
    */
   private def getCommandsReceived(models: IcdModels, targetModelsList: List[IcdModels]): List[ReceivedCommandInfo] = {
     for {
-      cmd <- models.commandModel.toList
+      cmd      <- models.commandModel.toList
       received <- cmd.receive
     } yield {
       val senders = getCommandSenders(cmd.subsystem, cmd.component, received.name, targetModelsList)
@@ -231,10 +246,14 @@ object IcdComponentInfo {
    * @param commandName      the command name
    * @param targetModelsList the target model objects
    */
-  private def getCommand(subsystem: String, component: String, commandName: String,
-                         targetModelsList: List[IcdModels]): Option[ReceiveCommandModel] = {
+  private def getCommand(
+      subsystem: String,
+      component: String,
+      commandName: String,
+      targetModelsList: List[IcdModels]
+  ): Option[ReceiveCommandModel] = {
     val result = for {
-      icdModels <- targetModelsList
+      icdModels    <- targetModelsList
       commandModel <- icdModels.commandModel
       if commandModel.subsystem == subsystem && commandModel.component == component
       receiveCommandModel <- commandModel.receive.find(_.name == commandName)
@@ -253,12 +272,17 @@ object IcdComponentInfo {
    */
   private def getCommandsSent(query: IcdDbQuery, models: IcdModels, targetModelsList: List[IcdModels]): List[SentCommandInfo] = {
     val result = for {
-      cmd <- models.commandModel.toList
+      cmd  <- models.commandModel.toList
       sent <- cmd.send
       recv <- getCommand(sent.subsystem, sent.component, sent.name, targetModelsList)
     } yield {
-      SentCommandInfo(sent.name, sent.subsystem, sent.component, Some(recv),
-        query.getComponentModel(sent.subsystem, sent.component))
+      SentCommandInfo(
+        sent.name,
+        sent.subsystem,
+        sent.component,
+        Some(recv),
+        query.getComponentModel(sent.subsystem, sent.component)
+      )
     }
     result
   }
@@ -272,7 +296,7 @@ object IcdComponentInfo {
    */
   private def getCommands(query: IcdDbQuery, models: IcdModels, targetModelsList: List[IcdModels]): Option[Commands] = {
     val received = getCommandsReceived(models, targetModelsList)
-    val sent = getCommandsSent(query, models, targetModelsList)
+    val sent     = getCommandsSent(query, models, targetModelsList)
     models.commandModel match {
       case None => None
       case Some(m) =>
@@ -282,4 +306,3 @@ object IcdComponentInfo {
     }
   }
 }
-

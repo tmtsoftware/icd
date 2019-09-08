@@ -20,7 +20,7 @@ object IcdVersions extends DefaultJsonProtocol {
   case class IcdEntry(icdVersion: String, versions: List[String], user: String, comment: String, date: String)
 
   // JSON support
-  implicit val icdEntryFormat: RootJsonFormat[IcdEntry] = jsonFormat5(IcdEntry.apply)
+  implicit val icdEntryFormat: RootJsonFormat[IcdEntry]       = jsonFormat5(IcdEntry.apply)
   implicit val icdVersionsFormat: RootJsonFormat[IcdVersions] = jsonFormat2(IcdVersions.apply)
 
   /**
@@ -52,7 +52,7 @@ object ApiVersions extends DefaultJsonProtocol {
   case class ApiEntry(version: String, commit: String, user: String, comment: String, date: String)
 
   // JSON support
-  implicit val apiEntryFormat: RootJsonFormat[ApiEntry] = jsonFormat5(ApiEntry.apply)
+  implicit val apiEntryFormat: RootJsonFormat[ApiEntry]       = jsonFormat5(ApiEntry.apply)
   implicit val apiVersionsFormat: RootJsonFormat[ApiVersions] = jsonFormat2(ApiVersions.apply)
 
   /**
@@ -65,4 +65,3 @@ object ApiVersions extends DefaultJsonProtocol {
  * Holds a list describing subsystem API versions
  */
 case class ApiVersions(subsystem: String, apis: List[ApiVersions.ApiEntry])
-

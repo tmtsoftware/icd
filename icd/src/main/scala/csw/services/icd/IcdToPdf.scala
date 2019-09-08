@@ -17,21 +17,24 @@ object IcdToPdf {
     override def onEndPage(writer: PdfWriter, document: Document) {
       try {
         val pageNumber = writer.getPageNumber
-        val pageSize = document.getPageSize
-        val x = pageSize.getRight(40)
-        val y = pageSize.getBottom(30)
-        val rect = new Rectangle(x, y, x + 40, y - 30)
-        val dc = writer.getDirectContent
+        val pageSize   = document.getPageSize
+        val x          = pageSize.getRight(40)
+        val y          = pageSize.getBottom(30)
+        val rect       = new Rectangle(x, y, x + 40, y - 30)
+        val dc         = writer.getDirectContent
         dc.setColorFill(BaseColor.GRAY)
         ColumnText.showTextAligned(
           dc,
-          Element.ALIGN_CENTER, new Phrase(s"$pageNumber"),
-          (rect.getLeft + rect.getRight) / 2, rect.getBottom - 18, 0
+          Element.ALIGN_CENTER,
+          new Phrase(s"$pageNumber"),
+          (rect.getLeft + rect.getRight) / 2,
+          rect.getBottom - 18,
+          0
         )
 
         // Add the TMT logo on the first page
         if (showLogo && pageNumber == 1) {
-          val url = getClass.getClassLoader.getResource("tmt.png")
+          val url   = getClass.getClassLoader.getResource("tmt.png")
           val image = Image.getInstance(url)
           image.setAbsolutePosition(
             pageSize.getLeft + pageSize.getWidth / 2 - image.getWidth / 2,
@@ -68,7 +71,7 @@ object IcdToPdf {
    */
   def saveAsPdf(out: OutputStream, html: String, showLogo: Boolean): Unit = {
     val document = new Document(PageSize.LETTER)
-    val writer = PdfWriter.getInstance(document, out)
+    val writer   = PdfWriter.getInstance(document, out)
     writer.setPageEvent(PageStamper(showLogo))
     document.open()
     XMLWorkerHelper.getInstance().parseXHtml(writer, document, new ByteArrayInputStream(html.getBytes), Charset.forName("UTF-8"))

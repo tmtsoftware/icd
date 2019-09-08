@@ -17,4 +17,3 @@ object BaseModelParser {
       component = config.getString(componentKey)
     )
 }
-

@@ -7,7 +7,7 @@ import scala.util.Try
 
 object ComponentDataReporter {
   def printAllUsedUnits(db: IcdDb): Unit = {
-    var units = Set[String]()
+    var units      = Set[String]()
     val components = db.query.getComponents
     components.foreach { componentModel =>
       println(s"--------- Component ${componentModel.component} --------")
@@ -29,21 +29,22 @@ object ComponentDataReporter {
         }
       }
       val commandModel = db.query.getCommandModel(componentModel)
-      commandModel.foreach(model =>
-        model.receive.foreach { command =>
-          println(s"----- Command ${command.name}")
-          command.args.foreach { arg =>
-            println(s"-- Argument ${arg.name}: type=${arg.typeStr}")
-            units = units + arg.units
+      commandModel.foreach(
+        model =>
+          model.receive.foreach { command =>
+            println(s"----- Command ${command.name}")
+            command.args.foreach { arg =>
+              println(s"-- Argument ${arg.name}: type=${arg.typeStr}")
+              units = units + arg.units
+            }
           }
-        }
       )
     }
     println(units.toSeq.sorted.mkString("\n\n\n----- Units -----\n", "\n", "\n------------"))
   }
 
   def listData(db: IcdDb, subsystem: String): Unit = {
-    val publishInfo = db.query.getPublishInfo(subsystem)
+    val publishInfo            = db.query.getPublishInfo(subsystem)
     var componentTotalDataRate = 0.0
     publishInfo.foreach { componentPublishInfo =>
       println(s" ----  ${componentPublishInfo.componentName} ----- ")
@@ -66,10 +67,12 @@ object ComponentDataReporter {
   }
 
   def listEventData(items: List[EventModel]): Double = {
-    val DEFAULT_RATE = 0.1 // TODO move somewhere
+    val DEFAULT_RATE  = 0.1 // TODO move somewhere
     var totalDataRate = 0.0
     items.foreach { item =>
-      println(s"Item Name: ${item.name}, min rate = ${item.minRate}, max rate=${item.maxRate}, archiveRate=${item.archiveRate}, archive=${item.archive}")
+      println(
+        s"Item Name: ${item.name}, min rate = ${item.minRate}, max rate=${item.maxRate}, archiveRate=${item.archiveRate}, archive=${item.archive}"
+      )
       if (item.archive) {
         val rate = if (item.archiveRate > 0.0) {
           item.archiveRate
@@ -116,19 +119,19 @@ object ComponentDataReporter {
 
   def getSizeOfType(dtype: String): Option[Int] = dtype match {
     case s if s.startsWith("boolean") => Some(1)
-    case s if s.startsWith("byte") => Some(1)
-    case s if s.startsWith("short") => Some(2)
-    case s if s.startsWith("enum") => Some(4)
+    case s if s.startsWith("byte")    => Some(1)
+    case s if s.startsWith("short")   => Some(2)
+    case s if s.startsWith("enum")    => Some(4)
     case s if s.startsWith("integer") => Some(4)
-    case s if s.startsWith("float") => Some(4)
-    case s if s.startsWith("long") => Some(8)
-    case s if s.startsWith("double") => Some(8)
-    case s if s.startsWith("string") => Some(80)
+    case s if s.startsWith("float")   => Some(4)
+    case s if s.startsWith("long")    => Some(8)
+    case s if s.startsWith("double")  => Some(8)
+    case s if s.startsWith("string")  => Some(80)
     case s if s.startsWith("array[") =>
-      var s1 = s.drop(6)
+      var s1          = s.drop(6)
       var numElements = 1
-      var commaLoc = s1.indexOf(',')
-      val endLoc = s1.indexOf(']')
+      var commaLoc    = s1.indexOf(',')
+      val endLoc      = s1.indexOf(']')
       if (commaLoc < endLoc) {
         while (commaLoc != -1) {
           val s2 = s1.take(commaLoc)
@@ -138,7 +141,7 @@ object ComponentDataReporter {
         }
       }
       val newEndLoc = s1.indexOf(']')
-      val s3 = s1.substring(0, newEndLoc)
+      val s3        = s1.substring(0, newEndLoc)
       numElements *= s3.toInt
       s1 = s1.drop(newEndLoc + 5)
       getSizeOfType(s1).map(_ * numElements)

@@ -1,8 +1,6 @@
 package icd.web.shared
 
-object SubsystemInfo {
-
-}
+object SubsystemInfo {}
 
 /**
  * Holds information about a subsystem
@@ -20,4 +18,3 @@ case class SubsystemInfo(sv: SubsystemWithVersion, title: String, description: S
  * @param maybeVersion optional version of the subsystem (None means the latest unpublished version)
  */
 case class SubsystemWithVersion(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String])
-

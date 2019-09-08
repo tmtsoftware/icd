@@ -29,8 +29,8 @@ object FileUtils {
   @js.native
   trait EventExt extends dom.Event {
     var dataTransfer: dom.DataTransfer = js.native
-    var loaded: Int = js.native
-    var total: Int = js.native
+    var loaded: Int                    = js.native
+    var total: Int                     = js.native
   }
 
   implicit def monkeyizeEvent(e: dom.Event): EventExt = e.asInstanceOf[EventExt]
@@ -43,4 +43,3 @@ object FileUtils {
   }
 
 }
-

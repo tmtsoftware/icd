@@ -17,4 +17,3 @@ case class Problem(severity: String, message: String) {
 
   override def toString: String = errorMessage()
 }
-

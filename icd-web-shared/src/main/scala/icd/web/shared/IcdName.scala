@@ -11,10 +11,12 @@ case class IcdName(subsystem: String, target: String) {
  * An ICD version with the associated source and target subsystem versions
  */
 case class IcdVersion(
-                       icdVersion: String,
-                       subsystem: String, subsystemVersion: String,
-                       target: String, targetVersion: String
-                     )
+    icdVersion: String,
+    subsystem: String,
+    subsystemVersion: String,
+    target: String,
+    targetVersion: String
+)
 
 /**
  * An ICD version with additional history information

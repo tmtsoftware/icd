@@ -15,9 +15,9 @@ case class IcdParser(dir: File) extends IcdModels {
 
   val subsystemModel: Option[IcdModels.SubsystemModel] = getConfig(subsystemFileNames.name).map(SubsystemModelParser(_))
   val componentModel: Option[IcdModels.ComponentModel] = getConfig(componentFileNames.name).map(ComponentModelParser(_))
-  val publishModel: Option[IcdModels.PublishModel] = getConfig(publishFileNames.name).map(PublishModelParser(_))
+  val publishModel: Option[IcdModels.PublishModel]     = getConfig(publishFileNames.name).map(PublishModelParser(_))
   val subscribeModel: Option[IcdModels.SubscribeModel] = getConfig(subscribeFileNames.name).map(SubscribeModelParser(_))
-  val commandModel: Option[IcdModels.CommandModel] = getConfig(commandFileNames.name).map(CommandModelParser(_))
+  val commandModel: Option[IcdModels.CommandModel]     = getConfig(commandFileNames.name).map(CommandModelParser(_))
 
   // Gets the Config object corresponding to the given standard ICD file in the given dir
   private def getConfig(name: String): Option[Config] = {

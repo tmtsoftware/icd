@@ -49,4 +49,3 @@ object CommandModelParser {
       send = config.as[Option[List[Config]]]("send").getOrElse(Nil).map(SendCommandModelParser(_))
     )
 }
-

@@ -77,7 +77,8 @@ object Styles extends StyleSheet.Inline {
 
   // Used for table columns that should wrap at "."
   val wrapTableColumn = style(
-    wordBreak.breakAll, wordWrap.breakWord
+    wordBreak.breakAll,
+    wordWrap.breakWord
   )
 
   val fileUploadMessages = style(

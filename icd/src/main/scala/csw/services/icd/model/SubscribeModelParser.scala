@@ -41,4 +41,3 @@ object SubscribeInfoParser {
       maxRate = config.as[Option[Double]]("maxRate").getOrElse(0.0)
     )
 }
-

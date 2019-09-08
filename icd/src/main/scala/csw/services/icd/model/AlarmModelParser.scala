@@ -27,4 +27,3 @@ object AlarmModelParser {
       latched = config.as[Option[Boolean]]("latched").getOrElse(false)
     )
 }
-

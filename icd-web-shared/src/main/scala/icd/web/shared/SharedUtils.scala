@@ -4,6 +4,7 @@ package icd.web.shared
  * Common, shared utility code
  */
 object SharedUtils {
+
   /**
    * Removes any columns that do not contain any values
    *

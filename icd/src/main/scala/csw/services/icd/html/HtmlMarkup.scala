@@ -64,9 +64,10 @@ object HtmlMarkup {
   // Markdown to HTML support
   private val options = PegdownOptionsAdapter.flexmarkOptions(
     Extensions.TABLES | Extensions.AUTOLINKS | Extensions.FENCED_CODE_BLOCKS
-      | Extensions.STRIKETHROUGH | Extensions.ATXHEADERSPACE | Extensions.TASKLISTITEMS)
+      | Extensions.STRIKETHROUGH | Extensions.ATXHEADERSPACE | Extensions.TASKLISTITEMS
+  )
 
-  private val parser = Parser.builder(options).build()
+  private val parser   = Parser.builder(options).build()
   private val renderer = HtmlRenderer.builder(options).build()
 
   // Enforce self-closing tags (e.g. for <img> tags) so that PDF generator will not fail.
@@ -92,16 +93,17 @@ object HtmlMarkup {
    */
   def gfmToHtml(gfm: String): String = {
     if (isEmpty(gfm)) ""
-    else try {
-      // Convert markdown to HTML
-      val html = renderer.render(parser.parse(stripLeadingWs(gfm)))
-      // Then clean it up with jsoup to avoid issues with the pdf generator (and for security)
-      Jsoup.clean(html, "", Whitelist.basicWithImages(), os)
-    } catch {
-      case ex: Throwable =>
-        println(s"Error converting markdown to HTML: $ex: Input was:\n$gfm")
-        gfm
-    }
+    else
+      try {
+        // Convert markdown to HTML
+        val html = renderer.render(parser.parse(stripLeadingWs(gfm)))
+        // Then clean it up with jsoup to avoid issues with the pdf generator (and for security)
+        Jsoup.clean(html, "", Whitelist.basicWithImages(), os)
+      } catch {
+        case ex: Throwable =>
+          println(s"Error converting markdown to HTML: $ex: Input was:\n$gfm")
+          gfm
+      }
   }
 
   /**

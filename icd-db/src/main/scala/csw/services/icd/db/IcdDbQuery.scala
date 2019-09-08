@@ -32,8 +32,14 @@ object IcdDbQuery {
   }
 
   // Lists available db collections related to an ICD
-  private[db] case class IcdEntry(name: String, subsystem: Option[MongoCollection], component: Option[MongoCollection],
-                                  publish: Option[MongoCollection], subscribe: Option[MongoCollection], command: Option[MongoCollection]) {
+  private[db] case class IcdEntry(
+      name: String,
+      subsystem: Option[MongoCollection],
+      component: Option[MongoCollection],
+      publish: Option[MongoCollection],
+      subscribe: Option[MongoCollection],
+      command: Option[MongoCollection]
+  ) {
 
     // Returns all collections belonging to this entry
     def getCollections: List[MongoCollection] = (subsystem ++ component ++ publish ++ subscribe ++ command).toList
@@ -106,11 +112,11 @@ object IcdDbQuery {
    * @param path               the path name (component-prefix.name) of the item being subscribed to
    */
   case class Subscribed(
-                         component: ComponentModel,
-                         subscribeModelInfo: SubscribeModelInfo,
-                         subscribeType: PublishType,
-                         path: String
-                       )
+      component: ComponentModel,
+      subscribeModelInfo: SubscribeModelInfo,
+      subscribeType: PublishType,
+      path: String
+  )
 
   implicit def toDbObject(query: (String, Any)): DBObject = MongoDBObject(query)
 
@@ -141,7 +147,7 @@ case class IcdDbQuery(db: MongoDB) {
   private[db] def getCollectionNames: Set[String] = db.getCollectionNames().toSet
 
   private[db] def getEntries: List[IcdEntry] = {
-    val paths = getCollectionNames.filter(isStdSet).map(IcdPath).toList
+    val paths   = getCollectionNames.filter(isStdSet).map(IcdPath).toList
     val compMap = paths.map(p => (p.component, paths.filter(_.component == p.component).map(_.path))).toMap
     val entries = compMap.keys.map(key => getEntry(db, key, compMap(key))).toList
     entries.sortBy(entry => (IcdPath(entry.name).parts.length, entry.name))
@@ -346,9 +352,8 @@ case class IcdDbQuery(db: MongoDB) {
   def getCommandSenders(subsystem: String, component: String, commandName: String): List[ComponentModel] = {
     for {
       componentModel <- getComponents
-      commandModel <- getCommandModel(componentModel)
-      _ <- commandModel.send.find(s =>
-        s.subsystem == subsystem && s.component == component && s.name == commandName)
+      commandModel   <- getCommandModel(componentModel)
+      _              <- commandModel.send.find(s => s.subsystem == subsystem && s.component == component && s.name == commandName)
     } yield componentModel
   }
 
@@ -382,13 +387,14 @@ case class IcdDbQuery(db: MongoDB) {
         entry.component.map(s => ComponentModelParser(getConfig(s.head.toString)))
     }
 
-    val e = if (component.isDefined)
-      entryForComponentName(subsystem, component.get)
-    else entryForSubsystemName(subsystem)
+    val e =
+      if (component.isDefined)
+        entryForComponentName(subsystem, component.get)
+      else entryForSubsystemName(subsystem)
 
     // Get the prefix for the related db sub-collections
     val prefix = e.name + "."
-    val list = for (entry <- getEntries if entry.name.startsWith(prefix)) yield Models(entry)
+    val list   = for (entry <- getEntries if entry.name.startsWith(prefix)) yield Models(entry)
     Models(e) :: list
   }
 
@@ -441,7 +447,7 @@ case class IcdDbQuery(db: MongoDB) {
     // Gets the full path of the subscribed item
     def getPath(i: SubscribeModelInfo): String = {
       val pubComp = getComponentModel(i.subsystem, i.component)
-      val prefix = pubComp.map(_.prefix).getOrElse("")
+      val prefix  = pubComp.map(_.prefix).getOrElse("")
       s"$prefix.${i.name}"
     }
 

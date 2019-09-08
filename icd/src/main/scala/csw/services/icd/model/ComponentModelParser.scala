@@ -23,4 +23,3 @@ object ComponentModelParser {
       wbsId = config.as[Option[String]]("wbsId").getOrElse("")
     )
 }
-

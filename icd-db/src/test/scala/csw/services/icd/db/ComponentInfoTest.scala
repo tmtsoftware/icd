@@ -33,7 +33,9 @@ class ComponentInfoTest extends FunSuite {
       info.publishes.get.eventList.foreach { pubInfo =>
         println(s"envCtrl publishes event: ${pubInfo.eventModel.name}")
         pubInfo.subscribers.foreach { subInfo =>
-          println(s"${subInfo.subscribeModelInfo.component} from ${subInfo.subscribeModelInfo.subsystem} subscribes to ${subInfo.subscribeModelInfo.name}")
+          println(
+            s"${subInfo.subscribeModelInfo.component} from ${subInfo.subscribeModelInfo.subsystem} subscribes to ${subInfo.subscribeModelInfo.name}"
+          )
         }
       }
       assert(info.subscribes.nonEmpty)

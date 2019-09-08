@@ -27,32 +27,43 @@ object Application {
  */
 //noinspection TypeAnnotation
 @Singleton
-class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken: CSRFCheck, assets: AssetsFinder, webJarsUtil: WebJarsUtil, webJarAssets: WebJarAssets, components: ControllerComponents) extends AbstractController(components) {
+class Application @Inject()(
+    env: Environment,
+    addToken: CSRFAddToken,
+    checkToken: CSRFCheck,
+    assets: AssetsFinder,
+    webJarsUtil: WebJarsUtil,
+    webJarAssets: WebJarAssets,
+    components: ControllerComponents
+) extends AbstractController(components) {
 
   import Application._
   import JsonSupport._
 
-  println(s"icdwebserver running on http://${System.getProperty("http.host", "localhost")}:${System.getProperty("http.port", "9000")}")
+  println(
+    s"icdwebserver running on http://${System.getProperty("http.host", "localhost")}:${System.getProperty("http.port", "9000")}"
+  )
 
   // cache of API and ICD versions published on GitHub (until next browser refresh)
   val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
 
   // Somehow disabling the CSRF filter in application.conf and adding it here was needed to make this work
   // (The CSRF token is needed for the file upload dialog in the client)
-  def index = addToken(Action { implicit request =>
-    implicit val environment: Environment = env
-    val token = Csrf(CSRF.getToken.get.value)
-    val debug = env.mode == Mode.Dev
-    Ok(views.html.index(debug, assets, token, webJarsUtil))
-  })
+  def index =
+    addToken(Action { implicit request =>
+      implicit val environment: Environment = env
+      val token                             = Csrf(CSRF.getToken.get.value)
+      val debug                             = env.mode == Mode.Dev
+      Ok(views.html.index(debug, assets, token, webJarsUtil))
+    })
 
   /**
    * Gets a list of top level subsystem names
    */
   def subsystemNames = Action { implicit request =>
-    val subsystemsInDb = db.query.getSubsystemNames
+    val subsystemsInDb          = db.query.getSubsystemNames
     val publishedSubsystemNames = allApiVersions.map(_.subsystem)
-    val names = publishedSubsystemNames ++ subsystemsInDb
+    val names                   = publishedSubsystemNames ++ subsystemsInDb
     Ok(Json.toJson(names.sorted.toSet))
   }
 
@@ -68,7 +79,7 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
     // Gets the matching published ApiEntry for the subsystem version
     def getApiEntry(apiVersions: ApiVersions): Option[ApiEntry] = maybeVersion match {
       case Some(version) => apiVersions.apis.find(_.version == version)
-      case None => Some(apiVersions.apis.head)
+      case None          => Some(apiVersions.apis.head)
     }
 
     allApiVersions.find(a => a.subsystem == subsystem).flatMap(getApiEntry) match {
@@ -84,7 +95,6 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
    * Gets information about a named subsystem
    */
   def subsystemInfo(subsystem: String, maybeVersion: Option[String]) = Action { implicit request =>
-
     // Gets the matching subsystem info from GitHub, if published there
     def getPublishedSubsystemInfo: Option[SubsystemInfo] = {
       ingestPublishedSubsystem(subsystem, maybeVersion).map { model =>
@@ -133,10 +143,11 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
    * @param maybeVersion   the subsystem's version (default: current)
    * @param maybeComponent component name (default all in subsystem)
    */
-  def componentInfo(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String]) = Action { implicit request =>
-    val sv = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-    val infoList = ComponentInfoHelper.getComponentInfoList(db, sv)
-    Ok(Json.toJson(infoList))
+  def componentInfo(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String]) = Action {
+    implicit request =>
+      val sv       = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
+      val infoList = ComponentInfoHelper.getComponentInfoList(db, sv)
+      Ok(Json.toJson(infoList))
   }
 
   /**
@@ -145,9 +156,9 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
   private def ingestPublishedIcd(icdVersion: IcdVersion): Unit = {
     val v = icdVersion.icdVersion
     if (v.nonEmpty && v != "*") {
-      val sv = SubsystemAndVersion(icdVersion.subsystem, Some(icdVersion.subsystemVersion))
+      val sv       = SubsystemAndVersion(icdVersion.subsystem, Some(icdVersion.subsystemVersion))
       val targetSv = SubsystemAndVersion(icdVersion.target, Some(icdVersion.targetVersion))
-      val icds = db.versionManager.getIcdVersions(icdVersion.subsystem, icdVersion.target)
+      val icds     = db.versionManager.getIcdVersions(icdVersion.subsystem, icdVersion.target)
       if (!icds.exists(_.icdVersion.icdVersion == v))
         IcdGitManager.importIcdFiles(db, List(sv, targetSv), println(_), allIcdVersions)
     }
@@ -163,13 +174,15 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
    * @param maybeTargetVersion  the target subsystem's version
    * @param maybeTargetComponent optional target component name (default: all in target subsystem)
    */
-  def icdComponentInfo(subsystem: String,
-                       maybeVersion: Option[String],
-                       maybeComponent: Option[String],
-                       target: String,
-                       maybeTargetVersion: Option[String],
-                       maybeTargetComponent: Option[String]): Action[AnyContent] = Action { implicit request =>
-    val sv = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
+  def icdComponentInfo(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      target: String,
+      maybeTargetVersion: Option[String],
+      maybeTargetComponent: Option[String]
+  ): Action[AnyContent] = Action { implicit request =>
+    val sv       = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     val targetSv = SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
     // XXX TODO FIXME: Make more efficient,since don't need model returned here. Why not check/ingest subsystem also?
     if (db.versionManager.getSubsystemModel(targetSv).isEmpty) {
@@ -190,15 +203,15 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
    * @param maybeTargetComponent optional target component name (default: all in target subsystem)
    * @param maybeIcdVersion    optional ICD version (default: current)
    */
-  def icdAsPdf(subsystem: String,
-               maybeVersion: Option[String],
-               maybeComponent: Option[String],
-               target: String,
-               maybeTargetVersion: Option[String],
-               maybeTargetComponent: Option[String],
-               maybeIcdVersion: Option[String]
+  def icdAsPdf(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      target: String,
+      maybeTargetVersion: Option[String],
+      maybeTargetComponent: Option[String],
+      maybeIcdVersion: Option[String]
   ): Action[AnyContent] = Action { implicit request =>
-
     val out = new ByteArrayOutputStream()
 
     // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
@@ -210,14 +223,18 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
       ingestPublishedIcd(IcdVersion(v, subsystem, maybeVersion.get, target, maybeTargetVersion.get))
 
     val versions = db.versionManager.getIcdVersions(subsystem, target)
-    val iv = versions.find(_.icdVersion.icdVersion == v).map(_.icdVersion)
+    val iv       = versions.find(_.icdVersion.icdVersion == v).map(_.icdVersion)
     val (sv, targetSv) = if (iv.isDefined) {
       val i = iv.get
-      (SubsystemWithVersion(i.subsystem, Some(i.subsystemVersion), maybeComponent),
-        SubsystemWithVersion(i.target, Some(i.targetVersion), maybeTargetComponent))
+      (
+        SubsystemWithVersion(i.subsystem, Some(i.subsystemVersion), maybeComponent),
+        SubsystemWithVersion(i.target, Some(i.targetVersion), maybeTargetComponent)
+      )
     } else {
-      (SubsystemWithVersion(subsystem, maybeVersion, maybeComponent),
-        SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent))
+      (
+        SubsystemWithVersion(subsystem, maybeVersion, maybeComponent),
+        SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
+      )
     }
 
     IcdDbPrinter(db).getIcdAsHtml(sv, targetSv, iv) match {
@@ -239,7 +256,7 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
    */
   def apiAsPdf(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String]) = Action { implicit request =>
     val out = new ByteArrayOutputStream()
-    val sv = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
+    val sv  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     IcdDbPrinter(db).getApiAsHtml(sv) match {
       case Some(html) =>
         IcdToPdf.saveAsPdf(out, html, showLogo = true)
@@ -254,7 +271,10 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
    * Returns a detailed list of the versions of the given subsystem
    */
   def getVersions(subsystem: String) = Action { implicit request =>
-    val versions = allApiVersions.filter(_.subsystem == subsystem).flatMap(_.apis).map(a => VersionInfo(Some(a.version), a.user, a.comment, a.date))
+    val versions = allApiVersions
+      .filter(_.subsystem == subsystem)
+      .flatMap(_.apis)
+      .map(a => VersionInfo(Some(a.version), a.user, a.comment, a.date))
     Ok(Json.toJson(versions))
   }
 
@@ -270,7 +290,7 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
    * Gets a list of ICD names as pairs of (subsystem, targetSubsystem)
    */
   def getIcdNames = Action { implicit request =>
-    val list = allIcdVersions.map(i => IcdName(i.subsystems.head, i.subsystems.tail.head))
+    val list   = allIcdVersions.map(i => IcdName(i.subsystems.head, i.subsystems.tail.head))
     val sorted = list.sortWith((a, b) => a.subsystem.compareTo(b.subsystem) < 0)
     Ok(Json.toJson(sorted))
   }
@@ -280,10 +300,12 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
    */
   def getIcdVersions(subsystem: String, target: String) = Action { implicit request =>
     // convert list to use shared IcdVersion class
-    val list = allIcdVersions.find(i => i.subsystems.contains(subsystem) && i.subsystems.contains(target)).toList.flatMap(_.icds).map { icd =>
-      val icdVersion = IcdVersion(icd.icdVersion, subsystem, icd.versions.head, target, icd.versions.tail.head)
-      IcdVersionInfo(icdVersion, icd.user, icd.comment, icd.date)
-    }
+    val list =
+      allIcdVersions.find(i => i.subsystems.contains(subsystem) && i.subsystems.contains(target)).toList.flatMap(_.icds).map {
+        icd =>
+          val icdVersion = IcdVersion(icd.icdVersion, subsystem, icd.versions.head, target, icd.versions.tail.head)
+          IcdVersionInfo(icdVersion, icd.user, icd.comment, icd.date)
+      }
     Ok(Json.toJson(list))
   }
 
@@ -297,10 +319,10 @@ class Application @Inject()(env: Environment, addToken: CSRFAddToken, checkToken
    */
   def diff(subsystem: String, versionsStr: String) = Action { implicit request =>
     val versions = versionsStr.split(',')
-    val v1 = versions.head
-    val v2 = versions.tail.head
-    val v1Opt = if (v1.nonEmpty) Some(v1) else None
-    val v2Opt = if (v2.nonEmpty) Some(v2) else None
+    val v1       = versions.head
+    val v2       = versions.tail.head
+    val v1Opt    = if (v1.nonEmpty) Some(v1) else None
+    val v2Opt    = if (v2.nonEmpty) Some(v2) else None
     // convert list to use shared IcdVersion class
     val list = db.versionManager.diff(subsystem, v1Opt, v2Opt).map(getDiffInfo)
     Ok(Json.toJson(list))

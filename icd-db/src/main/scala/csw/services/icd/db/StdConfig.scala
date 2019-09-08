@@ -70,8 +70,8 @@ object StdConfig {
    */
   def get(config: Config, fileName: String): Option[StdConfig] = {
     val name = new File(fileName).getName
-    stdNames.flatMap {
-      stdName => if (name == stdName.name) Some(StdConfig(stdName, config)) else None
+    stdNames.flatMap { stdName =>
+      if (name == stdName.name) Some(StdConfig(stdName, config)) else None
     }.headOption
   }
 }

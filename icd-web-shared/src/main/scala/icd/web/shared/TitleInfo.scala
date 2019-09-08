@@ -10,6 +10,7 @@ package icd.web.shared
 case class TitleInfo(title: String, maybeSubtitle: Option[String], maybeDescription: Option[String])
 
 object TitleInfo {
+
   /**
    * Displayed version for unpublished APIs
    */
@@ -19,7 +20,8 @@ object TitleInfo {
     if (maybeTargetSv.isEmpty)
       s"Based on ${sv.subsystem} ${sv.maybeVersion.getOrElse(unpublished)}"
     else
-      s"Based on ${sv.subsystem} ${sv.maybeVersion.getOrElse(unpublished)} and ${maybeTargetSv.get.subsystem} ${maybeTargetSv.get.maybeVersion.getOrElse(unpublished)}"
+      s"Based on ${sv.subsystem} ${sv.maybeVersion.getOrElse(unpublished)} and ${maybeTargetSv.get.subsystem} ${maybeTargetSv.get.maybeVersion
+        .getOrElse(unpublished)}"
   }
 
   /**
@@ -32,32 +34,34 @@ object TitleInfo {
    * @return the title related information
    */
   def apply(
-             subsystemInfo: SubsystemInfo,
-             maybeTargetSv: Option[SubsystemWithVersion],
-             maybeIcd: Option[IcdVersion],
-             part: String = ""
-           ): TitleInfo = {
-    val sv = subsystemInfo.sv
-    val targetName = maybeTargetSv.map(_.subsystem).getOrElse("")
-    val componentPart = subsystemInfo.sv.maybeComponent.map("." + _).getOrElse("")
+      subsystemInfo: SubsystemInfo,
+      maybeTargetSv: Option[SubsystemWithVersion],
+      maybeIcd: Option[IcdVersion],
+      part: String = ""
+  ): TitleInfo = {
+    val sv                  = subsystemInfo.sv
+    val targetName          = maybeTargetSv.map(_.subsystem).getOrElse("")
+    val componentPart       = subsystemInfo.sv.maybeComponent.map("." + _).getOrElse("")
     val targetComponentPart = maybeTargetSv.flatMap(_.maybeComponent).map("." + _).getOrElse("")
     if (maybeIcd.isDefined) {
       val icd = maybeIcd.get
-      val title = if (part.nonEmpty)
-        s"ICD $part $sv$componentPart -> $targetName$targetComponentPart (version ${icd.icdVersion})"
-      else
-        s"ICD $sv$componentPart / $targetName$targetComponentPart (version ${icd.icdVersion})"
+      val title =
+        if (part.nonEmpty)
+          s"ICD $part $sv$componentPart -> $targetName$targetComponentPart (version ${icd.icdVersion})"
+        else
+          s"ICD $sv$componentPart / $targetName$targetComponentPart (version ${icd.icdVersion})"
       val subtitle = getSubtitle(sv, maybeTargetSv)
       TitleInfo(title, Some(subtitle), None)
     } else {
       if (maybeTargetSv.isDefined) {
-        val title = s"ICD $part $sv$componentPart -> $targetName$targetComponentPart $unpublished"
+        val title    = s"ICD $part $sv$componentPart -> $targetName$targetComponentPart $unpublished"
         val subtitle = getSubtitle(sv, maybeTargetSv)
         TitleInfo(title, Some(subtitle), None)
       } else {
         TitleInfo(
           s"API for ${sv.subsystem}$componentPart ${sv.maybeVersion.getOrElse(unpublished)}",
-          Some(subsystemInfo.title), Some(subsystemInfo.description)
+          Some(subsystemInfo.title),
+          Some(subsystemInfo.description)
         )
       }
     }

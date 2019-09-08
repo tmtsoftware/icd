@@ -9,7 +9,7 @@ import scalatags.JsDom.all._
  */
 case class Navbar() extends Displayable {
 
-  val leftNavbar: UList = ul(cls := "nav navbar-nav").render
+  val leftNavbar: UList  = ul(cls := "nav navbar-nav").render
   val rightNavbar: UList = ul(cls := "nav navbar-nav pull-right").render
 
   def markup(): Element = {
@@ -17,7 +17,12 @@ case class Navbar() extends Displayable {
 
     nav(cls := "navbar navbar-default navbar-fixed-top hidden-print", role := "navigation")(
       div(cls := "navbar-header")(
-        button(`type` := "button", cls := "navbar-toggle", attr("data-toggle") := "collapse", attr("data-target") := "#icd-navbar")(
+        button(
+          `type` := "button",
+          cls := "navbar-toggle",
+          attr("data-toggle") := "collapse",
+          attr("data-target") := "#icd-navbar"
+        )(
           span(cls := "sr-only")("Toggle navigation/span"),
           span(cls := "icon-bar"),
           span(cls := "icon-bar"),
@@ -26,7 +31,8 @@ case class Navbar() extends Displayable {
         a(cls := "navbar-brand", href := "/")("TMT ICD Database")
       ),
       div(id := "icd-navbar", cls := "collapse navbar-collapse")(
-        leftNavbar, rightNavbar
+        leftNavbar,
+        rightNavbar
       )
     ).render
   }

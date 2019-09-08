@@ -4,6 +4,7 @@ import scalatags.Text
 import scalatags.Text.all._
 
 object Headings {
+
   /**
    * Returns a unique id for a link target.
    *
@@ -59,4 +60,3 @@ class HtmlHeadings extends Headings {
     h5(a(name := id)(title))
   }
 }
-

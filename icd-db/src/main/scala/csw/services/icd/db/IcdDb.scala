@@ -12,9 +12,9 @@ import org.joda.time.{DateTime, DateTimeZone}
 import scala.io.StdIn
 
 object IcdDbDefaults {
-  private val conf = ConfigFactory.load
-  val defaultPort: Int = conf.getInt("icd.db.port")
-  val defaultHost: String = conf.getString("icd.db.host")
+  private val conf          = ConfigFactory.load
+  val defaultPort: Int      = conf.getInt("icd.db.port")
+  val defaultHost: String   = conf.getString("icd.db.host")
   val defaultDbName: String = conf.getString("icd.db.name")
 }
 
@@ -138,16 +138,16 @@ object IcdDb extends App {
     // --list option
     def list(componentType: String): Unit = {
       val opt = componentType.toLowerCase
-      val list = if (opt.startsWith("s"))
-        db.query.getSubsystemNames
-      else if (opt.startsWith("as"))
-        db.query.getAssemblyNames
-      else if (opt.startsWith("h"))
-        db.query.getHcdNames
-      else db.query.getComponentNames
+      val list =
+        if (opt.startsWith("s"))
+          db.query.getSubsystemNames
+        else if (opt.startsWith("as"))
+          db.query.getAssemblyNames
+        else if (opt.startsWith("h"))
+          db.query.getHcdNames
+        else db.query.getComponentNames
       for (name <- list) println(name)
     }
-
 
     def error(msg: String): Unit = {
       println(msg)
@@ -157,8 +157,14 @@ object IcdDb extends App {
     // --output option
     def output(file: File): Unit = {
       if (options.subsystem.isEmpty) error("Missing required subsystem name: Please specify --subsystem <name>")
-      IcdDbPrinter(db).saveToFile(options.subsystem.get, options.component,
-        options.target, options.targetComponent, options.icdVersion, file)
+      IcdDbPrinter(db).saveToFile(
+        options.subsystem.get,
+        options.component,
+        options.target,
+        options.targetComponent,
+        options.icdVersion,
+        file
+      )
     }
 
     // --drop option
@@ -204,7 +210,7 @@ object IcdDb extends App {
           val versionRegex = """\d+\.\d+""".r
           version match {
             case versionRegex(_*) =>
-            case _ => error(s"Bad version format: $version, expected something like 1.0, 2.1")
+            case _                => error(s"Bad version format: $version, expected something like 1.0, 2.1")
           }
         case None =>
       }
@@ -240,19 +246,20 @@ object IcdDb extends App {
  * ICD Database (Mongodb) support
  */
 case class IcdDb(
-                  dbName: String = IcdDbDefaults.defaultDbName,
-                  host: String = IcdDbDefaults.defaultHost,
-                  port: Int = IcdDbDefaults.defaultPort) {
+    dbName: String = IcdDbDefaults.defaultDbName,
+    host: String = IcdDbDefaults.defaultHost,
+    port: Int = IcdDbDefaults.defaultPort
+) {
 
   val mongoClient = MongoClient(host, port)
 
   // Clean up on exit
   sys.addShutdownHook(mongoClient.close())
 
-  val db: MongoDB = mongoClient(dbName)
-  val query: IcdDbQuery = IcdDbQuery(db)
+  val db: MongoDB                       = mongoClient(dbName)
+  val query: IcdDbQuery                 = IcdDbQuery(db)
   val versionManager: IcdVersionManager = IcdVersionManager(db, query)
-  val manager: IcdDbManager = IcdDbManager(db, versionManager)
+  val manager: IcdDbManager             = IcdDbManager(db, versionManager)
 
   /**
    * Ingests all the files with the standard names (stdNames) in the given directory and recursively
@@ -368,9 +375,14 @@ case class IcdDb(
       feedback(s"Ingesting ICD ${icdVersions.subsystems.head}-${icdVersions.subsystems(1)}-${icd.icdVersion}")
       versionManager.addIcdVersion(
         icd.icdVersion,
-        icdVersions.subsystems.head, icd.versions.head,
-        icdVersions.subsystems(1), icd.versions(1),
-        icd.user, icd.comment, DateTime.parse(icd.date))
+        icdVersions.subsystems.head,
+        icd.versions.head,
+        icdVersions.subsystems(1),
+        icd.versions(1),
+        icd.user,
+        icd.comment,
+        DateTime.parse(icd.date)
+      )
     }
   }
 

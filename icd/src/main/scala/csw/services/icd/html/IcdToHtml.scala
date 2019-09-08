@@ -15,7 +15,7 @@ object IcdToHtml {
 
   def getCss: String = {
     val stream = getClass.getResourceAsStream("/icd.css")
-    val lines = scala.io.Source.fromInputStream(stream).getLines()
+    val lines  = scala.io.Source.fromInputStream(stream).getLines()
     lines.mkString("\n")
   }
 
@@ -26,29 +26,31 @@ object IcdToHtml {
    * @return a string in HTML format
    */
   def getAsHtml(models: List[IcdModels]): String = {
-    val maybeSubsystemInfo = models.head.subsystemModel.map(s =>
-      SubsystemInfo(SubsystemWithVersion(s.subsystem, None, None), s.title, s.description))
+    val maybeSubsystemInfo =
+      models.head.subsystemModel.map(s => SubsystemInfo(SubsystemWithVersion(s.subsystem, None, None), s.title, s.description))
     val infoList = for {
-      m <- models
+      m              <- models
       componentModel <- m.componentModel
     } yield {
       val publishes = m.publishModel.map { pm =>
-        val eventList = pm.eventList.map(EventInfo(_, Nil))
+        val eventList        = pm.eventList.map(EventInfo(_, Nil))
         val observeEventList = pm.observeEventList.map(EventInfo(_, Nil))
         val currentStateList = pm.currentStateList.map(EventInfo(_, Nil))
-        val alarmList = pm.alarmList.map(AlarmInfo(_, Nil))
+        val alarmList        = pm.alarmList.map(AlarmInfo(_, Nil))
         Publishes(pm.description, eventList, observeEventList, currentStateList, alarmList)
       }
       val subscribes = m.subscribeModel.map { sm =>
         val eventList = sm.eventList.map(ev => DetailedSubscribeInfo(Events, ev, None, None, None, warnings = false))
-        val observeEventList = sm.observeEventList.map(ev => DetailedSubscribeInfo(ObserveEvents, ev, None, None, None, warnings = false))
-        val currentStateList = sm.currentStateList.map(ev => DetailedSubscribeInfo(CurrentStates, ev, None, None, None, warnings = false))
+        val observeEventList =
+          sm.observeEventList.map(ev => DetailedSubscribeInfo(ObserveEvents, ev, None, None, None, warnings = false))
+        val currentStateList =
+          sm.currentStateList.map(ev => DetailedSubscribeInfo(CurrentStates, ev, None, None, None, warnings = false))
         val alarmList = sm.alarmList.map(ev => DetailedSubscribeInfo(Alarms, ev, None, None, None, warnings = false))
         Subscribes(sm.description, eventList ++ observeEventList ++ currentStateList ++ alarmList)
       }
       val commands = m.commandModel.map { cm =>
         val commandsReceived = cm.receive.map(r => ReceivedCommandInfo(r, Nil))
-        val commandsSent = cm.send.map(s => SentCommandInfo(s.name, s.subsystem, s.component, None, None))
+        val commandsSent     = cm.send.map(s => SentCommandInfo(s.name, s.subsystem, s.component, None, None))
         Commands(cm.description, commandsReceived, commandsSent)
       }
       ComponentInfo(componentModel, publishes, subscribes, commands)
@@ -57,7 +59,6 @@ object IcdToHtml {
     val markup = getApiAsHtml(maybeSubsystemInfo, infoList)
     markup.render
   }
-
 
   /**
    * Returns an HTML tags describing the given components in the given subsystem.
@@ -78,12 +79,12 @@ object IcdToHtml {
       } else if (infoList.size == 1) {
         // XXX TODO FIXME: When is this block called?
         val componentModel = infoList.head.componentModel
-        val subsys = componentModel.subsystem
-        val comp = componentModel.component
-        val desc = componentModel.description
-        val ti = TitleInfo(s"API for $subsys.$comp", None, Some(desc))
-        val sv = SubsystemWithVersion(subsys, None, Some(comp))
-        val si = SubsystemInfo(sv, "", "")
+        val subsys         = componentModel.subsystem
+        val comp           = componentModel.component
+        val desc           = componentModel.description
+        val ti             = TitleInfo(s"API for $subsys.$comp", None, Some(desc))
+        val sv             = SubsystemWithVersion(subsys, None, Some(comp))
+        val si             = SubsystemInfo(sv, "", "")
         (ti, getTitleMarkup(ti), SummaryTable.displaySummary(si, None, infoList, nh))
       } else {
         (TitleInfo("", None, None), div(), div())
@@ -92,7 +93,7 @@ object IcdToHtml {
       summaryTable,
       displayDetails(infoList, nh, forApi = true)
     )
-    val toc = nh.mkToc()
+    val toc   = nh.mkToc()
     val intro = makeIntro(titleInfo)
     html(
       head(
@@ -130,9 +131,7 @@ object IcdToHtml {
    * @param forApi   true if this is for an API document, false for ICD
    * @return the HTML
    */
-  def displayDetails(infoList: List[ComponentInfo],
-                     nh: NumberedHeadings,
-                     forApi: Boolean): Text.TypedTag[String] = {
+  def displayDetails(infoList: List[ComponentInfo], nh: NumberedHeadings, forApi: Boolean): Text.TypedTag[String] = {
     import scalatags.Text.all._
     div(
       infoList.map(displayComponentInfo(_, nh, forApi))
@@ -151,7 +150,7 @@ object IcdToHtml {
     // For ICDs, only display published items/received commands, for APIs show everything
     // (Note: Need to include even if only subscribed items are defined, to keep summary links from breaking)
     if (forApi ||
-      (info.publishes.isDefined && info.publishes.get.nonEmpty
+        (info.publishes.isDefined && info.publishes.get.nonEmpty
         || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
         || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
         || info.commands.get.commandsSent.nonEmpty))) {
@@ -181,10 +180,14 @@ object IcdToHtml {
   private def sentCommandsTitle(compName: String): String = s"Command Configurations Sent by $compName"
 
   // Generates the HTML markup to display the commands a component sends
-  private def sentCommandsMarkup(component: ComponentModel, info: List[SentCommandInfo], nh: NumberedHeadings): Text.TypedTag[String] = {
+  private def sentCommandsMarkup(
+      component: ComponentModel,
+      info: List[SentCommandInfo],
+      nh: NumberedHeadings
+  ): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
-    val compName = component.component
+    val compName   = component.component
     val senderInfo = span(strong("Sender: "), s"${component.subsystem}.$compName")
 
     if (info.isEmpty) div()
@@ -193,19 +196,22 @@ object IcdToHtml {
         nh.H3(sentCommandsTitle(compName)),
         for (s <- info) yield {
           val receiveCommandModel = s.receiveCommandModel
-          val receiverStr = s.receiver.map(r => s"${r.subsystem}.${r.component}").getOrElse("none")
-          val receiverInfo = span(strong("Receiver: "), receiverStr)
+          val receiverStr         = s.receiver.map(r => s"${r.subsystem}.${r.component}").getOrElse("none")
+          val receiverInfo        = span(strong("Receiver: "), receiverStr)
           div(cls := "nopagebreak")(
             nh.H4(s.name, idFor(compName, "sends", "Commands", s.name)),
             p(senderInfo, ", ", receiverInfo),
             receiveCommandModel match {
-              case Some(m) => div(
-                if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
-                if (m.preconditions.isEmpty) div() else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
-                if (m.postconditions.isEmpty) div() else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
-                raw(m.description),
-                if (m.args.isEmpty) div() else parameterListMarkup(m.name, m.args, m.requiredArgs, nh)
-              )
+              case Some(m) =>
+                div(
+                  if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
+                  if (m.preconditions.isEmpty) div()
+                  else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
+                  if (m.postconditions.isEmpty) div()
+                  else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
+                  raw(m.description),
+                  if (m.args.isEmpty) div() else parameterListMarkup(m.name, m.args, m.requiredArgs, nh)
+                )
               case None => s.warning.map(msg => p(em(" Warning: ", msg)))
             }
           )
@@ -215,7 +221,12 @@ object IcdToHtml {
   }
 
   // Generates the markup for the commands section (description plus received and sent)
-  private def commandsMarkup(component: ComponentModel, maybeCommands: Option[Commands], nh: NumberedHeadings, forApi: Boolean): Text.TypedTag[String] = {
+  private def commandsMarkup(
+      component: ComponentModel,
+      maybeCommands: Option[Commands],
+      nh: NumberedHeadings,
+      forApi: Boolean
+  ): Text.TypedTag[String] = {
     import scalatags.Text.all._
     maybeCommands match {
       case None => div()
@@ -231,14 +242,16 @@ object IcdToHtml {
   }
 
   // Generates the HTML markup to display the commands a component receives
-  private def receivedCommandsMarkup(component: ComponentModel,
-                                     info: List[ReceivedCommandInfo],
-                                     nh: NumberedHeadings,
-                                     forApi: Boolean): Text.TypedTag[String] = {
+  private def receivedCommandsMarkup(
+      component: ComponentModel,
+      info: List[ReceivedCommandInfo],
+      nh: NumberedHeadings,
+      forApi: Boolean
+  ): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
-    val compName = component.component
-    val senderStr = if (forApi) "Senders" else "Sender"
+    val compName     = component.component
+    val senderStr    = if (forApi) "Senders" else "Sender"
     val receiverInfo = span(strong("Receiver: "), s"${component.subsystem}.$compName")
 
     if (info.isEmpty) div()
@@ -246,21 +259,22 @@ object IcdToHtml {
       div(
         nh.H3(receivedCommandsTitle(compName)),
         for (r <- info) yield {
-          val m = r.receiveCommandModel
-          val senders = r.senders.map(s => s"${s.subsystem}.${s.component}").mkString(", ")
+          val m          = r.receiveCommandModel
+          val senders    = r.senders.map(s => s"${s.subsystem}.${s.component}").mkString(", ")
           val senderInfo = span(strong(s"$senderStr: "), if (senders.isEmpty) "none" else senders)
           div(cls := "nopagebreak")(
-            nh.H4(m.name,
-              idFor(compName, "receives", "Commands", m.name)),
+            nh.H4(m.name, idFor(compName, "receives", "Commands", m.name)),
             p(senderInfo, ", ", receiverInfo),
             if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
             if (m.preconditions.isEmpty) div() else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
-            if (m.postconditions.isEmpty) div() else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
+            if (m.postconditions.isEmpty) div()
+            else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
             raw(m.description),
             parameterListMarkup(m.name, m.args, m.requiredArgs, nh),
             p(strong("Completion Type: "), m.completionType),
             resultTypeMarkup(m.resultType, nh),
-            if (m.completionConditions.isEmpty) div() else div(p(strong("Completion Conditions: "), ol(m.completionConditions.map(cc => li(raw(cc))))))
+            if (m.completionConditions.isEmpty) div()
+            else div(p(strong("Completion Conditions: "), ol(m.completionConditions.map(cc => li(raw(cc))))))
           )
         }
       )
@@ -272,7 +286,7 @@ object IcdToHtml {
     if (attributesList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units")
-      val rowList = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units)
+      val rowList  = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units)
       div(cls := "nopagebreak")(
         p(strong(a("Result Type Fields"))),
         HtmlMarkup.mkTable(headings, rowList)
@@ -280,13 +294,19 @@ object IcdToHtml {
     }
   }
 
-  private def parameterListMarkup(nameStr: String, attributesList: List[AttributeModel], requiredArgs: List[String], nh: NumberedHeadings): Text.TypedTag[String] = {
+  private def parameterListMarkup(
+      nameStr: String,
+      attributesList: List[AttributeModel],
+      requiredArgs: List[String],
+      nh: NumberedHeadings
+  ): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (attributesList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default", "Required")
-      val rowList = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue,
-        yesNo(requiredArgs.contains(a.name)))
+      val rowList =
+        for (a <- attributesList)
+          yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue, yesNo(requiredArgs.contains(a.name)))
       div(cls := "nopagebreak")(
         p(strong(a(s"Arguments for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList)
@@ -297,10 +317,14 @@ object IcdToHtml {
   private def receivedCommandsTitle(compName: String): String = s"Command Configurations Received by $compName"
 
   // Generates the HTML markup to display the component's subscribe information
-  private def subscribeMarkup(component: ComponentModel, maybeSubscribes: Option[Subscribes], nh: NumberedHeadings): Text.TypedTag[String] = {
+  private def subscribeMarkup(
+      component: ComponentModel,
+      maybeSubscribes: Option[Subscribes],
+      nh: NumberedHeadings
+  ): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
-    val compName = component.component
+    val compName       = component.component
     val subscriberInfo = span(strong("Subscriber: "), s"${component.subsystem}.$compName")
 
     def subscribeListMarkup(pubType: String, subscribeList: List[DetailedSubscribeInfo]): Text.TypedTag[String] = {
@@ -312,33 +336,46 @@ object IcdToHtml {
       }
 
       if (subscribeList.isEmpty) div()
-      else div(
-        for (si <- subscribeList) yield {
-          val sInfo = si.subscribeModelInfo
-          val publisherInfo = span(strong("Publisher: "), s"${si.subscribeModelInfo.subsystem}.${si.subscribeModelInfo.component}")
-          div(cls := "nopagebreak")(
-            nh.H4(s"${singlePubType(pubType)}: ${sInfo.name}", idFor(compName, "subscribes", pubType, sInfo.name)),
-            p(publisherInfo, ", ", subscriberInfo),
-            raw(si.description),
-            getWarning(si),
-            if (sInfo.usage.isEmpty) div() else div(strong("Usage:"), raw(sInfo.usage)),
-            table(
-              thead(
-                tr(th("Subsystem"), th("Component"), th("Prefix.Name"),
-                  th("Required Rate"), th("Max Rate"),
-                  th("Publisher's Min Rate"), th("Publisher's Max Rate"))
+      else
+        div(
+          for (si <- subscribeList) yield {
+            val sInfo = si.subscribeModelInfo
+            val publisherInfo =
+              span(strong("Publisher: "), s"${si.subscribeModelInfo.subsystem}.${si.subscribeModelInfo.component}")
+            div(cls := "nopagebreak")(
+              nh.H4(s"${singlePubType(pubType)}: ${sInfo.name}", idFor(compName, "subscribes", pubType, sInfo.name)),
+              p(publisherInfo, ", ", subscriberInfo),
+              raw(si.description),
+              getWarning(si),
+              if (sInfo.usage.isEmpty) div() else div(strong("Usage:"), raw(sInfo.usage)),
+              table(
+                thead(
+                  tr(
+                    th("Subsystem"),
+                    th("Component"),
+                    th("Prefix.Name"),
+                    th("Required Rate"),
+                    th("Max Rate"),
+                    th("Publisher's Min Rate"),
+                    th("Publisher's Max Rate")
+                  )
+                ),
+                tbody(
+                  tr(
+                    td(sInfo.subsystem),
+                    td(sInfo.component),
+                    td(si.path),
+                    td(formatRate(sInfo.requiredRate)),
+                    td(formatRate(sInfo.maxRate)),
+                    td(formatRate(si.eventModel.map(_.minRate).getOrElse(0.0))),
+                    td(formatRate(si.eventModel.map(_.maxRate).getOrElse(0.0)))
+                  )
+                )
               ),
-              tbody(
-                tr(td(sInfo.subsystem), td(sInfo.component), td(si.path),
-                  td(formatRate(sInfo.requiredRate)), td(formatRate(sInfo.maxRate)),
-                  td(formatRate(si.eventModel.map(_.minRate).getOrElse(0.0))),
-                  td(formatRate(si.eventModel.map(_.maxRate).getOrElse(0.0))))
-              )
-            ),
-            si.eventModel.map(t => attributeListMarkup(t.name, t.attributesList, nh))
-          )
-        }
-      )
+              si.eventModel.map(t => attributeListMarkup(t.name, t.attributesList, nh))
+            )
+          }
+        )
     }
 
     maybeSubscribes match {
@@ -359,12 +396,16 @@ object IcdToHtml {
 
   private def subscribeTitle(compName: String): String = s"Items subscribed to by $compName"
 
-  private def attributeListMarkup(nameStr: String, attributesList: List[AttributeModel], nh: NumberedHeadings): Text.TypedTag[String] = {
+  private def attributeListMarkup(
+      nameStr: String,
+      attributesList: List[AttributeModel],
+      nh: NumberedHeadings
+  ): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (attributesList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default")
-      val rowList = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
+      val rowList  = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
       div(cls := "nopagebreak")(
         p(strong(a(s"Attributes for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList)
@@ -372,12 +413,16 @@ object IcdToHtml {
     }
   }
 
-
   // Generates the HTML markup to display the component's publish information
-  private def publishMarkup(component: ComponentModel, maybePublishes: Option[Publishes], nh: NumberedHeadings, forApi: Boolean): Text.TypedTag[String] = {
+  private def publishMarkup(
+      component: ComponentModel,
+      maybePublishes: Option[Publishes],
+      nh: NumberedHeadings,
+      forApi: Boolean
+  ): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
-    val compName = component.component
+    val compName      = component.component
     val subscriberStr = if (forApi) "Subscribers" else "Subscriber"
     val publisherInfo = span(strong("Publisher: "), s"${component.subsystem}.$compName")
 
@@ -386,31 +431,53 @@ object IcdToHtml {
       else {
         div(
           for (eventInfo <- eventList) yield {
-            val subscribers = eventInfo.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
+            val subscribers =
+              eventInfo.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
             val subscriberInfo = span(strong(s"$subscriberStr: "), if (subscribers.isEmpty) "none" else subscribers)
-            val headings = List("Min Rate", "Max Rate", "Archive", "Archive Duration", "Archive Rate", "Required Rate")
-            val rowList = List(List(
-              HtmlMarkup.formatRate(eventInfo.eventModel.minRate),
-              HtmlMarkup.formatRate(eventInfo.eventModel.maxRate),
-              yesNo(eventInfo.eventModel.archive),
-              eventInfo.eventModel.archiveDuration,
-              HtmlMarkup.formatRate(eventInfo.eventModel.archiveRate),
-              eventInfo.subscribers.map(s => // Add required rate for subscribers that set it
-                HtmlMarkup.formatRate(s"${s.componentModel.subsystem}.${s.componentModel.component}",
-                  s.subscribeModelInfo.requiredRate)).mkString(" ").trim()
-            ))
+            val headings       = List("Min Rate", "Max Rate", "Archive", "Archive Duration", "Archive Rate", "Required Rate")
+            val rowList = List(
+              List(
+                HtmlMarkup.formatRate(eventInfo.eventModel.minRate),
+                HtmlMarkup.formatRate(eventInfo.eventModel.maxRate),
+                yesNo(eventInfo.eventModel.archive),
+                eventInfo.eventModel.archiveDuration,
+                HtmlMarkup.formatRate(eventInfo.eventModel.archiveRate),
+                eventInfo.subscribers
+                  .map(
+                    s => // Add required rate for subscribers that set it
+                      HtmlMarkup.formatRate(
+                        s"${s.componentModel.subsystem}.${s.componentModel.component}",
+                        s.subscribeModelInfo.requiredRate
+                      )
+                  )
+                  .mkString(" ")
+                  .trim()
+              )
+            )
             div(cls := "nopagebreak")(
-              nh.H4(s"${singlePubType(pubType)}: ${eventInfo.eventModel.name}", idFor(compName, "publishes", pubType, eventInfo.eventModel.name)),
-              if (eventInfo.eventModel.requirements.isEmpty) div() else p(strong("Requirements: "), eventInfo.eventModel.requirements.mkString(", ")),
+              nh.H4(
+                s"${singlePubType(pubType)}: ${eventInfo.eventModel.name}",
+                idFor(compName, "publishes", pubType, eventInfo.eventModel.name)
+              ),
+              if (eventInfo.eventModel.requirements.isEmpty) div()
+              else p(strong("Requirements: "), eventInfo.eventModel.requirements.mkString(", ")),
               p(publisherInfo, ", ", subscriberInfo),
               raw(eventInfo.eventModel.description),
               // Include usage text from subscribers that define it
-              div(eventInfo.subscribers.map(s =>
-                if (s.subscribeModelInfo.usage.isEmpty) div()
-                else div(strong(s"Usage by ${s.componentModel.subsystem}.${s.componentModel.component}: "),
-                  raw(s.subscribeModelInfo.usage)))),
+              div(
+                eventInfo.subscribers.map(
+                  s =>
+                    if (s.subscribeModelInfo.usage.isEmpty) div()
+                    else
+                      div(
+                        strong(s"Usage by ${s.componentModel.subsystem}.${s.componentModel.component}: "),
+                        raw(s.subscribeModelInfo.usage)
+                      )
+                )
+              ),
               HtmlMarkup.mkTable(headings, rowList),
-              attributeListMarkup(eventInfo.eventModel.name, eventInfo.eventModel.attributesList, nh), hr
+              attributeListMarkup(eventInfo.eventModel.name, eventInfo.eventModel.attributesList, nh),
+              hr
             )
           }
         )
@@ -423,12 +490,20 @@ object IcdToHtml {
         div(
           for (t <- alarmList) yield {
             val m = t.alarmModel
-            val subscribers = t.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
+            val subscribers =
+              t.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
             val subscriberInfo = span(strong(s"$subscriberStr: "), if (subscribers.isEmpty) "none" else subscribers)
-            val headings = List("Severity Levels", "Archive", "Location", "Alarm Type", "Acknowledge", "Latched")
-            val rowList = List(List(m.severityLevels.mkString(", "), yesNo(m.archive),
-              m.location, m.alarmType, yesNo(m.acknowledge), yesNo(m.latched)
-            ))
+            val headings       = List("Severity Levels", "Archive", "Location", "Alarm Type", "Acknowledge", "Latched")
+            val rowList = List(
+              List(
+                m.severityLevels.mkString(", "),
+                yesNo(m.archive),
+                m.location,
+                m.alarmType,
+                yesNo(m.acknowledge),
+                yesNo(m.latched)
+              )
+            )
             div(cls := "nopagebreak")(
               nh.H4(s"Alarm: ${m.name}", idFor(compName, "publishes", "Alarms", m.name)),
               if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
@@ -450,7 +525,8 @@ object IcdToHtml {
         if (maybePublishes.nonEmpty && maybePublishes.get.nonEmpty) {
           div(
             nh.H3(publishTitle(compName)),
-            raw(publishes.description), hr,
+            raw(publishes.description),
+            hr,
             publishEventListMarkup("Events", publishes.eventList),
             publishEventListMarkup("Observe Events", publishes.observeEventList),
             publishAlarmListMarkup(publishes.alarmList)
@@ -497,5 +573,3 @@ object IcdToHtml {
   }
 
 }
-
-

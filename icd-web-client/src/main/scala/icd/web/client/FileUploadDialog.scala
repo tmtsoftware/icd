@@ -21,20 +21,24 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
 
   implicit def monkeyizeEvent(e: dom.Event): EventExt = e.asInstanceOf[EventExt]
 
-  private val errorSet = Set("error", "fatal")
+  private val errorSet   = Set("error", "fatal")
   private var problemSet = Set[Problem]()
 
   // standard ICD file names (See StdName class in icd-db. Reuse here?)
-  private val stdList = List("subsystem-model.conf", "component-model.conf", "publish-model.conf",
-    "subscribe-model.conf", "command-model.conf")
+  private val stdList =
+    List("subsystem-model.conf", "component-model.conf", "publish-model.conf", "subscribe-model.conf", "command-model.conf")
 
   // Displays upload button
   private val inputItem = {
     import scalatags.JsDom.all._
-    input(`type` := "file", name := "files[]", multiple := "multiple",
+    input(
+      `type` := "file",
+      name := "files[]",
+      multiple := "multiple",
       attr("webkitdirectory") := "webkitdirectory",
       onclick := fileSelectReset _,
-      onchange := fileSelectHandler _).render
+      onchange := fileSelectHandler _
+    ).render
   }
 
   // True if the file is one of the standard ICD files
@@ -82,13 +86,15 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     val files = e.target.files
     if (inputDirSupported) {
       val fileList = for (i <- 0 until files.length) yield files(i).asInstanceOf[WebkitFile]
-      fileList.filterNot { f =>
-        f.webkitRelativePath.contains(".git") ||
+      fileList
+        .filterNot { f =>
+          f.webkitRelativePath.contains(".git") ||
           f.webkitRelativePath.contains(".idea") ||
           f.webkitRelativePath.contains("/apis/") ||
           f.webkitRelativePath.contains("/icds/") ||
           f.name.endsWith(".md")
-      }.partition(isValidFile)
+        }
+        .partition(isValidFile)
     } else {
       val fileList = for (i <- 0 until files.length) yield files(i).asInstanceOf[WebkitFile]
       fileList.filterNot(_.name.endsWith(".md")).partition(isValidFile)
@@ -113,7 +119,8 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     statusItem.removeClass("label-danger")
     val (validFiles, invalidFiles) = getIcdFiles(e)
     if (validFiles.isEmpty) {
-      val fileType = if (inputDirSupported) "directory of .conf files for the ICD" else "a zip file containing .conf files for the ICD"
+      val fileType =
+        if (inputDirSupported) "directory of .conf files for the ICD" else "a zip file containing .conf files for the ICD"
       displayProblem(Problem("error", s"Expected a $fileType"))
     } else {
       uploadFiles(validFiles.toList)
@@ -172,10 +179,11 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     import scalatags.JsDom.all._
 
     // Only Chrome supports uploading8 directories. For other browsers, use zip file upload
-    val dirMsg = if (inputDirSupported)
-      "Here you can select the top level directory containing the subsystem or component files to upload."
-    else
-      "Here you can select a zip file of the top level directory containing the subsystem or component files to upload."
+    val dirMsg =
+      if (inputDirSupported)
+        "Here you can select the top level directory containing the subsystem or component files to upload."
+      else
+        "Here you can select a zip file of the top level directory containing the subsystem or component files to upload."
     val dirLabel = if (inputDirSupported) "Model File Directory" else "Zip file containing Model File Directory"
 
     val acceptSuffix = if (inputDirSupported) "" else ".zip,application/zip"
@@ -183,8 +191,13 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     div(
       cls := "container",
       p(dirMsg),
-      form(id := "upload", action := "/upload", attr("role") := "form",
-        attr("method") := "POST", attr("enctype") := "multipart/form-data")(
+      form(
+        id := "upload",
+        action := "/upload",
+        attr("role") := "form",
+        attr("method") := "POST",
+        attr("enctype") := "multipart/form-data"
+      )(
         input(`type` := "hidden", name := "csrfToken", value := csrfToken, accept := acceptSuffix),
         div(cls := "panel panel-info")(
           div(cls := "panel-body")(
@@ -196,9 +209,16 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
         )
       ),
       div(cls := "progress")(
-        div(id := "progress", cls := "progress-bar progress-bar-info progress-bar-striped",
-          role := "progressbar", attr("aria-valuenow") := "0", attr("aria-valuemin") := "0",
-          attr("aria-valuemax") := "100", style := "width: 0%", "0%")
+        div(
+          id := "progress",
+          cls := "progress-bar progress-bar-info progress-bar-striped",
+          role := "progressbar",
+          attr("aria-valuenow") := "0",
+          attr("aria-valuemin") := "0",
+          attr("aria-valuemax") := "100",
+          style := "width: 0%",
+          "0%"
+        )
       ),
       h4("Status")(
         span(style := "margin-left:15px;"),

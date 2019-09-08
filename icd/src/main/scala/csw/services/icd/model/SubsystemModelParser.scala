@@ -17,4 +17,3 @@ object SubsystemModelParser {
       modelVersion = config.getString("modelVersion")
     )
 }
-

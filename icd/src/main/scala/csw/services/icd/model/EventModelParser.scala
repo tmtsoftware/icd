@@ -24,4 +24,3 @@ object EventModelParser {
       attributesList = for (conf <- config.as[Option[List[Config]]]("attributes").getOrElse(Nil)) yield AttributeModelParser(conf)
     )
 }
-

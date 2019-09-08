@@ -21,15 +21,15 @@ class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
   // Note: this was 99% of the bottleneck: db.collectionExists calls db.getCollectionNames every time!
   override def collectionExists(name: String): Boolean = collectionNames.contains(name)
 
-  private val entries = super.getEntries
-  private val components = super.getComponents
+  private val entries        = super.getEntries
+  private val components     = super.getComponents
   private val subsystemNames = super.getSubsystemNames
 
   private val subscribeModelMap = getSubscribeModelMap(components)
-  private val publishModelMap = getPublishModelMap(components)
-  private val commandModelMap = getCommandModelMap(components)
+  private val publishModelMap   = getPublishModelMap(components)
+  private val commandModelMap   = getCommandModelMap(components)
 
-  private val subscribeInfo = components.map(c => super.getSubscribeInfo(c))
+  private val subscribeInfo  = components.map(c => super.getSubscribeInfo(c))
   private val publishInfoMap = getPublishInfoMap
 
   /**
@@ -61,7 +61,7 @@ class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
   private def getPublishModelMap(components: List[ComponentModel]): Map[Component, PublishModel] = {
     val list = for {
       componentModel <- components
-      publishModel <- super.getPublishModel(componentModel)
+      publishModel   <- super.getPublishModel(componentModel)
     } yield Component(componentModel.subsystem, componentModel.component) -> publishModel
     list.toMap
   }
@@ -74,7 +74,7 @@ class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
   private def getCommandModelMap(components: List[ComponentModel]): Map[Component, CommandModel] = {
     val list = for {
       componentModel <- components
-      commandModel <- super.getCommandModel(componentModel)
+      commandModel   <- super.getCommandModel(componentModel)
     } yield Component(componentModel.subsystem, componentModel.component) -> commandModel
     list.toMap
   }

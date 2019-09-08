@@ -7,6 +7,7 @@ import org.scalajs.dom.html.UList
 import scalatags.JsDom.all._
 
 trait SidebarListener {
+
   /**
    * called when one of the component links of clicked
    *
@@ -70,4 +71,3 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
     ).render
   }
 }
-

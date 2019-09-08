@@ -34,8 +34,8 @@ object IcdPrinter {
   def saveToFile(models: List[IcdModels], file: File): Unit = {
     file.getName.split('.').drop(1).lastOption match {
       case Some("html") => saveAsHtml()
-      case Some("pdf") => saveAsPdf()
-      case _ => println(s"Unsupported output format: Expected *.md. *.html or *.pdf")
+      case Some("pdf")  => saveAsPdf()
+      case _            => println(s"Unsupported output format: Expected *.md. *.html or *.pdf")
     }
 
     def saveAsHtml(): Unit = {

@@ -23,11 +23,10 @@ object ComponentInfoHelper {
     // subscribes, who calls commands, etc.
     val query = new CachedIcdDbQuery(db.db)
     val compNames = sv.maybeComponent match {
-      case None => db.versionManager.getComponentNames(sv)
+      case None           => db.versionManager.getComponentNames(sv)
       case Some(compName) => List(compName)
     }
-    compNames.flatMap(component => getComponentInfo(query,
-      SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component))))
+    compNames.flatMap(component => getComponentInfo(query, SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component))))
   }
 
   /**
@@ -40,13 +39,15 @@ object ComponentInfoHelper {
   def getComponentInfo(query: IcdDbQuery, sv: SubsystemWithVersion): Option[ComponentInfo] = {
     // get the models for this component
     val versionManager = IcdVersionManager(query.db, query)
-    val modelsList = versionManager.getModels(sv)
+    val modelsList     = versionManager.getModels(sv)
     modelsList.headOption.flatMap { icdModels =>
       val componentModel = icdModels.componentModel
-      val publishes = getPublishes(query, icdModels)
-      val subscribes = getSubscribes(query, icdModels)
-      val commands = getCommands(query, icdModels)
-      componentModel.map { model => ComponentInfo(model, publishes, subscribes, commands) }
+      val publishes      = getPublishes(query, icdModels)
+      val subscribes     = getSubscribes(query, icdModels)
+      val commands       = getCommands(query, icdModels)
+      componentModel.map { model =>
+        ComponentInfo(model, publishes, subscribes, commands)
+      }
     }
   }
 
@@ -59,8 +60,13 @@ object ComponentInfoHelper {
    * @param desc          description of the item
    * @param subscribeType event, alarm, etc...
    */
-  private def getSubscribers(query: IcdDbQuery, prefix: String, name: String, desc: String,
-                             subscribeType: PublishType): List[SubscribeInfo] = {
+  private def getSubscribers(
+      query: IcdDbQuery,
+      prefix: String,
+      name: String,
+      desc: String,
+      subscribeType: PublishType
+  ): List[SubscribeInfo] = {
     query.subscribes(s"$prefix.$name", subscribeType).map { s =>
       SubscribeInfo(s.component, s.subscribeType, s.subscribeModelInfo)
     }
@@ -110,14 +116,14 @@ object ComponentInfoHelper {
     // Gets additional information about the given subscription, including info from the publisher
     def getInfo(publishType: PublishType, si: SubscribeModelInfo): DetailedSubscribeInfo = {
       val x = for {
-        t <- query.getModels(si.subsystem, Some(si.component))
+        t            <- query.getModels(si.subsystem, Some(si.component))
         publishModel <- t.publishModel
       } yield {
         val (telem, alarm) = publishType match {
-          case Events => (publishModel.eventList.find(t => t.name == si.name), None)
+          case Events        => (publishModel.eventList.find(t => t.name == si.name), None)
           case ObserveEvents => (publishModel.observeEventList.find(t => t.name == si.name), None)
           case CurrentStates => (publishModel.currentStateList.find(t => t.name == si.name), None)
-          case Alarms => (None, publishModel.alarmList.find(a => a.name == si.name))
+          case Alarms        => (None, publishModel.alarmList.find(a => a.name == si.name))
         }
         DetailedSubscribeInfo(publishType, si, telem, alarm, t.componentModel)
       }
@@ -147,7 +153,7 @@ object ComponentInfoHelper {
    */
   private def getCommandsReceived(query: IcdDbQuery, models: IcdModels): List[ReceivedCommandInfo] = {
     for {
-      cmd <- models.commandModel.toList
+      cmd      <- models.commandModel.toList
       received <- cmd.receive
     } yield {
       val senders = query.getCommandSenders(cmd.subsystem, cmd.component, received.name)
@@ -164,7 +170,7 @@ object ComponentInfoHelper {
    */
   private def getCommandsSent(query: IcdDbQuery, models: IcdModels): List[SentCommandInfo] = {
     val result = for {
-      cmd <- models.commandModel.toList
+      cmd  <- models.commandModel.toList
       sent <- cmd.send
     } yield {
       val recv = query.getCommand(sent.subsystem, sent.component, sent.name)
@@ -181,7 +187,7 @@ object ComponentInfoHelper {
    */
   private def getCommands(query: IcdDbQuery, models: IcdModels): Option[Commands] = {
     val received = getCommandsReceived(query, models)
-    val sent = getCommandsSent(query, models)
+    val sent     = getCommandsSent(query, models)
     models.commandModel match {
       case None => None
       case Some(m) =>
@@ -192,4 +198,3 @@ object ComponentInfoHelper {
     }
   }
 }
-

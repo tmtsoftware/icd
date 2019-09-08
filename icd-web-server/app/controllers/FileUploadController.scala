@@ -11,12 +11,10 @@ import play.api.libs.json._
 import org.webjars.play._
 import play.api.libs.Files
 
-class FileUploadController @Inject()(env: Environment,
-                                     webJarAssets: WebJarAssets,
-                                     components: ControllerComponents)
-  extends AbstractController(components) {
+class FileUploadController @Inject()(env: Environment, webJarAssets: WebJarAssets, components: ControllerComponents)
+    extends AbstractController(components) {
 
-  private val log = play.Logger.of("application")
+  private val log     = play.Logger.of("application")
   private lazy val db = Application.db
 
   // Server side of the upload ICD feature.
@@ -26,8 +24,7 @@ class FileUploadController @Inject()(env: Environment,
     val files = request.body.files.toList
     try {
       // XXX TODO: Return config parse errors in StdConfig.get with file names!
-      val list = files.flatMap(filePart =>
-        StdConfig.get(filePart.ref.path.toFile, filePart.filename))
+      val list = files.flatMap(filePart => StdConfig.get(filePart.ref.path.toFile, filePart.filename))
       val comment =
         request.body.asFormUrlEncoded.getOrElse("comment", List("")).head
       ingestConfigs(list, comment)
@@ -58,8 +55,7 @@ class FileUploadController @Inject()(env: Environment,
     import net.ceedubs.ficus.Ficus._
     // Get the schema version
     val schemaVersion = list
-      .find(f =>
-        f.stdName == StdName.subsystemFileNames || f.stdName == StdName.componentFileNames)
+      .find(f => f.stdName == StdName.subsystemFileNames || f.stdName == StdName.componentFileNames)
       .map(_.config.as[String](IcdValidator.schemaVersionKey))
       .getOrElse(IcdValidator.currentSchemaVersion)
 

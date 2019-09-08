@@ -64,7 +64,7 @@ case class MainContent() extends Displayable {
     val s = contentTitle.innerHTML
     s.indexOf("<br>") match {
       case -1 => s
-      case n => s.substring(0, n)
+      case n  => s.substring(0, n)
     }
   }
 

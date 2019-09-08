@@ -22,13 +22,16 @@ case class SubsystemNames(mainContent: MainContent, listener: Listener) {
 
   // Gets the list of subsystems from the server
   private def getSubsystemNames: Future[List[String]] = {
-    Ajax.get(Routes.subsystems).map { r =>
-      Json.fromJson[List[String]](Json.parse(r.responseText)).get
-    }.recover {
-      case ex =>
-        mainContent.displayInternalError(ex)
-        Nil
-    }
+    Ajax
+      .get(Routes.subsystems)
+      .map { r =>
+        Json.fromJson[List[String]](Json.parse(r.responseText)).get
+      }
+      .recover {
+        case ex =>
+          mainContent.displayInternalError(ex)
+          Nil
+      }
   }
 
   private def notifyListener(items: List[String]): Unit = {

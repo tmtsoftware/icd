@@ -13,7 +13,8 @@ package object client {
     import scalatags.JsDom.all._
     div(cls := "alert alert-danger", role := "alert")(
       span(cls := "glyphicon glyphicon-exclamation-sign", attr("aria-hidden") := "true"),
-      span(cls := "sr-only", "Error"), s" $msg"
+      span(cls := "sr-only", "Error"),
+      s" $msg"
     ).toString()
   }
 
@@ -22,8 +23,8 @@ package object client {
     import scalatags.JsDom.all._
     div(cls := "alert alert-warning", role := "alert")(
       span(cls := "glyphicon glyphicon-warning-sign", attr("aria-hidden") := "true"),
-      span(cls := "sr-only", "Warning"), s" $msg"
+      span(cls := "sr-only", "Warning"),
+      s" $msg"
     ).toString()
   }
 }
-

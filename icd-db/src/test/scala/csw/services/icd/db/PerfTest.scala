@@ -2,7 +2,7 @@ package csw.services.icd.db
 
 // For performance test on already existing DB
 object PerfTest extends App {
-  val db = IcdDb("icds")
+  val db       = IcdDb("icds")
   val compName = "lgsWfs"
   ComponentInfoHelper.getComponentInfo(new CachedIcdDbQuery(db.db), "NFIRAOS", None, compName).foreach { info =>
     assert(info.componentModel.component == compName)
@@ -11,7 +11,9 @@ object PerfTest extends App {
     info.publishes.get.eventList.foreach { pubInfo =>
       println(s"lgsWfs publishes ${pubInfo.eventModel.name}")
       pubInfo.subscribers.foreach { subInfo =>
-        println(s"${subInfo.subscribeModelInfo.component} from ${subInfo.subscribeModelInfo.subsystem} subscribes to ${subInfo.subscribeModelInfo.name}")
+        println(
+          s"${subInfo.subscribeModelInfo.component} from ${subInfo.subscribeModelInfo.subsystem} subscribes to ${subInfo.subscribeModelInfo.name}"
+        )
       }
     }
     assert(info.subscribes.nonEmpty)
