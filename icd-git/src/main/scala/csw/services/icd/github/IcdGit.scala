@@ -326,7 +326,7 @@ object IcdGit extends App {
 
   // Handle the --ingest option
   private def ingest(options: Options): Unit = {
-    // Get the MongoDB handle
+    // Get the DefaultDB handle
     val db = IcdDb(options.dbName, options.host, options.port)
     try {
       db.dropDatabase()

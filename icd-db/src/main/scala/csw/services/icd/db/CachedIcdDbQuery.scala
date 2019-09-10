@@ -1,15 +1,14 @@
 package csw.services.icd.db
 
-import com.mongodb.casbah.MongoDB
 import icd.web.shared.IcdModels.{SubscribeModel, PublishModel, CommandModel, ComponentModel}
 
 /**
  * Adds caching to IcdDbQuery for better performance when creating documents or web pages that
  * require access to all subsystems and components.
  *
- * @param db the MongoDB handle
+ * @param db the DefaultDB handle
  */
-class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
+class CachedIcdDbQuery(db: DefaultDB) extends IcdDbQuery(db) {
 
   import IcdDbQuery._
 

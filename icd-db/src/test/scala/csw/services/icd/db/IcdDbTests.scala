@@ -7,7 +7,7 @@ import icd.web.shared.ComponentInfo.Events
 import org.scalatest.{DoNotDiscover, FunSuite}
 
 /**
- * Tests the IcdDb class (Note: Assumes MongoDB is running)
+ * Tests the IcdDb class (Note: Assumes DefaultDB is running)
  */
 //@DoNotDiscover
 class IcdDbTests extends FunSuite {

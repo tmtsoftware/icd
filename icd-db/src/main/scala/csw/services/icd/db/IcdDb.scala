@@ -2,13 +2,16 @@ package csw.services.icd.db
 
 import java.io.File
 
-import com.mongodb.casbah.Imports._
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd._
 import csw.services.icd.model.{BaseModelParser, SubsystemModelParser}
 import csw.services.icd.db.ComponentDataReporter._
 import org.joda.time.{DateTime, DateTimeZone}
+import reactivemongo.api.{DefaultDB, MongoConnection, MongoDriver}
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration._
 import scala.io.StdIn
 
 object IcdDbDefaults {
@@ -251,12 +254,21 @@ case class IcdDb(
     port: Int = IcdDbDefaults.defaultPort
 ) {
 
-  val mongoClient = MongoClient(host, port)
+  implicit val timeout: FiniteDuration = 5.seconds
+  private val mongoUri = s"mongodb://$host:$port/$dbName"
+//  private val mongoUri = s"mongodb://localhost:27017/icds2"
+  private val driver = new MongoDriver
+  private val futureDb = for {
+    uri <- Future.fromTry(MongoConnection.parseURI(mongoUri))
+    dn <- Future(uri.db.get)
+    db <- driver.connection(uri, None, strictUri = false).get.database(dn)
+  } yield db
+  val db: DefaultDB = Await.result(futureDb, timeout)
 
   // Clean up on exit
-  sys.addShutdownHook(mongoClient.close())
+  sys.addShutdownHook(driver.close(timeout))
 
-  val db: MongoDB                       = mongoClient(dbName)
+//  val db: DefaultDB                       = mongoClient(dbName)
   val query: IcdDbQuery                 = IcdDbQuery(db)
   val versionManager: IcdVersionManager = IcdVersionManager(db, query)
   val manager: IcdDbManager             = IcdDbManager(db, versionManager)
@@ -312,6 +324,26 @@ case class IcdDb(
     }
   }
 
+//    implicit def MapReader[V](implicit vr: BSONDocumentReader[V]): BSONDocumentReader[Map[String, V]] = new BSONDocumentReader[Map[String, V]] {
+//      def read(bson: BSONDocument): Map[String, V] = {
+//        val elements = bson.elements.map { tuple =>
+//          // assume that all values in the document are BSONDocuments
+//          tuple.name -> vr.read(tuple.value.seeAsTry[BSONDocument].get)
+//        }
+//        elements.toMap
+//      }
+//    }
+//
+//    implicit def MapWriter[V](implicit vw: BSONDocumentWriter[V]): BSONDocumentWriter[Map[String, V]] = new BSONDocumentWriter[Map[String, V]] {
+//      def write(map: Map[String, V]): BSONDocument = {
+//        val elements = map.toStream.map { tuple =>
+//          tuple._1 -> vw.write(tuple._2)
+//        }
+//        BSONDocument(elements)
+//      }
+//    }
+
+
   /**
    * Ingests the given input config into the database.
    *
@@ -319,13 +351,16 @@ case class IcdDb(
    * @param config the config to be ingested into the datasbase
    */
   private def ingestConfig(name: String, config: Config): Unit = {
-    import scala.collection.JavaConverters._
-    val dbObj = config.root().unwrapped().asScala.asDBObject
-    manager.ingest(name, dbObj)
+    import play.api.libs.json._
+    import play.api.libs.json.Reads._
+
+    val jsObj = Json.parse(IcdValidator.toJson(config)).as[JsObject]
+
+    manager.ingest(name, jsObj)
   }
 
   /**
-   * Returns the MongoDB collection name to use for the given ICD config.
+   * Returns the DefaultDB collection name to use for the given ICD config.
    *
    * @param stdConfig API model file packaged as StdConfig object
    * @return the collection name
@@ -391,14 +426,14 @@ case class IcdDb(
    * NOTE: This connection can't be reused after closing.
    */
   def close(): Unit = {
-    mongoClient.close()
+    driver.close(timeout)
   }
 
   /**
    * Drops this database. Use with caution!
    */
   def dropDatabase(): Unit = {
-    db.dropDatabase()
+    db.drop()
   }
 
 }

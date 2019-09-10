@@ -27,7 +27,7 @@ lazy val `icd-db` = project
   .enablePlugins(DeployApp)
   .settings(defaultSettings: _*)
   .settings(libraryDependencies ++=
-    compileScope(casbah, scalaCsv) ++
+    compileScope(reactivemongo, play2Reactivemongo, scalaCsv) ++
       testScope(scalaTest)
   ) dependsOn icd
 

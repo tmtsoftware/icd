@@ -25,9 +25,10 @@ object Dependencies {
   val itextpdf    = "com.itextpdf"         % "itextpdf"     % "5.5.13"
   val xmlworker   = "com.itextpdf.tool"    % "xmlworker"    % "5.5.13"
 
-  // XXX TODO FIXME: Migrate to MongoDB Scala Driver
-  // val `mongo-scala-driver` = "org.mongodb.scala" %% "mongo-scala-driver" % "2.7.0"
-  val casbah = "org.mongodb" %% "casbah" % "3.1.1"
+  val reactivemongo = "org.reactivemongo" %% "reactivemongo" % "0.18.5"
+  val play2Reactivemongo = "org.reactivemongo" %% "play2-reactivemongo" % "0.18.5-play27"
+//  val mongoScalaDriver = "org.mongodb.scala" %% "mongo-scala-driver" % "2.7.0"
+//  val casbah = "org.mongodb" %% "casbah" % "3.1.1"
 
   val diffson = "org.gnieh" %% "diffson-spray-json" % "3.1.0"
 
