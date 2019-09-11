@@ -31,8 +31,6 @@ case class IcdDbManager(db: DefaultDB, versionManager: IcdVersionManager) {
    * @param obj  the object to insert
    */
   private[db] def ingest(name: String, obj: JsObject): Unit = {
-    //    val collection = db.collection[JSONCollection]("IncomingRequests")
-    //    val future = collection.insert(document)
     val collection = db.collection[JSONCollection](name)
     if (Await.result(db.collectionNames, timeout).contains(name))
       update(collection, obj)

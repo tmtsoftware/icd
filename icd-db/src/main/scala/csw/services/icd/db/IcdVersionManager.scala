@@ -9,15 +9,11 @@ import org.joda.time.{DateTime, DateTimeZone}
 import csw.services.icd.model._
 import spray.json.{JsValue, JsonParser}
 import gnieh.diffson.sprayJson._
-import play.api.libs.json.{JsNumber, JsObject}
 import reactivemongo.api.{Cursor, DefaultDB}
-import reactivemongo.bson.{BSONDateTime, BSONDocument, BSONNumberLike, BSONString}
-import reactivemongo.play.json.collection.JSONCollection
+import reactivemongo.bson.{BSONDateTime, BSONDocument}
 
 import scala.concurrent.duration._
 import reactivemongo.play.json._
-import play.api.libs.json.Reads._
-import play.api.libs.json.Writes._
 import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.play.json.collection.JSONCollection
 
@@ -250,7 +246,7 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
     val coll = db.collection[BSONCollection](collName)
     Await.result(
       coll
-        .find(BSONDocument())
+        .find(BSONDocument(), None)
         .sort(BSONDocument(idKey -> -1))
         .cursor[BSONDocument]()
         .collect[List](-1, Cursor.FailOnError[List[BSONDocument]]()),
@@ -307,7 +303,11 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
           None // not found
         }
       case None => // current, unpublished version
-        def getPartVersion(path: String): Int = db(path).head(versionKey).asInstanceOf[Int]
+        def getPartVersion(path: String): Int = {
+          val coll     = db.collection[BSONCollection](path)
+          val maybeDoc = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout)
+          maybeDoc.flatMap(_.getAs[Int](versionKey)).get
+        }
 
         def filter(p: IcdPath) = p.subsystem == sv.subsystem && sv.maybeComponent.fold(true)(_ => p.component == path)
 
@@ -339,7 +339,7 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
       Await
         .result(
           coll
-            .find(BSONDocument())
+            .find(BSONDocument(), None)
             .sort(BSONDocument(idKey -> -1))
             .one[BSONDocument],
           timeout
