@@ -138,6 +138,9 @@ object IcdDb extends App {
     options.listData.foreach(s => listData(db, s))
     options.allUnits.foreach(_ => printAllUsedUnits(db))
 
+    db.close()
+    System.exit(0)
+
     // --list option
     def list(componentType: String): Unit = {
       val opt = componentType.toLowerCase
@@ -266,7 +269,7 @@ case class IcdDb(
   val db: DefaultDB = Await.result(futureDb, timeout)
 
   // Clean up on exit
-  sys.addShutdownHook(driver.close(timeout))
+  sys.addShutdownHook(close())
 
 //  val db: DefaultDB                       = mongoClient(dbName)
   val query: IcdDbQuery                 = IcdDbQuery(db)
@@ -426,7 +429,8 @@ case class IcdDb(
    * NOTE: This connection can't be reused after closing.
    */
   def close(): Unit = {
-    driver.close(timeout)
+    Await.ready(db.endSession(), timeout)
+//    driver.close(timeout)
   }
 
   /**

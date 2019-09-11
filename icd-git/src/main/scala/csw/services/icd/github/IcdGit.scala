@@ -127,6 +127,7 @@ object IcdGit extends App {
     if (options.unpublish) unpublish(options)
     if (options.publish) publish(options)
     if (options.ingest) ingest(options)
+    System.exit(0)
   }
 
   private def error(msg: String): Unit = IcdGitManager.error(msg)

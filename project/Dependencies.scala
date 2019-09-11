@@ -4,6 +4,7 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 object Dependencies {
   val Version               = "0.13"
   val ScalaVersion          = "2.12.8"
+  val AkkaVersion          = "2.5.25"
   val PlayVersion           = "2.7.0"
   val PlayJsonVersion       = "2.7.2"
   val ScalaTagsVersion      = "0.6.7"
@@ -11,6 +12,9 @@ object Dependencies {
   val JQueryVersion         = "2.2.1"
   val JQueryUiVersion       = "1.12.1"
   val BootstrapTableVersion = "1.14.1"
+
+  val akkaActor = "com.typesafe.akka" %% "akka-actor" % AkkaVersion
+  val akkaSlf4j = "com.typesafe.akka" %% "akka-slf4j" % AkkaVersion
 
   // command line dependencies
   val scopt = "com.github.scopt" %% "scopt" % "3.7.1"

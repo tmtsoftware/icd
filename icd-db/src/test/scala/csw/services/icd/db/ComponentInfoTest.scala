@@ -3,6 +3,7 @@ package csw.services.icd.db
 import java.io.File
 
 import csw.services.icd.IcdValidator
+import icd.web.shared.SubsystemWithVersion
 import org.scalatest.FunSuite
 
 // XXX TODO: Add more detailed test, add IcdComponentInfo tests
@@ -26,7 +27,7 @@ class ComponentInfoTest extends FunSuite {
     val problems2 = db.ingest(getTestDir(s"$examplesDir/TCS"))
     for (p <- problems2) println(p)
 
-    ComponentInfoHelper.getComponentInfo(db.query, "NFIRAOS", None, "lgsWfs").foreach { info =>
+    ComponentInfoHelper.getComponentInfo(db.query, SubsystemWithVersion("NFIRAOS", None, Some("lgsWfs"))).foreach { info =>
       assert(info.componentModel.component == "lgsWfs")
       assert(info.publishes.nonEmpty)
       assert(info.publishes.get.eventList.nonEmpty)

@@ -11,7 +11,7 @@ import spray.json.{JsValue, JsonParser}
 import gnieh.diffson.sprayJson._
 import play.api.libs.json.Json
 import reactivemongo.api.{Cursor, DefaultDB, WriteConcern}
-import reactivemongo.bson.{BSONDateTime, BSONDocument}
+import reactivemongo.bson.{BSONDateTime, BSONDocument, BSONObjectID}
 
 import scala.concurrent.duration._
 import reactivemongo.play.json._
@@ -542,7 +542,7 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
       val obj             = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
       val versionCollName = versionCollectionName(path)
       val version         = obj.getAs[Int](versionKey).get
-      val id              = obj.getAs[String](idKey).get
+      val id              = obj.getAs[BSONObjectID](idKey).get
       val exists          = collectionNames.contains(versionCollName)
       if (!exists || diff(db(versionCollName), obj).isDefined) {
         // Update version history, avoid duplicate key error?

@@ -4,7 +4,7 @@ import java.io.File
 
 import csw.services.icd.IcdValidator
 import icd.web.shared.ComponentInfo.Events
-import org.scalatest.{DoNotDiscover, FunSuite}
+import org.scalatest.FunSuite
 
 /**
  * Tests the IcdDb class (Note: Assumes DefaultDB is running)
