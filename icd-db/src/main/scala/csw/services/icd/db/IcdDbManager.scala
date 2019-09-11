@@ -2,11 +2,11 @@ package csw.services.icd.db
 
 import play.api.libs.json.{JsNumber, JsObject}
 import reactivemongo.play.json._
-import play.api.libs.json.Reads._
-import play.api.libs.json.Writes._
+//import play.api.libs.json.Reads._
+//import play.api.libs.json.Writes._
 import reactivemongo.api.DefaultDB
+import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.bson.{BSONDocument, BSONNumberLike}
-import reactivemongo.play.json.collection.JSONCollection
 
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -31,7 +31,7 @@ case class IcdDbManager(db: DefaultDB, versionManager: IcdVersionManager) {
    * @param obj  the object to insert
    */
   private[db] def ingest(name: String, obj: JsObject): Unit = {
-    val collection = db.collection[JSONCollection](name)
+    val collection = db.collection[BSONCollection](name)
     if (Await.result(db.collectionNames, timeout).contains(name))
       update(collection, obj)
     else
@@ -39,12 +39,12 @@ case class IcdDbManager(db: DefaultDB, versionManager: IcdVersionManager) {
   }
 
   // Inserts an new object in a collection
-  private def insert(coll: JSONCollection, obj: JsObject): Unit = {
+  private def insert(coll: BSONCollection, obj: JsObject): Unit = {
     Await.result(coll.insert.one(obj + (versionKey -> JsNumber(1))), timeout)
   }
 
   // Updates an object in an existing collection
-  private def update(coll: JSONCollection, obj: JsObject): Unit = {
+  private def update(coll: BSONCollection, obj: JsObject): Unit = {
     val doc = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
     val currentVersion = doc.getAs[BSONNumberLike](versionKey).get.toInt
     Await.result(coll.delete().one(BSONDocument(versionKey -> currentVersion)), timeout)

@@ -1,7 +1,6 @@
 package controllers
 
 import javax.inject.Inject
-import com.mongodb.MongoTimeoutException
 import com.typesafe.config.ConfigException
 import csw.services.icd.db.StdConfig
 import csw.services.icd.{IcdValidator, Problem, StdName}
@@ -29,10 +28,10 @@ class FileUploadController @Inject()(env: Environment, webJarAssets: WebJarAsset
         request.body.asFormUrlEncoded.getOrElse("comment", List("")).head
       ingestConfigs(list, comment)
     } catch {
-      case e: MongoTimeoutException =>
-        val msg = "Database seems to be down"
-        log.error(msg, e)
-        ServiceUnavailable(Json.toJson(List(Problem("error", msg))))
+//      case e: MongoTimeoutException =>
+//        val msg = "Database seems to be down"
+//        log.error(msg, e)
+//        ServiceUnavailable(Json.toJson(List(Problem("error", msg))))
       case e: ConfigException =>
         val msg = e.getMessage
         log.error(msg, e)

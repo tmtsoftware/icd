@@ -9,13 +9,13 @@ import org.joda.time.{DateTime, DateTimeZone}
 import csw.services.icd.model._
 import spray.json.{JsValue, JsonParser}
 import gnieh.diffson.sprayJson._
-import reactivemongo.api.{Cursor, DefaultDB}
+import play.api.libs.json.Json
+import reactivemongo.api.{Cursor, DefaultDB, WriteConcern}
 import reactivemongo.bson.{BSONDateTime, BSONDocument}
 
 import scala.concurrent.duration._
 import reactivemongo.play.json._
 import reactivemongo.api.collections.bson.BSONCollection
-import reactivemongo.play.json.collection.JSONCollection
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -383,6 +383,7 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
     }
   }
 
+  // XXX TODO FIXME: Going from BSON to Play-JSON to String to Spray-Json - simplify
   // Parse string to JSON and Remove _id and _version keys for comparing, since they change each time
   private def parseNoVersionOrId(json: String): JsValue = {
     val obj    = JsonParser(json).asJsObject
@@ -390,15 +391,17 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
     obj.copy(fields)
   }
 
-  // Returns the contents of the given version of the collection path
-  private def getVersionOf(coll: JSONCollection, version: Int): String = {
-    val currentVersion = coll.head(versionKey).asInstanceOf[Int]
-    val v              = coll.getCollection(versionColl)
+  // Returns the contents of the given version of the given collection
+  private def getVersionOf(coll: BSONCollection, version: Int): String = {
+    val doc            = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
+    val currentVersion = doc.getAs[Int](versionKey).get
     if (version == currentVersion) {
-      coll.head.toString
+      Json.toJson(doc).toString()
     } else {
-      val f = v.find(versionKey -> version)
-      if (f.count() == 0) "{}" else f.one().toString
+      val v        = db.collection[BSONCollection](s"${coll.name}.$versionColl")
+      val query    = BSONDocument(versionKey -> version)
+      val maybeDoc = Await.result(v.find(query, None).one[BSONDocument], timeout)
+      if (maybeDoc.isEmpty) "{}" else Json.toJson(maybeDoc.get).toString()
     }
   }
 
@@ -419,9 +422,10 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
 
   // Compares the given object with the current (head) version in the collection
   // (ignoring version and id values)
-  def diff(coll: JSONCollection, obj: DBObject): Option[VersionDiff] = {
-    val json1 = parseNoVersionOrId(coll.head.toString)
-    val json2 = parseNoVersionOrId(obj.toString)
+  def diff(coll: BSONCollection, obj: BSONDocument): Option[VersionDiff] = {
+    val headDoc = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
+    val json1   = parseNoVersionOrId(Json.toJson(headDoc).toString())
+    val json2   = parseNoVersionOrId(Json.toJson(obj).toString())
     diffJson(coll.name, json1, json2)
   }
 
@@ -469,7 +473,7 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
     case class Models(versionMap: Map[String, Int], entry: IcdEntry) extends IcdModels {
 
       // Parses the data from collection s (or an older version of it) and returns a Config object for it
-      private def parse(coll: JSONCollection): Config = getConfig(getVersionOf(coll, versionMap(coll.name)))
+      private def parse(coll: BSONCollection): Config = getConfig(getVersionOf(coll, versionMap(coll.name)))
 
       // XXX TODO FIXME: Do we need the subsystemModel here? It is duplicated for each component
       override val subsystemModel: Option[SubsystemModel] =
@@ -528,25 +532,26 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
   ): Unit = {
     val collectionNames = getCollectionNames
 
+    // XXX TODO FIXME: Test this
+
     // Save any of the subsystem's collections that changed
     val icdPaths = collectionNames.filter(isStdSet).map(IcdPath).filter(_.subsystem == subsystem)
     val paths    = icdPaths.map(_.path).toList
     val versions = for (path <- paths) yield {
-      val coll            = db(path)
-      val obj             = coll.head
+      val coll            = db.collection[BSONCollection](path)
+      val obj             = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
       val versionCollName = versionCollectionName(path)
-      val version         = obj(versionKey).asInstanceOf[Int]
-      val id              = obj(idKey)
+      val version         = obj.getAs[Int](versionKey).get
+      val id              = obj.getAs[String](idKey).get
       val exists          = collectionNames.contains(versionCollName)
       if (!exists || diff(db(versionCollName), obj).isDefined) {
         // Update version history, avoid duplicate key error?
-        val v = db(versionCollName)
-        if (exists) v.findAndRemove(idKey -> id)
-        v.insert(obj, WriteConcern.ACKNOWLEDGED)
+        val v = db.collection[BSONCollection](versionCollName)
+        if (exists) Await.ready(v.findAndRemove(BSONDocument(idKey -> id), None, None, WriteConcern.Default, None, None, Nil), timeout)
+        Await.ready(v.insert.one(obj), timeout)
         // increment version for unpublished working copy
-        obj.put(versionKey, version + 1)
-        coll.remove(coll.head)
-        coll.insert(obj, WriteConcern.ACKNOWLEDGED)
+        val mod = BSONDocument("$set" -> BSONDocument(versionKey -> (version + 1)))
+        Await.ready(coll.update(ordered = false).one(obj, mod), timeout)
       }
       (path, version)
     }
@@ -591,17 +596,17 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
     if (subsystemVersions.exists(_.maybeVersion.contains(subsystemVersion)) && targetVersions.exists(
           _.maybeVersion.contains(targetVersion)
         )) {
-      val obj = Map(
+      val obj = BSONDocument(
         versionStrKey       -> icdVersion,
         subsystemKey        -> subsystem,
         subsystemVersionKey -> subsystemVersion,
         targetKey           -> target,
         targetVersionKey    -> targetVersion,
         userKey             -> user,
-        dateKey             -> date,
+        dateKey             -> BSONDateTime(date.getMillis),
         commentKey          -> comment
-      ).asDBObject
-      db(icdCollName).insert(obj, WriteConcern.ACKNOWLEDGED)
+      )
+      Await.ready(db.collection[BSONCollection](icdCollName).insert.one(obj), timeout)
     } else {
       println(
         s"Warning: Not adding ICD version $icdVersion between $subsystem-$subsystemVersion and $target-$targetVersion, since not all referenced subsystem versions exist"
@@ -616,7 +621,8 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
    * @param target    the target subsystem
    */
   def removeIcdVersions(subsystem: String, target: String): Unit = {
-    db(icdCollName).remove(MongoDBObject(subsystemKey -> subsystem, targetKey -> target), WriteConcern.ACKNOWLEDGED)
+    val query = BSONDocument(subsystemKey -> subsystem, targetKey -> target)
+    Await.ready(db.collection[BSONCollection](icdCollName).delete.one(query), timeout)
   }
 
   /**
@@ -624,7 +630,22 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
    */
   def getIcdNames: List[IcdName] = {
     if (collectionExists(icdCollName)) {
-      db(icdCollName).map(obj => IcdName(obj(subsystemKey).toString, obj(targetKey).toString)).toList.distinct.sorted
+      val coll = db.collection[BSONCollection](icdCollName)
+      val docs = Await.result(
+        coll
+          .find(BSONDocument(), None)
+          .cursor[BSONDocument]()
+          .collect[List](-1, Cursor.FailOnError[List[BSONDocument]]()),
+        timeout
+      )
+      docs
+        .map { doc =>
+          val subsystem = doc.getAs[String](subsystemKey).get
+          val target    = doc.getAs[String](targetKey).get
+          IcdName(subsystem, target)
+        }
+        .distinct
+        .sorted
     } else Nil
   }
 
@@ -642,24 +663,32 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
     val t          = sorted.tail.head
 
     if (collectionExists(icdCollName)) {
-      db(icdCollName)
-        .find(MongoDBObject(subsystemKey -> s, targetKey -> t))
-        .sort(idKey -> -1)
-        .map { obj =>
+      val coll = db.collection[BSONCollection](icdCollName)
+      val docs = Await.result(
+        coll
+          .find(BSONDocument(subsystemKey -> s, targetKey -> t), None)
+          .sort(BSONDocument(idKey -> -1))
+          .cursor[BSONDocument]()
+          .collect[List](-1, Cursor.FailOnError[List[BSONDocument]]()),
+        timeout
+      )
+      docs
+        .map { doc =>
+          val icdVersion       = doc.getAs[String](versionStrKey).get
+          val subsystem        = doc.getAs[String](subsystemKey).get
+          val subsystemVersion = doc.getAs[String](subsystemVersionKey).get
+          val target           = doc.getAs[String](targetKey).get
+          val targetVersion    = doc.getAs[String](targetVersionKey).get
+          val user             = doc.getAs[String](userKey).get
+          val comment          = doc.getAs[String](commentKey).get
+          val date             = new DateTime(doc.getAs[Date](dateKey).get.getTime, DateTimeZone.UTC).toString()
           IcdVersionInfo(
-            icdVersion = IcdVersion(
-              icdVersion = obj(versionStrKey).toString,
-              subsystem = subsystem,
-              subsystemVersion = obj(subsystemVersionKey).toString,
-              target = target,
-              targetVersion = obj(targetVersionKey).toString
-            ),
-            user = obj(userKey).toString,
-            comment = obj(commentKey).toString,
-            date = obj(dateKey).asInstanceOf[DateTime].withZone(DateTimeZone.UTC).toString
+            IcdVersion(icdVersion, subsystem, subsystemVersion, target, targetVersion),
+            user,
+            comment,
+            date
           )
         }
-        .toList
     } else Nil
   }
 }

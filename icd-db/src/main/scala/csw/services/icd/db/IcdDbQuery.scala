@@ -8,8 +8,8 @@ import icd.web.shared.IcdModels
 import icd.web.shared.IcdModels._
 import play.api.libs.json.Json
 import reactivemongo.api.DefaultDB
+import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.bson.BSONDocument
-import reactivemongo.play.json.collection.JSONCollection
 import reactivemongo.play.json._
 
 import scala.concurrent.duration._
@@ -39,15 +39,15 @@ object IcdDbQuery {
   // Lists available db collections related to an ICD
   private[db] case class IcdEntry(
       name: String,
-      subsystem: Option[JSONCollection],
-      component: Option[JSONCollection],
-      publish: Option[JSONCollection],
-      subscribe: Option[JSONCollection],
-      command: Option[JSONCollection]
+      subsystem: Option[BSONCollection],
+      component: Option[BSONCollection],
+      publish: Option[BSONCollection],
+      subscribe: Option[BSONCollection],
+      command: Option[BSONCollection]
   ) {
 
     // Returns all collections belonging to this entry
-    def getCollections: List[JSONCollection] = (subsystem ++ component ++ publish ++ subscribe ++ command).toList
+    def getCollections: List[BSONCollection] = (subsystem ++ component ++ publish ++ subscribe ++ command).toList
   }
 
   // Returns an IcdEntry for the given collection path
@@ -164,12 +164,12 @@ case class IcdDbQuery(db: DefaultDB) {
 
   // XXX TODO FIXME: parsing to JSON and back to string and then to object!
    def collectionHeadToJson(collName: String): String = {
-    val coll = db.collection[JSONCollection](collName)
+    val coll = db.collection[BSONCollection](collName)
     collectionHeadToJson(coll)
   }
 
   // XXX TODO FIXME
-   def collectionHeadToJson(coll: JSONCollection): String = {
+   def collectionHeadToJson(coll: BSONCollection): String = {
     val doc = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
     Json.toJson(doc).toString()
   }
@@ -278,35 +278,35 @@ case class IcdDbQuery(db: DefaultDB) {
 
   // --- Get collections for (unpublished) ICD parts ---
 
-  private def getSubsystemCollection(subsystem: String): Option[JSONCollection] = {
+  private def getSubsystemCollection(subsystem: String): Option[BSONCollection] = {
     val collName = getSubsystemCollectionName(subsystem)
     if (collectionExists(collName))
       Some(db(collName))
     else None
   }
 
-  private def getComponentCollection(subsystem: String, component: String): Option[JSONCollection] = {
+  private def getComponentCollection(subsystem: String, component: String): Option[BSONCollection] = {
     val collName = getComponentCollectionName(subsystem, component)
     if (collectionExists(collName))
       Some(db(collName))
     else None
   }
 
-  private def getPublishCollection(subsystem: String, component: String): Option[JSONCollection] = {
+  private def getPublishCollection(subsystem: String, component: String): Option[BSONCollection] = {
     val collName = getPublishCollectionName(subsystem, component)
     if (collectionExists(collName))
       Some(db(collName))
     else None
   }
 
-  private def getSubscribeCollection(subsystem: String, component: String): Option[JSONCollection] = {
+  private def getSubscribeCollection(subsystem: String, component: String): Option[BSONCollection] = {
     val collName = getSubscribeCollectionName(subsystem, component)
     if (collectionExists(collName))
       Some(db(collName))
     else None
   }
 
-  private def getCommandCollection(subsystem: String, component: String): Option[JSONCollection] = {
+  private def getCommandCollection(subsystem: String, component: String): Option[BSONCollection] = {
     val collName = getCommandCollectionName(subsystem, component)
     if (collectionExists(collName))
       Some(db(collName))

@@ -2,7 +2,8 @@ package csw.services.icd.db
 
 // For performance test on already existing DB
 object PerfTest extends App {
-  val db       = IcdDb("icds")
+  // XXX TODO FIXME
+  val db       = IcdDb("icds2")
   val compName = "lgsWfs"
   ComponentInfoHelper.getComponentInfo(new CachedIcdDbQuery(db.db), "NFIRAOS", None, compName).foreach { info =>
     assert(info.componentModel.component == compName)

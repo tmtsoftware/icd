@@ -1,6 +1,10 @@
 package csw.services.icd.db
 
-import icd.web.shared.IcdModels.{SubscribeModel, PublishModel, CommandModel, ComponentModel}
+import icd.web.shared.IcdModels.{CommandModel, ComponentModel, PublishModel, SubscribeModel}
+import reactivemongo.api.DefaultDB
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Await
 
 /**
  * Adds caching to IcdDbQuery for better performance when creating documents or web pages that
@@ -12,10 +16,13 @@ class CachedIcdDbQuery(db: DefaultDB) extends IcdDbQuery(db) {
 
   import IcdDbQuery._
 
-  // --- Cached values ---
-  private val collectionNames = db.getCollectionNames().toSet
+  // XXX TODO FIXME: Pass in timeout or use async lib and make everything async
+  private val timeout = 5.seconds
 
-  override def getCollectionNames: Set[String] = collectionNames
+  // --- Cached values ---
+  private val collectionNames = Await.result(db.collectionNames, timeout).toSet
+
+  override def getCollectionNames: Set[String] = Await.result(db.collectionNames, timeout).toSet
 
   // Note: this was 99% of the bottleneck: db.collectionExists calls db.getCollectionNames every time!
   override def collectionExists(name: String): Boolean = collectionNames.contains(name)
