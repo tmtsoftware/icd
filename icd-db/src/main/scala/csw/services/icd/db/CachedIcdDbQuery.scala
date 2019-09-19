@@ -17,7 +17,7 @@ class CachedIcdDbQuery(db: DefaultDB) extends IcdDbQuery(db) {
   import IcdDbQuery._
 
   // XXX TODO FIXME: Pass in timeout or use async lib and make everything async
-  private val timeout = 5.seconds
+  private val timeout = 60.seconds
 
   // --- Cached values ---
   private val collectionNames = Await.result(db.collectionNames, timeout).toSet

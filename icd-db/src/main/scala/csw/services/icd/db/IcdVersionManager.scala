@@ -29,7 +29,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object IcdVersionManager {
 
   // XXX TODO FIXME
-  private val timeout = 5.seconds
+  private val timeout = 60.seconds
 
   /** The id key inserted into all documents */
   val idKey = "_id"

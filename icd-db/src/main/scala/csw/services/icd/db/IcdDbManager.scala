@@ -21,7 +21,7 @@ case class IcdDbManager(db: DefaultDB, versionManager: IcdVersionManager) {
   import IcdVersionManager._
 
   // XXX TODO FIXME
-  private val timeout = 5.seconds
+  private val timeout = 60.seconds
 
   /**
    * Ingests the given object into the database in the named collection,

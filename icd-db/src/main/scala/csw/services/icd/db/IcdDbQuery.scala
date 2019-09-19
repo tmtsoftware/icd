@@ -148,7 +148,7 @@ case class IcdDbQuery(db: DefaultDB) {
   import IcdDbQuery._
 
   // XXX TODO FIXME: Pass in timeout or use async lib and make everything async
-  private val timeout = 5.seconds
+  private val timeout = 60.seconds
 
   // XXX TODO FIXME: Make more efficient (cache names?)
   private[db] def collectionExists(name: String): Boolean = getCollectionNames.contains(name)
