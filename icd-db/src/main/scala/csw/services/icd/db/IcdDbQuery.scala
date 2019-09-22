@@ -147,29 +147,31 @@ case class IcdDbQuery(db: DefaultDB) {
 
   import IcdDbQuery._
 
-  // XXX TODO FIXME: Pass in timeout or use async lib and make everything async
   private val timeout = 60.seconds
 
-  // XXX TODO FIXME: Make more efficient (cache names?)
   private[db] def collectionExists(name: String): Boolean = getCollectionNames.contains(name)
 
   private[db] def getCollectionNames: Set[String] = Await.result(db.collectionNames, timeout).toSet
 
-  private[db] def getEntries: List[IcdEntry] = {
-    val paths   = getCollectionNames.filter(isStdSet).map(IcdPath).toList
+  private[db] def getEntries(paths: List[IcdPath]): List[IcdEntry] = {
     val compMap = paths.map(p => (p.component, paths.filter(_.component == p.component).map(_.path))).toMap
     val entries = compMap.keys.map(key => getEntry(db, key, compMap(key))).toList
     entries.sortBy(entry => (IcdPath(entry.name).parts.length, entry.name))
   }
 
+  private[db] def getEntries: List[IcdEntry] = {
+    val paths   = getCollectionNames.filter(isStdSet).map(IcdPath).toList
+    getEntries(paths)
+  }
+
   // XXX TODO FIXME: parsing to JSON and back to string and then to object!
-   def collectionHeadToJson(collName: String): String = {
+  def collectionHeadToJson(collName: String): String = {
     val coll = db.collection[BSONCollection](collName)
     collectionHeadToJson(coll)
   }
 
   // XXX TODO FIXME
-   def collectionHeadToJson(coll: BSONCollection): String = {
+  def collectionHeadToJson(coll: BSONCollection): String = {
     val doc = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
     Json.toJson(doc).toString()
   }

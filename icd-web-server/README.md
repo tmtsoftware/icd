@@ -16,7 +16,7 @@ You can add -D options or config file entries to override the default database h
 
 * icd.db.host is the host name where mongodb is running (default: localhost)
 * icd.db.port is the port for mongodb (default: 27017)
-* icd.db.name is the name of the mongodb database (default: icds)
+* icd.db.name is the name of the mongodb database (default: icds2)
 
 Usage
 -----

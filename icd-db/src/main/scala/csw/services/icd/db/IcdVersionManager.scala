@@ -3,7 +3,7 @@ package csw.services.icd.db
 import java.util.Date
 
 import com.typesafe.config.{Config, ConfigFactory}
-import icd.web.shared.IcdModels.SubsystemModel
+import icd.web.shared.IcdModels.{ComponentModel, SubsystemModel}
 import icd.web.shared.{IcdModels, IcdVersion, IcdVersionInfo, SubsystemWithVersion}
 import org.joda.time.{DateTime, DateTimeZone}
 import csw.services.icd.model._
@@ -349,17 +349,6 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
     } else None
   }
 
-  //  private def getFirst(collName: String): BSONDocument = {
-  //    val coll = db.collection[BSONCollection](collName)
-  //    Await.result(
-  //      coll
-  //        .find(BSONDocument())
-  //        .sort(BSONDocument(idKey -> -1))
-  //        .one,
-  //      timeout
-  //    ).get
-  //  }
-
   /**
    * Compares all of the named subsystem parts and returns a list of patches describing any differences.
    *
@@ -450,9 +439,7 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
   // The result is sorted so that the subsystem comes first.
   private def getEntries(parts: List[PartInfo]): List[IcdEntry] = {
     val paths   = parts.map(_.path).map(IcdPath)
-    val compMap = paths.map(p => (p.component, paths.filter(_.component == p.component).map(_.path))).toMap
-    val entries = compMap.keys.map(key => getEntry(db, key, compMap(key))).toList
-    entries.sortBy(entry => (IcdPath(entry.name).parts.length, entry.name))
+    query.getEntries(paths)
   }
 
   /**
@@ -509,6 +496,17 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
    */
   def getSubsystemModel(sv: SubsystemWithVersion): Option[SubsystemModel] = {
     getModels(sv, subsystemOnly = true).headOption.flatMap(_.subsystemModel)
+  }
+
+  /**
+   * Returns the component model for the given (or current) version of the given subsystem
+   * (Called when sv.maybeComponent is defined, so only one component is in the models list)
+   *
+   * @param sv the subsystem and version
+   * @return the subsystem model
+   */
+  def getComponentModel(sv: SubsystemWithVersion): Option[ComponentModel] = {
+    getModels(sv).headOption.flatMap(_.componentModel)
   }
 
   /**

@@ -54,7 +54,7 @@ object TitleInfo {
       TitleInfo(title, Some(subtitle), None)
     } else {
       if (maybeTargetSv.isDefined) {
-        val title    = s"ICD $part $sv$componentPart -> $targetName$targetComponentPart $unpublished"
+        val title    = s"ICD $part ${sv.subsystem}$componentPart -> $targetName$targetComponentPart $unpublished"
         val subtitle = getSubtitle(sv, maybeTargetSv)
         TitleInfo(title, Some(subtitle), None)
       } else {

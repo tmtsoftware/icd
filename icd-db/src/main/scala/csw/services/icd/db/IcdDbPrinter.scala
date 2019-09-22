@@ -17,12 +17,20 @@ import IcdToHtml._
 case class IcdDbPrinter(db: IcdDb) {
 
   /**
-   * Gets information about a named subsystem
+   * Gets information about a named subsystem (or component, if sv.maybeComponent is defined)
    */
-  private def getSubsystemInfo(sv: SubsystemWithVersion): Option[SubsystemInfo] =
-    db.versionManager
-      .getSubsystemModel(sv)
-      .map(m => SubsystemInfo(sv, m.title, m.description))
+  private def getSubsystemInfo(sv: SubsystemWithVersion): Option[SubsystemInfo] = {
+    if (sv.maybeComponent.isDefined) {
+      db.versionManager
+        .getComponentModel(sv)
+        .map(m => SubsystemInfo(sv, m.title, m.description))
+
+    } else {
+      db.versionManager
+        .getSubsystemModel(sv)
+        .map(m => SubsystemInfo(sv, m.title, m.description))
+    }
+  }
 
   /**
    * Gets information about the given components
@@ -85,9 +93,9 @@ case class IcdDbPrinter(db: IcdDb) {
       val subsystemVersion       = subsystemInfo.sv.maybeVersion.getOrElse(unpublished)
       val targetSubsystemVersion = targetSubsystemInfo.sv.maybeVersion.getOrElse(unpublished)
       val mainContent = div(
-        p(strong(s"${subsystemInfo.sv}: ${subsystemInfo.title} $subsystemVersion")),
+        p(strong(s"${subsystemInfo.sv.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
         raw(subsystemInfo.description),
-        p(strong(s"${targetSubsystemInfo.sv}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
+        p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
         raw(targetSubsystemInfo.description),
         SummaryTable.displaySummary(subsystemInfo, Some(targetSv), infoList, nh),
         makeIntro(titleInfo1),
