@@ -20,12 +20,30 @@ object AttributeModelParser {
     val units       = config.as[Option[String]]("units").map(HtmlMarkup.gfmToHtml).getOrElse("")
     val maxItems    = config.as[Option[String]]("maxItems")
     val minItems    = config.as[Option[String]]("minItems")
-    val minimum     = config.as[Option[String]]("minimum").orElse(config.as[Option[String]]("items.minimum"))
-    val maximum     = config.as[Option[String]]("maximum").orElse(config.as[Option[String]]("items.maximum"))
-    val exclusiveMinimum =
-      config.as[Option[Boolean]]("exclusiveMinimum").orElse(config.as[Option[Boolean]]("items.exclusiveMinimum")).getOrElse(false)
-    val exclusiveMaximum =
-      config.as[Option[Boolean]]("exclusiveMaximum").orElse(config.as[Option[Boolean]]("items.exclusiveMaximum")).getOrElse(false)
+
+    // --- Old json-schema uses Boolean for exclusive* keys, new one uses Number! ---
+    val exclusiveMinimumStr =
+      config.as[Option[String]]("exclusiveMinimum").orElse(config.as[Option[String]]("items.exclusiveMinimum")).getOrElse("false")
+    val exclusiveMinimum = exclusiveMinimumStr.toLowerCase() != "false"
+    val exclusiveMaximumStr =
+      config.as[Option[String]]("exclusiveMaximum").orElse(config.as[Option[String]]("items.exclusiveMaximum")).getOrElse("false")
+    val exclusiveMaximum = exclusiveMaximumStr.toLowerCase() != "false"
+
+    def isNumeric(str: String): Boolean        = str.matches("[-+]?\\d+(\\.\\d+)?")
+    def ifNumeric(str: String): Option[String] = Some(str).filter(isNumeric)
+
+    // For compatibility, use numeric value of exclusive min/max if found
+    val minimum = config
+      .as[Option[String]]("minimum")
+      .orElse(config.as[Option[String]]("items.minimum"))
+      .orElse(ifNumeric(exclusiveMinimumStr))
+    val maximum = config
+      .as[Option[String]]("maximum")
+      .orElse(config.as[Option[String]]("items.maximum"))
+      .orElse(ifNumeric(exclusiveMaximumStr))
+
+    // ---
+
     val defaultValue = if (config.hasPath("default")) config.getAnyRef("default").toString else ""
 
     def getPath(path: String, s: String): String = if (path.isEmpty) s else s"$path.$s"

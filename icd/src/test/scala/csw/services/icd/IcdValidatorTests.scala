@@ -138,8 +138,8 @@ class IcdValidatorTests extends FunSuite {
     assert(item1.name == "cmd1")
     assert(item1.description == "<p>Description of cmd1</p>")
     assert(item1.requirements == List("First requirement for cmd1", "Second requirement for cmd1"))
-    assert(item1.preconditions == List("First precondition for cmd1", "Second precondition for cmd1"))
-    assert(item1.postconditions == List("First postcondition for cmd1", "Second postcondition for cmd1"))
+    assert(item1.preconditions == List("<p>First precondition for cmd1</p>", "<p>Second precondition for cmd1</p>"))
+    assert(item1.postconditions == List("<p>First postcondition for cmd1</p>", "<p>Second postcondition for cmd1</p>"))
     assert(item1.requiredArgs == List("a1"))
     // ... XXX TODO continue
   }

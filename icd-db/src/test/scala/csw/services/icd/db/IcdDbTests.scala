@@ -3,11 +3,11 @@ package csw.services.icd.db
 import java.io.File
 
 import csw.services.icd.IcdValidator
-import icd.web.shared.ComponentInfo.Events
+import icd.web.shared.ComponentInfo.{CurrentStates, Events}
 import org.scalatest.FunSuite
 
 /**
- * Tests the IcdDb class (Note: Assumes DefaultDB is running)
+ * Tests the IcdDb class (Note: Assumes mongod is running)
  */
 //@DoNotDiscover
 class IcdDbTests extends FunSuite {
@@ -55,14 +55,15 @@ class IcdDbTests extends FunSuite {
 
     val publish   = db.query.getPublishModel(envCtrl).get
     val eventList = publish.eventList
-    assert(eventList.size == 5)
+    assert(eventList.size == 2)
     val logging = eventList.head
     assert(logging.name == "logToFile")
     assert(!logging.archive)
 
-    val sensors = eventList.find(_.name == "sensors").get
+    val currentStateList = publish.currentStateList
+    val sensors = currentStateList.find(_.name == "sensors").get
     assert(sensors.name == "sensors")
-    assert(sensors.archive)
+    assert(!sensors.archive)
     val attrList = sensors.attributesList
 
     val temp_ngsWfs = attrList.head
@@ -72,9 +73,9 @@ class IcdDbTests extends FunSuite {
     assert(temp_ngsWfs.units == "<p>degC</p>")
 
     // Test publish queries
-    val published = db.query.getPublished(envCtrl).filter(p => p.name == "sensors" && p.publishType == Events)
+    val published = db.query.getPublished(envCtrl).filter(p => p.name == "sensors" && p.publishType == CurrentStates)
     assert(published.size == 1)
-    assert(published.head.publishType == Events)
+    assert(published.head.publishType == CurrentStates)
 
     //    val sensorList = db.query.publishes("nfiraos.ncc.envCtrl.sensors", "NFIRAOS", Events)
     //    assert(sensorList.size == 1)
