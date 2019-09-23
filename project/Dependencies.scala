@@ -8,7 +8,7 @@ object Dependencies {
   val PlayVersion           = "2.7.0"
   val PlayJsonVersion       = "2.7.2"
   val ScalaTagsVersion      = "0.6.7"
-  val BootstrapVersion      = "3.3.7-1"
+  val BootstrapVersion      = "3.4.1"
   val JQueryVersion         = "2.2.1"
   val JQueryUiVersion       = "1.12.1"
   val BootstrapTableVersion = "1.14.1"
