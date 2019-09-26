@@ -4,13 +4,14 @@ import scalacss.internal.mutable.StyleSheet
 
 import scalacss.Defaults._
 
+//noinspection TypeAnnotation
 // CSS styles
 object Styles extends StyleSheet.Inline {
 
   import dsl._
   import language.postfixOps
 
-  val layout = style(
+  val layout: StyleA = style(
     height(95 %%),
     width(100 %%),
     position.fixed,
@@ -24,7 +25,7 @@ object Styles extends StyleSheet.Inline {
     media.print(width.auto, height.auto, display.block, overflow.visible, float.none, position.static)
   )
 
-  val mainContent = style(
+  val mainContent: StyleA = style(
     addClassName("col-xs-11"),
     padding(0 px, 0 px, 0 px, 0 px),
     height(100 %%),
@@ -130,6 +131,34 @@ object Styles extends StyleSheet.Inline {
 
   val attributeCell = style(
     whiteSpace.nowrap
+  )
+
+  val selectDialogLabel = style(
+    addClassNames("col-xs-2"),
+    padding(6 px, 6 px, 0 px, 16 px)
+  )
+
+  val selectDialogSubsystem = style(
+    addClassNames("col-xs-7"),
+    padding(0 px, 0 px, 0 px, 12 px)
+  )
+
+  val selectDialogVersion = style(
+    addClassNames("col-xs-3"),
+    padding(0 px, 0 px, 0 px, 5 px)
+  )
+
+  val selectDialogRow = style(
+    padding(0 px, 0 px, 20 px, 0 px)
+  )
+
+  val subsystemSwapper = style(
+    padding(0 px, 0 px, 20 px, 200 px),
+    fontSize(30 px)
+  )
+
+  val selectDialogApplyButton = style(
+    padding(20 px, 0 px, 20 px, 0 px)
   )
 
   val scrollableDiv = style(

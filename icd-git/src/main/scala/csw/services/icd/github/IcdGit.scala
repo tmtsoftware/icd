@@ -321,7 +321,7 @@ object IcdGit extends App {
       val sv       = options.subsystems.head
       val targetSv = options.subsystems.tail.head
       val info     = IcdGitManager.publish(options.subsystems, options.majorVersion, user, password, comment)
-      println(s"Created ICD version ${info.icdVersion.icdVersion} based on $sv and $targetSv")
+      println(s"Created ICD version ${info.icdVersion.icdVersion} based on ${sv.subsystem} and ${targetSv.subsystem}")
     }
   }
 

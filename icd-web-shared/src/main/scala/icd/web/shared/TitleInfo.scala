@@ -47,9 +47,9 @@ object TitleInfo {
       val icd = maybeIcd.get
       val title =
         if (part.nonEmpty)
-          s"ICD $part $sv$componentPart -> $targetName$targetComponentPart (version ${icd.icdVersion})"
+          s"ICD $part ${sv.subsystem}$componentPart -> $targetName$targetComponentPart (version ${icd.icdVersion})"
         else
-          s"ICD $sv$componentPart / $targetName$targetComponentPart (version ${icd.icdVersion})"
+          s"ICD ${sv.subsystem}$componentPart / $targetName$targetComponentPart (version ${icd.icdVersion})"
       val subtitle = getSubtitle(sv, maybeTargetSv)
       TitleInfo(title, Some(subtitle), None)
     } else {

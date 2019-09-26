@@ -16,6 +16,7 @@ object BrowserHistory {
       JsString(v match {
         case ComponentView => "ComponentView"
         case IcdView       => "IcdView"
+        case SelectView    => "SelectView"
         case UploadView    => "UploadView"
         case VersionView   => "VersionView"
       })
@@ -24,6 +25,7 @@ object BrowserHistory {
       JsSuccess(s match {
         case "ComponentView" => ComponentView
         case "IcdView"       => IcdView
+        case "SelectView"    => SelectView
         case "UploadView"    => UploadView
         case "VersionView"   => VersionView
       })
@@ -34,8 +36,10 @@ object BrowserHistory {
   // Type of a view in the application, used to restore the view
   sealed trait ViewType
 
-  // XXX TODO FIXME: Still needed?
-  // Viewing components based on checkbox states in sidebar
+  // View controls for selecting icds, subsystems, components, versions
+  case object SelectView extends ViewType
+
+  // Viewing components selected in sidebar
   case object ComponentView extends ViewType
 
   // Viewing an ICD
@@ -43,9 +47,6 @@ object BrowserHistory {
 
   // Uploading ICD files
   case object UploadView extends ViewType
-
-  //  // Publishing an API or ICD
-  //  case object PublishView extends ViewType
 
   // Viewing the version history
   case object VersionView extends ViewType

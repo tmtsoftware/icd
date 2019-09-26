@@ -7,7 +7,6 @@ import play.api.libs.json._
 
 import scala.language.implicitConversions
 
-//import org.scalajs.jquery.{ jQuery => $, _ }
 import org.querki.jquery._
 
 /**

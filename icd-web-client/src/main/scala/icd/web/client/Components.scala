@@ -184,9 +184,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         mainContent.appendElement(
           div(
             Styles.component,
-            p(strong(s"${subsystemInfo.sv}: ${subsystemInfo.title} $subsystemVersion")),
+            p(strong(s"${subsystemInfo.sv.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
             raw(subsystemInfo.description),
-            p(strong(s"${targetSubsystemInfo.sv}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
+            p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
             raw(targetSubsystemInfo.description)
           ).render
         )

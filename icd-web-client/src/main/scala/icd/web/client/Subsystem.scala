@@ -54,7 +54,7 @@ case class Subsystem(
   // The subsystem combobox
   private val subsystemItem = {
     import scalatags.JsDom.all._
-    select(onchange := subsystemSelected _)(
+    select(cls := "form-control", onchange := subsystemSelected _)(
       if (enablePlaceholder)
         option(value := placeholderMsg, selected := true)(placeholderMsg)
       else
@@ -65,7 +65,7 @@ case class Subsystem(
   // The subsystem version combobox
   private val versionItem = {
     import scalatags.JsDom.all._
-    select(hidden := true, onchange := subsystemVersionSelected _).render
+    select(cls := "form-control", hidden := true, onchange := subsystemVersionSelected _).render
   }
 
   /**
@@ -87,7 +87,12 @@ case class Subsystem(
   // HTML markup displaying the subsystem and version comboboxes
   override def markup(): Element = {
     import scalatags.JsDom.all._
-    li(a(label(s"$labelStr", " ", subsystemItem), " ", versionItem)).render
+    import scalacss.ScalatagsCss._
+    div(cls := "row")(
+      div(Styles.selectDialogLabel)(label(s"$labelStr")),
+      div(Styles.selectDialogSubsystem)(subsystemItem),
+      div(Styles.selectDialogVersion)(versionItem)
+    ).render
   }
 
   /**

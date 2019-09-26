@@ -18,7 +18,6 @@ object Dependencies {
 
   // command line dependencies
   val scopt = "com.github.scopt" %% "scopt" % "3.7.1"
-  //  val jsonSchemaValidator = "com.github.fge" % "json-schema-validator" % "2.2.6"
   val jsonSchemaValidator = "com.github.everit-org.json-schema" % "org.everit.json.schema" % "1.11.1"
   val ficus               = "com.iheart"                        %% "ficus"                 % "1.4.4"
   val typesafeConfig      = "com.typesafe"                      % "config"                 % "1.3.3"
@@ -31,8 +30,6 @@ object Dependencies {
 
   val reactivemongo = "org.reactivemongo" %% "reactivemongo" % "0.18.5"
   val play2Reactivemongo = "org.reactivemongo" %% "play2-reactivemongo" % "0.18.5-play27"
-//  val mongoScalaDriver = "org.mongodb.scala" %% "mongo-scala-driver" % "2.7.0"
-//  val casbah = "org.mongodb" %% "casbah" % "3.1.1"
 
   val diffson = "org.gnieh" %% "diffson-spray-json" % "3.1.0"
 

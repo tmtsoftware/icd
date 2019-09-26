@@ -46,7 +46,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   // The ICD combobox
   private val icdItem = {
     import scalatags.JsDom.all._
-    select(onchange := icdSelected _)(
+    select(cls := "form-control", onchange := icdSelected _)(
       option(value := emptyOptionMsg)(emptyOptionMsg)
     ).render
   }
@@ -54,7 +54,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   // The ICD version combobox
   private val versionItem = {
     import scalatags.JsDom.all._
-    select(hidden := true, onchange := icdVersionSelected _).render
+    select(cls := "form-control", hidden := true, onchange := icdVersionSelected _).render
   }
 
   def setEnabled(enabled: Boolean): Unit = {
@@ -86,7 +86,12 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   // HTML markup displaying the ICD and version comboboxes
   override def markup(): Element = {
     import scalatags.JsDom.all._
-    li(a(label("ICD", " ", icdItem), " ", versionItem)).render
+    import scalacss.ScalatagsCss._
+    div(cls := "row")(
+      div(Styles.selectDialogLabel)(label("ICD")),
+      div(Styles.selectDialogSubsystem)(icdItem),
+      div(Styles.selectDialogVersion)(versionItem)
+    ).render
   }
 
   /**

@@ -419,7 +419,7 @@ object IcdGitManager {
       case Some(v) => v
       case None =>
         val opt = getSubsystemVersionNumbers(sv, gitWorkDir).headOption
-        if (opt.isEmpty) error("Missing version for $sv, no published version found")
+        if (opt.isEmpty) error(s"Missing version for ${sv.subsystem}, no published version found")
         opt.get
     }
   }
@@ -468,7 +468,7 @@ object IcdGitManager {
 
       // Prepend the new icd version info to the JSON file and commit/push back to GitHub
       icds.find(e => e.versions.toSet == icdEntry.versions.toSet).foreach { icd =>
-        error(s"ICD version ${icd.icdVersion} is already defined for $sv and $targetSv")
+        error(s"ICD version ${icd.icdVersion} is already defined for ${sv.subsystem} and ${targetSv.subsystem}")
       }
       val json = IcdVersions(List(sv.subsystem, targetSv.subsystem), icdEntry :: icds).toJson.prettyPrint
 
