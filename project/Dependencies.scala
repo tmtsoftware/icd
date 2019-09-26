@@ -3,11 +3,11 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 
 object Dependencies {
   val Version               = "0.13"
-  val ScalaVersion          = "2.12.8"
+  val ScalaVersion          = "2.13.1"
   val AkkaVersion          = "2.5.25"
-  val PlayVersion           = "2.7.0"
-  val PlayJsonVersion       = "2.7.2"
-  val ScalaTagsVersion      = "0.6.7"
+  val PlayVersion           = "2.7.3"
+  val PlayJsonVersion       = "2.7.4"
+  val ScalaTagsVersion      = "0.7.0"
   val BootstrapVersion      = "3.4.1"
   val JQueryVersion         = "2.2.1"
   val JQueryUiVersion       = "1.12.1"
@@ -18,34 +18,34 @@ object Dependencies {
 
   // command line dependencies
   val scopt = "com.github.scopt" %% "scopt" % "3.7.1"
-  val jsonSchemaValidator = "com.github.everit-org.json-schema" % "org.everit.json.schema" % "1.11.1"
-  val ficus               = "com.iheart"                        %% "ficus"                 % "1.4.4"
-  val typesafeConfig      = "com.typesafe"                      % "config"                 % "1.3.3"
-  val scalaTest           = "org.scalatest"                     %% "scalatest"             % "3.0.5"
+  val jsonSchemaValidator = "com.github.everit-org.json-schema" % "org.everit.json.schema" % "1.12.0"
+  val ficus               = "com.iheart"                        %% "ficus"                 % "1.4.7"
+  val typesafeConfig      = "com.typesafe"                      % "config"                 % "1.3.4"
+  val scalaTest           = "org.scalatest"                     %% "scalatest"             % "3.0.8"
 
-  val flexmarkAll = "com.vladsch.flexmark" % "flexmark-all" % "0.35.2"
-  val scalaCsv    = "com.github.tototoshi" %% "scala-csv"   % "1.3.5"
-  val itextpdf    = "com.itextpdf"         % "itextpdf"     % "5.5.13"
-  val xmlworker   = "com.itextpdf.tool"    % "xmlworker"    % "5.5.13"
+  val flexmarkAll = "com.vladsch.flexmark" % "flexmark-all" % "0.50.40"
+  val scalaCsv    = "com.github.tototoshi" %% "scala-csv"   % "1.3.6"
+  val itextpdf    = "com.itextpdf"         % "itextpdf"     % "5.5.13.1"
+  val xmlworker   = "com.itextpdf.tool"    % "xmlworker"    % "5.5.13.1"
 
-  val reactivemongo = "org.reactivemongo" %% "reactivemongo" % "0.18.5"
-  val play2Reactivemongo = "org.reactivemongo" %% "play2-reactivemongo" % "0.18.5-play27"
+  val reactivemongo = "org.reactivemongo" %% "reactivemongo" % "0.18.6"
+  val play2Reactivemongo = "org.reactivemongo" %% "play2-reactivemongo" % "0.18.6-play27"
 
-  val diffson = "org.gnieh" %% "diffson-spray-json" % "3.1.0"
+  val diffson = "org.gnieh" %% "diffson-spray-json" % "4.0.0"
 
   val sprayJson      = "io.spray"                   %% "spray-json"      % "1.3.5"
   val scalaLogging   = "com.typesafe.scala-logging" %% "scala-logging"   % "3.9.2"
   val logbackClassic = "ch.qos.logback"             % "logback-classic"  % "1.2.3"
   val scalatags      = "com.lihaoyi"                %% "scalatags"       % ScalaTagsVersion
-  val jsoup          = "org.jsoup"                  % "jsoup"            % "1.11.3"
-  val jgit           = "org.eclipse.jgit"           % "org.eclipse.jgit" % "5.2.0.201812061821-r"
+  val jsoup          = "org.jsoup"                  % "jsoup"            % "1.12.1"
+  val jgit           = "org.eclipse.jgit"           % "org.eclipse.jgit" % "5.5.0.201909110433-r"
 
   // web server dependencies
-  val scalajsScripts = "com.vmunier" %% "scalajs-scripts" % "1.1.2"
+  val scalajsScripts = "com.vmunier" %% "scalajs-scripts" % "1.1.4"
 
   val playJson    = "com.typesafe.play" %% "play-json"    % PlayJsonVersion
   val jqueryUi    = "org.webjars"       % "jquery-ui"     % JQueryUiVersion
-  val webjarsPlay = "org.webjars"       %% "webjars-play" % "2.7.0"
+  val webjarsPlay = "org.webjars"       %% "webjars-play" % "2.7.3"
   // Note: Updating to bootstrap-4 could be a lot of work...
   val bootstrap      = "org.webjars"       % "bootstrap"       % BootstrapVersion
   val bootstrapTable = "org.webjars.bower" % "bootstrap-table" % BootstrapTableVersion
@@ -57,8 +57,8 @@ object Dependencies {
       "com.lihaoyi"                  %%% "scalatags"     % ScalaTagsVersion,
       "com.typesafe.play"            %%% "play-json"     % PlayJsonVersion,
       "org.querki"                   %%% "jquery-facade" % "1.2",
-      "com.github.japgolly.scalacss" %%% "core"          % "0.5.5",
-      "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.5.5"
+      "com.github.japgolly.scalacss" %%% "core"          % "0.6.0-RC1",
+      "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.6.0-RC1"
     )
   )
 
