@@ -142,7 +142,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Gets top level subsystem info from the server
-  // XXX TODO: Limit to selected component!
   private def getSubsystemInfo(sv: SubsystemWithVersion): Future[SubsystemInfo] = {
     val path = Routes.subsystemInfo(sv.subsystem, sv.maybeVersion)
     Ajax.get(path).map { r =>
@@ -167,13 +166,15 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalacss.ScalatagsCss._
 
     val isIcd = maybeTargetSubsystem.isDefined
+    val subsystemInfoF = getSubsystemInfo(sv)
+    val targetInfoF = maybeTargetSubsystem.map(getSubsystemInfo(_).map(i => Some(i))).getOrElse(Future.successful(None))
+    val infoListF = getComponentInfo(sv, maybeTargetSubsystem)
+    val targetInfoListF = getComponentInfo(maybeTargetSubsystem, Some(sv))
     val f = for {
-      subsystemInfo <- getSubsystemInfo(sv)
-      targetSubsystemInfo <- if (isIcd)
-                              getSubsystemInfo(maybeTargetSubsystem.get)
-                            else Future.successful(null) // XXX TODO FIXME
-      infoList       <- getComponentInfo(sv, maybeTargetSubsystem)
-      targetInfoList <- getComponentInfo(maybeTargetSubsystem, Some(sv))
+      subsystemInfo <- subsystemInfoF
+      maybeTargetSubsystemInfo <- targetInfoF
+      infoList       <- infoListF
+      targetInfoList <- targetInfoListF
     } yield {
       val titleInfo        = TitleInfo(subsystemInfo, maybeTargetSubsystem, maybeIcd)
       val subsystemVersion = sv.maybeVersion.getOrElse(TitleInfo.unpublished)
@@ -181,6 +182,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       mainContent.setTitle(titleInfo.title, titleInfo.maybeSubtitle, titleInfo.maybeDescription)
       // For ICDs, add the descriptions of the two subsystems at top
       if (isIcd) {
+        val targetSubsystemInfo = maybeTargetSubsystemInfo.get
         val targetSubsystemVersion = maybeTargetSubsystem.map(_.maybeVersion).getOrElse(TitleInfo.unpublished)
         mainContent.appendElement(
           div(
@@ -192,7 +194,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           ).render
         )
       }
-      // XXX TODO: Add support for comp to comp ICD in web app GUI
       val summaryTable = SummaryTable.displaySummary(subsystemInfo, maybeTargetSubsystem, infoList).render
       mainContent.appendElement(div(Styles.component, id := "Summary")(raw(summaryTable)).render)
       infoList.foreach(i => displayComponentInfo(i, !isIcd))
@@ -219,31 +220,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       }
       .recover {
         case ex => mainContent.displayInternalError(ex)
-      }
-  }
-
-  // XXX TODO FIXME: Is this method still called?
-  /**
-   * Displays only the given component's information, ignoring any filter
-   *
-   * @param sv       the subsystem and version to use for the component
-   * @param compName the name of the component
-   */
-  def setComponent(sv: SubsystemWithVersion, compName: String): Unit = {
-    val svc  = sv.copy(maybeComponent = Some(compName))
-    val path = Routes.componentInfo(svc)
-    Ajax
-      .get(path)
-      .map { r =>
-        val infoList = Json.fromJson[List[ComponentInfo]](Json.parse(r.responseText)).getOrElse(Nil)
-        mainContent.clearContent()
-        mainContent.scrollToTop()
-        mainContent.setTitle(s"Component: $compName")
-        displayComponentInfo(infoList.head, forApi = true)
-      }
-      .recover {
-        case ex =>
-          mainContent.displayInternalError(ex)
       }
   }
 

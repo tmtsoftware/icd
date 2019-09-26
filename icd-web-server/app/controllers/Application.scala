@@ -184,7 +184,6 @@ class Application @Inject()(
   ): Action[AnyContent] = Action { implicit request =>
     val sv       = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     val targetSv = SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
-    // XXX TODO FIXME: Make more efficient,since don't need model returned here. Why not check/ingest subsystem also?
     if (db.versionManager.getSubsystemModel(targetSv).isEmpty) {
       ingestPublishedSubsystem(target, maybeTargetVersion)
     }

@@ -193,7 +193,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
    */
   private def popState(e: PopStateEvent): Unit = {
     BrowserHistory.popState(e).foreach { hist =>
-      println(s"XXX popState: $hist")
       e.preventDefault()
       // Make sure to wait for futures to complete, so things happen in the right order
       for {
