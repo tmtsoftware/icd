@@ -2,7 +2,8 @@ package icd.web.client
 
 import scalacss.internal.mutable.StyleSheet
 
-import scalacss.Defaults._
+import scalacss.DevDefaults._
+//import scalacss.ProdDefaults._
 
 //noinspection TypeAnnotation
 // CSS styles
@@ -134,21 +135,30 @@ object Styles extends StyleSheet.Inline {
   )
 
   val selectDialogLabel = style(
-    addClassNames("col-xs-2"),
+    addClassNames("col-xs-1"),
     padding(6 px, 6 px, 0 px, 16 px)
   )
 
   val selectDialogSubsystem = style(
-    addClassNames("col-xs-7"),
+    addClassNames("col-xs-2"),
     padding(0 px, 0 px, 0 px, 12 px)
   )
 
   val selectDialogVersion = style(
-    addClassNames("col-xs-3"),
+    addClassNames("col-xs-1"),
     padding(0 px, 0 px, 0 px, 5 px)
   )
 
-  val selectDialogRow = style(
+  val selectDialogComponent = style(
+    addClassNames("col-xs-4"),
+    padding(0 px, 0 px, 0 px, 5 px)
+  )
+
+  val selectDialogIcdRow = style(
+    padding(0 px, 0 px, 60 px, 0 px)
+  )
+
+  val selectDialogSubsystemRow = style(
     padding(0 px, 0 px, 20 px, 0 px)
   )
 

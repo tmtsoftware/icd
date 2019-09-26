@@ -68,26 +68,32 @@ object BrowserHistory {
  *
  * @param maybeSourceSubsystem optional source subsystem selected in the left box
  * @param maybeTargetSubsystem optional target subsystem selected in the right box
- * @param maybeIcd             the ICD with version, if one was selected
+ * @param maybeIcd             optional ICD with version, if one was selected
+ * @param maybeSourceComponent optional source component, if one was selected
+ * @param maybeTargetComponent optional target component, if one was selected
  * @param viewType             indicates the type of data being displayed
- * @param currentCompnent  optional current component
+ * @param currentCompnent      optional current component
  */
 case class BrowserHistory(
     maybeSourceSubsystem: Option[SubsystemWithVersion],
     maybeTargetSubsystem: Option[SubsystemWithVersion],
     maybeIcd: Option[IcdVersion],
+    maybeSourceComponent: Option[String],
+    maybeTargetComponent: Option[String],
     viewType: ViewType,
     currentCompnent: Option[String]
 ) {
 
   // Pushes the current application history state (Note that the title is ignored in some browsers)
   def pushState(): Unit = {
+    println(s"XXX pushState $this")
     val json = Json.toJson(this).toString()
     dom.window.history.pushState(json, dom.document.title, dom.document.documentURI)
   }
 
   // Replaces the current application history state (Note that the title is ignored in some browsers)
   def replaceState(): Unit = {
+    println(s"XXX replaceState $this")
     val json = Json.toJson(this).toString()
     dom.window.history.replaceState(json, dom.document.title, dom.document.documentURI)
   }

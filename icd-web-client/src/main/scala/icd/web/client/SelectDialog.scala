@@ -1,13 +1,11 @@
 package icd.web.client
 
-import icd.web.client.BrowserHistory.{ComponentView, IcdView}
 import icd.web.client.IcdChooser.IcdListener
 import icd.web.client.Subsystem.SubsystemListener
 import icd.web.shared.{IcdVersion, SubsystemWithVersion}
 import org.scalajs.dom
 import org.scalajs.dom._
 import play.api.libs.json._
-import org.querki.jquery._
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.html.Button
 import SelectDialog._
@@ -41,17 +39,13 @@ object SelectDialog {
     ): Future[Unit]
   }
 
-  /**
-   * Value displayed for the unpublished working version of the subsystem
-   */
-  private val unpublishedVersion = "*"
-
   private val msg = "Select an ICD from the list or one or two subsystems (and optional components)"
 }
 
 /**
  * Displays the page for selecting the icds, subsystem APIs, components and versions to display
  */
+//noinspection DuplicatedCode
 case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent, listener: SelectDialogListener)
     extends Displayable {
 
@@ -59,7 +53,7 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
   val targetSubsystem = Subsystem(
     TargetSubsystemListener,
     labelStr = "Target",
-    placeholderMsg = "All",
+    placeholderMsg = "All Subsystems",
     enablePlaceholder = true
   )
   val subsystemSwapper = SubsystemSwapper(swapSubsystems)
@@ -109,13 +103,11 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
       val maybeTargetSv = targetSubsystem.getSubsystemWithVersion
       maybeSv
         .map { sv =>
-          val icdF            = icdChooser.selectMatchingIcd(sv, maybeTargetSv)
-          val componentNamesF = getComponentNames(sv)
           for {
-            _     <- icdF
-            names <- componentNamesF
+            _     <- icdChooser.selectMatchingIcd(sv, maybeTargetSv)
+            names <- getComponentNames(sv)
           } yield {
-            // XXX TODO Update component menu
+            subsystem.updateComponentOptions(names)
           }
         }
         .getOrElse(Future.successful())
@@ -128,13 +120,11 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
       val maybeSv = subsystem.getSubsystemWithVersion
       maybeSv
         .map { sv =>
-          val icdF            = icdChooser.selectMatchingIcd(sv, maybeTargetSv)
-          val componentNamesF = maybeTargetSv.map(getComponentNames).getOrElse(Future.successful(Nil))
           for {
             _     <- icdChooser.selectMatchingIcd(sv, maybeTargetSv)
-            names <- componentNamesF
+            names <- maybeTargetSv.map(getComponentNames).getOrElse(Future.successful(Nil))
           } yield {
-            // XXX TODO: Update target component menu
+            targetSubsystem.updateComponentOptions(names)
           }
         }
         .getOrElse(Future.successful())
@@ -148,8 +138,16 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
       sv1 <- subsystem.getSubsystemWithVersion
     } {
       icdChooser.selectMatchingIcd(sv2, Some(sv1))
+      val subsystemComponents = subsystem.getComponents
+      val selectedSubsystemComponent = subsystem.getSelectedComponent
+      val targetComponents = targetSubsystem.getComponents
+      val selectedTargetSubsystemComponent = targetSubsystem.getSelectedComponent
       targetSubsystem.setSubsystemWithVersion(Some(sv1), notifyListener = false, saveHistory = false)
-      subsystem.setSubsystemWithVersion(Some(sv2))
+      subsystem.setSubsystemWithVersion(Some(sv2), notifyListener = false, saveHistory = false)
+      targetSubsystem.updateComponentOptions(subsystemComponents)
+      subsystem.updateComponentOptions(targetComponents)
+      targetSubsystem.setSelectedComponent(selectedSubsystemComponent)
+      subsystem.setSelectedComponent(selectedTargetSubsystemComponent)
     }
   }
 
@@ -161,9 +159,14 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
           val sv       = SubsystemWithVersion(icdVersion.subsystem, Some(icdVersion.subsystemVersion), None)
           val targetSv = SubsystemWithVersion(icdVersion.target, Some(icdVersion.targetVersion), None)
           for {
-            _ <- subsystem.setSubsystemWithVersion(Some(sv), notifyListener = false, saveHistory = false)
-            _ <- targetSubsystem.setSubsystemWithVersion(Some(targetSv), notifyListener = false, saveHistory = false)
-          } yield {}
+            _                <- subsystem.setSubsystemWithVersion(Some(sv), notifyListener = false, saveHistory = false)
+            components       <- getComponentNames(sv)
+            _                <- targetSubsystem.setSubsystemWithVersion(Some(targetSv), notifyListener = false, saveHistory = false)
+            targetComponents <- getComponentNames(targetSv)
+          } yield {
+            subsystem.updateComponentOptions(components)
+            targetSubsystem.updateComponentOptions(targetComponents)
+          }
         case None => Future.successful()
       }
     }
@@ -180,12 +183,13 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
   override def markup(): Element = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
-    form(
-      div(Styles.selectDialogRow, p(msg)),
-      div(Styles.selectDialogRow, icdChooser.markup()),
-      div(Styles.selectDialogRow, subsystem.markup()),
+    div(
+      cls := "container",
+      div(Styles.selectDialogSubsystemRow, p(msg)),
+      div(Styles.selectDialogIcdRow, icdChooser.markup()),
+      div(Styles.selectDialogSubsystemRow, subsystem.markup()),
       div(Styles.subsystemSwapper, subsystemSwapper.markup()),
-      div(Styles.selectDialogRow, targetSubsystem.markup()),
+      div(Styles.selectDialogSubsystemRow, targetSubsystem.markup()),
       div(Styles.selectDialogApplyButton, applyButton)
     ).render
   }

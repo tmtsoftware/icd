@@ -142,10 +142,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Gets top level subsystem info from the server
-  private def getSubsystemInfo(subsystem: String, maybeVersion: Option[String]): Future[SubsystemInfo] = {
-    val path = Routes.subsystemInfo(subsystem, maybeVersion)
+  // XXX TODO: Limit to selected component!
+  private def getSubsystemInfo(sv: SubsystemWithVersion): Future[SubsystemInfo] = {
+    val path = Routes.subsystemInfo(sv.subsystem, sv.maybeVersion)
     Ajax.get(path).map { r =>
-      Json.fromJson[SubsystemInfo](Json.parse(r.responseText)).get
+      val subsystemInfo = Json.fromJson[SubsystemInfo](Json.parse(r.responseText)).get
+      subsystemInfo.copy(sv = sv) // include the compoinent, if specified
     }
   }
 
@@ -166,14 +168,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     val isIcd = maybeTargetSubsystem.isDefined
     val f = for {
-      subsystemInfo <- getSubsystemInfo(sv.subsystem, sv.maybeVersion)
+      subsystemInfo <- getSubsystemInfo(sv)
       targetSubsystemInfo <- if (isIcd)
-                              getSubsystemInfo(maybeTargetSubsystem.get.subsystem, maybeTargetSubsystem.get.maybeVersion)
+                              getSubsystemInfo(maybeTargetSubsystem.get)
                             else Future.successful(null) // XXX TODO FIXME
       infoList       <- getComponentInfo(sv, maybeTargetSubsystem)
       targetInfoList <- getComponentInfo(maybeTargetSubsystem, Some(sv))
     } yield {
-      // TODO: Update web app to allow selecting component to component ICDs
       val titleInfo        = TitleInfo(subsystemInfo, maybeTargetSubsystem, maybeIcd)
       val subsystemVersion = sv.maybeVersion.getOrElse(TitleInfo.unpublished)
       mainContent.clearContent()

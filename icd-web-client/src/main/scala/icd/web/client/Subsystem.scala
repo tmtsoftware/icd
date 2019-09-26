@@ -29,6 +29,8 @@ object Subsystem {
     def subsystemSelected(maybeSv: Option[SubsystemWithVersion], saveHistory: Boolean = true): Future[Unit]
   }
 
+  private val componentPlaceholder = "All Components"
+
   /**
    * Value displayed for the unpublished working version of the subsystem
    */
@@ -68,6 +70,14 @@ case class Subsystem(
     select(cls := "form-control", hidden := true, onchange := subsystemVersionSelected _).render
   }
 
+  // The component combobox
+  private val componentItem = {
+    import scalatags.JsDom.all._
+    select(cls := "form-control")(
+      option(value := componentPlaceholder, selected := true)(componentPlaceholder)
+    ).render
+  }
+
   /**
    * Returns true if the combobox is displaying the default item (i.e.: the initial item, no selection)
    */
@@ -91,7 +101,8 @@ case class Subsystem(
     div(cls := "row")(
       div(Styles.selectDialogLabel)(label(s"$labelStr")),
       div(Styles.selectDialogSubsystem)(subsystemItem),
-      div(Styles.selectDialogVersion)(versionItem)
+      div(Styles.selectDialogVersion)(versionItem),
+      div(Styles.selectDialogComponent)(componentItem)
     ).render
   }
 
@@ -105,10 +116,26 @@ case class Subsystem(
     }
 
   /**
+   * Gets the currently selected component name
+   */
+  def getSelectedComponent: Option[String] =
+    componentItem.value match {
+      case `componentPlaceholder` => None
+      case componentName          => Some(componentName)
+    }
+
+  /**
    * Gets the list of subsystems being displayed
    */
   def getSubsystems: List[String] = {
     subsystemItem.options.drop(1).map(_.value).toList
+  }
+
+  /**
+   * Gets the list of component names being displayed
+   */
+  def getComponents: List[String] = {
+    componentItem.options.drop(1).map(_.value).toList
   }
 
   /**
@@ -124,8 +151,7 @@ case class Subsystem(
    * Gets the selected subsystem with the selected version
    */
   def getSubsystemWithVersion: Option[SubsystemWithVersion] = {
-    // XXX TODO FIXME: Add selected component
-    getSelectedSubsystem.map(subsystem => SubsystemWithVersion(subsystem, getSelectedSubsystemVersion, None))
+    getSelectedSubsystem.map(subsystem => SubsystemWithVersion(subsystem, getSelectedSubsystemVersion, getSelectedComponent))
   }
 
   /**
@@ -145,8 +171,25 @@ case class Subsystem(
       Future.successful()
     else {
       maybeSv match {
-        case Some(sv) => subsystemItem.value = sv.subsystem
-        case None     => subsystemItem.value = placeholderMsg
+        case Some(sv) =>
+          subsystemItem.value = sv.subsystem
+          sv.maybeVersion match {
+            case Some(version) =>
+              versionItem.value = version
+            case None =>
+              versionItem.value = unpublishedVersion
+          }
+          sv.maybeComponent match {
+            case Some(component) =>
+              componentItem.value = component
+            case None =>
+              componentItem.value = componentPlaceholder
+          }
+          subsystemItem.value = sv.subsystem
+        case None =>
+          subsystemItem.value = placeholderMsg
+          versionItem.value = unpublishedVersion
+          componentItem.value = componentPlaceholder
       }
     }
     if (notifyListener) {
@@ -174,6 +217,19 @@ case class Subsystem(
   }
 
   /**
+   * Update the Component combobox options
+   */
+  def updateComponentOptions(items: List[String]): Unit = {
+    for (i <- (1 until componentItem.length).reverse) {
+      componentItem.remove(i)
+    }
+    items.foreach { str =>
+      import scalatags.JsDom.all._
+      componentItem.add(option(value := str)(str).render)
+    }
+  }
+
+  /**
    * Sets the selected subsystem version.
    *
    * @return a future indicating when any event handlers have completed
@@ -194,6 +250,19 @@ case class Subsystem(
         listener.subsystemSelected(getSubsystemWithVersion, saveHistory)
       else Future.successful()
     }
+  }
+
+  /**
+   * Sets the selected subsystem component.
+   *
+   * @return a future indicating when any event handlers have completed
+   */
+  def setSelectedComponent(maybeComponent: Option[String]): Unit = {
+    if (maybeComponent != getSelectedComponent)
+      maybeComponent match {
+        case Some(s) => componentItem.value = s
+        case None    => componentItem.value = componentPlaceholder
+      }
   }
 
   // Updates the version combobox with the list of available versions for the selected subsystem

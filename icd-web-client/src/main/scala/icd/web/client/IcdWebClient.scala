@@ -59,7 +59,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   dom.window.onpopstate = popState _
 
   // Initial browser state
-  pushState(viewType = SelectView)
   doLayout()
   selectSubsystems()
 
@@ -96,10 +95,19 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     }
   }
 
-  // Called when the Select item is selected
-  private def selectSubsystems(saveHistory: Boolean = true)(): Unit = {
+  // Called when the Select navbar item is selected (or through browser history)
+  private def selectSubsystems(
+      maybeSv: Option[SubsystemWithVersion] = None,
+      maybeTargetSv: Option[SubsystemWithVersion] = None,
+      maybeIcd: Option[IcdVersion] = None,
+      maybeSourceComponent: Option[String] = None,
+      maybeTargetComponent: Option[String] = None,
+      saveHistory: Boolean = true
+  )(): Unit = {
     setSidebarVisible(false)
     mainContent.setContent(selectDialog, "Select Subsystems and Components")
+    selectDialog.subsystem.setSelectedComponent(maybeSourceComponent)
+    selectDialog.targetSubsystem.setSelectedComponent(maybeTargetComponent)
     if (saveHistory) pushState(viewType = SelectView)
   }
 
@@ -168,10 +176,11 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       selectDialog.subsystem.getSubsystemWithVersion,
       selectDialog.targetSubsystem.getSubsystemWithVersion,
       selectDialog.icdChooser.getSelectedIcdVersion,
+      selectDialog.subsystem.getSelectedComponent,
+      selectDialog.targetSubsystem.getSelectedComponent,
       viewType,
       compName
     )
-
     if (replace) {
       hist.replaceState()
     } else {
@@ -184,6 +193,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
    */
   private def popState(e: PopStateEvent): Unit = {
     BrowserHistory.popState(e).foreach { hist =>
+      println(s"XXX popState: $hist")
       e.preventDefault()
       // Make sure to wait for futures to complete, so things happen in the right order
       for {
@@ -194,7 +204,15 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         hist.viewType match {
           case UploadView  => uploadSelected(saveHistory = false)()
           case VersionView => showVersionHistory(saveHistory = false)()
-          case SelectView => selectSubsystems(saveHistory = false)()
+          case SelectView =>
+            selectSubsystems(
+              hist.maybeSourceSubsystem,
+              hist.maybeTargetSubsystem,
+              hist.maybeIcd,
+              hist.maybeSourceComponent,
+              hist.maybeTargetComponent,
+              saveHistory = false
+            )()
           case ComponentView | IcdView =>
             updateComponentDisplay(
               hist.maybeSourceSubsystem,
@@ -246,7 +264,10 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         components.addComponents(maybeSv.get, maybeTargetSv, maybeIcd)
       }
     } else Future.successful(())
-    if (saveHistory) pushState(viewType = SelectView)
+    if (saveHistory) {
+      pushState(viewType = SelectView)
+      pushState(viewType = IcdView)
+    }
     f
   }
 
