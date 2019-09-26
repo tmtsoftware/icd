@@ -257,11 +257,14 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       maybeIcd: Option[IcdVersion],
       saveHistory: Boolean = true
   ): Future[Unit] = {
-    setSidebarVisible(true)
+    sidebar.clearComponents()
     mainContent.clearContent()
     val f = if (maybeSv.isDefined) {
       showBusyCursorWhile {
-        components.addComponents(maybeSv.get, maybeTargetSv, maybeIcd)
+        val f = components.addComponents(maybeSv.get, maybeTargetSv, maybeIcd)
+        selectDialog.subsystem.getComponents.foreach(sidebar.addComponent)
+        setSidebarVisible(true)
+        f
       }
     } else Future.successful(())
     if (saveHistory) {
