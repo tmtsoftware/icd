@@ -12,7 +12,7 @@ import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.joda.time.{DateTime, DateTimeZone}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
  * Provides methods for managing ICD versions in Git and

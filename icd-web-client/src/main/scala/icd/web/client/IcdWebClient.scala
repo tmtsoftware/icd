@@ -2,9 +2,8 @@ package icd.web.client
 
 import icd.web.shared.{IcdVersion, SubsystemWithVersion}
 import org.scalajs.dom
-import org.scalajs.dom.PopStateEvent
-import org.scalajs.dom.raw.HTMLStyleElement
-import org.querki.jquery._
+import org.scalajs.dom.{PopStateEvent, document}
+import org.scalajs.dom.raw.{HTMLDivElement, HTMLStyleElement}
 
 import scala.concurrent.Future
 import scala.scalajs.js.annotation.JSExportTopLevel
@@ -87,11 +86,11 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Hide or show the sidebar
   private def setSidebarVisible(show: Boolean): Unit = {
-    val s = $("#sidebar")
+    val s = document.querySelector("#sidebar")
     if (show) {
-      s.removeClass("hide")
+      s.classList.remove("hide")
     } else {
-      s.addClass("hide")
+      s.classList.add("hide")
     }
   }
 
@@ -228,9 +227,9 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Show/hide the busy cursor while the future is running
   private def showBusyCursorWhile(f: Future[Unit]): Future[Unit] = {
-    $("div").css("cursor", "progress")
+    body.classList.add("busyWaiting")
     f.onComplete { _ =>
-      $("div").css("cursor", "default")
+      body.classList.remove("busyWaiting")
     }
     f
   }

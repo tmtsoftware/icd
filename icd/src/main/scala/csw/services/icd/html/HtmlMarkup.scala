@@ -3,12 +3,11 @@ package csw.services.icd.html
 import java.util.UUID
 
 import com.vladsch.flexmark.html.HtmlRenderer
-import com.vladsch.flexmark.parser.Parser
+import com.vladsch.flexmark.parser.{Parser, PegdownExtensions}
 import com.vladsch.flexmark.profiles.pegdown.{Extensions, PegdownOptionsAdapter}
 import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
 import org.jsoup.nodes.Document.OutputSettings
-
 import scalatags.Text.all._
 import scalatags.Text.TypedTag
 
@@ -57,14 +56,14 @@ trait HtmlMarkup {
  * HTML markup utils
  */
 //noinspection TypeAnnotation
-object HtmlMarkup {
+object HtmlMarkup extends Extensions {
 
   private def isEmpty(x: String): Boolean = Option(x).forall(_.isEmpty)
 
   // Markdown to HTML support
   private val options = PegdownOptionsAdapter.flexmarkOptions(
-    Extensions.TABLES | Extensions.AUTOLINKS | Extensions.FENCED_CODE_BLOCKS
-      | Extensions.STRIKETHROUGH | Extensions.ATXHEADERSPACE | Extensions.TASKLISTITEMS
+      PegdownExtensions.TABLES | PegdownExtensions.AUTOLINKS | PegdownExtensions.FENCED_CODE_BLOCKS
+      | PegdownExtensions.STRIKETHROUGH | PegdownExtensions.ATXHEADERSPACE | PegdownExtensions.TASKLISTITEMS
   )
 
   private val parser   = Parser.builder(options).build()

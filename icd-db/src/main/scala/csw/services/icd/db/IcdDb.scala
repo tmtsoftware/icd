@@ -53,7 +53,7 @@ object IcdDb extends App {
     } text "Prints a list of total data rates for components of specified subsystem."
 
     opt[Unit]('u', "allUnits") action { (_, c) =>
-      c.copy(allUnits = Some(Unit))
+      c.copy(allUnits = Some(()))
     } text "Prints the set of unique units used in all received commands and published events for all components in DB."
 
     opt[String]('c', "component") valueName "<name>" action { (x, c) =>
@@ -229,11 +229,15 @@ object IcdDb extends App {
       val Array(name, vStr) = arg.split(":")
       if (vStr.isEmpty) error(msg)
       val Array(v1, v2) =
-        if (vStr.contains(",")) vStr.split(",").map(Some(_)) else Array(Some(vStr), None)
+        if (vStr.contains(",")) {
+          vStr.split(",").map(Option(_))
+        } else {
+          Array(Option(vStr), Option.empty)
+        }
       checkVersion(v1)
       checkVersion(v2)
       for (diff <- db.versionManager.diff(name, v1, v2))
-        println(s"\n${diff.path}:\n${diff.patch.toString()}") // XXX TODO: work on the format?
+        println(s"\n${diff.path}:\n${diff.patch.ops.toString}") // XXX TODO: work on the format?
     }
 
     // --missing option
@@ -257,14 +261,15 @@ case class IcdDb(
     port: Int = IcdDbDefaults.defaultPort
 ) {
 
+  // XXX TODO FIXME: Make readable error message when mongod is not running
   implicit val timeout: FiniteDuration = 5.seconds
-  private val mongoUri = s"mongodb://$host:$port/$dbName"
+  private val mongoUri                 = s"mongodb://$host:$port/$dbName"
 //  private val mongoUri = s"mongodb://localhost:27017/icds2"
   private val driver = new MongoDriver
   private val futureDb = for {
     uri <- Future.fromTry(MongoConnection.parseURI(mongoUri))
-    dn <- Future(uri.db.get)
-    db <- driver.connection(uri, None, strictUri = false).get.database(dn)
+    dn  <- Future(uri.db.get)
+    db  <- driver.connection(uri, None, strictUri = false).get.database(dn)
   } yield db
   val db: DefaultDB = Await.result(futureDb, timeout)
 
@@ -345,7 +350,6 @@ case class IcdDb(
 //        BSONDocument(elements)
 //      }
 //    }
-
 
   /**
    * Ingests the given input config into the database.

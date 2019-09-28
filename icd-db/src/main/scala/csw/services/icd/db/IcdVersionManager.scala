@@ -7,8 +7,17 @@ import icd.web.shared.IcdModels.{ComponentModel, SubsystemModel}
 import icd.web.shared.{IcdModels, IcdVersion, IcdVersionInfo, SubsystemWithVersion}
 import org.joda.time.{DateTime, DateTimeZone}
 import csw.services.icd.model._
+
 import spray.json.{JsValue, JsonParser}
-import gnieh.diffson.sprayJson._
+import diffson.sprayJson._
+import diffson._
+import diffson.lcs._
+import diffson.jsonpatch._
+import diffson.jsonpatch.lcsdiff._
+import cats._
+import cats.implicits._
+
+import icd.web.shared.JsonSupport.JsonDiff
 import play.api.libs.json.Json
 import reactivemongo.api.{Cursor, DefaultDB, WriteConcern}
 import reactivemongo.bson.{BSONDateTime, BSONDocument, BSONObjectID}
@@ -27,6 +36,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * to a given "top level" version for the subsystem (or component).
  */
 object IcdVersionManager {
+
+  implicit val lcs: Patience[JsValue] = new Patience[JsValue]
 
   // XXX TODO FIXME
   private val timeout = 60.seconds
@@ -60,7 +71,7 @@ object IcdVersionManager {
    * A list of all known TMT subsystems (read from the same resources file used in validating the ICDs)
    */
   val allSubsystems: Set[String] = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     val config = ConfigFactory.parseResources("subsystem.conf")
     config.getStringList("enum").asScala.toSet
   }
@@ -98,7 +109,7 @@ object IcdVersionManager {
       val user         = doc.getAs[String](userKey).get
       val comment      = doc.getAs[String](commentKey).get
       val date         = new DateTime(doc.getAs[Date](dateKey).get.getTime, DateTimeZone.UTC)
-      val partDocs     = doc.getAs[List[BSONDocument]](partsKey).get
+      val partDocs     = doc.getAs[Array[BSONDocument]](partsKey).get.toList
       val parts = partDocs.map { part =>
         val name    = part.getAs[String]("name").get
         val version = part.getAs[Int](versionStrKey).get
@@ -116,7 +127,7 @@ object IcdVersionManager {
    * @param path  the path to a part of the subsystem or component (for example: "NFIRAOS.lgsWfs.publish")
    * @param patch an object describing the difference for the subsystem or component part
    */
-  case class VersionDiff(path: String, patch: JsonPatch)
+  case class VersionDiff(path: String, patch: JsonPatch[JsValue])
 
   /**
    * An ICD from subsystem to target subsystem
@@ -406,7 +417,7 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
 
   // Compares the two json values, returning None if equal, otherwise some VersionDiff
   private def diffJson(path: String, json1: JsValue, json2: JsValue): Option[VersionDiff] = {
-    if (json1 == json2) None else Some(VersionDiff(path, JsonDiff.diff(json1, json2, remember = true)))
+    if (json1 == json2) None else Some(VersionDiff(path, diffson.diff(json1, json2)))
   }
 
   // Compares the given object with the current (head) version in the collection

@@ -3,18 +3,17 @@ package icd.web.client
 import icd.web.client.FileUtils._
 import org.scalajs.dom
 import org.scalajs.dom._
+import org.scalajs.dom.raw.HTMLDivElement
 import play.api.libs.json._
 
 import scala.language.implicitConversions
-
-import org.querki.jquery._
 
 /**
  * Displays the page for uploading ICD files and directories
  */
 case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, inputDirSupported: Boolean) extends Displayable {
 
-  implicit val problemFormat = Json.format[Problem]
+  implicit val problemFormat: OFormat[Problem] = Json.format[Problem]
 
   implicit def monkeyizeEventTarget(e: dom.EventTarget): EventTargetExt = e.asInstanceOf[EventTargetExt]
 
@@ -44,7 +43,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   private def isStdFile(file: dom.File): Boolean = stdList.contains(basename(file))
 
   // HTML item displaying error messages
-  val messagesItem = {
+  private val messagesItem = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
     div(Styles.fileUploadMessages).render
@@ -100,9 +99,9 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     }
   }
 
-  private def statusItem = $("#status")
+  private def statusItem = document.querySelector("#status")
 
-  private def busyStatusItem = $("#busyStatus")
+  private def busyStatusItem = document.querySelector("#busyStatus")
 
   // Called when user clicks on input item.
   // Reset the value (Otherwise you can't upload the same file twice,
@@ -115,7 +114,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   // Called when a file selection has been made
   private def fileSelectHandler(e: dom.Event): Unit = {
     clearProblems()
-    statusItem.removeClass("label-danger")
+    statusItem.classList.remove("label-danger")
     val (validFiles, invalidFiles) = getIcdFiles(e)
     if (validFiles.isEmpty) {
       val fileType =
@@ -142,17 +141,23 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
 
     // Updates progress bar during upload
     def progressListener(e: dom.Event): Unit = {
-      val pc = e.loaded / e.total * 100
-      $("#progress").css("width", pc + "%").attr("aria-valuenow", pc.toString).html(s"$pc %")
+      val pc          = e.loaded / e.total * 100
+      val progressDiv = document.querySelector("#progress").asInstanceOf[HTMLDivElement]
+      progressDiv.style.width = pc + "%"
+      progressDiv.setAttribute("aria-valuenow", pc.toString)
+      progressDiv.innerHTML = s"$pc %"
     }
 
     // Displays status after upload complete
     def onloadListener(e: dom.Event) = {
-      busyStatusItem.addClass("hide")
+//      busyStatusItem.classList.add("hide")
+      busyStatusItem.classList.add("hide")
       val statusClass = if (xhr.status == 200) "label-success" else "label-danger"
-      if (!statusItem.hasClass("label-danger")) {
+      if (!statusItem.classList.contains("label-danger")) {
         val statusMsg = if (xhr.status == 200) "Success" else xhr.statusText
-        statusItem.removeClass("label-default").addClass(statusClass).text(statusMsg)
+        statusItem.classList.remove("label-default")
+        statusItem.classList.add(statusClass)
+        statusItem.textContent = statusMsg
       }
       if (xhr.status != 200) {
         val problems = Json.fromJson[List[Problem]](Json.parse(xhr.responseText)).getOrElse(Nil)
@@ -168,8 +173,9 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     xhr.onload = onloadListener _
 
     //start upload
-    statusItem.addClass("label-default").text("Working...")
-    busyStatusItem.removeClass("hide")
+    statusItem.classList.add("label-default")
+    statusItem.textContent = "Working..."
+    busyStatusItem.classList.remove("hide")
     xhr.send(formData)
   }
 

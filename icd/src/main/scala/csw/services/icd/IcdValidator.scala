@@ -11,7 +11,7 @@ import scala.util.{Failure, Success, Try}
 import org.everit.json.schema.{Schema, ValidationException}
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
  * An ICD API validator

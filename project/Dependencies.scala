@@ -56,7 +56,6 @@ object Dependencies {
       "org.scala-js"                 %%% "scalajs-dom"   % "0.9.6",
       "com.lihaoyi"                  %%% "scalatags"     % ScalaTagsVersion,
       "com.typesafe.play"            %%% "play-json"     % PlayJsonVersion,
-      "org.querki"                   %%% "jquery-facade" % "1.2",
       "com.github.japgolly.scalacss" %%% "core"          % "0.6.0-RC1",
       "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.6.0-RC1"
     )

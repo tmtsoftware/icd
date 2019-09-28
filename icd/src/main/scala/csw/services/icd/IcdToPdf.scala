@@ -14,7 +14,7 @@ object IcdToPdf {
 
   // Adds page number to al the pages except the first.
   private case class PageStamper(showLogo: Boolean) extends PdfPageEventHelper {
-    override def onEndPage(writer: PdfWriter, document: Document) {
+    override def onEndPage(writer: PdfWriter, document: Document): Unit = {
       try {
         val pageNumber = writer.getPageNumber
         val pageSize   = document.getPageSize

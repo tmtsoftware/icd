@@ -8,8 +8,7 @@ import play.api.libs.json._
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import org.querki.jquery._
-import org.scalajs.dom.Element
+import org.scalajs.dom.{Element, document}
 import org.scalajs.dom.html.Button
 import scalatags.JsDom.all._
 
@@ -56,9 +55,9 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
 
   // Called when the Compare button is pressed
   private def compareHandler(subsystem: String)(e: dom.Event): Unit = {
-    val checked = $("input[name='version']:checked")
+    val checked = document.querySelectorAll("input[name='version']:checked")
     if (checked.length == 2) {
-      val versions = checked.mapElems(elem => elem.asInstanceOf[HTMLInputElement].value).sortWith(compareVersions).toList
+      val versions = List(checked(0), checked(1)).map(elem => elem.asInstanceOf[HTMLInputElement].value).sortWith(compareVersions)
       val route    = Routes.diff(subsystem, versions)
       Ajax.get(route).map { r =>
         val list = Json.fromJson[List[DiffInfo]](Json.parse(r.responseText)).getOrElse(Nil)
@@ -134,7 +133,7 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
   // Called when one of the version checkboxes is clicked to update the enabled state of the compare
   // button when exactly two items are selected
   private def checkboxListener(compButton: Button)(e: dom.Event): Unit = {
-    val checked = $("input[name='version']:checked")
+    val checked = document.querySelectorAll("input[name='version']:checked")
     compButton.disabled = checked.length != 2
   }
 

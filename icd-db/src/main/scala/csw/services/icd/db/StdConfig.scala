@@ -53,7 +53,7 @@ object StdConfig {
    * Returns a list for StdConfig objects, one for each ICD file in the given zip file
    */
   def get(zipFile: ZipFile): List[StdConfig] = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     def isValid(f: ZipEntry) = stdSet.contains(new File(f.getName).getName)
 
     val list = for (e <- zipFile.entries().asScala.filter(isValid)) yield {
