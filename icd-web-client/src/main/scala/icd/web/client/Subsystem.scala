@@ -135,7 +135,7 @@ case class Subsystem(
    * Gets the list of component names being displayed
    */
   def getComponents: List[String] = {
-    componentItem.options.drop(1).map(_.value).toList
+    componentItem.options.toList.drop(1).map(_.value)
   }
 
   /**

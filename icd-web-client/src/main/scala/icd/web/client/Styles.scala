@@ -187,7 +187,7 @@ object Styles extends StyleSheet.Inline {
     backgroundColor.transparent
   )
 
-  val busyWaiting = style(
-    cursor.progress
-  )
+//  val busyWaiting = style(
+//    cursor.progress
+//  )
 }

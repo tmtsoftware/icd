@@ -53,7 +53,7 @@ object Dependencies {
   // ScalaJS web client scala dependencies
   val clientDeps = Def.setting(
     Seq(
-      "org.scala-js"                 %%% "scalajs-dom"   % "0.9.6",
+      "org.scala-js"                 %%% "scalajs-dom"   % "0.9.7",
       "com.lihaoyi"                  %%% "scalatags"     % ScalaTagsVersion,
       "com.typesafe.play"            %%% "play-json"     % PlayJsonVersion,
       "com.github.japgolly.scalacss" %%% "core"          % "0.6.0-RC1",

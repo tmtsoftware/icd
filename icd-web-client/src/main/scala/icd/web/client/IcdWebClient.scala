@@ -227,9 +227,15 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Show/hide the busy cursor while the future is running
   private def showBusyCursorWhile(f: Future[Unit]): Future[Unit] = {
-    body.classList.add("busyWaiting")
+    // Note: See implicit NodeList to List support in package object in this dir
+    val nodeList = document.querySelectorAll("div")
+    nodeList.map(_.asInstanceOf[HTMLDivElement]).foreach { divEl =>
+      divEl.style.cursor = "progress"
+    }
     f.onComplete { _ =>
-      body.classList.remove("busyWaiting")
+      nodeList.map(_.asInstanceOf[HTMLDivElement]).foreach { divEl =>
+        divEl.style.cursor = "default"
+      }
     }
     f
   }
@@ -259,8 +265,9 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     mainContent.clearContent()
     val f = if (maybeSv.isDefined) {
       showBusyCursorWhile {
-        val f = components.addComponents(maybeSv.get, maybeTargetSv, maybeIcd)
-        selectDialog.subsystem.getComponents.foreach(sidebar.addComponent)
+        val f              = components.addComponents(maybeSv.get, maybeTargetSv, maybeIcd)
+        val componentNames = selectDialog.subsystem.getComponents
+        componentNames.foreach(name => sidebar.addComponent(name))
         setSidebarVisible(true)
         f
       }

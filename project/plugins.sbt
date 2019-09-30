@@ -4,7 +4,7 @@
 
 // Sbt plugins
 addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.7.3")
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.28")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.29")
 addSbtPlugin("com.vmunier" % "sbt-web-scalajs" % "1.0.9-0.6")
 // If you prefer using Scala.js 1.x, uncomment the following plugins instead:
 // addSbtPlugin("com.vmunier"               % "sbt-web-scalajs"           % "1.0.8")

@@ -34,11 +34,6 @@ object Settings {
     logBuffered in Test := false,
     fork := true,
     resolvers += "jitpack" at "https://jitpack.io"
-    //    resolvers += Resolver.typesafeRepo("releases"),
-    //    resolvers += Resolver.sonatypeRepo("releases"),
-    //    resolvers += sbtResolver.value,
-    //    resolvers += "Scalaz Bintray Repo" at "https://dl.bintray.com/scalaz/releases",
-    //    resolvers += Resolver.jcenterRepo
   )
 
   // Using java8
