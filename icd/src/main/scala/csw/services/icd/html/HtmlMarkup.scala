@@ -95,7 +95,9 @@ object HtmlMarkup extends Extensions {
     else
       try {
         // Convert markdown to HTML
+        // Performance Note: About 1/2 the time for generating the HTML for an ICD is spent parsing MarkDown strings
         val html = renderer.render(parser.parse(stripLeadingWs(gfm)))
+
         // Then clean it up with jsoup to avoid issues with the pdf generator (and for security)
         Jsoup.clean(html, "", Whitelist.basicWithImages(), os)
       } catch {

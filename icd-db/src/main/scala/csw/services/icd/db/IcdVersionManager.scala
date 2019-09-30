@@ -10,14 +10,11 @@ import csw.services.icd.model._
 
 import spray.json.{JsValue, JsonParser}
 import diffson.sprayJson._
-import diffson._
 import diffson.lcs._
 import diffson.jsonpatch._
 import diffson.jsonpatch.lcsdiff._
-import cats._
 import cats.implicits._
 
-import icd.web.shared.JsonSupport.JsonDiff
 import play.api.libs.json.Json
 import reactivemongo.api.{Cursor, DefaultDB, WriteConcern}
 import reactivemongo.bson.{BSONDateTime, BSONDocument, BSONObjectID}
@@ -473,7 +470,6 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
       // Parses the data from collection s (or an older version of it) and returns a Config object for it
       private def parse(coll: BSONCollection): Config = getConfig(getVersionOf(coll, versionMap(coll.name)))
 
-      // XXX TODO FIXME: Do we need the subsystemModel here? It is duplicated for each component
       override val subsystemModel: Option[SubsystemModel] =
         entry.subsystem.map(coll => SubsystemModelParser(parse(coll)))
       override val publishModel: Option[IcdModels.PublishModel] =
