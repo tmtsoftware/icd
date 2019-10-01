@@ -17,7 +17,7 @@ case class Diff(key: String, value: String)
 
 /**
  * Describes the difference between two subsystem versions
- *
+ *List
  * @param pointer pointer down to the nested json part that changed
  * @param changes a list of operation name (add, remove, move, remove, etc.) and the part that changed
  */

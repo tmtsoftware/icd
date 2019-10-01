@@ -310,7 +310,9 @@ class Application @Inject()(
 
   // Packages the diff information for return to browser
   private def getDiffInfo(diff: VersionDiff): DiffInfo = {
-    DiffInfo(diff.path, diff.patch.toString())
+    // XXX TODO FIXME
+//    val x = Json.toJson(diff.patch)
+    DiffInfo(diff.path, diff.patch.toString)
   }
 
   /**

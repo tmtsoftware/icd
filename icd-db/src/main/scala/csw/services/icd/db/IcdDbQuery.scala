@@ -2,11 +2,16 @@ package csw.services.icd.db
 
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd.StdName._
-import csw.services.icd.model._
+import csw.services.icd.db.parser.{
+  CommandModelBsonParser,
+  ComponentModelBsonParser,
+  PublishModelBsonParser,
+  SubscribeModelBsonParser,
+  SubsystemModelBsonParser
+}
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels
 import icd.web.shared.IcdModels._
-import play.api.libs.json.Json
 import reactivemongo.api.DefaultDB
 import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.bson.BSONDocument
@@ -72,11 +77,6 @@ object IcdDbQuery {
 
   private[db] def getCommandCollectionName(subsystem: String, component: String): String = s"$subsystem.$component.command"
 
-  // Gets a Config object from a JSON string
-  def getConfig(json: String): Config = {
-    ConfigFactory.parseString(json)
-  }
-
   /**
    * Describes a component in a subsystem
    */
@@ -122,18 +122,6 @@ object IcdDbQuery {
       subscribeType: PublishType,
       path: String
   )
-
-//  implicit def toBSONDocument(elements: Producer[BSONElement]*): BSONDocument = BSONDocument(elements: _*)
-
-  // Parses the given json and returns a componnet model object
-  def jsonToComponentModel(json: String): ComponentModel = {
-    ComponentModelParser(getConfig(json))
-  }
-
-  // Parses the given json and returns a subsystem model object
-  def jsonToSubsystemModel(json: String): SubsystemModel = {
-    SubsystemModelParser(getConfig(json))
-  }
 }
 
 /**
@@ -160,23 +148,14 @@ case class IcdDbQuery(db: DefaultDB) {
   }
 
   private[db] def getEntries: List[IcdEntry] = {
-    val paths   = getCollectionNames.filter(isStdSet).map(IcdPath).toList
+    val paths = getCollectionNames.filter(isStdSet).map(IcdPath).toList
     getEntries(paths)
   }
 
-  // XXX TODO FIXME: parsing to JSON and back to string and then to object!
-  def collectionHeadToJson(collName: String): String = {
-    val coll = db.collection[BSONCollection](collName)
-    collectionHeadToJson(coll)
+  def collectionHead(coll: BSONCollection): Option[BSONDocument] = {
+    Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout)
   }
 
-  // XXX TODO FIXME
-  def collectionHeadToJson(coll: BSONCollection): String = {
-    val doc = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
-    Json.toJson(doc).toString()
-  }
-
-  // XXX TODO FIXME: Use play-json reads/writes instead of custonm parsers?
   /**
    * Returns a list of models, one for each component in the db
    */
@@ -185,7 +164,7 @@ case class IcdDbQuery(db: DefaultDB) {
       yield {
         val coll = entry.component.get
         val doc  = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
-        jsonToComponentModel(Json.toJson(doc).toString())
+        ComponentModelBsonParser(doc)
       }
   }
 
@@ -212,16 +191,12 @@ case class IcdDbQuery(db: DefaultDB) {
    * @param query restricts the components returned (a MongoDBObject, for example)
    */
   def queryComponents(query: BSONDocument): List[ComponentModel] = {
-    val list = for (entry <- getEntries if entry.component.isDefined) yield {
-      val coll = entry.component.get
-      val data = Await.result(coll.find(query, None).one[BSONDocument], timeout)
-      if (data.isDefined) {
-        // XXX TODO FIXME: Parse using play-json rather then going back to String etc.?
-        val json = Json.toJson(data.get).toString()
-        Some(jsonToComponentModel(json))
-      } else None
+    getEntries.flatMap {
+      _.component.flatMap { coll =>
+        val maybeDoc  = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout)
+        maybeDoc.map(ComponentModelBsonParser(_))
+      }
     }
-    list.flatten
   }
 
   /**
@@ -266,16 +241,12 @@ case class IcdDbQuery(db: DefaultDB) {
    * Returns a list of all subsystem names in the database.
    */
   def getSubsystemNames: List[String] = {
-    val result = for (entry <- getEntries) yield {
-      if (entry.subsystem.isDefined) {
-        val coll = entry.subsystem.get
+    getEntries.flatMap {
+      _.subsystem.map { coll =>
         val doc  = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
-        // XXX TODO FIXME: parsing to JSON and back to string and then to object!
-        val json = Json.toJson(doc).toString()
-        Some(jsonToSubsystemModel(json).subsystem)
-      } else None
+        SubsystemModelBsonParser(doc).subsystem
+      }
     }
-    result.flatten.distinct
   }
 
   // --- Get collections for (unpublished) ICD parts ---
@@ -321,8 +292,8 @@ case class IcdDbQuery(db: DefaultDB) {
   def getSubsystemModel(subsystem: String): Option[SubsystemModel] = {
     val collName = getSubsystemCollectionName(subsystem)
     if (collectionExists(collName)) {
-      val json = collectionHeadToJson(collName)
-      Some(SubsystemModelParser(getConfig(json)))
+      val coll = db.collection[BSONCollection](collName)
+      collectionHead(coll).map(SubsystemModelBsonParser(_))
     } else None
   }
 
@@ -332,8 +303,8 @@ case class IcdDbQuery(db: DefaultDB) {
   def getComponentModel(subsystem: String, componentName: String): Option[ComponentModel] = {
     val collName = getComponentCollectionName(subsystem, componentName)
     if (collectionExists(collName)) {
-      val json = collectionHeadToJson(collName)
-      Some(ComponentModelParser(getConfig(json)))
+      val coll = db.collection[BSONCollection](collName)
+      collectionHead(coll).map(ComponentModelBsonParser(_))
     } else None
   }
 
@@ -343,8 +314,8 @@ case class IcdDbQuery(db: DefaultDB) {
   def getPublishModel(component: ComponentModel): Option[PublishModel] = {
     val collName = getPublishCollectionName(component.subsystem, component.component)
     if (collectionExists(collName)) {
-      val json = collectionHeadToJson(collName)
-      Some(PublishModelParser(getConfig(json)))
+      val coll = db.collection[BSONCollection](collName)
+      collectionHead(coll).map(PublishModelBsonParser(_))
     } else None
   }
 
@@ -356,8 +327,8 @@ case class IcdDbQuery(db: DefaultDB) {
   def getSubscribeModel(component: ComponentModel): Option[SubscribeModel] = {
     val collName = getSubscribeCollectionName(component.subsystem, component.component)
     if (collectionExists(collName)) {
-      val json = collectionHeadToJson(collName)
-      Some(SubscribeModelParser(getConfig(json)))
+      val coll = db.collection[BSONCollection](collName)
+      collectionHead(coll).map(SubscribeModelBsonParser(_))
     } else None
   }
 
@@ -370,8 +341,8 @@ case class IcdDbQuery(db: DefaultDB) {
   def getCommandModel(subsystem: String, component: String): Option[CommandModel] = {
     val collName = getCommandCollectionName(subsystem, component)
     if (collectionExists(collName)) {
-      val json = collectionHeadToJson(collName)
-      Some(CommandModelParser(getConfig(json)))
+      val coll = db.collection[BSONCollection](collName)
+      collectionHead(coll).map(CommandModelBsonParser(_))
     } else None
   }
 
@@ -414,18 +385,19 @@ case class IcdDbQuery(db: DefaultDB) {
    * @param component optional name of the component
    */
   def getModels(subsystem: String, component: Option[String] = None): List[IcdModels] = {
+
     // Holds all the model classes associated with a single ICD entry.
     case class Models(entry: IcdEntry) extends IcdModels {
       override val subsystemModel: Option[SubsystemModel] =
-        entry.subsystem.map(s => SubsystemModelParser(getConfig(collectionHeadToJson(s))))
+        entry.subsystem.flatMap(coll => collectionHead(coll).map(SubsystemModelBsonParser(_)))
       override val publishModel: Option[PublishModel] =
-        entry.publish.map(s => PublishModelParser(getConfig(collectionHeadToJson(s))))
+        entry.publish.flatMap(coll => collectionHead(coll).map(PublishModelBsonParser(_)))
       override val subscribeModel: Option[SubscribeModel] =
-        entry.subscribe.map(s => SubscribeModelParser(getConfig(collectionHeadToJson(s))))
+        entry.subscribe.flatMap(coll => collectionHead(coll).map(SubscribeModelBsonParser(_)))
       override val commandModel: Option[CommandModel] =
-        entry.command.map(s => CommandModelParser(getConfig(collectionHeadToJson(s))))
+        entry.command.flatMap(coll => collectionHead(coll).map(CommandModelBsonParser(_)))
       override val componentModel: Option[ComponentModel] =
-        entry.component.map(s => ComponentModelParser(getConfig(collectionHeadToJson(s))))
+        entry.component.flatMap(coll => collectionHead(coll).map(ComponentModelBsonParser(_)))
     }
 
     val e =

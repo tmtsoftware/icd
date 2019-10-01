@@ -69,6 +69,9 @@ object HtmlMarkup extends Extensions {
   private val parser   = Parser.builder(options).build()
   private val renderer = HtmlRenderer.builder(options).build()
 
+  // Used to check if we need to parse markdown syntax
+  private val nonWordRegex = "[^\\w \\-.!,:;()]+".r
+
   // Enforce self-closing tags (e.g. for <img> tags) so that PDF generator will not fail.
   private val os = new OutputSettings().syntax(OutputSettings.Syntax.xml)
 
@@ -95,8 +98,13 @@ object HtmlMarkup extends Extensions {
     else
       try {
         // Convert markdown to HTML
-        // Performance Note: About 1/2 the time for generating the HTML for an ICD is spent parsing MarkDown strings
-        val html = renderer.render(parser.parse(stripLeadingWs(gfm)))
+        // Note: About 1/2 the time for generating the HTML for an ICD is spent parsing MarkDown strings
+        val s = stripLeadingWs(gfm)
+        val html = if (nonWordRegex.findFirstIn(s).nonEmpty)
+          renderer.render(parser.parse(s))
+        else
+          s"<p>$s</p>"
+
 
         // Then clean it up with jsoup to avoid issues with the pdf generator (and for security)
         Jsoup.clean(html, "", Whitelist.basicWithImages(), os)

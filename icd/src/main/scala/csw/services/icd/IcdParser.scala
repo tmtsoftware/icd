@@ -3,7 +3,7 @@ package csw.services.icd
 import java.io.File
 
 import com.typesafe.config.{ConfigResolveOptions, ConfigFactory, Config}
-import csw.services.icd.model._
+import csw.services.icd.parser._
 import icd.web.shared.IcdModels
 
 /**
@@ -11,6 +11,7 @@ import icd.web.shared.IcdModels
  */
 case class IcdParser(dir: File) extends IcdModels {
 
+  // XXX TODO FIXME: Remove Config based parsers and icd command
   import StdName._
 
   val subsystemModel: Option[IcdModels.SubsystemModel] = getConfig(subsystemFileNames.name).map(SubsystemModelParser(_))

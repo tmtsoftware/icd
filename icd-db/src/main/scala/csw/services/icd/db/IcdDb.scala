@@ -4,7 +4,7 @@ import java.io.File
 
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd._
-import csw.services.icd.model.{BaseModelParser, SubsystemModelParser}
+import csw.services.icd.parser.{BaseModelParser, SubsystemModelParser}
 import csw.services.icd.db.ComponentDataReporter._
 import org.joda.time.{DateTime, DateTimeZone}
 import reactivemongo.api.{DefaultDB, MongoConnection, MongoDriver}

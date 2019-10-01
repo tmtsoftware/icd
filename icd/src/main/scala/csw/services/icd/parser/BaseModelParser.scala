@@ -1,4 +1,4 @@
-package csw.services.icd.model
+package csw.services.icd.parser
 
 import com.typesafe.config.Config
 import icd.web.shared.IcdModels.BaseModel
