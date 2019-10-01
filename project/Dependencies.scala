@@ -31,9 +31,8 @@ object Dependencies {
   val reactivemongo = "org.reactivemongo" %% "reactivemongo" % "0.18.6"
   val play2Reactivemongo = "org.reactivemongo" %% "play2-reactivemongo" % "0.18.6-play27"
 
-  val diffson = "org.gnieh" %% "diffson-spray-json" % "4.0.0"
+  val diffson = "org.gnieh" %% "diffson-play-json" % "4.0.0"
 
-  val sprayJson      = "io.spray"                   %% "spray-json"      % "1.3.5"
   val scalaLogging   = "com.typesafe.scala-logging" %% "scala-logging"   % "3.9.2"
   val logbackClassic = "ch.qos.logback"             % "logback-classic"  % "1.2.3"
   val scalatags      = "com.lihaoyi"                %% "scalatags"       % ScalaTagsVersion

@@ -18,7 +18,7 @@ lazy val icd = project
   .enablePlugins(DeployApp)
   .settings(defaultSettings: _*)
   .settings(libraryDependencies ++=
-    compileScope(jsonSchemaValidator, scopt, scalatags, typesafeConfig, ficus, flexmarkAll, itextpdf, xmlworker, diffson, sprayJson, scalaLogging, logbackClassic, jsoup) ++
+    compileScope(jsonSchemaValidator, scopt, scalatags, typesafeConfig, ficus, flexmarkAll, itextpdf, xmlworker, diffson, scalaLogging, logbackClassic, jsoup) ++
       testScope(scalaTest)
   ) dependsOn icdWebSharedJvm
 
@@ -27,7 +27,7 @@ lazy val `icd-db` = project
   .enablePlugins(DeployApp)
   .settings(defaultSettings: _*)
   .settings(libraryDependencies ++=
-    compileScope(akkaActor, akkaSlf4j, logbackClassic, reactivemongo, play2Reactivemongo, scalaCsv) ++
+    compileScope(akkaActor, akkaSlf4j, logbackClassic, reactivemongo, play2Reactivemongo, scalaCsv, playJson) ++
       testScope(scalaTest)
   ) dependsOn icd
 

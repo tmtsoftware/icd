@@ -1,12 +1,12 @@
 package csw.services.icd.db
 
-import spray.json._
+import play.api.libs.json._
 
 /**
  * These definitions determine the JSON format of the files recording the ICD version information.
  * (Be careful to make any changes backward compatible, once in production!)
  */
-object IcdVersions extends DefaultJsonProtocol {
+object IcdVersions {
 
   /**
    * Describes a single ICD version between two subsystems
@@ -20,13 +20,13 @@ object IcdVersions extends DefaultJsonProtocol {
   case class IcdEntry(icdVersion: String, versions: List[String], user: String, comment: String, date: String)
 
   // JSON support
-  implicit val icdEntryFormat: RootJsonFormat[IcdEntry]       = jsonFormat5(IcdEntry.apply)
-  implicit val icdVersionsFormat: RootJsonFormat[IcdVersions] = jsonFormat2(IcdVersions.apply)
+  implicit val icdEntryFormat: OFormat[IcdEntry]       = Json.format[IcdEntry]
+  implicit val icdVersionsFormat: OFormat[IcdVersions] = Json.format[IcdVersions]
 
   /**
    * Creates an IcdVersions object from a string in JSON format
    */
-  def fromJson(s: String): IcdVersions = icdVersionsFormat.read(s.parseJson)
+  def fromJson(s: String): IcdVersions = Json.fromJson[IcdVersions](Json.parse(s)).get
 }
 
 /**
@@ -38,7 +38,7 @@ case class IcdVersions(subsystems: List[String], icds: List[IcdVersions.IcdEntry
  * These definitions determine the JSON format of the files recording the subsystem API version information.
  * (Be careful to make any changes backward compatible, once in production!)
  */
-object ApiVersions extends DefaultJsonProtocol {
+object ApiVersions {
 
   /**
    * Describes a single subsystem API version
@@ -52,13 +52,13 @@ object ApiVersions extends DefaultJsonProtocol {
   case class ApiEntry(version: String, commit: String, user: String, comment: String, date: String)
 
   // JSON support
-  implicit val apiEntryFormat: RootJsonFormat[ApiEntry]       = jsonFormat5(ApiEntry.apply)
-  implicit val apiVersionsFormat: RootJsonFormat[ApiVersions] = jsonFormat2(ApiVersions.apply)
+  implicit val apiEntryFormat: OFormat[ApiEntry]       = Json.format[ApiEntry]
+  implicit val apiVersionsFormat: OFormat[ApiVersions] = Json.format[ApiVersions]
 
   /**
    * Creates an IcdVersions object from a string in JSON format
    */
-  def fromJson(s: String): ApiVersions = apiVersionsFormat.read(s.parseJson)
+  def fromJson(s: String): ApiVersions = Json.fromJson[ApiVersions](Json.parse(s)).get
 }
 
 /**

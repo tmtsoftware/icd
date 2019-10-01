@@ -11,6 +11,7 @@ import icd.web.shared.{ApiVersionInfo, IcdVersion, IcdVersionInfo}
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.joda.time.{DateTime, DateTimeZone}
+import play.api.libs.json.Json
 
 import scala.jdk.CollectionConverters._
 
@@ -227,7 +228,6 @@ object IcdGitManager {
       comment: String
   ): Option[IcdVersions.IcdEntry] = {
     import IcdVersions._
-    import spray.json._
     // sort by convention to avoid duplicates
     val (s, t) = if (subsystem > target) (target, subsystem) else (subsystem, target)
     // Checkout the icds repo in a temp dir
@@ -245,7 +245,9 @@ object IcdGitManager {
       val maybeIcd = icds.find(_.icdVersion == icdVersion)
       if (maybeIcd.isDefined) {
         // Write the file without the given ICD version
-        val json = IcdVersions(List(s, t), icds.filter(_.icdVersion != icdVersion)).toJson.prettyPrint
+        val icdVersions = IcdVersions(List(s, t), icds.filter(_.icdVersion != icdVersion))
+        val jsValue     = Json.toJson(icdVersions)
+        val json        = Json.prettyPrint(jsValue)
         Files.write(path, json.getBytes)
         if (!exists) git.add.addFilepattern(fileName).call()
         git.commit().setOnly(fileName).setMessage(comment).call
@@ -270,7 +272,6 @@ object IcdGitManager {
    */
   def unpublish(sv: SubsystemAndVersion, user: String, password: String, comment: String): Option[ApiVersions.ApiEntry] = {
     import ApiVersions._
-    import spray.json._
     // Checkout the apis repo in a temp dir
     val gitWorkDir = Files.createTempDirectory("apis").toFile
     try {
@@ -290,7 +291,9 @@ object IcdGitManager {
           }
           maybeApi.foreach { api =>
             // Write the file without the given API version
-            val json = ApiVersions(sv.subsystem, apis.filter(_.version != api.version)).toJson.prettyPrint
+            val apiVersions = ApiVersions(sv.subsystem, apis.filter(_.version != api.version))
+            val jsValue     = Json.toJson(apiVersions)
+            val json        = Json.prettyPrint(jsValue)
             Files.write(path, json.getBytes)
             git.commit().setOnly(fileName).setMessage(comment).call
             updateHistoryFile(git, gitWorkDir)
@@ -315,7 +318,6 @@ object IcdGitManager {
    * @param comment      the commit comment
    */
   def publish(subsystem: String, majorVersion: Boolean, user: String, password: String, comment: String): ApiVersionInfo = {
-    import spray.json._
     // Checkout the icds repo in a temp dir
     val gitWorkDir = Files.createTempDirectory("icds").toFile
     try {
@@ -341,7 +343,7 @@ object IcdGitManager {
       apis.find(e => e.version == apiEntry.version || e.commit == apiEntry.commit).foreach { api =>
         error(s"API version ${api.version} is already defined for $subsystem")
       }
-      val json = ApiVersions(subsystem, apiEntry :: apis).toJson.prettyPrint
+      val json = Json.prettyPrint(Json.toJson(ApiVersions(subsystem, apiEntry :: apis)))
 
       val dir = file.getParentFile
       if (!dir.exists()) dir.mkdir()
@@ -441,7 +443,6 @@ object IcdGitManager {
       comment: String
   ): IcdVersionInfo = {
     import IcdVersions._
-    import spray.json._
 
     val sorted   = subsystems.sorted
     val sv       = sorted.head
@@ -470,7 +471,7 @@ object IcdGitManager {
       icds.find(e => e.versions.toSet == icdEntry.versions.toSet).foreach { icd =>
         error(s"ICD version ${icd.icdVersion} is already defined for ${sv.subsystem} and ${targetSv.subsystem}")
       }
-      val json = IcdVersions(List(sv.subsystem, targetSv.subsystem), icdEntry :: icds).toJson.prettyPrint
+      val json = Json.prettyPrint(Json.toJson(IcdVersions(List(sv.subsystem, targetSv.subsystem), icdEntry :: icds)))
 
       val dir = file.getParentFile
       if (!dir.exists()) dir.mkdir()

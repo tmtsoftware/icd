@@ -5,15 +5,19 @@ import java.util.Date
 import icd.web.shared.IcdModels.{ComponentModel, SubsystemModel}
 import icd.web.shared.{IcdModels, IcdVersion, IcdVersionInfo, SubsystemWithVersion}
 import org.joda.time.{DateTime, DateTimeZone}
-import spray.json.{JsValue, JsonParser}
-import diffson.sprayJson._
+import diffson.playJson._
 import diffson.lcs._
 import diffson.jsonpatch._
 import diffson.jsonpatch.lcsdiff._
 import cats.implicits._
 import com.typesafe.config.ConfigFactory
-import csw.services.icd.db.parser.{ComponentModelBsonParser, PublishModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
-import play.api.libs.json.Json
+import csw.services.icd.db.parser.{
+  ComponentModelBsonParser,
+  PublishModelBsonParser,
+  SubscribeModelBsonParser,
+  SubsystemModelBsonParser
+}
+import play.api.libs.json.{JsObject, JsValue, Json}
 import reactivemongo.api.{Cursor, DefaultDB, WriteConcern}
 import reactivemongo.bson.{BSONDateTime, BSONDocument, BSONObjectID}
 
@@ -380,12 +384,10 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
     }
   }
 
-  // XXX TODO FIXME: Going from BSON to Play-JSON to String to Spray-Json - simplify
-  // Parse string to JSON and Remove _id and _version keys for comparing, since they change each time
-  private def parseNoVersionOrId(json: String): JsValue = {
-    val obj    = JsonParser(json).asJsObject
-    val fields = obj.fields - idKey - versionKey
-    obj.copy(fields)
+  // Remove _id and _version keys for comparing, since they change each time
+  private def withoutVersionOrId(jsValue: JsValue): JsValue = {
+    val obj = jsValue.as[JsObject]
+    obj - idKey - versionKey
   }
 
   // Returns the contents of the given version of the given collection
@@ -402,14 +404,14 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
   }
 
   // Returns the JSON for the given version of the collection path
-  private def getJson(path: String, version: Int): JsValue = {
-    val jsValue  = Json.toJson(getVersionOf(db(path), version))
-    parseNoVersionOrId(jsValue.toString())
+  private def getJsonWithoutVersionOrId(path: String, version: Int): JsValue = {
+    val jsValue = Json.toJson(getVersionOf(db(path), version))
+    withoutVersionOrId(jsValue)
   }
 
   // Returns the diff of the given versions of the given collection path, if they are different
   private def diffPart(path: String, v1: Int, v2: Int): Option[VersionDiff] = {
-    diffJson(path, getJson(path, v1), getJson(path, v2))
+    diffJson(path, getJsonWithoutVersionOrId(path, v1), getJsonWithoutVersionOrId(path, v2))
   }
 
   // Compares the two json values, returning None if equal, otherwise some VersionDiff
@@ -421,8 +423,8 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
   // (ignoring version and id values)
   def diff(coll: BSONCollection, obj: BSONDocument): Option[VersionDiff] = {
     val headDoc = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
-    val json1   = parseNoVersionOrId(Json.toJson(headDoc).toString())
-    val json2   = parseNoVersionOrId(Json.toJson(obj).toString())
+    val json1   = withoutVersionOrId(Json.toJson(headDoc))
+    val json2   = withoutVersionOrId(Json.toJson(obj))
     diffJson(coll.name, json1, json2)
   }
 
@@ -636,13 +638,15 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
   def getIcdNames: List[IcdName] = {
     if (collectionExists(icdCollName)) {
       val coll = db.collection[BSONCollection](icdCollName)
-      val docs = Await.result(
-        coll
-          .find(BSONDocument(), None)
-          .cursor[BSONDocument]()
-          .collect[Array](-1, Cursor.FailOnError[Array[BSONDocument]]()),
-        timeout
-      ).toList
+      val docs = Await
+        .result(
+          coll
+            .find(BSONDocument(), None)
+            .cursor[BSONDocument]()
+            .collect[Array](-1, Cursor.FailOnError[Array[BSONDocument]]()),
+          timeout
+        )
+        .toList
       docs
         .map { doc =>
           val subsystem = doc.getAs[String](subsystemKey).get
@@ -669,14 +673,16 @@ case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
 
     if (collectionExists(icdCollName)) {
       val coll = db.collection[BSONCollection](icdCollName)
-      val docs = Await.result(
-        coll
-          .find(BSONDocument(subsystemKey -> s, targetKey -> t), None)
-          .sort(BSONDocument(idKey -> -1))
-          .cursor[BSONDocument]()
-          .collect[Array](-1, Cursor.FailOnError[Array[BSONDocument]]()),
-        timeout
-      ).toList
+      val docs = Await
+        .result(
+          coll
+            .find(BSONDocument(subsystemKey -> s, targetKey -> t), None)
+            .sort(BSONDocument(idKey -> -1))
+            .cursor[BSONDocument]()
+            .collect[Array](-1, Cursor.FailOnError[Array[BSONDocument]]()),
+          timeout
+        )
+        .toList
       docs
         .map { doc =>
           val icdVersion       = doc.getAs[String](versionStrKey).get

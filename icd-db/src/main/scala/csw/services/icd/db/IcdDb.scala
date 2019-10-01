@@ -237,7 +237,7 @@ object IcdDb extends App {
       checkVersion(v1)
       checkVersion(v2)
       for (diff <- db.versionManager.diff(name, v1, v2))
-        println(s"\n${diff.path}:\n${diff.patch.ops.toString}") // XXX TODO: work on the format?
+        println(s"\n${diff.path}:\n${diff.patch.ops.toString}") // XXX TODO FIXME: work on the format?
     }
 
     // --missing option

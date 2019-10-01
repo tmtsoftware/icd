@@ -193,7 +193,7 @@ case class IcdDbQuery(db: DefaultDB) {
   def queryComponents(query: BSONDocument): List[ComponentModel] = {
     getEntries.flatMap {
       _.component.flatMap { coll =>
-        val maybeDoc  = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout)
+        val maybeDoc  = Await.result(coll.find(query, None).one[BSONDocument], timeout)
         maybeDoc.map(ComponentModelBsonParser(_))
       }
     }
