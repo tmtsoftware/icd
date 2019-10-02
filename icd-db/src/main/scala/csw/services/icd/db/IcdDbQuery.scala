@@ -133,13 +133,19 @@ object IcdDbQuery {
 //noinspection DuplicatedCode
 case class IcdDbQuery(db: DefaultDB) {
 
+  println(s"XXX IcdDbQuery()")
+
   import IcdDbQuery._
 
   private val timeout = 60.seconds
 
   private[db] def collectionExists(name: String): Boolean = getCollectionNames.contains(name)
 
-  private[db] def getCollectionNames: Set[String] = Await.result(db.collectionNames, timeout).toSet
+  private[db] def getCollectionNames: Set[String] = {
+    val x = Await.result(db.collectionNames, timeout).toSet
+    println(s"XXX Uncached CollectionNames = $x")
+    x
+  }
 
   private[db] def getEntries(paths: List[IcdPath]): List[IcdEntry] = {
     val compMap = paths.map(p => (p.component, paths.filter(_.component == p.component).map(_.path))).toMap

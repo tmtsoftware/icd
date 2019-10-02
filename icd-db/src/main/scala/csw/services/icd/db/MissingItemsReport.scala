@@ -65,10 +65,11 @@ object MissingItemsReport {
  */
 //noinspection DuplicatedCode
 case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
-
   import MissingItemsReport._
 
-  val query = new CachedIcdDbQuery(db.db)
+  private val subsystems = List(options.subsystem, options.target).flatten
+  private val maybeSubsystems = if (subsystems.nonEmpty) Some(subsystems) else None
+  private val query = new CachedIcdDbQuery(db.db, maybeSubsystems)
 
   // Returns a list of items missing a publisher, subscriber, sender or receiver
   private def getMissingItems: Items = {
@@ -91,9 +92,7 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
       )
     }
 
-//    // Note that the report always works with the latest, unpublished versions of subsystems
-//    val selectedSubsystems = (options.subsystem ++ options.target).toList.map(IcdVersionManager.SubsystemAndVersion(_).subsystem)
-//    val selectedComponents = (options.component ++ options.targetComponent).toList
+    // XXX TODO: Note that the report always works with the latest, unpublished versions of subsystems
 
     val components = query.getComponents
 

@@ -14,7 +14,7 @@ object ArchivedItemsReport {
 }
 
 case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
-  val query = new CachedIcdDbQuery(db.db)
+  val query = new CachedIcdDbQuery(db.db, maybeSubsystem.map(List(_)))
 
   // Returns true if the given subsystem should be included in the report
   private def subsystemFilter(subsystem: String): Boolean = {

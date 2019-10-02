@@ -37,10 +37,10 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val components    = Components(mainContent, ComponentLinkSelectionHandler)
   private val sidebar       = Sidebar(LeftSidebarListener)
 
-  private val historyItem    = NavbarItem("History", showVersionHistory())
+  private val historyItem    = NavbarItem("History", "Display the version history for an API or ICD", showVersionHistory())
   private val versionHistory = VersionHistory(mainContent)
 
-  private val pdfItem = NavbarItem("PDF", makePdf)
+  private val pdfItem = NavbarItem("PDF", "Generate and display a PDF for the API or ICD", makePdf)
 
   private val navbar = Navbar()
   private val layout = Layout()
@@ -48,10 +48,10 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Get the list of subsystems from the server and update the two comboboxes
   private val subsystemNames = SubsystemNames(mainContent, updateSubsystemOptions)
 
-  private val selectItem   = NavbarItem("Select", selectSubsystems())
+  private val selectItem   = NavbarItem("Select", "Select the API or ICD to display", selectSubsystems())
   private val selectDialog = SelectDialog(subsystemNames, mainContent, Selector)
 
-  private val fileUploadItem   = NavbarItem("Upload", uploadSelected())
+  private val fileUploadItem   = NavbarItem("Upload", "Select icd model files to ingest into the icd database", uploadSelected())
   private val fileUploadDialog = FileUploadDialog(subsystemNames, csrfToken, inputDirSupported)
 
   // Call popState() when the user presses the browser Back button

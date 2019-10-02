@@ -21,9 +21,10 @@ object ComponentInfoHelper {
   def getComponentInfoList(db: IcdDb, sv: SubsystemWithVersion): List[ComponentInfo] = {
     // Use caching, since we need to look at all the components multiple times, in order to determine who
     // subscribes, who calls commands, etc.
-    val query = new CachedIcdDbQuery(db.db)
+    val query = new CachedIcdDbQuery(db.db, Some(List(sv.subsystem)))
+    val versionManager = IcdVersionManager(db.db, query)
     val compNames = sv.maybeComponent match {
-      case None           => db.versionManager.getComponentNames(sv)
+      case None           => versionManager.getComponentNames(sv)
       case Some(compName) => List(compName)
     }
     compNames.flatMap(component => getComponentInfo(query, SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component))))
