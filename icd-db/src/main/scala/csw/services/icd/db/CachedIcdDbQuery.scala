@@ -22,8 +22,6 @@ class CachedIcdDbQuery(db: DefaultDB) extends IcdDbQuery(db) {
   // --- Cached values ---
   private val collectionNames = Await.result(db.collectionNames, timeout).toSet
 
-  override def getCollectionNames: Set[String] = Await.result(db.collectionNames, timeout).toSet
-
   // Note: this was 99% of the bottleneck: db.collectionExists calls db.getCollectionNames every time!
   override def collectionExists(name: String): Boolean = collectionNames.contains(name)
 

@@ -65,10 +65,7 @@ object AttributeModelBsonParser {
     // Returns a string describing the given type or enum
     def parseTypeStr(opt: Option[String]): String = {
       opt match {
-        case Some("array")   =>
-          val x = parseArrayTypeStr()
-          println(s"XXX x = $x")
-          x
+        case Some("array")   => parseArrayTypeStr()
         case Some("integer") => numberTypeStr("integer")
         case Some("number")  => numberTypeStr("double")
         case Some("short")   => numberTypeStr("short")
