@@ -268,7 +268,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         val f              = components.addComponents(maybeSv.get, maybeTargetSv, maybeIcd)
         val componentNames = selectDialog.subsystem.getComponents
         componentNames.foreach(name => sidebar.addComponent(name))
-        setSidebarVisible(true)
+        f.foreach(_ => setSidebarVisible(true))
         f
       }
     } else Future.successful(())

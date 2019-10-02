@@ -1,13 +1,14 @@
 package controllers
 
 import java.io.ByteArrayOutputStream
-import javax.inject._
 
+import javax.inject._
 import csw.services.icd.IcdToPdf
 import csw.services.icd.db.ApiVersions.ApiEntry
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
 import csw.services.icd.db._
 import csw.services.icd.github.IcdGitManager
+import diffson.playJson.DiffsonProtocol
 import icd.web.shared.IcdModels.SubsystemModel
 import icd.web.shared.{IcdVersion, _}
 import org.webjars.play._
@@ -310,9 +311,10 @@ class Application @Inject()(
 
   // Packages the diff information for return to browser
   private def getDiffInfo(diff: VersionDiff): DiffInfo = {
-    // XXX TODO FIXME
-//    val x = Json.toJson(diff.patch)
-    DiffInfo(diff.path, diff.patch.toString)
+    import DiffsonProtocol._
+    val jsValue = Json.toJson(diff.patch)
+    val s       = Json.prettyPrint(jsValue)
+    DiffInfo(diff.path, s)
   }
 
   /**

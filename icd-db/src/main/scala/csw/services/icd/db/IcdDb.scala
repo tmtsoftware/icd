@@ -6,7 +6,9 @@ import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd._
 import csw.services.icd.parser.{BaseModelParser, SubsystemModelParser}
 import csw.services.icd.db.ComponentDataReporter._
+import diffson.playJson.DiffsonProtocol
 import org.joda.time.{DateTime, DateTimeZone}
+import play.api.libs.json.Json
 import reactivemongo.api.{DefaultDB, MongoConnection, MongoDriver}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -224,6 +226,8 @@ object IcdDb extends App {
 
     // --diff option: Compare versions option. Argument format: <subsystem>:v1[,v2]
     def diffVersions(arg: String): Unit = {
+      import DiffsonProtocol._
+
       val msg = "Expected argument format: <subsystemName>:v1[,v2]"
       if (!arg.contains(":") || arg.endsWith(":") || arg.endsWith(",")) error(msg)
       val Array(name, vStr) = arg.split(":")
@@ -236,8 +240,11 @@ object IcdDb extends App {
         }
       checkVersion(v1)
       checkVersion(v2)
-      for (diff <- db.versionManager.diff(name, v1, v2))
-        println(s"\n${diff.path}:\n${diff.patch.ops.toString}") // XXX TODO FIXME: work on the format?
+      for (diff <- db.versionManager.diff(name, v1, v2)) {
+        val jsValue = Json.toJson(diff.patch)
+        val s = Json.prettyPrint(jsValue)
+        println(s"\n${diff.path}:\n$s") // XXX TODO FIXME: work on the format?
+      }
     }
 
     // --missing option

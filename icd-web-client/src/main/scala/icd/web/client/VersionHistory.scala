@@ -73,8 +73,6 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
     def jsonDiffMarkup(infoList: List[JsonDiff]) = {
       import scalacss.ScalatagsCss._
 
-      println(s"XXX jsonDiffMarkup: infoList = $infoList")
-
       val headings = List("Operation", "Path", "Old Value", "New Value")
 
       // Display quoted strings as just the text, but display json objects as objects
@@ -114,7 +112,6 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
     }
 
     def diffInfoMarkup(diffInfo: DiffInfo) = {
-      println(s"XXX diffInfo = $diffInfo")
       val jsValue = Json.parse(diffInfo.jsonDiff)
       val infoList = Json.fromJson[Array[JsonDiff]](jsValue) match {
         case JsSuccess(ar, _: JsPath) =>
