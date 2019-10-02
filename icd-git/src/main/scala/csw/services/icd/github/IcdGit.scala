@@ -1,7 +1,7 @@
 package csw.services.icd.github
 
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
-import csw.services.icd.db.{IcdDb, IcdDbDefaults, IcdVersionManager}
+import csw.services.icd.db.{IcdDb, IcdDbDefaults, IcdDbException, IcdVersionManager}
 
 /**
  * Implements the icd-git command line application, which is used to manage ICD versions in Git and
@@ -327,14 +327,15 @@ object IcdGit extends App {
 
   // Handle the --ingest option
   private def ingest(options: Options): Unit = {
-    // Get the DefaultDB handle
-    val db = IcdDb(options.dbName, options.host, options.port)
     try {
+      // Get the DefaultDB handle
+      val db = IcdDb(options.dbName, options.host, options.port)
       db.dropDatabase()
+      IcdGitManager.ingest(db, options.subsystems, (s: String) => println(s), allApiVersions, allIcdVersions)
     } catch {
+      case ex: IcdDbException => error("Failed to connect to mongodb. Make sure mongod server is running.")
       case ex: Exception => error(s"Unable to drop the existing ICD database: $ex")
     }
 
-    IcdGitManager.ingest(db, options.subsystems, (s: String) => println(s), allApiVersions, allIcdVersions)
   }
 }

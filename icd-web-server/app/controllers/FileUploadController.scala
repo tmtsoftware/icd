@@ -14,7 +14,7 @@ class FileUploadController @Inject()(env: Environment, webJarAssets: WebJarAsset
     extends AbstractController(components) {
 
   private val log     = play.Logger.of("application")
-  private lazy val db = Application.db
+  private lazy val db = Application.tryDb.get
 
   // Server side of the upload ICD feature.
   // Supported file types: A directory containing icd config files (chrome)
@@ -28,10 +28,6 @@ class FileUploadController @Inject()(env: Environment, webJarAssets: WebJarAsset
         request.body.asFormUrlEncoded.getOrElse("comment", List("")).head
       ingestConfigs(list, comment)
     } catch {
-//      case e: MongoTimeoutException =>
-//        val msg = "Database seems to be down"
-//        log.error(msg, e)
-//        ServiceUnavailable(Json.toJson(List(Problem("error", msg))))
       case e: ConfigException =>
         val msg = e.getMessage
         log.error(msg, e)

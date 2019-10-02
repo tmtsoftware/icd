@@ -17,10 +17,12 @@ import play.filters.csrf.{CSRF, CSRFAddToken, CSRFCheck}
 import play.api.mvc._
 import play.api.{Environment, Mode}
 
+import scala.util.Try
+
 // Defines the database used
 object Application {
   // Used to access the ICD database
-  val db: IcdDb = IcdDb()
+  val tryDb: Try[IcdDb] = Try(IcdDb())
 }
 
 /**
@@ -41,9 +43,15 @@ class Application @Inject()(
   import Application._
   import JsonSupport._
 
-  println(
-    s"icdwebserver running on http://${System.getProperty("http.host", "localhost")}:${System.getProperty("http.port", "9000")}"
-  )
+  if (tryDb.isSuccess) {
+    println(
+      s"icdwebserver running on http://${System.getProperty("http.host", "localhost")}:${System.getProperty("http.port", "9000")}"
+    )
+  } else {
+    println("Error: Failed to connect to the icd database. Make sure mongod is running.")
+    System.exit(1)
+  }
+  val db = tryDb.get
 
   // cache of API and ICD versions published on GitHub (until next browser refresh)
   val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions

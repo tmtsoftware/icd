@@ -12,9 +12,10 @@ import play.api.libs.json.Json
 import reactivemongo.api.{DefaultDB, MongoConnection, MongoDriver}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, Future, TimeoutException}
 import scala.concurrent.duration._
 import scala.io.StdIn
+import scala.util.Try
 
 object IcdDbDefaults {
   private val conf          = ConfigFactory.load
@@ -112,6 +113,9 @@ object IcdDb extends App {
       try {
         run(options)
       } catch {
+        case e: IcdDbException =>
+          println("Error: Failed to connect to mongodb. Make sure mongod server is running.")
+          System.exit(1)
         case e: Throwable =>
           e.printStackTrace()
           System.exit(1)
@@ -260,6 +264,11 @@ object IcdDb extends App {
 }
 
 /**
+* Thrown when the connection to the icd database fails
+ */
+class IcdDbException extends Exception
+
+/**
  * ICD Database (Mongodb) support
  */
 case class IcdDb(
@@ -268,17 +277,17 @@ case class IcdDb(
     port: Int = IcdDbDefaults.defaultPort
 ) {
 
-  // XXX TODO FIXME: Make readable error message when mongod is not running
   implicit val timeout: FiniteDuration = 5.seconds
   private val mongoUri                 = s"mongodb://$host:$port/$dbName"
-//  private val mongoUri = s"mongodb://localhost:27017/icds2"
   private val driver = new MongoDriver
   private val futureDb = for {
     uri <- Future.fromTry(MongoConnection.parseURI(mongoUri))
     dn  <- Future(uri.db.get)
     db  <- driver.connection(uri, None, strictUri = false).get.database(dn)
   } yield db
-  val db: DefaultDB = Await.result(futureDb, timeout)
+  val db: DefaultDB = Try(Await.result(futureDb, timeout)).getOrElse {
+    throw new IcdDbException()
+  }
 
   // Clean up on exit
   sys.addShutdownHook(close())
