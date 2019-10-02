@@ -44,15 +44,14 @@ object AttributeModelBsonParser {
 
     val defaultValue = doc.getAs[String]("default").getOrElse("")
 
-    def getPath(path: String, s: String): String = if (path.isEmpty) s else s"$path.$s"
-
     // Returns a string describing an array type
-    def parseArrayTypeStr(itemPath: String, dimPath: String): String = {
-      val dimsOpt = doc.getAs[Array[String]](getPath(dimPath, "dimensions")).map(_.toList)
-      val t       = doc.getAs[String](s"$itemPath.type")
-      val e       = doc.getAs[Array[String]](s"$itemPath.enum").map(_.toList)
+    def parseArrayTypeStr(): String = {
+      val dimsOpt = doc.getAs[Array[Int]]("dimensions").map(_.toList)
+      val items = doc.getAs[BSONDocument]("items")
+      val t       = items.flatMap(_.getAs[String]("type"))
+      val e       = items.flatMap(_.getAs[Array[String]]("enum").map(_.toList))
       val s = if (t.isDefined) {
-        parseTypeStr(t, s"$itemPath.items", getPath(dimPath, "items"))
+        parseTypeStr(t)
       } else if (e.isDefined) {
         "enum: (" + e.get.mkString(", ") + ")"
       } else "?"
@@ -64,9 +63,12 @@ object AttributeModelBsonParser {
     }
 
     // Returns a string describing the given type or enum
-    def parseTypeStr(opt: Option[String], itemPath: String = "items", dimPath: String = ""): String = {
+    def parseTypeStr(opt: Option[String]): String = {
       opt match {
-        case Some("array")   => parseArrayTypeStr(itemPath, dimPath)
+        case Some("array")   =>
+          val x = parseArrayTypeStr()
+          println(s"XXX x = $x")
+          x
         case Some("integer") => numberTypeStr("integer")
         case Some("number")  => numberTypeStr("double")
         case Some("short")   => numberTypeStr("short")
