@@ -17,16 +17,19 @@ object Routes {
   private def getAttrs(
       maybeVersion: Option[String],
       maybeComponent: Option[String],
+      searchAllSubsystems: Boolean,
       maybeTargetVersion: Option[String] = None,
       maybeTargetCompName: Option[String] = None,
       maybeIcdVersion: Option[String] = None
   ): String = {
     val versionAttr         = maybeVersion.map(v => s"version=$v")
     val componentAttr       = maybeComponent.map(c => s"component=$c")
+    val searchAllAttr       = if (searchAllSubsystems) Some("searchAll=true") else None
     val targetVersionAttr   = maybeTargetVersion.map(v => s"tagetVersion=$v")
     val targetComponentAttr = maybeTargetCompName.map(c => s"targetComponent=$c")
     val icdVersionAttr      = maybeIcdVersion.map(v => s"icdVersion=$v")
-    val attrs               = (versionAttr ++ componentAttr ++ targetVersionAttr ++ targetComponentAttr ++ icdVersionAttr).mkString("&")
+    val attrs =
+      (versionAttr ++ componentAttr ++ searchAllAttr ++ targetVersionAttr ++ targetComponentAttr ++ icdVersionAttr).mkString("&")
     if (attrs.isEmpty) "" else s"?$attrs"
   }
 
@@ -52,8 +55,8 @@ object Routes {
    * @param sv      the subsystem
    * @return the URL path to use
    */
-  def componentInfo(sv: SubsystemWithVersion): String = {
-    val attrs = getAttrs(sv.maybeVersion, sv.maybeComponent)
+  def componentInfo(sv: SubsystemWithVersion, searchAllSubsystems: Boolean): String = {
+    val attrs = getAttrs(sv.maybeVersion, sv.maybeComponent, searchAllSubsystems)
     s"/componentInfo/${sv.subsystem}$attrs"
   }
 
@@ -66,11 +69,21 @@ object Routes {
    * @param maybeTargetSv defines the optional target subsystem and version
    * @return the URL path to use
    */
-  def icdComponentInfo(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): String = {
+  def icdComponentInfo(
+      sv: SubsystemWithVersion,
+      maybeTargetSv: Option[SubsystemWithVersion],
+      searchAllSubsystems: Boolean
+  ): String = {
     maybeTargetSv match {
-      case None => componentInfo(sv)
+      case None => componentInfo(sv, searchAllSubsystems)
       case Some(targetSv) =>
-        val attrs = getAttrs(sv.maybeVersion, sv.maybeComponent, targetSv.maybeVersion, targetSv.maybeComponent)
+        val attrs = getAttrs(
+          sv.maybeVersion,
+          sv.maybeComponent,
+          searchAllSubsystems = false,
+          targetSv.maybeVersion,
+          targetSv.maybeComponent
+        )
         s"/icdComponentInfo/${sv.subsystem}/${targetSv.subsystem}$attrs"
     }
   }
@@ -85,11 +98,23 @@ object Routes {
    * @param icdVersion optional ICD version
    * @return the URL path to use
    */
-  def icdAsPdf(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion], icdVersion: Option[String]): String = {
+  def icdAsPdf(
+      sv: SubsystemWithVersion,
+      maybeTargetSv: Option[SubsystemWithVersion],
+      icdVersion: Option[String],
+      searchAllSubsystems: Boolean
+  ): String = {
     maybeTargetSv match {
-      case None => apiAsPdf(sv)
+      case None => apiAsPdf(sv, searchAllSubsystems)
       case Some(targetSv) =>
-        val attrs = getAttrs(sv.maybeVersion, sv.maybeComponent, targetSv.maybeVersion, targetSv.maybeComponent, icdVersion)
+        val attrs = getAttrs(
+          sv.maybeVersion,
+          sv.maybeComponent,
+          searchAllSubsystems = false,
+          targetSv.maybeVersion,
+          targetSv.maybeComponent,
+          icdVersion
+        )
         s"/icdAsPdf/${sv.subsystem}/${targetSv.subsystem}$attrs"
     }
   }
@@ -100,8 +125,8 @@ object Routes {
    * @param sv     the subsystem
    * @return the URL path to use
    */
-  def apiAsPdf(sv: SubsystemWithVersion): String = {
-    val attrs = getAttrs(sv.maybeVersion, sv.maybeComponent)
+  def apiAsPdf(sv: SubsystemWithVersion, searchAllSubsystems: Boolean): String = {
+    val attrs = getAttrs(sv.maybeVersion, sv.maybeComponent, searchAllSubsystems)
     s"/apiAsPdf/${sv.subsystem}$attrs"
   }
 

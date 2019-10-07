@@ -3,7 +3,7 @@ package csw.services.icd.db
 import java.io.File
 
 import csw.services.icd.IcdValidator
-import icd.web.shared.ComponentInfo.{CurrentStates, Events}
+import icd.web.shared.ComponentInfo.CurrentStates
 import org.scalatest.FunSuite
 
 /**

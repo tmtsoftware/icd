@@ -1,7 +1,6 @@
 package csw.services.icd.db
 
 import icd.web.shared.IcdModels.{CommandModel, ComponentModel, PublishModel, SubscribeModel}
-import icd.web.shared.SubsystemWithVersion
 import reactivemongo.api.DefaultDB
 
 import scala.concurrent.duration._
@@ -15,24 +14,14 @@ import scala.concurrent.Await
  * @param db the DefaultDB handle
  * @param maybeSubsystems limit the database searches to the given subsystems
  */
-class CachedIcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) extends IcdDbQuery(db) {
-  println(s"XXX CachedIcdDbQuery($maybeSubsystems)")
-
+class CachedIcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) extends IcdDbQuery(db, maybeSubsystems) {
   import IcdDbQuery._
 
   // XXX TODO FIXME: Pass in timeout or use async lib and make everything async
   private val timeout = 60.seconds
 
-  // Search only the given subsystems, or all subsystems, if maybeSubsystems is empty
-  private def collectionNameFilter(collName: String): Boolean = {
-    maybeSubsystems.isEmpty || collName.endsWith(IcdVersionManager.versionColl) ||
-    isStdSet(collName) && maybeSubsystems.get.contains(IcdPath(collName).subsystem)
-  }
-
   // --- Cached values ---
   private val collectionNames = Await.result(db.collectionNames, timeout).filter(collectionNameFilter).toSet
-
-  println(s"Cached CollectionNames = $collectionNames")
 
   // Note: this was 99% of the bottleneck: db.collectionExists calls db.getCollectionNames every time!
   override def collectionExists(name: String): Boolean = collectionNames.contains(name)

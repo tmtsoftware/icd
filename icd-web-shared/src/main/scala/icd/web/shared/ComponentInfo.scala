@@ -192,11 +192,12 @@ case class SentCommandInfo(
     subsystem: String,
     component: String,
     receiveCommandModel: Option[ReceiveCommandModel],
-    receiver: Option[ComponentModel]
+    receiver: Option[ComponentModel],
+    warnings: Boolean = true
 ) {
 
   val warning: Option[String] =
-    if (receiveCommandModel.nonEmpty) None
+    if (!warnings || receiveCommandModel.nonEmpty) None
     else {
       Some(s"$subsystem.$component does not define configuration: $name")
     }

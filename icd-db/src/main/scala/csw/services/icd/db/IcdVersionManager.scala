@@ -53,6 +53,8 @@ object IcdVersionManager {
   /** The name of the sub-collection containing the previous versions or version information */
   val versionColl = "v"
 
+  val versionSuffix = ".v"
+
   val partsKey = "parts"
 
   /** Name of collection with information about published ICDs */
@@ -196,14 +198,15 @@ object IcdVersionManager {
 /**
  * Provides access to current and previous versions of ICD collections.
  *
- * @param db    the DefaultDB handle
  * @param query may be used to share caching of collection names (see CachedIcdDbQuery)
  */
 //noinspection DuplicatedCode
-case class IcdVersionManager(db: DefaultDB, query: IcdDbQuery) {
+case class IcdVersionManager(query: IcdDbQuery) {
 
   import IcdVersionManager._
   import IcdDbQuery._
+
+  private val db = query.db
 
   // Performance can be improved by caching these values in some cases (redefine in a subclass)
   private[db] def collectionExists(name: String): Boolean = query.collectionExists(name)

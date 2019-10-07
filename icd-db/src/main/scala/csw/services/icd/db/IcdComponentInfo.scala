@@ -15,23 +15,25 @@ object IcdComponentInfo {
   /**
    * Query the database for information about the given components in an ICD
    *
-   * @param db used to access the database
+   * @param versionManager used to access the database
    * @param sv the subsystem
    * @param targetSv the target subsystem of the ICD
    * @return an object containing information about the component
    */
-  def getComponentInfoList(db: IcdDb, sv: SubsystemWithVersion, targetSv: SubsystemWithVersion): List[ComponentInfo] = {
-    // Use caching, since we need to look at all the components multiple times, in order to determine who
-    // subscribes, who calls commands, etc.
-    val query = new CachedIcdDbQuery(db.db, Some(List(sv.subsystem, targetSv.subsystem)))
-    val versionManager = IcdVersionManager(db.db, query)
+  def getComponentInfoList(
+      versionManager: IcdVersionManager,
+      sv: SubsystemWithVersion,
+      targetSv: SubsystemWithVersion
+  ): List[ComponentInfo] = {
+
     val compNames = sv.maybeComponent match {
       case None           => versionManager.getComponentNames(sv)
       case Some(compName) => List(compName)
     }
     compNames
       .flatMap(
-        component => getComponentInfo(query, SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component)), targetSv)
+        component =>
+          getComponentInfo(versionManager, SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component)), targetSv)
       )
       .map(ComponentInfo.applyIcdFilter)
   }
@@ -39,14 +41,17 @@ object IcdComponentInfo {
   /**
    * Query the database for information about the given component
    *
-   * @param query used to access the database
+   * @param versionManager used to access versions of components
    * @param sv    the subsystem
    * @param targetSv    the target subsystem of the ICD
    * @return an object containing information about the component
    */
-  def getComponentInfo(query: IcdDbQuery, sv: SubsystemWithVersion, targetSv: SubsystemWithVersion): Option[ComponentInfo] = {
+  private def getComponentInfo(
+      versionManager: IcdVersionManager,
+      sv: SubsystemWithVersion,
+      targetSv: SubsystemWithVersion
+  ): Option[ComponentInfo] = {
     // get the models for this component
-    val versionManager   = new CachedIcdVersionManager(query)
     val modelsList       = versionManager.getModels(sv)
     val targetModelsList = versionManager.getModels(targetSv)
 
@@ -54,7 +59,7 @@ object IcdComponentInfo {
       val componentModel = icdModels.componentModel
       val publishes      = getPublishes(sv.subsystem, icdModels, targetModelsList)
       val subscribes     = getSubscribes(icdModels, targetModelsList)
-      val commands       = getCommands(query, icdModels, targetModelsList)
+      val commands       = getCommands(versionManager.query, icdModels, targetModelsList)
 
       if (publishes.isDefined || subscribes.isDefined || commands.isDefined)
         componentModel.map(ComponentInfo(_, publishes, subscribes, commands))
@@ -171,13 +176,13 @@ object IcdComponentInfo {
         if componentModel.component == si.component && componentModel.subsystem == si.subsystem
         publishModel <- t.publishModel
       } yield {
-        val (telem, alarm) = publishType match {
+        val (maybeEvent, maybeAlarm) = publishType match {
           case Events        => (publishModel.eventList.find(t => t.name == si.name), None)
           case ObserveEvents => (publishModel.observeEventList.find(t => t.name == si.name), None)
           case CurrentStates => (publishModel.currentStateList.find(t => t.name == si.name), None)
           case Alarms        => (None, publishModel.alarmList.find(a => a.name == si.name))
         }
-        DetailedSubscribeInfo(publishType, si, telem, alarm, Some(componentModel))
+        DetailedSubscribeInfo(publishType, si, maybeEvent, maybeAlarm, Some(componentModel))
       }
       x.headOption
     }
@@ -282,7 +287,8 @@ object IcdComponentInfo {
         sent.subsystem,
         sent.component,
         Some(recv),
-        query.getComponentModel(sent.subsystem, sent.component)
+        query.getComponentModel(sent.subsystem, sent.component),
+        warnings = false
       )
     }
     result

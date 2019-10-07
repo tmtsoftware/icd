@@ -129,22 +129,27 @@ object IcdDbQuery {
  * (Note: This class works on the current, unpublished versions. See IcdVersionManager for use with versions.)
  *
  * @param db the DefaultDB handle
+ * @param maybeSubsystems if defined, limit the list of subsystems searched
  */
 //noinspection DuplicatedCode
-case class IcdDbQuery(db: DefaultDB) {
-
-  println(s"XXX IcdDbQuery()")
-
+case class IcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) {
   import IcdDbQuery._
 
   private val timeout = 60.seconds
 
+  // Search only the given subsystems, or all subsystems, if maybeSubsystems is empty
+  private[db] def collectionNameFilter(collName: String): Boolean = {
+    val baseName =
+      if (collName.endsWith(IcdVersionManager.versionSuffix))
+        collName.dropRight(IcdVersionManager.versionSuffix.length)
+      else collName
+    maybeSubsystems.isEmpty ||
+    isStdSet(baseName) && maybeSubsystems.get.contains(IcdPath(baseName).subsystem)
+  }
   private[db] def collectionExists(name: String): Boolean = getCollectionNames.contains(name)
 
   private[db] def getCollectionNames: Set[String] = {
-    val x = Await.result(db.collectionNames, timeout).toSet
-    println(s"XXX Uncached CollectionNames = $x")
-    x
+    Await.result(db.collectionNames, timeout).filter(collectionNameFilter).toSet
   }
 
   private[db] def getEntries(paths: List[IcdPath]): List[IcdEntry] = {
@@ -199,7 +204,7 @@ case class IcdDbQuery(db: DefaultDB) {
   def queryComponents(query: BSONDocument): List[ComponentModel] = {
     getEntries.flatMap {
       _.component.flatMap { coll =>
-        val maybeDoc  = Await.result(coll.find(query, None).one[BSONDocument], timeout)
+        val maybeDoc = Await.result(coll.find(query, None).one[BSONDocument], timeout)
         maybeDoc.map(ComponentModelBsonParser(_))
       }
     }
@@ -225,7 +230,7 @@ case class IcdDbQuery(db: DefaultDB) {
    */
   def getComponentNames(subsystem: String): List[String] = {
     getCollectionNames
-      .filter(name => name.startsWith(s"$subsystem.") && !name.endsWith(s".${IcdVersionManager.versionColl}"))
+      .filter(name => name.startsWith(s"$subsystem.") && !name.endsWith(IcdVersionManager.versionSuffix))
       .map(IcdPath)
       .filter(p => p.parts.length == 3)
       .map(_.parts.tail.head)
@@ -249,7 +254,7 @@ case class IcdDbQuery(db: DefaultDB) {
   def getSubsystemNames: List[String] = {
     getEntries.flatMap {
       _.subsystem.map { coll =>
-        val doc  = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
+        val doc = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
         SubsystemModelBsonParser(doc).subsystem
       }
     }

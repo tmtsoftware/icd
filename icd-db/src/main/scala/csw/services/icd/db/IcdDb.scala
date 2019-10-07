@@ -103,6 +103,10 @@ object IcdDb extends App {
       c.copy(archived = Some(x))
     } text "Generates an 'Archived Items' report to the given file in a format based on the file's suffix (html, pdf)"
 
+    opt[Unit]( "allSubsystems") action { (_, c) =>
+      c.copy(allSubsystems = Some(()))
+    } text "Include all subsystems in searches for publishers, subscribers, etc. while generating API doc (Default: only consider the one subsystem)"
+
     help("help")
     version("version")
   }
@@ -169,7 +173,8 @@ object IcdDb extends App {
     // --output option
     def output(file: File): Unit = {
       if (options.subsystem.isEmpty) error("Missing required subsystem name: Please specify --subsystem <name>")
-      IcdDbPrinter(db).saveToFile(
+      val searchAllSubsystems = options.allSubsystems.isDefined && options.target.isEmpty
+      IcdDbPrinter(db, searchAllSubsystems).saveToFile(
         options.subsystem.get,
         options.component,
         options.target,
@@ -292,8 +297,8 @@ case class IcdDb(
   // Clean up on exit
   sys.addShutdownHook(close())
 
-  val query: IcdDbQuery                 = IcdDbQuery(db)
-  val versionManager: IcdVersionManager = IcdVersionManager(db, query)
+  val query: IcdDbQuery                 = IcdDbQuery(db, None)
+  val versionManager: IcdVersionManager = IcdVersionManager(query)
   val manager: IcdDbManager             = IcdDbManager(db, versionManager)
 
   /**

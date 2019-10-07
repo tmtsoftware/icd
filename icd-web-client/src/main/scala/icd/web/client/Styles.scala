@@ -187,6 +187,11 @@ object Styles extends StyleSheet.Inline {
     backgroundColor.transparent
   )
 
+  val checkboxStyle = style(
+    float.left,
+    margin(9 px, 0 px, 0 px)
+  )
+
 //  val busyWaiting = style(
 //    cursor.progress
 //  )

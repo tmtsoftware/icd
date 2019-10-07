@@ -50,7 +50,7 @@ object IcdToHtml {
       }
       val commands = m.commandModel.map { cm =>
         val commandsReceived = cm.receive.map(r => ReceivedCommandInfo(r, Nil))
-        val commandsSent     = cm.send.map(s => SentCommandInfo(s.name, s.subsystem, s.component, None, None))
+        val commandsSent     = cm.send.map(s => SentCommandInfo(s.name, s.subsystem, s.component, None, None, warnings = false))
         Commands(cm.description, commandsReceived, commandsSent)
       }
       ComponentInfo(componentModel, publishes, subscribes, commands)

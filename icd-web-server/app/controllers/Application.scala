@@ -28,7 +28,7 @@ object Application {
 /**
  * Provides the interface between the web client and the server
  */
-//noinspection TypeAnnotation
+//noinspection TypeAnnotation,DuplicatedCode
 @Singleton
 class Application @Inject()(
     env: Environment,
@@ -107,7 +107,6 @@ class Application @Inject()(
     // Gets the matching subsystem info from GitHub, if published there
     def getPublishedSubsystemInfo: Option[SubsystemInfo] = {
       ingestPublishedSubsystem(subsystem, maybeVersion).map { model =>
-        // XXX TODO FIXME: Need to pass in optional component?
         val sv = SubsystemWithVersion(model.subsystem, maybeVersion, None)
         SubsystemInfo(sv, model.title, model.description)
       }
@@ -146,16 +145,20 @@ class Application @Inject()(
   }
 
   /**
-   * Gets information about a named component in the given version of the given subsystem
+   * Query the database for information about the subsystem's components
    *
    * @param subsystem      the subsystem
    * @param maybeVersion   the subsystem's version (default: current)
    * @param maybeComponent component name (default all in subsystem)
+   * @param searchAll if true, search all components for API dependencies
    */
-  def componentInfo(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String]) = Action {
+  def componentInfo(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String], searchAll: Option[Boolean]) = Action {
     implicit request =>
       val sv       = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-      val infoList = ComponentInfoHelper.getComponentInfoList(db, sv)
+      val query = new CachedIcdDbQuery(db.db, Some(List(sv.subsystem)))
+      val versionManager = new CachedIcdVersionManager(query)
+      val displayWarnings = searchAll.getOrElse(false)
+      val infoList = new ComponentInfoHelper(displayWarnings).getComponentInfoList(versionManager, sv)
       Ok(Json.toJson(infoList))
   }
 
@@ -174,7 +177,7 @@ class Application @Inject()(
   }
 
   /**
-   * Gets information about a component in a given version of a subsystem
+   * Query the database for information about the given components in an ICD
    *
    * @param subsystem           the source subsystem
    * @param maybeVersion        the source subsystem's version (default: current)
@@ -196,7 +199,9 @@ class Application @Inject()(
     if (db.versionManager.getSubsystemModel(targetSv).isEmpty) {
       ingestPublishedSubsystem(target, maybeTargetVersion)
     }
-    val infoList = IcdComponentInfo.getComponentInfoList(db, sv, targetSv)
+    val query = new CachedIcdDbQuery(db.db, Some(List(sv.subsystem, targetSv.subsystem)))
+    val versionManager = new CachedIcdVersionManager(query)
+    val infoList = IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv)
     Ok(Json.toJson(infoList))
   }
 
@@ -245,7 +250,7 @@ class Application @Inject()(
       )
     }
 
-    IcdDbPrinter(db).getIcdAsHtml(sv, targetSv, iv) match {
+    IcdDbPrinter(db, searchAllSubsystems = false).getIcdAsHtml(sv, targetSv, iv) match {
       case Some(html) =>
         IcdToPdf.saveAsPdf(out, html, showLogo = true)
         val bytes = out.toByteArray
@@ -261,11 +266,12 @@ class Application @Inject()(
    * @param subsystem      the source subsystem
    * @param maybeVersion   the source subsystem's version (default: current)
    * @param maybeComponent optional component (default: all in subsystem)
+   * @param searchAll if true, search all components for API dependencies
    */
-  def apiAsPdf(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String]) = Action { implicit request =>
+  def apiAsPdf(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String], searchAll: Option[Boolean]) = Action { implicit request =>
     val out = new ByteArrayOutputStream()
     val sv  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-    IcdDbPrinter(db).getApiAsHtml(sv) match {
+    IcdDbPrinter(db, searchAll.getOrElse(false)).getApiAsHtml(sv) match {
       case Some(html) =>
         IcdToPdf.saveAsPdf(out, html, showLogo = true)
         val bytes = out.toByteArray

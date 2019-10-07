@@ -145,6 +145,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       for {
         _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(None, saveHistory = false)
         _ <- selectDialog.subsystem.setSubsystemWithVersion(maybeLinkSv, saveHistory = false)
+        _ <- selectDialog.applySettings()
       } yield {
         goToComponent(link.compName)
         pushState(viewType = ComponentView, compName = Some(link.compName), replace = true)
@@ -216,6 +217,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
               hist.maybeSourceSubsystem,
               hist.maybeTargetSubsystem,
               hist.maybeIcd,
+              selectDialog.searchAllSubsystems(),
               saveHistory = false
             ).foreach { _ =>
               hist.currentCompnent.foreach(compName => goToComponent(compName, replace = true))
@@ -244,9 +246,10 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     override def subsystemsSelected(
         maybeSv: Option[SubsystemWithVersion],
         maybeTargetSv: Option[SubsystemWithVersion],
-        maybeIcd: Option[IcdVersion]
+        maybeIcd: Option[IcdVersion],
+        searchAllSubsystems: Boolean
     ): Future[Unit] = {
-      updateComponentDisplay(maybeSv, maybeTargetSv, maybeIcd)
+      updateComponentDisplay(maybeSv, maybeTargetSv, maybeIcd, searchAllSubsystems)
     }
   }
 
@@ -259,13 +262,14 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       maybeSv: Option[SubsystemWithVersion],
       maybeTargetSv: Option[SubsystemWithVersion],
       maybeIcd: Option[IcdVersion],
+      searchAllSubsystems: Boolean,
       saveHistory: Boolean = true
   ): Future[Unit] = {
     sidebar.clearComponents()
     mainContent.clearContent()
     val f = if (maybeSv.isDefined) {
       showBusyCursorWhile {
-        val f              = components.addComponents(maybeSv.get, maybeTargetSv, maybeIcd)
+        val f              = components.addComponents(maybeSv.get, maybeTargetSv, maybeIcd, searchAllSubsystems)
         val componentNames = selectDialog.subsystem.getComponents
         componentNames.foreach(name => sidebar.addComponent(name))
         f.foreach(_ => setSidebarVisible(true))
@@ -305,7 +309,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     maybeSv.foreach { sv =>
       val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion
       val maybeIcdVersion = selectDialog.icdChooser.getSelectedIcdVersion.map(_.icdVersion)
-      val uri             = Routes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion)
+      val searchAll = selectDialog.searchAllSubsystems()
+      val uri             = Routes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll)
       // dom.window.location.assign(uri) // opens in same window
       dom.window.open(uri) // opens in new window or tab
     }

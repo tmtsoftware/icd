@@ -7,45 +7,47 @@ import icd.web.shared._
 /**
  * Support for creating instances of the shared (scala/scala.js) ComponentInfo class.
  * (This code can't be shared, since it accesses the database, which is on the server.)
+ *
+ * @param displayWarnings if true warn when no publishers are found for a subscribed event etc.
  */
 //noinspection DuplicatedCode
-object ComponentInfoHelper {
+class ComponentInfoHelper(displayWarnings: Boolean) {
 
   /**
    * Query the database for information about the subsystem's components
    *
-   * @param db used to access the database
+   * @param versionManager used to access the database
    * @param sv the subsystem
    * @return a list of objects containing information about the components
    */
-  def getComponentInfoList(db: IcdDb, sv: SubsystemWithVersion): List[ComponentInfo] = {
-    // Use caching, since we need to look at all the components multiple times, in order to determine who
-    // subscribes, who calls commands, etc.
-    val query = new CachedIcdDbQuery(db.db, Some(List(sv.subsystem)))
-    val versionManager = IcdVersionManager(db.db, query)
+  def getComponentInfoList(
+      versionManager: IcdVersionManager,
+      sv: SubsystemWithVersion
+  ): List[ComponentInfo] = {
     val compNames = sv.maybeComponent match {
       case None           => versionManager.getComponentNames(sv)
       case Some(compName) => List(compName)
     }
-    compNames.flatMap(component => getComponentInfo(query, SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component))))
+    compNames.flatMap(
+      component => getComponentInfo(versionManager, SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component)))
+    )
   }
 
   /**
    * Query the database for information about the given component
    *
-   * @param query    used to access the database
+   * @param versionManager    used to access the database
    * @param sv       the subsystem and component
    * @return an object containing information about the component, if found
    */
-  def getComponentInfo(query: IcdDbQuery, sv: SubsystemWithVersion): Option[ComponentInfo] = {
+  def getComponentInfo(versionManager: IcdVersionManager, sv: SubsystemWithVersion): Option[ComponentInfo] = {
     // get the models for this component
-    val versionManager = IcdVersionManager(query.db, query)
-    val modelsList     = versionManager.getModels(sv)
+    val modelsList = versionManager.getModels(sv)
     modelsList.headOption.flatMap { icdModels =>
       val componentModel = icdModels.componentModel
-      val publishes      = getPublishes(query, icdModels)
-      val subscribes     = getSubscribes(query, icdModels)
-      val commands       = getCommands(query, icdModels)
+      val publishes      = getPublishes(versionManager.query, icdModels)
+      val subscribes     = getSubscribes(versionManager.query, icdModels)
+      val commands       = getCommands(versionManager.query, icdModels)
       componentModel.map { model =>
         ComponentInfo(model, publishes, subscribes, commands)
       }
@@ -120,15 +122,15 @@ object ComponentInfoHelper {
         t            <- query.getModels(si.subsystem, Some(si.component))
         publishModel <- t.publishModel
       } yield {
-        val (telem, alarm) = publishType match {
+        val (maybeEvent, maybeAlarm) = publishType match {
           case Events        => (publishModel.eventList.find(t => t.name == si.name), None)
           case ObserveEvents => (publishModel.observeEventList.find(t => t.name == si.name), None)
           case CurrentStates => (publishModel.currentStateList.find(t => t.name == si.name), None)
           case Alarms        => (None, publishModel.alarmList.find(a => a.name == si.name))
         }
-        DetailedSubscribeInfo(publishType, si, telem, alarm, t.componentModel)
+        DetailedSubscribeInfo(publishType, si, maybeEvent, maybeAlarm, t.componentModel, displayWarnings)
       }
-      x.headOption.getOrElse(DetailedSubscribeInfo(publishType, si, None, None, None))
+      x.headOption.getOrElse(DetailedSubscribeInfo(publishType, si, None, None, None, displayWarnings))
     }
 
     models.subscribeModel match {
@@ -175,7 +177,7 @@ object ComponentInfoHelper {
       sent <- cmd.send
     } yield {
       val recv = query.getCommand(sent.subsystem, sent.component, sent.name)
-      SentCommandInfo(sent.name, sent.subsystem, sent.component, recv, query.getComponentModel(sent.subsystem, sent.component))
+      SentCommandInfo(sent.name, sent.subsystem, sent.component, recv, query.getComponentModel(sent.subsystem, sent.component), displayWarnings)
     }
     result
   }

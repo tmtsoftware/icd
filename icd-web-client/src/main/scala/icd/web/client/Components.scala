@@ -110,14 +110,16 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    *
    * @param sv            the subsystem
    * @param maybeTargetSv optional target subsystem and version
+   * @param searchAllSubsystems if true search all TMT subsystems for API dependencies
    * @return future list of objects describing the components
    */
   private def getComponentInfo(
       sv: SubsystemWithVersion,
-      maybeTargetSv: Option[SubsystemWithVersion]
+      maybeTargetSv: Option[SubsystemWithVersion],
+      searchAllSubsystems: Boolean
   ): Future[List[ComponentInfo]] = {
-    Ajax.get(Routes.icdComponentInfo(sv, maybeTargetSv)).map { r =>
-      val list = Json.fromJson[List[ComponentInfo]](Json.parse(r.responseText)).getOrElse(Nil)
+    Ajax.get(Routes.icdComponentInfo(sv, maybeTargetSv, searchAllSubsystems)).map { r =>
+      val list = Json.fromJson[Array[ComponentInfo]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
       if (maybeTargetSv.isDefined) list.map(ComponentInfo.applyIcdFilter) else list
     }
   }
@@ -131,13 +133,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    */
   private def getComponentInfo(
       maybeSubsystem: Option[SubsystemWithVersion],
-      maybeTargetSubsystem: Option[SubsystemWithVersion]
+      maybeTargetSubsystem: Option[SubsystemWithVersion],
+      searchAllSubsystems: Boolean
   ): Future[List[ComponentInfo]] = {
     maybeSubsystem match {
       case None =>
         Future.successful(Nil)
       case Some(sv) =>
-        getComponentInfo(sv, maybeTargetSubsystem)
+        getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems)
     }
   }
 
@@ -146,7 +149,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     val path = Routes.subsystemInfo(sv.subsystem, sv.maybeVersion)
     Ajax.get(path).map { r =>
       val subsystemInfo = Json.fromJson[SubsystemInfo](Json.parse(r.responseText)).get
-      subsystemInfo.copy(sv = sv) // include the compoinent, if specified
+      subsystemInfo.copy(sv = sv) // include the component, if specified
     }
   }
 
@@ -160,21 +163,22 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   def addComponents(
       sv: SubsystemWithVersion,
       maybeTargetSubsystem: Option[SubsystemWithVersion],
-      maybeIcd: Option[IcdVersion]
+      maybeIcd: Option[IcdVersion],
+      searchAllSubsystems: Boolean
   ): Future[Unit] = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
-    val isIcd = maybeTargetSubsystem.isDefined
-    val subsystemInfoF = getSubsystemInfo(sv)
-    val targetInfoF = maybeTargetSubsystem.map(getSubsystemInfo(_).map(i => Some(i))).getOrElse(Future.successful(None))
-    val infoListF = getComponentInfo(sv, maybeTargetSubsystem)
-    val targetInfoListF = getComponentInfo(maybeTargetSubsystem, Some(sv))
+    val isIcd           = maybeTargetSubsystem.isDefined
+    val subsystemInfoF  = getSubsystemInfo(sv)
+    val targetInfoF     = maybeTargetSubsystem.map(getSubsystemInfo(_).map(i => Some(i))).getOrElse(Future.successful(None))
+    val infoListF       = getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems)
+    val targetInfoListF = getComponentInfo(maybeTargetSubsystem, Some(sv), searchAllSubsystems)
     val f = for {
-      subsystemInfo <- subsystemInfoF
+      subsystemInfo            <- subsystemInfoF
       maybeTargetSubsystemInfo <- targetInfoF
-      infoList       <- infoListF
-      targetInfoList <- targetInfoListF
+      infoList                 <- infoListF
+      targetInfoList           <- targetInfoListF
     } yield {
       val titleInfo        = TitleInfo(subsystemInfo, maybeTargetSubsystem, maybeIcd)
       val subsystemVersion = sv.maybeVersion.getOrElse(TitleInfo.unpublished)
@@ -182,7 +186,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       mainContent.setTitle(titleInfo.title, titleInfo.maybeSubtitle, titleInfo.maybeDescription)
       // For ICDs, add the descriptions of the two subsystems at top
       if (isIcd) {
-        val targetSubsystemInfo = maybeTargetSubsystemInfo.get
+        val targetSubsystemInfo    = maybeTargetSubsystemInfo.get
         val targetSubsystemVersion = maybeTargetSubsystem.map(_.maybeVersion).getOrElse(TitleInfo.unpublished)
         mainContent.appendElement(
           div(
@@ -206,22 +210,21 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     f
   }
 
-  // XXX TODO FIXME: Is this method still called?
-  /**
-   * Adds (appends) a component to the display
-   *
-   * @param sv              the selected subsystem
-   * @param maybeTargetSv optional target subsystem
-   */
-  def addComponent(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): Unit = {
-    getComponentInfo(sv, maybeTargetSv)
-      .map { list =>
-        list.foreach(i => displayComponentInfo(i, maybeTargetSv.isEmpty))
-      }
-      .recover {
-        case ex => mainContent.displayInternalError(ex)
-      }
-  }
+//  /**
+//   * Adds (appends) a component to the display
+//   *
+//   * @param sv              the selected subsystem
+//   * @param maybeTargetSv optional target subsystem
+//   */
+//  def addComponent(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): Unit = {
+//    getComponentInfo(sv, maybeTargetSv)
+//      .map { list =>
+//        list.foreach(i => displayComponentInfo(i, maybeTargetSv.isEmpty))
+//      }
+//      .recover {
+//        case ex => mainContent.displayInternalError(ex)
+//      }
+//  }
 
   // Removes the component display
   def removeComponentInfo(compName: String): Unit = {

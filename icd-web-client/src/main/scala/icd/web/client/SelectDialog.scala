@@ -7,7 +7,7 @@ import org.scalajs.dom
 import org.scalajs.dom._
 import play.api.libs.json._
 import org.scalajs.dom.ext.Ajax
-import org.scalajs.dom.html.Button
+import org.scalajs.dom.html.{Button, Input}
 import SelectDialog._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -35,7 +35,8 @@ object SelectDialog {
     def subsystemsSelected(
         maybeSv: Option[SubsystemWithVersion],
         maybeTargetSv: Option[SubsystemWithVersion],
-        maybeIcd: Option[IcdVersion]
+        maybeIcd: Option[IcdVersion],
+        searchAllSubsystems: Boolean
     ): Future[Unit]
   }
 
@@ -70,7 +71,19 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
     )("Apply").render
   }
 
+  // Displays a checkbox for the "search all subsystems for API dependencies" option
+  private val searchAllCheckbox: Input = {
+    import scalatags.JsDom.all._
+//    import scalacss.ScalatagsCss._
+//    input(`type` := "checkbox", Styles.checkboxStyle).render
+    input(`type` := "checkbox").render
+  }
+
   icdChooser.updateIcdOptions()
+
+  def searchAllSubsystems(): Boolean = {
+    searchAllCheckbox.checked
+  }
 
   // Update the list of Subsystem options
   def updateSubsystemOptions(items: List[String]): Unit = {
@@ -87,7 +100,7 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
       Ajax
         .get(path)
         .map { r =>
-          Json.fromJson[List[String]](Json.parse(r.responseText)).get
+          Json.fromJson[Array[String]](Json.parse(r.responseText)).map(_.toList).get
         }
         .recover {
           case ex =>
@@ -138,9 +151,9 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
       sv1 <- subsystem.getSubsystemWithVersion
     } {
       icdChooser.selectMatchingIcd(sv2, Some(sv1))
-      val subsystemComponents = subsystem.getComponents
-      val selectedSubsystemComponent = subsystem.getSelectedComponent
-      val targetComponents = targetSubsystem.getComponents
+      val subsystemComponents              = subsystem.getComponents
+      val selectedSubsystemComponent       = subsystem.getSelectedComponent
+      val targetComponents                 = targetSubsystem.getComponents
       val selectedTargetSubsystemComponent = targetSubsystem.getSelectedComponent
       targetSubsystem.setSubsystemWithVersion(Some(sv1), notifyListener = false, saveHistory = false)
       subsystem.setSubsystemWithVersion(Some(sv2), notifyListener = false, saveHistory = false)
@@ -172,13 +185,16 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
     }
   }
 
-  // Displays the selected API or ICD
-  private def apply()(e: dom.Event): Unit = {
+  // Display the selected subsystems and components
+  def applySettings(): Future[Unit] = {
     val maybeSv       = subsystem.getSubsystemWithVersion
     val maybeTargetSv = targetSubsystem.getSubsystemWithVersion
     val maybeIcd      = icdChooser.getSelectedIcdVersion
-    listener.subsystemsSelected(maybeSv, maybeTargetSv, maybeIcd)
+    listener.subsystemsSelected(maybeSv, maybeTargetSv, maybeIcd, searchAllSubsystems())
   }
+
+  // Called when the Apply button is pressed
+  private def apply()(e: dom.Event): Unit = applySettings()
 
   override def markup(): Element = {
     import scalatags.JsDom.all._
@@ -190,6 +206,7 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
       div(Styles.selectDialogSubsystemRow, subsystem.markup()),
       div(Styles.subsystemSwapper, subsystemSwapper.markup()),
       div(Styles.selectDialogSubsystemRow, targetSubsystem.markup()),
+      div(cls := "checkbox", label(searchAllCheckbox, "Search all TMT subsystems for API dependencies")),
       div(Styles.selectDialogApplyButton, applyButton)
     ).render
   }

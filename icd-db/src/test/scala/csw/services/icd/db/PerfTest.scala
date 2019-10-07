@@ -7,24 +7,29 @@ import org.scalatest.Ignore
 @Ignore
 object PerfTest extends App {
   // XXX TODO FIXME
-  val db       = IcdDb("icds2")
-  val compName = "lgsWfs"
-  ComponentInfoHelper.getComponentInfo(new CachedIcdDbQuery(db.db, Some(List("NFIRAOS"))), SubsystemWithVersion("NFIRAOS", None, Some(compName))).foreach { info =>
-    assert(info.componentModel.component == compName)
-    assert(info.publishes.nonEmpty)
-    assert(info.publishes.get.eventList.nonEmpty)
-    info.publishes.get.eventList.foreach { pubInfo =>
-      println(s"lgsWfs publishes ${pubInfo.eventModel.name}")
-      pubInfo.subscribers.foreach { subInfo =>
-        println(
-          s"${subInfo.subscribeModelInfo.component} from ${subInfo.subscribeModelInfo.subsystem} subscribes to ${subInfo.subscribeModelInfo.name}"
-        )
+  val db             = IcdDb("icds2")
+  val compName       = "lgsWfs"
+  val query          = IcdDbQuery(db.db, Some(List("NFIRAOS")))
+  val versionManager = IcdVersionManager(query)
+
+  new ComponentInfoHelper(displayWarnings = false)
+    .getComponentInfo(versionManager, SubsystemWithVersion("NFIRAOS", None, Some(compName)))
+    .foreach { info =>
+      assert(info.componentModel.component == compName)
+      assert(info.publishes.nonEmpty)
+      assert(info.publishes.get.eventList.nonEmpty)
+      info.publishes.get.eventList.foreach { pubInfo =>
+        println(s"lgsWfs publishes ${pubInfo.eventModel.name}")
+        pubInfo.subscribers.foreach { subInfo =>
+          println(
+            s"${subInfo.subscribeModelInfo.component} from ${subInfo.subscribeModelInfo.subsystem} subscribes to ${subInfo.subscribeModelInfo.name}"
+          )
+        }
+      }
+      assert(info.subscribes.nonEmpty)
+      assert(info.subscribes.get.subscribeInfo.nonEmpty)
+      info.subscribes.get.subscribeInfo.foreach { subInfo =>
+        println(s"$compName subscribes to ${subInfo.subscribeModelInfo.name} from ${subInfo.subscribeModelInfo.subsystem}")
       }
     }
-    assert(info.subscribes.nonEmpty)
-    assert(info.subscribes.get.subscribeInfo.nonEmpty)
-    info.subscribes.get.subscribeInfo.foreach { subInfo =>
-      println(s"$compName subscribes to ${subInfo.subscribeModelInfo.name} from ${subInfo.subscribeModelInfo.subsystem}")
-    }
-  }
 }
