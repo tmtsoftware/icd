@@ -182,7 +182,7 @@ object IcdComponentInfo {
           case CurrentStates => (publishModel.currentStateList.find(t => t.name == si.name), None)
           case Alarms        => (None, publishModel.alarmList.find(a => a.name == si.name))
         }
-        DetailedSubscribeInfo(publishType, si, maybeEvent, maybeAlarm, Some(componentModel))
+        DetailedSubscribeInfo(publishType, si, maybeEvent, maybeAlarm, Some(componentModel), warnings = true)
       }
       x.headOption
     }
@@ -288,7 +288,7 @@ object IcdComponentInfo {
         sent.component,
         Some(recv),
         query.getComponentModel(sent.subsystem, sent.component),
-        warnings = false
+        warnings = true
       )
     }
     result

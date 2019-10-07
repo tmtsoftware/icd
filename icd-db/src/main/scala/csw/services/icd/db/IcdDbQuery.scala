@@ -139,12 +139,11 @@ case class IcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) {
 
   // Search only the given subsystems, or all subsystems, if maybeSubsystems is empty
   private[db] def collectionNameFilter(collName: String): Boolean = {
-    val baseName =
-      if (collName.endsWith(IcdVersionManager.versionSuffix))
-        collName.dropRight(IcdVersionManager.versionSuffix.length)
-      else collName
-    maybeSubsystems.isEmpty ||
-    isStdSet(baseName) && maybeSubsystems.get.contains(IcdPath(baseName).subsystem)
+    if (maybeSubsystems.isEmpty) true
+    else {
+      val baseName = collName.split('.').head
+      maybeSubsystems.get.contains(baseName)
+    }
   }
   private[db] def collectionExists(name: String): Boolean = getCollectionNames.contains(name)
 
