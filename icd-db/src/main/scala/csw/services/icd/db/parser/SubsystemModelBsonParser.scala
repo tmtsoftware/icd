@@ -9,11 +9,16 @@ import reactivemongo.bson.BSONDocument
  */
 object SubsystemModelBsonParser {
 
-  def apply(doc: BSONDocument): SubsystemModel =
-    SubsystemModel(
-      subsystem = doc.getAs[String]("subsystem").get,
-      title = doc.getAs[String]("title").get,
-      description = HtmlMarkup.gfmToHtml(doc.getAs[String]("description").get),
-      modelVersion = doc.getAs[String]("modelVersion").get
-    )
+  def apply(doc: BSONDocument): Option[SubsystemModel] = {
+    if (doc.isEmpty) None
+    else
+      Some(
+        SubsystemModel(
+          subsystem = doc.getAs[String]("subsystem").get,
+          title = doc.getAs[String]("title").get,
+          description = HtmlMarkup.gfmToHtml(doc.getAs[String]("description").get),
+          modelVersion = doc.getAs[String]("modelVersion").get
+        )
+      )
+  }
 }

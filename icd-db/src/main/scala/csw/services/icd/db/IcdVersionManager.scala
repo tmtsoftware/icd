@@ -475,15 +475,15 @@ case class IcdVersionManager(query: IcdDbQuery) {
       private def getDocVersion(coll: BSONCollection): BSONDocument = getVersionOf(coll, versionMap(coll.name))
 
       override val subsystemModel: Option[SubsystemModel] =
-        entry.subsystem.map(coll => SubsystemModelBsonParser(getDocVersion(coll)))
+        entry.subsystem.flatMap(coll => SubsystemModelBsonParser(getDocVersion(coll)))
       override val publishModel: Option[IcdModels.PublishModel] =
-        entry.publish.map(coll => PublishModelBsonParser(getDocVersion(coll)))
+        entry.publish.flatMap(coll => PublishModelBsonParser(getDocVersion(coll)))
       override val subscribeModel: Option[IcdModels.SubscribeModel] =
-        entry.subscribe.map(coll => SubscribeModelBsonParser(getDocVersion(coll)))
+        entry.subscribe.flatMap(coll => SubscribeModelBsonParser(getDocVersion(coll)))
       override val commandModel: Option[IcdModels.CommandModel] =
-        entry.command.map(coll => parser.CommandModelBsonParser(getDocVersion(coll)))
+        entry.command.flatMap(coll => parser.CommandModelBsonParser(getDocVersion(coll)))
       override val componentModel: Option[IcdModels.ComponentModel] =
-        entry.component.map(coll => ComponentModelBsonParser(getDocVersion(coll)))
+        entry.component.flatMap(coll => ComponentModelBsonParser(getDocVersion(coll)))
     }
 
     getVersion(sv) match {

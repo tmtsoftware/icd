@@ -9,21 +9,26 @@ import reactivemongo.bson.BSONDocument
  */
 object SubscribeModelBsonParser {
 
-  def apply(doc: BSONDocument): SubscribeModel = {
-    val subscribeDoc = doc.getAs[BSONDocument]("subscribe").get
+  def apply(doc: BSONDocument): Option[SubscribeModel] = {
+    if (doc.isEmpty) None
+    else
+      Some {
+        val subscribeDoc = doc.getAs[BSONDocument]("subscribe").get
 
-    def getItems[A](name: String): List[SubscribeModelInfo] =
-      for (subDoc <- subscribeDoc.getAs[Array[BSONDocument]](name).map(_.toList).getOrElse(Nil)) yield SubscribeInfoBsonParser(subDoc)
+        def getItems[A](name: String): List[SubscribeModelInfo] =
+          for (subDoc <- subscribeDoc.getAs[Array[BSONDocument]](name).map(_.toList).getOrElse(Nil))
+            yield SubscribeInfoBsonParser(subDoc)
 
-    SubscribeModel(
-      subsystem = doc.getAs[String](BaseModelBsonParser.subsystemKey).get,
-      component = doc.getAs[String](BaseModelBsonParser.componentKey).get,
-      description = subscribeDoc.getAs[String]("description").map(HtmlMarkup.gfmToHtml).getOrElse(""),
-      eventList = getItems("events"),
-      observeEventList = getItems("observeEvents"),
-      currentStateList = getItems("currentStates"),
-      alarmList = getItems("alarms")
-    )
+        SubscribeModel(
+          subsystem = doc.getAs[String](BaseModelBsonParser.subsystemKey).get,
+          component = doc.getAs[String](BaseModelBsonParser.componentKey).get,
+          description = subscribeDoc.getAs[String]("description").map(HtmlMarkup.gfmToHtml).getOrElse(""),
+          eventList = getItems("events"),
+          observeEventList = getItems("observeEvents"),
+          currentStateList = getItems("currentStates"),
+          alarmList = getItems("alarms")
+        )
+      }
   }
 }
 

@@ -46,17 +46,21 @@ object SendCommandModelBsonParser {
  * Model for commands
  */
 object CommandModelBsonParser {
-  def apply(doc: BSONDocument): CommandModel = {
-    CommandModel(
-      subsystem = doc.getAs[String](BaseModelBsonParser.subsystemKey).get,
-      component = doc.getAs[String](BaseModelBsonParser.componentKey).get,
-      description = doc.getAs[String]("description").map(HtmlMarkup.gfmToHtml).getOrElse(""),
-      receive =
-        for (subDoc <- doc.getAs[Array[BSONDocument]]("receive").map(_.toList).getOrElse(Nil))
-          yield ReceiveCommandModelBsonParser(subDoc),
-      send =
-        for (subDoc <- doc.getAs[Array[BSONDocument]]("send").map(_.toList).getOrElse(Nil))
-          yield SendCommandModelBsonParser(subDoc)
-    )
+  def apply(doc: BSONDocument): Option[CommandModel] = {
+    if (doc.isEmpty) None
+    else
+      Some(
+        CommandModel(
+          subsystem = doc.getAs[String](BaseModelBsonParser.subsystemKey).get,
+          component = doc.getAs[String](BaseModelBsonParser.componentKey).get,
+          description = doc.getAs[String]("description").map(HtmlMarkup.gfmToHtml).getOrElse(""),
+          receive =
+            for (subDoc <- doc.getAs[Array[BSONDocument]]("receive").map(_.toList).getOrElse(Nil))
+              yield ReceiveCommandModelBsonParser(subDoc),
+          send =
+            for (subDoc <- doc.getAs[Array[BSONDocument]]("send").map(_.toList).getOrElse(Nil))
+              yield SendCommandModelBsonParser(subDoc)
+        )
+      )
   }
 }
