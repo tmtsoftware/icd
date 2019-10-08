@@ -41,7 +41,7 @@ Usage: icd-db [options]
   --icdversion <icd-version>
                            Specifies the version to be used by any following options (overrides subsystem and target versions)
   -o, --out <outputFile>   Saves the selected API or ICD to the given file in a format based on the file's suffix (html, pdf)
-  --drop [db|component]    Drops the specified component or database (use with caution!)
+  --drop [db|component]    Drops the specified component or database
   --versions <subsystem>   List the version history of the given subsystem
   --diff <subsystem>:<version1>[,version2]
                            For the given subsystem, list the differences between <version1> and <version2> (or the current version)

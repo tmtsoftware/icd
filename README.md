@@ -25,6 +25,11 @@ where $db is the directory containing the database.
 The default database name used is `icds` and can be configured in icd-db/src/main/resources/reference.conf,
 in <installDir>/conf/reference.conf or via equivalent -D (system property) command line options.
 
+Note: After starting the database, it is a good idea to ingest the published ICDs, which are stored in GitHub repositories:
+
+    icd-git --ingest
+
+This will make the web app faster, since it will auto-ingest the ICDs and APIs as needed.
 
 ICD Subprojects
 ---------------

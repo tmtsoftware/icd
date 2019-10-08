@@ -188,18 +188,18 @@ object IcdDb extends App {
     def drop(opt: String): Unit = {
       opt match {
         case "db" =>
-          if (confirmDrop(s"Are you sure you want to drop the ${options.dbName} database?")) {
+//          if (confirmDrop(s"Are you sure you want to drop the ${options.dbName} database?")) {
             println(s"Dropping ${options.dbName}")
             db.dropDatabase()
-          }
+//          }
         case "component" =>
           if (options.subsystem.isEmpty) error("Missing required subsystem name: Please specify --subsystem <name>")
           options.component match {
             case Some(component) =>
-              if (confirmDrop(s"Are you sure you want to drop $component from ${options.dbName}?")) {
+//              if (confirmDrop(s"Are you sure you want to drop $component from ${options.dbName}?")) {
                 println(s"Dropping $component from ${options.dbName}")
                 db.query.dropComponent(options.subsystem.get, component)
-              }
+//              }
             case None =>
               error("Missing required component name: Please specify --component <name>")
           }
@@ -207,10 +207,10 @@ object IcdDb extends App {
           error(s"Invalid drop argument $x. Expected 'db' or 'component' (together with --component option)")
       }
 
-      def confirmDrop(msg: String): Boolean = {
-        print(s"$msg [y/n] ")
-        StdIn.readLine().toLowerCase == "y"
-      }
+//      def confirmDrop(msg: String): Boolean = {
+//        print(s"$msg [y/n] ")
+//        StdIn.readLine().toLowerCase == "y"
+//      }
     }
 
     // --versions option
