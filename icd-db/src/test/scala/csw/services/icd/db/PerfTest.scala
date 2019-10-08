@@ -32,4 +32,5 @@ object PerfTest extends App {
         println(s"$compName subscribes to ${subInfo.subscribeModelInfo.name} from ${subInfo.subscribeModelInfo.subsystem}")
       }
     }
+  System.exit(0)
 }
