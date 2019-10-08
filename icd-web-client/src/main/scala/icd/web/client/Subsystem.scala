@@ -70,6 +70,7 @@ case class Subsystem(
     select(cls := "form-control", hidden := true, onchange := subsystemVersionSelected _).render
   }
 
+
   // The component combobox
   private val componentItem = {
     import scalatags.JsDom.all._
@@ -82,6 +83,12 @@ case class Subsystem(
    * Returns true if the combobox is displaying the default item (i.e.: the initial item, no selection)
    */
   def isDefault: Boolean = subsystemItem.selectedIndex == 0
+
+  def setEnabled(enabled: Boolean): Unit = {
+    subsystemItem.disabled = !enabled
+    versionItem.disabled = !enabled
+    componentItem.disabled = !enabled
+  }
 
   // called when a subsystem is selected
   private def subsystemSelected(e: dom.Event): Unit = {

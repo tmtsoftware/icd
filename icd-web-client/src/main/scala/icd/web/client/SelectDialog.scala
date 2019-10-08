@@ -40,7 +40,12 @@ object SelectDialog {
     ): Future[Unit]
   }
 
-  private val msg = "Select an ICD from the list or one or two subsystems (and optional components)"
+  private val msg =
+    """
+      |Choose an ICD and version to display below. Or select only a subsystem to see the API.
+      |Selecting a subsystem and target subsystem displays the ICD between the two.
+      |To narrow the focus, you can optionally select a component in each subsystem.
+      |""".stripMargin
 }
 
 /**
@@ -54,7 +59,7 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
   val targetSubsystem = Subsystem(
     TargetSubsystemListener,
     labelStr = "Target",
-    placeholderMsg = "All Subsystems",
+    placeholderMsg = "Select Subsystem",
     enablePlaceholder = true
   )
   val subsystemSwapper = SubsystemSwapper(swapSubsystems)
@@ -74,12 +79,13 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
   // Displays a checkbox for the "search all subsystems for API dependencies" option
   private val searchAllCheckbox: Input = {
     import scalatags.JsDom.all._
-//    import scalacss.ScalatagsCss._
-//    input(`type` := "checkbox", Styles.checkboxStyle).render
     input(`type` := "checkbox").render
   }
 
   icdChooser.updateIcdOptions()
+  targetSubsystem.setEnabled(false)
+  subsystemSwapper.setEnabled(false)
+  applyButton.disabled = true
 
   def searchAllSubsystems(): Boolean = {
     searchAllCheckbox.checked
@@ -114,6 +120,8 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
     // Called when the source subsystem (or version) combobox selection is changed
     override def subsystemSelected(maybeSv: Option[SubsystemWithVersion], saveHistory: Boolean): Future[Unit] = {
       val maybeTargetSv = targetSubsystem.getSubsystemWithVersion
+      targetSubsystem.setEnabled(maybeSv.isDefined)
+      applyButton.disabled = maybeSv.isEmpty
       maybeSv
         .map { sv =>
           for {
@@ -121,6 +129,7 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
             names <- getComponentNames(sv)
           } yield {
             subsystem.updateComponentOptions(names)
+            subsystemSwapper.setEnabled(maybeSv.isDefined && maybeTargetSv.isDefined)
           }
         }
         .getOrElse(Future.successful())
@@ -138,6 +147,7 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
             names <- maybeTargetSv.map(getComponentNames).getOrElse(Future.successful(Nil))
           } yield {
             targetSubsystem.updateComponentOptions(names)
+            subsystemSwapper.setEnabled(targetSubsystem.getSelectedSubsystem.isDefined)
           }
         }
         .getOrElse(Future.successful())
@@ -179,6 +189,10 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
           } yield {
             subsystem.updateComponentOptions(components)
             targetSubsystem.updateComponentOptions(targetComponents)
+            val enabled = subsystem.getSelectedSubsystem.isDefined
+            targetSubsystem.setEnabled(enabled)
+            subsystemSwapper.setEnabled(enabled && targetSubsystem.getSelectedSubsystem.isDefined)
+            applyButton.disabled = !enabled
           }
         case None => Future.successful()
       }
