@@ -76,7 +76,9 @@ object IcdValidator {
    *            and any number of subdirectories containing ICD files
    */
   def validateRecursive(dir: File = new File(".")): List[Problem] = {
-    (dir :: subDirs(dir)).flatMap(validate)
+    if (dir.isDirectory) {
+      (dir :: subDirs(dir)).flatMap(validate)
+    } else List(Problem("error", s"Directory $dir does not exist"))
   }
 
   /**
