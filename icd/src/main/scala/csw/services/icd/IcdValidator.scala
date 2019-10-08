@@ -139,7 +139,7 @@ object IcdValidator {
       .build()
     val schema    = schemaLoader.load().build()
     val jsonInput = new JSONObject(toJson(inputFile))
-    validate(schema, jsonInput, inputFile.getName)
+    validate(schema, jsonInput, inputFile.getPath)
   }
 
   /**
@@ -171,15 +171,16 @@ object IcdValidator {
    *
    * @param inputConfig the config to be validated against the schema
    * @param stdName     holds the file and schema name
+   * @param fileName    holds the path to the source file
    * @return a list of problems, if any were found
    */
-  def validate(inputConfig: Config, stdName: StdName, schemaVersion: String): List[Problem] = {
+  def validate(inputConfig: Config, stdName: StdName, schemaVersion: String, fileName: String): List[Problem] = {
     val schemaPath   = s"$schemaVersion/${stdName.schema}"
     val schemaConfig = ConfigFactory.parseResources(schemaPath)
     if (schemaConfig == null) {
       List(Problem("error", s"Missing schema resource: $schemaPath"))
     } else {
-      validate(inputConfig, schemaConfig, stdName.name)
+      validate(inputConfig, schemaConfig, fileName)
     }
   }
 
@@ -212,7 +213,7 @@ object IcdValidator {
       Nil
     } catch {
       case e: ValidationException =>
-        e.getAllMessages.asScala.toList.map(msg => Problem("error", msg))
+        e.getAllMessages.asScala.toList.map(msg => Problem("error", s"$source: $msg"))
       case e: Exception =>
         e.printStackTrace()
         List(Problem("fatal", e.toString))

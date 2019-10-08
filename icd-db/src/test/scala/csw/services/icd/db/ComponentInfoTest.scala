@@ -16,6 +16,10 @@ class ComponentInfoTest extends FunSuite {
     if (dir.exists()) dir else new File(s"../$path")
   }
 
+//  test("") {
+//
+//  }
+
   test("Get pub/sub info from database") {
     val db = IcdDb("test")
     db.dropDatabase() // start with a clean db for test

@@ -22,8 +22,9 @@ class FileUploadController @Inject()(env: Environment, webJarAssets: WebJarAsset
   def uploadFiles: Action[MultipartFormData[Files.TemporaryFile]] = Action(parse.multipartFormData) { implicit request =>
     val files = request.body.files.toList
     try {
-      // XXX TODO: Return config parse errors in StdConfig.get with file names!
-      val list = files.flatMap(filePart => StdConfig.get(filePart.ref.path.toFile, filePart.filename))
+      val list = files.flatMap { filePart =>
+        StdConfig.get(filePart.ref.path.toFile, filePart.filename)
+      }
       val comment =
         request.body.asFormUrlEncoded.getOrElse("comment", List("")).head
       ingestConfigs(list, comment)
@@ -56,7 +57,7 @@ class FileUploadController @Inject()(env: Environment, webJarAssets: WebJarAsset
 
     // Validate everything first
     val validateProblems =
-      list.flatMap(sc => IcdValidator.validate(sc.config, sc.stdName, schemaVersion))
+      list.flatMap(sc => IcdValidator.validate(sc.config, sc.stdName, schemaVersion, sc.fileName))
     if (validateProblems.nonEmpty) {
       NotAcceptable(Json.toJson(validateProblems))
     } else {

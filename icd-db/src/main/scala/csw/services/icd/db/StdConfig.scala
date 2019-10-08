@@ -14,8 +14,9 @@ import csw.services.icd.StdName._
  *
  * @param stdName indicates which of the ICD model files the config represents
  * @param config  the model file parsed into a Config
+ * @param fileName  the (relative) path name of the source file (for error reporting)
  */
-case class StdConfig(stdName: StdName, config: Config)
+case class StdConfig(stdName: StdName, config: Config, fileName: String)
 
 object StdConfig {
 
@@ -27,7 +28,7 @@ object StdConfig {
     stdNames.flatMap { stdName =>
       val inputFile = new File(dir, stdName.name)
       if (inputFile.exists())
-        Some(StdConfig(stdName, ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())))
+        Some(StdConfig(stdName, ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem()), inputFile.getPath))
       else None
     }
   }
@@ -43,7 +44,7 @@ object StdConfig {
     else {
       stdNames.flatMap { stdName =>
         if (name == stdName.name)
-          Some(StdConfig(stdName, ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())))
+          Some(StdConfig(stdName, ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem()), fileName))
         else None
       }
     }
@@ -71,7 +72,7 @@ object StdConfig {
   def get(config: Config, fileName: String): Option[StdConfig] = {
     val name = new File(fileName).getName
     stdNames.flatMap { stdName =>
-      if (name == stdName.name) Some(StdConfig(stdName, config)) else None
+      if (name == stdName.name) Some(StdConfig(stdName, config, fileName)) else None
     }.headOption
   }
 }
