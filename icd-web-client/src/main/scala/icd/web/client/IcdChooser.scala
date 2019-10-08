@@ -54,7 +54,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   // The ICD version combobox
   private val versionItem = {
     import scalatags.JsDom.all._
-    select(cls := "form-control", hidden := true, onchange := icdVersionSelected _).render
+    select(cls := "form-control", onchange := icdVersionSelected _).render
   }
 
   def setEnabled(enabled: Boolean): Unit = {
@@ -141,14 +141,12 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
       case Some(icdVersion) =>
         icdItem.value = Json.toJson(IcdName(icdVersion.subsystem, icdVersion.target)).toString() // JSON
         versionItem.value = Json.toJson(icdVersion).toString()                                   // JSON
-        versionItem.removeAttribute("hidden")
         if (notifyListener)
           listener.icdSelected(maybeIcdVersion, saveHistory)
         else Future.successful()
       case None =>
         icdItem.value = emptyOptionMsg
         versionItem.value = unpublishedVersion
-        versionItem.setAttribute("hidden", "true")
         if (notifyListener)
           listener.icdSelected(None, saveHistory)
         else Future.successful()
@@ -252,10 +250,8 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
       maybeVersion match {
         case Some(s) =>
           versionItem.value = Json.toJson(s).toString() // JSON
-          versionItem.removeAttribute("hidden")
         case None =>
           versionItem.value = unpublishedVersion
-          versionItem.setAttribute("hidden", "true")
       }
       if (notifyListener)
         listener.icdSelected(maybeSelectedVersion, saveHistory)
@@ -266,18 +262,17 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   // Updates the version combobox with the list of available versions for the selected ICD.
   // Returns a future indicating when done.
   def updateIcdVersionOptions(): Future[Unit] = {
-    versionItem.setAttribute("hidden", "true")
     getSelectedIcd match {
       case Some(icdName) =>
         getIcdVersionOptions(icdName)
           .flatMap { list => // Future!
-            versionItem.removeAttribute("hidden")
             updateIcdVersionOptions(list)
           }
           .recover {
             case ex => ex.printStackTrace()
           }
       case None =>
+        versionItem.value = unpublishedVersion
         Future.successful()
     }
   }

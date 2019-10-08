@@ -67,7 +67,7 @@ case class Subsystem(
   // The subsystem version combobox
   private val versionItem = {
     import scalatags.JsDom.all._
-    select(cls := "form-control", hidden := true, onchange := subsystemVersionSelected _).render
+    select(cls := "form-control", onchange := subsystemVersionSelected _).render
   }
 
 
@@ -276,13 +276,11 @@ case class Subsystem(
   // and selects the given version, if defined.
   // Returns a future indicating when done.
   def updateSubsystemVersionOptions(maybeVersion: Option[String] = None): Future[Unit] = {
-    versionItem.setAttribute("hidden", "true")
     getSelectedSubsystem match {
       case Some(subsystem) =>
         getSubsystemVersionOptions(subsystem)
           .map { list => // Future!
             updateSubsystemVersionOptions(list)
-            versionItem.removeAttribute("hidden")
             val version = maybeVersion.getOrElse(unpublishedVersion)
             versionItem.value = version
           }
@@ -290,6 +288,7 @@ case class Subsystem(
             case ex => ex.printStackTrace()
           }
       case None =>
+        versionItem.value = unpublishedVersion
         Future.successful()
     }
   }
