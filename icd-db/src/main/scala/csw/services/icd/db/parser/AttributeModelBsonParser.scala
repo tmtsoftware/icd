@@ -95,6 +95,12 @@ object AttributeModelBsonParser {
 
     val typeStr = parseTypeStr(doc.getAs[String]("type"))
 
+    // If type is "struct", attributeList gives the fields of the struct
+    val attributesList = if (typeStr == "struct") {
+        for (subDoc <- doc.getAs[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
+          yield AttributeModelBsonParser(subDoc)
+    } else Nil
+
     AttributeModel(
       name,
       description,
@@ -108,7 +114,8 @@ object AttributeModelBsonParser {
       exclusiveMinimum,
       exclusiveMaximum,
       defaultValue,
-      typeStr
+      typeStr,
+      attributesList
     )
   }
 }

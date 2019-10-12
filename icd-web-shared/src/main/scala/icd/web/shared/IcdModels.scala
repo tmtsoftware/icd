@@ -113,7 +113,8 @@ object IcdModels {
       exclusiveMinimum: Boolean,
       exclusiveMaximum: Boolean,
       defaultValue: String,
-      typeStr: String
+      typeStr: String,
+      attributesList: List[AttributeModel]
   ) extends NameDesc
 
   /**

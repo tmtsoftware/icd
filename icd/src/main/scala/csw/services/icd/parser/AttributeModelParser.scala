@@ -98,6 +98,11 @@ object AttributeModelParser {
 
     val typeStr = parseTypeStr(config.as[Option[String]]("type"))
 
+    // If type is "struct", attributeList gives the fields of the struct
+    val attributesList = if (typeStr == "struct" && config.hasPath("attributes")) {
+      for (conf <- config.as[Option[List[Config]]]("attributes").getOrElse(Nil)) yield AttributeModelParser(conf)
+    } else Nil
+
     AttributeModel(
       name,
       description,
@@ -111,7 +116,8 @@ object AttributeModelParser {
       exclusiveMinimum,
       exclusiveMaximum,
       defaultValue,
-      typeStr
+      typeStr,
+      attributesList
     )
   }
 }

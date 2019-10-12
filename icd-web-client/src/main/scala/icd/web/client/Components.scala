@@ -256,6 +256,23 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
+  // Add a table for each attribute of type "struct" to show the members of the struct
+  private def structAttributesMarkup(headings: List[String], attributesList: List[AttributeModel]): Seq[TypedTag[Div]] = {
+    import scalatags.JsDom.all._
+    attributesList.flatMap { attrModel =>
+      if (attrModel.typeStr == "struct") {
+        val rowList2 =
+          for (a2 <- attrModel.attributesList) yield List(a2.name, a2.description, a2.typeStr, a2.units, a2.defaultValue)
+        Some(
+          div()(
+            p(strong(a(s"Attributes for ${attrModel.name} struct"))),
+            mkTable(headings, rowList2)
+          )
+        )
+      } else None
+    }
+  }
+
   /**
    * Returns a table of attributes
    *
@@ -271,7 +288,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       val rowList  = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
       div(
         strong(titleStr),
-        mkTable(headings, rowList, tableStyle = Styles.attributeTable)
+        mkTable(headings, rowList, tableStyle = Styles.attributeTable),
+        structAttributesMarkup(headings, attributesList)
       )
     }
   }
@@ -297,7 +315,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue, yesNo(requiredArgs.contains(a.name)))
       div(
         strong(titleStr),
-        mkTable(headings, rowList, tableStyle = Styles.attributeTable)
+        mkTable(headings, rowList, tableStyle = Styles.attributeTable),
+        structAttributesMarkup(headings, attributesList)
       )
     }
   }
@@ -315,7 +334,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       val rowList  = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units)
       div(
         strong("Result Type Fields"),
-        mkTable(headings, rowList, tableStyle = Styles.attributeTable)
+        mkTable(headings, rowList, tableStyle = Styles.attributeTable),
+        structAttributesMarkup(headings, attributesList)
       )
     }
   }

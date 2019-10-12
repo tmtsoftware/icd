@@ -5,6 +5,8 @@ import java.io._
 import csw.services.icd.html.IcdToHtml
 import icd.web.shared.IcdModels
 
+// XXX TODO FIXME: Is this class needed? Maybe remove all code that parses config files and use the mongodb versions?
+
 /**
  * Saves the ICD/API as a document
  */
