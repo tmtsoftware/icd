@@ -200,7 +200,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       for {
         _ <- selectDialog.subsystem.setSubsystemWithVersion(hist.maybeSourceSubsystem, saveHistory = false)
         _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(hist.maybeTargetSubsystem, saveHistory = false)
-        _ <- selectDialog.icdChooser.setIcdWithVersion(hist.maybeIcd, saveHistory = false)
+        _ <- selectDialog.icdChooser.setIcdWithVersion(hist.maybeIcd, notifyListener = false, saveHistory = false)
       } {
         hist.viewType match {
           case UploadView  => uploadSelected(saveHistory = false)()
