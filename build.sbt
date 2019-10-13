@@ -64,6 +64,7 @@ lazy val icdWebServer = (project in file("icd-web-server"))
   .settings(dockerSettings: _*)
   .settings(
     isDevMode in scalaJSPipeline := sys.env.get("SCALAJS_PROD").isEmpty,
+    Global / onChangedBuildSource := ReloadOnSourceChanges,
     scalaJSProjects := clients,
     pipelineStages in Assets := Seq(scalaJSPipeline),
     pipelineStages := Seq(digest, gzip),
@@ -97,7 +98,8 @@ lazy val icdWebClient = (project in file("icd-web-client"))
     unmanagedSourceDirectories in Compile := Seq((scalaSource in Compile).value),
     skip in packageJSDependencies := false,
     jsDependencies ++= clientJsDeps.value,
-    libraryDependencies ++= clientDeps.value
+    libraryDependencies ++= clientDeps.value,
+    Global / onChangedBuildSource := ReloadOnSourceChanges
   )
   .enablePlugins(ScalaJSPlugin, ScalaJSWeb)
   .dependsOn(icdWebSharedJs)

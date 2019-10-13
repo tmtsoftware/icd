@@ -36,7 +36,6 @@ object Settings {
     resolvers += "jitpack" at "https://jitpack.io"
   )
 
-  // Using java8
   lazy val defaultSettings = buildSettings ++ Seq(
     scalacOptions ++= Seq("-encoding", "UTF-8", "-feature", "-deprecation", "-unchecked"),
     javacOptions in (Compile, compile) ++= Seq("-Xlint:unchecked", "-Xlint:deprecation"),

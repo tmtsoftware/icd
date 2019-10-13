@@ -106,9 +106,11 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     if (saveHistory) {
       pushState(viewType = SelectView)
     } else {
-      selectDialog.icdChooser.setIcdWithVersion(maybeIcd, saveHistory = false)
-      selectDialog.subsystem.setSubsystemWithVersion(maybeSv, saveHistory = false)
-      selectDialog.targetSubsystem.setSubsystemWithVersion(maybeTargetSv, saveHistory = false)
+      for {
+        _ <- selectDialog.icdChooser.setIcdWithVersion(maybeIcd, saveHistory = false)
+        _ <- selectDialog.subsystem.setSubsystemWithVersion(maybeSv, saveHistory = false)
+        _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(maybeTargetSv, saveHistory = false)
+      } {}
     }
   }
 

@@ -90,7 +90,9 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
 
   private def notifyListener(maybeIcdVersion: Option[IcdVersion], saveHistory: Boolean = true): Future[Unit] = {
     busy = true
-    listener.icdSelected(maybeIcdVersion, saveHistory).map(_ => busy = false)
+    val f = listener.icdSelected(maybeIcdVersion, saveHistory)
+    f.onComplete(_ => busy = false)
+    f
   }
 
   // HTML markup displaying the ICD and version comboboxes
@@ -161,7 +163,8 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
    * Gets the list of ICDs being displayed
    */
   def getIcds: List[IcdName] = {
-    icdItem.options.drop(1).map(s => Json.fromJson[IcdName](Json.parse(s.value)).get).toList
+    val icds = icdItem.options.toList.drop(1)
+    icds.map(s => Json.fromJson[IcdName](Json.parse(s.value)).get)
   }
 
   /**
