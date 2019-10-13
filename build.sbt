@@ -1,7 +1,8 @@
 import sbt._
 import Dependencies._
 import Settings._
-import sbtcrossproject.{crossProject, CrossType}
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
+
 
 def compileScope(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 def testScope(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test")
@@ -50,6 +51,7 @@ lazy val icdWebServer = (project in file("icd-web-server"))
   .settings(defaultSettings: _*)
   .settings(dockerSettings: _*)
   .settings(
+    isDevMode in scalaJSPipeline := sys.env.get("SCALAJS_PROD").isEmpty,
     scalaJSProjects := clients,
     pipelineStages in Assets := Seq(scalaJSPipeline),
     pipelineStages := Seq(digest, gzip),
