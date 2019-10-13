@@ -284,7 +284,7 @@ object IcdToHtml {
   // Insert a hyperlink from "struct" to the table listing the fields in the struct
   private def getTypeStr(fieldName: String, typeStr: String): String = {
     import scalatags.Text.all._
-    if (typeStr == "struct")
+    if (typeStr == "struct" || typeStr == "array of struct")
       a(href := s"#${structIdStr(fieldName)}")(typeStr).render
     else typeStr
   }
@@ -420,7 +420,7 @@ object IcdToHtml {
   private def structAttributesMarkup(headings: List[String], attributesList: List[AttributeModel]): Seq[Text.TypedTag[String]] = {
     import scalatags.Text.all._
     attributesList.flatMap { attrModel =>
-      if (attrModel.typeStr == "struct") {
+      if (attrModel.typeStr == "struct" || attrModel.typeStr == "array of struct") {
         val rowList2 =
           for (a2 <- attrModel.attributesList) yield List(a2.name, a2.description, a2.typeStr, a2.units, a2.defaultValue)
         Some(

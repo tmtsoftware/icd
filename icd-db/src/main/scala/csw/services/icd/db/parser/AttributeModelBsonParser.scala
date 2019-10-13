@@ -99,7 +99,12 @@ object AttributeModelBsonParser {
     val attributesList = if (typeStr == "struct") {
         for (subDoc <- doc.getAs[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
           yield AttributeModelBsonParser(subDoc)
-    } else Nil
+    } else if (typeStr == "array of struct") {
+      doc.getAs[BSONDocument]("items").toList.flatMap(items =>
+      for (subDoc <- items.getAs[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
+        yield AttributeModelBsonParser(subDoc))
+    }
+    else Nil
 
     AttributeModel(
       name,

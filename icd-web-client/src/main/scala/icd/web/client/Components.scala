@@ -263,7 +263,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def structAttributesMarkup(headings: List[String], attributesList: List[AttributeModel]): Seq[TypedTag[Div]] = {
     import scalatags.JsDom.all._
     attributesList.flatMap { attrModel =>
-      if (attrModel.typeStr == "struct") {
+      if (attrModel.typeStr == "struct" || attrModel.typeStr == "array of struct") {
         val rowList2 =
           for (a2 <- attrModel.attributesList) yield List(a2.name, a2.description, a2.typeStr, a2.units, a2.defaultValue)
         Some(
@@ -288,7 +288,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     if (attributesList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default")
-      val rowList  = for (a <- attributesList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units, a.defaultValue)
+      val rowList =
+        for (a <- attributesList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units, a.defaultValue)
       div(
         strong(titleStr),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
@@ -315,7 +316,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       val headings = List("Name", "Description", "Type", "Units", "Default", "Required")
       val rowList =
         for (a <- attributesList)
-          yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units, a.defaultValue, yesNo(requiredArgs.contains(a.name)))
+          yield List(
+            a.name,
+            a.description,
+            getTypeStr(a.name, a.typeStr),
+            a.units,
+            a.defaultValue,
+            yesNo(requiredArgs.contains(a.name))
+          )
       div(
         strong(titleStr),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
@@ -327,7 +335,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   // Insert a hyperlink from "struct" to the table listing the fields in the struct
   private def getTypeStr(fieldName: String, typeStr: String): String = {
     import scalatags.Text.all._
-    if (typeStr == "struct")
+    if (typeStr == "struct" || typeStr == "array of struct")
       a(href := s"#${structIdStr(fieldName)}")(typeStr).render
     else typeStr
   }
