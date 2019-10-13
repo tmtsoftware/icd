@@ -256,6 +256,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
+  // HTML id for a table displaying the fields of a struct
+  private def structIdStr(name: String): String = s"$name-struct"
+
   // Add a table for each attribute of type "struct" to show the members of the struct
   private def structAttributesMarkup(headings: List[String], attributesList: List[AttributeModel]): Seq[TypedTag[Div]] = {
     import scalatags.JsDom.all._
@@ -265,7 +268,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           for (a2 <- attrModel.attributesList) yield List(a2.name, a2.description, a2.typeStr, a2.units, a2.defaultValue)
         Some(
           div()(
-            p(strong(a(s"Attributes for ${attrModel.name} struct"))),
+            p(strong(a(name := structIdStr(attrModel.name))(s"Attributes for ${attrModel.name} struct"))),
             mkTable(headings, rowList2)
           )
         )
@@ -285,7 +288,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     if (attributesList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default")
-      val rowList  = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
+      val rowList  = for (a <- attributesList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units, a.defaultValue)
       div(
         strong(titleStr),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
@@ -312,13 +315,21 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       val headings = List("Name", "Description", "Type", "Units", "Default", "Required")
       val rowList =
         for (a <- attributesList)
-          yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue, yesNo(requiredArgs.contains(a.name)))
+          yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units, a.defaultValue, yesNo(requiredArgs.contains(a.name)))
       div(
         strong(titleStr),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
         structAttributesMarkup(headings, attributesList)
       )
     }
+  }
+
+  // Insert a hyperlink from "struct" to the table listing the fields in the struct
+  private def getTypeStr(fieldName: String, typeStr: String): String = {
+    import scalatags.Text.all._
+    if (typeStr == "struct")
+      a(href := s"#${structIdStr(fieldName)}")(typeStr).render
+    else typeStr
   }
 
   /**
@@ -331,7 +342,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     if (attributesList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units")
-      val rowList  = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units)
+      val rowList  = for (a <- attributesList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units)
       div(
         strong("Result Type Fields"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),

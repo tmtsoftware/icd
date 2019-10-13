@@ -281,12 +281,20 @@ object IcdToHtml {
     }
   }
 
+  // Insert a hyperlink from "struct" to the table listing the fields in the struct
+  private def getTypeStr(fieldName: String, typeStr: String): String = {
+    import scalatags.Text.all._
+    if (typeStr == "struct")
+      a(href := s"#${structIdStr(fieldName)}")(typeStr).render
+    else typeStr
+  }
+
   private def resultTypeMarkup(attributesList: List[AttributeModel], nh: NumberedHeadings): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (attributesList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units")
-      val rowList  = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units)
+      val rowList  = for (a <- attributesList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units)
       div(cls := "nopagebreak")(
         p(strong(a("Result Type Fields"))),
         HtmlMarkup.mkTable(headings, rowList),
@@ -307,7 +315,14 @@ object IcdToHtml {
       val headings = List("Name", "Description", "Type", "Units", "Default", "Required")
       val rowList =
         for (a <- attributesList)
-          yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue, yesNo(requiredArgs.contains(a.name)))
+          yield List(
+            a.name,
+            a.description,
+            getTypeStr(a.name, a.typeStr),
+            a.units,
+            a.defaultValue,
+            yesNo(requiredArgs.contains(a.name))
+          )
       div(cls := "nopagebreak")(
         p(strong(a(s"Arguments for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList),
@@ -398,6 +413,9 @@ object IcdToHtml {
 
   private def subscribeTitle(compName: String): String = s"Items subscribed to by $compName"
 
+  // HTML id for a table displaying the fields of a struct
+  private def structIdStr(name: String): String = s"$name-struct"
+
   // Add a table for each attribute of type "struct" to show the members of the struct
   private def structAttributesMarkup(headings: List[String], attributesList: List[AttributeModel]): Seq[Text.TypedTag[String]] = {
     import scalatags.Text.all._
@@ -407,7 +425,7 @@ object IcdToHtml {
           for (a2 <- attrModel.attributesList) yield List(a2.name, a2.description, a2.typeStr, a2.units, a2.defaultValue)
         Some(
           div()(
-            p(strong(a(s"Attributes for ${attrModel.name} struct"))),
+            p(strong(a(name := structIdStr(attrModel.name))(s"Attributes for ${attrModel.name} struct"))),
             HtmlMarkup.mkTable(headings, rowList2)
           )
         )
@@ -423,7 +441,8 @@ object IcdToHtml {
     if (attributesList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default")
-      val rowList  = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
+      val rowList =
+        for (a <- attributesList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units, a.defaultValue)
       div(cls := "nopagebreak")(
         p(strong(a(s"Attributes for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList),
