@@ -39,6 +39,7 @@ object IcdChooser {
  *
  * @param listener notified when the user makes a selection
  */
+//noinspection DuplicatedCode
 case class IcdChooser(listener: IcdListener) extends Displayable {
 
   import icd.web.shared.JsonSupport._
@@ -157,7 +158,8 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
    * Gets the list of ICDs being displayed
    */
   def getIcds: List[IcdName] = {
-    icdItem.options.drop(1).map(s => Json.fromJson[IcdName](Json.parse(s.value)).get).toList
+    val icds = icdItem.options.toList.drop(1)
+    icds.map(s => Json.fromJson[IcdName](Json.parse(s.value)).get)
   }
 
   /**
@@ -167,36 +169,37 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
    * @param maybeTargetSv optional target subsystem and version
    */
   def selectMatchingIcd(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): Future[Unit] = {
-    // XXX TODO FIXME: Simplify
-    // Select none as the default, in case a matching ICD is not found
+      // Select none as the default, in case a matching ICD is not found
     setIcdWithVersion(None, notifyListener = false, saveHistory = false)
-    val p = Promise[Unit]()
-    val icdNames = for {
-      subsystemVersion <- sv.maybeVersion
-      targetSv         <- maybeTargetSv
-      targetVersion    <- targetSv.maybeVersion
-      icd              <- getIcds.find(i => i.subsystem == sv.subsystem && i.target == targetSv.subsystem)
-    } yield {
-      for (icdVersionList <- getIcdVersionOptions(icd) recover { case ex => p.failure(ex); Nil }) {
-        val maybeIcdVersion = icdVersionList.find(i => i.subsystemVersion == subsystemVersion && i.targetVersion == targetVersion)
-        if (maybeIcdVersion.isDefined) {
-          for {
-            _ <- updateIcdVersionOptions(icdVersionList) recover { case ex => p.failure(ex) }
+    updateIcdVersionOptions(Nil)
+      val p = Promise[Unit]()
+      val icdNames = for {
+        subsystemVersion <- sv.maybeVersion
+        targetSv         <- maybeTargetSv
+        targetVersion    <- targetSv.maybeVersion
+        icd              <- getIcds.find(i => i.subsystem == sv.subsystem && i.target == targetSv.subsystem)
+      } yield {
+        for (icdVersionList <- getIcdVersionOptions(icd) recover { case ex => p.failure(ex); Nil }) {
+          val maybeIcdVersion =
+            icdVersionList.find(i => i.subsystemVersion == subsystemVersion && i.targetVersion == targetVersion)
+          if (maybeIcdVersion.isDefined) {
+            for {
+              _ <- updateIcdVersionOptions(icdVersionList) recover { case ex => p.failure(ex) }
             _ <- setIcdWithVersion(maybeIcdVersion, notifyListener = false, saveHistory = false)
-          } p.success(())
-        } else p.success(())
+            } p.success(())
+          } else p.success(())
+        }
+        icd
       }
-      icd
+      if (icdNames.isEmpty) Future.successful() else p.future
     }
-    if (icdNames.isEmpty) Future.successful() else p.future
-  }
 
   // Update the ICD combobox options
   def updateIcdOptions(): Future[Unit] = {
     Ajax
       .get(Routes.icdNames)
       .flatMap { r =>
-        val icdNames = Json.fromJson[List[IcdName]](Json.parse(r.responseText)).getOrElse(Nil)
+        val icdNames = Json.fromJson[Array[IcdName]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
         updateIcdOptions(icdNames)
       }
       .recover {
@@ -272,6 +275,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
             case ex => ex.printStackTrace()
           }
       case None =>
+        updateIcdVersionOptions(Nil)
         versionItem.value = unpublishedVersion
         Future.successful()
     }
@@ -297,7 +301,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
     Ajax
       .get(Routes.icdVersions(icdName))
       .map { r =>
-        Json.fromJson[List[IcdVersionInfo]](Json.parse(r.responseText)).getOrElse(Nil)
+        Json.fromJson[Array[IcdVersionInfo]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
       }
       .recover {
         case ex =>

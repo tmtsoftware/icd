@@ -99,21 +99,17 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
 
   // Gets the list of subcomponents for the selected subsystem
   private def getComponentNames(sv: SubsystemWithVersion): Future[List[String]] = {
-    if (sv.maybeComponent.isDefined) {
-      Future(List(sv.maybeComponent.get))
-    } else {
-      val path = Routes.components(sv.subsystem, sv.maybeVersion)
-      Ajax
-        .get(path)
-        .map { r =>
-          Json.fromJson[Array[String]](Json.parse(r.responseText)).map(_.toList).get
-        }
-        .recover {
-          case ex =>
-            mainContent.displayInternalError(ex)
-            Nil
-        }
-    }
+    val path = Routes.components(sv.subsystem, sv.maybeVersion)
+    Ajax
+      .get(path)
+      .map { r =>
+        Json.fromJson[Array[String]](Json.parse(r.responseText)).map(_.toList).get
+      }
+      .recover {
+        case ex =>
+          mainContent.displayInternalError(ex)
+          Nil
+      }
   }
 
   private object SourceSubsystemListener extends SubsystemListener {
@@ -129,6 +125,7 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
             names <- getComponentNames(sv)
           } yield {
             subsystem.updateComponentOptions(names)
+            subsystem.setSelectedComponent(sv.maybeComponent)
             subsystemSwapper.setEnabled(maybeSv.isDefined && maybeTargetSv.isDefined)
           }
         }
@@ -147,7 +144,8 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
             names <- maybeTargetSv.map(getComponentNames).getOrElse(Future.successful(Nil))
           } yield {
             targetSubsystem.updateComponentOptions(names)
-            subsystemSwapper.setEnabled(targetSubsystem.getSelectedSubsystem.isDefined)
+            maybeTargetSv.foreach(targetSv => targetSubsystem.setSelectedComponent(targetSv.maybeComponent))
+            subsystemSwapper.setEnabled(maybeTargetSv.isDefined)
           }
         }
         .getOrElse(Future.successful())
@@ -161,16 +159,12 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
       sv1 <- subsystem.getSubsystemWithVersion
     } {
       icdChooser.selectMatchingIcd(sv2, Some(sv1))
-      val subsystemComponents              = subsystem.getComponents
       val selectedSubsystemComponent       = subsystem.getSelectedComponent
-      val targetComponents                 = targetSubsystem.getComponents
       val selectedTargetSubsystemComponent = targetSubsystem.getSelectedComponent
-      targetSubsystem.setSubsystemWithVersion(Some(sv1), notifyListener = false, saveHistory = false)
-      subsystem.setSubsystemWithVersion(Some(sv2), notifyListener = false, saveHistory = false)
-      targetSubsystem.updateComponentOptions(subsystemComponents)
-      subsystem.updateComponentOptions(targetComponents)
-      targetSubsystem.setSelectedComponent(selectedSubsystemComponent)
+      subsystem.setSubsystemWithVersion(Some(sv2), saveHistory = false)
       subsystem.setSelectedComponent(selectedTargetSubsystemComponent)
+      targetSubsystem.setSubsystemWithVersion(Some(sv1), saveHistory = false)
+      targetSubsystem.setSelectedComponent(selectedSubsystemComponent)
     }
   }
 
@@ -182,13 +176,9 @@ case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent
           val sv       = SubsystemWithVersion(icdVersion.subsystem, Some(icdVersion.subsystemVersion), None)
           val targetSv = SubsystemWithVersion(icdVersion.target, Some(icdVersion.targetVersion), None)
           for {
-            _                <- subsystem.setSubsystemWithVersion(Some(sv), notifyListener = false, saveHistory = false)
-            components       <- getComponentNames(sv)
-            _                <- targetSubsystem.setSubsystemWithVersion(Some(targetSv), notifyListener = false, saveHistory = false)
-            targetComponents <- getComponentNames(targetSv)
+            _ <- subsystem.setSubsystemWithVersion(Some(sv), saveHistory = false)
+            _ <- targetSubsystem.setSubsystemWithVersion(Some(targetSv), saveHistory = false)
           } yield {
-            subsystem.updateComponentOptions(components)
-            targetSubsystem.updateComponentOptions(targetComponents)
             val enabled = subsystem.getSelectedSubsystem.isDefined
             targetSubsystem.setEnabled(enabled)
             subsystemSwapper.setEnabled(enabled && targetSubsystem.getSelectedSubsystem.isDefined)

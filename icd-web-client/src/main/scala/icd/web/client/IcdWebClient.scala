@@ -99,15 +99,19 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       maybeSv: Option[SubsystemWithVersion] = None,
       maybeTargetSv: Option[SubsystemWithVersion] = None,
       maybeIcd: Option[IcdVersion] = None,
-      maybeSourceComponent: Option[String] = None,
-      maybeTargetComponent: Option[String] = None,
       saveHistory: Boolean = true
   )(): Unit = {
     setSidebarVisible(false)
     mainContent.setContent(selectDialog, "Select Subsystems and Components")
-    selectDialog.subsystem.setSelectedComponent(maybeSourceComponent)
-    selectDialog.targetSubsystem.setSelectedComponent(maybeTargetComponent)
-    if (saveHistory) pushState(viewType = SelectView)
+    if (saveHistory) {
+      pushState(viewType = SelectView)
+    } else {
+      for {
+        _ <- selectDialog.icdChooser.setIcdWithVersion(maybeIcd, saveHistory = false)
+        _ <- selectDialog.subsystem.setSubsystemWithVersion(maybeSv, saveHistory = false)
+        _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(maybeTargetSv, saveHistory = false)
+      } {}
+    }
   }
 
   // Called when the Upload item is selected
@@ -176,8 +180,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       selectDialog.subsystem.getSubsystemWithVersion,
       selectDialog.targetSubsystem.getSubsystemWithVersion,
       selectDialog.icdChooser.getSelectedIcdVersion,
-      selectDialog.subsystem.getSelectedComponent,
-      selectDialog.targetSubsystem.getSelectedComponent,
       viewType,
       compName
     )
@@ -198,7 +200,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       for {
         _ <- selectDialog.subsystem.setSubsystemWithVersion(hist.maybeSourceSubsystem, saveHistory = false)
         _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(hist.maybeTargetSubsystem, saveHistory = false)
-        _ <- selectDialog.icdChooser.setIcdWithVersion(hist.maybeIcd, saveHistory = false)
+        _ <- selectDialog.icdChooser.setIcdWithVersion(hist.maybeIcd, notifyListener = false, saveHistory = false)
       } {
         hist.viewType match {
           case UploadView  => uploadSelected(saveHistory = false)()
@@ -208,8 +210,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
               hist.maybeSourceSubsystem,
               hist.maybeTargetSubsystem,
               hist.maybeIcd,
-              hist.maybeSourceComponent,
-              hist.maybeTargetComponent,
               saveHistory = false
             )()
           case ComponentView | IcdView =>
