@@ -39,6 +39,7 @@ object IcdChooser {
  *
  * @param listener notified when the user makes a selection
  */
+//noinspection DuplicatedCode
 case class IcdChooser(listener: IcdListener) extends Displayable {
 
   import icd.web.shared.JsonSupport._
@@ -57,6 +58,9 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
     select(cls := "form-control", onchange := icdVersionSelected _).render
   }
 
+  // Prevent selecting matching ICD when one was manually selected
+  private var busy = false
+
   def setEnabled(enabled: Boolean): Unit = {
     if (enabled) {
       icdItem.removeAttribute("disabled")
@@ -74,13 +78,19 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
 
   // called when an ICD is selected
   private def icdSelected(e: dom.Event): Unit = {
-    for (_ <- updateIcdVersionOptions())
-      listener.icdSelected(getSelectedIcdVersion)
+    for (_ <- updateIcdVersionOptions()) {
+      notifyListener(getSelectedIcdVersion)
+    }
   }
 
   // called when an ICD version is selected
   private def icdVersionSelected(e: dom.Event): Unit = {
-    listener.icdSelected(getSelectedIcdVersion)
+    notifyListener(getSelectedIcdVersion)
+  }
+
+  private def notifyListener(maybeIcdVersion: Option[IcdVersion], saveHistory: Boolean = true): Future[Unit] = {
+    busy = true
+    listener.icdSelected(maybeIcdVersion, saveHistory).map(_ => busy = false)
   }
 
   // HTML markup displaying the ICD and version comboboxes
@@ -128,28 +138,22 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
    * Sets the selected ICD and version.
    *
    * @param maybeIcdVersion the ICD name and version to set, or None to set none
-   * @param notifyListener  if true, notify the listener
    * @param saveHistory     if true, save the current state to the browser history
    * @return a future indicating when any event handlers have completed
    */
   def setIcdWithVersion(
       maybeIcdVersion: Option[IcdVersion],
-      notifyListener: Boolean = true,
       saveHistory: Boolean = true
   ): Future[Unit] = {
     maybeIcdVersion match {
       case Some(icdVersion) =>
         icdItem.value = Json.toJson(IcdName(icdVersion.subsystem, icdVersion.target)).toString() // JSON
         versionItem.value = Json.toJson(icdVersion).toString()                                   // JSON
-        if (notifyListener)
-          listener.icdSelected(maybeIcdVersion, saveHistory)
-        else Future.successful()
+        notifyListener(maybeIcdVersion, saveHistory)
       case None =>
         icdItem.value = emptyOptionMsg
         versionItem.value = unpublishedVersion
-        if (notifyListener)
-          listener.icdSelected(None, saveHistory)
-        else Future.successful()
+        notifyListener(None, saveHistory)
     }
   }
 
@@ -167,28 +171,32 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
    * @param maybeTargetSv optional target subsystem and version
    */
   def selectMatchingIcd(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): Future[Unit] = {
-    // XXX TODO FIXME: Simplify
-    // Select none as the default, in case a matching ICD is not found
-    setIcdWithVersion(None, notifyListener = false, saveHistory = false)
-    val p = Promise[Unit]()
-    val icdNames = for {
-      subsystemVersion <- sv.maybeVersion
-      targetSv         <- maybeTargetSv
-      targetVersion    <- targetSv.maybeVersion
-      icd              <- getIcds.find(i => i.subsystem == sv.subsystem && i.target == targetSv.subsystem)
-    } yield {
-      for (icdVersionList <- getIcdVersionOptions(icd) recover { case ex => p.failure(ex); Nil }) {
-        val maybeIcdVersion = icdVersionList.find(i => i.subsystemVersion == subsystemVersion && i.targetVersion == targetVersion)
-        if (maybeIcdVersion.isDefined) {
-          for {
-            _ <- updateIcdVersionOptions(icdVersionList) recover { case ex => p.failure(ex) }
-            _ <- setIcdWithVersion(maybeIcdVersion, notifyListener = false, saveHistory = false)
-          } p.success(())
-        } else p.success(())
+    if (busy) Future.successful()
+    else {
+      // XXX TODO FIXME: Simplify
+      // Select none as the default, in case a matching ICD is not found
+      setIcdWithVersion(None, saveHistory = false)
+      val p = Promise[Unit]()
+      val icdNames = for {
+        subsystemVersion <- sv.maybeVersion
+        targetSv         <- maybeTargetSv
+        targetVersion    <- targetSv.maybeVersion
+        icd              <- getIcds.find(i => i.subsystem == sv.subsystem && i.target == targetSv.subsystem)
+      } yield {
+        for (icdVersionList <- getIcdVersionOptions(icd) recover { case ex => p.failure(ex); Nil }) {
+          val maybeIcdVersion =
+            icdVersionList.find(i => i.subsystemVersion == subsystemVersion && i.targetVersion == targetVersion)
+          if (maybeIcdVersion.isDefined) {
+            for {
+              _ <- updateIcdVersionOptions(icdVersionList) recover { case ex => p.failure(ex) }
+              _ <- setIcdWithVersion(maybeIcdVersion, saveHistory = false)
+            } p.success(())
+          } else p.success(())
+        }
+        icd
       }
-      icd
+      if (icdNames.isEmpty) Future.successful() else p.future
     }
-    if (icdNames.isEmpty) Future.successful() else p.future
   }
 
   // Update the ICD combobox options
@@ -196,7 +204,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
     Ajax
       .get(Routes.icdNames)
       .flatMap { r =>
-        val icdNames = Json.fromJson[List[IcdName]](Json.parse(r.responseText)).getOrElse(Nil)
+        val icdNames = Json.fromJson[Array[IcdName]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
         updateIcdOptions(icdNames)
       }
       .recover {
@@ -239,7 +247,6 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
    */
   def setSelectedIcdVersion(
       maybeVersion: Option[IcdVersion],
-      notifyListener: Boolean = true,
       saveHistory: Boolean = true
   ): Future[Unit] = {
 
@@ -253,9 +260,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
         case None =>
           versionItem.value = unpublishedVersion
       }
-      if (notifyListener)
-        listener.icdSelected(maybeSelectedVersion, saveHistory)
-      else Future.successful()
+      notifyListener(maybeSelectedVersion, saveHistory)
     }
   }
 
@@ -289,7 +294,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
       // The option value is the JSON for the IcdVersion object
       versionItem.add(option(value := Json.toJson(v).toString())(v.icdVersion).render)
     }
-    setSelectedIcdVersion(versions.headOption, notifyListener = false)
+    setSelectedIcdVersion(versions.headOption)
   }
 
   // Gets the list of available versions for the given ICD
@@ -297,7 +302,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
     Ajax
       .get(Routes.icdVersions(icdName))
       .map { r =>
-        Json.fromJson[List[IcdVersionInfo]](Json.parse(r.responseText)).getOrElse(Nil)
+        Json.fromJson[Array[IcdVersionInfo]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
       }
       .recover {
         case ex =>

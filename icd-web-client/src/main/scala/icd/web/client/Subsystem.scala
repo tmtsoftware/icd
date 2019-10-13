@@ -70,7 +70,6 @@ case class Subsystem(
     select(cls := "form-control", onchange := subsystemVersionSelected _).render
   }
 
-
   // The component combobox
   private val componentItem = {
     import scalatags.JsDom.all._
@@ -165,13 +164,11 @@ case class Subsystem(
    * Sets (or clears) the selected subsystem and version.
    *
    * @param maybeSv        optional subsystem name and version to set (clear if None)
-   * @param notifyListener if true, notify the listener
    * @param saveHistory    if true, save the current state to the browser history
    * @return a future indicating when any event handlers have completed
    */
   def setSubsystemWithVersion(
       maybeSv: Option[SubsystemWithVersion],
-      notifyListener: Boolean = true,
       saveHistory: Boolean = true
   ): Future[Unit] = {
     if (maybeSv == getSubsystemWithVersion)
@@ -199,14 +196,10 @@ case class Subsystem(
           componentItem.value = componentPlaceholder
       }
     }
-    if (notifyListener) {
-      for {
-        _ <- updateSubsystemVersionOptions(maybeSv.flatMap(_.maybeVersion))
-        _ <- listener.subsystemSelected(maybeSv, saveHistory)
-      } yield {}
-    } else {
-      updateSubsystemVersionOptions(maybeSv.flatMap(_.maybeVersion))
-    }
+    for {
+      _ <- updateSubsystemVersionOptions(maybeSv.flatMap(_.maybeVersion))
+      _ <- listener.subsystemSelected(maybeSv, saveHistory)
+    } yield {}
   }
 
   /**
@@ -243,7 +236,6 @@ case class Subsystem(
    */
   def setSelectedSubsystemVersion(
       maybeVersion: Option[String],
-      notifyListener: Boolean = true,
       saveHistory: Boolean = true
   ): Future[Unit] = {
     if (maybeVersion == getSelectedSubsystemVersion)
@@ -253,9 +245,7 @@ case class Subsystem(
         case Some(s) => versionItem.value = s
         case None    => versionItem.value = unpublishedVersion
       }
-      if (notifyListener)
-        listener.subsystemSelected(getSubsystemWithVersion, saveHistory)
-      else Future.successful()
+      listener.subsystemSelected(getSubsystemWithVersion, saveHistory)
     }
   }
 
@@ -303,7 +293,7 @@ case class Subsystem(
     for (s <- unpublishedVersion :: versions) {
       versionItem.add(option(value := s)(s).render)
     }
-    setSelectedSubsystemVersion(versions.headOption, notifyListener = false)
+    setSelectedSubsystemVersion(versions.headOption)
 
   }
 
