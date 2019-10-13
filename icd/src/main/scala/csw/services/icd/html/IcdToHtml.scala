@@ -416,6 +416,8 @@ object IcdToHtml {
   // HTML id for a table displaying the fields of a struct
   private def structIdStr(name: String): String = s"$name-struct"
 
+  // XXX TODO FIXME: Deal with arbitrary nested array/struct types?
+
   // Add a table for each attribute of type "struct" to show the members of the struct
   private def structAttributesMarkup(headings: List[String], attributesList: List[AttributeModel]): Seq[Text.TypedTag[String]] = {
     import scalatags.Text.all._

@@ -332,6 +332,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
+  // XXX TODO FIXME: Deal with arbitrary nested array/struct types?
+
   // Insert a hyperlink from "struct" to the table listing the fields in the struct
   private def getTypeStr(fieldName: String, typeStr: String): String = {
     import scalatags.Text.all._

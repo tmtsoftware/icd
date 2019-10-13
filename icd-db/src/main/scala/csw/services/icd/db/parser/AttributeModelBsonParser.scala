@@ -95,6 +95,8 @@ object AttributeModelBsonParser {
 
     val typeStr = parseTypeStr(doc.getAs[String]("type"))
 
+    // XXX TODO FIXME: Deal with arbitrary nested array/struct types?
+
     // If type is "struct", attributeList gives the fields of the struct
     val attributesList = if (typeStr == "struct") {
         for (subDoc <- doc.getAs[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
