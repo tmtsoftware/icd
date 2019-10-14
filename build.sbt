@@ -10,16 +10,23 @@ lazy val clients = Seq(icdWebClient)
 
 // Root of the multi-project build
 lazy val root = (project in file("."))
-  .aggregate(icd, `icd-db`, `icd-git`, icdWebServer)
+  .aggregate(`icd-db`, `icd-git`, icdWebServer)
   .settings(name := "ICD")
 
-// Core project, implements validation of ICD model files against JSON schema files, icd command line tool
-lazy val icd = project
+// Adds MongoDB database support, ICD versioning, queries, icd-db command line tool
+lazy val `icd-db` = project
   .enablePlugins(DeployApp)
   .settings(defaultSettings: _*)
   .settings(
     libraryDependencies ++=
       compileScope(
+//        akkaActor,
+        akkaSlf4j,
+        logbackClassic,
+        reactivemongo,
+        play2Reactivemongo,
+        scalaCsv,
+        playJson,
         jsonSchemaValidator,
         scopt,
         scalatags,
@@ -36,16 +43,6 @@ lazy val icd = project
         testScope(scalaTest)
   ) dependsOn icdWebSharedJvm
 
-// Adds MongoDB database support, ICD versioning, queries, icd-db command line tool
-lazy val `icd-db` = project
-  .enablePlugins(DeployApp)
-  .settings(defaultSettings: _*)
-  .settings(
-    libraryDependencies ++=
-      compileScope(akkaActor, akkaSlf4j, logbackClassic, reactivemongo, play2Reactivemongo, scalaCsv, playJson) ++
-        testScope(scalaTest)
-  ) dependsOn icd
-
 // Adds support for working with ICD model file repositories on GitHub, ICD version management, icd-github tool
 lazy val `icd-git` = project
   .enablePlugins(DeployApp)
@@ -54,7 +51,7 @@ lazy val `icd-git` = project
     libraryDependencies ++=
       compileScope(jgit) ++
         testScope(scalaTest)
-  ) dependsOn (icd, `icd-db`)
+  ) dependsOn (`icd-db`)
 
 // -- Play/ScalaJS parts below --
 

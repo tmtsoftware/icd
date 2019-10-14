@@ -8,20 +8,20 @@ import java.nio.charset.Charset
  */
 object IcdToPdf {
 
-  import com.itextpdf.tool.xml.XMLWorkerHelper
   import com.itextpdf.text._
   import com.itextpdf.text.pdf._
+  import com.itextpdf.tool.xml.XMLWorkerHelper
 
   // Adds page number to al the pages except the first.
   private case class PageStamper(showLogo: Boolean) extends PdfPageEventHelper {
     override def onEndPage(writer: PdfWriter, document: Document): Unit = {
       try {
         val pageNumber = writer.getPageNumber
-        val pageSize   = document.getPageSize
-        val x          = pageSize.getRight(40)
-        val y          = pageSize.getBottom(30)
-        val rect       = new Rectangle(x, y, x + 40, y - 30)
-        val dc         = writer.getDirectContent
+        val pageSize = document.getPageSize
+        val x = pageSize.getRight(40)
+        val y = pageSize.getBottom(30)
+        val rect = new Rectangle(x, y, x + 40, y - 30)
+        val dc = writer.getDirectContent
         dc.setColorFill(BaseColor.GRAY)
         ColumnText.showTextAligned(
           dc,
@@ -34,7 +34,7 @@ object IcdToPdf {
 
         // Add the TMT logo on the first page
         if (showLogo && pageNumber == 1) {
-          val url   = getClass.getClassLoader.getResource("tmt.png")
+          val url = getClass.getClassLoader.getResource("tmt.png")
           val image = Image.getInstance(url)
           image.setAbsolutePosition(
             pageSize.getLeft + pageSize.getWidth / 2 - image.getWidth / 2,
@@ -71,7 +71,7 @@ object IcdToPdf {
    */
   def saveAsPdf(out: OutputStream, html: String, showLogo: Boolean): Unit = {
     val document = new Document(PageSize.LETTER)
-    val writer   = PdfWriter.getInstance(document, out)
+    val writer = PdfWriter.getInstance(document, out)
     writer.setPageEvent(PageStamper(showLogo))
     document.open()
     XMLWorkerHelper.getInstance().parseXHtml(writer, document, new ByteArrayInputStream(html.getBytes), Charset.forName("UTF-8"))

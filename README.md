@@ -12,7 +12,7 @@ Versions of ICDs are managed in [GitHub repositories](https://github.com/tmt-icd
 the subsystem model files can be imported (with version history) into a local MongoDB database, which is used
 by command line applications and a web app.
  
-Three command line applications ([icd](icd), [icd-db](icd-db)), [icd-git](icd-git)) and a web app ([icd-web](icd-web)) 
+Command line applications ([icd-db](icd-db)), [icd-git](icd-git)) and a web app ([icd-web](icd-web)) 
 are provided for working with ICDs, querying and viewing the data.
 
 The applications here assume the MongoDB database is running. 
@@ -22,21 +22,20 @@ To start the MongoDB server, you can run a command like this:
     
 where $db is the directory containing the database.
 
-The default database name used is `icds` and can be configured in icd-db/src/main/resources/reference.conf,
+The default database name used is `icds2` and can be configured in icd-db/src/main/resources/reference.conf,
 in <installDir>/conf/reference.conf or via equivalent -D (system property) command line options.
 
 Note: After starting the database, it is a good idea to ingest the published ICDs, which are stored in GitHub repositories:
 
     icd-git --ingest
 
-This will make the web app faster, since it will auto-ingest the ICDs and APIs as needed.
+This will make the web app faster (it will auto-ingest any missing ICDs and APIs as needed).
 
 ICD Subprojects
 ---------------
 
 There are currently these ICD subprojects:
 
-* [icd](icd) - supports validating an API against the JSON schema as well as saving it as a Markdown, HTML or PDF document
 * [icd-db](icd-db) - supports ingesting API files into a MongoDB database, querying the db and saving an API or ICD as a document
 * [icd-git](icd-git) - work directly with ICD model files stored on GitHub, publish ICDs, ingest ICD releases into the ICD database
 * [icd-web-server](icd-web-server) - a Play web server for working with ICDs

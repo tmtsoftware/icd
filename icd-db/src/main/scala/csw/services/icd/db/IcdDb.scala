@@ -4,7 +4,7 @@ import java.io.File
 
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd._
-import csw.services.icd.parser.{BaseModelParser, SubsystemModelParser}
+import csw.services.icd.db.parser.{BaseModelParser, SubsystemModelParser}
 import csw.services.icd.db.ComponentDataReporter._
 import diffson.playJson.DiffsonProtocol
 import org.joda.time.{DateTime, DateTimeZone}
@@ -14,7 +14,6 @@ import reactivemongo.api.{DefaultDB, MongoConnection, MongoDriver}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
-import scala.io.StdIn
 import scala.util.Try
 
 object IcdDbDefaults {
@@ -117,7 +116,7 @@ object IcdDb extends App {
       try {
         run(options)
       } catch {
-        case e: IcdDbException =>
+        case _: IcdDbException =>
           println("Error: Failed to connect to mongodb. Make sure mongod server is running.")
           System.exit(1)
         case e: Throwable =>
@@ -381,19 +380,6 @@ case class IcdDb(
       s"${model.subsystem}.${model.component}"
     }
     s"$baseName.${stdConfig.stdName.modelBaseName}"
-  }
-
-  /**
-   * Returns the subsystem name for the given API model config.
-   *
-   * @param stdConfig API model file packaged as StdConfig object
-   * @return the collection name
-   */
-  def getSubsystemName(stdConfig: StdConfig): String = {
-    if (stdConfig.stdName.isSubsystemModel)
-      SubsystemModelParser(stdConfig.config).subsystem
-    else
-      BaseModelParser(stdConfig.config).subsystem
   }
 
   /**

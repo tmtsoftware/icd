@@ -1,8 +1,8 @@
 package csw.services.icd.db.parser
 
+import reactivemongo.bson.BSONDocument
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.SubsystemModel
-import reactivemongo.bson.BSONDocument
 
 /**
  * See resources/subsystem-schema.conf
@@ -22,3 +22,4 @@ object SubsystemModelBsonParser {
       )
   }
 }
+

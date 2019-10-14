@@ -13,12 +13,13 @@ import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
 import scala.jdk.CollectionConverters._
 
+
 /**
  * An ICD API validator
  */
 object IcdValidator {
 
-  val schemaVersionKey     = "modelVersion"
+  val schemaVersionKey = "modelVersion"
   val currentSchemaVersion = "2.0"
 
   /**
@@ -32,7 +33,7 @@ object IcdValidator {
     if (!file.exists()) throw new FileNotFoundException(file.getName)
     if (file.getName.endsWith(".json")) {
       val source = Source.fromFile(file)
-      val json   = source.mkString
+      val json = source.mkString
       source.close()
       json
     } else {
@@ -60,7 +61,7 @@ object IcdValidator {
   // to refer to external JSON schemas in HOCON format.
   object HoconSchemaClient extends SchemaClient {
     override def get(url: String): InputStream = {
-      val uri    = URI.create(url)
+      val uri = URI.create(url)
       val config = ConfigFactory.parseResources(uri.getPath.substring(1))
       if (config == null)
         throw new IOException(s"Resource not found: ${uri.getPath}")
@@ -87,7 +88,7 @@ object IcdValidator {
    * @param dir the directory containing the standard set of ICD files (default: current dir)
    */
   def validate(dir: File = new File(".")): List[Problem] = {
-    import csw.services.icd.StdName._
+    import StdName._
     if (!dir.isDirectory) {
       List(Problem("error", s"$dir does not exist or is not a directory"))
     } else {
@@ -104,7 +105,7 @@ object IcdValidator {
                 parsedConfigFile.resolve(ConfigResolveOptions.noSystem())
               if (inputConfig.hasPath(schemaVersionKey))
                 schemaVersion = inputConfig.getString(schemaVersionKey)
-              val schemaPath   = s"$schemaVersion/${stdName.schema}"
+              val schemaPath = s"$schemaVersion/${stdName.schema}"
               val schemaConfig = ConfigFactory.parseResources(schemaPath)
               if (schemaConfig == null) {
                 List(Problem("error", s"Missing schema resource: $schemaPath"))
@@ -137,7 +138,7 @@ object IcdValidator {
       .schemaJson(jsonSchema)
       .resolutionScope("classpath:/")
       .build()
-    val schema    = schemaLoader.load().build()
+    val schema = schemaLoader.load().build()
     val jsonInput = new JSONObject(toJson(inputFile))
     validate(schema, jsonInput, inputFile.getPath)
   }
@@ -154,7 +155,7 @@ object IcdValidator {
     val name = new File(fileName).getName
     StdName.stdNames.find(_.name == name) match {
       case Some(stdName) =>
-        val schemaPath   = s"$currentSchemaVersion/${stdName.schema}"
+        val schemaPath = s"$currentSchemaVersion/${stdName.schema}"
         val schemaConfig = ConfigFactory.parseResources(schemaPath)
         if (schemaConfig == null) {
           List(Problem("error", s"Missing schema resource: $schemaPath"))
@@ -175,7 +176,7 @@ object IcdValidator {
    * @return a list of problems, if any were found
    */
   def validate(inputConfig: Config, stdName: StdName, schemaVersion: String, fileName: String): List[Problem] = {
-    val schemaPath   = s"$schemaVersion/${stdName.schema}"
+    val schemaPath = s"$schemaVersion/${stdName.schema}"
     val schemaConfig = ConfigFactory.parseResources(schemaPath)
     if (schemaConfig == null) {
       List(Problem("error", s"Missing schema resource: $schemaPath"))
@@ -200,7 +201,7 @@ object IcdValidator {
       .schemaJson(jsonSchema)
       .resolutionScope("classpath:/")
       .build()
-    val schema    = schemaLoader.load().build()
+    val schema = schemaLoader.load().build()
     val jsonInput = new JSONObject(toJson(inputConfig))
     validate(schema, jsonInput, inputFileName)
   }

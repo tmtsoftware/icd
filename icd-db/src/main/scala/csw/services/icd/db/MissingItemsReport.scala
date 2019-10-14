@@ -5,7 +5,6 @@ import java.io._
 import csw.services.icd.IcdToPdf
 import csw.services.icd.html.IcdToHtml
 import icd.web.shared.IcdModels._
-
 import scalatags.Text
 
 /**

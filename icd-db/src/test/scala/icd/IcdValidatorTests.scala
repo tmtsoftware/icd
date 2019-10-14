@@ -1,8 +1,9 @@
-package csw.services.icd
+package icd
 
 import java.io.File
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions}
+import csw.services.icd.{IcdValidator, Problem}
 import csw.services.icd.IcdValidator._
 import icd.web.shared.IcdModels
 import org.scalatest.FunSuite

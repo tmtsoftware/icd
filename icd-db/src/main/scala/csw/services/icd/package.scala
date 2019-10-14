@@ -3,7 +3,6 @@ package csw.services
 import java.io.File
 
 package object icd {
-
   /**
    * Gets a recursive list of subdirectories containing ICD files
    *
@@ -16,4 +15,5 @@ package object icd {
     } yield d :: subDirs(d)
     dirs.flatten
   }
+
 }
