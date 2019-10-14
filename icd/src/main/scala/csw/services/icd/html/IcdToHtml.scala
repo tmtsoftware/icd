@@ -298,7 +298,7 @@ object IcdToHtml {
       div(cls := "nopagebreak")(
         p(strong(a("Result Type Fields"))),
         HtmlMarkup.mkTable(headings, rowList),
-        structAttributesMarkup(headings, attributesList)
+        structAttributesMarkup(attributesList)
       )
     }
   }
@@ -326,7 +326,7 @@ object IcdToHtml {
       div(cls := "nopagebreak")(
         p(strong(a(s"Arguments for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList),
-        structAttributesMarkup(headings, attributesList)
+        structAttributesMarkup(attributesList)
       )
     }
   }
@@ -416,19 +416,21 @@ object IcdToHtml {
   // HTML id for a table displaying the fields of a struct
   private def structIdStr(name: String): String = s"$name-struct"
 
-  // XXX TODO FIXME: Deal with arbitrary nested array/struct types?
-
   // Add a table for each attribute of type "struct" to show the members of the struct
-  private def structAttributesMarkup(headings: List[String], attributesList: List[AttributeModel]): Seq[Text.TypedTag[String]] = {
+  private def structAttributesMarkup(attributesList: List[AttributeModel]): Seq[Text.TypedTag[String]] = {
     import scalatags.Text.all._
+    val headings = List("Name", "Description", "Type", "Units", "Default")
     attributesList.flatMap { attrModel =>
       if (attrModel.typeStr == "struct" || attrModel.typeStr == "array of struct") {
         val rowList2 =
-          for (a2 <- attrModel.attributesList) yield List(a2.name, a2.description, a2.typeStr, a2.units, a2.defaultValue)
+          for (a2 <- attrModel.attributesList)
+            yield List(a2.name, a2.description, getTypeStr(a2.name, a2.typeStr), a2.units, a2.defaultValue)
         Some(
           div()(
             p(strong(a(name := structIdStr(attrModel.name))(s"Attributes for ${attrModel.name} struct"))),
-            HtmlMarkup.mkTable(headings, rowList2)
+            HtmlMarkup.mkTable(headings, rowList2),
+            // Handle structs embedded in other structs (or arrays of structs, etc.)
+            structAttributesMarkup(attrModel.attributesList)
           )
         )
       } else None
@@ -448,7 +450,7 @@ object IcdToHtml {
       div(cls := "nopagebreak")(
         p(strong(a(s"Attributes for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList),
-        structAttributesMarkup(headings, attributesList)
+        structAttributesMarkup(attributesList)
       )
     }
   }

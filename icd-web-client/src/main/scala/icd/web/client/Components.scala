@@ -260,16 +260,20 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def structIdStr(name: String): String = s"$name-struct"
 
   // Add a table for each attribute of type "struct" to show the members of the struct
-  private def structAttributesMarkup(headings: List[String], attributesList: List[AttributeModel]): Seq[TypedTag[Div]] = {
+  private def structAttributesMarkup(attributesList: List[AttributeModel]): Seq[TypedTag[Div]] = {
     import scalatags.JsDom.all._
+    val headings = List("Name", "Description", "Type", "Units", "Default")
     attributesList.flatMap { attrModel =>
       if (attrModel.typeStr == "struct" || attrModel.typeStr == "array of struct") {
         val rowList2 =
-          for (a2 <- attrModel.attributesList) yield List(a2.name, a2.description, a2.typeStr, a2.units, a2.defaultValue)
+          for (a2 <- attrModel.attributesList)
+            yield List(a2.name, a2.description, getTypeStr(a2.name, a2.typeStr), a2.units, a2.defaultValue)
         Some(
           div()(
             p(strong(a(name := structIdStr(attrModel.name))(s"Attributes for ${attrModel.name} struct"))),
-            mkTable(headings, rowList2)
+            mkTable(headings, rowList2),
+            // Handle structs embedded in other structs (or arrays of structs, etc.)
+            structAttributesMarkup(attrModel.attributesList)
           )
         )
       } else None
@@ -293,7 +297,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       div(
         strong(titleStr),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
-        structAttributesMarkup(headings, attributesList)
+        structAttributesMarkup(attributesList)
       )
     }
   }
@@ -327,12 +331,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       div(
         strong(titleStr),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
-        structAttributesMarkup(headings, attributesList)
+        structAttributesMarkup(attributesList)
       )
     }
   }
-
-  // XXX TODO FIXME: Deal with arbitrary nested array/struct types?
 
   // Insert a hyperlink from "struct" to the table listing the fields in the struct
   private def getTypeStr(fieldName: String, typeStr: String): String = {
@@ -356,7 +358,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       div(
         strong("Result Type Fields"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
-        structAttributesMarkup(headings, attributesList)
+        structAttributesMarkup(attributesList)
       )
     }
   }
