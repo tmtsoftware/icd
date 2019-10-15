@@ -49,7 +49,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val subsystemNames = SubsystemNames(mainContent, updateSubsystemOptions)
 
   private val selectItem   = NavbarItem("Select", "Select the API or ICD to display", selectSubsystems())
-  private val selectDialog = SelectDialog(subsystemNames, mainContent, Selector)
+  private val selectDialog = SelectDialog(mainContent, Selector)
 
   private val fileUploadItem   = NavbarItem("Upload", "Select icd model files to ingest into the icd database", uploadSelected())
   private val fileUploadDialog = FileUploadDialog(subsystemNames, csrfToken, inputDirSupported)

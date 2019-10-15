@@ -416,7 +416,7 @@ case class IcdDb(
    * Drops this database. Use with caution!
    */
   def dropDatabase(): Unit = {
-    db.drop()
+    Await.ready(db.drop(), timeout)
   }
 
 }

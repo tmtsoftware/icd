@@ -429,7 +429,7 @@ case class IcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) {
    */
   def dropComponent(subsystem: String, component: String): Unit = {
     for (coll <- entryForComponentName(subsystem, component).getCollections) {
-      coll.drop(failIfNotFound = false)
+      Await.ready(coll.drop(failIfNotFound = false), timeout)
     }
   }
 

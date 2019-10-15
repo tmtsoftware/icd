@@ -22,7 +22,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   private val errorSet   = Set("error", "fatal")
   private var problemSet = Set[Problem]()
 
-  // standard ICD file names (See StdName class in icd-db. Reuse here?)
+  // standard ICD file names (XXX TODO FIXME: See StdName class in icd-db. Reuse here?)
   private val stdList =
     List("subsystem-model.conf", "component-model.conf", "publish-model.conf", "subscribe-model.conf", "command-model.conf")
 

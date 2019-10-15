@@ -45,6 +45,7 @@ case class IcdDbManager(db: DefaultDB, versionManager: IcdVersionManager) {
 
   // Updates an object in an existing collection
   private def update(coll: BSONCollection, obj: JsObject): Unit = {
+    // XXX TODO FIXME: Instead of delete and insert, do a mongodb update?
     val doc = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
     val currentVersion = doc.getAs[BSONNumberLike](versionKey).get.toInt
     Await.result(coll.delete().one(BSONDocument(versionKey -> currentVersion)), timeout)

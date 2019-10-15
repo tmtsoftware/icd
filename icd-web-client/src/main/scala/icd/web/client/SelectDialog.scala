@@ -52,7 +52,7 @@ object SelectDialog {
  * Displays the page for selecting the icds, subsystem APIs, components and versions to display
  */
 //noinspection DuplicatedCode
-case class SelectDialog(subsystemNames: SubsystemNames, mainContent: MainContent, listener: SelectDialogListener)
+case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener)
     extends Displayable {
 
   val subsystem = Subsystem(SourceSubsystemListener)

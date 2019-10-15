@@ -134,7 +134,8 @@ case class Subsystem(
    * Gets the list of subsystems being displayed
    */
   def getSubsystems: List[String] = {
-    subsystemItem.options.drop(1).map(_.value).toList
+    val items = subsystemItem.options.toList
+    items.drop(1).map(_.value)
   }
 
   /**
@@ -206,14 +207,13 @@ case class Subsystem(
    * Update the Subsystem combobox options
    */
   def updateSubsystemOptions(items: List[String]): Unit = {
-    for (i <- (1 until subsystemItem.length).reverse) {
-      subsystemItem.remove(i)
-    }
-    items.foreach { str =>
-      import scalatags.JsDom.all._
-      subsystemItem.add(option(value := str)(str).render)
-    }
-    updateSubsystemVersionOptions() // Future!
+    val currentSubsystems = getSubsystems
+      items.foreach { subsystem =>
+        import scalatags.JsDom.all._
+        if (!currentSubsystems.contains(subsystem))
+          subsystemItem.add(option(value := subsystem)(subsystem).render)
+      }
+      updateSubsystemVersionOptions() // Future!
   }
 
   /**
