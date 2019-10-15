@@ -22,7 +22,6 @@ Example files that can be ingested into the database for testing can be found
 in the [examples](../examples) directory.
 
 ```
-icd-db 0.12
 Usage: icd-db [options]
 
   -d, --db <name>          The name of the database to use (default: icds)
@@ -31,6 +30,8 @@ Usage: icd-db [options]
   -i, --ingest <dir>       Top level directory containing files to ingest into the database
   -l, --list [subsystems|assemblies|hcds|all]
                            Prints a list of ICD subsystems, assemblies, HCDs or all components
+  --listData <subsystem>   Prints a list of total data rates for components of specified subsystem.
+  -u, --allUnits           Prints the set of unique units used in all received commands and published events for all components in DB.
   -c, --component <name>   Specifies the component to be used by any following options (subsystem must also be specified)
   -s, --subsystem <subsystem>[:version]
                            Specifies the subsystem (and optional version) to be used by any following options
@@ -41,7 +42,7 @@ Usage: icd-db [options]
   --icdversion <icd-version>
                            Specifies the version to be used by any following options (overrides subsystem and target versions)
   -o, --out <outputFile>   Saves the selected API or ICD to the given file in a format based on the file's suffix (html, pdf)
-  --drop [db|component]    Drops the specified component or database
+  --drop [db|component]    Drops the specified component or database (use with caution!)
   --versions <subsystem>   List the version history of the given subsystem
   --diff <subsystem>:<version1>[,version2]
                            For the given subsystem, list the differences between <version1> and <version2> (or the current version)
@@ -49,6 +50,7 @@ Usage: icd-db [options]
                            Generates a 'Missing Items' report to the given file (dir for csv) in a format based on the file's suffix (html, pdf, otherwise text/csv formatted files are generated in given dir)
   -a, --archived <outputFile>
                            Generates an 'Archived Items' report to the given file in a format based on the file's suffix (html, pdf)
+  --allSubsystems          Include all subsystems in searches for publishers, subscribers, etc. while generating API doc (Default: only consider the one subsystem)
   --help                   
   --version                
 ```
@@ -83,7 +85,7 @@ Here is a listing of the collections present after running this ingest command:
 
 ```
 > icd-db --ingest examples/NFIRAOS/
-> mongo icds
+> mongo icds2
 MongoDB shell version: 3.0.0
 connecting to: icds
 > show collections

@@ -52,54 +52,27 @@ Add the `-i` or `--interactive` option to enter the required options interactive
 a list of possible subsystems and versions.
 
 ```
-icd-git 0.9
 Usage: icd-git [options]
 
-  -l | --list
-        Prints the list of API or ICD versions defined on GitHub for the given subsystem options
- 
-  -s <subsystem1>[:version1],... | --subsystems <subsystem1>[:version1],...
-        Specifies the subsystems (and optional versions) of the APIs to be used by the other options
- 
+  -l, --list               Prints the list of API or ICD versions defined on GitHub for the given subsystem options
+  -s, --subsystems <subsystem1>[:version1],...
+                           Specifies the subsystems (and optional versions) of the APIs to be used by the other options
   --icdversion <icd-version>
-        Specifies the ICD version for the --unpublish option
- 
-  -i | --interactive
-        Interactive mode: Asks to choose missing options
- 
-  --publish
-        Publish an API (one subsystem) or ICD (two subsystems) based on the options (--subsystems, --user, --password, --comment)
- 
-  --unpublish
-        Deletes the entry for the given API or ICD version (Use together with --subsystem, --target and --icdversion)
- 
-  --major
-        Use with --publish to increment the major version
- 
-  -u <user> | --user <user>
-        Use with --publish or --unpublish to set the GitHub user name (default: $USER)
-
-  -p <password> | --password <password>
-        Use with --publish or --unpublish to set the user's GitHub password
-
-  -m <text> | --comment <text>
-        Use with --publish to add a comment describing the changes made
-
-  -d <name> | --db <name>
-        The name of the database to use (for the --ingest option, default: icds)
- 
-  --host <hostname>
-        The host name where the database is running (for the --ingest option, default: localhost)
-
-  --port <number>
-        The port number to use for the database (for the --ingest option, default: 27017)
- 
-  --ingest
-        Ingests the selected subsystem and target subsystem model files and ICDs from GitHub into the ICD database (Ingests all subsystems, if neither option is given)
- 
-  --help
-
-  --version
+                           Specifies the ICD version for the --unpublish option
+  -i, --interactive        Interactive mode: Asks to choose missing options
+  --publish                Publish an API (one subsystem) or ICD (two subsystems) based on the options (--subsystems, --user, --password, --comment)
+  --unpublish              Deletes the entry for the given API or ICD version (Use together with --subsystems, --icdversion)
+  --major                  Use with --publish to increment the major version
+  -u, --user <user>        Use with --publish or --unpublish to set the GitHub user name (default: $USER)
+  -p, --password <password>
+                           Use with --publish or --unpublish to set the user's GitHub password
+  -m, --comment <text>     Use with --publish to add a comment describing the changes made
+  -d, --db <name>          The name of the database to use (for the --ingest option, default: icds)
+  --host <hostname>        The host name where the database is running (for the --ingest option, default: localhost)
+  --port <number>          The port number to use for the database (for the --ingest option, default: 27017)
+  --ingest                 Ingests the selected subsystem and target subsystem model files and ICDs from GitHub into the ICD database (Ingests all subsystems, if neither option is given)
+  --help                   
+  --version                
 ```
 
 Additional Configuration Options for Testing

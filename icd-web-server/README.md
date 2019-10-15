@@ -2,12 +2,15 @@ ICD Web App
 ===========
 
 This subproject contains a Play/Scala.js based web app for accessing the ICD database.
+
+Note: It is recommended to use the *Chrome* web browser for this application, since it allows uploading directories.
+
 It also makes use of Bootstrap and Less.
 
-* The icd-web-server subproject is a Play project and provides a REST interface for the client.
+* The icd-web-server subproject is a Play project and provides an HTTP API for the client.
 
-* The icd-web-client project is a Scala.JS based client (Scala is automatically compiled into JavaScript)
-  (The main client class is [IcdWebClient](icd-web-client/src/main/scala/icd/web/client/IcdWebClient.scala).)
+* The icd-web-client project is a Scala.js based client (Scala is automatically compiled into JavaScript)
+  (The main client class is [IcdWebClient](../icd-web-client/src/main/scala/icd/web/client/IcdWebClient.scala).)
 
 * The icd-web-shared project contains shared classes that can be used by both client and server
 

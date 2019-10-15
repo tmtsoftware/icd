@@ -1,29 +1,25 @@
 ICD - Interface Control Document Management
 ===========================================
 
-This project contains support for validating, 
-searching and viewing subsystem APIs and ICDs (Interface Control Document between two TMT subsystems).
+This project contains support for creating, validating and viewing subsystem APIs and ICDs (Interface Control Document between two TMT subsystems).
 
 The validation is based on [JSON Schema](http://json-schema.org/),
-however the schema descriptions as well as the ICDs themselves may also be written in
+however the schema descriptions as well as the model files may also be written in
 the simpler [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md) format.
 
-Versions of ICDs are managed in [GitHub repositories](https://github.com/tmt-icd/ICD-Model-Files.git) and 
-the subsystem model files can be imported (with version history) into a local MongoDB database, which is used
+Versions of APIs and ICDs are managed in [GitHub repositories](https://github.com/tmt-icd/ICD-Model-Files.git) and 
+the subsystem model files can be imported from GitHub (with version history) into a local MongoDB database, which is used
 by command line applications and a web app.
  
-Command line applications ([icd-db](icd-db)), [icd-git](icd-git)) and a web app ([icd-web](icd-web)) 
-are provided for working with ICDs, querying and viewing the data.
+Command line applications ([icd-db](icd-db)), [icd-git](icd-git)) and a web app ([icdwebserver](icd-web-server)) 
+are provided for working with APIs and ICDs, querying and viewing the data.
 
-The applications here assume the MongoDB database is running. 
+The applications here assume the [MongoDB database](https://www.mongodb.com) is running. 
 To start the MongoDB server, you can run a command like this:
 
     mongod -dbpath $db
     
 where $db is the directory containing the database.
-
-The default database name used is `icds2` and can be configured in icd-db/src/main/resources/reference.conf,
-in <installDir>/conf/reference.conf or via equivalent -D (system property) command line options.
 
 Note: After starting the database, it is a good idea to ingest the published ICDs, which are stored in GitHub repositories:
 
@@ -36,9 +32,9 @@ ICD Subprojects
 
 There are currently these ICD subprojects:
 
-* [icd-db](icd-db) - supports ingesting API files into a MongoDB database, querying the db and saving an API or ICD as a document
+* [icd-db](icd-db) - supports ingesting API model files into a MongoDB database, querying the db and saving an API or ICD as an HTML or PDF document
 * [icd-git](icd-git) - work directly with ICD model files stored on GitHub, publish ICDs, ingest ICD releases into the ICD database
-* [icd-web-server](icd-web-server) - a Play web server for working with ICDs
+* [icd-web-server](icd-web-server) - a Play Framework based web server for working with ICDs
 * [icd-web-client](icd-web-client) - a Scala.JS based web client for the Play server
                                      (The main client class is [IcdWebClient](icd-web-client/src/main/scala/icd/web/client/IcdWebClient.scala).
 * [icd-web-shared](icd-web-shared) - contains shared classes that can be used by both web client and server
@@ -50,10 +46,9 @@ Note: The build requires that [node.js](https://nodejs.org/en/) be installed on 
 This is checked in the install.sh script, which automatically sets the SBT_OPTS environment variable if node.js is found 
 and gives an error otherwise. 
 
-An install.sh script is provided that builds and installs all of the subprojects into the ../install_icd directory.
+An install.sh script is provided that builds and installs all of the subprojects into the __../install_icd__ directory.
 This is basically just the command `sbt stage` in each project followed by copying the products to the
-install directory. A binary is installed for each subproject, with the same name as the subproject
-(except for icd-web, where the binary produced is `icdwebserver`).
+install directory. A binary is installed for each subproject, with the same name as the subproject.
 
 For the command line apps, the `--help` option prints a summary of the command line options.
 
@@ -67,7 +62,7 @@ you need to first switch to that project or the root project. For example `sbt c
 Play Project icd-web-server
 ---------------------------
 
-To start the server for the web app during development, you can use `sbt run` from this directory.
+To start the web app with continuous compilation during development, you can use `sbt ~run` from this directory.
 Then go to http://localhost:9000 in a web browser.
 
 See [icd-web-server/README.md](icd-web-server/README.md) for more information.
@@ -75,25 +70,28 @@ See [icd-web-server/README.md](icd-web-server/README.md) for more information.
 Importing ICD-Model-Files from GitHub into the ICD Database with Version History
 --------------------------------------------------------------------------------
 
-Using the [icd-git](icd-git) command line application you can publish subsystem APIs and ICDs between subsystems.
-Publishing a subsystem or ICD adds an entry to a JSON file on GitHub which is used later to extract specific 
+Using the [icd-git](icd-git) command line application you can publish subsystem APIs and ICDs between subsystems 
+(assuming you have the necessary access to the [GitHub repository](https://github.com/tmt-icd/ICD-Model-Files)).
+Publishing a subsystem API or ICD adds an entry to a JSON file on GitHub which is used later to extract specific 
 versions of the model files.
 
 The app also lets you import subsystem model files directly from the
-[GitHub repositories](https://github.com/tmt-icd/ICD-Model-Files)  into a local MongoDB database
-for use with the icd tools. 
+[GitHub subsystem model file repositories](https://github.com/tmt-icd/)  into a local MongoDB database
+for use with the icd tools. For example, to ingest all the published APIs and ICDS into the local database, use:
 
-Warning: The icd-git app will currently delete the current contents of the ICD database before
-ingesting the files from the repository (*This may be changed in the future*).
+    icd-git --ingest
 
-The icd web app lists the published versions of subsystems and ICDs from GitHub and the model
-files are checked out and ingested into the database automatoically as needed (when you select a subsystem 
-from the menu, for example).
+Note: The icd-git app will currently delete the current contents of the local ICD database before
+ingesting the files from the repository.
+
+The icd web app lists the published versions of subsystem APIs and ICDs from GitHub and the model
+files are checked out and ingested into the database automatically as needed (when you select a subsystem 
+from the menu, for example). 
 
 Known Issues
 ------------
 
-* csh/tcsh users should run teh command `unlimit` or add `unlimit` to your .cshrc or .tcshrc file before starting `mongod` to make sure
+* csh/tcsh users should run the command `unlimit` or add `unlimit` to your .cshrc or .tcshrc file before starting `mongod` to make sure
   it has access to enough file descriptors.
 
 * Including a comma in an unquoted string in an ICD model file can cause a NullPointerException.
@@ -102,6 +100,7 @@ For example, don't do this:
 description = The beam-splitter stage has an unacceptable position error, datum may be lost.
 ```
 This is a known bug in the Config class: See https://github.com/lightbend/config/issues/367.
+In general, it is safer to put description text in double quotes.
 
 Docker Install
 --------------
