@@ -57,7 +57,7 @@ class FileUploadController @Inject()(env: Environment, webJarAssets: WebJarAsset
 
     // Validate everything first
     val validateProblems =
-      list.flatMap(sc => IcdValidator.validate(sc.config, sc.stdName, schemaVersion, sc.fileName))
+      list.flatMap(sc => IcdValidator.validateStdName(sc.config, sc.stdName, schemaVersion, sc.fileName))
     if (validateProblems.nonEmpty) {
       NotAcceptable(Json.toJson(validateProblems))
     } else {

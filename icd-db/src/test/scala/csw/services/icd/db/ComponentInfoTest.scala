@@ -16,25 +16,21 @@ class ComponentInfoTest extends FunSuite {
     if (dir.exists()) dir else new File(s"../$path")
   }
 
-//  test("") {
-//
-//  }
-
   test("Get pub/sub info from database") {
     val db = IcdDb("test")
     db.dropDatabase() // start with a clean db for test
     val query          = IcdDbQuery(db.db, None)
     val versionManager = IcdVersionManager(query)
 
-    // ingest examples/NFIRAOS into the DB
-    val problems = db.ingest(getTestDir(s"$examplesDir/NFIRAOS"))
+    // ingest examples/TEST into the DB
+    val problems = db.ingest(getTestDir(s"$examplesDir/TEST"))
     for (p <- problems) println(p)
 
-    val problems2 = db.ingest(getTestDir(s"$examplesDir/TCS"))
+    val problems2 = db.ingest(getTestDir(s"$examplesDir/TEST2"))
     for (p <- problems2) println(p)
 
     new ComponentInfoHelper(displayWarnings = false)
-      .getComponentInfo(versionManager, SubsystemWithVersion("NFIRAOS", None, Some("lgsWfs")))
+      .getComponentInfo(versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")))
       .foreach { info =>
         assert(info.componentModel.component == "lgsWfs")
         assert(info.publishes.nonEmpty)

@@ -102,7 +102,7 @@ object IcdDb extends App {
       c.copy(archived = Some(x))
     } text "Generates an 'Archived Items' report to the given file in a format based on the file's suffix (html, pdf)"
 
-    opt[Unit]( "allSubsystems") action { (_, c) =>
+    opt[Unit]("allSubsystems") action { (_, c) =>
       c.copy(allSubsystems = Some(()))
     } text "Include all subsystems in searches for publishers, subscribers, etc. while generating API doc (Default: only consider the one subsystem)"
 
@@ -187,29 +187,20 @@ object IcdDb extends App {
     def drop(opt: String): Unit = {
       opt match {
         case "db" =>
-//          if (confirmDrop(s"Are you sure you want to drop the ${options.dbName} database?")) {
-            println(s"Dropping ${options.dbName}")
-            db.dropDatabase()
-//          }
+          println(s"Dropping ${options.dbName}")
+          db.dropDatabase()
         case "component" =>
           if (options.subsystem.isEmpty) error("Missing required subsystem name: Please specify --subsystem <name>")
           options.component match {
             case Some(component) =>
-//              if (confirmDrop(s"Are you sure you want to drop $component from ${options.dbName}?")) {
-                println(s"Dropping $component from ${options.dbName}")
-                db.query.dropComponent(options.subsystem.get, component)
-//              }
+              println(s"Dropping $component from ${options.dbName}")
+              db.query.dropComponent(options.subsystem.get, component)
             case None =>
               error("Missing required component name: Please specify --component <name>")
           }
         case x =>
           error(s"Invalid drop argument $x. Expected 'db' or 'component' (together with --component option)")
       }
-
-//      def confirmDrop(msg: String): Boolean = {
-//        print(s"$msg [y/n] ")
-//        StdIn.readLine().toLowerCase == "y"
-//      }
     }
 
     // --versions option
@@ -250,7 +241,7 @@ object IcdDb extends App {
       checkVersion(v2)
       for (diff <- db.versionManager.diff(name, v1, v2)) {
         val jsValue = Json.toJson(diff.patch)
-        val s = Json.prettyPrint(jsValue)
+        val s       = Json.prettyPrint(jsValue)
         println(s"\n${diff.path}:\n$s") // XXX TODO FIXME: work on the format?
       }
     }
@@ -268,7 +259,7 @@ object IcdDb extends App {
 }
 
 /**
-* Thrown when the connection to the icd database fails
+ * Thrown when the connection to the icd database fails
  */
 class IcdDbException extends Exception
 
@@ -283,7 +274,7 @@ case class IcdDb(
 
   implicit val timeout: FiniteDuration = 5.seconds
   private val mongoUri                 = s"mongodb://$host:$port/$dbName"
-  private val driver = new MongoDriver
+  private val driver                   = new MongoDriver
   private val futureDb = for {
     uri <- Future.fromTry(MongoConnection.parseURI(mongoUri))
     dn  <- Future(uri.db.get)
@@ -308,7 +299,7 @@ case class IcdDb(
    *            and any number of subdirectories containing ICD files
    */
   def ingest(dir: File = new File(".")): List[Problem] = {
-    val validateProblems = IcdValidator.validateRecursive(dir)
+    val validateProblems = IcdValidator.validateDirRecursive(dir)
     if (validateProblems.nonEmpty)
       validateProblems
     else

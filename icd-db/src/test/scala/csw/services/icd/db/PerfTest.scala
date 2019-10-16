@@ -9,11 +9,11 @@ object PerfTest extends App {
   // XXX TODO FIXME
   val db             = IcdDb("icds2")
   val compName       = "lgsWfs"
-  val query          = IcdDbQuery(db.db, Some(List("NFIRAOS")))
+  val query          = IcdDbQuery(db.db, Some(List("TEST")))
   val versionManager = IcdVersionManager(query)
 
   new ComponentInfoHelper(displayWarnings = false)
-    .getComponentInfo(versionManager, SubsystemWithVersion("NFIRAOS", None, Some(compName)))
+    .getComponentInfo(versionManager, SubsystemWithVersion("TEST", None, Some(compName)))
     .foreach { info =>
       assert(info.componentModel.component == compName)
       assert(info.publishes.nonEmpty)
