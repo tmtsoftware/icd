@@ -13,14 +13,13 @@ import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
 import scala.jdk.CollectionConverters._
 
-
 /**
  * An ICD API validator
  */
 //noinspection DuplicatedCode
 object IcdValidator {
 
-  val schemaVersionKey = "modelVersion"
+  val schemaVersionKey     = "modelVersion"
   val currentSchemaVersion = "2.0"
 
   /**
@@ -34,7 +33,7 @@ object IcdValidator {
     if (!file.exists()) throw new FileNotFoundException(file.getName)
     if (file.getName.endsWith(".json")) {
       val source = Source.fromFile(file)
-      val json = source.mkString
+      val json   = source.mkString
       source.close()
       json
     } else {
@@ -62,11 +61,20 @@ object IcdValidator {
   // to refer to external JSON schemas in HOCON format.
   object HoconSchemaClient extends SchemaClient {
     override def get(url: String): InputStream = {
-      val uri = URI.create(url)
+      val uri    = URI.create(url)
       val config = ConfigFactory.parseResources(uri.getPath.substring(1))
       if (config == null)
         throw new IOException(s"Resource not found: ${uri.getPath}")
       new ByteArrayInputStream(toJson(config).getBytes)
+    }
+  }
+
+  private def checkSchemaVersion(v: String, fileName: String): Either[Problem, String] = {
+    v match {
+      // Fix for wrong modelVersion (0.1) in NFIRAOS published model files
+      case "1.0" | "0.1" => Right("1.0")
+      case "2.0"         => Right("2.0")
+      case _             => Left(Problem("error", s"Invalid modelVersion in $fileName: Expected 1.0 or 2.0"))
     }
   }
 
@@ -106,13 +114,7 @@ object IcdValidator {
                 parsedConfigFile.resolve(ConfigResolveOptions.noSystem())
               if (inputConfig.hasPath(schemaVersionKey))
                 schemaVersion = inputConfig.getString(schemaVersionKey)
-              val schemaPath = s"$schemaVersion/${stdName.schema}"
-              val schemaConfig = ConfigFactory.parseResources(schemaPath)
-              if (schemaConfig == null) {
-                List(Problem("error", s"Missing schema resource: $schemaPath"))
-              } else {
-                validateConfig(inputConfig, schemaConfig, inputFile.toString)
-              }
+              validateStdName(inputConfig, stdName, schemaVersion, inputFile.toString)
             case Failure(ex) =>
               ex.printStackTrace()
               List(Problem("error", s"Fatal config parsing error in $inputFile: $ex"))
@@ -139,7 +141,7 @@ object IcdValidator {
       .schemaJson(jsonSchema)
       .resolutionScope("classpath:/")
       .build()
-    val schema = schemaLoader.load().build().asInstanceOf[Schema]
+    val schema    = schemaLoader.load().build().asInstanceOf[Schema]
     val jsonInput = new JSONObject(toJson(inputFile))
     validateJson(schema, jsonInput, inputFile.getPath)
   }
@@ -156,7 +158,7 @@ object IcdValidator {
     val name = new File(fileName).getName
     StdName.stdNames.find(_.name == name) match {
       case Some(stdName) =>
-        val schemaPath = s"$currentSchemaVersion/${stdName.schema}"
+        val schemaPath   = s"$currentSchemaVersion/${stdName.schema}"
         val schemaConfig = ConfigFactory.parseResources(schemaPath)
         if (schemaConfig == null) {
           List(Problem("error", s"Missing schema resource: $schemaPath"))
@@ -173,16 +175,18 @@ object IcdValidator {
    *
    * @param inputConfig the config to be validated against the schema
    * @param stdName     holds the file and schema name
+   * @param schemaVersion value of the component or subsystem model's modelVersion field: Should be 1.0 or 2.0
    * @param fileName    holds the path to the source file
    * @return a list of problems, if any were found
    */
   def validateStdName(inputConfig: Config, stdName: StdName, schemaVersion: String, fileName: String): List[Problem] = {
-    val schemaPath = s"$schemaVersion/${stdName.schema}"
-    val schemaConfig = ConfigFactory.parseResources(schemaPath)
-    if (schemaConfig == null) {
-      List(Problem("error", s"Missing schema resource: $schemaPath"))
-    } else {
-      validateConfig(inputConfig, schemaConfig, fileName)
+    checkSchemaVersion(schemaVersion, fileName.toString) match {
+      case Right(version) =>
+        val schemaPath   = s"$version/${stdName.schema}"
+        val schemaConfig = ConfigFactory.parseResources(schemaPath)
+        validateConfig(inputConfig, schemaConfig, fileName)
+      case Left(problem) =>
+        List(problem)
     }
   }
 
@@ -202,7 +206,7 @@ object IcdValidator {
       .schemaJson(jsonSchema)
       .resolutionScope("classpath:/")
       .build()
-    val schema = schemaLoader.load().build().asInstanceOf[Schema]
+    val schema    = schemaLoader.load().build().asInstanceOf[Schema]
     val jsonInput = new JSONObject(toJson(inputConfig))
     validateJson(schema, jsonInput, inputFileName)
   }

@@ -8,7 +8,7 @@ import org.joda.time.{DateTime, DateTimeZone}
 import diffson.playJson._
 import diffson.lcs._
 import diffson.jsonpatch._
-import diffson.jsonpatch.lcsdiff._
+import diffson.jsonpatch.lcsdiff.remembering._
 import cats.implicits._
 import com.typesafe.config.ConfigFactory
 import csw.services.icd.db.parser.{
@@ -419,7 +419,10 @@ case class IcdVersionManager(query: IcdDbQuery) {
 
   // Compares the two json values, returning None if equal, otherwise some VersionDiff
   private def diffJson(path: String, json1: JsValue, json2: JsValue): Option[VersionDiff] = {
-    if (json1 == json2) None else Some(VersionDiff(path, diffson.diff(json1, json2)))
+    if (json1 == json2) None else {
+      val diff = diffson.diff(json1, json2)
+      Some(VersionDiff(path, diff))
+    }
   }
 
   // Compares the given object with the current (head) version in the collection

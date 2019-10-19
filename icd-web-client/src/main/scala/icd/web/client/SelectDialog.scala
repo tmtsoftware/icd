@@ -45,6 +45,7 @@ object SelectDialog {
       |Choose an ICD and version to display below. Or select only a subsystem to see the API.
       |Selecting a subsystem and target subsystem displays the ICD between the two.
       |To narrow the focus, you can optionally select a component in each subsystem.
+      |To display only a subsystem API again, make sure the target subsystem is set to "Select Subsystem".
       |""".stripMargin
 }
 

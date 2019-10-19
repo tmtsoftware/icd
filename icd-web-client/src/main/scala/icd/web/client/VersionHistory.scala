@@ -128,6 +128,12 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
 
     div(
       h2(s"Changes to $subsystem"),
+      p(
+        """
+          |Note: The paths in the tables below indicate the relative location of the change.
+          |A number in a path is the zero based index of the changed item.
+          |For example: "/publish/alarms/3/description" indicates that the change is in the fourth alarm's description.
+          |""".stripMargin),
       list.map(diffInfoMarkup)
     ).render
   }

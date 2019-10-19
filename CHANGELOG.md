@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [ICD v0.14] - 2019-10-20
+
+### Changed
+
+- Changed the default JSON schema version to 2.0 
+
 ## [ICD v0.12] - 2019-08-15
 
 ### Added
