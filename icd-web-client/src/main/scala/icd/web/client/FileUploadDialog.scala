@@ -3,45 +3,47 @@ package icd.web.client
 import icd.web.client.FileUtils._
 import org.scalajs.dom
 import org.scalajs.dom._
+import org.scalajs.dom.raw.HTMLDivElement
 import play.api.libs.json._
 
 import scala.language.implicitConversions
-
-//import org.scalajs.jquery.{ jQuery => $, _ }
-import org.querki.jquery._
 
 /**
  * Displays the page for uploading ICD files and directories
  */
 case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, inputDirSupported: Boolean) extends Displayable {
 
-  implicit val problemFormat = Json.format[Problem]
+  implicit val problemFormat: OFormat[Problem] = Json.format[Problem]
 
   implicit def monkeyizeEventTarget(e: dom.EventTarget): EventTargetExt = e.asInstanceOf[EventTargetExt]
 
   implicit def monkeyizeEvent(e: dom.Event): EventExt = e.asInstanceOf[EventExt]
 
-  private val errorSet = Set("error", "fatal")
+  private val errorSet   = Set("error", "fatal")
   private var problemSet = Set[Problem]()
 
-  // standard ICD file names (See StdName class in icd-db. Reuse here?)
-  private val stdList = List("subsystem-model.conf", "component-model.conf", "publish-model.conf",
-    "subscribe-model.conf", "command-model.conf")
+  // standard ICD file names (XXX TODO FIXME: See StdName class in icd-db. Reuse here?)
+  private val stdList =
+    List("subsystem-model.conf", "component-model.conf", "publish-model.conf", "subscribe-model.conf", "command-model.conf")
 
   // Displays upload button
   private val inputItem = {
     import scalatags.JsDom.all._
-    input(`type` := "file", name := "files[]", multiple := "multiple",
+    input(
+      `type` := "file",
+      name := "files[]",
+      multiple := "multiple",
       attr("webkitdirectory") := "webkitdirectory",
       onclick := fileSelectReset _,
-      onchange := fileSelectHandler _).render
+      onchange := fileSelectHandler _
+    ).render
   }
 
   // True if the file is one of the standard ICD files
   private def isStdFile(file: dom.File): Boolean = stdList.contains(basename(file))
 
   // HTML item displaying error messages
-  val messagesItem = {
+  private val messagesItem = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
     div(Styles.fileUploadMessages).render
@@ -82,22 +84,24 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     val files = e.target.files
     if (inputDirSupported) {
       val fileList = for (i <- 0 until files.length) yield files(i).asInstanceOf[WebkitFile]
-      fileList.filterNot { f =>
-        f.webkitRelativePath.contains(".git") ||
+      fileList
+        .filterNot { f =>
+          f.webkitRelativePath.contains(".git") ||
           f.webkitRelativePath.contains(".idea") ||
           f.webkitRelativePath.contains("/apis/") ||
           f.webkitRelativePath.contains("/icds/") ||
           f.name.endsWith(".md")
-      }.partition(isValidFile)
+        }
+        .partition(isValidFile)
     } else {
       val fileList = for (i <- 0 until files.length) yield files(i).asInstanceOf[WebkitFile]
       fileList.filterNot(_.name.endsWith(".md")).partition(isValidFile)
     }
   }
 
-  private def statusItem = $("#status")
+  private def statusItem = document.querySelector("#status")
 
-  private def busyStatusItem = $("#busyStatus")
+  private def busyStatusItem = document.querySelector("#busyStatus")
 
   // Called when user clicks on input item.
   // Reset the value (Otherwise you can't upload the same file twice,
@@ -110,10 +114,11 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   // Called when a file selection has been made
   private def fileSelectHandler(e: dom.Event): Unit = {
     clearProblems()
-    statusItem.removeClass("label-danger")
+    statusItem.classList.remove("label-danger")
     val (validFiles, invalidFiles) = getIcdFiles(e)
     if (validFiles.isEmpty) {
-      val fileType = if (inputDirSupported) "directory of .conf files for the ICD" else "a zip file containing .conf files for the ICD"
+      val fileType =
+        if (inputDirSupported) "directory of .conf files for the ICD" else "a zip file containing .conf files for the ICD"
       displayProblem(Problem("error", s"Expected a $fileType"))
     } else {
       uploadFiles(validFiles.toList)
@@ -136,17 +141,23 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
 
     // Updates progress bar during upload
     def progressListener(e: dom.Event): Unit = {
-      val pc = e.loaded / e.total * 100
-      $("#progress").css("width", pc + "%").attr("aria-valuenow", pc.toString).html(s"$pc %")
+      val pc          = e.loaded / e.total * 100
+      val progressDiv = document.querySelector("#progress").asInstanceOf[HTMLDivElement]
+      progressDiv.style.width = pc + "%"
+      progressDiv.setAttribute("aria-valuenow", pc.toString)
+      progressDiv.innerHTML = s"$pc %"
     }
 
     // Displays status after upload complete
     def onloadListener(e: dom.Event) = {
-      busyStatusItem.addClass("hide")
+//      busyStatusItem.classList.add("hide")
+      busyStatusItem.classList.add("hide")
       val statusClass = if (xhr.status == 200) "label-success" else "label-danger"
-      if (!statusItem.hasClass("label-danger")) {
+      if (!statusItem.classList.contains("label-danger")) {
         val statusMsg = if (xhr.status == 200) "Success" else xhr.statusText
-        statusItem.removeClass("label-default").addClass(statusClass).text(statusMsg)
+        statusItem.classList.remove("label-default")
+        statusItem.classList.add(statusClass)
+        statusItem.textContent = statusMsg
       }
       if (xhr.status != 200) {
         val problems = Json.fromJson[List[Problem]](Json.parse(xhr.responseText)).getOrElse(Nil)
@@ -162,8 +173,9 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     xhr.onload = onloadListener _
 
     //start upload
-    statusItem.addClass("label-default").text("Working...")
-    busyStatusItem.removeClass("hide")
+    statusItem.classList.add("label-default")
+    statusItem.textContent = "Working..."
+    busyStatusItem.classList.remove("hide")
     xhr.send(formData)
   }
 
@@ -172,10 +184,11 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     import scalatags.JsDom.all._
 
     // Only Chrome supports uploading8 directories. For other browsers, use zip file upload
-    val dirMsg = if (inputDirSupported)
-      "Here you can select the top level directory containing the subsystem or component files to upload."
-    else
-      "Here you can select a zip file of the top level directory containing the subsystem or component files to upload."
+    val dirMsg =
+      if (inputDirSupported)
+        "Here you can select the top level directory containing the subsystem or component files to upload."
+      else
+        "Here you can select a zip file of the top level directory containing the subsystem or component files to upload."
     val dirLabel = if (inputDirSupported) "Model File Directory" else "Zip file containing Model File Directory"
 
     val acceptSuffix = if (inputDirSupported) "" else ".zip,application/zip"
@@ -183,22 +196,34 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     div(
       cls := "container",
       p(dirMsg),
-      form(id := "upload", action := "/upload", attr("role") := "form",
-        attr("method") := "POST", attr("enctype") := "multipart/form-data")(
-          input(`type` := "hidden", name := "csrfToken", value := csrfToken, accept := acceptSuffix),
-          div(cls := "panel panel-info")(
-            div(cls := "panel-body")(
-              div(label(s"$dirLabel to upload:")(inputItem)),
-              div(cls := "hide")(
-                button(`type` := "submit")("Upload Files")
-              )
+      form(
+        id := "upload",
+        action := "/upload",
+        attr("role") := "form",
+        attr("method") := "POST",
+        attr("enctype") := "multipart/form-data"
+      )(
+        input(`type` := "hidden", name := "csrfToken", value := csrfToken, accept := acceptSuffix),
+        div(cls := "panel panel-info")(
+          div(cls := "panel-body")(
+            div(label(s"$dirLabel to upload:")(inputItem)),
+            div(cls := "hide")(
+              button(`type` := "submit")("Upload Files")
             )
           )
-        ),
+        )
+      ),
       div(cls := "progress")(
-        div(id := "progress", cls := "progress-bar progress-bar-info progress-bar-striped",
-          role := "progressbar", attr("aria-valuenow") := "0", attr("aria-valuemin") := "0",
-          attr("aria-valuemax") := "100", style := "width: 0%", "0%")
+        div(
+          id := "progress",
+          cls := "progress-bar progress-bar-info progress-bar-striped",
+          role := "progressbar",
+          attr("aria-valuenow") := "0",
+          attr("aria-valuemin") := "0",
+          attr("aria-valuemax") := "100",
+          style := "width: 0%",
+          "0%"
+        )
       ),
       h4("Status")(
         span(style := "margin-left:15px;"),

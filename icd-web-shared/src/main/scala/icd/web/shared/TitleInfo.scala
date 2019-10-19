@@ -3,70 +3,65 @@ package icd.web.shared
 /**
  * Holds title related information for a subsystem
  *
- * @param title          the title
- * @param subtitleOpt    optional subtitle
- * @param descriptionOpt optional description
+ * @param title            the title
+ * @param maybeSubtitle    optional subtitle
+ * @param maybeDescription optional description
  */
-case class TitleInfo(title: String, subtitleOpt: Option[String], descriptionOpt: Option[String])
+case class TitleInfo(title: String, maybeSubtitle: Option[String], maybeDescription: Option[String])
 
 object TitleInfo {
+
   /**
    * Displayed version for unpublished APIs
    */
   val unpublished = "(unpublished)"
 
-  private def getSubtitle(subsystemName: String, subsystemVersion: String,
-                          targetName: String, targetVersion: String): String = {
-    if (subsystemName == targetName)
-      s"Based on $subsystemName $subsystemVersion"
+  private def getSubtitle(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): String = {
+    if (maybeTargetSv.isEmpty)
+      s"Based on ${sv.subsystem} ${sv.maybeVersion.getOrElse(unpublished)}"
     else
-      s"Based on $subsystemName $subsystemVersion and $targetName $targetVersion"
+      s"Based on ${sv.subsystem} ${sv.maybeVersion.getOrElse(unpublished)} and ${maybeTargetSv.get.subsystem} ${maybeTargetSv.get.maybeVersion
+        .getOrElse(unpublished)}"
   }
 
   /**
    * Gets the title and optional subtitle to display based on the given source and target subsystems
    *
    * @param subsystemInfo   describes the source subsystem
-   * @param targetSubsystem the optional target subsystem and version
-   * @param icdOpt          optional ICD related information
-   * @param component       optional subsystem component (restrict output to parts related to this component)
-   * @param targetComponent optional target subsystem component (restrict output to parts related to this component)
+   * @param maybeTargetSv  optional target subsystem and version
+   * @param maybeIcd        optional ICD related information
    * @param part            Optional string inserted before the title
    * @return the title related information
    */
   def apply(
-             subsystemInfo: SubsystemInfo,
-             targetSubsystem: SubsystemWithVersion,
-             icdOpt: Option[IcdVersion],
-             component: Option[String],
-             targetComponent: Option[String],
-             part: String = ""
-           ): TitleInfo = {
-    val subsystemName = subsystemInfo.subsystem
-    val targetName = targetSubsystem.subsystemOpt.getOrElse("")
-    val componentPart = component.map("." + _).getOrElse("")
-    val targetComponentPart = targetComponent.map("." + _).getOrElse("")
-    if (icdOpt.isDefined) {
-      val icd = icdOpt.get
-
-      val title = if (part.nonEmpty)
-        s"ICD $part $subsystemName$componentPart -> $targetName$targetComponentPart (version ${icd.icdVersion})"
-      else
-        s"ICD $subsystemName$componentPart / $targetName$targetComponentPart (version ${icd.icdVersion})"
-
-      val subtitle = getSubtitle(subsystemName, subsystemInfo.versionOpt.get, targetName, targetSubsystem.versionOpt.get)
+      subsystemInfo: SubsystemInfo,
+      maybeTargetSv: Option[SubsystemWithVersion],
+      maybeIcd: Option[IcdVersion],
+      part: String = ""
+  ): TitleInfo = {
+    val sv                  = subsystemInfo.sv
+    val targetName          = maybeTargetSv.map(_.subsystem).getOrElse("")
+    val componentPart       = subsystemInfo.sv.maybeComponent.map("." + _).getOrElse("")
+    val targetComponentPart = maybeTargetSv.flatMap(_.maybeComponent).map("." + _).getOrElse("")
+    if (maybeIcd.isDefined) {
+      val icd = maybeIcd.get
+      val title =
+        if (part.nonEmpty)
+          s"ICD $part ${sv.subsystem}$componentPart -> $targetName$targetComponentPart (version ${icd.icdVersion})"
+        else
+          s"ICD ${sv.subsystem}$componentPart / $targetName$targetComponentPart (version ${icd.icdVersion})"
+      val subtitle = getSubtitle(sv, maybeTargetSv)
       TitleInfo(title, Some(subtitle), None)
     } else {
-      val version = subsystemInfo.versionOpt.getOrElse(unpublished)
-      if (targetSubsystem.subsystemOpt.isDefined) {
-        val targetVersion = targetSubsystem.versionOpt.getOrElse(unpublished)
-        val title = s"ICD $part $subsystemName$componentPart -> $targetName$targetComponentPart $unpublished"
-        val subtitle = getSubtitle(subsystemName, version, targetName, targetVersion)
+      if (maybeTargetSv.isDefined) {
+        val title    = s"ICD $part ${sv.subsystem}$componentPart -> $targetName$targetComponentPart $unpublished"
+        val subtitle = getSubtitle(sv, maybeTargetSv)
         TitleInfo(title, Some(subtitle), None)
       } else {
         TitleInfo(
-          s"API for $subsystemName$componentPart $version",
-          Some(subsystemInfo.title), Some(subsystemInfo.description)
+          s"API for ${sv.subsystem}$componentPart ${sv.maybeVersion.getOrElse(unpublished)}",
+          Some(subsystemInfo.title),
+          Some(subsystemInfo.description)
         )
       }
     }

@@ -1,7 +1,6 @@
 package icd.web.client
 
 import org.scalajs.dom.Element
-import org.scalajs.dom.html.Div
 
 import scalatags.JsDom.all._
 
@@ -24,8 +23,9 @@ case class MainContent() extends Displayable {
 
   /**
    * Sets the title and HTML content of the main section of the page
+   *
    * @param content the content to display
-   * @param title the title to display
+   * @param title   the title to display
    */
   def setContent(content: String, title: String): Unit = {
     setTitle(title)
@@ -34,8 +34,9 @@ case class MainContent() extends Displayable {
 
   /**
    * Sets the title and HTML content of the main section of the page
+   *
    * @param displayable the content to display
-   * @param title the title to display
+   * @param title       the title to display
    */
   def setContent(displayable: Displayable, title: String): Unit = {
     setTitle(title)
@@ -46,14 +47,14 @@ case class MainContent() extends Displayable {
   /**
    * Sets the title and optional subtitle of the main section of the page
    */
-  def setTitle(title: String, subtitleOpt: Option[String] = None, descriptionOpt: Option[String] = None): Unit = {
-    subtitleOpt match {
+  def setTitle(title: String, maybeSubtitle: Option[String] = None, maybeDescription: Option[String] = None): Unit = {
+    maybeSubtitle match {
       case Some(subtitle) =>
         contentTitle.innerHTML = s"$title<br><small>$subtitle</small>"
       case None =>
         contentTitle.textContent = title
     }
-    setDescription(descriptionOpt.getOrElse(""))
+    setDescription(maybeDescription.getOrElse(""))
   }
 
   /**

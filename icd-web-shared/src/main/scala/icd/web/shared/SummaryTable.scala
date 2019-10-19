@@ -2,34 +2,34 @@ package icd.web.shared
 
 import scalatags.Text
 import scalatags.Text.all._
-import icd.web.shared.ComponentInfo.{Alarms, EventStreams, Events, Telemetry}
+import icd.web.shared.ComponentInfo.{Alarms, CurrentStates, Events, ObserveEvents}
 import icd.web.shared.IcdModels.ComponentModel
 import Headings.idFor
 
+//noinspection DuplicatedCode
 object SummaryTable {
+
   /**
    * Displays a summary of the events published and commands received by the subsystem
    *
-   * @param subsystemInfo   subsystem to use
-   * @param targetSubsystem optional target subsystem name (for ICD)
-   * @param component       optional subsystem component (restrict output to parts related to this component)
-   * @param targetComponent optional target subsystem component (restrict output to parts related to this component)
-   * @param infoList        list of component info
-   * @param nh              used for numbered headings and TOC, if needed
+   * @param subsystemInfo subsystem to use
+   * @param maybeTargetSv optional target subsystem and version
+   * @param infoList      list of component info
+   * @param nh            used for numbered headings and TOC, if needed
    * @return the HTML
    */
-  def displaySummary(subsystemInfo: SubsystemInfo,
-                     targetSubsystem: Option[String],
-                     component: Option[String],
-                     targetComponent: Option[String],
-                     infoList: List[ComponentInfo],
-                     nh: Headings = new HtmlHeadings): Text.TypedTag[String] = {
+  def displaySummary(
+      subsystemInfo: SubsystemInfo,
+      maybeTargetSv: Option[SubsystemWithVersion],
+      infoList: List[ComponentInfo],
+      nh: Headings = new HtmlHeadings
+  ): Text.TypedTag[String] = {
     import SummaryInfo._
 
-    val isIcd = targetSubsystem.isDefined
-    val componentPart = component.map("." + _).getOrElse("")
-    val targetComponentPart = targetComponent.map("." + _).getOrElse("")
-    val subsystem = subsystemInfo.subsystem + componentPart
+    val isIcd               = maybeTargetSv.isDefined
+    val componentPart       = subsystemInfo.sv.maybeComponent.map("." + _).getOrElse("")
+    val targetComponentPart = maybeTargetSv.flatMap(_.maybeComponent.map("." + _)).getOrElse("")
+    val sourceStr           = subsystemInfo.sv.subsystem + componentPart
 
     def firstParagraph(s: String): String = {
       val i = s.indexOf("</p>")
@@ -37,24 +37,30 @@ object SummaryTable {
     }
 
     // Displays a summary for published items of a given event type or commands received.
-    def publishedSummaryMarkup(itemType: String, list: List[PublishedItem], heading: String, prep: String): Text.TypedTag[String] = {
+    def publishedSummaryMarkup(
+        itemType: String,
+        list: List[PublishedItem],
+        heading: String,
+        prep: String
+    ): Text.TypedTag[String] = {
       val (action, publisher, subscribers) = heading.toLowerCase() match {
         case "published by" => ("publishes", "Publisher", "Subscribers")
-        case "received by" => ("receives", "Receiver", "Senders")
+        case "received by"  => ("receives", "Receiver", "Senders")
       }
 
-      val targetStr = if (targetSubsystem.isDefined) s" $prep ${targetSubsystem.get}$targetComponentPart" else ""
+      val targetStr = if (maybeTargetSv.isDefined) s" $prep ${maybeTargetSv.get.subsystem}$targetComponentPart" else ""
 
       def linkToSubscriber(subscriber: ComponentModel) = {
-        if ((isIcd && subscriber.subsystem == targetSubsystem.get) || subscriber.subsystem == subsystemInfo.subsystem)
+        if ((isIcd && subscriber.subsystem == maybeTargetSv.get.subsystem) || subscriber.subsystem == subsystemInfo.sv.subsystem)
           span(a(href := s"#${subscriber.component}")(subscriber.component), " ")
         else
           span(s"${subscriber.subsystem}.${subscriber.component}", " ")
       }
 
-      if (list.isEmpty) div() else {
+      if (list.isEmpty) div()
+      else {
         div(
-          nh.H3(s"$itemType $heading $subsystem$targetStr"),
+          nh.H3(s"$itemType $heading $sourceStr$targetStr"),
           table(
             thead(
               tr(
@@ -74,7 +80,8 @@ object SummaryTable {
                   td(p(info.subscribers.map(linkToSubscriber))),
                   td(p(a(href := s"#${info.publisher.component}")(info.publisher.prefix))),
                   td(p(a(href := s"#${idFor(info.publisher.component, action, itemType, info.item.name)}")(info.item.name))),
-                  td(raw(firstParagraph(info.item.description))))
+                  td(raw(firstParagraph(info.item.description)))
+                )
               }
             )
           )
@@ -83,19 +90,24 @@ object SummaryTable {
     }
 
     // Displays a summary for subscribed items of a given event type or commands sent.
-    def subscribedSummaryMarkup(itemType: String, list: List[SubscribedItem], heading: String, prep: String): Text.TypedTag[String] = {
+    def subscribedSummaryMarkup(
+        itemType: String,
+        list: List[SubscribedItem],
+        heading: String,
+        prep: String
+    ): Text.TypedTag[String] = {
 
       // For ICDs, display subscribed items from the publisher's point of view
       def publisherView(): Text.TypedTag[String] = {
         val (action, publisher, subscriber) = heading.toLowerCase() match {
           case "published by" => ("publishes", "Publisher", "Subscriber")
-          case "received by" => ("receives", "Receiver", "Senders")
+          case "received by"  => ("receives", "Receiver", "Senders")
         }
 
-        val target = targetSubsystem.get
+        val target = maybeTargetSv.get.subsystem
 
         div(
-          nh.H3(s"$itemType $heading $target$targetComponentPart $prep $subsystem"),
+          nh.H3(s"$itemType $heading $target$targetComponentPart $prep $sourceStr"),
           table(
             thead(
               tr(
@@ -111,13 +123,13 @@ object SummaryTable {
                 info <- list
               } yield {
                 // If this is an ICD or the publisher is in the same subsystem, we can link to it, since it is in this doc
-                val prefixItem = info.publisherOpt match {
+                val prefixItem = info.maybePublisher match {
                   case Some(componentModel) => span(componentModel.prefix)
-                  case None => em("unknown")
+                  case None                 => span()
                 }
-                val description = info.warningOpt match {
+                val description = info.maybeWarning match {
                   case Some(msg) => p(em("Warning: ", msg))
-                  case None => raw(firstParagraph(info.item.description))
+                  case None      => raw(firstParagraph(info.item.description))
                 }
 
                 // ICDs contain both subsystems, so we can link to them
@@ -139,11 +151,11 @@ object SummaryTable {
       def subscriberView(): Text.TypedTag[String] = {
         val (subscribes, subscriber, publisher) = heading.toLowerCase() match {
           case "subscribed to by" => ("subscribes", "Subscriber", "Publisher")
-          case "sent by" => ("sends", "Sender", "Receiver")
+          case "sent by"          => ("sends", "Sender", "Receiver")
         }
-        val targetStr = if (targetSubsystem.isDefined) s" $prep ${targetSubsystem.get}$targetComponentPart" else ""
+        val targetStr = if (maybeTargetSv.isDefined) s" $prep ${maybeTargetSv.get.subsystem}$targetComponentPart" else ""
         div(
-          nh.H3(s"$itemType $heading $subsystem$targetStr"),
+          nh.H3(s"$itemType $heading $sourceStr$targetStr"),
           table(
             thead(
               tr(
@@ -158,9 +170,9 @@ object SummaryTable {
               for {
                 info <- list
               } yield {
-                val prefixItem = info.publisherOpt match {
+                val prefixItem = info.maybePublisher match {
                   case Some(componentModel) => span(componentModel.prefix)
-                  case None => em("unknown")
+                  case None                 => span()
                 }
 
                 val publisherComponent =
@@ -173,9 +185,9 @@ object SummaryTable {
                     a(href := s"#${info.publisherComponent}")(prefixItem)
                   else span(prefixItem)
 
-                val description = info.warningOpt match {
+                val description = info.maybeWarning match {
                   case Some(msg) => p(em("Warning: ", msg))
-                  case None => raw(firstParagraph(info.item.description))
+                  case None      => raw(firstParagraph(info.item.description))
                 }
 
                 // XXX TODO: Link targets should contain subsystem names!?
@@ -201,39 +213,39 @@ object SummaryTable {
 
     def publishedSummary(): Text.TypedTag[String] = {
       val publishedEvents = for {
-        info <- infoList
-        pub <- info.publishes.toList
+        info  <- infoList
+        pub   <- info.publishes.toList
         event <- pub.eventList
-      } yield PublishedItem(info.componentModel, event.telemetryModel, event.subscribers.map(_.componentModel))
+      } yield PublishedItem(info.componentModel, event.eventModel, event.subscribers.map(_.componentModel))
 
-      val publishedEventStreams = for {
-        info <- infoList
-        pub <- info.publishes.toList
-        event <- pub.eventStreamList
-      } yield PublishedItem(info.componentModel, event.telemetryModel, event.subscribers.map(_.componentModel))
+      val publishedObserveEvents = for {
+        info  <- infoList
+        pub   <- info.publishes.toList
+        event <- pub.observeEventList
+      } yield PublishedItem(info.componentModel, event.eventModel, event.subscribers.map(_.componentModel))
 
-      val publishedTelemetry = for {
-        info <- infoList
-        pub <- info.publishes.toList
-        event <- pub.telemetryList
-      } yield PublishedItem(info.componentModel, event.telemetryModel, event.subscribers.map(_.componentModel))
+      val publishedCurrentStates = for {
+        info  <- infoList
+        pub   <- info.publishes.toList
+        event <- pub.currentStateList
+      } yield PublishedItem(info.componentModel, event.eventModel, event.subscribers.map(_.componentModel))
 
       val publishedAlarms = for {
-        info <- infoList
-        pub <- info.publishes.toList
+        info  <- infoList
+        pub   <- info.publishes.toList
         event <- pub.alarmList
       } yield PublishedItem(info.componentModel, event.alarmModel, event.subscribers.map(_.componentModel))
 
       val receivedCommands = for {
-        info <- infoList
+        info     <- infoList
         commands <- info.commands.toList
-        command <- commands.commandsReceived
+        command  <- commands.commandsReceived
       } yield PublishedItem(info.componentModel, command.receiveCommandModel, command.senders)
 
       div(
         publishedSummaryMarkup("Events", publishedEvents, "Published by", "for"),
-        publishedSummaryMarkup("Event Streams", publishedEventStreams, "Published by", "for"),
-        publishedSummaryMarkup("Telemetry", publishedTelemetry, "Published by", "for"),
+        publishedSummaryMarkup("Observe Events", publishedObserveEvents, "Published by", "for"),
+        publishedSummaryMarkup("Current States", publishedCurrentStates, "Published by", "for"),
         publishedSummaryMarkup("Alarms", publishedAlarms, "Published by", "for"),
         publishedSummaryMarkup("Commands", receivedCommands, "Received by", "from")
       )
@@ -242,47 +254,54 @@ object SummaryTable {
     def subscribedSummary(): Text.TypedTag[String] = {
       // For subscribed items and sent commands, the info from the other subsystem might not be available
       val allSubscribed = for {
-        info <- infoList
-        sub <- info.subscribes.toList
+        info  <- infoList
+        sub   <- info.subscribes.toList
         event <- sub.subscribeInfo
-      } yield (event.itemType, SubscribedItem(
-        event.subscribeModelInfo.subsystem,
-        event.subscribeModelInfo.component,
-        event.publisher,
-        event.warning,
-        info.componentModel,
-        OptionalNameDesc(event.subscribeModelInfo.name, event.telemetryModel)))
-      val subscribedEvents = allSubscribed.filter(_._1 == Events).map(_._2)
-      val subscribedEventStreams = allSubscribed.filter(_._1 == EventStreams).map(_._2)
-      val subscribedTelemetry = allSubscribed.filter(_._1 == Telemetry).map(_._2)
-      val subscribedAlarms = allSubscribed.filter(_._1 == Alarms).map(_._2)
+      } yield (
+        event.itemType,
+        SubscribedItem(
+          event.subscribeModelInfo.subsystem,
+          event.subscribeModelInfo.component,
+          event.publisher,
+          event.warning,
+          info.componentModel,
+          OptionalNameDesc(event.subscribeModelInfo.name, event.eventModel)
+        )
+      )
+      val subscribedEvents        = allSubscribed.filter(_._1 == Events).map(_._2)
+      val subscribedObserveEvents = allSubscribed.filter(_._1 == ObserveEvents).map(_._2)
+      val subscribedCurrentStates = allSubscribed.filter(_._1 == CurrentStates).map(_._2)
+      val subscribedAlarms        = allSubscribed.filter(_._1 == Alarms).map(_._2)
 
       val sentCommands = for {
-        info <- infoList
+        info     <- infoList
         commands <- info.commands.toList
-        command <- commands.commandsSent
+        command  <- commands.commandsSent
       } yield SubscribedItem(
         command.subsystem,
         command.component,
         command.receiver,
         command.warning,
         info.componentModel,
-        OptionalNameDesc(command.name, command.receiveCommandModel))
+        OptionalNameDesc(command.name, command.receiveCommandModel)
+      )
       div(
-        if (isIcd) div(
-          subscribedSummaryMarkup("Events", subscribedEvents, "Published by", "for"),
-          subscribedSummaryMarkup("Event Streams", subscribedEventStreams, "Published by", "for"),
-          subscribedSummaryMarkup("Telemetry", subscribedTelemetry, "Published by", "for"),
-          subscribedSummaryMarkup("Alarms", subscribedAlarms, "Published by", "for"),
-          subscribedSummaryMarkup("Commands", sentCommands, "Received by", "from")
-        )
-        else div(
-          subscribedSummaryMarkup("Events", subscribedEvents, "Subscribed to by", "from"),
-          subscribedSummaryMarkup("Event Streams", subscribedEventStreams, "Subscribed to by", "from"),
-          subscribedSummaryMarkup("Telemetry", subscribedTelemetry, "Subscribed to by", "from"),
-          subscribedSummaryMarkup("Alarms", subscribedAlarms, "Subscribed to by", "from"),
-          subscribedSummaryMarkup("Commands", sentCommands, "Sent by", "to")
-        )
+        if (isIcd)
+          div(
+            subscribedSummaryMarkup("Events", subscribedEvents, "Published by", "for"),
+            subscribedSummaryMarkup("Observe Events", subscribedObserveEvents, "Published by", "for"),
+            subscribedSummaryMarkup("Current States", subscribedCurrentStates, "Published by", "for"),
+            subscribedSummaryMarkup("Alarms", subscribedAlarms, "Published by", "for"),
+            subscribedSummaryMarkup("Commands", sentCommands, "Received by", "from")
+          )
+        else
+          div(
+            subscribedSummaryMarkup("Events", subscribedEvents, "Subscribed to by", "from"),
+            subscribedSummaryMarkup("Observe Events", subscribedObserveEvents, "Subscribed to by", "from"),
+            subscribedSummaryMarkup("Current States", subscribedCurrentStates, "Subscribed to by", "from"),
+            subscribedSummaryMarkup("Alarms", subscribedAlarms, "Subscribed to by", "from"),
+            subscribedSummaryMarkup("Commands", sentCommands, "Sent by", "to")
+          )
       )
     }
 

@@ -1,33 +1,42 @@
 package csw.services.icd.db
 
-import com.mongodb.casbah.MongoDB
-import icd.web.shared.IcdModels.{SubscribeModel, PublishModel, CommandModel, ComponentModel}
+import icd.web.shared.IcdModels.{CommandModel, ComponentModel, PublishModel, SubscribeModel}
+import reactivemongo.api.DefaultDB
+
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Await
 
 /**
  * Adds caching to IcdDbQuery for better performance when creating documents or web pages that
  * require access to all subsystems and components.
  *
- * @param db the MongoDB handle
+ * @param db the DefaultDB handle
+ * @param maybeSubsystems limit the database searches to the given subsystems
  */
-class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
-
+class CachedIcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) extends IcdDbQuery(db, maybeSubsystems) {
   import IcdDbQuery._
 
+  // XXX TODO FIXME: Pass in timeout or use async lib and make everything async
+  private val timeout = 60.seconds
+
   // --- Cached values ---
-  private val collectionNames = db.getCollectionNames().toSet
-  override def getCollectionNames: Set[String] = collectionNames
+  private val collectionNames = Await.result(db.collectionNames, timeout).filter(collectionNameFilter).toSet
+
   // Note: this was 99% of the bottleneck: db.collectionExists calls db.getCollectionNames every time!
   override def collectionExists(name: String): Boolean = collectionNames.contains(name)
 
-  private val entries = super.getEntries
-  private val components = super.getComponents
+  override def getCollectionNames: Set[String] = collectionNames
+
+  private val entries        = super.getEntries
+  private val components     = super.getComponents
   private val subsystemNames = super.getSubsystemNames
 
   private val subscribeModelMap = getSubscribeModelMap(components)
-  private val publishModelMap = getPublishModelMap(components)
-  private val commandModelMap = getCommandModelMap(components)
+  private val publishModelMap   = getPublishModelMap(components)
+  private val commandModelMap   = getCommandModelMap(components)
 
-  private val subscribeInfo = components.map(c => super.getSubscribeInfo(c))
+  private val subscribeInfo  = components.map(c => super.getSubscribeInfo(c))
   private val publishInfoMap = getPublishInfoMap
 
   /**
@@ -40,6 +49,7 @@ class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
 
   /**
    * Returns a map of component to subscribe model, for each component in the list that defines one
+   *
    * @param components a list of component models
    */
   private def getSubscribeModelMap(components: List[ComponentModel]): Map[Component, SubscribeModel] = {
@@ -52,24 +62,26 @@ class CachedIcdDbQuery(db: MongoDB) extends IcdDbQuery(db) {
 
   /**
    * Returns a map of component to publish model, for each component in the list that defines one
+   *
    * @param components a list of component models
    */
   private def getPublishModelMap(components: List[ComponentModel]): Map[Component, PublishModel] = {
     val list = for {
       componentModel <- components
-      publishModel <- super.getPublishModel(componentModel)
+      publishModel   <- super.getPublishModel(componentModel)
     } yield Component(componentModel.subsystem, componentModel.component) -> publishModel
     list.toMap
   }
 
   /**
    * Returns a map of component to command model, for each component in the list that defines one
+   *
    * @param components a list of component models
    */
   private def getCommandModelMap(components: List[ComponentModel]): Map[Component, CommandModel] = {
     val list = for {
       componentModel <- components
-      commandModel <- super.getCommandModel(componentModel)
+      commandModel   <- super.getCommandModel(componentModel)
     } yield Component(componentModel.subsystem, componentModel.component) -> commandModel
     list.toMap
   }

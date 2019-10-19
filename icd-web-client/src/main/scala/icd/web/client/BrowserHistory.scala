@@ -8,22 +8,27 @@ import BrowserHistory._
 
 object BrowserHistory {
   // JSON support
+
   import icd.web.shared.JsonSupport._
 
   implicit val viewTypeWrites: Writes[ViewType] =
-    (v: ViewType) => JsString(v match {
-      case ComponentView => "ComponentView"
-      case IcdView => "IcdView"
-      case UploadView => "UploadView"
-      case VersionView => "VersionView"
-    })
+    (v: ViewType) =>
+      JsString(v match {
+        case ComponentView => "ComponentView"
+        case IcdView       => "IcdView"
+        case SelectView    => "SelectView"
+        case UploadView    => "UploadView"
+        case VersionView   => "VersionView"
+      })
   implicit val viewTypeReads: Reads[ViewType] = {
-    case JsString(s) => JsSuccess(s match {
-      case "ComponentView" => ComponentView
-      case "IcdView" => IcdView
-      case "UploadView" => UploadView
-      case "VersionView" => VersionView
-    })
+    case JsString(s) =>
+      JsSuccess(s match {
+        case "ComponentView" => ComponentView
+        case "IcdView"       => IcdView
+        case "SelectView"    => SelectView
+        case "UploadView"    => UploadView
+        case "VersionView"   => VersionView
+      })
     case _ => JsError("bad ViewType")
   }
   implicit val browserHistoryFormat: OFormat[BrowserHistory] = Json.format[BrowserHistory]
@@ -31,7 +36,10 @@ object BrowserHistory {
   // Type of a view in the application, used to restore the view
   sealed trait ViewType
 
-  // Viewing components based on checkbox states in sidebar
+  // View controls for selecting icds, subsystems, components, versions
+  case object SelectView extends ViewType
+
+  // Viewing components selected in sidebar
   case object ComponentView extends ViewType
 
   // Viewing an ICD
@@ -39,9 +47,6 @@ object BrowserHistory {
 
   // Uploading ICD files
   case object UploadView extends ViewType
-
-  //  // Publishing an API or ICD
-  //  case object PublishView extends ViewType
 
   // Viewing the version history
   case object VersionView extends ViewType
@@ -52,25 +57,28 @@ object BrowserHistory {
     else {
       Json.fromJson[BrowserHistory](Json.parse(e.state.toString)) match {
         case JsSuccess(h: BrowserHistory, _: JsPath) => Some(h)
-        case _ => None
+        case _                                       => None
       }
     }
   }
 }
 
 /**
-  * Object used to keep track of browser history for back button
-  *
-  * @param sourceSubsystem  source subsystem selected in the left box
-  * @param targetSubsystem  target subsystem selected in the right box
-  * @param icdOpt           the ICD with version, if one was selected
-  * @param sourceComponents source subsystem components whose checkboxes are checked
-  * @param viewType         indicates the type of data being displayed
-  * @param currentCompnent  optional current component
-  */
-case class BrowserHistory(sourceSubsystem: SubsystemWithVersion, targetSubsystem: SubsystemWithVersion,
-                          icdOpt: Option[IcdVersion], sourceComponents: List[String], viewType: ViewType,
-                          currentCompnent: Option[String]) {
+ * Object used to keep track of browser history for back button
+ *
+ * @param maybeSourceSubsystem optional source subsystem selected in the left box
+ * @param maybeTargetSubsystem optional target subsystem selected in the right box
+ * @param maybeIcd             optional ICD with version, if one was selected
+ * @param viewType             indicates the type of data being displayed
+ * @param currentCompnent      optional current component
+ */
+case class BrowserHistory(
+    maybeSourceSubsystem: Option[SubsystemWithVersion],
+    maybeTargetSubsystem: Option[SubsystemWithVersion],
+    maybeIcd: Option[IcdVersion],
+    viewType: ViewType,
+    currentCompnent: Option[String]
+) {
 
   // Pushes the current application history state (Note that the title is ignored in some browsers)
   def pushState(): Unit = {
@@ -84,4 +92,3 @@ case class BrowserHistory(sourceSubsystem: SubsystemWithVersion, targetSubsystem
     dom.window.history.replaceState(json, dom.document.title, dom.document.documentURI)
   }
 }
-

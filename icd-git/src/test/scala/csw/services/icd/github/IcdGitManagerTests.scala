@@ -12,11 +12,11 @@ import org.scalatest.{BeforeAndAfter, FunSuite}
 class IcdGitManagerTests extends FunSuite with BeforeAndAfter {
 
   private var repoDir: File = _
-  private var git: Git = _
+  private var git: Git      = _
 
-  private val user = System.getProperty("user.name")
-  private val password = ""
-  private val comment = "test comment"
+  private val user       = System.getProperty("user.name")
+  private val password   = ""
+  private val comment    = "test comment"
   private val subsysList = List(SubsystemAndVersion("TEST", Some("1.0")), SubsystemAndVersion("TEST2", Some("1.0")))
 
   // Use a dummy repo for the icd and api versions
@@ -47,9 +47,9 @@ class IcdGitManagerTests extends FunSuite with BeforeAndAfter {
     assert(i1.user == user)
     assert(i1.subsystem == "TEST")
 
-    val apiVersionOpt = IcdGitManager.getApiVersions(subsysList.head, IcdGitManager.getAllVersions._1)
-    assert(apiVersionOpt.isDefined)
-    val apiVersion = apiVersionOpt.get
+    val maybeApiVersion = IcdGitManager.getApiVersions(subsysList.head, IcdGitManager.getAllVersions._1)
+    assert(maybeApiVersion.isDefined)
+    val apiVersion = maybeApiVersion.get
     assert(apiVersion.subsystem == "TEST")
     assert(apiVersion.apis.size == 1)
     val api = apiVersion.apis.head
@@ -64,9 +64,9 @@ class IcdGitManagerTests extends FunSuite with BeforeAndAfter {
     assert(i2.user == user)
     assert(i2.subsystem == "TEST2")
 
-    val apiVersionOpt2 = IcdGitManager.getApiVersions(subsysList.tail.head, IcdGitManager.getAllVersions._1)
-    assert(apiVersionOpt2.isDefined)
-    val apiVersion2 = apiVersionOpt2.get
+    val maybeApiVersion2 = IcdGitManager.getApiVersions(subsysList.tail.head, IcdGitManager.getAllVersions._1)
+    assert(maybeApiVersion2.isDefined)
+    val apiVersion2 = maybeApiVersion2.get
     assert(apiVersion2.subsystem == "TEST2")
     assert(apiVersion2.apis.size == 1)
     val api2 = apiVersion2.apis.head
@@ -80,9 +80,9 @@ class IcdGitManagerTests extends FunSuite with BeforeAndAfter {
     assert(i3.comment == comment + " 3")
     assert(i3.user == user)
 
-    val icdVersionsOpt = IcdGitManager.list(subsysList, IcdGitManager.getAllVersions._2)
-    assert(icdVersionsOpt.isDefined)
-    val icdVersions = icdVersionsOpt.get
+    val maybeIcdVersions = IcdGitManager.list(subsysList, IcdGitManager.getAllVersions._2)
+    assert(maybeIcdVersions.isDefined)
+    val icdVersions = maybeIcdVersions.get
     assert(icdVersions.subsystems == List("TEST", "TEST2"))
     assert(icdVersions.icds.size == 1)
     val icd = icdVersions.icds.head
@@ -107,16 +107,16 @@ class IcdGitManagerTests extends FunSuite with BeforeAndAfter {
 
     val versions = db.versionManager.getVersions("TEST")
     assert(versions.size == 2) // head is unnamed version "*"
-    assert(versions.head.versionOpt.isEmpty)
-    assert(versions.tail.head.versionOpt.get == "1.0")
+    assert(versions.head.maybeVersion.isEmpty)
+    assert(versions.tail.head.maybeVersion.get == "1.0")
     assert(versions.tail.head.user == user)
     assert(versions.tail.head.comment == comment)
     assert(versions.tail.head.date.toString() == api.date)
 
     val versions2 = db.versionManager.getVersions("TEST2")
     assert(versions2.size == 2) // head is unnamed version "*"
-    assert(versions2.head.versionOpt.isEmpty)
-    assert(versions2.tail.head.versionOpt.get == "1.0")
+    assert(versions2.head.maybeVersion.isEmpty)
+    assert(versions2.tail.head.maybeVersion.get == "1.0")
     assert(versions2.tail.head.user == user)
     assert(versions2.tail.head.comment == comment + " 2")
     assert(versions2.tail.head.date.toString() == api2.date)

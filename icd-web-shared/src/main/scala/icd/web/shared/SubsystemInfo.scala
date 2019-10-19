@@ -1,24 +1,26 @@
 package icd.web.shared
 
-object SubsystemInfo {
-
-}
+object SubsystemInfo {}
 
 /**
  * Holds information about a subsystem
  *
- * @param subsystem       the subsystem
- * @param versionOpt      optional version (default: latest)
- * @param title           the subsystem title
- * @param description     the subsystem description as HTML (after markdown processing)
+ * @param sv          the subsystem
+ * @param title       the subsystem title
+ * @param description the subsystem description as HTML (after markdown processing)
  */
-case class SubsystemInfo(subsystem: String, versionOpt: Option[String], title: String, description: String)
+case class SubsystemInfo(sv: SubsystemWithVersion, title: String, description: String)
 
 /**
- * Holds an optional subsystem and optional subsystem version
+ * Holds a subsystem and an optional version and component name
  *
- * @param subsystemOpt the selected subsystem, or None if no subsystem is selected
- * @param versionOpt   optional version of the subsystem (None means the latest version)
+ * @param subsystem    the selected subsystem
+ * @param maybeVersion optional version of the subsystem (None means the latest unpublished version)
  */
-case class SubsystemWithVersion(subsystemOpt: Option[String], versionOpt: Option[String])
-
+case class SubsystemWithVersion(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String]) {
+  override def toString: String = {
+    val compStr = maybeComponent.map(c => s".$c").getOrElse("")
+    val versionStr = maybeVersion.map(v => s"-$v").getOrElse("")
+    s"$subsystem$compStr$versionStr"
+  }
+}

@@ -25,35 +25,41 @@ object Components {
   def getComponentInfoId(compName: String): String = compName
 
   /**
-    * Information about a link to a component
-    *
-    * @param subsystem the component's subsystem
-    * @param compName  the component name
-    */
+   * Information about a link to a component
+   *
+   * @param subsystem the component's subsystem
+   * @param compName  the component name
+   */
   case class ComponentLink(subsystem: String, compName: String)
 
   trait ComponentListener {
+
     /**
-      * Called when a link for the component is clicked
-      *
-      * @param link conatins the component's subsystem and name
-      */
+     * Called when a link for the component is clicked
+     *
+     * @param link conatins the component's subsystem and name
+     */
     def componentSelected(link: ComponentLink): Unit
   }
 
   // Displayed version for unpublished APIs
   val unpublished = "(unpublished)"
 
+  def yesNo(b: Boolean): String = if (b) "yes" else "no"
+
   /**
-    * Returns a HTML table with the given column headings and list of rows
-    *
-    * @param headings   the table headings
-    * @param rowList    list of row data
-    * @param tableStyle optional table style
-    * @return an html table element
-    */
-  def mkTable(headings: List[String], rowList: List[List[String]],
-              tableStyle: scalacss.StyleA = Styles.emptyStyle): TypedTag[HTMLElement] = {
+   * Returns a HTML table with the given column headings and list of rows
+   *
+   * @param headings   the table headings
+   * @param rowList    list of row data
+   * @param tableStyle optional table style
+   * @return an html table element
+   */
+  def mkTable(
+      headings: List[String],
+      rowList: List[List[String]],
+      tableStyle: scalacss.StyleA = Styles.emptyStyle
+  ): TypedTag[HTMLElement] = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
@@ -70,7 +76,9 @@ object Components {
       val (newHead, newRows) = SharedUtils.compact(headings, rowList)
       if (newHead.isEmpty) div()
       else {
-        table(tableStyle, attr("data-toggle") := "table",
+        table(
+          tableStyle,
+          attr("data-toggle") := "table",
           thead(
             tr(newHead.map(th(_)))
           ),
@@ -78,173 +86,145 @@ object Components {
             for (row <- newRows) yield {
               tr(row.map(mkTableCell))
             }
-          ))
+          )
+        )
       }
     }
   }
 }
 
 /**
-  * Manages the component (Assembly, HCD) display
-  *
-  * @param mainContent used to display information about selected components
-  * @param listener    called when the user clicks on a component link in the (subscriber, publisher, etc)
-  */
+ * Manages the component (Assembly, HCD) display
+ *
+ * @param mainContent used to display information about selected components
+ * @param listener    called when the user clicks on a component link in the (subscriber, publisher, etc)
+ */
+//noinspection DuplicatedCode
 case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   import Components._
   import icd.web.shared.JsonSupport._
 
   /**
-    * Gets information about the given components
-    *
-    * @param subsystem       the components' subsystem
-    * @param versionOpt      optional version (default: current version)
-    * @param compNames       list of component names
-    * @param targetSubsystem optional target subsystem and version
-    * @return future list of objects describing the components
-    */
-  private def getComponentInfo(subsystem: String, versionOpt: Option[String], compNames: List[String],
-                               targetSubsystem: SubsystemWithVersion): Future[List[ComponentInfo]] = {
-    Ajax.get(Routes.icdComponentInfo(subsystem, versionOpt, compNames, targetSubsystem)).map { r =>
-      val list = Json.fromJson[List[ComponentInfo]](Json.parse(r.responseText)).getOrElse(Nil)
-      if (targetSubsystem.subsystemOpt.isDefined) list.map(ComponentInfo.applyIcdFilter) else list
+   * Gets information about the given components
+   *
+   * @param sv            the subsystem
+   * @param maybeTargetSv optional target subsystem and version
+   * @param searchAllSubsystems if true search all TMT subsystems for API dependencies
+   * @return future list of objects describing the components
+   */
+  private def getComponentInfo(
+      sv: SubsystemWithVersion,
+      maybeTargetSv: Option[SubsystemWithVersion],
+      searchAllSubsystems: Boolean
+  ): Future[List[ComponentInfo]] = {
+    Ajax.get(Routes.icdComponentInfo(sv, maybeTargetSv, searchAllSubsystems)).map { r =>
+      val list = Json.fromJson[Array[ComponentInfo]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
+      if (maybeTargetSv.isDefined) list.map(ComponentInfo.applyIcdFilter) else list
     }
   }
 
   /**
-    * Gets the list of component names for the given subsystem
-    */
-  private def getComponentNames(sv: SubsystemWithVersion): Future[List[String]] = {
-    if (sv.subsystemOpt.isDefined) {
-      val path = Routes.components(sv.subsystemOpt.get, sv.versionOpt)
-      Ajax.get(path).map { r =>
-        Json.fromJson[List[String]](Json.parse(r.responseText)).get
-      }.recover {
-        case ex =>
-          ex.printStackTrace()
-          Nil
-      }
-    } else Future.successful(Nil)
-  }
-
-  /**
-    * Gets the list of components for the given subsystem and then gets the information for them
-    * @param sv the subsystem
-    * @param targetSubsystem the target subsystem
-    * @return future list of component info
-    */
-  private def getComponentInfo(sv: SubsystemWithVersion, targetSubsystem: SubsystemWithVersion): Future[List[ComponentInfo]] = {
-    sv.subsystemOpt match {
+   * Gets the list of components for the given subsystem and then gets the information for them
+   *
+   * @param maybeSubsystem       optional subsystem
+   * @param maybeTargetSubsystem optional target subsystem
+   * @return future list of component info
+   */
+  private def getComponentInfo(
+      maybeSubsystem: Option[SubsystemWithVersion],
+      maybeTargetSubsystem: Option[SubsystemWithVersion],
+      searchAllSubsystems: Boolean
+  ): Future[List[ComponentInfo]] = {
+    maybeSubsystem match {
       case None =>
         Future.successful(Nil)
-      case Some(subsystem) =>
-        getComponentNames(sv).flatMap(getComponentInfo(subsystem, sv.versionOpt, _, targetSubsystem))
+      case Some(sv) =>
+        getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems)
     }
   }
 
   // Gets top level subsystem info from the server
-  private def getSubsystemInfo(subsystem: String, versionOpt: Option[String]): Future[SubsystemInfo] = {
-    val path = Routes.subsystemInfo(subsystem, versionOpt)
+  private def getSubsystemInfo(sv: SubsystemWithVersion): Future[SubsystemInfo] = {
+    val path = Routes.subsystemInfo(sv.subsystem, sv.maybeVersion)
     Ajax.get(path).map { r =>
-      Json.fromJson[SubsystemInfo](Json.parse(r.responseText)).get
+      val subsystemInfo = Json.fromJson[SubsystemInfo](Json.parse(r.responseText)).get
+      subsystemInfo.copy(sv = sv) // include the component, if specified
     }
   }
 
   /**
-    * Adds (appends) a list of components to the display, in the order that they are given in the list.
-    *
-    * @param compNames       the names of the components
-    * @param sv              the selected subsystem and version
-    * @param targetSubsystem the target subsystem (might not be set)
-    */
-  def addComponents(compNames: List[String], sv: SubsystemWithVersion, targetSubsystem: SubsystemWithVersion,
-                    icdOpt: Option[IcdVersion]): Future[Unit] = {
+   * Adds (appends) components to the display.
+   *
+   * @param sv                   the selected subsystem, version and optional single component
+   * @param maybeTargetSubsystem optional target subsystem, version, optional component
+   * @param maybeIcd             optional icd version
+   */
+  def addComponents(
+      sv: SubsystemWithVersion,
+      maybeTargetSubsystem: Option[SubsystemWithVersion],
+      maybeIcd: Option[IcdVersion],
+      searchAllSubsystems: Boolean
+  ): Future[Unit] = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
-    val isIcd = targetSubsystem.subsystemOpt.isDefined
-    sv.subsystemOpt match {
-      case None => Future.successful()
-      case Some(subsystem) =>
-        val f = for {
-          subsystemInfo <- getSubsystemInfo(subsystem, sv.versionOpt)
-          targetSubsystemInfo <- if (isIcd)
-            getSubsystemInfo(targetSubsystem.subsystemOpt.get, targetSubsystem.versionOpt)
-          else Future.successful(null)
-          infoList <- getComponentInfo(subsystem, sv.versionOpt, compNames, targetSubsystem)
-          targetInfoList <- getComponentInfo(targetSubsystem, sv)
-        } yield {
-          // TODO: Update web app to allow selecting component to component ICDs
-          val titleInfo = TitleInfo(subsystemInfo, targetSubsystem, icdOpt, None, None)
-          val subsystemVersion = subsystemInfo.versionOpt.getOrElse(TitleInfo.unpublished)
-          mainContent.clearContent()
-          mainContent.setTitle(titleInfo.title, titleInfo.subtitleOpt, titleInfo.descriptionOpt)
-          // For ICDs, add the descriptions of the two subsystems at top
-          if (isIcd) {
-            val targetSubsystemVersion = targetSubsystemInfo.versionOpt.getOrElse(TitleInfo.unpublished)
-            mainContent.appendElement(
-              div(Styles.component,
-                p(strong(s"${subsystemInfo.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
-                raw(subsystemInfo.description),
-                p(strong(s"${targetSubsystemInfo.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
-                raw(targetSubsystemInfo.description)
-              ).render
-            )
-          }
-          // XXX TODO: Add support for comp to comp ICD in web app GUI
-          val summaryTable = SummaryTable.displaySummary(subsystemInfo, targetSubsystem.subsystemOpt, None, None, infoList).render
-          mainContent.appendElement(div(Styles.component, id := "Summary")(raw(summaryTable)).render)
-          infoList.foreach(i => displayComponentInfo(i, !isIcd))
-          if (isIcd) targetInfoList.foreach(i => displayComponentInfo(i, forApi = false))
-        }
-        f.onComplete {
-          case Failure(ex) => mainContent.displayInternalError(ex)
-          case _ =>
-        }
-        f
+    val isIcd           = maybeTargetSubsystem.isDefined
+    val subsystemInfoF  = getSubsystemInfo(sv)
+    val targetInfoF     = maybeTargetSubsystem.map(getSubsystemInfo(_).map(i => Some(i))).getOrElse(Future.successful(None))
+    val infoListF       = getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems)
+    val targetInfoListF = getComponentInfo(maybeTargetSubsystem, Some(sv), searchAllSubsystems)
+    val f = for {
+      subsystemInfo            <- subsystemInfoF
+      maybeTargetSubsystemInfo <- targetInfoF
+      infoList                 <- infoListF
+      targetInfoList           <- targetInfoListF
+    } yield {
+      val titleInfo        = TitleInfo(subsystemInfo, maybeTargetSubsystem, maybeIcd)
+      val subsystemVersion = sv.maybeVersion.getOrElse(TitleInfo.unpublished)
+      mainContent.clearContent()
+      mainContent.setTitle(titleInfo.title, titleInfo.maybeSubtitle, titleInfo.maybeDescription)
+      // For ICDs, add the descriptions of the two subsystems at top
+      if (isIcd) {
+        val targetSubsystemInfo    = maybeTargetSubsystemInfo.get
+        val targetSubsystemVersion = maybeTargetSubsystem.map(_.maybeVersion).getOrElse(TitleInfo.unpublished)
+        mainContent.appendElement(
+          div(
+            Styles.component,
+            p(strong(s"${subsystemInfo.sv.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
+            raw(subsystemInfo.description),
+            p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
+            raw(targetSubsystemInfo.description)
+          ).render
+        )
+      }
+      val summaryTable = SummaryTable.displaySummary(subsystemInfo, maybeTargetSubsystem, infoList).render
+      mainContent.appendElement(div(Styles.component, id := "Summary")(raw(summaryTable)).render)
+      infoList.foreach(i => displayComponentInfo(i, !isIcd))
+      if (isIcd) targetInfoList.foreach(i => displayComponentInfo(i, forApi = false))
     }
+    f.onComplete {
+      case Failure(ex) => mainContent.displayInternalError(ex)
+      case _           =>
+    }
+    f
   }
 
-  /**
-    * Adds (appends) a component to the display
-    *
-    * @param compName        the name of the component
-    * @param sv              the selected subsystem
-    * @param targetSubsystem the target subsystem (might not be set)
-    */
-  def addComponent(compName: String, sv: SubsystemWithVersion,
-                   targetSubsystem: SubsystemWithVersion): Unit = {
-    sv.subsystemOpt.foreach { subsystem =>
-      getComponentInfo(subsystem, sv.versionOpt, List(compName), targetSubsystem).map { list =>
-        list.foreach(i => displayComponentInfo(i, targetSubsystem.subsystemOpt.isEmpty))
-      }.recover {
-        case ex => mainContent.displayInternalError(ex)
-      }
-    }
-  }
-
-  /**
-    * Displays only the given component's information, ignoring any filter
-    *
-    * @param sv       the subsystem and version to use for the component
-    * @param compName the name of the component
-    */
-  def setComponent(sv: SubsystemWithVersion, compName: String): Unit = {
-    if (sv.subsystemOpt.isDefined) {
-      val path = Routes.componentInfo(sv.subsystemOpt.get, sv.versionOpt, List(compName))
-      Ajax.get(path).map { r =>
-        val infoList = Json.fromJson[List[ComponentInfo]](Json.parse(r.responseText)).getOrElse(Nil)
-        mainContent.clearContent()
-        mainContent.scrollToTop()
-        mainContent.setTitle(s"Component: $compName")
-        displayComponentInfo(infoList.head, forApi = true)
-      }.recover {
-        case ex =>
-          mainContent.displayInternalError(ex)
-      }
-    }
-  }
+//  /**
+//   * Adds (appends) a component to the display
+//   *
+//   * @param sv              the selected subsystem
+//   * @param maybeTargetSv optional target subsystem
+//   */
+//  def addComponent(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): Unit = {
+//    getComponentInfo(sv, maybeTargetSv)
+//      .map { list =>
+//        list.foreach(i => displayComponentInfo(i, maybeTargetSv.isEmpty))
+//      }
+//      .recover {
+//        case ex => mainContent.displayInternalError(ex)
+//      }
+//  }
 
   // Removes the component display
   def removeComponentInfo(compName: String): Unit = {
@@ -256,17 +236,16 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
-    * Displays the information for a component, appending to the other selected components, if any.
-    *
-    * @param info contains the information to display
-    */
+   * Displays the information for a component, appending to the other selected components, if any.
+   *
+   * @param info contains the information to display
+   */
   private def displayComponentInfo(info: ComponentInfo, forApi: Boolean): Unit = {
     if (forApi || (info.publishes.isDefined && info.publishes.get.nonEmpty
-      || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
-      || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
-      || info.commands.get.commandsSent.nonEmpty
-      ))) {
-      val markup = markupForComponent(info, forApi).render
+        || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
+        || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
+        || info.commands.get.commandsSent.nonEmpty))) {
+      val markup     = markupForComponent(info, forApi).render
       val oldElement = $id(getComponentInfoId(info.componentModel.component))
       if (oldElement == null) {
         mainContent.appendElement(markup)
@@ -277,56 +256,124 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
+  // HTML id for a table displaying the fields of a struct
+  private def structIdStr(name: String): String = s"$name-struct"
+
+  // Add a table for each attribute of type "struct" to show the members of the struct
+  private def structAttributesMarkup(attributesList: List[AttributeModel]): Seq[TypedTag[Div]] = {
+    import scalatags.JsDom.all._
+    val headings = List("Name", "Description", "Type", "Units", "Default")
+    attributesList.flatMap { attrModel =>
+      if (attrModel.typeStr == "struct" || attrModel.typeStr == "array of struct") {
+        val rowList2 =
+          for (a2 <- attrModel.attributesList)
+            yield List(a2.name, a2.description, getTypeStr(a2.name, a2.typeStr), a2.units, a2.defaultValue)
+        Some(
+          div()(
+            p(strong(a(name := structIdStr(attrModel.name))(s"Attributes for ${attrModel.name} struct"))),
+            mkTable(headings, rowList2),
+            // Handle structs embedded in other structs (or arrays of structs, etc.)
+            structAttributesMarkup(attrModel.attributesList)
+          )
+        )
+      } else None
+    }
+  }
+
   /**
-    * Returns a table of attributes
-    *
-    * @param titleStr       title to display above the table
-    * @param attributesList list of attributes to display
-    * @return
-    */
+   * Returns a table of attributes
+   *
+   * @param titleStr       title to display above the table
+   * @param attributesList list of attributes to display
+   * @return
+   */
   private def attributeListMarkup(titleStr: String, attributesList: List[AttributeModel]): TypedTag[HTMLDivElement] = {
     import scalatags.JsDom.all._
     if (attributesList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default")
-      val rowList = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
+      val rowList =
+        for (a <- attributesList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units, a.defaultValue)
       div(
         strong(titleStr),
-        mkTable(headings, rowList, tableStyle = Styles.attributeTable)
+        mkTable(headings, rowList, tableStyle = Styles.attributeTable),
+        structAttributesMarkup(attributesList)
       )
     }
   }
 
   /**
-    * Returns a table of parameters
-    *
-    * @param titleStr       title to display above the table
-    * @param attributesList list of attributes to display
-    * @param requiredArgs   a list of required arguments
-    * @return
-    */
-  private def parameterListMarkup(titleStr: String, attributesList: List[AttributeModel], requiredArgs: List[String]): TypedTag[HTMLDivElement] = {
+   * Returns a table of parameters
+   *
+   * @param titleStr       title to display above the table
+   * @param attributesList list of attributes to display
+   * @param requiredArgs   a list of required arguments
+   */
+  private def parameterListMarkup(
+      titleStr: String,
+      attributesList: List[AttributeModel],
+      requiredArgs: List[String]
+  ): TypedTag[HTMLDivElement] = {
     import scalatags.JsDom.all._
     if (attributesList.isEmpty) div()
     else {
-      val headings = List("Name", "Description", "Type", "Units", "Default")
-      val rowList = for (a <- attributesList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue,
-        if (requiredArgs.contains(a.name)) "yes" else "no")
+      val headings = List("Name", "Description", "Type", "Units", "Default", "Required")
+      val rowList =
+        for (a <- attributesList)
+          yield List(
+            a.name,
+            a.description,
+            getTypeStr(a.name, a.typeStr),
+            a.units,
+            a.defaultValue,
+            yesNo(requiredArgs.contains(a.name))
+          )
       div(
         strong(titleStr),
-        mkTable(headings, rowList, tableStyle = Styles.attributeTable)
+        mkTable(headings, rowList, tableStyle = Styles.attributeTable),
+        structAttributesMarkup(attributesList)
+      )
+    }
+  }
+
+  // Insert a hyperlink from "struct" to the table listing the fields in the struct
+  private def getTypeStr(fieldName: String, typeStr: String): String = {
+    import scalatags.Text.all._
+    if (typeStr == "struct" || typeStr == "array of struct")
+      a(href := s"#${structIdStr(fieldName)}")(typeStr).render
+    else typeStr
+  }
+
+  /**
+   * Returns a table listing the attributes of a command result
+   *
+   * @param attributesList list of attributes to display
+   */
+  private def resultTypeMarkup(attributesList: List[AttributeModel]): TypedTag[HTMLDivElement] = {
+    import scalatags.JsDom.all._
+    if (attributesList.isEmpty) div()
+    else {
+      val headings = List("Name", "Description", "Type", "Units")
+      val rowList  = for (a <- attributesList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units)
+      div(
+        strong("Result Type Fields"),
+        mkTable(headings, rowList, tableStyle = Styles.attributeTable),
+        structAttributesMarkup(attributesList)
       )
     }
   }
 
   /**
-    * Returns a hidden, expandable table row containing the given div item
-    *
-    * @param item    the contents of the table row
-    * @param colSpan the number of columns to span
-    * @return a pair of (button, tr) elements, where the button toggles the visibility of the row
-    */
-  private def hiddenRowMarkup(item: TypedTag[HTMLDivElement], colSpan: Int): (TypedTag[HTMLButtonElement], TypedTag[HTMLTableRowElement]) = {
+   * Returns a hidden, expandable table row containing the given div item
+   *
+   * @param item    the contents of the table row
+   * @param colSpan the number of columns to span
+   * @return a pair of (button, tr) elements, where the button toggles the visibility of the row
+   */
+  private def hiddenRowMarkup(
+      item: TypedTag[HTMLDivElement],
+      colSpan: Int
+  ): (TypedTag[HTMLButtonElement], TypedTag[HTMLTableRowElement]) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
     // button to toggle visibility
@@ -346,7 +393,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def formatRate(rate: Double): String = if (rate == 0.0) "" else s"$rate Hz"
 
   // Generates the HTML markup to display the component's publish information
-  private def publishMarkup(compName: String, publishesOpt: Option[Publishes]) = {
+  private def publishMarkup(compName: String, maybePublishes: Option[Publishes]) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
@@ -366,62 +413,74 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       )
     }
 
-    // Returns a table row displaying more details for the given telemetry
-    def makeTelemetryDetailsRow(t: TelemetryInfo) = {
-      val headings = List("Min Rate", "Max Rate", "Archive", "Archive Rate")
-      val rowList = List(List(
-        formatRate(t.telemetryModel.minRate),
-        formatRate(t.telemetryModel.maxRate),
-        if (t.telemetryModel.archive) "Yes" else "No",
-        formatRate(t.telemetryModel.archiveRate)
-      ))
+    // Returns a table row displaying more details for the given event
+    def makeEventDetailsRow(eventInfo: EventInfo) = {
+      val headings = List("Min Rate", "Max Rate", "Archive", "Archive Duration", "Archive Rate")
+      val rowList = List(
+        List(
+          formatRate(eventInfo.eventModel.minRate),
+          formatRate(eventInfo.eventModel.maxRate),
+          yesNo(eventInfo.eventModel.archive),
+          eventInfo.eventModel.archiveDuration,
+          formatRate(eventInfo.eventModel.archiveRate)
+        )
+      )
 
       div(
-        if (t.telemetryModel.requirements.isEmpty) div() else p(strong("Requirements: "), t.telemetryModel.requirements.mkString(", ")),
+        if (eventInfo.eventModel.requirements.isEmpty) div()
+        else p(strong("Requirements: "), eventInfo.eventModel.requirements.mkString(", ")),
         mkTable(headings, rowList),
-        attributeListMarkup("Attributes", t.telemetryModel.attributesList)
+        attributeListMarkup("Attributes", eventInfo.eventModel.attributesList)
       )
     }
 
-    // Returns the markup for the published telemetry
-    def publishTelemetryListMarkup(pubType: String, telemetryList: List[TelemetryInfo]) = {
-      if (telemetryList.isEmpty) div()
-      else div(
-        h3(s"$pubType Published by $compName"),
-        table(
-          attr("data-toggle") := "table",
-          thead(
-            tr(
-              th("Name"),
-              th("Description"),
-              th("Subscribers")
-            )
-          ),
-          tbody(
-            for (t <- telemetryList) yield {
-              val (btn, row) = hiddenRowMarkup(makeTelemetryDetailsRow(t), 3)
-              List(
-                tr(
-                  td(Styles.attributeCell, p(btn,
-                    a(name := idFor(compName, "publishes", pubType, t.telemetryModel.name))(t.telemetryModel.name))),
-                  td(raw(t.telemetryModel.description)),
-                  td(p(t.subscribers.map(makeLinkForSubscriber)))
-                ),
-                row
+    // Returns the markup for the published event
+    def publishEventListMarkup(pubType: String, eventList: List[EventInfo]) = {
+      if (eventList.isEmpty) div()
+      else
+        div(
+          h3(s"$pubType Published by $compName"),
+          table(
+            attr("data-toggle") := "table",
+            thead(
+              tr(
+                th("Name"),
+                th("Description"),
+                th("Subscribers")
               )
-            }
+            ),
+            tbody(
+              for (t <- eventList) yield {
+                val (btn, row) = hiddenRowMarkup(makeEventDetailsRow(t), 3)
+                List(
+                  tr(
+                    td(
+                      Styles.attributeCell,
+                      p(btn, a(name := idFor(compName, "publishes", pubType, t.eventModel.name))(t.eventModel.name))
+                    ),
+                    td(raw(t.eventModel.description)),
+                    td(p(t.subscribers.map(makeLinkForSubscriber)))
+                  ),
+                  row
+                )
+              }
+            )
           )
         )
-      )
     }
 
     // Returns a table row displaying more details for the given alarm
     def makeAlarmDetailsRow(t: AlarmInfo) = {
-      val headings = List("Severity", "Archive")
-      val rowList = List(List(t.alarmModel.severity, if (t.alarmModel.archive) "Yes" else "No"))
+      val headings = List("Severity Levels", "Archive", "Location", "Alarm Type", "Acknowledge", "Latched")
+      val m        = t.alarmModel
+      val rowList = List(
+        List(m.severityLevels.mkString(", "), yesNo(m.archive), m.location, m.alarmType, yesNo(m.acknowledge), yesNo(m.latched))
+      )
 
       div(
-        if (t.alarmModel.requirements.isEmpty) div() else p(strong("Requirements: "), t.alarmModel.requirements.mkString(", ")),
+        if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
+        p(strong("Probable Cause: "), raw(m.probableCause)),
+        p(strong("Operator Response: "), raw(m.operatorResponse)),
         mkTable(headings, rowList)
       )
     }
@@ -429,45 +488,46 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     // Returns the markup for the published alarms
     def publishAlarmListMarkup(alarmList: List[AlarmInfo]) = {
       if (alarmList.isEmpty) div()
-      else div(
-        h3(s"Alarms Published by $compName"),
-        table(
-          attr("data-toggle") := "table",
-          thead(
-            tr(
-              th("Name"),
-              th("Description"),
-              th("Subscribers")
-            )
-          ),
-          tbody(
-            for (t <- alarmList) yield {
-              val (btn, row) = hiddenRowMarkup(makeAlarmDetailsRow(t), 3)
-              List(
-                tr(
-                  td(Styles.attributeCell, p(btn,
-                    a(name := idFor(compName, "publishes", "Alarms", t.alarmModel.name))(t.alarmModel.name))),
-                  td(raw(t.alarmModel.description)),
-                  td(p(t.subscribers.map(makeLinkForSubscriber)))
-                ),
-                row
+      else
+        div(
+          h3(s"Alarms Published by $compName"),
+          table(
+            attr("data-toggle") := "table",
+            thead(
+              tr(
+                th("Name"),
+                th("Description"),
+                th("Subscribers")
               )
-            }
+            ),
+            tbody(
+              for (t <- alarmList) yield {
+                val m          = t.alarmModel
+                val (btn, row) = hiddenRowMarkup(makeAlarmDetailsRow(t), 3)
+                List(
+                  tr(
+                    td(Styles.attributeCell, p(btn, a(name := idFor(compName, "publishes", "Alarms", m.name))(m.name))),
+                    td(raw(m.description)),
+                    td(p(t.subscribers.map(makeLinkForSubscriber)))
+                  ),
+                  row
+                )
+              }
+            )
           )
         )
-      )
     }
 
-    publishesOpt match {
+    maybePublishes match {
       case None => div()
       case Some(publishes) =>
         if (publishes.nonEmpty) {
           div(
             Styles.componentSection,
             raw(publishes.description),
-            publishTelemetryListMarkup("Telemetry", publishes.telemetryList),
-            publishTelemetryListMarkup("Events", publishes.eventList),
-            publishTelemetryListMarkup("Event Streams", publishes.eventStreamList),
+            publishEventListMarkup("Events", publishes.eventList),
+            publishEventListMarkup("Observe Events", publishes.observeEventList),
+            publishEventListMarkup("Current States", publishes.currentStateList),
             publishAlarmListMarkup(publishes.alarmList)
           )
         } else div()
@@ -475,17 +535,19 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Generates the HTML markup to display the component's subscribe information
-  private def subscribeMarkup(compName: String, subscribesOpt: Option[Subscribes]) = {
+  private def subscribeMarkup(compName: String, maybeSubscribes: Option[Subscribes]) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
     // Action when user clicks on a subscriber link
     def clickedOnPublisher(info: DetailedSubscribeInfo)(e: dom.Event): Unit = {
       e.preventDefault()
-      listener.componentSelected(ComponentLink(
-        info.subscribeModelInfo.subsystem,
-        info.subscribeModelInfo.component
-      ))
+      listener.componentSelected(
+        ComponentLink(
+          info.subscribeModelInfo.subsystem,
+          info.subscribeModelInfo.component
+        )
+      )
     }
 
     // Makes the link for a publisher component in the table
@@ -502,18 +564,21 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     // Returns a table row displaying more details for the given subscription
     def makeDetailsRow(si: DetailedSubscribeInfo) = {
       val sInfo = si.subscribeModelInfo
-      val headings = List("Subsystem", "Component", "Prefix.Name", "Required Rate", "Max Rate", "Publisher's Min Rate", "Publisher's Max Rate")
-      val rowList = List(List(
-        sInfo.subsystem,
-        sInfo.component,
-        si.path,
-        formatRate(sInfo.requiredRate),
-        formatRate(sInfo.maxRate),
-        formatRate(si.telemetryModel.map(_.minRate).getOrElse(0.0)),
-        formatRate(si.telemetryModel.map(_.maxRate).getOrElse(0.0))
-      ))
+      val headings =
+        List("Subsystem", "Component", "Prefix.Name", "Required Rate", "Max Rate", "Publisher's Min Rate", "Publisher's Max Rate")
+      val rowList = List(
+        List(
+          sInfo.subsystem,
+          sInfo.component,
+          si.path,
+          formatRate(sInfo.requiredRate),
+          formatRate(sInfo.maxRate),
+          formatRate(si.eventModel.map(_.minRate).getOrElse(0.0)),
+          formatRate(si.eventModel.map(_.maxRate).getOrElse(0.0))
+        )
+      )
 
-      val attrTable = si.telemetryModel.map(t => attributeListMarkup("Attributes", t.attributesList)).getOrElse(div())
+      val attrTable = si.eventModel.map(t => attributeListMarkup("Attributes", t.attributesList)).getOrElse(div())
       div(mkTable(headings, rowList), attrTable)
     }
 
@@ -527,55 +592,81 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       }
 
       if (subscribeList.isEmpty) div()
-      else div(
-        h3(s"$pubType Subscribed to by $compName"),
+      else
         div(
-          Styles.componentSection,
-          table(Styles.componentTable, attr("data-toggle") := "table",
-            thead(
-              tr(
-                th("Name"),
-                th("Description"),
-                th("Publisher")
+          h3(s"$pubType Subscribed to by $compName"),
+          div(
+            Styles.componentSection,
+            table(
+              Styles.componentTable,
+              attr("data-toggle") := "table",
+              thead(
+                tr(
+                  th("Name"),
+                  th("Description"),
+                  th("Publisher")
+                )
+              ),
+              tbody(
+                for (s <- subscribeList) yield {
+                  val (btn, row) = hiddenRowMarkup(makeDetailsRow(s), 3)
+                  val usage =
+                    if (s.subscribeModelInfo.usage.isEmpty) div()
+                    else
+                      div(
+                        strong("Usage:"),
+                        raw(s.subscribeModelInfo.usage)
+                      )
+                  List(
+                    tr(
+                      td(
+                        Styles.attributeCell,
+                        p(
+                          btn,
+                          a(name := idFor(compName, "subscribes", pubType, s.subscribeModelInfo.name))(s.subscribeModelInfo.name)
+                        )
+                      ),
+                      td(raw(s.description), getWarning(s), usage),
+                      td(p(makeLinkForPublisher(s)))
+                    ),
+                    row
+                  )
+                }
               )
-            ),
-            tbody(
-              for (s <- subscribeList) yield {
-                val (btn, row) = hiddenRowMarkup(makeDetailsRow(s), 3)
-                val usage = if (s.subscribeModelInfo.usage.isEmpty) div()
-                else div(
-                  strong("Usage:"),
-                  raw(s.subscribeModelInfo.usage)
-                )
-                List(
-                  tr(
-                    td(Styles.attributeCell, p(btn,
-                      a(name := idFor(compName, "subscribes", pubType, s.subscribeModelInfo.name))(s.subscribeModelInfo.name))),
-                    td(raw(s.description), getWarning(s), usage),
-                    td(p(makeLinkForPublisher(s)))
-                  ),
-                  row
-                )
-              }
-            ))
+            )
+          )
         )
-      )
     }
 
-    subscribesOpt match {
+    maybeSubscribes match {
       case None => div()
       case Some(subscribes) =>
         if (subscribes.subscribeInfo.nonEmpty) {
           div(
             Styles.componentSection,
             raw(subscribes.description),
-            subscribeListMarkup("Telemetry", subscribes.subscribeInfo.filter(_.itemType == Telemetry)),
             subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == Events)),
-            subscribeListMarkup("Event Streams", subscribes.subscribeInfo.filter(_.itemType == EventStreams)),
+            subscribeListMarkup("Observe Events", subscribes.subscribeInfo.filter(_.itemType == ObserveEvents)),
+            subscribeListMarkup("Current States", subscribes.subscribeInfo.filter(_.itemType == CurrentStates)),
             subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == Alarms))
           )
         } else div()
     }
+  }
+
+  // Returns a table row displaying more details for the given command
+  private def makeReceivedCommandDetailsRow(m: ReceiveCommandModel) = {
+    import scalatags.JsDom.all._
+    div(
+      if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
+      if (m.preconditions.isEmpty) div() else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
+      if (m.postconditions.isEmpty) div() else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
+      parameterListMarkup("Arguments", m.args, m.requiredArgs),
+      p(strong("Completion Type: "), m.completionType),
+      resultTypeMarkup(m.resultType),
+      if (m.completionConditions.isEmpty) div()
+      else div(p(strong("Completion Conditions: "), ol(m.completionConditions.map(cc => li(raw(cc))))))
+    )
   }
 
   // Generates the HTML markup to display the commands a component receives
@@ -594,45 +685,39 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       a(s"${sender.subsystem}.${sender.component} ", href := "#", onclick := clickedOnSender(sender) _)
     }
 
-    // Returns a table row displaying more details for the given command
-    def makeDetailsRow(r: ReceivedCommandInfo) = {
-      val m = r.receiveCommandModel
-      div(
-        if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
-        parameterListMarkup("Arguments", m.args, m.requiredArgs)
-      )
-    }
-
     // Only display non-empty tables
     if (info.isEmpty) div()
-    else div(
-      Styles.componentSection,
-      h4(s"Command Configurations Received by $compName"),
-      table(Styles.componentTable, attr("data-toggle") := "table",
-        thead(
-          tr(
-            th("Name"),
-            th("Description"),
-            th("Senders")
-          )
-        ),
-        tbody(
-          for (r <- info) yield {
-            val rc = r.receiveCommandModel
-            val (btn, row) = hiddenRowMarkup(makeDetailsRow(r), 3)
-            List(
-              tr(
-                td(Styles.attributeCell, p(btn,
-                  a(name := idFor(compName, "receives", "Commands", rc.name))(rc.name))),
-                // XXX TODO: Make link to command description page with details
-                td(raw(rc.description)),
-                td(p(r.senders.map(makeLinkForSender)))
-              ),
-              row
+    else
+      div(
+        Styles.componentSection,
+        h4(s"Command Configurations Received by $compName"),
+        table(
+          Styles.componentTable,
+          attr("data-toggle") := "table",
+          thead(
+            tr(
+              th("Name"),
+              th("Description"),
+              th("Senders")
             )
-          }
-        ))
-    )
+          ),
+          tbody(
+            for (r <- info) yield {
+              val rc         = r.receiveCommandModel
+              val (btn, row) = hiddenRowMarkup(makeReceivedCommandDetailsRow(r.receiveCommandModel), 3)
+              List(
+                tr(
+                  td(Styles.attributeCell, p(btn, a(name := idFor(compName, "receives", "Commands", rc.name))(rc.name))),
+                  // XXX TODO: Make link to command description page with details
+                  td(raw(rc.description)),
+                  td(p(r.senders.map(makeLinkForSender)))
+                ),
+                row
+              )
+            }
+          )
+        )
+      )
   }
 
   // Generates the HTML markup to display the commands a component sends
@@ -651,14 +736,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       a(s"${receiver.subsystem}.${receiver.component} ", href := "#", onclick := clickedOnReceiver(receiver) _)
     }
 
-    // Returns a table row displaying more details for the given command
-    def makeDetailsRow(r: ReceiveCommandModel) = {
-      div(
-        if (r.requirements.isEmpty) div() else p(strong("Requirements: "), r.requirements.mkString(", ")),
-        parameterListMarkup("Arguments", r.args, r.requiredArgs)
-      )
-    }
-
     // Warn if no receiver found for sent command
     def getWarning(m: SentCommandInfo) = m.warning.map { msg =>
       div(cls := "alert alert-warning", role := "alert")(
@@ -671,11 +748,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     def makeItem(s: SentCommandInfo) = {
       s.receiveCommandModel match {
         case Some(r) =>
-          val (btn, row) = hiddenRowMarkup(makeDetailsRow(r), 3)
+          val (btn, row) = hiddenRowMarkup(makeReceivedCommandDetailsRow(r), 3)
           List(
             tr(
-              td(Styles.attributeCell, p(btn,
-                a(name := idFor(compName, "sends", "Commands", r.name))(r.name))),
+              td(Styles.attributeCell, p(btn, a(name := idFor(compName, "sends", "Commands", r.name))(r.name))),
               // XXX TODO: Make link to command description page with details
               td(raw(r.description)),
               td(p(s.receiver.map(makeLinkForReceiver)))
@@ -695,36 +771,41 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Only display non-empty tables
     if (info.isEmpty) div()
-    else div(
-      Styles.componentSection,
-      h4(s"Command Configurations Sent by $compName"),
-      table(Styles.componentTable, attr("data-toggle") := "table",
-        thead(
-          tr(
-            th("Name"),
-            th("Description"),
-            th("Receiver")
+    else
+      div(
+        Styles.componentSection,
+        h4(s"Command Configurations Sent by $compName"),
+        table(
+          Styles.componentTable,
+          attr("data-toggle") := "table",
+          thead(
+            tr(
+              th("Name"),
+              th("Description"),
+              th("Receiver")
+            )
+          ),
+          tbody(
+            for (s <- info) yield makeItem(s)
           )
-        ),
-        tbody(
-          for (s <- info) yield makeItem(s)
-        ))
-    )
+        )
+      )
   }
 
   // Generates the markup for the commands section (description plus received and sent)
-  private def commandsMarkup(compName: String, commandsOpt: Option[Commands], forApi: Boolean) = {
+  private def commandsMarkup(compName: String, maybeCommands: Option[Commands], forApi: Boolean) = {
     import scalatags.JsDom.all._
-    commandsOpt match {
+    maybeCommands match {
       case None => div()
       case Some(commands) =>
         if (commands.commandsReceived.isEmpty && commands.commandsSent.isEmpty) div()
-        else div(
-          h3(s"Commands for $compName"),
-          raw(commands.description),
-          receivedCommandsMarkup(compName, commands.commandsReceived),
-          sentCommandsMarkup(compName, commands.commandsSent)
-        )
+        else
+          div(
+            h3(s"Commands for $compName"),
+            raw(commands.description),
+            receivedCommandsMarkup(compName, commands.commandsReceived),
+            sentCommandsMarkup(compName, commands.commandsSent)
+          )
     }
   }
 
@@ -733,7 +814,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
     div(
-      table(Styles.componentTable, attr("data-toggle") := "table",
+      table(
+        Styles.componentTable,
+        attr("data-toggle") := "table",
         thead(
           tr(
             th("Subsystem"),
@@ -751,7 +834,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             td(info.componentModel.componentType),
             td(info.componentModel.wbsId)
           )
-        ))
+        )
+      )
     )
   }
 

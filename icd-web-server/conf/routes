@@ -3,53 +3,52 @@
 # ~~~~
 
 # Home page
-GET         /                                                             controllers.Application.index
+GET         /                                                      controllers.Application.index
 
 # Gets a list of top level subsystem names
-GET         /subsystems                                                   controllers.Application.subsystemNames
+GET         /subsystems                                            controllers.Application.subsystemNames
 
 # Gets top level information about a given version of the given subsystem
-GET         /subsystemInfo/:subsystem                                     controllers.Application.subsystemInfo(subsystem, version: Option[String])
+GET         /subsystemInfo/:subsystem                              controllers.Application.subsystemInfo(subsystem, version: Option[String])
 
 # Gets a list of components belonging to the given version of the given subsystem
-GET         /components/:subsystem                                        controllers.Application.components(subsystem, version: Option[String])
+GET         /components/:subsystem                                 controllers.Application.components(subsystem, version: Option[String])
 
 # Gets information about a given component in a given version of the given subsystem
-GET         /componentInfo/:subsystem/:compNames                           controllers.Application.componentInfo(subsystem, version: Option[String], compNames)
+GET         /componentInfo/:subsystem                              controllers.Application.componentInfo(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean])
 
 # Gets information about a component in a given version of an ICD
-GET         /icdComponentInfo/:subsystem/:compNames/:target                controllers.Application.icdComponentInfo(subsystem, version: Option[String], compNames, target, targetVersion: Option[String])
+GET         /icdComponentInfo/:subsystem/:target        controllers.Application.icdComponentInfo(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String])
 
 # Gets the PDF for the given ICD
-GET         /icdAsPdf/:subsystem/:target                                  controllers.Application.icdAsPdf(subsystem, version: Option[String], compNames: Option[String], target, targetVersion: Option[String], icdVersion: Option[String])
+GET         /icdAsPdf/:subsystem/:target                           controllers.Application.icdAsPdf(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String])
 
 # Gets the PDF for the given subsystem API
-GET         /apiAsPdf/:subsystem                                          controllers.Application.apiAsPdf(subsystem, version: Option[String], compNames: Option[String])
+GET         /apiAsPdf/:subsystem                                   controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean])
 
 # Gets the detailed information about the versions of a component or subsystem
-GET         /versions/:name                                               controllers.Application.getVersions(name)
+GET         /versions/:name                                        controllers.Application.getVersions(name)
 
 # Gets a list of version names for a component or subsystem
-GET         /versionNames/:name                                           controllers.Application.getVersionNames(name)
+GET         /versionNames/:name                                    controllers.Application.getVersionNames(name)
 
 # Gets a list of published ICD names
-GET         /icdNames                                                     controllers.Application.getIcdNames
+GET         /icdNames                                              controllers.Application.getIcdNames
 
 # Gets a list of versions for the ICD from subsystem to target
-GET         /icdVersions/:subsystem/:target                               controllers.Application.getIcdVersions(subsystem, target)
+GET         /icdVersions/:subsystem/:target                        controllers.Application.getIcdVersions(subsystem, target)
 
 # Uploads ICD files from a selected directory, all at once as multipart/formdata
-POST        /uploadFiles                                                  controllers.FileUploadController.uploadFiles
+POST        /uploadFiles                                           controllers.FileUploadController.uploadFiles()
 
 # Gets the differences between two versions (version strings separated by a comma)
-GET         /diff/:subsystem/:versions                                    controllers.Application.diff(subsystem, versions)
+GET         /diff/:subsystem/:versions                             controllers.Application.diff(subsystem, versions)
 
 # Map static resources from the /public folder to the /assets URL path
-#GET         /assets/*file                                                 controllers.Assets.at(file)
-GET         /assets/*file                                                 controllers.Assets.versioned(file)
+GET         /assets/*file                                          controllers.Assets.versioned(file)
 
 # WebJars
-->          /webjars                webjars.Routes
+->          /webjars                                               webjars.Routes
 
 
 

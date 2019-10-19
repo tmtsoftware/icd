@@ -11,7 +11,7 @@ case class SubsystemSwapper(listener: () => Unit) extends Displayable {
     import scalatags.JsDom.all._
     button(
       tpe := "button",
-      cls := "glyphicon glyphicon-resize-horizontal",
+      cls := "btn btn-default glyphicon glyphicon-resize-vertical",
       title := "Swap source and target subsystems",
       onclick := listener
     ).render
@@ -19,7 +19,7 @@ case class SubsystemSwapper(listener: () => Unit) extends Displayable {
 
   override def markup(): Element = {
     import scalatags.JsDom.all._
-    li(a(swapperItem)).render
+    a(swapperItem).render
   }
 
   def setEnabled(enabled: Boolean): Unit = {

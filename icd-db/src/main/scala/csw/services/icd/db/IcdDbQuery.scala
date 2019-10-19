@@ -1,20 +1,29 @@
 package csw.services.icd.db
 
-import com.mongodb.casbah.{MongoCollection, MongoDB}
-import com.mongodb.casbah.commons.Imports._
-import com.mongodb.casbah.commons.{Imports, MongoDBObject}
-import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd.StdName._
-import csw.services.icd.model._
+import csw.services.icd.db.parser.{
+  CommandModelBsonParser,
+  ComponentModelBsonParser,
+  PublishModelBsonParser,
+  SubscribeModelBsonParser,
+  SubsystemModelBsonParser
+}
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels
 import icd.web.shared.IcdModels._
+import reactivemongo.api.DefaultDB
+import reactivemongo.api.collections.bson.BSONCollection
+import reactivemongo.bson.BSONDocument
+import reactivemongo.play.json._
 
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Await
 import scala.language.implicitConversions
 
 object IcdDbQuery {
   // Set of standard ICD model parts: subsystem, component, publish, subscribe, command
-  val stdSet: Set[JSFunction] = stdNames.map(_.modelBaseName).toSet
+  val stdSet: Set[String] = stdNames.map(_.modelBaseName).toSet
 
   // True if the named collection represents an ICD model (has one of the standard names)
   def isStdSet(name: String): Boolean =
@@ -22,25 +31,31 @@ object IcdDbQuery {
 
   // for working with dot separated paths
   private[db] case class IcdPath(path: String) {
-    lazy val parts: List[JSFunction] = path.split("\\.").toList
+    lazy val parts: List[String] = path.split("\\.").toList
 
     // The common path for an assembly, HCD, sequencer, etc.
     lazy val component: String = parts.dropRight(1).mkString(".")
 
     // The top level subsystem collection name
-    lazy val subsystem: Imports.JSFunction = parts.head
+    lazy val subsystem: String = parts.head
   }
 
   // Lists available db collections related to an ICD
-  private[db] case class IcdEntry(name: String, subsystem: Option[MongoCollection], component: Option[MongoCollection],
-                                  publish: Option[MongoCollection], subscribe: Option[MongoCollection], command: Option[MongoCollection]) {
+  private[db] case class IcdEntry(
+      name: String,
+      subsystem: Option[BSONCollection],
+      component: Option[BSONCollection],
+      publish: Option[BSONCollection],
+      subscribe: Option[BSONCollection],
+      command: Option[BSONCollection]
+  ) {
 
     // Returns all collections belonging to this entry
-    def getCollections: List[MongoCollection] = (subsystem ++ component ++ publish ++ subscribe ++ command).toList
+    def getCollections: List[BSONCollection] = (subsystem ++ component ++ publish ++ subscribe ++ command).toList
   }
 
   // Returns an IcdEntry for the given collection path
-  private[db] def getEntry(db: MongoDB, name: String, paths: List[String]): IcdEntry = {
+  private[db] def getEntry(db: DefaultDB, name: String, paths: List[String]): IcdEntry = {
     IcdEntry(
       name = name,
       subsystem = paths.find(_.endsWith(".subsystem")).map(db(_)),
@@ -61,11 +76,6 @@ object IcdDbQuery {
 
   private[db] def getCommandCollectionName(subsystem: String, component: String): String = s"$subsystem.$component.command"
 
-  // Gets a Config object from a JSON string
-  def getConfig(json: String): Config = {
-    ConfigFactory.parseString(json)
-  }
-
   /**
    * Describes a component in a subsystem
    */
@@ -74,7 +84,7 @@ object IcdDbQuery {
   /**
    * Describes a published item
    *
-   * @param publishType one of Telemetry, Events, Alarms, etc.
+   * @param publishType one of ObserveEvents, Events, Alarms, etc.
    * @param name        the name of the item being published
    * @param description description of the published item
    */
@@ -85,7 +95,7 @@ object IcdDbQuery {
    *
    * @param componentName component (HCD, assembly, ...) name
    * @param prefix        component prefix
-   * @param publishes     list of names (without prefix) of published items (telemetry, events, alarms, etc.)
+   * @param publishes     list of names (without prefix) of published items (events, alarms, etc.)
    */
   case class PublishInfo(componentName: String, prefix: String, publishes: List[Published])
 
@@ -102,56 +112,70 @@ object IcdDbQuery {
    *
    * @param component          The subscriber's component model
    * @param subscribeModelInfo from the subscribe model
-   * @param subscribeType      one of Telemetry, Events, Alarms, etc.
+   * @param subscribeType      one of ObserveEvents, Events, Alarms, etc.
    * @param path               the path name (component-prefix.name) of the item being subscribed to
    */
   case class Subscribed(
-    component:          ComponentModel,
-    subscribeModelInfo: SubscribeModelInfo,
-    subscribeType:      PublishType,
-    path:               String
+      component: ComponentModel,
+      subscribeModelInfo: SubscribeModelInfo,
+      subscribeType: PublishType,
+      path: String
   )
-
-  implicit def toDbObject(query: (String, Any)): DBObject = MongoDBObject(query)
-
-  // Parses the given json and returns a componnet model object
-  def jsonToComponentModel(json: String): ComponentModel = {
-    ComponentModelParser(getConfig(json))
-  }
-
-  // Parses the given json and returns a subsystem model object
-  def jsonToSubsystemModel(json: String): SubsystemModel = {
-    SubsystemModelParser(getConfig(json))
-  }
 }
 
 /**
  * Support for querying the ICD database
  * (Note: This class works on the current, unpublished versions. See IcdVersionManager for use with versions.)
  *
- * @param db the MongoDB handle
+ * @param db the DefaultDB handle
+ * @param maybeSubsystems if defined, limit the list of subsystems searched
  */
-case class IcdDbQuery(db: MongoDB) {
-
+//noinspection DuplicatedCode
+case class IcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) {
   import IcdDbQuery._
 
-  private[db] def collectionExists(name: String): Boolean = db.collectionExists(name)
+  private val timeout = 60.seconds
 
-  private[db] def getCollectionNames: Set[String] = db.getCollectionNames().toSet
+  // Search only the given subsystems, or all subsystems, if maybeSubsystems is empty
+  private[db] def collectionNameFilter(collName: String): Boolean = {
+    if (maybeSubsystems.isEmpty) true
+    else {
+      val baseName = collName.split('.').head
+      maybeSubsystems.get.contains(baseName)
+    }
+  }
+  private[db] def collectionExists(name: String): Boolean = getCollectionNames.contains(name)
 
-  private[db] def getEntries: List[IcdEntry] = {
-    val paths = getCollectionNames.filter(isStdSet).map(IcdPath).toList
+  private[db] def getCollectionNames: Set[String] = {
+    Await.result(db.collectionNames, timeout).filter(collectionNameFilter).toSet
+  }
+
+  private[db] def getEntries(paths: List[IcdPath]): List[IcdEntry] = {
     val compMap = paths.map(p => (p.component, paths.filter(_.component == p.component).map(_.path))).toMap
     val entries = compMap.keys.map(key => getEntry(db, key, compMap(key))).toList
     entries.sortBy(entry => (IcdPath(entry.name).parts.length, entry.name))
+  }
+
+  private[db] def getEntries: List[IcdEntry] = {
+    val paths = getCollectionNames.filter(isStdSet).map(IcdPath).toList
+    getEntries(paths)
+  }
+
+  def collectionHead(coll: BSONCollection): Option[BSONDocument] = {
+    Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout)
   }
 
   /**
    * Returns a list of models, one for each component in the db
    */
   def getComponents: List[ComponentModel] = {
-    for (entry <- getEntries if entry.component.isDefined)
-      yield jsonToComponentModel(entry.component.get.head.toString)
+    val x = for (entry <- getEntries if entry.component.isDefined)
+      yield {
+        val coll = entry.component.get
+        val doc  = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
+        ComponentModelBsonParser(doc)
+      }
+    x.flatten
   }
 
   // Returns an IcdEntry object for the given component name, if found
@@ -176,13 +200,13 @@ case class IcdDbQuery(db: MongoDB) {
    *
    * @param query restricts the components returned (a MongoDBObject, for example)
    */
-  def queryComponents(query: DBObject): List[ComponentModel] = {
-    val list = for (entry <- getEntries if entry.component.isDefined) yield {
-      val coll = entry.component.get
-      val data = coll.findOne(query)
-      if (data.isDefined) Some(jsonToComponentModel(data.get.toString)) else None
+  def queryComponents(query: BSONDocument): List[ComponentModel] = {
+    getEntries.flatMap {
+      _.component.flatMap { coll =>
+        val maybeDoc = Await.result(coll.find(query, None).one[BSONDocument], timeout)
+        maybeDoc.flatMap(ComponentModelBsonParser(_))
+      }
     }
-    list.flatten
   }
 
   /**
@@ -191,7 +215,7 @@ case class IcdDbQuery(db: MongoDB) {
    * @param componentType restricts the type of components returned (one of: Assembly, HCD, Sequencer, etc.)
    */
   def getComponents(componentType: String): List[ComponentModel] =
-    queryComponents("componentType" -> componentType)
+    queryComponents(BSONDocument("componentType" -> componentType))
 
   /**
    * Returns a list of all the component names in the DB
@@ -205,7 +229,7 @@ case class IcdDbQuery(db: MongoDB) {
    */
   def getComponentNames(subsystem: String): List[String] = {
     getCollectionNames
-      .filter(name => name.startsWith(s"$subsystem.") && !name.endsWith(s".${IcdVersionManager.versionColl}"))
+      .filter(name => name.startsWith(s"$subsystem.") && !name.endsWith(IcdVersionManager.versionSuffix))
       .map(IcdPath)
       .filter(p => p.parts.length == 3)
       .map(_.parts.tail.head)
@@ -227,45 +251,45 @@ case class IcdDbQuery(db: MongoDB) {
    * Returns a list of all subsystem names in the database.
    */
   def getSubsystemNames: List[String] = {
-    val result = for (entry <- getEntries) yield {
-      if (entry.subsystem.isDefined) {
-        Some(jsonToSubsystemModel(entry.subsystem.get.head.toString).subsystem)
-      } else None
+    getEntries.flatMap {
+      _.subsystem.flatMap { coll =>
+        val doc = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
+        SubsystemModelBsonParser(doc).map(_.subsystem)
+      }
     }
-    result.flatten.distinct
   }
 
   // --- Get collections for (unpublished) ICD parts ---
 
-  private def getSubsystemCollection(subsystem: String): Option[MongoCollection] = {
+  private def getSubsystemCollection(subsystem: String): Option[BSONCollection] = {
     val collName = getSubsystemCollectionName(subsystem)
     if (collectionExists(collName))
       Some(db(collName))
     else None
   }
 
-  private def getComponentCollection(subsystem: String, component: String): Option[MongoCollection] = {
+  private def getComponentCollection(subsystem: String, component: String): Option[BSONCollection] = {
     val collName = getComponentCollectionName(subsystem, component)
     if (collectionExists(collName))
       Some(db(collName))
     else None
   }
 
-  private def getPublishCollection(subsystem: String, component: String): Option[MongoCollection] = {
+  private def getPublishCollection(subsystem: String, component: String): Option[BSONCollection] = {
     val collName = getPublishCollectionName(subsystem, component)
     if (collectionExists(collName))
       Some(db(collName))
     else None
   }
 
-  private def getSubscribeCollection(subsystem: String, component: String): Option[MongoCollection] = {
+  private def getSubscribeCollection(subsystem: String, component: String): Option[BSONCollection] = {
     val collName = getSubscribeCollectionName(subsystem, component)
     if (collectionExists(collName))
       Some(db(collName))
     else None
   }
 
-  private def getCommandCollection(subsystem: String, component: String): Option[MongoCollection] = {
+  private def getCommandCollection(subsystem: String, component: String): Option[BSONCollection] = {
     val collName = getCommandCollectionName(subsystem, component)
     if (collectionExists(collName))
       Some(db(collName))
@@ -277,9 +301,10 @@ case class IcdDbQuery(db: MongoDB) {
    */
   def getSubsystemModel(subsystem: String): Option[SubsystemModel] = {
     val collName = getSubsystemCollectionName(subsystem)
-    if (collectionExists(collName))
-      Some(SubsystemModelParser(getConfig(db(collName).head.toString)))
-    else None
+    if (collectionExists(collName)) {
+      val coll = db.collection[BSONCollection](collName)
+      collectionHead(coll).flatMap(SubsystemModelBsonParser(_))
+    } else None
   }
 
   /**
@@ -287,9 +312,10 @@ case class IcdDbQuery(db: MongoDB) {
    */
   def getComponentModel(subsystem: String, componentName: String): Option[ComponentModel] = {
     val collName = getComponentCollectionName(subsystem, componentName)
-    if (collectionExists(collName))
-      Some(ComponentModelParser(getConfig(db(collName).head.toString)))
-    else None
+    if (collectionExists(collName)) {
+      val coll = db.collection[BSONCollection](collName)
+      collectionHead(coll).flatMap(ComponentModelBsonParser(_))
+    } else None
   }
 
   /**
@@ -297,9 +323,10 @@ case class IcdDbQuery(db: MongoDB) {
    */
   def getPublishModel(component: ComponentModel): Option[PublishModel] = {
     val collName = getPublishCollectionName(component.subsystem, component.component)
-    if (collectionExists(collName))
-      Some(PublishModelParser(getConfig(db(collName).head.toString)))
-    else None
+    if (collectionExists(collName)) {
+      val coll = db.collection[BSONCollection](collName)
+      collectionHead(coll).flatMap(PublishModelBsonParser(_))
+    } else None
   }
 
   /**
@@ -309,9 +336,10 @@ case class IcdDbQuery(db: MongoDB) {
    */
   def getSubscribeModel(component: ComponentModel): Option[SubscribeModel] = {
     val collName = getSubscribeCollectionName(component.subsystem, component.component)
-    if (collectionExists(collName))
-      Some(SubscribeModelParser(getConfig(db(collName).head.toString)))
-    else None
+    if (collectionExists(collName)) {
+      val coll = db.collection[BSONCollection](collName)
+      collectionHead(coll).flatMap(SubscribeModelBsonParser(_))
+    } else None
   }
 
   /**
@@ -322,9 +350,10 @@ case class IcdDbQuery(db: MongoDB) {
 
   def getCommandModel(subsystem: String, component: String): Option[CommandModel] = {
     val collName = getCommandCollectionName(subsystem, component)
-    if (collectionExists(collName))
-      Some(CommandModelParser(getConfig(db(collName).head.toString)))
-    else None
+    if (collectionExists(collName)) {
+      val coll = db.collection[BSONCollection](collName)
+      collectionHead(coll).flatMap(CommandModelBsonParser(_))
+    } else None
   }
 
   /**
@@ -345,9 +374,8 @@ case class IcdDbQuery(db: MongoDB) {
   def getCommandSenders(subsystem: String, component: String, commandName: String): List[ComponentModel] = {
     for {
       componentModel <- getComponents
-      commandModel <- getCommandModel(componentModel)
-      sendCommandModel <- commandModel.send.find(s =>
-        s.subsystem == subsystem && s.component == component && s.name == commandName)
+      commandModel   <- getCommandModel(componentModel)
+      _              <- commandModel.send.find(s => s.subsystem == subsystem && s.component == component && s.name == commandName)
     } yield componentModel
   }
 
@@ -367,27 +395,29 @@ case class IcdDbQuery(db: MongoDB) {
    * @param component optional name of the component
    */
   def getModels(subsystem: String, component: Option[String] = None): List[IcdModels] = {
+
     // Holds all the model classes associated with a single ICD entry.
     case class Models(entry: IcdEntry) extends IcdModels {
       override val subsystemModel: Option[SubsystemModel] =
-        entry.subsystem.map(s => SubsystemModelParser(getConfig(s.head.toString)))
+        entry.subsystem.flatMap(coll => collectionHead(coll).flatMap(SubsystemModelBsonParser(_)))
       override val publishModel: Option[PublishModel] =
-        entry.publish.map(s => PublishModelParser(getConfig(s.head.toString)))
+        entry.publish.flatMap(coll => collectionHead(coll).flatMap(PublishModelBsonParser(_)))
       override val subscribeModel: Option[SubscribeModel] =
-        entry.subscribe.map(s => SubscribeModelParser(getConfig(s.head.toString)))
+        entry.subscribe.flatMap(coll => collectionHead(coll).flatMap(SubscribeModelBsonParser(_)))
       override val commandModel: Option[CommandModel] =
-        entry.command.map(s => CommandModelParser(getConfig(s.head.toString)))
+        entry.command.flatMap(coll => collectionHead(coll).flatMap(CommandModelBsonParser(_)))
       override val componentModel: Option[ComponentModel] =
-        entry.component.map(s => ComponentModelParser(getConfig(s.head.toString)))
+        entry.component.flatMap(coll => collectionHead(coll).flatMap(ComponentModelBsonParser(_)))
     }
 
-    val e = if (component.isDefined)
-      entryForComponentName(subsystem, component.get)
-    else entryForSubsystemName(subsystem)
+    val e =
+      if (component.isDefined)
+        entryForComponentName(subsystem, component.get)
+      else entryForSubsystemName(subsystem)
 
     // Get the prefix for the related db sub-collections
     val prefix = e.name + "."
-    val list = for (entry <- getEntries if entry.name.startsWith(prefix)) yield new Models(entry)
+    val list   = for (entry <- getEntries if entry.name.startsWith(prefix)) yield Models(entry)
     Models(e) :: list
   }
 
@@ -399,7 +429,7 @@ case class IcdDbQuery(db: MongoDB) {
    */
   def dropComponent(subsystem: String, component: String): Unit = {
     for (coll <- entryForComponentName(subsystem, component).getCollections) {
-      coll.drop()
+      Await.ready(coll.drop(failIfNotFound = false), timeout)
     }
   }
 
@@ -412,9 +442,9 @@ case class IcdDbQuery(db: MongoDB) {
     getPublishModel(component) match {
       case Some(publishModel) =>
         List(
-          publishModel.telemetryList.map(i => Published(Telemetry, i.name, i.description)),
           publishModel.eventList.map(i => Published(Events, i.name, i.description)),
-          publishModel.eventStreamList.map(i => Published(EventStreams, i.name, i.description)),
+          publishModel.observeEventList.map(i => Published(ObserveEvents, i.name, i.description)),
+          publishModel.currentStateList.map(i => Published(CurrentStates, i.name, i.description)),
           publishModel.alarmList.map(i => Published(Alarms, i.name, i.description))
         ).flatten
       case None => Nil
@@ -440,16 +470,16 @@ case class IcdDbQuery(db: MongoDB) {
     // Gets the full path of the subscribed item
     def getPath(i: SubscribeModelInfo): String = {
       val pubComp = getComponentModel(i.subsystem, i.component)
-      val prefix = pubComp.map(_.prefix).getOrElse("")
+      val prefix  = pubComp.map(_.prefix).getOrElse("")
       s"$prefix.${i.name}"
     }
 
     getSubscribeModel(component) match {
       case Some(subscribeModel) =>
         List(
-          subscribeModel.telemetryList.map(i => Subscribed(component, i, Telemetry, getPath(i))),
           subscribeModel.eventList.map(i => Subscribed(component, i, Events, getPath(i))),
-          subscribeModel.eventStreamList.map(i => Subscribed(component, i, EventStreams, getPath(i))),
+          subscribeModel.observeEventList.map(i => Subscribed(component, i, ObserveEvents, getPath(i))),
+          subscribeModel.currentStateList.map(i => Subscribed(component, i, CurrentStates, getPath(i))),
           subscribeModel.alarmList.map(i => Subscribed(component, i, Alarms, getPath(i)))
         ).flatten
       case None => Nil
@@ -472,7 +502,7 @@ case class IcdDbQuery(db: MongoDB) {
    * Returns a list describing the components that subscribe to the given value.
    *
    * @param path          full path name of value (prefix + name)
-   * @param subscribeType telemetry, alarm, etc...
+   * @param subscribeType events, alarm, etc...
    */
   def subscribes(path: String, subscribeType: PublishType): List[Subscribed] = {
     for {

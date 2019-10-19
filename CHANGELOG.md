@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [ICD v0.14] - 2019-10-20
+
+### Changed
+
+- Changed the default JSON schema version to 2.0 
+
 ## [ICD v0.12] - 2019-08-15
 
 ### Added
@@ -35,7 +41,7 @@ All notable changes to this project will be documented in this file.
 - Changed the way the PDF document titles are created, so that (for the command line
   at least) you can have component to component ICDs. 
   For example, these two commands will generate an ICD PDF from a single component of IRIS to
-  a single component oof NFIRAOS and another one between two components in NFIRAOS 
+  a single component of NFIRAOS and another one between two components in NFIRAOS 
   (*Note that if the versions are not specified, you get the latest unpublished version*):
 ```$xslt
    icd-db -s IRIS:1.5 -t NFIRAOS:1.3 --component csro-env-assembly --target-component encl -o csro-env-assembly-encl.pdf

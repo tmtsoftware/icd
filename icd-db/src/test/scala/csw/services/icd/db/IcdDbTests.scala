@@ -2,14 +2,17 @@ package csw.services.icd.db
 
 import java.io.File
 
-import icd.web.shared.ComponentInfo.Telemetry
-import org.scalatest.{DoNotDiscover, FunSuite}
+import csw.services.icd.IcdValidator
+import icd.web.shared.ComponentInfo.CurrentStates
+import org.scalatest.FunSuite
 
 /**
- * Tests the IcdDb class (Note: Assumes MongoDB is running)
+ * Tests the IcdDb class (Note: Assumes mongod is running)
  */
 //@DoNotDiscover
 class IcdDbTests extends FunSuite {
+  val examplesDir = s"examples/${IcdValidator.currentSchemaVersion}"
+
   // The relative location of the the examples directory can change depending on how the test is run
   def getTestDir(path: String): File = {
     val dir = new File(path)
@@ -20,46 +23,47 @@ class IcdDbTests extends FunSuite {
     val db = IcdDb("test")
     db.dropDatabase() // start with a clean db for test
 
-    // ingest examples/NFIRAOS into the DB
-    val problems = db.ingest(getTestDir("examples/NFIRAOS"))
+    // ingest examples/TEST into the DB
+    val problems = db.ingest(getTestDir(s"$examplesDir/TEST"))
     for (p <- problems) println(p)
     assert(problems.isEmpty)
 
     // query the DB
     assert(db.query.getComponentNames == List("envCtrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
-    assert(db.query.getComponentNames("NFIRAOS") == List("envCtrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
+    assert(db.query.getComponentNames("TEST") == List("envCtrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
     assert(db.query.getAssemblyNames == List("envCtrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
     assert(db.query.getHcdNames == List())
-    assert(db.query.getSubsystemNames == List("NFIRAOS"))
+    assert(db.query.getSubsystemNames == List("TEST"))
 
     val components = db.query.getComponents
     assert(components.size == 5)
 
     // Test getting items based on the component name
-    val envCtrl = db.query.getComponentModel("NFIRAOS", "envCtrl").get
+    val envCtrl = db.query.getComponentModel("TEST", "envCtrl").get
     assert(envCtrl.component == "envCtrl")
     assert(envCtrl.componentType == "Assembly")
-    assert(envCtrl.prefix == "nfiraos.ncc.envCtrl")
+    assert(envCtrl.prefix == "test.ncc.envCtrl")
 
     val commands = db.query.getCommandModel(envCtrl).get
     assert(commands.receive.size == 2)
 
     assert(commands.receive.head.name == "ENVIRONMENTAL_CONTROL_INITIALIZE")
-    assert(commands.receive.head.requirements.head == "INT-NFIRAOS-AOESW-0400")
+    assert(commands.receive.head.requirements.head == "INT-TEST-AOESW-0400")
 
     assert(commands.receive.last.name == "ENVIRONMENTAL_CONTROL_STOP")
-    assert(commands.receive.last.requirements.head == "INT-NFIRAOS-AOESW-0405")
+    assert(commands.receive.last.requirements.head == "INT-TEST-AOESW-0405")
 
-    val publish = db.query.getPublishModel(envCtrl).get
-    val telemetryList = publish.telemetryList
-    assert(telemetryList.size == 2)
-    val logging = telemetryList.head
+    val publish   = db.query.getPublishModel(envCtrl).get
+    val eventList = publish.eventList
+    assert(eventList.size == 3)
+    val logging = eventList.head
     assert(logging.name == "logToFile")
     assert(!logging.archive)
 
-    val sensors = telemetryList.last
+    val currentStateList = publish.currentStateList
+    val sensors = currentStateList.find(_.name == "sensors").get
     assert(sensors.name == "sensors")
-    assert(sensors.archive)
+    assert(!sensors.archive)
     val attrList = sensors.attributesList
 
     val temp_ngsWfs = attrList.head
@@ -69,16 +73,15 @@ class IcdDbTests extends FunSuite {
     assert(temp_ngsWfs.units == "<p>degC</p>")
 
     // Test publish queries
-    val published = db.query.getPublished(envCtrl).filter(p =>
-      p.name == "sensors" && p.publishType == Telemetry)
+    val published = db.query.getPublished(envCtrl).filter(p => p.name == "sensors" && p.publishType == CurrentStates)
     assert(published.size == 1)
-    assert(published.head.publishType == Telemetry)
+    assert(published.head.publishType == CurrentStates)
 
-    //    val sensorList = db.query.publishes("nfiraos.ncc.envCtrl.sensors", "NFIRAOS", Telemetry)
+    //    val sensorList = db.query.publishes("test.ncc.envCtrl.sensors", "TEST", Events)
     //    assert(sensorList.size == 1)
     //    assert(sensorList.head.componentName == "envCtrl")
-    //    assert(sensorList.head.item.publishType == Telemetry)
-    //    assert(sensorList.head.prefix == "nfiraos.ncc.envCtrl")
+    //    assert(sensorList.head.item.publishType == Events)
+    //    assert(sensorList.head.prefix == "test.ncc.envCtrl")
     //    assert(sensorList.head.item.name == "sensors")
 
     // Test accessing ICD models
@@ -86,14 +89,14 @@ class IcdDbTests extends FunSuite {
 
     //    // Test saving document from the database
     //    IcdDbPrinter(db).saveToFile(envCtrl.subsystem, Some(envCtrl.component), new File("envCtrl.pdf"))
-    //    IcdDbPrinter(db).saveToFile("NFIRAOS", None, new File("NFIRAOS.pdf"))
+    //    IcdDbPrinter(db).saveToFile("TEST", None, new File("TEST.pdf"))
 
     // Test dropping a component
     db.query.dropComponent(envCtrl.subsystem, envCtrl.component)
-    assert(db.query.getComponentModel("NFIRAOS", "envCtrl").isEmpty)
+    assert(db.query.getComponentModel("TEST", "envCtrl").isEmpty)
 
-    //    db.query.dropComponent("NFIRAOS")
-    //    assert(db.query.getComponentModel("NFIRAOS").isEmpty)
+    //    db.query.dropComponent("TEST")
+    //    assert(db.query.getComponentModel("TEST").isEmpty)
     //    assert(db.query.getComponentModel("ndme").isEmpty)
 
     db.dropDatabase()
@@ -105,23 +108,23 @@ class IcdDbTests extends FunSuite {
   //    db.dropDatabase() // start with a clean db for test
   //
   //    // These three different directories are ingested under the same name (example), to test versioning
-  //    testExample(db, "examples/example1", List("Tcs"), "Comment for example1", majorVersion = false)
-  //    testExample(db, "examples/example2", List("NFIRAOS"), "Comment for example2", majorVersion = true)
-  //    testExample(db, "examples/example3", List("NFIRAOS"), "Comment for example3", majorVersion = false)
+  //    testExample(db, "examples/example1", List("Test2"), "Comment for example1", majorVersion = false)
+  //    testExample(db, "examples/example2", List("TEST"), "Comment for example2", majorVersion = true)
+  //    testExample(db, "examples/example3", List("TEST"), "Comment for example3", majorVersion = false)
   //
   //    // Test Publish/Subscribe queries
-  //    val subscribeInfoList = db.query.subscribes("tcs.parallacticAngle")
+  //    val subscribeInfoList = db.query.subscribes("test2.parallacticAngle")
   //    assert(subscribeInfoList.size == 1)
-  //    assert(subscribeInfoList.head.componentName == "NFIRAOS")
-  //    assert(subscribeInfoList.head.subscribeType == Telemetry)
-  //    assert(subscribeInfoList.head.name == "tcs.parallacticAngle")
-  //    assert(subscribeInfoList.head.subsystem == "TCS")
+  //    assert(subscribeInfoList.head.componentName == "TEST")
+  //    assert(subscribeInfoList.head.subscribeType == Events)
+  //    assert(subscribeInfoList.head.name == "test2.parallacticAngle")
+  //    assert(subscribeInfoList.head.subsystem == "TEST2")
   //
-  //    val publishList = db.query.publishes("nfiraos.initialized")
+  //    val publishList = db.query.publishes("test.initialized")
   //    assert(publishList.size == 1)
-  //    assert(publishList.head.componentName == "NFIRAOS")
+  //    assert(publishList.head.componentName == "TEST")
   //    assert(publishList.head.item.publishType == Events)
-  //    assert(publishList.head.prefix == "nfiraos")
+  //    assert(publishList.head.prefix == "test")
   //    assert(publishList.head.item.name == "initialized")
   //
   //    // Test versions
@@ -146,16 +149,16 @@ class IcdDbTests extends FunSuite {
 
   // XXX TODO: Turn this into a test
   def testModels(db: IcdDb): Unit = {
-    val modelsList = db.query.getModels("NFIRAOS")
+    val modelsList = db.query.getModels("TEST")
     val publishInfo = for (models <- modelsList) yield {
       models.publishModel.foreach { publishModel =>
-        publishModel.telemetryList.foreach { telemetryModel =>
-          // println(s"${publishModel.component} publishes telemetry ${telemetryModel.name}: ${telemetryModel.description}")
+        publishModel.eventList.foreach { eventModel =>
+          // println(s"${publishModel.component} publishes event ${eventModel.name}: ${eventModel.description}")
         }
       }
       models.subscribeModel.foreach { subscribeModel =>
-        subscribeModel.telemetryList.foreach { telemetryModel =>
-          // println(s"${subscribeModel.component} subscribes to telemetry ${telemetryModel.name} from ${telemetryModel.subsystem}")
+        subscribeModel.eventList.foreach { eventModel =>
+          // println(s"${subscribeModel.component} subscribes to event ${eventModel.name} from ${eventModel.subsystem}")
         }
       }
     }
@@ -165,7 +168,8 @@ class IcdDbTests extends FunSuite {
         commandModel.receive.foreach { receiveCommandModel =>
           val opt = db.query.getCommand(commandModel.subsystem, commandModel.component, receiveCommandModel.name)
           assert(opt.get == receiveCommandModel)
-          val senders = db.query.getCommandSenders(commandModel.subsystem, commandModel.component, receiveCommandModel.name)
+          val senders = db.query
+            .getCommandSenders(commandModel.subsystem, commandModel.component, receiveCommandModel.name)
             .map(_.component)
         }
       }

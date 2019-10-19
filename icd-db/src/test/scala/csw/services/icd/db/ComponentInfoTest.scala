@@ -2,10 +2,13 @@ package csw.services.icd.db
 
 import java.io.File
 
+import csw.services.icd.IcdValidator
+import icd.web.shared.SubsystemWithVersion
 import org.scalatest.FunSuite
 
 // XXX TODO: Add more detailed test, add IcdComponentInfo tests
 class ComponentInfoTest extends FunSuite {
+  val examplesDir = s"examples/${IcdValidator.currentSchemaVersion}"
 
   // The relative location of the the examples directory can change depending on how the test is run
   def getTestDir(path: String): File = {
@@ -16,29 +19,35 @@ class ComponentInfoTest extends FunSuite {
   test("Get pub/sub info from database") {
     val db = IcdDb("test")
     db.dropDatabase() // start with a clean db for test
+    val query          = IcdDbQuery(db.db, None)
+    val versionManager = IcdVersionManager(query)
 
-    // ingest examples/NFIRAOS into the DB
-    val problems = db.ingest(getTestDir("examples/NFIRAOS"))
+    // ingest examples/TEST into the DB
+    val problems = db.ingest(getTestDir(s"$examplesDir/TEST"))
     for (p <- problems) println(p)
 
-    val problems2 = db.ingest(getTestDir("examples/TCS"))
+    val problems2 = db.ingest(getTestDir(s"$examplesDir/TEST2"))
     for (p <- problems2) println(p)
 
-    ComponentInfoHelper.getComponentInfo(db.query, "NFIRAOS", None, "lgsWfs").foreach { info =>
-      assert(info.componentModel.component == "lgsWfs")
-      assert(info.publishes.nonEmpty)
-      assert(info.publishes.get.telemetryList.nonEmpty)
-      info.publishes.get.telemetryList.foreach { pubInfo =>
-        println(s"envCtrl publishes telemetry: ${pubInfo.telemetryModel.name}")
-        pubInfo.subscribers.foreach { subInfo =>
-          println(s"${subInfo.subscribeModelInfo.component} from ${subInfo.subscribeModelInfo.subsystem} subscribes to ${subInfo.subscribeModelInfo.name}")
+    new ComponentInfoHelper(displayWarnings = false)
+      .getComponentInfo(versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")))
+      .foreach { info =>
+        assert(info.componentModel.component == "lgsWfs")
+        assert(info.publishes.nonEmpty)
+        assert(info.publishes.get.eventList.nonEmpty)
+        info.publishes.get.eventList.foreach { pubInfo =>
+          println(s"envCtrl publishes event: ${pubInfo.eventModel.name}")
+          pubInfo.subscribers.foreach { subInfo =>
+            println(
+              s"${subInfo.subscribeModelInfo.component} from ${subInfo.subscribeModelInfo.subsystem} subscribes to ${subInfo.subscribeModelInfo.name}"
+            )
+          }
+        }
+        assert(info.subscribes.nonEmpty)
+        assert(info.subscribes.get.subscribeInfo.nonEmpty)
+        info.subscribes.get.subscribeInfo.foreach { subInfo =>
+          println(s"envCtrl subscribes to ${subInfo.subscribeModelInfo.name} from ${subInfo.subscribeModelInfo.subsystem}")
         }
       }
-      assert(info.subscribes.nonEmpty)
-      assert(info.subscribes.get.subscribeInfo.nonEmpty)
-      info.subscribes.get.subscribeInfo.foreach { subInfo =>
-        println(s"envCtrl subscribes to ${subInfo.subscribeModelInfo.name} from ${subInfo.subscribeModelInfo.subsystem}")
-      }
-    }
   }
 }

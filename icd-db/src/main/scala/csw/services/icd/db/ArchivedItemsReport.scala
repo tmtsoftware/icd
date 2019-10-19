@@ -9,43 +9,37 @@ import icd.web.shared.IcdModels.{ArchivedNameDesc, ComponentModel}
 
 object ArchivedItemsReport {
 
-  case class ArchiveInfo(component: String,
-                         prefix: String,
-                         eventType: String,
-                         name: String,
-                         description: String)
+  case class ArchiveInfo(component: String, prefix: String, eventType: String, name: String, description: String)
 
 }
 
-case class ArchivedItemsReport(db: IcdDb, subsystemOpt: Option[String]) {
-  val query = new CachedIcdDbQuery(db.db)
+case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
+  val query = new CachedIcdDbQuery(db.db, maybeSubsystem.map(List(_)))
 
   // Returns true if the given subsystem should be included in the report
   private def subsystemFilter(subsystem: String): Boolean = {
-    if (subsystemOpt.isDefined) subsystemOpt.contains(subsystem)
+    if (maybeSubsystem.isDefined) maybeSubsystem.contains(subsystem)
     else !subsystem.startsWith("TEST")
   }
 
   // Gets all the archived items
   private def getArchivedItems: List[ArchiveInfo] = {
     // Gets the archived items from the list
-    def getItems(c: ComponentModel,
-                 eventType: String,
-                 list: List[ArchivedNameDesc]): List[ArchiveInfo] = {
+    def getItems(c: ComponentModel, eventType: String, list: List[ArchivedNameDesc]): List[ArchiveInfo] = {
       val comp = c.component.replace("-", "-\n") // save horizontal space
       list
         .filter(_.archive)
         .map(e => ArchiveInfo(comp, c.prefix, eventType, e.name, e.description))
     }
+
     val result = for {
       component <- query.getComponents
       if subsystemFilter(component.subsystem)
       publishModel <- query.getPublishModel(component)
     } yield {
       getItems(component, "Alarm", publishModel.alarmList) ++
-        getItems(component, "Events", publishModel.eventList) ++
-        getItems(component, "EventStreams", publishModel.eventStreamList) ++
-        getItems(component, "Telemetry", publishModel.telemetryList)
+      getItems(component, "Events", publishModel.eventList) ++
+      getItems(component, "ObserveEvents", publishModel.observeEventList)
     }
     result.flatten
   }
@@ -81,11 +75,13 @@ case class ArchivedItemsReport(db: IcdDb, subsystemOpt: Option[String]) {
               for {
                 item <- getArchivedItems
               } yield {
-                tr(td(p(item.component)),
-                   td(p(item.prefix)),
-                   td(p(item.eventType)),
-                   td(p(item.name)),
-                   td(raw(firstParagraph(item.description))))
+                tr(
+                  td(p(item.component)),
+                  td(p(item.prefix)),
+                  td(p(item.eventType)),
+                  td(p(item.name)),
+                  td(raw(firstParagraph(item.description)))
+                )
               }
             )
           )
@@ -96,8 +92,8 @@ case class ArchivedItemsReport(db: IcdDb, subsystemOpt: Option[String]) {
   }
 
   /**
-    * Saves the report in HTML or PDF, depending on the file suffix
-    */
+   * Saves the report in HTML or PDF, depending on the file suffix
+   */
   def saveToFile(file: File): Unit = {
 
     def saveAsHtml(html: String): Unit = {

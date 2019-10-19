@@ -8,9 +8,9 @@
         <title>@title</title>
         <link rel="shortcut icon" type="image/png" href="@assets.path("images/favicon.png")">
 
-        @Html(webJarsUtil.css("bootstrap.min.css"))
-        @Html(webJarsUtil.css("bootstrap-table.min.css"))
-        @Html(webJarsUtil.css("jquery-ui.min.css"))
+        @webJarsUtil.locate("bootstrap.min.css").css()
+        @webJarsUtil.locate("bootstrap-table.min.css").css()
+        @webJarsUtil.locate("jquery-ui.min.css").css()
 
         <link rel="stylesheet" media="screen" href="@assets.path("stylesheets/resize.css")">
         <link rel="stylesheet" href="@assets.path("stylesheets/icd.css")">

@@ -1,6 +1,4 @@
 import com.typesafe.sbt.SbtNativePackager._
-//import com.typesafe.sbt.SbtScalariform
-//import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import com.typesafe.sbt.jse.JsEngineImport.JsEngineKeys
 import com.typesafe.sbt.packager.Keys._
 import sbt.Keys._
@@ -17,12 +15,12 @@ object Settings {
     organizationName := "TMT",
     organizationHomepage := Some(url("http://www.tmt.org")),
     version := Dependencies.Version,
-    scalaVersion := Dependencies.ScalaVersion)
+    scalaVersion := Dependencies.ScalaVersion
+  )
 
   // Basic settings
   val buildSettings = commonSettings ++ Seq(
     crossPaths := true,
-
     // Note: "parallelExecution in Test := false" doesn't seem to prevent parallel execution when all tests are run,
     // which can be a problem in some cases. Besides the fact that all the test output is mixed up,
     // some tests access external resources, such as the location service, redis, hornetq, the config service, etc.,
@@ -34,21 +32,13 @@ object Settings {
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),
     // Don't buffer test log output (since not parallel)
     logBuffered in Test := false,
-
     fork := true,
-    resolvers += Resolver.typesafeRepo("releases"),
-    resolvers += Resolver.sonatypeRepo("releases"),
-    resolvers += sbtResolver.value,
-    resolvers += "Scalaz Bintray Repo" at "https://dl.bintray.com/scalaz/releases",
-    resolvers += Resolver.jcenterRepo
+    resolvers += "jitpack" at "https://jitpack.io"
   )
 
-  // Using java8
-//  lazy val defaultSettings = buildSettings ++ formatSettings ++ Seq(
   lazy val defaultSettings = buildSettings ++ Seq(
-    scalacOptions ++= Seq("-target:jvm-1.8", "-encoding", "UTF-8", "-feature", "-deprecation", "-unchecked"),
-    javacOptions in Compile ++= Seq("-source", "1.8"),
-    javacOptions in (Compile, compile) ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint:unchecked", "-Xlint:deprecation"),
+    scalacOptions ++= Seq("-encoding", "UTF-8", "-feature", "-deprecation", "-unchecked"),
+    javacOptions in (Compile, compile) ++= Seq("-Xlint:unchecked", "-Xlint:deprecation"),
     bashScriptExtraDefines ++= Seq(s"addJava -DICD_VERSION=${Dependencies.Version}")
   )
 

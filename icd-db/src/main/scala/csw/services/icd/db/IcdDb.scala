@@ -2,22 +2,28 @@ package csw.services.icd.db
 
 import java.io.File
 
-import com.mongodb.casbah.Imports._
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd._
-import csw.services.icd.model.{BaseModelParser, SubsystemModelParser}
+import csw.services.icd.db.parser.{BaseModelParser, SubsystemModelParser}
 import csw.services.icd.db.ComponentDataReporter._
+import diffson.playJson.DiffsonProtocol
 import org.joda.time.{DateTime, DateTimeZone}
+import play.api.libs.json.Json
+import reactivemongo.api.{DefaultDB, MongoConnection, MongoDriver}
 
-import scala.io.StdIn
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration._
+import scala.util.Try
 
 object IcdDbDefaults {
-  private val conf = ConfigFactory.load
-  val defaultPort: Int = conf.getInt("icd.db.port")
-  val defaultHost: String = conf.getString("icd.db.host")
+  private val conf          = ConfigFactory.load
+  val defaultPort: Int      = conf.getInt("icd.db.port")
+  val defaultHost: String   = conf.getString("icd.db.host")
   val defaultDbName: String = conf.getString("icd.db.name")
 }
 
+//noinspection DuplicatedCode
 object IcdDb extends App {
 
   // Parser for the command line options
@@ -48,9 +54,9 @@ object IcdDb extends App {
       c.copy(listData = Some(x))
     } text "Prints a list of total data rates for components of specified subsystem."
 
-    opt[Unit]('u', "allUnits")  action { (x, c) =>
-      c.copy(allUnits = Some(Unit))
-    } text "Prints the set of unique units used in all received commands and published events/telemetry for all components in DB."
+    opt[Unit]('u', "allUnits") action { (_, c) =>
+      c.copy(allUnits = Some(()))
+    } text "Prints the set of unique units used in all received commands and published events for all components in DB."
 
     opt[String]('c', "component") valueName "<name>" action { (x, c) =>
       c.copy(component = Some(x))
@@ -96,6 +102,10 @@ object IcdDb extends App {
       c.copy(archived = Some(x))
     } text "Generates an 'Archived Items' report to the given file in a format based on the file's suffix (html, pdf)"
 
+    opt[Unit]("allSubsystems") action { (_, c) =>
+      c.copy(allSubsystems = Some(()))
+    } text "Include all subsystems in searches for publishers, subscribers, etc. while generating API doc (Default: only consider the one subsystem)"
+
     help("help")
     version("version")
   }
@@ -106,6 +116,9 @@ object IcdDb extends App {
       try {
         run(options)
       } catch {
+        case _: IcdDbException =>
+          println("Error: Failed to connect to mongodb. Make sure mongod server is running.")
+          System.exit(1)
         case e: Throwable =>
           e.printStackTrace()
           System.exit(1)
@@ -132,22 +145,24 @@ object IcdDb extends App {
     options.missing.foreach(missingItemsReport)
     options.archived.foreach(archivedItemsReport)
     options.listData.foreach(s => listData(db, s))
-    options.allUnits.foreach(Unit => printAllUsedUnits(db))
+    options.allUnits.foreach(_ => printAllUsedUnits(db))
+
+    db.close()
+    System.exit(0)
 
     // --list option
     def list(componentType: String): Unit = {
       val opt = componentType.toLowerCase
-      val list = if (opt.startsWith("s"))
-        db.query.getSubsystemNames
-      else if (opt.startsWith("as"))
-        db.query.getAssemblyNames
-      else if (opt.startsWith("h"))
-        db.query.getHcdNames
-      else db.query.getComponentNames
+      val list =
+        if (opt.startsWith("s"))
+          db.query.getSubsystemNames
+        else if (opt.startsWith("as"))
+          db.query.getAssemblyNames
+        else if (opt.startsWith("h"))
+          db.query.getHcdNames
+        else db.query.getComponentNames
       for (name <- list) println(name)
     }
-
-
 
     def error(msg: String): Unit = {
       println(msg)
@@ -157,53 +172,52 @@ object IcdDb extends App {
     // --output option
     def output(file: File): Unit = {
       if (options.subsystem.isEmpty) error("Missing required subsystem name: Please specify --subsystem <name>")
-      IcdDbPrinter(db).saveToFile(options.subsystem.get, options.component,
-        options.target, options.targetComponent, options.icdVersion, file)
+      val searchAllSubsystems = options.allSubsystems.isDefined && options.target.isEmpty
+      IcdDbPrinter(db, searchAllSubsystems).saveToFile(
+        options.subsystem.get,
+        options.component,
+        options.target,
+        options.targetComponent,
+        options.icdVersion,
+        file
+      )
     }
 
     // --drop option
     def drop(opt: String): Unit = {
       opt match {
         case "db" =>
-          if (confirmDrop(s"Are you sure you want to drop the ${options.dbName} database?")) {
-            println(s"Dropping ${options.dbName}")
-            db.dropDatabase()
-          }
+          println(s"Dropping ${options.dbName}")
+          db.dropDatabase()
         case "component" =>
           if (options.subsystem.isEmpty) error("Missing required subsystem name: Please specify --subsystem <name>")
           options.component match {
             case Some(component) =>
-              if (confirmDrop(s"Are you sure you want to drop $component from ${options.dbName}?")) {
-                println(s"Dropping $component from ${options.dbName}")
-                db.query.dropComponent(options.subsystem.get, component)
-              }
+              println(s"Dropping $component from ${options.dbName}")
+              db.query.dropComponent(options.subsystem.get, component)
             case None =>
               error("Missing required component name: Please specify --component <name>")
           }
         case x =>
           error(s"Invalid drop argument $x. Expected 'db' or 'component' (together with --component option)")
       }
-      def confirmDrop(msg: String): Boolean = {
-        print(s"$msg [y/n] ")
-        StdIn.readLine().toLowerCase == "y"
-      }
     }
 
     // --versions option
     def listVersions(subsystem: String): Unit = {
       for (v <- db.versionManager.getVersions(subsystem)) {
-        println(s"${v.versionOpt.getOrElse("*")}\t${v.date.withZone(DateTimeZone.getDefault)}\t${v.comment}")
+        println(s"${v.maybeVersion.getOrElse("*")}\t${v.date.withZone(DateTimeZone.getDefault)}\t${v.comment}")
       }
     }
 
     // Check that the version is in the correct format
-    def checkVersion(versionOpt: Option[String]): Unit = {
-      versionOpt match {
+    def checkVersion(maybeVersion: Option[String]): Unit = {
+      maybeVersion match {
         case Some(version) =>
           val versionRegex = """\d+\.\d+""".r
           version match {
             case versionRegex(_*) =>
-            case _ => error(s"Bad version format: $version, expected something like 1.0, 2.1")
+            case _                => error(s"Bad version format: $version, expected something like 1.0, 2.1")
           }
         case None =>
       }
@@ -211,16 +225,25 @@ object IcdDb extends App {
 
     // --diff option: Compare versions option. Argument format: <subsystem>:v1[,v2]
     def diffVersions(arg: String): Unit = {
+      import DiffsonProtocol._
+
       val msg = "Expected argument format: <subsystemName>:v1[,v2]"
       if (!arg.contains(":") || arg.endsWith(":") || arg.endsWith(",")) error(msg)
       val Array(name, vStr) = arg.split(":")
       if (vStr.isEmpty) error(msg)
       val Array(v1, v2) =
-        if (vStr.contains(",")) vStr.split(",").map(Some(_)) else Array(Some(vStr), None)
+        if (vStr.contains(",")) {
+          vStr.split(",").map(Option(_))
+        } else {
+          Array(Option(vStr), Option.empty)
+        }
       checkVersion(v1)
       checkVersion(v2)
-      for (diff <- db.versionManager.diff(name, v1, v2))
-        println(s"\n${diff.path}:\n${diff.patch.toString()}") // XXX TODO: work on the format?
+      for (diff <- db.versionManager.diff(name, v1, v2)) {
+        val jsValue = Json.toJson(diff.patch)
+        val s       = Json.prettyPrint(jsValue)
+        println(s"\n${diff.path}:\n$s") // XXX TODO FIXME: work on the format?
+      }
     }
 
     // --missing option
@@ -236,22 +259,37 @@ object IcdDb extends App {
 }
 
 /**
+ * Thrown when the connection to the icd database fails
+ */
+class IcdDbException extends Exception
+
+/**
  * ICD Database (Mongodb) support
  */
 case class IcdDb(
-  dbName: String = IcdDbDefaults.defaultDbName,
-  host: String = IcdDbDefaults.defaultHost,
-  port: Int = IcdDbDefaults.defaultPort) {
+    dbName: String = IcdDbDefaults.defaultDbName,
+    host: String = IcdDbDefaults.defaultHost,
+    port: Int = IcdDbDefaults.defaultPort
+) {
 
-  val mongoClient = MongoClient(host, port)
+  implicit val timeout: FiniteDuration = 5.seconds
+  private val mongoUri                 = s"mongodb://$host:$port/$dbName"
+  private val driver                   = new MongoDriver
+  private val futureDb = for {
+    uri <- Future.fromTry(MongoConnection.parseURI(mongoUri))
+    dn  <- Future(uri.db.get)
+    db  <- driver.connection(uri, None, strictUri = false).get.database(dn)
+  } yield db
+  val db: DefaultDB = Try(Await.result(futureDb, timeout)).getOrElse {
+    throw new IcdDbException()
+  }
 
   // Clean up on exit
-  sys.addShutdownHook(mongoClient.close())
+  sys.addShutdownHook(close())
 
-  val db = mongoClient(dbName)
-  val query = IcdDbQuery(db)
-  val versionManager = IcdVersionManager(db, query)
-  val manager = IcdDbManager(db, versionManager)
+  val query: IcdDbQuery                 = IcdDbQuery(db, None)
+  val versionManager: IcdVersionManager = IcdVersionManager(query)
+  val manager: IcdDbManager             = IcdDbManager(db, versionManager)
 
   /**
    * Ingests all the files with the standard names (stdNames) in the given directory and recursively
@@ -261,7 +299,7 @@ case class IcdDb(
    *            and any number of subdirectories containing ICD files
    */
   def ingest(dir: File = new File(".")): List[Problem] = {
-    val validateProblems = IcdValidator.validateRecursive(dir)
+    val validateProblems = IcdValidator.validateDirRecursive(dir)
     if (validateProblems.nonEmpty)
       validateProblems
     else
@@ -311,13 +349,16 @@ case class IcdDb(
    * @param config the config to be ingested into the datasbase
    */
   private def ingestConfig(name: String, config: Config): Unit = {
-    import scala.collection.JavaConverters._
-    val dbObj = config.root().unwrapped().asScala.asDBObject
-    manager.ingest(name, dbObj)
+    import play.api.libs.json._
+    import play.api.libs.json.Reads._
+
+    val jsObj = Json.parse(IcdValidator.toJson(config)).as[JsObject]
+
+    manager.ingest(name, jsObj)
   }
 
   /**
-   * Returns the MongoDB collection name to use for the given ICD config.
+   * Returns the DefaultDB collection name to use for the given ICD config.
    *
    * @param stdConfig API model file packaged as StdConfig object
    * @return the collection name
@@ -333,30 +374,6 @@ case class IcdDb(
   }
 
   /**
-   * Returns the subsystem name for the given API model config.
-   *
-   * @param stdConfig API model file packaged as StdConfig object
-   * @return the collection name
-   */
-  def getSubsystemName(stdConfig: StdConfig): String = {
-    if (stdConfig.stdName.isSubsystemModel)
-      SubsystemModelParser(stdConfig.config).subsystem
-    else
-      BaseModelParser(stdConfig.config).subsystem
-  }
-
-//  /**
-//   * Imports a JSON file with ICD release information.
-//   * The format of the file is the one generated by the [[IcdVersions]] class.
-//   *
-//   * @param inputFile a file in HOCON/JSON format matching the JSON schema in icds-schema.conf
-//   */
-//  def importIcds(inputFile: File): Unit = {
-//    val icdVersions = IcdVersions.fromJson(new String(Files.readAllBytes(inputFile.toPath)))
-//    importIcds(icdVersions)
-//  }
-
-  /**
    * Imports the given ICD release information.
    *
    * @param icdVersions describes the ICD version
@@ -367,9 +384,14 @@ case class IcdDb(
       feedback(s"Ingesting ICD ${icdVersions.subsystems.head}-${icdVersions.subsystems(1)}-${icd.icdVersion}")
       versionManager.addIcdVersion(
         icd.icdVersion,
-        icdVersions.subsystems.head, icd.versions.head,
-        icdVersions.subsystems(1), icd.versions(1),
-        icd.user, icd.comment, DateTime.parse(icd.date))
+        icdVersions.subsystems.head,
+        icd.versions.head,
+        icdVersions.subsystems(1),
+        icd.versions(1),
+        icd.user,
+        icd.comment,
+        DateTime.parse(icd.date)
+      )
     }
   }
 
@@ -378,14 +400,14 @@ case class IcdDb(
    * NOTE: This connection can't be reused after closing.
    */
   def close(): Unit = {
-    mongoClient.close()
+    Await.ready(db.endSession(), timeout)
   }
 
   /**
    * Drops this database. Use with caution!
    */
   def dropDatabase(): Unit = {
-    db.dropDatabase()
+    Await.ready(db.drop(), timeout)
   }
 
 }

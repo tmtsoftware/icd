@@ -4,6 +4,9 @@
 #
 # By default does a clean install. Use `install.sh -nc` to not do a clean build.
 
+# See build.sbt: Causes fullOpt to be used to optimize the generated JS code
+export SCALAJS_PROD=true
+
 dir=../install_icd
 
 # Make sure we can find sbt

@@ -2,15 +2,17 @@ package icd.web.client
 
 import scalacss.internal.mutable.StyleSheet
 
-import scalacss.Defaults._
+import scalacss.DevDefaults._
+//import scalacss.ProdDefaults._
 
+//noinspection TypeAnnotation
 // CSS styles
 object Styles extends StyleSheet.Inline {
 
   import dsl._
   import language.postfixOps
 
-  val layout = style(
+  val layout: StyleA = style(
     height(95 %%),
     width(100 %%),
     position.fixed,
@@ -24,7 +26,7 @@ object Styles extends StyleSheet.Inline {
     media.print(width.auto, height.auto, display.block, overflow.visible, float.none, position.static)
   )
 
-  val mainContent = style(
+  val mainContent: StyleA = style(
     addClassName("col-xs-11"),
     padding(0 px, 0 px, 0 px, 0 px),
     height(100 %%),
@@ -77,7 +79,8 @@ object Styles extends StyleSheet.Inline {
 
   // Used for table columns that should wrap at "."
   val wrapTableColumn = style(
-    wordBreak.breakAll, wordWrap.breakWord
+    wordBreak.breakAll,
+    wordWrap.breakWord
   )
 
   val fileUploadMessages = style(
@@ -131,6 +134,43 @@ object Styles extends StyleSheet.Inline {
     whiteSpace.nowrap
   )
 
+  val selectDialogLabel = style(
+    addClassNames("col-xs-1"),
+    padding(6 px, 6 px, 0 px, 16 px)
+  )
+
+  val selectDialogSubsystem = style(
+    addClassNames("col-xs-2"),
+    padding(0 px, 0 px, 0 px, 12 px)
+  )
+
+  val selectDialogVersion = style(
+    addClassNames("col-xs-1"),
+    padding(0 px, 0 px, 0 px, 5 px)
+  )
+
+  val selectDialogComponent = style(
+    addClassNames("col-xs-4"),
+    padding(0 px, 0 px, 0 px, 5 px)
+  )
+
+  val selectDialogIcdRow = style(
+    padding(0 px, 0 px, 60 px, 0 px)
+  )
+
+  val selectDialogSubsystemRow = style(
+    padding(0 px, 0 px, 20 px, 0 px)
+  )
+
+  val subsystemSwapper = style(
+    padding(0 px, 0 px, 20 px, 200 px),
+    fontSize(30 px)
+  )
+
+  val selectDialogApplyButton = style(
+    padding(20 px, 0 px, 20 px, 0 px)
+  )
+
   val scrollableDiv = style(
     width(100 %%),
     height(100 %%),
@@ -146,4 +186,13 @@ object Styles extends StyleSheet.Inline {
     color.black,
     backgroundColor.transparent
   )
+
+  val checkboxStyle = style(
+    float.left,
+    margin(9 px, 0 px, 0 px)
+  )
+
+//  val busyWaiting = style(
+//    cursor.progress
+//  )
 }

@@ -9,9 +9,10 @@ package csw.services.icd.db
  *
  * @param query may be used to share caching of collection names (see CachedIcdDbQuery)
  */
-class CachedIcdVersionManager(query: IcdDbQuery) extends IcdVersionManager(query.db, query) {
+class CachedIcdVersionManager(query: IcdDbQuery) extends IcdVersionManager(query) {
   private val collectionNames = query.getCollectionNames
 
   override def getCollectionNames: Set[String] = collectionNames
+
   override def collectionExists(name: String): Boolean = collectionNames.contains(name)
 }

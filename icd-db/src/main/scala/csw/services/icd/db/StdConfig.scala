@@ -9,13 +9,14 @@ import csw.services.icd.StdName._
 
 /**
  * Used to determine the subsystem and component name, given a set of model files.
- * The MongoDB collection name is subsystem.name or subsystem.component.name,
+ * The DefaultDB collection name is subsystem.name or subsystem.component.name,
  * where name is the value returned by StdName.modelBaseName.
  *
  * @param stdName indicates which of the ICD model files the config represents
- * @param config the model file parsed into a Config
+ * @param config  the model file parsed into a Config
+ * @param fileName  the (relative) path name of the source file (for error reporting)
  */
-case class StdConfig(stdName: StdName, config: Config)
+case class StdConfig(stdName: StdName, config: Config, fileName: String)
 
 object StdConfig {
 
@@ -27,7 +28,7 @@ object StdConfig {
     stdNames.flatMap { stdName =>
       val inputFile = new File(dir, stdName.name)
       if (inputFile.exists())
-        Some(StdConfig(stdName, ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())))
+        Some(StdConfig(stdName, ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem()), inputFile.getPath))
       else None
     }
   }
@@ -43,7 +44,7 @@ object StdConfig {
     else {
       stdNames.flatMap { stdName =>
         if (name == stdName.name)
-          Some(StdConfig(stdName, ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())))
+          Some(StdConfig(stdName, ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem()), fileName))
         else None
       }
     }
@@ -53,8 +54,9 @@ object StdConfig {
    * Returns a list for StdConfig objects, one for each ICD file in the given zip file
    */
   def get(zipFile: ZipFile): List[StdConfig] = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     def isValid(f: ZipEntry) = stdSet.contains(new File(f.getName).getName)
+
     val list = for (e <- zipFile.entries().asScala.filter(isValid)) yield {
       val reader = new InputStreamReader(zipFile.getInputStream(e))
       val config = ConfigFactory.parseReader(reader)
@@ -69,8 +71,8 @@ object StdConfig {
    */
   def get(config: Config, fileName: String): Option[StdConfig] = {
     val name = new File(fileName).getName
-    stdNames.flatMap {
-      stdName => if (name == stdName.name) Some(StdConfig(stdName, config)) else None
+    stdNames.flatMap { stdName =>
+      if (name == stdName.name) Some(StdConfig(stdName, config, fileName)) else None
     }.headOption
   }
 }

@@ -8,9 +8,8 @@ import play.api.libs.json._
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import org.querki.jquery._
+import org.scalajs.dom.{Element, document}
 import org.scalajs.dom.html.Button
-
 import scalatags.JsDom.all._
 
 object VersionHistory {
@@ -32,8 +31,8 @@ object VersionHistory {
 }
 
 /**
-  * Manages the main content section
-  */
+ * Manages the main content section
+ */
 case class VersionHistory(mainContent: MainContent) extends Displayable {
 
   import VersionHistory._
@@ -56,12 +55,12 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
 
   // Called when the Compare button is pressed
   private def compareHandler(subsystem: String)(e: dom.Event): Unit = {
-    val checked = $("input[name='version']:checked")
-    if (checked.length == 2) {
-      val versions = checked.mapElems(elem => elem.asInstanceOf[HTMLInputElement].value).sortWith(compareVersions).toList
-      val route = Routes.diff(subsystem, versions)
+    val checked = document.querySelectorAll("input[name='version']:checked").toList
+    if (checked.size == 2) {
+      val versions = checked.map(elem => elem.asInstanceOf[HTMLInputElement].value).sortWith(compareVersions)
+      val route    = Routes.diff(subsystem, versions)
       Ajax.get(route).map { r =>
-        val list = Json.fromJson[List[DiffInfo]](Json.parse(r.responseText)).getOrElse(Nil)
+        val list = Json.fromJson[Array[DiffInfo]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
         diffDiv.innerHTML = ""
         diffDiv.appendChild(markupDiff(subsystem, list))
       }
@@ -73,18 +72,20 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
 
     def jsonDiffMarkup(infoList: List[JsonDiff]) = {
       import scalacss.ScalatagsCss._
+
       val headings = List("Operation", "Path", "Old Value", "New Value")
 
       // Display quoted strings as just the text, but display json objects as objects
       def displayJson(json: String) = {
         if (json.startsWith("\"")) {
-          div(json.substring(1, json.length-1).replace("\\n", "\n").trim.split("\n").map(s => p(s)))
+          div(json.substring(1, json.length - 1).replace("\\n", "\n").trim.split("\n").map(s => p(s)))
         } else {
           pre(code(Styles.unstyledPre, Json.prettyPrint(Json.parse(json))))
         }
       }
 
-      table(attr("data-toggle") := "table",
+      table(
+        attr("data-toggle") := "table",
         thead(
           tr(headings.map(th(_)))
         ),
@@ -97,7 +98,8 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
               td(div(Styles.scrollableDiv, displayJson(i.value)))
             )
           }
-        ))
+        )
+      )
 
     }
 
@@ -110,9 +112,10 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
     }
 
     def diffInfoMarkup(diffInfo: DiffInfo) = {
-      val infoList = Json.fromJson[List[JsonDiff]](Json.parse(diffInfo.jsonDiff)) match {
-        case JsSuccess(list: List[JsonDiff], _: JsPath) =>
-          list
+      val jsValue = Json.parse(diffInfo.jsonDiff)
+      val infoList = Json.fromJson[Array[JsonDiff]](jsValue) match {
+        case JsSuccess(ar, _: JsPath) =>
+          ar.toList
         case e: JsError =>
           println(s"${JsError.toJson(e).toString()}")
           Nil
@@ -125,6 +128,12 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
 
     div(
       h2(s"Changes to $subsystem"),
+      p(
+        """
+          |Note: The paths in the tables below indicate the relative location of the change.
+          |A number in a path is the zero based index of the changed item.
+          |For example: "/publish/alarms/3/description" indicates that the change is in the fourth alarm's description.
+          |""".stripMargin),
       list.map(diffInfoMarkup)
     ).render
   }
@@ -132,7 +141,7 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
   // Called when one of the version checkboxes is clicked to update the enabled state of the compare
   // button when exactly two items are selected
   private def checkboxListener(compButton: Button)(e: dom.Event): Unit = {
-    val checked = $("input[name='version']:checked")
+    val checked = document.querySelectorAll("input[name='version']:checked")
     compButton.disabled = checked.length != 2
   }
 
@@ -159,7 +168,9 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
     else {
       val compButton = compareButton(subsystem)
       div(
-        table(Styles.componentTable, attr("data-toggle") := "table",
+        table(
+          Styles.componentTable,
+          attr("data-toggle") := "table",
           thead(
             tr(
               th(subsystem, br, "Version"),
@@ -177,7 +188,10 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
                 td(v.comment)
               )
             }
-          )), compButton, diffDiv
+          )
+        ),
+        compButton,
+        diffDiv
       ).render
     }
 
@@ -187,67 +201,77 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
   private def markupIcdVersionInfo(icdName: IcdName, list: List[IcdVersionInfo]) = {
     import scalacss.ScalatagsCss._
     if (list.isEmpty) div().render
-    else div(
-      table(Styles.componentTable, attr("data-toggle") := "table",
-        thead(
-          tr(
-            th("ICD", br, "Version"),
-            th(icdName.subsystem, br, "Version"),
-            th(icdName.target, br, "Version"),
-            th("User"),
-            th("Date"),
-            th("Comment")
-          )
-        ),
-        tbody(
-          for (v <- list) yield {
-            val icdVersion = v.icdVersion
+    else
+      div(
+        table(
+          Styles.componentTable,
+          attr("data-toggle") := "table",
+          thead(
             tr(
-              td(icdVersion.icdVersion),
-              td(icdVersion.subsystemVersion),
-              td(icdVersion.targetVersion),
-              td(v.user),
-              td(Styles.noWrapTableColumn, v.date),
-              td(v.comment)
+              th("ICD", br, "Version"),
+              th(icdName.subsystem, br, "Version"),
+              th(icdName.target, br, "Version"),
+              th("User"),
+              th("Date"),
+              th("Comment")
             )
-          }
-        ))
-    ).render
+          ),
+          tbody(
+            for (v <- list) yield {
+              val icdVersion = v.icdVersion
+              tr(
+                td(icdVersion.icdVersion),
+                td(icdVersion.subsystemVersion),
+                td(icdVersion.targetVersion),
+                td(v.user),
+                td(Styles.noWrapTableColumn, v.date),
+                td(v.comment)
+              )
+            }
+          )
+        )
+      ).render
 
   }
 
   // Gets the subsystem version info from the server
   private def getSubsystemVersionInfo(subsystem: String): Future[List[VersionInfo]] =
-    Ajax.get(Routes.versions(subsystem)).map { r =>
-      Json.fromJson[List[VersionInfo]](Json.parse(r.responseText)) match {
-        case JsSuccess(list: List[VersionInfo], _: JsPath) =>
-          list
-        case e: JsError =>
-          mainContent.displayInternalError(JsError.toJson(e).toString())
+    Ajax
+      .get(Routes.versions(subsystem))
+      .map { r =>
+        Json.fromJson[Array[VersionInfo]](Json.parse(r.responseText)) match {
+          case JsSuccess(ar: Array[VersionInfo], _: JsPath) =>
+            ar.toList
+          case e: JsError =>
+            mainContent.displayInternalError(JsError.toJson(e).toString())
+            Nil
+        }
+      }
+      .recover {
+        case ex =>
+          mainContent.displayInternalError(ex)
           Nil
       }
-    }.recover {
-      case ex =>
-        mainContent.displayInternalError(ex)
-        Nil
-    }
 
   // Gets the ICD version info from the server
   private def getIcdVersionInfo(icdName: IcdName): Future[List[IcdVersionInfo]] = {
     import play.api.libs.json._
-    Ajax.get(Routes.icdVersions(icdName)).map { r =>
-      Json.fromJson[List[IcdVersionInfo]](Json.parse(r.responseText)) match {
-        case JsSuccess(list: List[IcdVersionInfo], _: JsPath) =>
-          list
-        case e: JsError =>
-          mainContent.displayInternalError(JsError.toJson(e).toString())
+    Ajax
+      .get(Routes.icdVersions(icdName))
+      .map { r =>
+        Json.fromJson[Array[IcdVersionInfo]](Json.parse(r.responseText)) match {
+          case JsSuccess(ar: Array[IcdVersionInfo], _: JsPath) =>
+            ar.toList
+          case e: JsError =>
+            mainContent.displayInternalError(JsError.toJson(e).toString())
+            Nil
+        }
+      }
+      .recover {
+        case ex =>
+          mainContent.displayInternalError(ex)
           Nil
       }
-    }.recover {
-      case ex =>
-        mainContent.displayInternalError(ex)
-        Nil
-    }
   }
 
   def setSubsystem(subsystem: String): Unit = {
@@ -266,5 +290,5 @@ case class VersionHistory(mainContent: MainContent) extends Displayable {
     }
   }
 
-  def markup() = contentDiv
+  def markup(): Element = contentDiv
 }
