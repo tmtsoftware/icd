@@ -18,7 +18,7 @@ import csw.services.icd.db.parser.{
   SubsystemModelBsonParser
 }
 import play.api.libs.json.{JsObject, JsValue, Json}
-import reactivemongo.api.{Cursor, DefaultDB, WriteConcern}
+import reactivemongo.api.{Cursor, WriteConcern}
 import reactivemongo.bson.{BSONDateTime, BSONDocument, BSONObjectID}
 
 import scala.concurrent.duration._
@@ -67,6 +67,8 @@ object IcdVersionManager {
   val userKey             = "user"
   val dateKey             = "date"
   val commentKey          = "comment"
+
+  val queryAny = BSONDocument()
 
   /**
    * A list of all known TMT subsystems (read from the same resources file used in validating the ICDs)
@@ -260,7 +262,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
     Await
       .result(
         coll
-          .find(BSONDocument(), None)
+          .find(queryAny, None)
           .sort(BSONDocument(idKey -> -1))
           .cursor[BSONDocument]()
           .collect[Array](-1, Cursor.FailOnError[Array[BSONDocument]]()),
@@ -318,10 +320,10 @@ case class IcdVersionManager(query: IcdDbQuery) {
           None // not found
         }
       case None => // current, unpublished version
-        def getPartVersion(path: String): Int = {
+        def getPartVersion(path: String): Option[Int] = {
           val coll     = db.collection[BSONCollection](path)
-          val maybeDoc = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout)
-          maybeDoc.flatMap(_.getAs[Int](versionKey)).get
+          val maybeDoc = Await.result(coll.find(queryAny, None).one[BSONDocument], timeout)
+          maybeDoc.flatMap(_.getAs[Int](versionKey))
         }
 
         def filter(p: IcdPath) = p.subsystem == sv.subsystem && sv.maybeComponent.fold(true)(_ => p.component == path)
@@ -330,7 +332,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
         val now     = new DateTime(DateTimeZone.UTC)
         val user    = ""
         val comment = "Working version, unpublished"
-        val parts   = paths.map(p => (p, getPartVersion(p))).map(x => PartInfo(x._1, x._2))
+        val parts   = paths.map(p => (p, getPartVersion(p))).flatMap(pair => pair._2.map(version => PartInfo(pair._1, version)))
         Some(VersionInfo(None, user, comment, now, parts))
     }
   }
@@ -354,7 +356,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       Await
         .result(
           coll
-            .find(BSONDocument(), None)
+            .find(queryAny, None)
             .sort(BSONDocument(idKey -> -1))
             .one[BSONDocument],
           timeout
@@ -395,14 +397,14 @@ case class IcdVersionManager(query: IcdDbQuery) {
 
   // Returns the contents of the given version of the given collection
   private def getVersionOf(coll: BSONCollection, version: Int): BSONDocument = {
-    val doc            = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
+    val doc            = Await.result(coll.find(queryAny, None).one[BSONDocument], timeout).get
     val currentVersion = doc.getAs[Int](versionKey).get
     if (version == currentVersion) {
       doc
     } else {
       val v     = db.collection[BSONCollection](versionCollectionName(coll.name))
       val query = BSONDocument(versionKey -> version)
-      Await.result(v.find(query, None).one[BSONDocument], timeout).getOrElse(BSONDocument())
+      Await.result(v.find(query, None).one[BSONDocument], timeout).getOrElse(queryAny)
     }
   }
 
@@ -419,7 +421,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
 
   // Compares the two json values, returning None if equal, otherwise some VersionDiff
   private def diffJson(path: String, json1: JsValue, json2: JsValue): Option[VersionDiff] = {
-    if (json1 == json2) None else {
+    if (json1 == json2) None
+    else {
       val diff = diffson.diff(json1, json2)
       Some(VersionDiff(path, diff))
     }
@@ -428,7 +431,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
   // Compares the given object with the current (head) version in the collection
   // (ignoring version and id values)
   def diff(coll: BSONCollection, obj: BSONDocument): Option[VersionDiff] = {
-    val headDoc = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
+    val headDoc = Await.result(coll.find(queryAny, None).one[BSONDocument], timeout).get
     val json1   = withoutVersionOrId(Json.toJson(headDoc))
     val json2   = withoutVersionOrId(Json.toJson(obj))
     diffJson(coll.name, json1, json2)
@@ -551,7 +554,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
     val paths    = icdPaths.map(_.path).toList
     val versions = for (path <- paths) yield {
       val coll            = db.collection[BSONCollection](path)
-      val obj             = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
+      val obj             = Await.result(coll.find(queryAny, None).one[BSONDocument], timeout).get
       val versionCollName = versionCollectionName(path)
       val version         = obj.getAs[Int](versionKey).get
       val id              = obj.getAs[BSONObjectID](idKey).get
@@ -647,7 +650,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       val docs = Await
         .result(
           coll
-            .find(BSONDocument(), None)
+            .find(queryAny, None)
             .cursor[BSONDocument]()
             .collect[Array](-1, Cursor.FailOnError[Array[BSONDocument]]()),
           timeout

@@ -178,6 +178,7 @@ object SummaryTable {
                 val publisherComponent =
                   if (info.publisherSubsystem == info.subscriber.subsystem)
                     a(href := s"#${info.publisherComponent}")(info.publisherComponent)
+                  // XXX TODO FIXME: Make link in web app for components in other subsystems also!
                   else span(s"${info.publisherSubsystem}.${info.publisherComponent}")
 
                 val publisherPrefix =

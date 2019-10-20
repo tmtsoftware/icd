@@ -12,7 +12,7 @@ import org.scalajs.dom.raw.{HTMLButtonElement, HTMLDivElement, HTMLElement, HTML
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import Components._
-import org.scalajs.dom.html.Div
+import org.scalajs.dom.html.{Anchor, Div}
 import play.api.libs.json._
 
 import scala.util.Failure
@@ -104,6 +104,28 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   import Components._
   import icd.web.shared.JsonSupport._
+
+  // Action when user clicks on a component link
+  private def clickedOnComponent(subsystem: String, component: String)(e: dom.Event): Unit = {
+    e.preventDefault()
+    listener.componentSelected(ComponentLink(subsystem, component))
+  }
+
+  // Makes the link for a component in the table
+  private def makeLinkForComponent(subsystem: String, component: String): TypedTag[Anchor] = {
+    import scalatags.JsDom.all._
+    a(
+      title := s"Show API for $subsystem.$component",
+      s"$subsystem.$component ",
+      href := "#",
+      onclick := clickedOnComponent(subsystem, component) _
+    )
+  }
+
+  // Makes the link for a component in the table
+  private def makeLinkForComponent(componentModel: ComponentModel): TypedTag[Anchor] = {
+    makeLinkForComponent(componentModel.subsystem, componentModel.component)
+  }
 
   /**
    * Gets information about the given components
@@ -198,7 +220,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           ).render
         )
       }
+      // XXX TODO FIXME: Hyperlinks to other subsystems can't be made in the summary table,
+      // since the code is shared with non-javascript code on the server side.
       val summaryTable = SummaryTable.displaySummary(subsystemInfo, maybeTargetSubsystem, infoList).render
+
       mainContent.appendElement(div(Styles.component, id := "Summary")(raw(summaryTable)).render)
       infoList.foreach(i => displayComponentInfo(i, !isIcd))
       if (isIcd) targetInfoList.foreach(i => displayComponentInfo(i, forApi = false))
@@ -209,22 +234,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
     f
   }
-
-//  /**
-//   * Adds (appends) a component to the display
-//   *
-//   * @param sv              the selected subsystem
-//   * @param maybeTargetSv optional target subsystem
-//   */
-//  def addComponent(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): Unit = {
-//    getComponentInfo(sv, maybeTargetSv)
-//      .map { list =>
-//        list.foreach(i => displayComponentInfo(i, maybeTargetSv.isEmpty))
-//      }
-//      .recover {
-//        case ex => mainContent.displayInternalError(ex)
-//      }
-//  }
 
   // Removes the component display
   def removeComponentInfo(compName: String): Unit = {
@@ -397,22 +406,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
-    // Action when user clicks on a subscriber link
-    def clickedOnSubscriber(info: SubscribeInfo)(e: dom.Event): Unit = {
-      e.preventDefault()
-      listener.componentSelected(ComponentLink(info.componentModel.subsystem, info.componentModel.component))
-    }
-
-    // Makes the link for a subscriber component in the table
-    def makeLinkForSubscriber(info: SubscribeInfo) = {
-      a(
-        title := s"Show API for ${info.componentModel.subsystem}.${info.componentModel.component}",
-        s"${info.componentModel.subsystem}.${info.componentModel.component} ",
-        href := "#",
-        onclick := clickedOnSubscriber(info) _
-      )
-    }
-
     // Returns a table row displaying more details for the given event
     def makeEventDetailsRow(eventInfo: EventInfo) = {
       val headings = List("Min Rate", "Max Rate", "Archive", "Archive Duration", "Archive Rate")
@@ -459,7 +452,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                       p(btn, a(name := idFor(compName, "publishes", pubType, t.eventModel.name))(t.eventModel.name))
                     ),
                     td(raw(t.eventModel.description)),
-                    td(p(t.subscribers.map(makeLinkForSubscriber)))
+                    td(p(t.subscribers.map(subscribeInfo => makeLinkForComponent(subscribeInfo.componentModel))))
                   ),
                   row
                 )
@@ -508,7 +501,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                   tr(
                     td(Styles.attributeCell, p(btn, a(name := idFor(compName, "publishes", "Alarms", m.name))(m.name))),
                     td(raw(m.description)),
-                    td(p(t.subscribers.map(makeLinkForSubscriber)))
+                    td(p(t.subscribers.map(si => makeLinkForComponent(si.componentModel))))
                   ),
                   row
                 )
@@ -538,28 +531,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def subscribeMarkup(compName: String, maybeSubscribes: Option[Subscribes]) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
-
-    // Action when user clicks on a subscriber link
-    def clickedOnPublisher(info: DetailedSubscribeInfo)(e: dom.Event): Unit = {
-      e.preventDefault()
-      listener.componentSelected(
-        ComponentLink(
-          info.subscribeModelInfo.subsystem,
-          info.subscribeModelInfo.component
-        )
-      )
-    }
-
-    // Makes the link for a publisher component in the table
-    def makeLinkForPublisher(info: DetailedSubscribeInfo) = {
-      val comp = s"${info.subscribeModelInfo.subsystem}.${info.subscribeModelInfo.component}"
-      a(
-        title := s"Show API for $comp",
-        comp,
-        href := "#",
-        onclick := clickedOnPublisher(info) _
-      )
-    }
 
     // Returns a table row displaying more details for the given subscription
     def makeDetailsRow(si: DetailedSubscribeInfo) = {
@@ -627,7 +598,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                         )
                       ),
                       td(raw(s.description), getWarning(s), usage),
-                      td(p(makeLinkForPublisher(s)))
+                      td(p(makeLinkForComponent(s.subscribeModelInfo.subsystem, s.subscribeModelInfo.component)))
                     ),
                     row
                   )
@@ -674,17 +645,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
-    // Action when user clicks on a sender link
-    def clickedOnSender(sender: ComponentModel)(e: dom.Event): Unit = {
-      e.preventDefault()
-      listener.componentSelected(ComponentLink(sender.subsystem, sender.component))
-    }
-
-    // Makes the link for a sender component in the table
-    def makeLinkForSender(sender: ComponentModel) = {
-      a(s"${sender.subsystem}.${sender.component} ", href := "#", onclick := clickedOnSender(sender) _)
-    }
-
     // Only display non-empty tables
     if (info.isEmpty) div()
     else
@@ -710,7 +670,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                   td(Styles.attributeCell, p(btn, a(name := idFor(compName, "receives", "Commands", rc.name))(rc.name))),
                   // XXX TODO: Make link to command description page with details
                   td(raw(rc.description)),
-                  td(p(r.senders.map(makeLinkForSender)))
+                  td(p(r.senders.map(makeLinkForComponent)))
                 ),
                 row
               )
@@ -724,17 +684,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def sentCommandsMarkup(compName: String, info: List[SentCommandInfo]) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
-
-    // Action when user clicks on a receiver link
-    def clickedOnReceiver(receiver: ComponentModel)(e: dom.Event): Unit = {
-      e.preventDefault()
-      listener.componentSelected(ComponentLink(receiver.subsystem, receiver.component))
-    }
-
-    // Makes the link for a receiver component in the table
-    def makeLinkForReceiver(receiver: ComponentModel) = {
-      a(s"${receiver.subsystem}.${receiver.component} ", href := "#", onclick := clickedOnReceiver(receiver) _)
-    }
 
     // Warn if no receiver found for sent command
     def getWarning(m: SentCommandInfo) = m.warning.map { msg =>
@@ -754,7 +703,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               td(Styles.attributeCell, p(btn, a(name := idFor(compName, "sends", "Commands", r.name))(r.name))),
               // XXX TODO: Make link to command description page with details
               td(raw(r.description)),
-              td(p(s.receiver.map(makeLinkForReceiver)))
+              td(p(s.receiver.map(makeLinkForComponent)))
             ),
             row
           )
@@ -763,7 +712,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             tr(
               td(Styles.attributeCell, p(s.name)),
               td(getWarning(s)),
-              td(p(s.receiver.map(makeLinkForReceiver)))
+              td(p(s.receiver.map(makeLinkForComponent)))
             )
           )
       }

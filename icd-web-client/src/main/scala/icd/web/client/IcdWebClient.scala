@@ -144,7 +144,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       val maybeLinkSv = Some(link.subsystem) match {
         case `maybeSubsystem`       => maybeSv
         case `maybeTargetSubsystem` => maybeTargetSv
-        case _                      => Some(SubsystemWithVersion(link.subsystem, None, None))
+        case _                      => Some(SubsystemWithVersion(link.subsystem, None, Some(link.compName)))
       }
       for {
         _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(None, saveHistory = false)

@@ -135,7 +135,7 @@ class Application @Inject()(
    */
   def components(subsystem: String, maybeVersion: Option[String]) = Action { implicit request =>
     val sv = SubsystemWithVersion(subsystem, maybeVersion, None)
-    if (db.versionManager.getSubsystemModel(sv).isEmpty) {
+    if (db.versionManager.getSubsystemModel(sv).isEmpty && db.versionManager.getComponentModel(sv).isEmpty) {
       // Not found in db, check if its a published version on GitHub, and if so, ingest it first
       ingestPublishedSubsystem(subsystem, maybeVersion) // Make sure subsystem is ingested from GitHub if needed
     }
@@ -196,7 +196,7 @@ class Application @Inject()(
   ): Action[AnyContent] = Action { implicit request =>
     val sv       = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     val targetSv = SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
-    if (db.versionManager.getSubsystemModel(targetSv).isEmpty) {
+    if (db.versionManager.getSubsystemModel(sv).isEmpty && db.versionManager.getComponentModel(sv).isEmpty) {
       ingestPublishedSubsystem(target, maybeTargetVersion)
     }
     val query = new CachedIcdDbQuery(db.db, Some(List(sv.subsystem, targetSv.subsystem)))

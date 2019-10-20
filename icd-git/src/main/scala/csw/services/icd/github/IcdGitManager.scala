@@ -602,7 +602,6 @@ object IcdGitManager {
       feedback: String => Unit,
       allIcdVersions: List[IcdVersions]
   ): Unit = {
-//    val gitWorkDir = Files.createTempDirectory("icds").toFile
     if (subsystems.size == 2) {
       // Import one ICD if subsystem and target options were given
       allIcdVersions.find(_.subsystems == subsystems.map(_.subsystem)).foreach(db.importIcds(_, feedback))
