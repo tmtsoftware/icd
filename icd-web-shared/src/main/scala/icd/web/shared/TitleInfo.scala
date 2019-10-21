@@ -47,19 +47,19 @@ object TitleInfo {
       val icd = maybeIcd.get
       val title =
         if (part.nonEmpty)
-          s"ICD $part ${sv.subsystem}$componentPart -> $targetName$targetComponentPart (version ${icd.icdVersion})"
+          s"ICD SDB $part ${sv.subsystem}$componentPart -> $targetName$targetComponentPart (version ${icd.icdVersion})"
         else
-          s"ICD ${sv.subsystem}$componentPart / $targetName$targetComponentPart (version ${icd.icdVersion})"
+          s"ICD SDB ${sv.subsystem}$componentPart / $targetName$targetComponentPart (version ${icd.icdVersion})"
       val subtitle = getSubtitle(sv, maybeTargetSv)
       TitleInfo(title, Some(subtitle), None)
     } else {
       if (maybeTargetSv.isDefined) {
-        val title    = s"ICD $part ${sv.subsystem}$componentPart -> $targetName$targetComponentPart $unpublished"
+        val title    = s"ICD SDB $part ${sv.subsystem}$componentPart -> $targetName$targetComponentPart $unpublished"
         val subtitle = getSubtitle(sv, maybeTargetSv)
         TitleInfo(title, Some(subtitle), None)
       } else {
         TitleInfo(
-          s"API for ${sv.subsystem}$componentPart ${sv.maybeVersion.getOrElse(unpublished)}",
+          s"API SDB for ${sv.subsystem}$componentPart ${sv.maybeVersion.getOrElse(unpublished)}",
           Some(subsystemInfo.title),
           Some(subsystemInfo.description)
         )
