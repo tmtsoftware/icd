@@ -21,11 +21,11 @@ To start the MongoDB server, you can run a command like this:
     
 where $db is the directory containing the database.
 
-Note: After starting the database, it is a good idea to ingest the published ICDs, which are stored in GitHub repositories:
+After starting the database, ingest the published ICDs, which are stored in GitHub repositories:
 
     icd-git --ingest
 
-This will make the web app faster (it will auto-ingest any missing ICDs and APIs as needed).
+You should rerun this command occasionally to get any updates from newly published ICDs or APIs.
 
 ICD Subprojects
 ---------------

@@ -71,10 +71,11 @@ object IcdValidator {
 
   private def checkSchemaVersion(v: String, fileName: String): Either[Problem, String] = {
     v match {
-      // Fix for wrong modelVersion (0.1) in NFIRAOS published model files
-      case "1.0" | "0.1" => Right("1.0")
-      case "2.0"         => Right("2.0")
-      case _             => Left(Problem("error", s"Invalid modelVersion in $fileName: Expected 1.0 or 2.0"))
+      // Fix for wrong modelVersion (0.1) in some existing published model files.
+      // This means we tolerate 0.1 and 1.1, converting automatically to 1.0, for backward compatibility.
+      case "1.0" | "1.1" | "0.1" => Right("1.0")
+      case "2.0"                 => Right("2.0")
+      case _                     => Left(Problem("error", s"Invalid modelVersion in $fileName: Expected 1.0 or 2.0"))
     }
   }
 
@@ -144,30 +145,6 @@ object IcdValidator {
     val schema    = schemaLoader.load().build().asInstanceOf[Schema]
     val jsonInput = new JSONObject(toJson(inputFile))
     validateJson(schema, jsonInput, inputFile.getPath)
-  }
-
-  /**
-   * Validates the given input config using the standard schema for it based on the file name.
-   *
-   * @param inputConfig   the config to be validated against the schema
-   * @param fileName      the name of the original file that inputConfig was made from
-   * @param schemaVersion the schema version (default: latest version)
-   * @return a list of problems, if any were found
-   */
-  def validate(inputConfig: Config, fileName: String, schemaVersion: String): List[Problem] = {
-    val name = new File(fileName).getName
-    StdName.stdNames.find(_.name == name) match {
-      case Some(stdName) =>
-        val schemaPath   = s"$currentSchemaVersion/${stdName.schema}"
-        val schemaConfig = ConfigFactory.parseResources(schemaPath)
-        if (schemaConfig == null) {
-          List(Problem("error", s"Missing schema resource: $schemaPath"))
-        } else {
-          validateConfig(inputConfig, schemaConfig, fileName)
-        }
-      case None =>
-        List(Problem("error", s"Invalid ICD file name: $fileName"))
-    }
   }
 
   /**
