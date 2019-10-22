@@ -535,11 +535,10 @@ object IcdToHtml {
             val subscribers =
               t.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
             val subscriberInfo = span(strong(s"$subscriberStr: "), if (subscribers.isEmpty) "none" else subscribers)
-            val headings       = List("Severity Levels", "Archive", "Location", "Alarm Type", "Acknowledge", "Latched")
+            val headings       = List("Severity Levels", "Location", "Alarm Type", "Acknowledge", "Latched")
             val rowList = List(
               List(
                 m.severityLevels.mkString(", "),
-                yesNo(m.archive),
                 m.location,
                 m.alarmType,
                 yesNo(m.acknowledge),

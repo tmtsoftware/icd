@@ -17,7 +17,6 @@ object AlarmModelBsonParser {
       description = HtmlMarkup.gfmToHtml(doc.getAs[String]("description").get),
       requirements = doc.getAs[Array[String]]("requirements").map(_.toList).getOrElse(Nil),
       severityLevels = doc.getAs[Array[String]]("severityLevels").map(_.toList).getOrElse(List("Warning", "Major", "Critical")),
-      archive = doc.getAs[Boolean]("archive").getOrElse(true),
       location = doc.getAs[String]("location").getOrElse(""),
       alarmType = doc.getAs[String]("alarmType").getOrElse(""),
       probableCause = HtmlMarkup.gfmToHtml(doc.getAs[String]("probableCause").getOrElse("")),

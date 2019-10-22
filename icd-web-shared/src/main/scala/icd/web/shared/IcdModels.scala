@@ -47,20 +47,12 @@ object IcdModels {
   }
 
   /**
-   * Common trait of archived items with a name and description.
-   */
-  trait ArchivedNameDesc extends NameDesc {
-    val archive: Boolean
-  }
-
-  /**
    * Description of an alarm
    *
    * @param name             alarm name
    * @param description      alarm descrption
    * @param requirements     list of requirements that flow to this alarm
    * @param severityLevels   Severity levels that the alarm can have (besides Disconnected, Indeterminate, Okay)
-   * @param archive          true if publisher recommends archiving this alarm
    * @param location         A text description of where the alarming condition is located
    * @param alarmType        The general category for the alarm one of (Absolute, BitPattern, Calculated, Deviation,
    *                         Discrepancy, Instrument, RateChange, RecipeDriven, Safety, Statistical, System)
@@ -74,14 +66,13 @@ object IcdModels {
       description: String,
       requirements: List[String],
       severityLevels: List[String],
-      archive: Boolean,
       location: String,
       alarmType: String,
       probableCause: String,
       operatorResponse: String,
       acknowledge: Boolean,
       latched: Boolean
-  ) extends ArchivedNameDesc
+  ) extends NameDesc
 
   /**
    * Defines the properties of an attribute
@@ -254,6 +245,6 @@ object IcdModels {
       archiveDuration: String,
       archiveRate: Double,
       attributesList: List[AttributeModel]
-  ) extends ArchivedNameDesc
+  ) extends NameDesc
 
 }

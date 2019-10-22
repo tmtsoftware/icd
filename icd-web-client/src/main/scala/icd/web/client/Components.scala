@@ -464,10 +464,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Returns a table row displaying more details for the given alarm
     def makeAlarmDetailsRow(t: AlarmInfo) = {
-      val headings = List("Severity Levels", "Archive", "Location", "Alarm Type", "Acknowledge", "Latched")
+      val headings = List("Severity Levels", "Location", "Alarm Type", "Acknowledge", "Latched")
       val m        = t.alarmModel
       val rowList = List(
-        List(m.severityLevels.mkString(", "), yesNo(m.archive), m.location, m.alarmType, yesNo(m.acknowledge), yesNo(m.latched))
+        List(m.severityLevels.mkString(", "), m.location, m.alarmType, yesNo(m.acknowledge), yesNo(m.latched))
       )
 
       div(

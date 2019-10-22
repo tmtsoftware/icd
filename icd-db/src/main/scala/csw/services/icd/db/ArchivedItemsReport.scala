@@ -5,7 +5,7 @@ import java.io.{File, FileOutputStream}
 import csw.services.icd.IcdToPdf
 import csw.services.icd.db.ArchivedItemsReport.ArchiveInfo
 import csw.services.icd.html.IcdToHtml
-import icd.web.shared.IcdModels.{ArchivedNameDesc, ComponentModel}
+import icd.web.shared.IcdModels.{ComponentModel, EventModel}
 
 object ArchivedItemsReport {
 
@@ -25,7 +25,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
   // Gets all the archived items
   private def getArchivedItems: List[ArchiveInfo] = {
     // Gets the archived items from the list
-    def getItems(c: ComponentModel, eventType: String, list: List[ArchivedNameDesc]): List[ArchiveInfo] = {
+    def getItems(c: ComponentModel, eventType: String, list: List[EventModel]): List[ArchiveInfo] = {
       val comp = c.component.replace("-", "-\n") // save horizontal space
       list
         .filter(_.archive)
@@ -37,7 +37,6 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
       if subsystemFilter(component.subsystem)
       publishModel <- query.getPublishModel(component)
     } yield {
-      getItems(component, "Alarm", publishModel.alarmList) ++
       getItems(component, "Events", publishModel.eventList) ++
       getItems(component, "ObserveEvents", publishModel.observeEventList)
     }
