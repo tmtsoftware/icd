@@ -47,7 +47,7 @@ Usage: icd-db [options]
   --diff <subsystem>:<version1>[,version2]
                            For the given subsystem, list the differences between <version1> and <version2> (or the current version)
   -m, --missing <outputFile>
-                           Generates a 'Missing Items' report to the given file (dir for csv) in a format based on the file's suffix (html, pdf, otherwise text/csv formatted files are generated in given dir)
+                           Generates a 'Missing Items' report to the given file (dir for csv) in a format based on the file's suffix (html, pdf, otherwise text/csv formatted files are generated in given dir). Use the -s and/or -t options to restrict the report to the given subsystems.
   -a, --archived <outputFile>
                            Generates an 'Archived Items' report to the given file in a format based on the file's suffix (html, pdf)
   --allSubsystems          Include all subsystems in searches for publishers, subscribers, etc. while generating API doc (Default: only consider the one subsystem)

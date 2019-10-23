@@ -5,6 +5,7 @@ import java.io._
 import csw.services.icd.IcdToPdf
 import csw.services.icd.html.IcdToHtml
 import icd.web.shared.IcdModels._
+import icd.web.shared.SubsystemWithVersion
 import scalatags.Text
 
 /**
@@ -66,9 +67,23 @@ object MissingItemsReport {
 case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
   import MissingItemsReport._
 
-  private val subsystems = List(options.subsystem, options.target).flatten
-  private val maybeSubsystems = if (subsystems.nonEmpty) Some(subsystems) else None
-  private val query = new CachedIcdDbQuery(db.db, maybeSubsystems)
+  private val selectedSubsystemsWithVersions = List(options.subsystem, options.target).flatten
+    .map(IcdVersionManager.SubsystemAndVersion(_))
+    .map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, None))
+
+  // Note: Need to search entire database in order to find the missing items
+  private val query          = new CachedIcdDbQuery(db.db, None)
+  private val versionManager = new CachedIcdVersionManager(query)
+
+  // s"$subsystem.$component" for all components in all subsystems (latest versions)
+  private val allComponents = query.getComponents
+    .map(c => s"${c.subsystem}.${c.component}")
+
+  // Make the report only for the selected subsystems (-s and -t options), or all subsystems by default
+  private val subsystemsWithVersions = if (selectedSubsystemsWithVersions.nonEmpty)
+    selectedSubsystemsWithVersions
+  else
+    query.getSubsystemNames.map(SubsystemWithVersion(_, None, None))
 
   // Returns a list of items missing a publisher, subscriber, sender or receiver
   private def getMissingItems: Items = {
@@ -91,17 +106,15 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
       )
     }
 
-    // XXX TODO: Note that the report always works with the latest, unpublished versions of subsystems
-
-    val components = query.getComponents
-
     def getItems: List[Items] = {
       for {
-        component <- components
+        sv        <- subsystemsWithVersions
+        models    <- versionManager.getModels(sv)
+        component <- models.componentModel
       } yield {
-        val publishModel           = query.getPublishModel(component)
-        val subscribeModel         = query.getSubscribeModel(component)
-        val commandModel           = query.getCommandModel(component)
+        val publishModel           = models.publishModel
+        val subscribeModel         = models.subscribeModel
+        val commandModel           = models.commandModel
         val publishedAlarms        = getPublishedItems(component, publishModel.map(_.alarmList.map(_.name)).getOrElse(Nil))
         val publishedEvents        = getPublishedItems(component, publishModel.map(_.eventList.map(_.name)).getOrElse(Nil))
         val publishedObserveEvents = getPublishedItems(component, publishModel.map(_.observeEventList.map(_.name)).getOrElse(Nil))
@@ -115,18 +128,23 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
         val receivedCommands = getPublishedItems(component, commandModel.map(_.receive.map(_.name)).getOrElse(Nil))
         val sentCommands     = getSubscribedItems(component, commandModel.map(_.send).getOrElse(Nil))
 
+        // "$subsystem.$component" for referenced components
+        def getPubComp(i: PublishedItemInfo)     = s"${i.publisherSubsystem}.${i.publisherComponent}"
+        def getSubPubComp(i: SubscribedItemInfo) = s"${i.publisherSubsystem}.${i.publisherComponent}"
+        def getSubComp(i: SubscribedItemInfo)    = s"${i.subscriberSubsystem}.${i.subscriberComponent}"
+
         val compRefs =
-          publishedAlarms.map(_.publisherComponent) ++
-            publishedEvents.map(_.publisherComponent) ++
-            publishedObserveEvents.map(_.publisherComponent) ++
-            publishedCurrentStates.map(_.publisherComponent) ++
-            subscribedAlarms.map(_.publisherComponent) ++ subscribedAlarms.map(_.subscriberComponent) ++
-            subscribedEvents.map(_.publisherComponent) ++ subscribedEvents.map(_.subscriberComponent) ++
-            subscribedObserveEvents.map(_.publisherComponent) ++ subscribedObserveEvents.map(_.subscriberComponent) ++
-            subscribedCurrentStates.map(_.publisherComponent) ++ subscribedCurrentStates.map(_.subscriberComponent) ++
-            receivedCommands.map(_.publisherComponent) ++
-            sentCommands.map(_.publisherComponent) ++ sentCommands.map(_.subscriberComponent)
-        val compSet           = components.map(_.component).toSet
+          publishedAlarms.map(getPubComp) ++
+            publishedEvents.map(getPubComp) ++
+            publishedObserveEvents.map(getPubComp) ++
+            publishedCurrentStates.map(getPubComp) ++
+            subscribedAlarms.map(getSubPubComp) ++ subscribedAlarms.map(getSubComp) ++
+            subscribedEvents.map(getSubPubComp) ++ subscribedEvents.map(getSubComp) ++
+            subscribedObserveEvents.map(getSubPubComp) ++ subscribedObserveEvents.map(getSubComp) ++
+            subscribedCurrentStates.map(getSubPubComp) ++ subscribedCurrentStates.map(getSubComp) ++
+            receivedCommands.map(getPubComp) ++
+            sentCommands.map(getSubPubComp) ++ sentCommands.map(getSubComp)
+        val compSet           = allComponents.toSet
         val badComponentNames = compRefs.filter(!compSet.contains(_)).toSet
 
         Items(
