@@ -54,6 +54,15 @@ object ComponentInfo {
 
     ComponentInfo(info.componentModel, publishes, info.subscribes, commands)
   }
+
+  /**
+   * Returns true if the argument contains any lists with publishers, subscribers, ect. that are non-empty
+   */
+  def nonEmpty(info: ComponentInfo): Boolean = {
+    info.publishes.exists(_.nonEmpty) ||
+    info.subscribes.exists(_.subscribeInfo.nonEmpty) ||
+    info.commands.exists(_.nonEmpty)
+  }
 }
 
 /**

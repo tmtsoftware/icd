@@ -269,11 +269,11 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     mainContent.clearContent()
     val f = if (maybeSv.isDefined) {
       showBusyCursorWhile {
-        val f              = components.addComponents(maybeSv.get, maybeTargetSv, maybeIcd, searchAllSubsystems)
-        val componentNames = selectDialog.subsystem.getComponents
-        componentNames.foreach(name => sidebar.addComponent(name))
-        f.foreach(_ => setSidebarVisible(true))
-        f
+        components.addComponents(maybeSv.get, maybeTargetSv, maybeIcd, searchAllSubsystems)
+        .map { infoList =>
+          infoList.foreach(info => sidebar.addComponent(info.componentModel.component))
+          setSidebarVisible(true)
+        }
       }
     } else Future.successful(())
     if (saveHistory) {
@@ -309,7 +309,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     maybeSv.foreach { sv =>
       val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion
       val maybeIcdVersion = selectDialog.icdChooser.getSelectedIcdVersion.map(_.icdVersion)
-      val searchAll = selectDialog.searchAllSubsystems()
+      val searchAll       = selectDialog.searchAllSubsystems()
       val uri             = Routes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll)
       // dom.window.location.assign(uri) // opens in same window
       dom.window.open(uri) // opens in new window or tab

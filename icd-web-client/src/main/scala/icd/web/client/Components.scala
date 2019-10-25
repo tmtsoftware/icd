@@ -142,7 +142,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   ): Future[List[ComponentInfo]] = {
     Ajax.get(Routes.icdComponentInfo(sv, maybeTargetSv, searchAllSubsystems)).map { r =>
       val list = Json.fromJson[Array[ComponentInfo]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
-      if (maybeTargetSv.isDefined) list.map(ComponentInfo.applyIcdFilter) else list
+      if (maybeTargetSv.isDefined) list.map(ComponentInfo.applyIcdFilter).filter(ComponentInfo.nonEmpty) else list
     }
   }
 
@@ -181,13 +181,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    * @param sv                   the selected subsystem, version and optional single component
    * @param maybeTargetSubsystem optional target subsystem, version, optional component
    * @param maybeIcd             optional icd version
+   * @return a future list of ComponentInfo (one entry for each component in the result)
    */
   def addComponents(
       sv: SubsystemWithVersion,
       maybeTargetSubsystem: Option[SubsystemWithVersion],
       maybeIcd: Option[IcdVersion],
       searchAllSubsystems: Boolean
-  ): Future[Unit] = {
+  ): Future[List[ComponentInfo]] = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
@@ -225,6 +226,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       mainContent.appendElement(div(Styles.component, id := "Summary")(raw(summaryTable)).render)
       infoList.foreach(i => displayComponentInfo(i, !isIcd))
       if (isIcd) targetInfoList.foreach(i => displayComponentInfo(i, forApi = false))
+      infoList ++ targetInfoList
     }
     f.onComplete {
       case Failure(ex) => mainContent.displayInternalError(ex)
