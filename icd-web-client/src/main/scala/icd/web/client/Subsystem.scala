@@ -91,13 +91,13 @@ case class Subsystem(
 
   // called when a subsystem is selected
   private def subsystemSelected(e: dom.Event): Unit = {
-    for (_ <- updateSubsystemVersionOptions())
-      listener.subsystemSelected(getSubsystemWithVersion)
+      for (_ <- updateSubsystemVersionOptions())
+        listener.subsystemSelected(getSubsystemWithVersion)
   }
 
   // called when a subsystem version is selected
   private def subsystemVersionSelected(e: dom.Event): Unit = {
-    listener.subsystemSelected(getSubsystemWithVersion)
+      listener.subsystemSelected(getSubsystemWithVersion)
   }
 
   // HTML markup displaying the subsystem and version comboboxes
@@ -190,7 +190,6 @@ case class Subsystem(
             case None =>
               componentItem.value = componentPlaceholder
           }
-          subsystemItem.value = sv.subsystem
         case None =>
           subsystemItem.value = placeholderMsg
           versionItem.value = unpublishedVersion
@@ -199,8 +198,9 @@ case class Subsystem(
     }
     for {
       _ <- updateSubsystemVersionOptions(maybeSv.flatMap(_.maybeVersion))
-      _ <- listener.subsystemSelected(maybeSv, saveHistory)
-    } yield {}
+      _ <- listener.subsystemSelected(getSubsystemWithVersion, saveHistory)
+    } yield {
+    }
   }
 
   /**
@@ -208,12 +208,12 @@ case class Subsystem(
    */
   def updateSubsystemOptions(items: List[String]): Unit = {
     val currentSubsystems = getSubsystems
-      items.foreach { subsystem =>
-        import scalatags.JsDom.all._
-        if (!currentSubsystems.contains(subsystem))
-          subsystemItem.add(option(value := subsystem)(subsystem).render)
-      }
-      updateSubsystemVersionOptions() // Future!
+    items.foreach { subsystem =>
+      import scalatags.JsDom.all._
+      if (!currentSubsystems.contains(subsystem))
+        subsystemItem.add(option(value := subsystem)(subsystem).render)
+    }
+    updateSubsystemVersionOptions() // Future!
   }
 
   /**
@@ -245,7 +245,7 @@ case class Subsystem(
         case Some(s) => versionItem.value = s
         case None    => versionItem.value = unpublishedVersion
       }
-      listener.subsystemSelected(getSubsystemWithVersion, saveHistory)
+        listener.subsystemSelected(getSubsystemWithVersion, saveHistory)
     }
   }
 
@@ -303,7 +303,7 @@ case class Subsystem(
     Ajax
       .get(Routes.versionNames(subsystem))
       .map { r =>
-        Json.fromJson[List[String]](Json.parse(r.responseText)).get
+        Json.fromJson[Array[String]](Json.parse(r.responseText)).get.toList
       }
       .recover {
         case ex =>

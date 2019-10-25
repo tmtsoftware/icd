@@ -500,7 +500,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
         entries.map(Models(versionMap, _))
       case None =>
         val v = sv.maybeVersion.map("-" + _).getOrElse("")
-        println(s"Error: ${sv.subsystem}$v not found in the icd database.")
+        println(s"${sv.subsystem}$v not found in the icd database.")
         Nil
     }
   }

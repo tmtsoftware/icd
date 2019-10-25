@@ -575,7 +575,7 @@ object IcdGitManager {
    * @param apiEntries the (GitHub version) entries for the published versions to ingest
    * @param feedback   optional feedback function
    */
-  def ingest(db: IcdDb, sv: SubsystemAndVersion, apiEntries: List[ApiEntry], feedback: String => Unit): Unit = {
+  def ingest(db: IcdDb, sv: SubsystemAndVersion, apiEntries: List[ApiEntry], feedback: String => Unit): Unit = this.synchronized {
     val url = getSubsystemGitHubUrl(sv.subsystem)
     // Checkout the subsystem repo in a temp dir
     val gitWorkDir = Files.createTempDirectory("icds").toFile

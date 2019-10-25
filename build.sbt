@@ -20,7 +20,6 @@ lazy val `icd-db` = project
   .settings(
     libraryDependencies ++=
       compileScope(
-//        akkaActor,
         akkaSlf4j,
         logbackClassic,
         reactivemongo,

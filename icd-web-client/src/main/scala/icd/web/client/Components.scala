@@ -191,16 +191,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
-    val isIcd           = maybeTargetSubsystem.isDefined
-    val subsystemInfoF  = getSubsystemInfo(sv)
-    val targetInfoF     = maybeTargetSubsystem.map(getSubsystemInfo(_).map(i => Some(i))).getOrElse(Future.successful(None))
-    val infoListF       = getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems)
-    val targetInfoListF = getComponentInfo(maybeTargetSubsystem, Some(sv), searchAllSubsystems)
+    val isIcd = maybeTargetSubsystem.isDefined
     val f = for {
-      subsystemInfo            <- subsystemInfoF
-      maybeTargetSubsystemInfo <- targetInfoF
-      infoList                 <- infoListF
-      targetInfoList           <- targetInfoListF
+      subsystemInfo <- getSubsystemInfo(sv)
+      maybeTargetSubsystemInfo <- maybeTargetSubsystem
+                                   .map(getSubsystemInfo(_).map(i => Some(i)))
+                                   .getOrElse(Future.successful(None))
+      infoList       <- getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems)
+      targetInfoList <- getComponentInfo(maybeTargetSubsystem, Some(sv), searchAllSubsystems)
     } yield {
       val titleInfo        = TitleInfo(subsystemInfo, maybeTargetSubsystem, maybeIcd)
       val subsystemVersion = sv.maybeVersion.getOrElse(TitleInfo.unpublished)

@@ -82,6 +82,7 @@ object IcdDb extends App {
       c.copy(outputFile = Some(x))
     } text "Saves the selected API or ICD to the given file in a format based on the file's suffix (html, pdf)"
 
+    // XXX TODO FIXME: Remove this option? Removing a single component doesn't make sense. Dropping the db while the web app is running causes issues.
     opt[String]("drop") valueName "[db|component]" action { (x, c) =>
       c.copy(drop = Some(x))
     } text "Drops the specified component or database (use with caution!)"

@@ -13,7 +13,6 @@ object Dependencies {
   val JQueryUiVersion       = "1.12.1"
   val BootstrapTableVersion = "1.14.1"
 
-  val akkaActor = "com.typesafe.akka" %% "akka-actor" % AkkaVersion
   val akkaSlf4j = "com.typesafe.akka" %% "akka-slf4j" % AkkaVersion
 
   // command line dependencies

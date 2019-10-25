@@ -55,6 +55,11 @@ class Application @Inject()(
 
   // cache of API and ICD versions published on GitHub (until next browser refresh)
   val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
+  // If the database is empty, ingest the released APIs and ICDs
+  if (db.query.getSubsystemNames.isEmpty) {
+    println("Please wait while ingesting all published APIs and ICDs from GitHub (first time only).")
+    IcdGitManager.ingest(db, Nil, (s: String) => println(s), allApiVersions, allIcdVersions)
+  }
 
   // Somehow disabling the CSRF filter in application.conf and adding it here was needed to make this work
   // (The CSRF token is needed for the file upload dialog in the client)
@@ -77,41 +82,9 @@ class Application @Inject()(
   }
 
   /**
-   * Ingests a published subsystem and returns the db model, if found
-   *
-   * @param subsystem    the subsystem name
-   * @param maybeVersion optional version to ingest (otherwise all versions)
-   * @return the subsystem database model
-   */
-  private def ingestPublishedSubsystem(subsystem: String, maybeVersion: Option[String]): Option[SubsystemModel] = {
-
-    // Gets the matching published ApiEntry for the subsystem version
-    def getApiEntry(apiVersions: ApiVersions): Option[ApiEntry] = maybeVersion match {
-      case Some(version) => apiVersions.apis.find(_.version == version)
-      case None          => Some(apiVersions.apis.head)
-    }
-
-    allApiVersions.find(a => a.subsystem == subsystem).flatMap(getApiEntry) match {
-      case Some(apiEntry) =>
-        val sv = SubsystemAndVersion(subsystem, Some(apiEntry.version))
-        IcdGitManager.ingest(db, sv, List(apiEntry), println(_))
-        db.versionManager.getSubsystemModel(SubsystemWithVersion(subsystem, maybeVersion, None))
-      case None => None
-    }
-  }
-
-  /**
    * Gets information about a named subsystem
    */
   def subsystemInfo(subsystem: String, maybeVersion: Option[String]) = Action { implicit request =>
-    // Gets the matching subsystem info from GitHub, if published there
-    def getPublishedSubsystemInfo: Option[SubsystemInfo] = {
-      ingestPublishedSubsystem(subsystem, maybeVersion).map { model =>
-        val sv = SubsystemWithVersion(model.subsystem, maybeVersion, None)
-        SubsystemInfo(sv, model.title, model.description)
-      }
-    }
-
     // Get the subsystem info from the database, or if not found, look in the published GitHub repo
     val sv = SubsystemWithVersion(subsystem, maybeVersion, None)
     db.versionManager.getSubsystemModel(sv) match {
@@ -120,13 +93,7 @@ class Application @Inject()(
         val info = SubsystemInfo(sv, model.title, model.description)
         Ok(Json.toJson(info))
       case None =>
-        // Not found in db, check if its a published version on GitHub, and if so, ingest it first
-        getPublishedSubsystemInfo match {
-          case Some(info) =>
-            Ok(Json.toJson(info))
-          case None =>
-            NotFound
-        }
+        NotFound
     }
   }
 
@@ -134,12 +101,7 @@ class Application @Inject()(
    * Gets a list of components belonging to the given version of the given subsystem
    */
   def components(subsystem: String, maybeVersion: Option[String]) = Action { implicit request =>
-    val sv = SubsystemWithVersion(subsystem, maybeVersion, None)
-    if (db.versionManager.getSubsystemModel(sv).isEmpty && db.versionManager.getComponentModel(sv).isEmpty) {
-      // Not found in db, check if its a published version on GitHub, and if so, ingest it first
-      ingestPublishedSubsystem(subsystem, maybeVersion) // Make sure subsystem is ingested from GitHub if needed
-    }
-
+    val sv    = SubsystemWithVersion(subsystem, maybeVersion, None)
     val names = db.versionManager.getComponentNames(sv)
     Ok(Json.toJson(names))
   }
@@ -152,29 +114,15 @@ class Application @Inject()(
    * @param maybeComponent component name (default all in subsystem)
    * @param searchAll if true, search all components for API dependencies
    */
-  def componentInfo(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String], searchAll: Option[Boolean]) = Action {
-    implicit request =>
-      val sv       = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-      val query = new CachedIcdDbQuery(db.db, Some(List(sv.subsystem)))
-      val versionManager = new CachedIcdVersionManager(query)
+  def componentInfo(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String], searchAll: Option[Boolean]) =
+    Action { implicit request =>
+      val sv              = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
+      val query           = new CachedIcdDbQuery(db.db, Some(List(sv.subsystem)))
+      val versionManager  = new CachedIcdVersionManager(query)
       val displayWarnings = searchAll.getOrElse(false)
-      val infoList = new ComponentInfoHelper(displayWarnings).getComponentInfoList(versionManager, sv)
+      val infoList        = new ComponentInfoHelper(displayWarnings).getComponentInfoList(versionManager, sv)
       Ok(Json.toJson(infoList))
-  }
-
-  /**
-   * Adds information about the ICD to the database if needed by ingesting it from the GitHub ICD repo
-   */
-  private def ingestPublishedIcd(icdVersion: IcdVersion): Unit = {
-    val v = icdVersion.icdVersion
-    if (v.nonEmpty && v != "*") {
-      val sv       = SubsystemAndVersion(icdVersion.subsystem, Some(icdVersion.subsystemVersion))
-      val targetSv = SubsystemAndVersion(icdVersion.target, Some(icdVersion.targetVersion))
-      val icds     = db.versionManager.getIcdVersions(icdVersion.subsystem, icdVersion.target)
-      if (!icds.exists(_.icdVersion.icdVersion == v))
-        IcdGitManager.importIcdFiles(db, List(sv, targetSv), println(_), allIcdVersions)
     }
-  }
 
   /**
    * Query the database for information about the given components in an ICD
@@ -194,14 +142,11 @@ class Application @Inject()(
       maybeTargetVersion: Option[String],
       maybeTargetComponent: Option[String]
   ): Action[AnyContent] = Action { implicit request =>
-    val sv       = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-    val targetSv = SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
-    if (db.versionManager.getSubsystemModel(sv).isEmpty && db.versionManager.getComponentModel(sv).isEmpty) {
-      ingestPublishedSubsystem(target, maybeTargetVersion)
-    }
-    val query = new CachedIcdDbQuery(db.db, Some(List(sv.subsystem, targetSv.subsystem)))
+    val sv             = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
+    val targetSv       = SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
+    val query          = new CachedIcdDbQuery(db.db, Some(List(sv.subsystem, targetSv.subsystem)))
     val versionManager = new CachedIcdVersionManager(query)
-    val infoList = IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv)
+    val infoList       = IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv)
     Ok(Json.toJson(infoList))
   }
 
@@ -230,10 +175,6 @@ class Application @Inject()(
     // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
     // if only the subsystem or target versions were given, use those (default to latest versions)
     val v = maybeIcdVersion.getOrElse("*")
-
-    // Make sure the database has the ICDs that were published on GitHub
-    if (v != "*" && maybeVersion.isDefined && maybeTargetVersion.isDefined)
-      ingestPublishedIcd(IcdVersion(v, subsystem, maybeVersion.get, target, maybeTargetVersion.get))
 
     val versions = db.versionManager.getIcdVersions(subsystem, target)
     val iv       = versions.find(_.icdVersion.icdVersion == v).map(_.icdVersion)
@@ -268,18 +209,19 @@ class Application @Inject()(
    * @param maybeComponent optional component (default: all in subsystem)
    * @param searchAll if true, search all components for API dependencies
    */
-  def apiAsPdf(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String], searchAll: Option[Boolean]) = Action { implicit request =>
-    val out = new ByteArrayOutputStream()
-    val sv  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-    IcdDbPrinter(db, searchAll.getOrElse(false)).getApiAsHtml(sv) match {
-      case Some(html) =>
-        IcdToPdf.saveAsPdf(out, html, showLogo = true)
-        val bytes = out.toByteArray
-        Ok(bytes).as("application/pdf")
-      case None =>
-        NotFound
+  def apiAsPdf(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String], searchAll: Option[Boolean]) =
+    Action { implicit request =>
+      val out = new ByteArrayOutputStream()
+      val sv  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
+      IcdDbPrinter(db, searchAll.getOrElse(false)).getApiAsHtml(sv) match {
+        case Some(html) =>
+          IcdToPdf.saveAsPdf(out, html, showLogo = true)
+          val bytes = out.toByteArray
+          Ok(bytes).as("application/pdf")
+        case None =>
+          NotFound
+      }
     }
-  }
 
   /**
    * Returns a detailed list of the versions of the given subsystem
