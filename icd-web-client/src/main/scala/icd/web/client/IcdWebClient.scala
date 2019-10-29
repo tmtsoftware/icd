@@ -141,20 +141,26 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       val maybeTargetSv        = selectDialog.targetSubsystem.getSubsystemWithVersion
       val maybeSubsystem       = maybeSv.map(_.subsystem)
       val maybeTargetSubsystem = maybeTargetSv.map(_.subsystem)
-      val maybeLinkSv = Some(link.subsystem) match {
-        case `maybeSubsystem`       => maybeSv
-        case `maybeTargetSubsystem` => maybeTargetSv
-        case _                      => Some(SubsystemWithVersion(link.subsystem, None, Some(link.compName)))
+
+      Some(link.subsystem) match {
+        case `maybeSubsystem` if maybeSv.flatMap(_.maybeComponent).isEmpty =>
+          goToComponent(link.compName)
+          pushState(viewType = ComponentView, compName = Some(link.compName), replace = true)
+        case `maybeTargetSubsystem` if maybeTargetSv.flatMap(_.maybeComponent).isEmpty  =>
+          goToComponent(link.compName)
+          pushState(viewType = ComponentView, compName = Some(link.compName), replace = true)
+        case _                      =>
+          val maybeLinkSv = Some(SubsystemWithVersion(link.subsystem, None, Some(link.compName)))
+          for {
+            _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(None, saveHistory = false)
+            _ <- selectDialog.subsystem.setSubsystemWithVersion(maybeLinkSv, saveHistory = false)
+            _ <- selectDialog.applySettings()
+          } yield {
+            goToComponent(link.compName)
+            pushState(viewType = ComponentView, compName = Some(link.compName), replace = true)
+          }
       }
-      // XXX TODO FIXME: If you are already displaying the subsystem (and sv.component is empty) just jump to link, don't reload!
-      for {
-        _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(None, saveHistory = false)
-        _ <- selectDialog.subsystem.setSubsystemWithVersion(maybeLinkSv, saveHistory = false)
-        _ <- selectDialog.applySettings()
-      } yield {
-        goToComponent(link.compName)
-        pushState(viewType = ComponentView, compName = Some(link.compName), replace = true)
-      }
+
     }
   }
 

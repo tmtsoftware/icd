@@ -330,7 +330,7 @@ object IcdGit extends App {
     try {
       // Get the DefaultDB handle
       val db = IcdDb(options.dbName, options.host, options.port)
-      // XXX TODO FIXME: Only drop subsystems that are being ingested
+      // XXX TODO FIXME: Only drop subsystems that are being ingested?
       db.dropDatabase()
       IcdGitManager.ingest(db, options.subsystems, (s: String) => println(s), allApiVersions, allIcdVersions)
     } catch {

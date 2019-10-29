@@ -138,19 +138,23 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
       notifyListener: Boolean = true,
       saveHistory: Boolean = true
   ): Future[Unit] = {
-    maybeIcdVersion match {
-      case Some(icdVersion) =>
-        icdItem.value = Json.toJson(IcdName(icdVersion.subsystem, icdVersion.target)).toString() // JSON
-        versionItem.value = Json.toJson(icdVersion).toString()                                   // JSON
-        if (notifyListener)
-          listener.icdSelected(maybeIcdVersion, saveHistory)
-        else Future.successful()
-      case None =>
-        icdItem.value = emptyOptionMsg
-        versionItem.value = unpublishedVersion
-        if (notifyListener)
-          listener.icdSelected(None, saveHistory)
-        else Future.successful()
+    if (maybeIcdVersion == getSelectedIcdVersion)
+      Future.successful()
+    else {
+      maybeIcdVersion match {
+        case Some(icdVersion) =>
+          icdItem.value = Json.toJson(IcdName(icdVersion.subsystem, icdVersion.target)).toString() // JSON
+          versionItem.value = Json.toJson(icdVersion).toString()                                   // JSON
+          if (notifyListener)
+            listener.icdSelected(maybeIcdVersion, saveHistory)
+          else Future.successful()
+        case None =>
+          icdItem.value = emptyOptionMsg
+          versionItem.value = unpublishedVersion
+          if (notifyListener)
+            listener.icdSelected(None, saveHistory)
+          else Future.successful()
+      }
     }
   }
 
@@ -169,30 +173,30 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
    * @param maybeTargetSv optional target subsystem and version
    */
   def selectMatchingIcd(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): Future[Unit] = {
-      // Select none as the default, in case a matching ICD is not found
+    // Select none as the default, in case a matching ICD is not found
     setIcdWithVersion(None, notifyListener = false, saveHistory = false)
     updateIcdVersionOptions(Nil)
-      val p = Promise[Unit]()
-      val icdNames = for {
-        subsystemVersion <- sv.maybeVersion
-        targetSv         <- maybeTargetSv
-        targetVersion    <- targetSv.maybeVersion
-        icd              <- getIcds.find(i => i.subsystem == sv.subsystem && i.target == targetSv.subsystem)
-      } yield {
-        for (icdVersionList <- getIcdVersionOptions(icd) recover { case ex => p.failure(ex); Nil }) {
-          val maybeIcdVersion =
-            icdVersionList.find(i => i.subsystemVersion == subsystemVersion && i.targetVersion == targetVersion)
-          if (maybeIcdVersion.isDefined) {
-            for {
-              _ <- updateIcdVersionOptions(icdVersionList) recover { case ex => p.failure(ex) }
+    val p = Promise[Unit]()
+    val icdNames = for {
+      subsystemVersion <- sv.maybeVersion
+      targetSv         <- maybeTargetSv
+      targetVersion    <- targetSv.maybeVersion
+      icd              <- getIcds.find(i => i.subsystem == sv.subsystem && i.target == targetSv.subsystem)
+    } yield {
+      for (icdVersionList <- getIcdVersionOptions(icd) recover { case ex => p.failure(ex); Nil }) {
+        val maybeIcdVersion =
+          icdVersionList.find(i => i.subsystemVersion == subsystemVersion && i.targetVersion == targetVersion)
+        if (maybeIcdVersion.isDefined) {
+          for {
+            _ <- updateIcdVersionOptions(icdVersionList) recover { case ex => p.failure(ex) }
             _ <- setIcdWithVersion(maybeIcdVersion, notifyListener = false, saveHistory = false)
-            } p.success(())
-          } else p.success(())
-        }
-        icd
+          } p.success(())
+        } else p.success(())
       }
-      if (icdNames.isEmpty) Future.successful() else p.future
+      icd
     }
+    if (icdNames.isEmpty) Future.successful() else p.future
+  }
 
   // Update the ICD combobox options
   def updateIcdOptions(): Future[Unit] = {

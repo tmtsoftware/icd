@@ -419,7 +419,7 @@ case class IcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) {
   }
 
   /**
-   * Deletes the given component hierarchy. Use with caution!
+   * Deletes the given component hierarchy.
    *
    * @param subsystem the component's subsystem
    * @param component the component to delete

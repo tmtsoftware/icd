@@ -191,7 +191,7 @@ object SummaryTable {
                   case None      => raw(firstParagraph(info.item.description))
                 }
 
-                // XXX TODO: Link targets should contain subsystem names!?
+                // XXX TODO FIXME: Link targets should contain subsystem names!?
                 tr(
                   td(p(publisherComponent)),
                   td(p(a(href := s"#${info.subscriber.component}")(info.subscriber.component))),
