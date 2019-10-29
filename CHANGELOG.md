@@ -9,8 +9,8 @@ All notable changes to this project will be documented in this file.
 
 - Changed the default JSON schema for model files. The old 1.0 schema is still supported. You can use the new model file formats by setting modelVersion="2.0" in component-model.conf and subsystem-model.conf. 
 
--  The old and new JSON schema descriptions are now under [icd/icd-db/src/main/resources](icd/icd-db/src/main/resources) in the 
- [1.0](icd/icd-db/src/main/resources/1.0) and [2.0](icd/icd-db/src/main/resources/2.0) directories. 
+-  The old and new JSON schema descriptions are now under [icd-db/src/main/resources](icd-db/src/main/resources) in the 
+ [1.0](icd-db/src/main/resources/1.0) and [2.0](icd-db/src/main/resources/2.0) directories. 
   Examples of the old and new formats can be found in the [examples](examples) directory. 
   
 - With the new JSON schema for attributes, the values for *exclusiveMinimum* and *exclusiveMaximum* are the numerical values 
