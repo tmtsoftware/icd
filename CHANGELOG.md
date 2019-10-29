@@ -14,7 +14,7 @@ All notable changes to this project will be documented in this file.
   Examples of the old and new formats can be found in the [examples](examples) directory. 
   
 - With the new JSON schema for attributes, the values for *exclusiveMinimum* and *exclusiveMaximum* are the numerical values 
-  (previously it was a boolean value). The *minimum* 
+  (previously it was a boolean value). 
 
 - Changed the icd web app (*icdwebserver*) to support *component to component ICDs* as well as viewing selected components in an API.
 
