@@ -1,8 +1,11 @@
 package csw.services
 
 import java.io.File
+import scala.concurrent.duration.DurationLong
+import scala.concurrent.{Await, Future}
 
 package object icd {
+
   /**
    * Gets a recursive list of subdirectories containing ICD files
    *
@@ -16,4 +19,10 @@ package object icd {
     dirs.flatten
   }
 
+  /**
+  * Shortcut for Await.result
+   */
+  implicit class RichFuture[T](val f: Future[T]) extends AnyVal {
+    def await: T = Await.result(f, 100.seconds)
+  }
 }

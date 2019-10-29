@@ -12,8 +12,7 @@ import play.api.libs.json.Json
 import reactivemongo.api.{DefaultDB, MongoConnection, MongoDriver}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration._
+import scala.concurrent.Future
 import scala.util.Try
 
 object IcdDbDefaults {
@@ -273,7 +272,6 @@ case class IcdDb(
     port: Int = IcdDbDefaults.defaultPort
 ) {
 
-  implicit val timeout: FiniteDuration = 5.seconds
   private val mongoUri                 = s"mongodb://$host:$port/$dbName"
   private val driver                   = new MongoDriver
   private val futureDb = for {
@@ -281,7 +279,7 @@ case class IcdDb(
     dn  <- Future(uri.db.get)
     db  <- driver.connection(uri, None, strictUri = false).get.database(dn)
   } yield db
-  val db: DefaultDB = Try(Await.result(futureDb, timeout)).getOrElse {
+  val db: DefaultDB = Try(futureDb.await).getOrElse {
     throw new IcdDbException()
   }
 
@@ -401,14 +399,14 @@ case class IcdDb(
    * NOTE: This connection can't be reused after closing.
    */
   def close(): Unit = {
-    Await.ready(db.endSession(), timeout)
+    db.endSession().await
   }
 
   /**
    * Drops this database. Use with caution!
    */
   def dropDatabase(): Unit = {
-    Await.ready(db.drop(), timeout)
+    db.drop().await
   }
 
 }

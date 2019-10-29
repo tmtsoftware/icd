@@ -1,5 +1,6 @@
 package csw.services.icd.db
 
+import csw.services.icd._
 import csw.services.icd.StdName._
 import csw.services.icd.db.parser.{
   CommandModelBsonParser,
@@ -16,9 +17,7 @@ import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.bson.BSONDocument
 import reactivemongo.play.json._
 
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Await
 import scala.language.implicitConversions
 
 object IcdDbQuery {
@@ -134,8 +133,6 @@ object IcdDbQuery {
 case class IcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) {
   import IcdDbQuery._
 
-  private val timeout = 60.seconds
-
   // Search only the given subsystems, or all subsystems, if maybeSubsystems is empty
   private[db] def collectionNameFilter(collName: String): Boolean = {
     if (maybeSubsystems.isEmpty) true
@@ -147,7 +144,7 @@ case class IcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) {
   private[db] def collectionExists(name: String): Boolean = getCollectionNames.contains(name)
 
   private[db] def getCollectionNames: Set[String] = {
-    Await.result(db.collectionNames, timeout).filter(collectionNameFilter).toSet
+    db.collectionNames.await.filter(collectionNameFilter).toSet
   }
 
   private[db] def getEntries(paths: List[IcdPath]): List[IcdEntry] = {
@@ -162,7 +159,7 @@ case class IcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) {
   }
 
   def collectionHead(coll: BSONCollection): Option[BSONDocument] = {
-    Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout)
+    coll.find(BSONDocument(), None).one[BSONDocument].await
   }
 
   /**
@@ -172,7 +169,7 @@ case class IcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) {
     val x = for (entry <- getEntries if entry.component.isDefined)
       yield {
         val coll = entry.component.get
-        val doc  = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
+        val doc  = coll.find(BSONDocument(), None).one[BSONDocument].await.get
         ComponentModelBsonParser(doc)
       }
     x.flatten
@@ -203,7 +200,7 @@ case class IcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) {
   def queryComponents(query: BSONDocument): List[ComponentModel] = {
     getEntries.flatMap {
       _.component.flatMap { coll =>
-        val maybeDoc = Await.result(coll.find(query, None).one[BSONDocument], timeout)
+        val maybeDoc = coll.find(query, None).one[BSONDocument].await
         maybeDoc.flatMap(ComponentModelBsonParser(_))
       }
     }
@@ -253,7 +250,7 @@ case class IcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) {
   def getSubsystemNames: List[String] = {
     getEntries.flatMap {
       _.subsystem.flatMap { coll =>
-        val doc = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
+        val doc = coll.find(BSONDocument(), None).one[BSONDocument].await.get
         SubsystemModelBsonParser(doc).map(_.subsystem)
       }
     }
@@ -429,7 +426,7 @@ case class IcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) {
    */
   def dropComponent(subsystem: String, component: String): Unit = {
     for (coll <- entryForComponentName(subsystem, component).getCollections) {
-      Await.ready(coll.drop(failIfNotFound = false), timeout)
+      coll.drop(failIfNotFound = false).await
     }
   }
 

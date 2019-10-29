@@ -2,15 +2,12 @@ package csw.services.icd.db
 
 import play.api.libs.json.{JsNumber, JsObject}
 import reactivemongo.play.json._
-//import play.api.libs.json.Reads._
-//import play.api.libs.json.Writes._
+import csw.services.icd._
 import reactivemongo.api.DefaultDB
 import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.bson.{BSONDocument, BSONNumberLike}
 
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Await
 
 /**
  * Manages ingesting objects into the database while keeping track of
@@ -19,9 +16,6 @@ import scala.concurrent.Await
 case class IcdDbManager(db: DefaultDB, versionManager: IcdVersionManager) {
 
   import IcdVersionManager._
-
-  // XXX TODO FIXME
-  private val timeout = 60.seconds
 
   /**
    * Ingests the given object into the database in the named collection,
@@ -32,7 +26,7 @@ case class IcdDbManager(db: DefaultDB, versionManager: IcdVersionManager) {
    */
   private[db] def ingest(name: String, obj: JsObject): Unit = {
     val collection = db.collection[BSONCollection](name)
-    if (Await.result(db.collectionNames, timeout).contains(name))
+    if (db.collectionNames.await.contains(name))
       update(collection, obj)
     else
       insert(collection, obj)
@@ -40,15 +34,15 @@ case class IcdDbManager(db: DefaultDB, versionManager: IcdVersionManager) {
 
   // Inserts an new object in a collection
   private def insert(coll: BSONCollection, obj: JsObject): Unit = {
-    Await.result(coll.insert.one(obj + (versionKey -> JsNumber(1))), timeout)
+    coll.insert.one(obj + (versionKey -> JsNumber(1))).await
   }
 
   // Updates an object in an existing collection
   private def update(coll: BSONCollection, obj: JsObject): Unit = {
     // XXX TODO FIXME: Instead of delete and insert, do a mongodb update?
-    val doc = Await.result(coll.find(BSONDocument(), None).one[BSONDocument], timeout).get
+    val doc = coll.find(BSONDocument(), None).one[BSONDocument].await.get
     val currentVersion = doc.getAs[BSONNumberLike](versionKey).get.toInt
-    Await.result(coll.delete().one(BSONDocument(versionKey -> currentVersion)), timeout)
-    Await.result(coll.insert.one(obj + (versionKey -> JsNumber(currentVersion))), timeout)
+    coll.delete().one(BSONDocument(versionKey -> currentVersion)).await
+    coll.insert.one(obj + (versionKey -> JsNumber(currentVersion))).await
   }
 }
