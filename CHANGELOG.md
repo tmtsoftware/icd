@@ -35,7 +35,7 @@ All notable changes to this project will be documented in this file.
     *location, alarmType, probableCause, operatorResponse, acknowledge, latched.*
 
 - Added support for *struct* types for attributes.
-  See [examples/2.0/TEST/envCtrl/publish-model.conf]() for some sample struct declarations.
+  See [examples/2.0/TEST/envCtrl/publish-model.conf](examples/2.0/TEST/envCtrl/publish-model.conf) for some sample struct declarations.
 
 
 ## [ICD v0.12] - 2019-08-15
