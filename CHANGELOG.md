@@ -3,11 +3,37 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [ICD v0.14] - 2019-10-20
+## [ICD v0.14] - 2019-10-29
 
 ### Changed
 
-- Changed the default JSON schema version to 2.0 
+- Changed the default JSON schema for model files. The old 1.0 schema is still supported. You can use the new model file formats by setting modelVersion="2.0" in component-model.conf and subsystem-model.conf. 
+
+-  The old and new JSON schema descriptions are now under [icd/icd-db/src/main/resources](icd/icd-db/src/main/resources) in the 
+ [1.0](icd/icd-db/src/main/resources/1.0) and [2.0](icd/icd-db/src/main/resources/2.0) directories. 
+  Examples of the old and new formats can be found in the [examples](examples) directory. 
+
+- Changed the icd web app (*icdwebserver*) to support *component to component ICDs* as well as viewing selected components in an API.
+
+- Bug fixes
+
+### Removed
+
+- Removed *telemetry* events and *eventStreams* from the publish model
+  (These are automatically converted to *events* when imported from modelVersion 1.0 files).
+  
+- Removed *archive* field from alarm model.
+
+### Added
+
+- Added *observeEvents* and *currentStates* as an event types for the publish model.
+
+- Added more fields to the alarm model: 
+    *location, alarmType, probableCause, operatorResponse, acknowledge, latched.*
+
+- Added support for *struct* types for attributes.
+  See [examples/2.0/TEST/envCtrl/publish-model.conf]() for some sample struct declarations.
+
 
 ## [ICD v0.12] - 2019-08-15
 
