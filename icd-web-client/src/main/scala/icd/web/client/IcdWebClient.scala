@@ -146,6 +146,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         case `maybeTargetSubsystem` => maybeTargetSv
         case _                      => Some(SubsystemWithVersion(link.subsystem, None, Some(link.compName)))
       }
+      // XXX TODO FIXME: If you are already displaying the subsystem (and sv.component is empty) just jump to link, don't reload!
       for {
         _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(None, saveHistory = false)
         _ <- selectDialog.subsystem.setSubsystemWithVersion(maybeLinkSv, saveHistory = false)

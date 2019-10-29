@@ -198,7 +198,7 @@ case class Subsystem(
     }
     for {
       _ <- updateSubsystemVersionOptions(maybeSv.flatMap(_.maybeVersion))
-      _ <- listener.subsystemSelected(getSubsystemWithVersion, saveHistory)
+      _ <- listener.subsystemSelected(maybeSv, saveHistory)
     } yield {
     }
   }

@@ -128,6 +128,7 @@ object IcdGitManager {
       .call()
       .asScala
       .toList
+      .filter(_.getName == "refs/heads/master")
       .map { ref =>
         ref.getObjectId.getName
       }
