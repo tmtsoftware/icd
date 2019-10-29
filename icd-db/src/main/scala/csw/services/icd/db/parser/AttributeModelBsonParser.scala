@@ -2,13 +2,21 @@ package csw.services.icd.db.parser
 
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.AttributeModel
-import reactivemongo.bson.BSONDocument
+import reactivemongo.bson.{BSONBoolean, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONString, BSONValue}
 
 /**
  * This model is a value that is based on the json-schema "ref": "resource:/json-schema.json".
  * In this case it can define a primitive type, enum, array, or object, for example.
  */
 object AttributeModelBsonParser {
+
+  private def bsonValueToString(b: BSONValue): String = b match {
+    case s: BSONString => s.value
+    case d: BSONDouble => d.value.toString
+    case d: BSONInteger => d.value.toString
+    case d: BSONLong => d.value.toString
+    case d: BSONBoolean => d.value.toString
+  }
 
   def apply(doc: BSONDocument): AttributeModel = {
     val name        = doc.getAs[String]("name").getOrElse("")
@@ -21,10 +29,10 @@ object AttributeModelBsonParser {
 
     // --- Old json-schema uses Boolean for exclusive* keys, new one uses Number! ---
     val exclusiveMinimumStr =
-      doc.getAs[String]("exclusiveMinimum").orElse(doc.getAs[String]("items.exclusiveMinimum")).getOrElse("false")
+      doc.get("exclusiveMinimum").orElse(doc.get("items.exclusiveMinimum")).map(bsonValueToString).getOrElse("false")
     val exclusiveMinimum = exclusiveMinimumStr.toLowerCase() != "false"
     val exclusiveMaximumStr =
-      doc.getAs[String]("exclusiveMaximum").orElse(doc.getAs[String]("items.exclusiveMaximum")).getOrElse("false")
+      doc.get("exclusiveMaximum").orElse(doc.get("items.exclusiveMaximum")).map(bsonValueToString).getOrElse("false")
     val exclusiveMaximum = exclusiveMaximumStr.toLowerCase() != "false"
 
     def isNumeric(str: String): Boolean        = str.matches("[-+]?\\d+(\\.\\d+)?")
@@ -32,12 +40,12 @@ object AttributeModelBsonParser {
 
     // For compatibility, use numeric value of exclusive min/max if found
     val minimum = doc
-      .getAs[String]("minimum")
-      .orElse(doc.getAs[String]("items.minimum"))
+      .get("minimum").map(bsonValueToString)
+      .orElse(doc.get("items.minimum").map(bsonValueToString))
       .orElse(ifNumeric(exclusiveMinimumStr))
     val maximum = doc
-      .getAs[String]("maximum")
-      .orElse(doc.getAs[String]("items.maximum"))
+      .get("maximum").map(bsonValueToString)
+      .orElse(doc.get("items.maximum").map(bsonValueToString))
       .orElse(ifNumeric(exclusiveMaximumStr))
 
     // ---
