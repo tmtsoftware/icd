@@ -586,6 +586,8 @@ object IcdGitManager {
         feedback(s"Checking out ${sv.subsystem}-${e.version} (commit: ${e.commit})")
         git.checkout().setName(e.commit).call
         feedback(s"Ingesting ${sv.subsystem}-${e.version}")
+        // Remove the latest version of the subsystem collections here to avoid leaving old, deleted components in the db
+        db.query.dropSubsystem(sv.subsystem)
         db.ingest(gitWorkDir)
         val date = DateTime.parse(e.date)
         db.versionManager.publishApi(sv.subsystem, Some(e.version), majorVersion = false, e.comment, e.user, date)

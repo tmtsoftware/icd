@@ -16,6 +16,7 @@ object AttributeModelBsonParser {
     case d: BSONInteger => d.value.toString
     case d: BSONLong => d.value.toString
     case d: BSONBoolean => d.value.toString
+    case x => x.toString // should not happen
   }
 
   def apply(doc: BSONDocument): AttributeModel = {

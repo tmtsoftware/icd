@@ -166,12 +166,13 @@ case class IcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) {
    * Returns a list of models, one for each component in the db
    */
   def getComponents: List[ComponentModel] = {
-    val x = for (entry <- getEntries if entry.component.isDefined)
-      yield {
-        val coll = entry.component.get
-        val doc  = coll.find(BSONDocument(), None).one[BSONDocument].await.get
-        ComponentModelBsonParser(doc)
-      }
+    val x =
+      for (entry <- getEntries if entry.component.isDefined)
+        yield {
+          val coll = entry.component.get
+          val doc  = coll.find(BSONDocument(), None).one[BSONDocument].await.get
+          ComponentModelBsonParser(doc)
+        }
     x.flatten
   }
 
@@ -426,6 +427,23 @@ case class IcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) {
    */
   def dropComponent(subsystem: String, component: String): Unit = {
     for (coll <- entryForComponentName(subsystem, component).getCollections) {
+      coll.drop(failIfNotFound = false).await
+    }
+  }
+
+  /**
+   * Deletes the given unpublished subsystem.
+   *
+   * @param subsystem the name of the subsystem
+   */
+  def dropSubsystem(subsystem: String): Unit = {
+    val paths = getCollectionNames
+      .filter(name => name.startsWith(s"$subsystem.") && !name.endsWith(IcdVersionManager.versionSuffix))
+      .map(IcdPath)
+    for {
+      e    <- getEntries(paths.toList)
+      coll <- e.getCollections
+    } {
       coll.drop(failIfNotFound = false).await
     }
   }

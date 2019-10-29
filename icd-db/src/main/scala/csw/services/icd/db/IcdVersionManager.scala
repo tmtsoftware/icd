@@ -538,8 +538,6 @@ case class IcdVersionManager(query: IcdDbQuery) {
   ): Unit = {
     val collectionNames = getCollectionNames
 
-    // XXX TODO FIXME: Test this
-
     // Save any of the subsystem's collections that changed
     val icdPaths = collectionNames.filter(isStdSet).map(IcdPath).filter(_.subsystem == subsystem)
     val paths    = icdPaths.map(_.path).toList
