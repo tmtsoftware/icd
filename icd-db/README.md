@@ -8,9 +8,9 @@ To start the MongoDB server, you can run a command like this:
 
     mongod -dbpath $db
     
-where $db is the directory containing the database.
+where $db is the directory thath contains (or should contain) the database.
 
-The default database name used is `icds` and can be configured in src/main/resources/reference.conf
+The default database name used for this version is `icds2` and can be configured in src/main/resources/reference.conf
 (The test cases use a different database).
 
 icd-db Command
@@ -47,7 +47,7 @@ Usage: icd-db [options]
   --diff <subsystem>:<version1>[,version2]
                            For the given subsystem, list the differences between <version1> and <version2> (or the current version)
   -m, --missing <outputFile>
-                           Generates a 'Missing Items' report to the given file (dir for csv) in a format based on the file's suffix (html, pdf, otherwise text/csv formatted files are generated in given dir). Use the -s and/or -t options to restrict the report to the given subsystems.
+                           Generates a 'Missing Items' report to the given file (dir for csv) in a format based on the file's suffix (html, pdf, otherwise text/csv formatted files are generated in given dir)
   -a, --archived <outputFile>
                            Generates an 'Archived Items' report to the given file in a format based on the file's suffix (html, pdf)
   --allSubsystems          Include all subsystems in searches for publishers, subscribers, etc. while generating API doc (Default: only consider the one subsystem)
@@ -79,7 +79,7 @@ Example:
 Implementation
 --------------
 
-Each ICD JSON file is stored in its own MongoDB collection.
+Each JSON file is stored in its own MongoDB collection.
 Here is a listing of the collections present after running this ingest command:
 
 
@@ -110,3 +110,13 @@ Queries can be run on all collections.
 When detailed information is needed, the JSON in a collection is parsed into the same model classes used to
 create the PDF document. Creating documents from the database works in the same way as creating them from files.
 The JSON is parsed into model classes and then the document is generated from the model.
+
+# API versions
+
+The collection names above are for the *current, unpublished versions" of the model files.
+This is where the data is stored after ingesting the files into the database.
+
+When ingesting API releases that were published on GitHub (using [icd-git](../icd-git)), the different versions of the
+model files are *published* locally in the MongoDB and stored in collections that end with ".v".
+
+

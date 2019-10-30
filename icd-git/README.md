@@ -5,7 +5,7 @@ icd-git is a command line application that reads model files from the GitHub
 [ICD-Model-Files](https://github.com/tmt-icd/ICD-Model-Files.git) repositories and
 allows you to publish subsystem APIs and ICDs and ingest them into the ICD database.
 
-In order for a subsystem to be part of an ICD, the API for it first needs to be published:
+In order for a subsystem to be part of an ICD, the API for it first needs to be published (Note: You need commit access to the above repo for this to work):
 
     icd-git --subsystems TEST --publish --user $USER --password XXXXX --comment "Some comment"
     icd-git --subsystems TEST2 --publish --user $USER --password XXXXX --comment "Some comment"

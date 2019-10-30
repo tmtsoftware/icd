@@ -11,7 +11,7 @@ Versions of APIs and ICDs are managed in [GitHub repositories](https://github.co
 the subsystem model files can be imported from GitHub (with version history) into a local MongoDB database, which is used
 by command line applications and a web app.
  
-Command line applications ([icd-db](icd-db)), [icd-git](icd-git)) and a web app ([icdwebserver](icd-web-server)) 
+Command line applications: [icd-db](icd-db), [icd-git](icd-git) and a web app ([icdwebserver](icd-web-server)) 
 are provided for working with APIs and ICDs, querying and viewing the data.
 
 The applications here assume the [MongoDB database](https://www.mongodb.com) is running. 
@@ -19,7 +19,7 @@ To start the MongoDB server, you can run a command like this:
 
     mongod -dbpath $db
     
-where $db is the directory containing the database.
+where $db is the directory that contains (or should contain) the database.
 
 After starting the database, ingest the published ICDs, which are stored in GitHub repositories:
 
@@ -85,8 +85,7 @@ Note: The icd-git app will currently delete the current contents of the local IC
 ingesting the files from the repository.
 
 The icd web app lists the published versions of subsystem APIs and ICDs from GitHub and the model
-files are checked out and ingested into the database automatically as needed (when you select a subsystem 
-from the menu, for example). 
+files are checked out and ingested into the database automatically as needed the first time you start the web app. 
 
 Known Issues
 ------------

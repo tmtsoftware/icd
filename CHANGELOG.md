@@ -18,6 +18,9 @@ All notable changes to this project will be documented in this file.
 
 - Changed the icd web app (*icdwebserver*) to support *component to component ICDs* as well as viewing selected components in an API.
 
+- Changed the icd web app to automatically ingest published APIs and subsystems from GitHub if missing on the first start
+ (previously they were ingested only as needed, which caused delays and other issues)
+
 - Bug fixes
 
 ### Removed
