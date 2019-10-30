@@ -388,14 +388,20 @@ case class IcdVersionManager(query: IcdDbQuery) {
 
   // Returns the contents of the given version of the given collection
   private def getVersionOf(coll: BSONCollection, version: Int): BSONDocument = {
-    val doc            = coll.find(queryAny, None).one[BSONDocument].await.get
-    val currentVersion = doc.getAs[Int](versionKey).get
-    if (version == currentVersion) {
-      doc
-    } else {
+    // Get a previously published version from $coll.v
+    def getPublishedDoc: BSONDocument = {
       val v     = db.collection[BSONCollection](versionCollectionName(coll.name))
       val query = BSONDocument(versionKey -> version)
       v.find(query, None).one[BSONDocument].await.getOrElse(queryAny)
+    }
+    // Note: Doc might not exist in current version, but exist in an older, published version
+    coll.find(queryAny, None).one[BSONDocument].await match {
+      case Some(doc) =>
+        val currentVersion = doc.getAs[Int](versionKey).get
+        if (version == currentVersion) doc else getPublishedDoc
+
+      case None =>
+        getPublishedDoc
     }
   }
 
@@ -518,9 +524,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
   }
 
   /**
-   * Publishes the given subsystem.
-   * If the subsystem string contains a version number, that is the version that is published.
-   * (For use when importing from GitHub.)
+   * Publishes the given version of the subsystem in the database.
+   * (For use when importing releases of APIs and ICDs from GitHub.)
    *
    * @param subsystem    the name of subsystem
    * @param maybeVersion optional version string in the form "1.0" (used when importing specific release from github)
@@ -544,15 +549,17 @@ case class IcdVersionManager(query: IcdDbQuery) {
     val versions = for (path <- paths) yield {
       val coll            = db.collection[BSONCollection](path)
       val obj             = coll.find(queryAny, None).one[BSONDocument].await.get
-      val versionCollName = versionCollectionName(path)
       val version         = obj.getAs[Int](versionKey).get
       val id              = obj.getAs[BSONObjectID](idKey).get
+      val versionCollName = versionCollectionName(path)
       val exists          = collectionNames.contains(versionCollName)
       if (!exists || diff(db(versionCollName), obj).isDefined) {
-        // Update version history, avoid duplicate key error?
+        // Update version history
         val v = db.collection[BSONCollection](versionCollName)
-        if (exists)
+        if (exists) {
+          // avoid duplicate key (needed?)
           v.findAndRemove(BSONDocument(idKey -> id), None, None, WriteConcern.Default, None, None, Nil).await
+        }
         v.insert.one(obj).await
         // increment version for unpublished working copy
         val mod = BSONDocument("$set" -> BSONDocument(versionKey -> (version + 1)))

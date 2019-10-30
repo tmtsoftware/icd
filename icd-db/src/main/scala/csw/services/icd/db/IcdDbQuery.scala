@@ -431,22 +431,22 @@ case class IcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) {
     }
   }
 
-//  /**
-//   * Deletes the given unpublished subsystem.
-//   *
-//   * @param subsystem the name of the subsystem
-//   */
-//  def dropSubsystem(subsystem: String): Unit = {
-//    val paths = getCollectionNames
-//      .filter(name => name.startsWith(s"$subsystem.") && !name.endsWith(IcdVersionManager.versionSuffix))
-//      .map(IcdPath)
-//    for {
-//      e    <- getEntries(paths.toList)
-//      coll <- e.getCollections
-//    } {
-//      coll.drop(failIfNotFound = false).await
-//    }
-//  }
+  /**
+   * Deletes the given unpublished subsystem.
+   *
+   * @param subsystem the name of the subsystem
+   */
+  def dropSubsystem(subsystem: String): Unit = {
+    val paths = getCollectionNames
+      .filter(name => name.startsWith(s"$subsystem.") && !name.endsWith(IcdVersionManager.versionSuffix))
+      .map(IcdPath)
+    for {
+      e    <- getEntries(paths.toList)
+      coll <- e.getCollections
+    } {
+      coll.drop(failIfNotFound = false).await
+    }
+  }
 
   /**
    * Returns a list of items published by the given component

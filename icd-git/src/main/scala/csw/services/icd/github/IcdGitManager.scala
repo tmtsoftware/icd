@@ -560,7 +560,7 @@ object IcdGitManager {
         def versionFilter(e: ApiEntry) = if (sv.maybeVersion.isEmpty) true else sv.maybeVersion.get == e.version
 
         val apiEntries = versionsFound.apis.filter(versionFilter)
-        ingest(db, sv, apiEntries, feedback)
+        ingest(db, sv.subsystem, apiEntries, feedback)
 
       case None =>
         warning(s"No published versions of ${sv.subsystem} were found in the repository")
@@ -572,25 +572,25 @@ object IcdGitManager {
    * Ingests the given versions of the given subsystem into the icd db
    *
    * @param db         the database to use
-   * @param sv         the subsystem and optional version
+   * @param subsystem  the subsystem to ingest into teh db
    * @param apiEntries the (GitHub version) entries for the published versions to ingest
    * @param feedback   optional feedback function
    */
-  def ingest(db: IcdDb, sv: SubsystemAndVersion, apiEntries: List[ApiEntry], feedback: String => Unit): Unit = this.synchronized {
-    val url = getSubsystemGitHubUrl(sv.subsystem)
+  def ingest(db: IcdDb, subsystem: String, apiEntries: List[ApiEntry], feedback: String => Unit): Unit = this.synchronized {
+    val url = getSubsystemGitHubUrl(subsystem)
     // Checkout the subsystem repo in a temp dir
     val gitWorkDir = Files.createTempDirectory("icds").toFile
     try {
       val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(url).call()
       apiEntries.reverse.foreach { e =>
-        feedback(s"Checking out ${sv.subsystem}-${e.version} (commit: ${e.commit})")
+        feedback(s"Checking out ${subsystem}-${e.version} (commit: ${e.commit})")
         git.checkout().setName(e.commit).call
-        feedback(s"Ingesting ${sv.subsystem}-${e.version}")
+        feedback(s"Ingesting ${subsystem}-${e.version}")
         // Remove the latest version of the subsystem collections here to avoid leaving old, deleted components in the db
-//        db.query.dropSubsystem(sv.subsystem)
+        db.query.dropSubsystem(subsystem)
         db.ingest(gitWorkDir)
         val date = DateTime.parse(e.date)
-        db.versionManager.publishApi(sv.subsystem, Some(e.version), majorVersion = false, e.comment, e.user, date)
+        db.versionManager.publishApi(subsystem, Some(e.version), majorVersion = false, e.comment, e.user, date)
       }
       git.close()
     } finally {
