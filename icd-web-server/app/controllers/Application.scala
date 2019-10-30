@@ -4,12 +4,10 @@ import java.io.ByteArrayOutputStream
 
 import javax.inject._
 import csw.services.icd.IcdToPdf
-import csw.services.icd.db.ApiVersions.ApiEntry
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
 import csw.services.icd.db._
 import csw.services.icd.github.IcdGitManager
 import diffson.playJson.DiffsonProtocol
-import icd.web.shared.IcdModels.SubsystemModel
 import icd.web.shared.{IcdVersion, _}
 import org.webjars.play._
 import play.api.libs.json.Json
@@ -53,12 +51,17 @@ class Application @Inject()(
   }
   val db = tryDb.get
 
+  // XXX TODO FIXME: Get missing, newly published versions automatically?
   // cache of API and ICD versions published on GitHub (until next browser refresh)
   val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
-  // If the database is empty, ingest the released APIs and ICDs
-  if (db.query.getSubsystemNames.isEmpty) {
-    println("Please wait while ingesting all published APIs and ICDs from GitHub (first time only).")
-    IcdGitManager.ingest(db, Nil, (s: String) => println(s), allApiVersions, allIcdVersions)
+  val missingSubsystems = allApiVersions
+    .map(_.subsystem)
+    .toSet
+    .diff(db.query.getSubsystemNames.toSet)
+    .map(SubsystemAndVersion(_, None))
+  if (missingSubsystems.nonEmpty) {
+    println(s"Updating the ICD database with changes from GitHub")
+    IcdGitManager.ingest(db, missingSubsystems.toList, (s: String) => println(s), allApiVersions, allIcdVersions)
   }
 
   // Somehow disabling the CSRF filter in application.conf and adding it here was needed to make this work
