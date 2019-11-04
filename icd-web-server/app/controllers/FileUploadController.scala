@@ -49,15 +49,19 @@ class FileUploadController @Inject()(env: Environment, webJarAssets: WebJarAsset
    */
   private def ingestConfigs(list: List[StdConfig], comment: String): Result = {
     import net.ceedubs.ficus.Ficus._
-    // Get the schema version
-    val schemaVersion = list
-      .find(f => f.stdName == StdName.subsystemFileNames || f.stdName == StdName.componentFileNames)
-      .map(_.config.as[String](IcdValidator.schemaVersionKey))
-      .getOrElse(IcdValidator.currentSchemaVersion)
+
+    // Note: The user may have selected a top level dir containing subdirs that use different schema versions,
+    // so this needs to be updated for each subsystem and component in the list of model files received
+    var schemaVersion = IcdValidator.currentSchemaVersion
 
     // Validate everything first
     val validateProblems =
-      list.flatMap(sc => IcdValidator.validateStdName(sc.config, sc.stdName, schemaVersion, sc.fileName))
+      list.flatMap { sc =>
+        // Update the schema version being used any time we come across a component or subsystem model
+        if (sc.stdName == StdName.subsystemFileNames || sc.stdName == StdName.componentFileNames)
+          schemaVersion = sc.config.as[Option[String]](IcdValidator.schemaVersionKey).getOrElse(IcdValidator.currentSchemaVersion)
+        IcdValidator.validateStdName(sc.config, sc.stdName, schemaVersion, sc.fileName)
+      }
     if (validateProblems.nonEmpty) {
       NotAcceptable(Json.toJson(validateProblems))
     } else {
