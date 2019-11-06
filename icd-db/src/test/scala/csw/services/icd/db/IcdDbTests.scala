@@ -92,9 +92,9 @@ class IcdDbTests extends FunSuite {
     //    IcdDbPrinter(db).saveToFile(envCtrl.subsystem, Some(envCtrl.component), new File("envCtrl.pdf"))
     //    IcdDbPrinter(db).saveToFile("TEST", None, new File("TEST.pdf"))
 
-    // Test dropping a component
-    db.query.dropComponent(envCtrl.subsystem, envCtrl.component)
-    assert(db.query.getComponentModel("TEST", "envCtrl").isEmpty)
+//    // Test dropping a component
+//    db.query.dropComponent(envCtrl.subsystem, envCtrl.component)
+//    assert(db.query.getComponentModel("TEST", "envCtrl").isEmpty)
 
     //    db.query.dropComponent("TEST")
     //    assert(db.query.getComponentModel("TEST").isEmpty)
