@@ -12,6 +12,7 @@ import org.scalatest.FunSuite
 //@DoNotDiscover
 class IcdDbTests extends FunSuite {
   val examplesDir = s"examples/${IcdValidator.currentSchemaVersion}"
+  val dbName = "test"
 
   // The relative location of the the examples directory can change depending on how the test is run
   def getTestDir(path: String): File = {
@@ -20,14 +21,14 @@ class IcdDbTests extends FunSuite {
   }
 
   test("Ingest example ICD into database, then query the DB") {
-    val db = IcdDb("test")
+    val db = IcdDb(dbName)
     db.dropDatabase() // start with a clean db for test
 
     // ingest examples/TEST into the DB
     val problems = db.ingest(getTestDir(s"$examplesDir/TEST"))
     for (p <- problems) println(p)
     assert(problems.isEmpty)
-    db.query.afterIngestFiles(problems)
+    db.query.afterIngestFiles(problems, dbName)
 
     // query the DB
     assert(db.query.getComponentNames == List("envCtrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
@@ -92,7 +93,7 @@ class IcdDbTests extends FunSuite {
     //    IcdDbPrinter(db).saveToFile(envCtrl.subsystem, Some(envCtrl.component), new File("envCtrl.pdf"))
     //    IcdDbPrinter(db).saveToFile("TEST", None, new File("TEST.pdf"))
 
-//    // Test dropping a component
+    // Test dropping a component
 //    db.query.dropComponent(envCtrl.subsystem, envCtrl.component)
 //    assert(db.query.getComponentModel("TEST", "envCtrl").isEmpty)
 
