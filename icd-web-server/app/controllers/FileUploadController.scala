@@ -66,6 +66,7 @@ class FileUploadController @Inject()(env: Environment, webJarAssets: WebJarAsset
       NotAcceptable(Json.toJson(validateProblems))
     } else {
       val problems = list.flatMap(db.ingestConfig)
+      db.query.afterIngestFiles(problems)
       if (problems.nonEmpty) {
         NotAcceptable(Json.toJson(problems))
       } else {

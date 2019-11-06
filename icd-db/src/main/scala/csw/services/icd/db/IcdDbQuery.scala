@@ -126,11 +126,12 @@ object IcdDbQuery {
  * Support for querying the ICD database
  * (Note: This class works on the current, unpublished versions. See IcdVersionManager for use with versions.)
  *
- * @param db the DefaultDB handle
+ * @param db the icds2 DB handle
+ * @param admin the admin DB handle
  * @param maybeSubsystems if defined, limit the list of subsystems searched
  */
 //noinspection DuplicatedCode
-case class IcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) {
+case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[List[String]]) {
   import IcdDbQuery._
 
   // Search only the given subsystems, or all subsystems, if maybeSubsystems is empty
@@ -432,20 +433,73 @@ case class IcdDbQuery(db: DefaultDB, maybeSubsystems: Option[List[String]]) {
   }
 
   /**
-   * Deletes the given unpublished subsystem.
+   * Deletes the given subsystem hierarchy.
    *
-   * @param subsystem the name of the subsystem
+   * @param subsystem the component's subsystem
    */
   def dropSubsystem(subsystem: String): Unit = {
-    val paths = getCollectionNames
-      .filter(name => name.startsWith(s"$subsystem.") && !name.endsWith(IcdVersionManager.versionSuffix))
-      .map(IcdPath)
-    for {
-      e    <- getEntries(paths.toList)
-      coll <- e.getCollections
-    } {
+    val paths = getCollectionNames.filter(name => name.startsWith(s"$subsystem."))
+    paths.foreach { collName =>
+      val coll = db.collection[BSONCollection](collName)
       coll.drop(failIfNotFound = false).await
     }
+  }
+
+  private def baseName(s: String, suffix: String) = s.dropRight(suffix.length)
+
+  // Rename the given set of temp collections by removing the .tmp suffix.
+  // If there were fatal errors, delete the temp collections without renaming.
+  private def renameTmpCollections(tmpPaths: Set[String], problems: List[Problem]): Unit = {
+    val fatalErrors = problems.filter(_.severity != "warning")
+    tmpPaths.foreach { collName =>
+      if (fatalErrors.isEmpty) {
+        admin
+          .renameCollection(
+            IcdDbDefaults.defaultDbName,
+            collName,
+            baseName(collName, IcdDbDefaults.tmpCollSuffix),
+            dropExisting = true
+          )
+          .await
+      } else {
+        val coll = db.collection[BSONCollection](collName)
+        coll.drop(failIfNotFound = false).await
+      }
+    }
+  }
+
+  /**
+   * Drop any mongodb collections for components in the given subsystem that are not found in the just ingested version,
+   * then rename the temp collections by removing the .tmp suffix.
+   * If there were fatal errors, delete the temp collections without renaming.
+   */
+  def afterIngestSubsystem(subsystem: String, problems: List[Problem]): Unit = {
+    val tmpPaths = getCollectionNames
+      .filter(name => name.startsWith(s"$subsystem.") && name.endsWith(IcdDbDefaults.tmpCollSuffix))
+    val paths = getCollectionNames
+      .filter(
+        name =>
+          name.startsWith(s"$subsystem.") && !name.endsWith(IcdVersionManager.versionSuffix) && !name
+            .endsWith(IcdDbDefaults.tmpCollSuffix)
+      )
+    val deleted = paths.diff(tmpPaths.map(path => baseName(path, IcdDbDefaults.tmpCollSuffix)))
+    deleted.foreach { collName =>
+      val coll = db.collection[BSONCollection](collName)
+      coll.drop(failIfNotFound = false).await
+    }
+    renameTmpCollections(tmpPaths, problems)
+  }
+
+  /**
+   * Rename any temp collections that were just ingested.
+   * If there were fatal errors, delete the temp collections without renaming.
+   * Note: Since we don't know if an entire subsystem was ingested here, we can't delete any old, removed collections.
+   * (Need to provide a "drop subsystem" option for icd-db so user can manually do this)
+   */
+  def afterIngestFiles(problems: List[Problem]): Unit = {
+    val tmpPaths = getCollectionNames
+      .filter(_.endsWith(IcdDbDefaults.tmpCollSuffix))
+    renameTmpCollections(tmpPaths, problems)
   }
 
   /**

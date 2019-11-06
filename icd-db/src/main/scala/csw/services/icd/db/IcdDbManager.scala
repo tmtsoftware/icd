@@ -22,27 +22,28 @@ case class IcdDbManager(db: DefaultDB, versionManager: IcdVersionManager) {
    * creating a new one if it does not already exist.
    *
    * @param name name of the collection to use
+   * @param tmpName temp name of the collection to use during iingest
    * @param obj  the object to insert
    */
-  private[db] def ingest(name: String, obj: JsObject): Unit = {
-    val collection = db.collection[BSONCollection](name)
-    if (db.collectionNames.await.contains(name))
-      update(collection, obj)
-    else
-      insert(collection, obj)
+  private[db] def ingest(name: String, tmpName: String, obj: JsObject): Unit = {
+    val tmpCollection = db.collection[BSONCollection](tmpName)
+    if (db.collectionNames.await.contains(name)) {
+      val collection = db.collection[BSONCollection](name)
+      update(collection, tmpCollection, obj)
+    } else {
+      insert(tmpCollection, obj)
+    }
   }
 
-  // Inserts an new object in a collection
+  // Inserts an new object in a collection, with _version = 1
   private def insert(coll: BSONCollection, obj: JsObject): Unit = {
     coll.insert.one(obj + (versionKey -> JsNumber(1))).await
   }
 
-  // Updates an object in an existing collection
-  private def update(coll: BSONCollection, obj: JsObject): Unit = {
-    // XXX TODO FIXME: Instead of delete and insert, do a mongodb update?
+  // Updates an object in an existing collection, keeping the same _version number
+  private def update(coll: BSONCollection, tmpColl: BSONCollection, obj: JsObject): Unit = {
     val doc = coll.find(BSONDocument(), None).one[BSONDocument].await.get
     val currentVersion = doc.getAs[BSONNumberLike](versionKey).get.toInt
-    coll.delete().one(BSONDocument(versionKey -> currentVersion)).await
-    coll.insert.one(obj + (versionKey -> JsNumber(currentVersion))).await
+    tmpColl.insert.one(obj + (versionKey -> JsNumber(currentVersion))).await
   }
 }

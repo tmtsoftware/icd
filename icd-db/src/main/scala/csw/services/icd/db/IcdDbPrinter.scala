@@ -59,7 +59,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean) {
     // Use caching, since we need to look at all the components multiple times, in order to determine who
     // subscribes, who calls commands, etc.
     val maybeSubsystems = if (searchAllSubsystems) None else Some(List(sv.subsystem))
-    val query           = new CachedIcdDbQuery(db.db, maybeSubsystems)
+    val query           = new CachedIcdDbQuery(db.db, db.admin, maybeSubsystems)
     val versionManager  = new CachedIcdVersionManager(query)
 
 
@@ -92,7 +92,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean) {
 
     // Use caching, since we need to look at all the components multiple times, in order to determine who
     // subscribes, who calls commands, etc.
-    val query = new CachedIcdDbQuery(db.db, Some(List(sv.subsystem, targetSv.subsystem)))
+    val query = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)))
     val versionManager = new CachedIcdVersionManager(query)
 
     val markup = for {

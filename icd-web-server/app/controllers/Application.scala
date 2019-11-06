@@ -120,7 +120,7 @@ class Application @Inject()(
   def componentInfo(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String], searchAll: Option[Boolean]) =
     Action { implicit request =>
       val sv              = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-      val query           = new CachedIcdDbQuery(db.db, Some(List(sv.subsystem)))
+      val query           = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem)))
       val versionManager  = new CachedIcdVersionManager(query)
       val displayWarnings = searchAll.getOrElse(false)
       val infoList        = new ComponentInfoHelper(displayWarnings).getComponentInfoList(versionManager, sv)
@@ -147,7 +147,7 @@ class Application @Inject()(
   ): Action[AnyContent] = Action { implicit request =>
     val sv             = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     val targetSv       = SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
-    val query          = new CachedIcdDbQuery(db.db, Some(List(sv.subsystem, targetSv.subsystem)))
+    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)))
     val versionManager = new CachedIcdVersionManager(query)
     val infoList       = IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv)
     Ok(Json.toJson(infoList))

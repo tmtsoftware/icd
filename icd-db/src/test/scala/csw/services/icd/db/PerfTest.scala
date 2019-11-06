@@ -9,7 +9,7 @@ object PerfTest extends App {
   // XXX TODO FIXME
   val db             = IcdDb("icds2")
   val compName       = "lgsWfs"
-  val query          = IcdDbQuery(db.db, Some(List("TEST")))
+  val query          = IcdDbQuery(db.db, db.admin, Some(List("TEST")))
   val versionManager = IcdVersionManager(query)
 
   new ComponentInfoHelper(displayWarnings = false)

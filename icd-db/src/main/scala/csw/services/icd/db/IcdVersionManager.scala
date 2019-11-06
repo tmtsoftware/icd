@@ -10,18 +10,11 @@ import diffson.playJson._
 import diffson.lcs._
 import diffson.jsonpatch._
 import diffson.jsonpatch.lcsdiff.remembering._
-import cats.implicits._
 import com.typesafe.config.ConfigFactory
-import csw.services.icd.db.parser.{
-  ComponentModelBsonParser,
-  PublishModelBsonParser,
-  SubscribeModelBsonParser,
-  SubsystemModelBsonParser
-}
+import csw.services.icd.db.parser.{ComponentModelBsonParser, PublishModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import reactivemongo.api.{Cursor, WriteConcern}
 import reactivemongo.bson.{BSONDateTime, BSONDocument, BSONObjectID}
-
 import reactivemongo.play.json._
 import reactivemongo.api.collections.bson.BSONCollection
 
@@ -563,7 +556,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
         v.insert.one(obj).await
         // increment version for unpublished working copy
         val mod = BSONDocument("$set" -> BSONDocument(versionKey -> (version + 1)))
-        coll.update(ordered = false).one(obj, mod).await
+        coll.update.one(queryAny, mod).await
       }
       (path, version)
     }

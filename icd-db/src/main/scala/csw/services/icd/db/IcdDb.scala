@@ -12,14 +12,24 @@ import play.api.libs.json.Json
 import reactivemongo.api.{DefaultDB, MongoConnection, MongoDriver}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.util.Try
 
 object IcdDbDefaults {
   private val conf          = ConfigFactory.load
   val defaultPort: Int      = conf.getInt("icd.db.port")
   val defaultHost: String   = conf.getString("icd.db.host")
   val defaultDbName: String = conf.getString("icd.db.name")
+
+  // Suffix used for temp collections while ingesting model files into the DB
+  val tmpCollSuffix = ".tmp"
+
+  def connectToDatabase(host: String, port: Int, dbName: String): DefaultDB = {
+    val mongoUri   = s"mongodb://$host:$port/$dbName"
+    val driver     = new MongoDriver
+    val uri        = MongoConnection.parseURI(mongoUri).get
+    val dn         = uri.db.get
+    val connection = driver.connection(uri, None, strictUri = false).get
+    connection.database(dn).await
+  }
 }
 
 //noinspection DuplicatedCode
@@ -130,7 +140,11 @@ object IcdDb extends App {
   private def run(options: IcdDbOptions): Unit = {
     val db = IcdDb(options.dbName, options.host, options.port)
 
-    options.ingest.map(dir => db.ingest(dir)) match {
+    options.ingest.map { dir =>
+      val problems = db.ingest(dir)
+      db.query.afterIngestFiles(problems)
+      problems
+    } match {
       case Some(problems) if problems.nonEmpty =>
         problems.foreach(println(_))
         System.exit(1)
@@ -189,6 +203,9 @@ object IcdDb extends App {
         case "db" =>
           println(s"Dropping ${options.dbName}")
           db.dropDatabase()
+        case "subsystem" =>
+          if (options.subsystem.isEmpty) error("Missing required subsystem name: Please specify --subsystem <name>")
+          db.query.dropSubsystem(options.subsystem.get)
         case "component" =>
           if (options.subsystem.isEmpty) error("Missing required subsystem name: Please specify --subsystem <name>")
           options.component match {
@@ -272,21 +289,13 @@ case class IcdDb(
     port: Int = IcdDbDefaults.defaultPort
 ) {
 
-  private val mongoUri                 = s"mongodb://$host:$port/$dbName"
-  private val driver                   = new MongoDriver
-  private val futureDb = for {
-    uri <- Future.fromTry(MongoConnection.parseURI(mongoUri))
-    dn  <- Future(uri.db.get)
-    db  <- driver.connection(uri, None, strictUri = false).get.database(dn)
-  } yield db
-  val db: DefaultDB = Try(futureDb.await).getOrElse {
-    throw new IcdDbException()
-  }
+  val db: DefaultDB = IcdDbDefaults.connectToDatabase(host, port, dbName)
+  val admin: DefaultDB = IcdDbDefaults.connectToDatabase(host, port, "admin")
 
   // Clean up on exit
   sys.addShutdownHook(close())
 
-  val query: IcdDbQuery                 = IcdDbQuery(db, None)
+  val query: IcdDbQuery                 = IcdDbQuery(db, admin, None)
   val versionManager: IcdVersionManager = IcdVersionManager(query)
   val manager: IcdDbManager             = IcdDbManager(db, versionManager)
 
@@ -327,14 +336,16 @@ case class IcdDb(
   }
 
   /**
-   * Ingests the given ICD model objects (based on the contents of one subsystem API directory)
+   * Ingests the given ICD model objects into the db (based on the contents of one subsystem API directory).
+   * The collections created have the suffix IcdDbDefaults.tmpCollSuffix and must be renamed, if there are no errors.
    *
    * @param stdConfig ICD model file packaged as a StdConfig object
    * @return a list describing the problems, if any
    */
   def ingestConfig(stdConfig: StdConfig): List[Problem] = {
     try {
-      ingestConfig(getCollectionName(stdConfig), stdConfig.config)
+      val coll = getCollectionName(stdConfig)
+      ingestConfig(coll, s"$coll${IcdDbDefaults.tmpCollSuffix}", stdConfig.config)
       Nil
     } catch {
       case t: Throwable => List(Problem("error", s"Internal error: $t"))
@@ -347,13 +358,13 @@ case class IcdDb(
    * @param name   the name of the collection in which to store this part of the API
    * @param config the config to be ingested into the datasbase
    */
-  private def ingestConfig(name: String, config: Config): Unit = {
+  private def ingestConfig(name: String, tmpName: String, config: Config): Unit = {
     import play.api.libs.json._
     import play.api.libs.json.Reads._
 
     val jsObj = Json.parse(IcdValidator.toJson(config)).as[JsObject]
 
-    manager.ingest(name, jsObj)
+    manager.ingest(name, tmpName, jsObj)
   }
 
   /**

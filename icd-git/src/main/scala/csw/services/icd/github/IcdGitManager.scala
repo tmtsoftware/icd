@@ -572,13 +572,13 @@ object IcdGitManager {
    * Ingests the given versions of the given subsystem into the icd db
    *
    * @param db         the database to use
-   * @param subsystem  the subsystem to ingest into teh db
+   * @param subsystem  the subsystem to ingest into the db
    * @param apiEntries the (GitHub version) entries for the published versions to ingest
    * @param feedback   optional feedback function
    */
   def ingest(db: IcdDb, subsystem: String, apiEntries: List[ApiEntry], feedback: String => Unit): Unit = this.synchronized {
-    val url = getSubsystemGitHubUrl(subsystem)
     // Checkout the subsystem repo in a temp dir
+    val url = getSubsystemGitHubUrl(subsystem)
     val gitWorkDir = Files.createTempDirectory("icds").toFile
     try {
       val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(url).call()
@@ -586,11 +586,13 @@ object IcdGitManager {
         feedback(s"Checking out ${subsystem}-${e.version} (commit: ${e.commit})")
         git.checkout().setName(e.commit).call
         feedback(s"Ingesting ${subsystem}-${e.version}")
-        // Remove the latest version of the subsystem collections here to avoid leaving old, deleted components in the db
-        db.query.dropSubsystem(subsystem)
-        db.ingest(gitWorkDir)
-        val date = DateTime.parse(e.date)
-        db.versionManager.publishApi(subsystem, Some(e.version), majorVersion = false, e.comment, e.user, date)
+        val problems = db.ingest(gitWorkDir)
+        problems.foreach(p => feedback(p.errorMessage()))
+        db.query.afterIngestSubsystem(subsystem, problems)
+        if (!problems.exists(_.severity != "warning")) {
+          val date = DateTime.parse(e.date)
+          db.versionManager.publishApi(subsystem, Some(e.version), majorVersion = false, e.comment, e.user, date)
+        }
       }
       git.close()
     } finally {
@@ -605,11 +607,13 @@ object IcdGitManager {
       feedback: String => Unit,
       allIcdVersions: List[IcdVersions]
   ): Unit = {
-    if (subsystems.size == 2) {
-      // Import one ICD if subsystem and target options were given
-      allIcdVersions.find(_.subsystems == subsystems.map(_.subsystem)).foreach(db.importIcds(_, feedback))
-    } else {
-      allIcdVersions.foreach(db.importIcds(_, feedback))
+    subsystems.size match {
+      case 1 =>
+      case 2 =>
+        // Import one ICD if subsystem and target options were given
+        allIcdVersions.find(_.subsystems == subsystems.map(_.subsystem)).foreach(db.importIcds(_, feedback))
+      case n =>
+        allIcdVersions.foreach(db.importIcds(_, feedback))
     }
   }
 }

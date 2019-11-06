@@ -19,15 +19,17 @@ class ComponentInfoTest extends FunSuite {
   test("Get pub/sub info from database") {
     val db = IcdDb("test")
     db.dropDatabase() // start with a clean db for test
-    val query          = IcdDbQuery(db.db, None)
+    val query          = IcdDbQuery(db.db, db.admin, None)
     val versionManager = IcdVersionManager(query)
 
     // ingest examples/TEST into the DB
     val problems = db.ingest(getTestDir(s"$examplesDir/TEST"))
     for (p <- problems) println(p)
+    db.query.afterIngestFiles(problems)
 
     val problems2 = db.ingest(getTestDir(s"$examplesDir/TEST2"))
     for (p <- problems2) println(p)
+    db.query.afterIngestFiles(problems2)
 
     new ComponentInfoHelper(displayWarnings = false)
       .getComponentInfo(versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")))

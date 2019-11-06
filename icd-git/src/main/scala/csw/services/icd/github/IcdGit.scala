@@ -330,8 +330,10 @@ object IcdGit extends App {
     try {
       // Get the DefaultDB handle
       val db = IcdDb(options.dbName, options.host, options.port)
-      // XXX TODO FIXME: Only drop subsystems that are being ingested?
-      db.dropDatabase()
+      if (options.subsystems.isEmpty)
+        db.dropDatabase()
+      else
+        options.subsystems.foreach(sv => db.query.dropSubsystem(sv.subsystem))
       IcdGitManager.ingest(db, options.subsystems, (s: String) => println(s), allApiVersions, allIcdVersions)
     } catch {
       case ex: IcdDbException => error("Failed to connect to mongodb. Make sure mongod server is running.")
