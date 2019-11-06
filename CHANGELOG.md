@@ -3,6 +3,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [ICD v0.15] - 2019-11-06
+
+### Changed
+
+- Bug fixes
+
+### Added
+
+- Added support for new types for attributes. The list of available types matches those implemented in CSW parameter sets:
+  (*array, struct, boolean, integer, number, string, byte, short, long, float, double, taiDate, utcDate, raDec, eqCoord, solarSystemCoord, minorPlanetCoord, cometCoord, altAzCoord, coord*)
+
+
 ## [ICD v0.14] - 2019-10-29
 
 ### Changed
