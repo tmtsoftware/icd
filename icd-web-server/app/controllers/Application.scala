@@ -13,7 +13,7 @@ import org.webjars.play._
 import play.api.libs.json.Json
 import play.filters.csrf.{CSRF, CSRFAddToken, CSRFCheck}
 import play.api.mvc._
-import play.api.{Environment, Mode}
+import play.api.{Configuration, Environment, Mode}
 
 import scala.util.Try
 
@@ -35,7 +35,8 @@ class Application @Inject()(
     assets: AssetsFinder,
     webJarsUtil: WebJarsUtil,
     webJarAssets: WebJarAssets,
-    components: ControllerComponents
+    components: ControllerComponents,
+    configuration: Configuration
 ) extends AbstractController(components) {
 
   import Application._
@@ -288,6 +289,15 @@ class Application @Inject()(
     // convert list to use shared IcdVersion class
     val list = db.versionManager.diff(subsystem, v1Opt, v2Opt).map(getDiffInfo)
     Ok(Json.toJson(list))
+  }
+
+  /**
+   * Returns OK(true) if Uploads should be allowed in the web app
+   * (Should be set to false when running as a public server, on when running locally during development)
+   */
+  def isUploadAllowed = Action { implicit request =>
+    val allowed = configuration.get[Boolean]("icd.allowUpload")
+    Ok(Json.toJson(allowed))
   }
 
 }

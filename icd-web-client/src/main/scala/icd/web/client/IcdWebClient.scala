@@ -14,6 +14,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import BrowserHistory._
 import Components._
 import icd.web.client.SelectDialog.SelectDialogListener
+import org.scalajs.dom.ext.Ajax
+import play.api.libs.json.Json
 
 /**
  * Main class for the ICD web app.
@@ -54,20 +56,32 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val fileUploadItem   = NavbarItem("Upload", "Select icd model files to ingest into the icd database", uploadSelected())
   private val fileUploadDialog = FileUploadDialog(subsystemNames, csrfToken, inputDirSupported)
 
-  // Call popState() when the user presses the browser Back button
-  dom.window.onpopstate = popState _
+  isUploadAllowed.map { uploadAllowed =>
+    // Call popState() when the user presses the browser Back button
+    dom.window.onpopstate = popState _
 
-  // Initial browser state
-  doLayout()
-  selectSubsystems()
+    // Initial browser state
+    doLayout(uploadAllowed)
+    selectSubsystems()
+  }
+
+  // See if uploading model files is allowed in this configuration
+  private def isUploadAllowed: Future[Boolean] = {
+    val path = Routes.isUploadAllowed
+    Ajax.get(path).map { r =>
+      val response = Json.fromJson[Boolean](Json.parse(r.responseText)).get
+      response
+    }
+  }
+
 
   // Layout the components on the page
-  private def doLayout(): Unit = {
+  private def doLayout(uploadAllowed: Boolean): Unit = {
     // Add CSS styles
     head.appendChild(Styles.render[TypedTag[HTMLStyleElement]].render)
 
     navbar.addItem(selectItem)
-    navbar.addItem(fileUploadItem)
+    if (uploadAllowed) navbar.addItem(fileUploadItem)
     navbar.addItem(historyItem)
     navbar.addItem(pdfItem)
     navbar.addItem(expandToggler)

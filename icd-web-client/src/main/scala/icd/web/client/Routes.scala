@@ -159,4 +159,9 @@ object Routes {
    * Gets the differences between two versions (version strings separated by a comma)
    */
   def diff(subsystem: String, versions: List[String]) = s"/diff/$subsystem/${versions.mkString(",")}"
+
+  /**
+   * Returns OK(true) if Uploads should be allowed in the web app
+   */
+  def isUploadAllowed = s"/isUploadAllowed"
 }
