@@ -50,12 +50,11 @@ class Application @Inject()(
     println("Error: Failed to connect to the icd database. Make sure mongod is running.")
     System.exit(1)
   }
-  val db = tryDb.get
+  private val db = tryDb.get
 
-  // XXX TODO FIXME: Get missing, newly published versions automatically?
   // cache of API and ICD versions published on GitHub (until next browser refresh)
-  val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
-  val missingSubsystems = allApiVersions
+  private val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
+  private val missingSubsystems = allApiVersions
     .map(_.subsystem)
     .toSet
     .diff(db.query.getSubsystemNames.toSet)
@@ -298,6 +297,14 @@ class Application @Inject()(
   def isUploadAllowed = Action { implicit request =>
     val allowed = configuration.get[Boolean]("icd.allowUpload")
     Ok(Json.toJson(allowed))
+  }
+
+  /**
+   * Responds with the JSON for the PublishInfo for every subsystem
+   */
+  def getPublishInfo = Action { implicit request =>
+    val publishInfo = IcdGitManager.getPublishInfo
+    Ok(Json.toJson(publishInfo))
   }
 
 }

@@ -69,5 +69,7 @@ object JsonSupport {
   implicit val diffInfoFormat              = Json.format[DiffInfo]
   implicit val versionInfoFormat           = Json.format[VersionInfo]
   implicit val icdVersionInfoFormat        = Json.format[IcdVersionInfo]
+  implicit val apiVersionInfoFormat        = Json.format[ApiVersionInfo]
+  implicit val publishInfoFormat           = Json.format[PublishInfo]
 
 }

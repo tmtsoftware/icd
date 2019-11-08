@@ -40,7 +40,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val sidebar       = Sidebar(LeftSidebarListener)
 
   private val historyItem    = NavbarItem("History", "Display the version history for an API or ICD", showVersionHistory())
-  private val versionHistory = VersionHistory(mainContent)
+  private val historyDialog = HistoryDialog(mainContent)
 
   private val pdfItem = NavbarItem("PDF", "Generate and display a PDF for the API or ICD", makePdf)
 
@@ -53,8 +53,11 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val selectItem   = NavbarItem("Select", "Select the API or ICD to display", selectSubsystems())
   private val selectDialog = SelectDialog(mainContent, Selector)
 
-  private val fileUploadItem   = NavbarItem("Upload", "Select icd model files to ingest into the icd database", uploadSelected())
+  private val fileUploadItem   = NavbarItem("Upload", "Select icd model files to ingest into the icd database", showUploadDialog())
   private val fileUploadDialog = FileUploadDialog(subsystemNames, csrfToken, inputDirSupported)
+
+  private val publishItem   = NavbarItem("Publish", "Shows dialog to publish APIs and ICDs", showPublishDialog())
+  private val publishDialog = PublishDialog(mainContent, subsystemNames)
 
   isUploadAllowed.map { uploadAllowed =>
     // Call popState() when the user presses the browser Back button
@@ -84,6 +87,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     if (uploadAllowed) navbar.addItem(fileUploadItem)
     navbar.addItem(historyItem)
     navbar.addItem(pdfItem)
+    navbar.addItem(publishItem)
     navbar.addItem(expandToggler)
 
     layout.addItem(sidebar)
@@ -129,10 +133,18 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   // Called when the Upload item is selected
-  private def uploadSelected(saveHistory: Boolean = true)(): Unit = {
+  private def showUploadDialog(saveHistory: Boolean = true)(): Unit = {
     setSidebarVisible(false)
     mainContent.setContent(fileUploadDialog, "Upload Subsystem Model Files")
     if (saveHistory) pushState(viewType = UploadView)
+  }
+
+  // Called when the Publish item is selected
+  private def showPublishDialog(saveHistory: Boolean = true)(): Unit = {
+    setSidebarVisible(false)
+    publishDialog.update()
+    mainContent.setContent(publishDialog, "Publish APIs and ICDs")
+    if (saveHistory) pushState(viewType = PublishView)
   }
 
   // Listener for sidebar component checkboxes
@@ -224,7 +236,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         _ <- selectDialog.icdChooser.setIcdWithVersion(hist.maybeIcd, notifyListener = false, saveHistory = false)
       } {
         hist.viewType match {
-          case UploadView  => uploadSelected(saveHistory = false)()
+          case UploadView  => showUploadDialog(saveHistory = false)()
+          case PublishView  => showPublishDialog(saveHistory = false)()
           case VersionView => showVersionHistory(saveHistory = false)()
           case SelectView =>
             selectSubsystems(
@@ -308,16 +321,16 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private def showVersionHistory(saveHistory: Boolean = true)(): Unit = {
     selectDialog.icdChooser.getSelectedIcd match {
       case Some(icdName) =>
-        versionHistory.setIcd(icdName)
+        historyDialog.setIcd(icdName)
         setSidebarVisible(false)
-        mainContent.setContent(versionHistory, s"ICD Version History: ${icdName.subsystem} to ${icdName.target}")
+        mainContent.setContent(historyDialog, s"ICD Version History: ${icdName.subsystem} to ${icdName.target}")
         if (saveHistory) pushState(viewType = VersionView)
       case None =>
         selectDialog.subsystem.getSelectedSubsystem match {
           case Some(name) =>
-            versionHistory.setSubsystem(name)
+            historyDialog.setSubsystem(name)
             setSidebarVisible(false)
-            mainContent.setContent(versionHistory, s"Subsystem API Version History: $name")
+            mainContent.setContent(historyDialog, s"Subsystem API Version History: $name")
             if (saveHistory) pushState(viewType = VersionView)
           case None =>
         }

@@ -163,5 +163,10 @@ object Routes {
   /**
    * Returns OK(true) if Uploads should be allowed in the web app
    */
-  def isUploadAllowed = s"/isUploadAllowed"
+  def isUploadAllowed = "/isUploadAllowed"
+
+  /**
+   * Gets PublishInfo for every subsystem
+   */
+  def getPublishInfo = "/getPublishInfo"
 }
