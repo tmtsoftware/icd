@@ -193,15 +193,16 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
       }
   }
 
-  def update(): Unit = {
-    getPublishInfo
-      .onComplete {
-        case Success(list) =>
-          contentDiv.innerHTML = ""
-          contentDiv.appendChild(markupSubsystemTable(list))
-        case Failure(ex) =>
-          mainContent.displayInternalError(ex)
-      }
+  def update(): Future[Unit] = {
+    val f = getPublishInfo
+    f.onComplete {
+      case Success(list) =>
+        contentDiv.innerHTML = ""
+        contentDiv.appendChild(markupSubsystemTable(list))
+      case Failure(ex) =>
+        mainContent.displayInternalError(ex)
+    }
+    f.map(_ =>())
   }
 
   def markup(): Element = contentDiv

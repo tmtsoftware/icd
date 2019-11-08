@@ -142,7 +142,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Called when the Publish item is selected
   private def showPublishDialog(saveHistory: Boolean = true)(): Unit = {
     setSidebarVisible(false)
-    publishDialog.update()
+    showBusyCursorWhile(publishDialog.update())
     mainContent.setContent(publishDialog, "Publish APIs and ICDs")
     if (saveHistory) pushState(viewType = PublishView)
   }
