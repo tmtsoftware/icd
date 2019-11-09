@@ -241,7 +241,10 @@ class Application @Inject()(
    * Returns a list of version names for the given subsystem
    */
   def getVersionNames(subsystem: String) = Action { implicit request =>
-    val versions = allApiVersions.filter(_.subsystem == subsystem).flatMap(_.apis).map(_.version)
+    val versions = allApiVersions
+      .filter(_.subsystem == subsystem)
+      .flatMap(_.apis)
+      .map(_.version)
     Ok(Json.toJson(versions))
   }
 
