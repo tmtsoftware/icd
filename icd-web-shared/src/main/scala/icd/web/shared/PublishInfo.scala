@@ -14,3 +14,14 @@ case class PublishInfo(
     icdVersions: List[IcdVersionInfo],
     readyToPublish: Boolean
 )
+
+/**
+ * Holds the information needed to publish a subsystem API
+ *
+ * @param subsystem the subsystem to publish
+ * @param majorVersion if true, increment the major version
+ * @param user GitHub user name
+ * @param password GitHub password
+ * @param comment Comment for the new API version
+ */
+case class PublishApiInfo(subsystem: String, majorVersion: Boolean, user: String, password: String, comment: String)

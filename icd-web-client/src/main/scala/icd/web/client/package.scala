@@ -1,13 +1,33 @@
 package icd.web
 
 import org.scalajs.dom
-import org.scalajs.dom.{DOMList, Node}
+import org.scalajs.dom.raw.{Element, HTMLDivElement}
+import org.scalajs.dom.{DOMList, Node, document}
+
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * Common definitions
  */
 package object client {
-  def $id(s: String) = dom.document.getElementById(s)
+
+  // Show/hide the busy cursor while the future is running
+  def showBusyCursorWhile(f: Future[Unit]): Future[Unit] = {
+    // Note: See implicit NodeList to List support in package object in this dir
+    val nodeList = document.querySelectorAll("div")
+    nodeList.map(_.asInstanceOf[HTMLDivElement]).foreach { divEl =>
+      divEl.style.cursor = "progress"
+    }
+    f.onComplete { _ =>
+      nodeList.map(_.asInstanceOf[HTMLDivElement]).foreach { divEl =>
+        divEl.style.cursor = "default"
+      }
+    }
+    f
+  }
+
+  def $id(s: String): Element = dom.document.getElementById(s)
 
   // Returns an HTML div containing the given error message
   def errorDiv(msg: String): String = {

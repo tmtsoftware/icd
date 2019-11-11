@@ -261,21 +261,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     }
   }
 
-  // Show/hide the busy cursor while the future is running
-  private def showBusyCursorWhile(f: Future[Unit]): Future[Unit] = {
-    // Note: See implicit NodeList to List support in package object in this dir
-    val nodeList = document.querySelectorAll("div")
-    nodeList.map(_.asInstanceOf[HTMLDivElement]).foreach { divEl =>
-      divEl.style.cursor = "progress"
-    }
-    f.onComplete { _ =>
-      nodeList.map(_.asInstanceOf[HTMLDivElement]).foreach { divEl =>
-        divEl.style.cursor = "default"
-      }
-    }
-    f
-  }
-
   private object Selector extends SelectDialogListener {
     override def subsystemsSelected(
         maybeSv: Option[SubsystemWithVersion],

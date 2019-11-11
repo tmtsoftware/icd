@@ -309,4 +309,29 @@ class Application @Inject()(
     val publishInfo = IcdGitManager.getPublishInfo
     Ok(Json.toJson(publishInfo))
   }
+
+  /**
+   * Publish the selected API (add an entry for the current commit of the master branch on GitHub)
+   */
+  def publishApi() = Action { implicit request =>
+    val maybePublishApiInfo = request.body.asJson.map(json => Json.fromJson[PublishApiInfo](json).get)
+    if (maybePublishApiInfo.isEmpty) {
+      BadRequest("Missing POST data of type PublishApiInfo")
+    } else {
+      val publishApiInfo = maybePublishApiInfo.get
+      try {
+        val apiVersionInfo = IcdGitManager.publish(
+          publishApiInfo.subsystem,
+          publishApiInfo.majorVersion,
+          publishApiInfo.user,
+          publishApiInfo.password,
+          publishApiInfo.comment
+        )
+        Ok(Json.toJson(apiVersionInfo))
+      } catch {
+        case ex: Exception => BadRequest(ex.getMessage)
+      }
+    }
+
+  }
 }

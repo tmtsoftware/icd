@@ -170,4 +170,8 @@ object Routes {
    */
   def getPublishInfo = "/getPublishInfo"
 
+  /**
+  * For POST of PublishApiInfo to publish an API
+   */
+  def publishApi = "/publishApi"
 }
