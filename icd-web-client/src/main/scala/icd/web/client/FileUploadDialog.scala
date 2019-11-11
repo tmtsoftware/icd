@@ -150,7 +150,6 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
 
     // Displays status after upload complete
     def onloadListener(e: dom.Event) = {
-//      busyStatusItem.classList.add("hide")
       busyStatusItem.classList.add("hide")
       val statusClass = if (xhr.status == 200) "label-success" else "label-danger"
       if (!statusItem.classList.contains("label-danger")) {

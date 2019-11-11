@@ -62,10 +62,10 @@ object IcdVersionManager {
   /**
    * A list of all known TMT subsystems (read from the same resources file used in validating the ICDs)
    */
-  val allSubsystems: Set[String] = {
+  val allSubsystems: List[String] = {
     import scala.jdk.CollectionConverters._
     val config = ConfigFactory.parseResources("subsystem.conf")
-    config.getStringList("enum").asScala.toSet
+    config.getStringList("enum").asScala.toList
   }
 
   /**

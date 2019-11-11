@@ -7,7 +7,8 @@ import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalajs.dom.{Element, document}
-import org.scalajs.dom.html.Button
+import org.scalajs.dom.html.{Button, Input}
+import org.scalajs.dom.raw.HTMLInputElement
 import scalatags.JsDom.all._
 
 import scala.concurrent.Future
@@ -28,13 +29,25 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
                           |Then enter your GitHub credentials and a comment and click Publish.
                           |""".stripMargin
 
-  // Displays the Publish button
+  private val pubLabelMsg = "To publish an API or ICD, first select one or two subsystems above."
+
+  // Displays the Publish button (at the bottom of the dialog)
   private def publishButton(): Button = {
     import scalatags.JsDom.all._
     button(
+      id := "publishButton",
       title := "Publish the selected API, or ICD if two APIs are selected",
       onclick := publishHandler _
     )("Publish").render
+  }
+
+  // Displays a Publish API button in the table that just jumps to the main publish button
+  private def publishApiButton(subsystem: String, publishButton: Button): Button = {
+    import scalatags.JsDom.all._
+    button(
+      title := s"Publish the API for $subsystem ...",
+      onclick := publishApiHandler(subsystem, publishButton) _
+    )("Publish...").render
   }
 
   // Publish comment box
@@ -80,7 +93,7 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
     div.render
   }
 
-  // Called when the Compare button is pressed
+  // Called when the Publish button is pressed
   private def publishHandler(e: dom.Event): Unit = {
 //    val checked = document.querySelectorAll("input[name='version']:checked").toList
 //    if (checked.size == 2) {
@@ -94,12 +107,36 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
 //    }
   }
 
+  // Called when the PublishApi button is pressed in the table for a given subsystem
+  private def publishApiHandler(subsystem: String, publishButton: Button)(e: dom.Event): Unit = {
+    // Check the subsystem checkbox, if not already
+    val checkbox = document.querySelector(s"#${subsystem}Checkbox").asInstanceOf[Input]
+    checkbox.checked = true
+    checkboxListener(subsystem, publishButton)(e)
+
+    dom.window.location.hash = s"#publishButton"
+  }
+
   // Called when one of the API checkboxes is clicked to update the enabled state of the publish
   // button
-  private def checkboxListener(publishButton: Button)(e: dom.Event): Unit = {
-    val checked = document.querySelectorAll("input[name='version']:checked")
-    // XXX TODO FIXME: Also check if selected API(s) have changed
-    publishButton.disabled = checked.length != 2 && checked.length != 1
+  private def checkboxListener(subsystem: String, publishButton: Button)(e: dom.Event): Unit = {
+    val checked = document.querySelectorAll("input[name='api']:checked")
+
+    val enabled = checked.length == 1 || checked.length == 2
+    publishButton.disabled = !enabled
+
+    // Set the label next to the publish button
+    val e = document.querySelector("#publishLabel")
+    if (enabled) {
+      val subsystems = checked.map(elem => elem.asInstanceOf[HTMLInputElement].value).toList
+      if (checked.length == 1) {
+        e.innerHTML = s"Click below to publish the API for ${subsystems.head}:"
+      } else {
+        e.innerHTML = s"Click below to publish the ICD between ${subsystems.mkString(" and ")}:"
+      }
+    } else {
+      e.innerHTML = pubLabelMsg
+    }
   }
 
   // Returns a checkbox displaying the API name
@@ -107,10 +144,11 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
     div(cls := "checkbox")(
       label(
         input(
+          id := s"${subsystem}Checkbox",
           name := "api",
           title := s"Select this API to publish",
           tpe := "checkbox",
-          onchange := checkboxListener(publishButton) _,
+          onchange := checkboxListener(subsystem, publishButton) _,
           value := subsystem
         ),
         subsystem
@@ -122,6 +160,7 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
   private def markupSubsystemTable(publishInfoList: List[PublishInfo]) = {
     import scalacss.ScalatagsCss._
     val pubButton = publishButton()
+    val pubLabel  = label(id := "publishLabel", pubLabelMsg)
     div(
       messageItem,
       div(cls := "panel panel-info")(
@@ -137,28 +176,39 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
                 th("Date"),
                 th("User"),
                 th("Comment"),
-                th("Changed?")
+                th("Ready to Publish?")
               )
             ),
             tbody(
-              for (p <- publishInfoList) yield {
+              for (publishInfo <- publishInfoList) yield {
+                // XXX TODO: Display menu of versions
+                val checkBox   = makeSubsystemCheckBox(publishInfo.subsystem, pubButton).render
+                val apiVersion = publishInfo.apiVersions.headOption
+                val publishItem =
+                  if (publishInfo.readyToPublish)
+                    div(publishApiButton(publishInfo.subsystem, pubButton))
+                  else if (apiVersion.nonEmpty)
+                    div("Up to date")
+                  else div()
                 tr(
-                  td(makeSubsystemCheckBox(p.subsystem, pubButton)),
-                  td(p.maybeApiVersionInfo.map(_.version)),
-                  td(p.maybeApiVersionInfo.map(_.date)),
-                  td(p.maybeApiVersionInfo.map(_.user)),
-                  td(p.maybeApiVersionInfo.map(_.comment)),
-                  td(if (p.readyToPublish) "yes" else "no")
+                  td(checkBox),
+                  td(apiVersion.map(_.version)),
+                  td(apiVersion.map(_.date)),
+                  td(apiVersion.map(_.user)),
+                  td(apiVersion.map(_.comment)),
+                  td(publishItem)
                 )
               }
             )
           ),
-          div(Styles.commentBox, label("Comments")(commentBox)),
+          div(Styles.commentBox, label("Comments")("*", commentBox)),
 //          div(Styles.commentBox, label("Username")("*", userNameBox, userNameMissing)),
 //          div(Styles.commentBox, label("Password")("*", passwordBox, passwordMissing)),
           div(Styles.commentBox, label("Username")("*", userNameBox)),
           div(Styles.commentBox, label("Password")("*", passwordBox)),
           div(
+            pubLabel,
+            br,
             pubButton
           )
         )
@@ -202,7 +252,7 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
       case Failure(ex) =>
         mainContent.displayInternalError(ex)
     }
-    f.map(_ =>())
+    f.map(_ => ())
   }
 
   def markup(): Element = contentDiv

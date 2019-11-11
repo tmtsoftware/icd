@@ -169,4 +169,5 @@ object Routes {
    * Gets PublishInfo for every subsystem
    */
   def getPublishInfo = "/getPublishInfo"
+
 }
