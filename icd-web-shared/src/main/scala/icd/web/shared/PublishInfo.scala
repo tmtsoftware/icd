@@ -25,3 +25,26 @@ case class PublishInfo(
  * @param comment Comment for the new API version
  */
 case class PublishApiInfo(subsystem: String, majorVersion: Boolean, user: String, password: String, comment: String)
+
+/**
+ * Holds the information needed to publish an ICD
+ *
+ * @param subsystem the first subsystem in the ICD
+ * @param subsystemVersion the version of the first subsystem to use
+ * @param target the second subsystem in the ICD
+ * @param targetVersion the version of the second subsystem to use
+ * @param majorVersion if true, increment the major version
+ * @param user GitHub user name
+ * @param password GitHub password
+ * @param comment Comment for the new API version
+ */
+case class PublishIcdInfo(
+    subsystem: String,
+    subsystemVersion: String,
+    target: String,
+    targetVersion: String,
+    majorVersion: Boolean,
+    user: String,
+    password: String,
+    comment: String
+)

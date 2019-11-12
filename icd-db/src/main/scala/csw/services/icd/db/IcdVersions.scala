@@ -27,12 +27,19 @@ object IcdVersions {
    * Creates an IcdVersions object from a string in JSON format
    */
   def fromJson(s: String): IcdVersions = Json.fromJson[IcdVersions](Json.parse(s)).get
+
+//  // Define sorting for IcdVersions
+//  implicit def ordering[A <: IcdVersions]: Ordering[A] = Ordering.by(e => e.subsystems.head)
 }
 
 /**
  * Holds a list describing ICD versions
  */
-case class IcdVersions(subsystems: List[String], icds: List[IcdVersions.IcdEntry])
+case class IcdVersions(subsystems: List[String], icds: List[IcdVersions.IcdEntry]) extends Ordered[IcdVersions] {
+  override def compare(that: IcdVersions): Int = {
+    subsystems.head.compare(that.subsystems.head)
+  }
+}
 
 /**
  * These definitions determine the JSON format of the files recording the subsystem API version information.
@@ -59,9 +66,16 @@ object ApiVersions {
    * Creates an IcdVersions object from a string in JSON format
    */
   def fromJson(s: String): ApiVersions = Json.fromJson[ApiVersions](Json.parse(s)).get
+
+//  // Define sorting for ApiVersions
+//  implicit def ordering[A <: ApiVersions]: Ordering[A] = Ordering.by(e => e.subsystem)
 }
 
 /**
  * Holds a list describing subsystem API versions
  */
-case class ApiVersions(subsystem: String, apis: List[ApiVersions.ApiEntry])
+case class ApiVersions(subsystem: String, apis: List[ApiVersions.ApiEntry]) extends Ordered[ApiVersions] {
+  override def compare(that: ApiVersions): Int = {
+    subsystem.compare(that.subsystem)
+  }
+}

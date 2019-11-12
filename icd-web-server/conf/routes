@@ -53,6 +53,9 @@ GET         /getPublishInfo                              controllers.Application
 # Publishs a given subsystem API on GitHub
 POST        /publishApi                                 controllers.Application.publishApi()
 
+# Publishs an ICD on GitHub
+POST        /publishIcd                                 controllers.Application.publishIcd()
+
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                               controllers.Assets.versioned(file)
 

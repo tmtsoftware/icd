@@ -174,4 +174,9 @@ object Routes {
   * For POST of PublishApiInfo to publish an API
    */
   def publishApi = "/publishApi"
+
+  /**
+  * For POST of PublishIcdInfo to publish an ICD
+   */
+  def publishIcd = "/publishIcd"
 }

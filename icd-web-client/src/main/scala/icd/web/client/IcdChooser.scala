@@ -173,29 +173,35 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
    * @param maybeTargetSv optional target subsystem and version
    */
   def selectMatchingIcd(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): Future[Unit] = {
+    println(s"XXX selectMatchingIcd($sv, $maybeTargetSv)")
     // Select none as the default, in case a matching ICD is not found
-    setIcdWithVersion(None, notifyListener = false, saveHistory = false)
-    updateIcdVersionOptions(Nil)
-    val p = Promise[Unit]()
-    val icdNames = for {
-      subsystemVersion <- sv.maybeVersion
-      targetSv         <- maybeTargetSv
-      targetVersion    <- targetSv.maybeVersion
-      icd              <- getIcds.find(i => i.subsystem == sv.subsystem && i.target == targetSv.subsystem)
+    val f = for {
+      _ <- setIcdWithVersion(None, notifyListener = false, saveHistory = false)
+      _ <- updateIcdVersionOptions(Nil)
     } yield {
-      for (icdVersionList <- getIcdVersionOptions(icd) recover { case ex => p.failure(ex); Nil }) {
-        val maybeIcdVersion =
-          icdVersionList.find(i => i.subsystemVersion == subsystemVersion && i.targetVersion == targetVersion)
-        if (maybeIcdVersion.isDefined) {
-          for {
-            _ <- updateIcdVersionOptions(icdVersionList) recover { case ex => p.failure(ex) }
-            _ <- setIcdWithVersion(maybeIcdVersion, notifyListener = false, saveHistory = false)
-          } p.success(())
-        } else p.success(())
+      val p = Promise[Unit]()
+      val icdNames = for {
+        subsystemVersion <- sv.maybeVersion
+        targetSv         <- maybeTargetSv
+        targetVersion    <- targetSv.maybeVersion
+        icd              <- getIcds.find(i => i.subsystem == sv.subsystem && i.target == targetSv.subsystem)
+      } yield {
+        val x = for (icdVersionList <- getIcdVersionOptions(icd) recover { case ex => p.failure(ex); Nil }) yield {
+          val maybeIcdVersion =
+            icdVersionList.find(i => i.subsystemVersion == subsystemVersion && i.targetVersion == targetVersion)
+          if (maybeIcdVersion.isDefined) {
+            for {
+              _ <- updateIcdVersionOptions(icdVersionList) recover { case ex => p.failure(ex) }
+              _ <- setIcdWithVersion(maybeIcdVersion, notifyListener = false, saveHistory = false)
+            } yield p.success(())
+          } else p.success(())
+        }
+        x
+        icd
       }
-      icd
+      if (icdNames.isEmpty) Future.successful() else p.future
     }
-    if (icdNames.isEmpty) Future.successful() else p.future
+    f.flatten
   }
 
   // Update the ICD combobox options

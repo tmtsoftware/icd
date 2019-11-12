@@ -164,6 +164,33 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
     showBusyCursorWhile(f.map(_ => ()))
   }
 
+  private def publishIcd(publishInfo1: PublishInfo, publishInfo2: PublishInfo): Unit = {
+    // XXX TODO FIXME: Add a Major Version checkbox
+    val majorVersion = false
+    val user         = userNameBox.value
+    val password     = passwordBox.value
+    val comment      = commentBox.value
+    val publishIcdInfo = PublishIcdInfo(
+      publishInfo1.subsystem,
+      publishInfo1.apiVersions.head.version,
+      publishInfo2.subsystem,
+      publishInfo2.apiVersions.head.version,
+      majorVersion,
+      user,
+      password,
+      comment
+    )
+    val headers = Map("Content-Type" -> "application/json")
+    val f = Ajax.post(url = Routes.publishIcd, data = Json.toJson(publishIcdInfo).toString(), headers = headers).map { r =>
+      val icdVersionInfo = Json.fromJson[IcdVersionInfo](Json.parse(r.responseText)).get
+      val v              = icdVersionInfo.icdVersion
+      setPublishStatus(
+        s"Published ICD-${v.subsystem}-${v.target}-${v.icdVersion} between ${v.subsystem}-${v.subsystemVersion} and ${v.target}-${v.targetVersion}"
+      )
+    }
+    showBusyCursorWhile(f.map(_ => ()))
+  }
+
   // Called when the Publish button is pressed
   private def publishHandler(e: dom.Event): Unit = {
     setPublishStatus("")
@@ -181,10 +208,8 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
         }
       } else {
         // ICD
-        val subsystems = publishInfoList.map(getSubsystemVersionStr)
-        val subsysStr  = s"${subsystems.mkString(" and ")}"
         if (!icdExists(publishInfoList)) {
-          // TODO publish ICD
+          publishIcd(publishInfoList.head, publishInfoList.tail.head)
         }
       }
     }
@@ -234,7 +259,6 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
 
     // Set the label next to the publish button
     val e = $id("publishLabel")
-//    val e = document.querySelector("#publishLabel")
     if (enabled) {
 
       val publishInfoList = checked

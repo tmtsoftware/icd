@@ -78,6 +78,7 @@ object IcdGitManager {
       .map(_.toPath)
       .filter(apiMatcher.matches)
       .map(path => ApiVersions.fromJson(new String(Files.readAllBytes(path))))
+      .sorted
 
     val icdVersions = Option(icdsDir.listFiles)
       .getOrElse(Array())
@@ -85,6 +86,7 @@ object IcdGitManager {
       .map(_.toPath)
       .filter(icdMatcher.matches)
       .map(path => IcdVersions.fromJson(new String(Files.readAllBytes(path))))
+      .sorted
 
     (apiVersions, icdVersions)
   }

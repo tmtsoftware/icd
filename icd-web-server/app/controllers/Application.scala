@@ -81,7 +81,7 @@ class Application @Inject()(
     val subsystemsInDb          = db.query.getSubsystemNames
     val publishedSubsystemNames = allApiVersions.map(_.subsystem)
     val names                   = publishedSubsystemNames ++ subsystemsInDb
-    Ok(Json.toJson(names.sorted.toSet))
+    Ok(Json.toJson(names.toSet.toList.sorted))
   }
 
   /**
@@ -328,6 +328,33 @@ class Application @Inject()(
           publishApiInfo.comment
         )
         Ok(Json.toJson(apiVersionInfo))
+      } catch {
+        case ex: Exception => BadRequest(ex.getMessage)
+      }
+    }
+  }
+
+  /**
+   * Publish an ICD (add an entry to the icds file on the master branch of https://github.com/tmt-icd/ICD-Model-Files)
+   */
+  def publishIcd() = Action { implicit request =>
+    val maybePublishIcdInfo = request.body.asJson.map(json => Json.fromJson[PublishIcdInfo](json).get)
+    if (maybePublishIcdInfo.isEmpty) {
+      BadRequest("Missing POST data of type PublishIcdInfo")
+    } else {
+      val publishIcdInfo = maybePublishIcdInfo.get
+      try {
+        val sv = SubsystemAndVersion(publishIcdInfo.subsystem, Some(publishIcdInfo.subsystemVersion))
+        val tv = SubsystemAndVersion(publishIcdInfo.target, Some(publishIcdInfo.targetVersion))
+        val subsystems = List(sv, tv)
+        val icdVersionInfo = IcdGitManager.publish(
+          subsystems,
+          publishIcdInfo.majorVersion,
+          publishIcdInfo.user,
+          publishIcdInfo.password,
+          publishIcdInfo.comment
+        )
+        Ok(Json.toJson(icdVersionInfo))
       } catch {
         case ex: Exception => BadRequest(ex.getMessage)
       }
