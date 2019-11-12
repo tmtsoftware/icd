@@ -52,16 +52,48 @@ class Application @Inject()(
   }
   private val db = tryDb.get
 
-  // cache of API and ICD versions published on GitHub (until next browser refresh)
-  private val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
-  private val missingSubsystems = allApiVersions
-    .map(_.subsystem)
-    .toSet
-    .diff(db.query.getSubsystemNames.toSet)
-    .map(SubsystemAndVersion(_, None))
-  if (missingSubsystems.nonEmpty) {
-    println(s"Updating the ICD database with changes from GitHub")
-    IcdGitManager.ingest(db, missingSubsystems.toList, (s: String) => println(s), allApiVersions, allIcdVersions)
+  // Cache of API and ICD versions published on GitHub (cached for better performance)
+  private var (allApiVersions, allIcdVersions) = ingestMissing()
+
+  // Ingest any APIs or versions of APIs that are published, but not yet in the database
+  // and return a pair of lists containing API and ICD version info.
+  private def ingestMissing(): (List[ApiVersions], List[IcdVersions]) = {
+    val pair = IcdGitManager.getAllVersions
+    allApiVersions = pair._1
+    allIcdVersions = pair._2
+
+    // Ingest any missing subsystems
+    val missingSubsystems = allApiVersions
+      .map(_.subsystem)
+      .toSet
+      .diff(db.query.getSubsystemNames.toSet)
+      .map(SubsystemAndVersion(_, None))
+    if (missingSubsystems.nonEmpty) {
+      println(s"Updating the ICD database with changes from GitHub")
+      IcdGitManager.ingest(db, missingSubsystems.toList, (s: String) => println(s), allApiVersions, allIcdVersions)
+    }
+
+    // Ingest any missing published subsystem versions
+    val missingSubsystemVersions = allApiVersions
+      .flatMap { apiVersions =>
+        val versions = db.versionManager.getVersionNames(apiVersions.subsystem).toSet
+        apiVersions.apis
+          .filter(apiEntry => !versions.contains(apiEntry.version))
+          .map(apiEntry => SubsystemAndVersion(apiVersions.subsystem, Some(apiEntry.version)))
+      }
+    if (missingSubsystemVersions.nonEmpty) {
+      println(s"Updating the ICD database with newly published changes from GitHub")
+      IcdGitManager.ingest(db, missingSubsystemVersions, (s: String) => println(s), allApiVersions, allIcdVersions)
+    }
+
+    (allApiVersions, allIcdVersions)
+  }
+
+  // Update the database and cache after a new API or ICD was published
+  private def updateAfterPublish(): Unit = {
+    val pair = ingestMissing()
+    allApiVersions = pair._1
+    allIcdVersions = pair._2
   }
 
   // Somehow disabling the CSRF filter in application.conf and adding it here was needed to make this work
@@ -320,14 +352,22 @@ class Application @Inject()(
     } else {
       val publishApiInfo = maybePublishApiInfo.get
       try {
-        val apiVersionInfo = IcdGitManager.publish(
-          publishApiInfo.subsystem,
-          publishApiInfo.majorVersion,
-          publishApiInfo.user,
-          publishApiInfo.password,
-          publishApiInfo.comment
-        )
-        Ok(Json.toJson(apiVersionInfo))
+        val problems = IcdGitManager.validate(publishApiInfo.subsystem)
+        if (problems.nonEmpty) {
+          val msg =
+            s"The version of ${publishApiInfo.subsystem} on GitHub did not pass validation: ${problems.map(_.toString).mkString(", ")}."
+          NotAcceptable(msg)
+        } else {
+          val apiVersionInfo = IcdGitManager.publish(
+            publishApiInfo.subsystem,
+            publishApiInfo.majorVersion,
+            publishApiInfo.user,
+            publishApiInfo.password,
+            publishApiInfo.comment
+          )
+          updateAfterPublish()
+          Ok(Json.toJson(apiVersionInfo))
+        }
       } catch {
         case ex: Exception => BadRequest(ex.getMessage)
       }
@@ -344,8 +384,8 @@ class Application @Inject()(
     } else {
       val publishIcdInfo = maybePublishIcdInfo.get
       try {
-        val sv = SubsystemAndVersion(publishIcdInfo.subsystem, Some(publishIcdInfo.subsystemVersion))
-        val tv = SubsystemAndVersion(publishIcdInfo.target, Some(publishIcdInfo.targetVersion))
+        val sv         = SubsystemAndVersion(publishIcdInfo.subsystem, Some(publishIcdInfo.subsystemVersion))
+        val tv         = SubsystemAndVersion(publishIcdInfo.target, Some(publishIcdInfo.targetVersion))
         val subsystems = List(sv, tv)
         val icdVersionInfo = IcdGitManager.publish(
           subsystems,
@@ -354,6 +394,7 @@ class Application @Inject()(
           publishIcdInfo.password,
           publishIcdInfo.comment
         )
+        updateAfterPublish()
         Ok(Json.toJson(icdVersionInfo))
       } catch {
         case ex: Exception => BadRequest(ex.getMessage)

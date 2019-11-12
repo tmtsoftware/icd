@@ -314,6 +314,14 @@ object IcdGit extends App {
       // publish subsystem API
       val sv = options.subsystems.head
       if (sv.maybeVersion.isDefined) error(s"Invalid use of :version in ${sv.subsystem}:${sv.maybeVersion}")
+
+      // Validate
+      val problems = IcdGitManager.validate(sv.subsystem)
+      if (problems.nonEmpty) {
+        problems.foreach(p => println(p.toString))
+        error(s"The version of ${sv.subsystem} on GitHub did not pass validation.")
+      }
+
       val info = IcdGitManager.publish(sv.subsystem, options.majorVersion, user, password, comment)
       println(s"Created API version ${info.version} of ${sv.subsystem}")
     } else if (options.subsystems.size == 2) {
