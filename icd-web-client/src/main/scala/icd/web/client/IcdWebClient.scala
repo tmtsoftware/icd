@@ -231,8 +231,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       e.preventDefault()
       // Make sure to wait for futures to complete, so things happen in the right order
       for {
-        _ <- selectDialog.subsystem.setSubsystemWithVersion(hist.maybeSourceSubsystem, saveHistory = false)
-        _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(hist.maybeTargetSubsystem, saveHistory = false)
+        _ <- selectDialog.subsystem.setSubsystemWithVersion(hist.maybeSourceSubsystem, saveHistory = false, findMatchingIcd = false)
+        _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(hist.maybeTargetSubsystem, saveHistory = false, findMatchingIcd = false)
         _ <- selectDialog.icdChooser.setIcdWithVersion(hist.maybeIcd, notifyListener = false, saveHistory = false)
       } {
         hist.viewType match {

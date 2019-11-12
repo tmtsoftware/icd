@@ -53,8 +53,7 @@ object SelectDialog {
  * Displays the page for selecting the icds, subsystem APIs, components and versions to display
  */
 //noinspection DuplicatedCode
-case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener)
-    extends Displayable {
+case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener) extends Displayable {
 
   val subsystem = Subsystem(SourceSubsystemListener)
   val targetSubsystem = Subsystem(
@@ -115,14 +114,18 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
 
   private object SourceSubsystemListener extends SubsystemListener {
     // Called when the source subsystem (or version) combobox selection is changed
-    override def subsystemSelected(maybeSv: Option[SubsystemWithVersion], saveHistory: Boolean): Future[Unit] = {
+    override def subsystemSelected(
+        maybeSv: Option[SubsystemWithVersion],
+        saveHistory: Boolean,
+        findMatchingIcd: Boolean
+    ): Future[Unit] = {
       val maybeTargetSv = targetSubsystem.getSubsystemWithVersion
       targetSubsystem.setEnabled(maybeSv.isDefined)
       applyButton.disabled = maybeSv.isEmpty
       maybeSv
         .map { sv =>
           for {
-            _     <- icdChooser.selectMatchingIcd(sv, maybeTargetSv)
+            _     <- if (findMatchingIcd) icdChooser.selectMatchingIcd(sv, maybeTargetSv) else Future.successful()
             names <- getComponentNames(sv)
           } yield {
             subsystem.updateComponentOptions(names)
@@ -136,12 +139,16 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
 
   private object TargetSubsystemListener extends SubsystemListener {
     // Called when the target subsystem or version combobox selection is changed
-    override def subsystemSelected(maybeTargetSv: Option[SubsystemWithVersion], saveHistory: Boolean): Future[Unit] = {
+    override def subsystemSelected(
+        maybeTargetSv: Option[SubsystemWithVersion],
+        saveHistory: Boolean,
+        findMatchingIcd: Boolean
+    ): Future[Unit] = {
       val maybeSv = subsystem.getSubsystemWithVersion
       maybeSv
         .map { sv =>
           for {
-            _     <- icdChooser.selectMatchingIcd(sv, maybeTargetSv)
+            _     <- if (findMatchingIcd) icdChooser.selectMatchingIcd(sv, maybeTargetSv) else Future.successful()
             names <- maybeTargetSv.map(getComponentNames).getOrElse(Future.successful(Nil))
           } yield {
             targetSubsystem.updateComponentOptions(names)
@@ -163,9 +170,9 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       icdChooser.selectMatchingIcd(sv2, Some(sv1))
       val selectedSubsystemComponent       = subsystem.getSelectedComponent
       val selectedTargetSubsystemComponent = targetSubsystem.getSelectedComponent
-      subsystem.setSubsystemWithVersion(Some(sv2), saveHistory = false)
+      subsystem.setSubsystemWithVersion(Some(sv2), saveHistory = false, findMatchingIcd = false)
       subsystem.setSelectedComponent(selectedTargetSubsystemComponent)
-      targetSubsystem.setSubsystemWithVersion(Some(sv1), saveHistory = false)
+      targetSubsystem.setSubsystemWithVersion(Some(sv1), saveHistory = false, findMatchingIcd = false)
       targetSubsystem.setSelectedComponent(selectedSubsystemComponent)
     }
   }
@@ -178,8 +185,8 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
           val sv       = SubsystemWithVersion(icdVersion.subsystem, Some(icdVersion.subsystemVersion), None)
           val targetSv = SubsystemWithVersion(icdVersion.target, Some(icdVersion.targetVersion), None)
           for {
-            _ <- subsystem.setSubsystemWithVersion(Some(sv), saveHistory = false)
-            _ <- targetSubsystem.setSubsystemWithVersion(Some(targetSv), saveHistory = false)
+            _ <- subsystem.setSubsystemWithVersion(Some(sv), saveHistory = false, findMatchingIcd = false)
+            _ <- targetSubsystem.setSubsystemWithVersion(Some(targetSv), saveHistory = false, findMatchingIcd = false)
           } yield {
             val enabled = subsystem.getSelectedSubsystem.isDefined
             targetSubsystem.setEnabled(enabled)
