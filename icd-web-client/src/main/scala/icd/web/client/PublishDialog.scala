@@ -2,13 +2,13 @@ package icd.web.client
 
 import icd.web.shared._
 import org.scalajs.dom
-import org.scalajs.dom.ext.Ajax
+import org.scalajs.dom.ext.{Ajax, AjaxException}
 import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalajs.dom.{Element, document}
 import org.scalajs.dom.html.{Button, Input}
-import org.scalajs.dom.raw.HTMLInputElement
+import org.scalajs.dom.raw.{HTMLButtonElement, HTMLInputElement}
 import scalatags.JsDom.all._
 
 import scala.concurrent.Future
@@ -29,10 +29,12 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
                           |Then enter your GitHub credentials and a comment and click Publish.
                           |""".stripMargin
 
-  private val pubLabelMsg = "To publish an API or ICD, first select one or two subsystems above."
+  private val publishLabelMsg = "To publish an API or ICD, first select one or two subsystems above."
+
+  private val upToDate = "Up to date"
 
   // Displays the Publish button (at the bottom of the dialog)
-  private def publishButton(): Button = {
+  private def makePublishButton(): Button = {
     import scalatags.JsDom.all._
     button(
       id := "publishButton",
@@ -92,6 +94,11 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
     ).render
   }
 
+  private val majorVersionCheckBox = {
+    import scalatags.JsDom.all._
+    input(tpe := "checkbox").render
+  }
+
   // Message about missing username
   private val userNameMissing = {
     import scalatags.JsDom.all._
@@ -127,6 +134,12 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
     div(id := "passwordMissing", cls := "has-error hide", label(cls := "control-label", "Password is required!"))
   }
 
+  // Message about incorrect password
+  private val passwordIncorrect = {
+    import scalatags.JsDom.all._
+    div(id := "passwordIncorrect", cls := "has-error hide", label(cls := "control-label", "Password is incorrect!"))
+  }
+
   private def passwordChanged(): Unit = {
     val password = passwordBox.value
     val elem     = $id("passwordMissing")
@@ -134,6 +147,7 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
       elem.classList.remove("hide")
     else
       elem.classList.add("hide")
+    $id("passwordIncorrect").classList.add("hide")
   }
 
   // Message to display above publish button
@@ -149,24 +163,55 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
 
   }
 
+  // Updates the row for the newly published API
+  private def updateTableRow(apiVersionInfo: ApiVersionInfo): Unit = {
+    val subsystem = apiVersionInfo.subsystem
+    $id(s"${subsystem}Version").innerHTML = apiVersionInfo.version
+    $id(s"${subsystem}Date").innerHTML = apiVersionInfo.date
+    $id(s"${subsystem}User").innerHTML = apiVersionInfo.user
+    $id(s"${subsystem}Comment").innerHTML = apiVersionInfo.comment
+    $id(s"${subsystem}Status").innerHTML = upToDate
+    $id("publishButton").asInstanceOf[HTMLButtonElement].disabled = true
+  }
+
+  private def displayAjaxErrors(f: Future[Unit]): Unit = {
+    f.onComplete {
+      case Failure(ex: AjaxException) =>
+        ex.xhr.status match {
+          case 400 => // BadRequest
+            setPublishStatus(ex.xhr.responseText)
+          case 401 => // Unauthorized
+            $id("passwordIncorrect").classList.remove("hide")
+          case 406 => // NotAcceptable
+            setPublishStatus(ex.xhr.responseText)
+        }
+      case _ =>
+    }
+  }
+
+  // Publish an API on GitHub
   private def publishApi(publishInfo: PublishInfo): Unit = {
-    // XXX TODO FIXME: Add a Major Version checkbox
-    val majorVersion   = false
+    val majorVersion   = majorVersionCheckBox.checked
     val user           = userNameBox.value
     val password       = passwordBox.value
     val comment        = commentBox.value
     val publishApiInfo = PublishApiInfo(publishInfo.subsystem, majorVersion, user, password, comment)
     val headers        = Map("Content-Type" -> "application/json")
     val f = Ajax.post(url = Routes.publishApi, data = Json.toJson(publishApiInfo).toString(), headers = headers).map { r =>
-      val apiVersionInfo = Json.fromJson[ApiVersionInfo](Json.parse(r.responseText)).get
-      setPublishStatus(s"Published ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
+      r.status match {
+        case 200 => // OK
+          val apiVersionInfo = Json.fromJson[ApiVersionInfo](Json.parse(r.responseText)).get
+          setPublishStatus(s"Published ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
+          updateTableRow(apiVersionInfo)
+      }
     }
+    displayAjaxErrors(f)
     showBusyCursorWhile(f.map(_ => ()))
   }
 
+  // Publish an ICD on GitHub
   private def publishIcd(publishInfo1: PublishInfo, publishInfo2: PublishInfo): Unit = {
-    // XXX TODO FIXME: Add a Major Version checkbox
-    val majorVersion = false
+    val majorVersion = majorVersionCheckBox.checked
     val user         = userNameBox.value
     val password     = passwordBox.value
     val comment      = commentBox.value
@@ -182,12 +227,17 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
     )
     val headers = Map("Content-Type" -> "application/json")
     val f = Ajax.post(url = Routes.publishIcd, data = Json.toJson(publishIcdInfo).toString(), headers = headers).map { r =>
-      val icdVersionInfo = Json.fromJson[IcdVersionInfo](Json.parse(r.responseText)).get
-      val v              = icdVersionInfo.icdVersion
-      setPublishStatus(
-        s"Published ICD-${v.subsystem}-${v.target}-${v.icdVersion} between ${v.subsystem}-${v.subsystemVersion} and ${v.target}-${v.targetVersion}"
-      )
+      r.status match {
+        case 200 => // OK
+          val icdVersionInfo = Json.fromJson[IcdVersionInfo](Json.parse(r.responseText)).get
+          val v              = icdVersionInfo.icdVersion
+          setPublishStatus(
+            s"Published ICD-${v.subsystem}-${v.target}-${v.icdVersion} between ${v.subsystem}-${v.subsystemVersion} and ${v.target}-${v.targetVersion}"
+          )
+          $id("publishButton").asInstanceOf[HTMLButtonElement].disabled = true
+      }
     }
+    displayAjaxErrors(f)
     showBusyCursorWhile(f.map(_ => ()))
   }
 
@@ -286,7 +336,7 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
         }
       }
     } else {
-      e.innerHTML = pubLabelMsg
+      e.innerHTML = publishLabelMsg
     }
   }
 
@@ -310,9 +360,9 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
   // Returns the markup for displaying a table of subsystems
   private def markupSubsystemTable(publishInfoList: List[PublishInfo]) = {
     import scalacss.ScalatagsCss._
-    val pubButton = publishButton()
-    val pubLabel  = label(id := "publishLabel", pubLabelMsg)
-    val pubStatus = label(id := "publishStatus", "")
+    val publishButton = makePublishButton()
+    val publishLabel  = label(id := "publishLabel", publishLabelMsg)
+    val publishStatus = label(id := "publishStatus", "")
     div(
       messageItem,
       div(cls := "panel panel-info")(
@@ -334,34 +384,36 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
             tbody(
               for (publishInfo <- publishInfoList) yield {
                 // XXX TODO: Display menu of versions
-                val checkBox   = makeSubsystemCheckBox(publishInfo, pubButton).render
+                val checkBox   = makeSubsystemCheckBox(publishInfo, publishButton).render
                 val apiVersion = publishInfo.apiVersions.headOption
                 val publishItem =
                   if (publishInfo.readyToPublish)
-                    div(readyToPublishButton(publishInfo, pubButton))
+                    div(readyToPublishButton(publishInfo, publishButton))
                   else if (apiVersion.nonEmpty)
-                    div("Up to date")
+                    div(upToDate)
                   else div()
+                val subsystem = publishInfo.subsystem
                 tr(
                   td(checkBox),
-                  td(apiVersion.map(_.version)),
-                  td(apiVersion.map(_.date)),
-                  td(apiVersion.map(_.user)),
-                  td(apiVersion.map(_.comment)),
-                  td(publishItem)
+                  td(id := s"${subsystem}Version", apiVersion.map(_.version)),
+                  td(id := s"${subsystem}Date", apiVersion.map(_.date)),
+                  td(id := s"${subsystem}User", apiVersion.map(_.user)),
+                  td(id := s"${subsystem}Comment", apiVersion.map(_.comment)),
+                  td(id := s"${subsystem}Status", publishItem)
                 )
               }
             )
           ),
           div(Styles.commentBox, label("Comments")("*", commentBox, commentMissing)),
+          div(cls := "checkbox")(label(majorVersionCheckBox, "Increment major version")),
           div(Styles.commentBox, label("Username")("*", userNameBox, userNameMissing)),
-          div(Styles.commentBox, label("Password")("*", passwordBox, passwordMissing)),
+          div(Styles.commentBox, label("Password")("*", passwordBox, passwordMissing, passwordIncorrect)),
           div(
-            pubLabel,
+            publishLabel,
             br,
-            pubButton,
+            publishButton,
             " ",
-            pubStatus
+            publishStatus
           )
         )
       ),

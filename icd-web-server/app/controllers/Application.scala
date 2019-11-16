@@ -9,6 +9,7 @@ import csw.services.icd.db._
 import csw.services.icd.github.IcdGitManager
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.{IcdVersion, _}
+import org.eclipse.jgit.api.errors.TransportException
 import org.webjars.play._
 import play.api.libs.json.Json
 import play.filters.csrf.{CSRF, CSRFAddToken, CSRFCheck}
@@ -369,7 +370,11 @@ class Application @Inject()(
           Ok(Json.toJson(apiVersionInfo))
         }
       } catch {
-        case ex: Exception => BadRequest(ex.getMessage)
+        case ex: TransportException =>
+          Unauthorized(ex.getMessage)
+        case ex: Exception =>
+          ex.printStackTrace()
+          BadRequest(ex.getMessage)
       }
     }
   }
@@ -397,7 +402,11 @@ class Application @Inject()(
         updateAfterPublish()
         Ok(Json.toJson(icdVersionInfo))
       } catch {
-        case ex: Exception => BadRequest(ex.getMessage)
+        case ex: TransportException =>
+          Unauthorized(ex.getMessage)
+        case ex: Exception =>
+          ex.printStackTrace()
+          BadRequest(ex.getMessage)
       }
     }
 
