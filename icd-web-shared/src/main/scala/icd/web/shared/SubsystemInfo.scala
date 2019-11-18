@@ -1,7 +1,5 @@
 package icd.web.shared
 
-object SubsystemInfo {}
-
 /**
  * Holds information about a subsystem
  *

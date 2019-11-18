@@ -159,4 +159,24 @@ object Routes {
    * Gets the differences between two versions (version strings separated by a comma)
    */
   def diff(subsystem: String, versions: List[String]) = s"/diff/$subsystem/${versions.mkString(",")}"
+
+  /**
+   * Returns OK(true) if Uploads should be allowed in the web app
+   */
+  def isUploadAllowed = "/isUploadAllowed"
+
+  /**
+   * Gets PublishInfo for every subsystem
+   */
+  def getPublishInfo = "/getPublishInfo"
+
+  /**
+  * For POST of PublishApiInfo to publish an API
+   */
+  def publishApi = "/publishApi"
+
+  /**
+  * For POST of PublishIcdInfo to publish an ICD
+   */
+  def publishIcd = "/publishIcd"
 }

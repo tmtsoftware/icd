@@ -19,7 +19,7 @@ class FileUploadController @Inject()(env: Environment, webJarAssets: WebJarAsset
   // Server side of the upload ICD feature.
   // Supported file types: A directory containing icd config files (chrome)
   // or a .zip file containing directories with icd config files.
-  def uploadFiles: Action[MultipartFormData[Files.TemporaryFile]] = Action(parse.multipartFormData) { implicit request =>
+  def uploadFiles(): Action[MultipartFormData[Files.TemporaryFile]] = Action(parse.multipartFormData) { implicit request =>
     val files = request.body.files.toList
     try {
       val list = files.flatMap { filePart =>
@@ -66,7 +66,7 @@ class FileUploadController @Inject()(env: Environment, webJarAssets: WebJarAsset
       NotAcceptable(Json.toJson(validateProblems))
     } else {
       val problems = list.flatMap(db.ingestConfig)
-      db.query.afterIngestFiles(problems)
+      db.query.afterIngestFiles(problems, db.dbName)
       if (problems.nonEmpty) {
         NotAcceptable(Json.toJson(problems))
       } else {

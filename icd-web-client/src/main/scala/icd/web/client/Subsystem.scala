@@ -24,9 +24,14 @@ object Subsystem {
      *
      * @param maybeSv     optional selected subsystem and version
      * @param saveHistory if true, push the browser history state, otherwise not
+     * @param findMatchingIcd if true, update the ICD item if a matching published ICD can be found
      * @return a future indicating when changes are done
      */
-    def subsystemSelected(maybeSv: Option[SubsystemWithVersion], saveHistory: Boolean = true): Future[Unit]
+    def subsystemSelected(
+        maybeSv: Option[SubsystemWithVersion],
+        saveHistory: Boolean = true,
+        findMatchingIcd: Boolean = true
+    ): Future[Unit]
   }
 
   private val componentPlaceholder = "All Components"
@@ -91,13 +96,13 @@ case class Subsystem(
 
   // called when a subsystem is selected
   private def subsystemSelected(e: dom.Event): Unit = {
-      for (_ <- updateSubsystemVersionOptions())
-        listener.subsystemSelected(getSubsystemWithVersion)
+    for (_ <- updateSubsystemVersionOptions())
+      listener.subsystemSelected(getSubsystemWithVersion)
   }
 
   // called when a subsystem version is selected
   private def subsystemVersionSelected(e: dom.Event): Unit = {
-      listener.subsystemSelected(getSubsystemWithVersion)
+    listener.subsystemSelected(getSubsystemWithVersion)
   }
 
   // HTML markup displaying the subsystem and version comboboxes
@@ -166,11 +171,13 @@ case class Subsystem(
    *
    * @param maybeSv        optional subsystem name and version to set (clear if None)
    * @param saveHistory    if true, save the current state to the browser history
+   * @param findMatchingIcd if true, update the ICD item if a matching published ICD can be found
    * @return a future indicating when any event handlers have completed
    */
   def setSubsystemWithVersion(
       maybeSv: Option[SubsystemWithVersion],
-      saveHistory: Boolean = true
+      saveHistory: Boolean = true,
+      findMatchingIcd: Boolean = true
   ): Future[Unit] = {
     if (maybeSv == getSubsystemWithVersion)
       Future.successful()
@@ -198,9 +205,8 @@ case class Subsystem(
     }
     for {
       _ <- updateSubsystemVersionOptions(maybeSv.flatMap(_.maybeVersion))
-      _ <- listener.subsystemSelected(maybeSv, saveHistory)
-    } yield {
-    }
+      _ <- listener.subsystemSelected(maybeSv, saveHistory, findMatchingIcd = false)
+    } yield {}
   }
 
   /**
@@ -245,7 +251,7 @@ case class Subsystem(
         case Some(s) => versionItem.value = s
         case None    => versionItem.value = unpublishedVersion
       }
-        listener.subsystemSelected(getSubsystemWithVersion, saveHistory)
+      listener.subsystemSelected(getSubsystemWithVersion, saveHistory, findMatchingIcd = false)
     }
   }
 

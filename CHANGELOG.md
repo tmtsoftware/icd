@@ -3,6 +3,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Added a new Publish dialog to the icd web app
+
+- The `Upload` feature in the icd web app. which allows you to ingest local model files into the ICD database,
+  can now be disabled by changing the `icd.allowUpload` configuration setting 
+  in icd-web-server/application.conf or by starting the web app like this: `icdwebserver -Dicd.allowUpload=false`.
+  The Upload feature should be disabled when `icdwebserver` is running in a public network and should only 
+  display the actual API and ICD releases, which are stored on GitHub. 
+
 ## [ICD v0.15] - 2019-11-06
 
 ### Changed

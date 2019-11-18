@@ -18,6 +18,7 @@ object BrowserHistory {
         case IcdView       => "IcdView"
         case SelectView    => "SelectView"
         case UploadView    => "UploadView"
+        case PublishView    => "PublishView"
         case VersionView   => "VersionView"
       })
   implicit val viewTypeReads: Reads[ViewType] = {
@@ -27,6 +28,7 @@ object BrowserHistory {
         case "IcdView"       => IcdView
         case "SelectView"    => SelectView
         case "UploadView"    => UploadView
+        case "PublishView"    => PublishView
         case "VersionView"   => VersionView
       })
     case _ => JsError("bad ViewType")
@@ -47,6 +49,9 @@ object BrowserHistory {
 
   // Uploading ICD files
   case object UploadView extends ViewType
+
+  // Publishing APIs and ICDs
+  case object PublishView extends ViewType
 
   // Viewing the version history
   case object VersionView extends ViewType

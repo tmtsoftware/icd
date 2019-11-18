@@ -12,7 +12,7 @@ import org.scalajs.dom.{Element, document}
 import org.scalajs.dom.html.Button
 import scalatags.JsDom.all._
 
-object VersionHistory {
+object HistoryDialog {
   // Split a version string into (maj.min)
   private def splitVersion(v: String): (String, String) = {
     val ar = v.split('.')
@@ -31,11 +31,11 @@ object VersionHistory {
 }
 
 /**
- * Manages the main content section
+ * Displays a table with the version history
  */
-case class VersionHistory(mainContent: MainContent) extends Displayable {
+case class HistoryDialog(mainContent: MainContent) extends Displayable {
 
-  import VersionHistory._
+  import HistoryDialog._
   import icd.web.shared.JsonSupport._
 
   // Main version div

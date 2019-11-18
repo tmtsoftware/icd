@@ -142,7 +142,7 @@ object IcdDb extends App {
 
     options.ingest.map { dir =>
       val problems = db.ingest(dir)
-      db.query.afterIngestFiles(problems)
+      db.query.afterIngestFiles(problems, db.dbName)
       problems
     } match {
       case Some(problems) if problems.nonEmpty =>

@@ -9,11 +9,12 @@ import csw.services.icd.db._
 import csw.services.icd.github.IcdGitManager
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.{IcdVersion, _}
+import org.eclipse.jgit.api.errors.TransportException
 import org.webjars.play._
 import play.api.libs.json.Json
 import play.filters.csrf.{CSRF, CSRFAddToken, CSRFCheck}
 import play.api.mvc._
-import play.api.{Environment, Mode}
+import play.api.{Configuration, Environment, Mode}
 
 import scala.util.Try
 
@@ -35,7 +36,8 @@ class Application @Inject()(
     assets: AssetsFinder,
     webJarsUtil: WebJarsUtil,
     webJarAssets: WebJarAssets,
-    components: ControllerComponents
+    components: ControllerComponents,
+    configuration: Configuration
 ) extends AbstractController(components) {
 
   import Application._
@@ -49,19 +51,50 @@ class Application @Inject()(
     println("Error: Failed to connect to the icd database. Make sure mongod is running.")
     System.exit(1)
   }
-  val db = tryDb.get
+  private val db = tryDb.get
 
-  // XXX TODO FIXME: Get missing, newly published versions automatically?
-  // cache of API and ICD versions published on GitHub (until next browser refresh)
-  val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
-  val missingSubsystems = allApiVersions
-    .map(_.subsystem)
-    .toSet
-    .diff(db.query.getSubsystemNames.toSet)
-    .map(SubsystemAndVersion(_, None))
-  if (missingSubsystems.nonEmpty) {
-    println(s"Updating the ICD database with changes from GitHub")
-    IcdGitManager.ingest(db, missingSubsystems.toList, (s: String) => println(s), allApiVersions, allIcdVersions)
+  // Cache of API and ICD versions published on GitHub (cached for better performance)
+  private var (allApiVersions, allIcdVersions) = ingestMissing()
+
+  // Ingest any APIs or versions of APIs that are published, but not yet in the database
+  // and return a pair of lists containing API and ICD version info.
+  private def ingestMissing(): (List[ApiVersions], List[IcdVersions]) = {
+    val pair = IcdGitManager.getAllVersions
+    allApiVersions = pair._1
+    allIcdVersions = pair._2
+
+    // Ingest any missing subsystems
+    val missingSubsystems = allApiVersions
+      .map(_.subsystem)
+      .toSet
+      .diff(db.query.getSubsystemNames.toSet)
+      .map(SubsystemAndVersion(_, None))
+    if (missingSubsystems.nonEmpty) {
+      println(s"Updating the ICD database with changes from GitHub")
+      IcdGitManager.ingest(db, missingSubsystems.toList, (s: String) => println(s), allApiVersions, allIcdVersions)
+    }
+
+    // Ingest any missing published subsystem versions
+    val missingSubsystemVersions = allApiVersions
+      .flatMap { apiVersions =>
+        val versions = db.versionManager.getVersionNames(apiVersions.subsystem).toSet
+        apiVersions.apis
+          .filter(apiEntry => !versions.contains(apiEntry.version))
+          .map(apiEntry => SubsystemAndVersion(apiVersions.subsystem, Some(apiEntry.version)))
+      }
+    if (missingSubsystemVersions.nonEmpty) {
+      println(s"Updating the ICD database with newly published changes from GitHub")
+      IcdGitManager.ingest(db, missingSubsystemVersions, (s: String) => println(s), allApiVersions, allIcdVersions)
+    }
+
+    (allApiVersions, allIcdVersions)
+  }
+
+  // Update the database and cache after a new API or ICD was published
+  private def updateAfterPublish(): Unit = {
+    val pair = ingestMissing()
+    allApiVersions = pair._1
+    allIcdVersions = pair._2
   }
 
   // Somehow disabling the CSRF filter in application.conf and adding it here was needed to make this work
@@ -81,7 +114,7 @@ class Application @Inject()(
     val subsystemsInDb          = db.query.getSubsystemNames
     val publishedSubsystemNames = allApiVersions.map(_.subsystem)
     val names                   = publishedSubsystemNames ++ subsystemsInDb
-    Ok(Json.toJson(names.sorted.toSet))
+    Ok(Json.toJson(names.toSet.toList.sorted))
   }
 
   /**
@@ -293,4 +326,89 @@ class Application @Inject()(
     Ok(Json.toJson(list))
   }
 
+  /**
+   * Returns OK(true) if Uploads should be allowed in the web app
+   * (Should be set to false when running as a public server, on when running locally during development)
+   */
+  def isUploadAllowed = Action { implicit request =>
+    val allowed = configuration.get[Boolean]("icd.allowUpload")
+    Ok(Json.toJson(allowed))
+  }
+
+  /**
+   * Responds with the JSON for the PublishInfo for every subsystem
+   */
+  def getPublishInfo = Action { implicit request =>
+    val publishInfo = IcdGitManager.getPublishInfo
+    Ok(Json.toJson(publishInfo))
+  }
+
+  /**
+   * Publish the selected API (add an entry for the current commit of the master branch on GitHub)
+   */
+  def publishApi() = Action { implicit request =>
+    val maybePublishApiInfo = request.body.asJson.map(json => Json.fromJson[PublishApiInfo](json).get)
+    if (maybePublishApiInfo.isEmpty) {
+      BadRequest("Missing POST data of type PublishApiInfo")
+    } else {
+      val publishApiInfo = maybePublishApiInfo.get
+      try {
+        val problems = IcdGitManager.validate(publishApiInfo.subsystem)
+        if (problems.nonEmpty) {
+          val msg =
+            s"The version of ${publishApiInfo.subsystem} on GitHub did not pass validation: ${problems.map(_.toString).mkString(", ")}."
+          NotAcceptable(msg)
+        } else {
+          val apiVersionInfo = IcdGitManager.publish(
+            publishApiInfo.subsystem,
+            publishApiInfo.majorVersion,
+            publishApiInfo.user,
+            publishApiInfo.password,
+            publishApiInfo.comment
+          )
+          updateAfterPublish()
+          Ok(Json.toJson(apiVersionInfo))
+        }
+      } catch {
+        case ex: TransportException =>
+          Unauthorized(ex.getMessage)
+        case ex: Exception =>
+          ex.printStackTrace()
+          BadRequest(ex.getMessage)
+      }
+    }
+  }
+
+  /**
+   * Publish an ICD (add an entry to the icds file on the master branch of https://github.com/tmt-icd/ICD-Model-Files)
+   */
+  def publishIcd() = Action { implicit request =>
+    val maybePublishIcdInfo = request.body.asJson.map(json => Json.fromJson[PublishIcdInfo](json).get)
+    if (maybePublishIcdInfo.isEmpty) {
+      BadRequest("Missing POST data of type PublishIcdInfo")
+    } else {
+      val publishIcdInfo = maybePublishIcdInfo.get
+      try {
+        val sv         = SubsystemAndVersion(publishIcdInfo.subsystem, Some(publishIcdInfo.subsystemVersion))
+        val tv         = SubsystemAndVersion(publishIcdInfo.target, Some(publishIcdInfo.targetVersion))
+        val subsystems = List(sv, tv)
+        val icdVersionInfo = IcdGitManager.publish(
+          subsystems,
+          publishIcdInfo.majorVersion,
+          publishIcdInfo.user,
+          publishIcdInfo.password,
+          publishIcdInfo.comment
+        )
+        updateAfterPublish()
+        Ok(Json.toJson(icdVersionInfo))
+      } catch {
+        case ex: TransportException =>
+          Unauthorized(ex.getMessage)
+        case ex: Exception =>
+          ex.printStackTrace()
+          BadRequest(ex.getMessage)
+      }
+    }
+
+  }
 }

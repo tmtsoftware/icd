@@ -3,11 +3,11 @@ package csw.services.icd.github
 import java.io.{File, PrintWriter}
 import java.nio.file.{FileSystems, Files, Paths}
 
-import com.typesafe.config.ConfigFactory
+import csw.services.icd.{IcdValidator, Problem}
 import csw.services.icd.db.ApiVersions.ApiEntry
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.db.{ApiVersions, IcdDb, IcdVersionManager, IcdVersions}
-import icd.web.shared.{ApiVersionInfo, IcdVersion, IcdVersionInfo}
+import icd.web.shared.{ApiVersionInfo, IcdVersion, IcdVersionInfo, PublishInfo}
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.joda.time.{DateTime, DateTimeZone}
@@ -45,14 +45,6 @@ object IcdGitManager {
   private val tmpDir = System.getProperty("java.io.tmpdir")
 
   /**
-   * A list of all known TMT subsystems (read from the same resources file used in validating the ICDs)
-   */
-  private val allSubsystems: Set[String] = {
-    val config = ConfigFactory.parseResources("subsystem.conf")
-    config.getStringList("enum").asScala.toSet
-  }
-
-  /**
    * Gets a list of information about all of the published API and ICD versions by reading any
    * apis/api-*.json and icds/icd-*.json files from the GitHub repo.
    */
@@ -87,6 +79,8 @@ object IcdGitManager {
       .map(_.toPath)
       .filter(apiMatcher.matches)
       .map(path => ApiVersions.fromJson(new String(Files.readAllBytes(path))))
+      .filter(_.apis.nonEmpty)
+      .sorted
 
     val icdVersions = Option(icdsDir.listFiles)
       .getOrElse(Array())
@@ -94,6 +88,8 @@ object IcdGitManager {
       .map(_.toPath)
       .filter(icdMatcher.matches)
       .map(path => IcdVersions.fromJson(new String(Files.readAllBytes(path))))
+      .filter(_.icds.nonEmpty)
+      .sorted
 
     (apiVersions, icdVersions)
   }
@@ -119,9 +115,9 @@ object IcdGitManager {
     s"$gitParentUri/$subsystem-Model-Files.git"
   }
 
-  // Gets the commit id of the given repo
+  // Gets the latest commit id of the given repo
   private def getRepoCommitId(url: String): String = {
-    val list = Git
+    Git
       .lsRemoteRepository()
       .setHeads(true)
       .setRemote(url)
@@ -132,7 +128,7 @@ object IcdGitManager {
       .map { ref =>
         ref.getObjectId.getName
       }
-    list.head
+      .head
   }
 
   /**
@@ -534,7 +530,7 @@ object IcdGitManager {
         subsystemList.sorted
       } else {
         feedback(s"Ingesting all published subsystems from $gitBaseUri")
-        allSubsystems.map(s => SubsystemAndVersion(s, None)).toList
+        IcdVersionManager.allSubsystems.map(s => SubsystemAndVersion(s, None))
       }
     }
     subsystems.foreach(ingest(db, _, feedback, allApiVersions))
@@ -578,17 +574,17 @@ object IcdGitManager {
    */
   def ingest(db: IcdDb, subsystem: String, apiEntries: List[ApiEntry], feedback: String => Unit): Unit = this.synchronized {
     // Checkout the subsystem repo in a temp dir
-    val url = getSubsystemGitHubUrl(subsystem)
+    val url        = getSubsystemGitHubUrl(subsystem)
     val gitWorkDir = Files.createTempDirectory("icds").toFile
     try {
       val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(url).call()
       apiEntries.reverse.foreach { e =>
-        feedback(s"Checking out ${subsystem}-${e.version} (commit: ${e.commit})")
+        feedback(s"Checking out $subsystem-${e.version} (commit: ${e.commit})")
         git.checkout().setName(e.commit).call
-        feedback(s"Ingesting ${subsystem}-${e.version}")
+        feedback(s"Ingesting $subsystem-${e.version}")
         val problems = db.ingest(gitWorkDir)
         problems.foreach(p => feedback(p.errorMessage()))
-        db.query.afterIngestSubsystem(subsystem, problems)
+        db.query.afterIngestSubsystem(subsystem, problems, db.dbName)
         if (!problems.exists(_.severity != "warning")) {
           val date = DateTime.parse(e.date)
           db.versionManager.publishApi(subsystem, Some(e.version), majorVersion = false, e.comment, e.user, date)
@@ -600,8 +596,27 @@ object IcdGitManager {
     }
   }
 
+  /**
+   * Validates the current version of the given subsystem that is checked in on GitHub
+   *
+   * @param subsystem  the subsystem to ingest into the db
+   */
+  def validate(subsystem: String): List[Problem] = {
+    // Checkout the subsystem repo in a temp dir
+    val url        = getSubsystemGitHubUrl(subsystem)
+    val gitWorkDir = Files.createTempDirectory("icds").toFile
+    try {
+      val git      = Git.cloneRepository.setDirectory(gitWorkDir).setURI(url).call
+      val problems = IcdValidator.validateDirRecursive(gitWorkDir)
+      git.close()
+      problems
+    } finally {
+      deleteDirectoryRecursively(gitWorkDir)
+    }
+  }
+
   // Imports the ICD release information for the two subsystems, or all subsystems
-  def importIcdFiles(
+  private def importIcdFiles(
       db: IcdDb,
       subsystems: List[SubsystemAndVersion],
       feedback: String => Unit,
@@ -612,8 +627,76 @@ object IcdGitManager {
       case 2 =>
         // Import one ICD if subsystem and target options were given
         allIcdVersions.find(_.subsystems == subsystems.map(_.subsystem)).foreach(db.importIcds(_, feedback))
-      case n =>
+      case _ =>
         allIcdVersions.foreach(db.importIcds(_, feedback))
+    }
+  }
+
+  // Map of subsystem name to latest commit id for repos that were empty at time of development.
+  // This is used to speed up the check if a repo is empty. If the commit id changes,
+  // then we assume somebody added something.
+  private val emptyRepos = Map(
+    "CIS"    -> "7f42a42871015c5e5bdaea64f49bd26619217314",
+    "CLN"    -> "29eefda09df5b1415ca69724ee131aafadcb2f87",
+    "CRYO"   -> "73714a1bee9fc38c4a14ab4e9e5d3bfa731c7136",
+    "CSW"    -> "0be40700817fb3ffd4393aba58207a696ae16321",
+    "DMS"    -> "f9b257eded51a2daf1b13b28ef16a781f21882c7",
+    "DPS"    -> "132c3aacfb1f13bed0751bf4ead3ae14827b4092",
+    "FMCS"   -> "cc40c0589cbcfe299ed2166de85f2d6a83743643",
+    "GMS"    -> "ed5023527d099a042bbddd1c85d9ecdec9bf4942",
+    "LGSF"   -> "b01dfa73a1f3e5c677f819aa855e8158e12c1bc5",
+    "MODHIS" -> "6139728cc2e1c1ba64724c5cff40c16452ee8da9",
+    "NSCU"   -> "5f26e4dd18bee60f0c631e625d4b02558dccd3e1",
+    "PFCS"   -> "a01b55689f5d36436c7018acfa0888f598bf6a7d",
+    "PSFR"   -> "21413dae346a90dba6e3dfb1fca53dab96d46d31",
+    "REFR"   -> "e57687a18f61875deea19cb1ba83ceca3d1fc9a5",
+    "RPG"    -> "a62a7d5ee0354d5402124bfc56a88c46f9845979",
+    "RTC"    -> "45a2a564c0e57fe628e10214aa9f0924bfc4e8fe",
+    "SCMS"   -> "13916c6a742b3f37f8c6a131a1ff9291edf3f781",
+    "SOSS"   -> "48684f6dc2a54d290c69edbfdd4909528a2b27a7",
+    "WFOS"   -> "330391bb97a21ff5c888594517019cb65f5c34fc"
+  )
+
+  case class SubsystemGitInfo(commitId: String, isEmpty: Boolean)
+
+  private def getSubsystemGitInfo(subsystem: String): SubsystemGitInfo = {
+    val url      = getSubsystemGitHubUrl(subsystem)
+    val commitId = getRepoCommitId(url)
+//    println(s"""    "$subsystem" -> "$commitId", """)
+    val isEmpty = emptyRepos.get(subsystem).contains(commitId)
+    SubsystemGitInfo(commitId, isEmpty)
+  }
+
+  /**
+   * Returns information about the publish state for each known subsystem,
+   * including the latest API version, list of ICDs each subsystem is involved in,
+   * whether there are changes ready to be published...
+   */
+  def getPublishInfo: List[PublishInfo] = {
+    val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
+    IcdVersionManager.allSubsystems.map { subsystem =>
+      val subsystemGitInfo = getSubsystemGitInfo(subsystem)
+      val maybeApiVersions = allApiVersions.find(_.subsystem == subsystem)
+      val maybeApiVersionList = maybeApiVersions.toList
+        .flatMap(_.apis)
+        .map { apiEntry =>
+          ApiVersionInfo(subsystem, apiEntry.version, apiEntry.user, apiEntry.comment, apiEntry.date)
+        }
+      val icdVersions = allIcdVersions
+        .filter(_.subsystems.contains(subsystem))
+        .flatMap { icdVersions =>
+          val subsystem1 = icdVersions.subsystems.head
+          val subsystem2 = icdVersions.subsystems.tail.head
+          icdVersions.icds.map { icdEntry =>
+            val version1   = icdEntry.versions.head
+            val version2   = icdEntry.versions.tail.head
+            val icdVersion = IcdVersion(icdEntry.icdVersion, subsystem1, version1, subsystem2, version2)
+            IcdVersionInfo(icdVersion, icdEntry.user, icdEntry.comment, icdEntry.date)
+          }
+        }
+      val publishedCommitId = maybeApiVersions.map(_.apis.head.commit)
+      val readyToPublish    = !(subsystemGitInfo.isEmpty || publishedCommitId.contains(subsystemGitInfo.commitId))
+      PublishInfo(subsystem, maybeApiVersionList, icdVersions, readyToPublish)
     }
   }
 }
