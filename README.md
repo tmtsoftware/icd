@@ -59,11 +59,16 @@ Note that the build is set up so that the Play subproject is selected on start.
 So to run any commands (like sbt clean or sbt stage) that should apply to the other projects,
 you need to first switch to that project or the root project. For example `sbt clean "project root" clean`. 
 
-Play Project icd-web-server
----------------------------
+ICD Web App
+------------
+
+To start the ICD web app, run `icdwebserver`. 
+If running as a public server, you should use `icdwebserver -Dicd.allowUpload=false` to start it.
+Then go to http://localhost:9000 in a web browser.
+
+Note that the first time you start `icdwebserver`, it will update the ICD database from the released versions on GitHub. 
 
 To start the web app with continuous compilation during development, you can use `sbt ~run` from this directory.
-Then go to http://localhost:9000 in a web browser.
 
 See [icd-web-server/README.md](icd-web-server/README.md) for more information.
 
@@ -85,7 +90,7 @@ Note: The icd-git app will currently delete the current contents of the local IC
 ingesting the files from the repository.
 
 The icd web app lists the published versions of subsystem APIs and ICDs from GitHub and the model
-files are checked out and ingested into the database automatically as needed the first time you start the web app. 
+files are checked out and ingested into the database automatically as needed the *first time* you start the web app. 
 
 Known Issues
 ------------

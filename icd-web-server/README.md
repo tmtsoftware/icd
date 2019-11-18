@@ -54,8 +54,8 @@ Publishing APIs and ICDs
 After uploading, you have an unpublished API (version = *). 
 
 In order to publish an API or ICD, commit and push your changes to the subsystem's GitHub repository ([under tmt-icd on GitHub](https://github.com/tmt-icd))
-and request that they be published. A TMT admin can use the `icd-git --publish` command to actually 
-publish the subsystem or ICD version (making an entry in a JSON file under `apis` or `icds` in the
+and request that they be published. A TMT admin can use the `icd-git --publish` command or the ICD web app's Publish dialog 
+to actually publish the subsystem or ICD version (making an entry in a JSON file under `apis` or `icds` in the
 [main repository](https://github.com/tmt-icd/ICD-Model-Files.git)).
 
 Install
