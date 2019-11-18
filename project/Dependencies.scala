@@ -2,7 +2,7 @@ import sbt._
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 
 object Dependencies {
-  val Version               = "0.15"
+  val Version               = "0.16"
   val ScalaVersion          = "2.13.1"
   val AkkaVersion          = "2.5.25"
   val PlayVersion           = "2.7.3"

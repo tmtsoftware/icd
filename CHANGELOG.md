@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [ICD v0.16] - 2019-11-18
+
 ### Added
 
 - Added a new Publish dialog to the icd web app
