@@ -62,9 +62,15 @@ you need to first switch to that project or the root project. For example `sbt c
 ICD Web App
 ------------
 
-To start the ICD web app, run `icdwebserver`. 
-If running as a public server, you should use `icdwebserver -Dicd.allowUpload=false` to start it.
-Then go to http://localhost:9000 in a web browser.
+To start the ICD web app on http://localhost:9000/, run `icdwebserver`,
+then go to http://localhost:9000 in a web browser.
+
+To run as a public server, you should use something like this to start it:
+
+    icdwebserver -Dicd.allowUpload=false -Dhttp.host=$hostname -Dhttp.port=8080
+
+and then go to http://$hostname:8080. The `-Dicd.allowUpload=false` option hides the *upload* feature, which allows
+users to test their changes before publishing.
 
 Note that the first time you start `icdwebserver`, it will update the ICD database from the released versions on GitHub. 
 
