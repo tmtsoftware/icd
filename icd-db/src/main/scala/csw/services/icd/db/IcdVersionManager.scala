@@ -64,7 +64,7 @@ object IcdVersionManager {
    */
   val allSubsystems: List[String] = {
     import scala.jdk.CollectionConverters._
-    val config = ConfigFactory.parseResources("subsystem.conf")
+    val config = ConfigFactory.parseResources("2.0/subsystem.conf")
     config.getStringList("enum").asScala.toList
   }
 

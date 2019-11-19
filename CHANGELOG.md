@@ -14,6 +14,9 @@ All notable changes to this project will be documented in this file.
   in icd-web-server/application.conf or by starting the web app like this: `icdwebserver -Dicd.allowUpload=false`.
   The Upload feature should be disabled when `icdwebserver` is running in a public network and should only 
   display the actual API and ICD releases, which are stored on GitHub. 
+  
+- Updated the list of allowed subsystem names for ICD model files
+  (The old list is only allowed when modelVersion is set to "1.0". If it is set to "2.0", the new list is used).
 
 ## [ICD v0.15] - 2019-11-06
 

@@ -101,8 +101,10 @@ files are checked out and ingested into the database automatically as needed the
 Known Issues
 ------------
 
-* csh/tcsh users should run the command `unlimit` or add `unlimit` to your .cshrc or .tcshrc file before starting `mongod` to make sure
-  it has access to enough file descriptors.
+* Most Unix-like operating systems limit the system resources that a session may use. 
+  These limits may negatively impact MongoDB operation. 
+  See [UNIX ulimit Settings](https://docs.mongodb.com/manual/reference/ulimit/) for more information.
+  csh/tcsh users can also run the command `unlimit` before starting `mongod`.
 
 * Including a comma in an unquoted string in an ICD model file can cause a NullPointerException.
 For example, don't do this: 
