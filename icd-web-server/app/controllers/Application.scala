@@ -54,45 +54,11 @@ class Application @Inject()(
   private val db = tryDb.get
 
   // Cache of API and ICD versions published on GitHub (cached for better performance)
-  private var (allApiVersions, allIcdVersions) = ingestMissing()
+  private var (allApiVersions, allIcdVersions) = IcdGitManager.ingestMissing(db)
 
-  // Ingest any APIs or versions of APIs that are published, but not yet in the database
-  // and return a pair of lists containing API and ICD version info.
-  private def ingestMissing(): (List[ApiVersions], List[IcdVersions]) = {
-    val pair = IcdGitManager.getAllVersions
-    allApiVersions = pair._1
-    allIcdVersions = pair._2
-
-    // Ingest any missing subsystems
-    val missingSubsystems = allApiVersions
-      .map(_.subsystem)
-      .toSet
-      .diff(db.query.getSubsystemNames.toSet)
-      .map(SubsystemAndVersion(_, None))
-    if (missingSubsystems.nonEmpty) {
-      println(s"Updating the ICD database with changes from GitHub")
-      IcdGitManager.ingest(db, missingSubsystems.toList, (s: String) => println(s), allApiVersions, allIcdVersions)
-    }
-
-    // Ingest any missing published subsystem versions
-    val missingSubsystemVersions = allApiVersions
-      .flatMap { apiVersions =>
-        val versions = db.versionManager.getVersionNames(apiVersions.subsystem).toSet
-        apiVersions.apis
-          .filter(apiEntry => !versions.contains(apiEntry.version))
-          .map(apiEntry => SubsystemAndVersion(apiVersions.subsystem, Some(apiEntry.version)))
-      }
-    if (missingSubsystemVersions.nonEmpty) {
-      println(s"Updating the ICD database with newly published changes from GitHub")
-      IcdGitManager.ingest(db, missingSubsystemVersions, (s: String) => println(s), allApiVersions, allIcdVersions)
-    }
-
-    (allApiVersions, allIcdVersions)
-  }
-
-  // Update the database and cache after a new API or ICD was published
+  // Update the database and cache after a new API or ICD was published (or in case one was published)
   private def updateAfterPublish(): Unit = {
-    val pair = ingestMissing()
+    val pair = IcdGitManager.ingestMissing(db)
     allApiVersions = pair._1
     allIcdVersions = pair._2
   }
@@ -409,6 +375,13 @@ class Application @Inject()(
           BadRequest(ex.getMessage)
       }
     }
+  }
 
+  /**
+   * Updates the cache of published APIs and ICDs (in case new ones were published)
+   */
+  def updatePublished() = Action { implicit request =>
+    updateAfterPublish()
+    Ok.as(JSON)
   }
 }

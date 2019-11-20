@@ -212,7 +212,7 @@ case class Subsystem(
   /**
    * Update the Subsystem combobox options
    */
-  def updateSubsystemOptions(items: List[String]): Unit = {
+  def updateSubsystemOptions(items: List[String]): Future[Unit] = {
     val currentSubsystems = getSubsystems
     items.foreach { subsystem =>
       import scalatags.JsDom.all._

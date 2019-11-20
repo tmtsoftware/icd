@@ -11,7 +11,7 @@ $(document).ready(function () {
             var ele = ui.element;
             var factor = par - x;
 
-            if (x == par) {
+            if (x === par) {
                 return;
             }
 
@@ -24,7 +24,6 @@ $(document).ready(function () {
             }
         }
     });
-
 
     // Implement Expand/Collapse toolbar button
     // (based on http://jsfiddle.net/KyleMit/f8ypa/)
