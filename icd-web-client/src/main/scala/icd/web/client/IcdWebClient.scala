@@ -3,7 +3,7 @@ package icd.web.client
 import icd.web.shared.{IcdVersion, SubsystemWithVersion}
 import org.scalajs.dom
 import org.scalajs.dom.{PopStateEvent, document}
-import org.scalajs.dom.raw.{HTMLDivElement, HTMLStyleElement}
+import org.scalajs.dom.raw.HTMLStyleElement
 
 import scala.concurrent.Future
 import scala.scalajs.js.annotation.JSExportTopLevel
@@ -98,7 +98,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   // Update the list of Subsystem options
-  private def updateSubsystemOptions(items: List[String]): Unit = {
+  private def updateSubsystemOptions(items: List[String]): Future[Unit] = {
     selectDialog.updateSubsystemOptions(items)
   }
 
@@ -125,6 +125,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       pushState(viewType = SelectView)
     } else {
       for {
+        _ <- subsystemNames.update()
         _ <- selectDialog.icdChooser.setIcdWithVersion(maybeIcd, saveHistory = false)
         _ <- selectDialog.subsystem.setSubsystemWithVersion(maybeSv, saveHistory = false)
         _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(maybeTargetSv, saveHistory = false)

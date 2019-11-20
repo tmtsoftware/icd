@@ -9,7 +9,7 @@ import SubsystemNames._
 
 object SubsystemNames {
   // Type of a listener for changes in the list of subsystem names
-  type Listener = List[String] => Unit
+  type Listener = List[String] => Future[Unit]
 }
 
 /**
@@ -34,12 +34,12 @@ case class SubsystemNames(mainContent: MainContent, listener: Listener) {
       }
   }
 
-  private def notifyListener(items: List[String]): Unit = {
+  private def notifyListener(items: List[String]): Future[Unit] = {
     listener(items)
   }
 
   // Updates the menu
   def update(): Future[Unit] = {
-    getSubsystemNames.map(notifyListener)
+    getSubsystemNames.flatMap(notifyListener)
   }
 }

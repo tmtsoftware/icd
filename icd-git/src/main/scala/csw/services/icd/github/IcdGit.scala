@@ -331,6 +331,10 @@ object IcdGit extends App {
       val info     = IcdGitManager.publish(options.subsystems, options.majorVersion, user, password, comment)
       println(s"Created ICD version ${info.icdVersion.icdVersion} based on ${sv.subsystem} and ${targetSv.subsystem}")
     }
+    if (options.subsystems.size == 1 || options.subsystems.size == 2) {
+      val db = IcdDb(options.dbName, options.host, options.port)
+      IcdGitManager.ingestMissing(db)
+    }
   }
 
   // Handle the --ingest option
@@ -345,7 +349,7 @@ object IcdGit extends App {
       IcdGitManager.ingest(db, options.subsystems, (s: String) => println(s), allApiVersions, allIcdVersions)
     } catch {
       case ex: IcdDbException => error("Failed to connect to mongodb. Make sure mongod server is running.")
-      case ex: Exception => error(s"Unable to drop the existing ICD database: $ex")
+      case ex: Exception      => error(s"Unable to drop the existing ICD database: $ex")
     }
 
   }

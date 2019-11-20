@@ -92,9 +92,11 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   }
 
   // Update the list of Subsystem options
-  def updateSubsystemOptions(items: List[String]): Unit = {
-    subsystem.updateSubsystemOptions(items)
-    targetSubsystem.updateSubsystemOptions(items)
+  def updateSubsystemOptions(items: List[String]): Future[Unit] = {
+    for {
+      _ <- subsystem.updateSubsystemOptions(items)
+      _ <- targetSubsystem.updateSubsystemOptions(items)
+    } yield {}
   }
 
   // Gets the list of subcomponents for the selected subsystem

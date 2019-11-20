@@ -510,7 +510,7 @@ object IcdGitManager {
    * Ingests the given subsystems and ICD (or all subsystems and ICDs) into the ICD database.
    *
    * @param db             the database to use
-   * @param subsystemList  list of subsystems to ingest (two subsystems for an ICD, empty for all subsystems and ICDs)
+   * @param subsystemList  list of subsystems to ingest (or two subsystems for an ICD, empty for all subsystems and ICDs)
    * @param feedback       function to display messages while working
    * @param allApiVersions cached API version info (see getAllVersions)
    * @param allIcdVersions cached ICD version info (see getAllVersions)
@@ -526,10 +526,8 @@ object IcdGitManager {
     val subsystems = {
       if (subsystemList.nonEmpty) {
         // sort by convention to avoid duplicate ICDs,
-        feedback(s"Ingesting ${subsystemList.mkString(" and ")}")
         subsystemList.sorted
       } else {
-        feedback(s"Ingesting all published subsystems from $gitBaseUri")
         IcdVersionManager.allSubsystems.map(s => SubsystemAndVersion(s, None))
       }
     }
@@ -699,4 +697,42 @@ object IcdGitManager {
       PublishInfo(subsystem, maybeApiVersionList, icdVersions, readyToPublish)
     }
   }
+
+  /**
+   * Ingest any APIs or versions of APIs that are published, but not yet in the database
+   * and return a pair of lists containing API and ICD version info.
+   *
+   * @param db the icd database
+   * @return a pair containing lists of all API and ICD versions
+   */
+  def ingestMissing(db: IcdDb): (List[ApiVersions], List[IcdVersions]) = {
+    val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
+
+    // Ingest any missing subsystems
+    val missingSubsystems = allApiVersions
+      .map(_.subsystem)
+      .toSet
+      .diff(db.query.getSubsystemNames.toSet)
+      .map(SubsystemAndVersion(_, None))
+    if (missingSubsystems.nonEmpty) {
+      println(s"Updating the ICD database with changes from GitHub")
+      IcdGitManager.ingest(db, missingSubsystems.toList, (s: String) => println(s), allApiVersions, allIcdVersions)
+    }
+
+    // Ingest any missing published subsystem versions
+    val missingSubsystemVersions = allApiVersions
+      .flatMap { apiVersions =>
+        val versions = db.versionManager.getVersionNames(apiVersions.subsystem).toSet
+        apiVersions.apis
+          .filter(apiEntry => !versions.contains(apiEntry.version))
+          .map(apiEntry => SubsystemAndVersion(apiVersions.subsystem, Some(apiEntry.version)))
+      }
+    if (missingSubsystemVersions.nonEmpty) {
+      println(s"Updating the ICD database with newly published changes from GitHub")
+      IcdGitManager.ingest(db, missingSubsystemVersions, (s: String) => println(s), allApiVersions, allIcdVersions)
+    }
+
+    (allApiVersions, allIcdVersions)
+  }
+
 }
