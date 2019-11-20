@@ -3,7 +3,7 @@ package icd.web.client
 import icd.web.shared.{IcdVersion, SubsystemWithVersion}
 import org.scalajs.dom
 import org.scalajs.dom.{PopStateEvent, document}
-import org.scalajs.dom.raw.{HTMLDivElement, HTMLStyleElement}
+import org.scalajs.dom.raw.HTMLStyleElement
 
 import scala.concurrent.Future
 import scala.scalajs.js.annotation.JSExportTopLevel
@@ -59,13 +59,16 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val publishItem   = NavbarItem("Publish", "Shows dialog to publish APIs and ICDs", showPublishDialog())
   private val publishDialog = PublishDialog(mainContent, subsystemNames)
 
-  isUploadAllowed.map { uploadAllowed =>
-    // Call popState() when the user presses the browser Back button
-    dom.window.onpopstate = popState _
+  // Call popState() when the user presses the browser Back button
+  dom.window.onpopstate = popState _
 
-    // Initial browser state
-    doLayout(uploadAllowed)
-    selectSubsystems()
+  // Initial browser state
+  doLayout()
+  selectSubsystems()
+
+  isUploadAllowed.map { uploadAllowed =>
+    if (!uploadAllowed)
+      fileUploadItem.hide()
   }
 
   // See if uploading model files is allowed in this configuration
@@ -79,12 +82,12 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
 
   // Layout the components on the page
-  private def doLayout(uploadAllowed: Boolean): Unit = {
+  private def doLayout(): Unit = {
     // Add CSS styles
     head.appendChild(Styles.render[TypedTag[HTMLStyleElement]].render)
 
     navbar.addItem(selectItem)
-    if (uploadAllowed) navbar.addItem(fileUploadItem)
+    navbar.addItem(fileUploadItem)
     navbar.addItem(historyItem)
     navbar.addItem(pdfItem)
     navbar.addItem(publishItem)

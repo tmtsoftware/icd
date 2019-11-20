@@ -10,10 +10,11 @@ import org.scalajs.dom._
  * @param listener called when the item is clicked
  */
 case class NavbarItem(labelStr: String, tip: String, listener: () => Unit) extends Displayable {
+  import scalatags.JsDom.all._
+  private val item = li(a(onclick := listener, title := tip)(labelStr)).render
 
   // Returns the HTML markup for the navbar item
-  def markup(): Element = {
-    import scalatags.JsDom.all._
-    li(a(onclick := listener, title := tip)(labelStr)).render
-  }
+  def markup(): Element = item
+
+  def hide(): Unit = item.classList.add("hide")
 }
