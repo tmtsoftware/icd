@@ -45,16 +45,19 @@ POST        /uploadFiles                                controllers.FileUploadCo
 GET         /diff/:subsystem/:versions                  controllers.Application.diff(subsystem, versions)
 
 # Returns OK(true) if Uploads should be allowed in the web app
-GET         /isUploadAllowed                              controllers.Application.isUploadAllowed
+GET         /isUploadAllowed                            controllers.Application.isUploadAllowed
 
 # Gets PublishInfo for every subsystem
-GET         /getPublishInfo                              controllers.Application.getPublishInfo
+GET         /getPublishInfo                             controllers.Application.getPublishInfo
 
 # Publishs a given subsystem API on GitHub
 POST        /publishApi                                 controllers.Application.publishApi()
 
 # Publishs an ICD on GitHub
 POST        /publishIcd                                 controllers.Application.publishIcd()
+
+# Updates the cache of published APIs and ICDs (in case new ones were published)
+POST        /updatePublished                            controllers.Application.updatePublished()
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                               controllers.Assets.versioned(file)

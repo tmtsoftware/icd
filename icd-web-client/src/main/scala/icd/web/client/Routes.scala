@@ -163,20 +163,25 @@ object Routes {
   /**
    * Returns OK(true) if Uploads should be allowed in the web app
    */
-  def isUploadAllowed = "/isUploadAllowed"
+  val isUploadAllowed = "/isUploadAllowed"
 
   /**
    * Gets PublishInfo for every subsystem
    */
-  def getPublishInfo = "/getPublishInfo"
+  val getPublishInfo = "/getPublishInfo"
 
   /**
-  * For POST of PublishApiInfo to publish an API
+   * For POST of PublishApiInfo to publish an API
    */
-  def publishApi = "/publishApi"
+  val publishApi = "/publishApi"
 
   /**
-  * For POST of PublishIcdInfo to publish an ICD
+   * For POST of PublishIcdInfo to publish an ICD
    */
-  def publishIcd = "/publishIcd"
+  val publishIcd = "/publishIcd"
+
+  /**
+   * Post: Updates the cache of published APIs and ICDs (in case new ones were published)
+   */
+  val updatePublished = "/updatePublished"
 }

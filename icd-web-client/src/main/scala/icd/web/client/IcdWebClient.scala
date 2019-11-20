@@ -39,7 +39,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val components    = Components(mainContent, ComponentLinkSelectionHandler)
   private val sidebar       = Sidebar(LeftSidebarListener)
 
-  private val historyItem    = NavbarItem("History", "Display the version history for an API or ICD", showVersionHistory())
+  private val historyItem   = NavbarItem("History", "Display the version history for an API or ICD", showVersionHistory())
   private val historyDialog = HistoryDialog(mainContent)
 
   private val pdfItem = NavbarItem("PDF", "Generate and display a PDF for the API or ICD", makePdf)
@@ -59,32 +59,44 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val publishItem   = NavbarItem("Publish", "Shows dialog to publish APIs and ICDs", showPublishDialog())
   private val publishDialog = PublishDialog(mainContent, subsystemNames)
 
-  isUploadAllowed.map { uploadAllowed =>
-    // Call popState() when the user presses the browser Back button
-    dom.window.onpopstate = popState _
+  // Call popState() when the user presses the browser Back button
+  dom.window.onpopstate = popState _
 
-    // Initial browser state
-    doLayout(uploadAllowed)
-    selectSubsystems()
+  // Initial browser state
+  doLayout()
+
+  // Refresh the list of published APIs and ICDs when the user refreshes the web app
+  updatePublished().onComplete(_ => selectSubsystems())
+
+  // If uploads are not allowed, hide the item (Doing this in the background caused issues with jquery)
+  isUploadAllowed.map { uploadAllowed =>
+    if (!uploadAllowed)
+      fileUploadItem.hide()
   }
 
   // See if uploading model files is allowed in this configuration
   private def isUploadAllowed: Future[Boolean] = {
     val path = Routes.isUploadAllowed
     Ajax.get(path).map { r =>
-      val response = Json.fromJson[Boolean](Json.parse(r.responseText)).get
-      response
+      Json.fromJson[Boolean](Json.parse(r.responseText)).get
     }
   }
 
+  // Updates the cache of published APIs and ICDs on teh server (in case new ones were published)
+  private def updatePublished(): Future[Unit] = {
+    val path = Routes.updatePublished
+    Ajax.post(path).map { r =>
+      Json.fromJson[Boolean](Json.parse(r.responseText)).get
+    }
+  }
 
   // Layout the components on the page
-  private def doLayout(uploadAllowed: Boolean): Unit = {
+  private def doLayout(): Unit = {
     // Add CSS styles
     head.appendChild(Styles.render[TypedTag[HTMLStyleElement]].render)
 
     navbar.addItem(selectItem)
-    if (uploadAllowed) navbar.addItem(fileUploadItem)
+    navbar.addItem(fileUploadItem)
     navbar.addItem(historyItem)
     navbar.addItem(pdfItem)
     navbar.addItem(publishItem)
@@ -173,10 +185,10 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         case `maybeSubsystem` if maybeSv.flatMap(_.maybeComponent).isEmpty =>
           goToComponent(link.compName)
           pushState(viewType = ComponentView, compName = Some(link.compName), replace = true)
-        case `maybeTargetSubsystem` if maybeTargetSv.flatMap(_.maybeComponent).isEmpty  =>
+        case `maybeTargetSubsystem` if maybeTargetSv.flatMap(_.maybeComponent).isEmpty =>
           goToComponent(link.compName)
           pushState(viewType = ComponentView, compName = Some(link.compName), replace = true)
-        case _                      =>
+        case _ =>
           val maybeLinkSv = Some(SubsystemWithVersion(link.subsystem, None, Some(link.compName)))
           for {
             _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(None, saveHistory = false)
@@ -232,13 +244,15 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       e.preventDefault()
       // Make sure to wait for futures to complete, so things happen in the right order
       for {
-        _ <- selectDialog.subsystem.setSubsystemWithVersion(hist.maybeSourceSubsystem, saveHistory = false, findMatchingIcd = false)
-        _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(hist.maybeTargetSubsystem, saveHistory = false, findMatchingIcd = false)
+        _ <- selectDialog.subsystem
+              .setSubsystemWithVersion(hist.maybeSourceSubsystem, saveHistory = false, findMatchingIcd = false)
+        _ <- selectDialog.targetSubsystem
+              .setSubsystemWithVersion(hist.maybeTargetSubsystem, saveHistory = false, findMatchingIcd = false)
         _ <- selectDialog.icdChooser.setIcdWithVersion(hist.maybeIcd, notifyListener = false, saveHistory = false)
       } {
         hist.viewType match {
           case UploadView  => showUploadDialog(saveHistory = false)()
-          case PublishView  => showPublishDialog(saveHistory = false)()
+          case PublishView => showPublishDialog(saveHistory = false)()
           case VersionView => showVersionHistory(saveHistory = false)()
           case SelectView =>
             selectSubsystems(
@@ -289,11 +303,12 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     mainContent.clearContent()
     val f = if (maybeSv.isDefined) {
       showBusyCursorWhile {
-        components.addComponents(maybeSv.get, maybeTargetSv, maybeIcd, searchAllSubsystems)
-        .map { infoList =>
-          infoList.foreach(info => sidebar.addComponent(info.componentModel.component))
-          setSidebarVisible(true)
-        }
+        components
+          .addComponents(maybeSv.get, maybeTargetSv, maybeIcd, searchAllSubsystems)
+          .map { infoList =>
+            infoList.foreach(info => sidebar.addComponent(info.componentModel.component))
+            setSidebarVisible(true)
+          }
       }
     } else Future.successful(())
     if (saveHistory) {

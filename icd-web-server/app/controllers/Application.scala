@@ -56,7 +56,7 @@ class Application @Inject()(
   // Cache of API and ICD versions published on GitHub (cached for better performance)
   private var (allApiVersions, allIcdVersions) = IcdGitManager.ingestMissing(db)
 
-  // Update the database and cache after a new API or ICD was published
+  // Update the database and cache after a new API or ICD was published (or in case one was published)
   private def updateAfterPublish(): Unit = {
     val pair = IcdGitManager.ingestMissing(db)
     allApiVersions = pair._1
@@ -375,6 +375,13 @@ class Application @Inject()(
           BadRequest(ex.getMessage)
       }
     }
+  }
 
+  /**
+   * Updates the cache of published APIs and ICDs (in case new ones were published)
+   */
+  def updatePublished() = Action { implicit request =>
+    updateAfterPublish()
+    Ok.as(JSON)
   }
 }
