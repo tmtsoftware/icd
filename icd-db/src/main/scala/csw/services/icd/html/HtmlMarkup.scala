@@ -100,7 +100,7 @@ object HtmlMarkup extends Extensions {
         val html = renderer.render(parser.parse(s))
 
         // Then clean it up with jsoup to avoid issues with the pdf generator (and for security)
-        Jsoup.clean(html, "", Whitelist.basicWithImages(), os)
+        Jsoup.clean(html, "", Whitelist.relaxed(), os)
       } catch {
         case ex: Throwable =>
           println(s"Error converting markdown to HTML: $ex: Input was:\n$gfm")
