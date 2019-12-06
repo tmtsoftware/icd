@@ -408,22 +408,23 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Returns a table row displaying more details for the given event
     def makeEventDetailsRow(eventInfo: EventInfo) = {
-      val headings = List("Min Rate", "Max Rate", "Archive", "Archive Duration", "Archive Rate")
+      val eventModel = eventInfo.eventModel
+      val headings       = List("Max Rate", "Archive", "Archive Duration", "Bytes per Event", "Year Accumulation")
       val rowList = List(
         List(
-          formatRate(eventInfo.eventModel.minRate),
-          formatRate(eventInfo.eventModel.maxRate),
-          yesNo(eventInfo.eventModel.archive),
-          eventInfo.eventModel.archiveDuration,
-          formatRate(eventInfo.eventModel.archiveRate)
+          formatRate(eventModel.maxRate),
+          yesNo(eventModel.archive),
+          eventModel.archiveDuration,
+          eventModel.totalSizeInBytes.toString,
+          if (eventModel.maxRate == 0) "" else eventModel.totalArchiveSpacePerYear,
         )
       )
 
       div(
-        if (eventInfo.eventModel.requirements.isEmpty) div()
-        else p(strong("Requirements: "), eventInfo.eventModel.requirements.mkString(", ")),
+        if (eventModel.requirements.isEmpty) div()
+        else p(strong("Requirements: "), eventModel.requirements.mkString(", ")),
         mkTable(headings, rowList),
-        attributeListMarkup("Attributes", eventInfo.eventModel.attributesList)
+        attributeListMarkup("Attributes", eventModel.attributesList)
       )
     }
 

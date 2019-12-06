@@ -11,29 +11,32 @@ import reactivemongo.bson.{BSONBoolean, BSONDocument, BSONDouble, BSONInteger, B
 object AttributeModelBsonParser {
 
   private def bsonValueToString(b: BSONValue): String = b match {
-    case s: BSONString => s.value
-    case d: BSONDouble => d.value.toString
+    case s: BSONString  => s.value
+    case d: BSONDouble  => d.value.toString
     case d: BSONInteger => d.value.toString
-    case d: BSONLong => d.value.toString
+    case d: BSONLong    => d.value.toString
     case d: BSONBoolean => d.value.toString
-    case x => x.toString // should not happen
+    case x              => x.toString // should not happen
   }
 
   def apply(doc: BSONDocument): AttributeModel = {
-    val name        = doc.getAs[String]("name").getOrElse("")
-    val description = doc.getAs[String]("description").map(HtmlMarkup.gfmToHtml).getOrElse("")
-    val maybeType   = doc.getAs[String]("type")
-    val maybeEnum   = doc.getAs[Array[String]]("enum").map(_.toList)
-    val units       = doc.getAs[String]("units").map(HtmlMarkup.gfmToHtml).getOrElse("")
-    val maxItems    = doc.getAs[String]("maxItems")
-    val minItems    = doc.getAs[String]("minItems")
+    val name            = doc.getAs[String]("name").getOrElse("")
+    val description     = doc.getAs[String]("description").map(HtmlMarkup.gfmToHtml).getOrElse("")
+    val maybeType       = doc.getAs[String]("type")
+    val maybeEnum       = doc.getAs[Array[String]]("enum").map(_.toList)
+    val units           = doc.getAs[String]("units").map(HtmlMarkup.gfmToHtml).getOrElse("")
+    val maxItems        = doc.getAs[String]("maxItems")
+    val minItems        = doc.getAs[String]("minItems")
+    val maybeDimensions = doc.getAs[Array[Int]]("dimensions").map(_.toList)
+    val itemsDoc = doc.get("items").map(_.asInstanceOf[BSONDocument])
+    val maybeArrayType  = itemsDoc.flatMap(_.get("type").map(bsonValueToString))
 
     // --- Old json-schema uses Boolean for exclusive* keys, new one uses Number! ---
-    val exclusiveMinimumStr =
-      doc.get("exclusiveMinimum").orElse(doc.get("items.exclusiveMinimum")).map(bsonValueToString).getOrElse("false")
+    val exclusiveMinimumStr = doc.get("exclusiveMinimum").map(bsonValueToString)
+        .orElse(itemsDoc.flatMap(_.get("exclusiveMinimum").map(bsonValueToString))).getOrElse("false")
     val exclusiveMinimum = exclusiveMinimumStr.toLowerCase() != "false"
-    val exclusiveMaximumStr =
-      doc.get("exclusiveMaximum").orElse(doc.get("items.exclusiveMaximum")).map(bsonValueToString).getOrElse("false")
+    val exclusiveMaximumStr = doc.get("exclusiveMaximum").map(bsonValueToString)
+      .orElse(itemsDoc.flatMap(_.get("exclusiveMaximum").map(bsonValueToString))).getOrElse("false")
     val exclusiveMaximum = exclusiveMaximumStr.toLowerCase() != "false"
 
     def isNumeric(str: String): Boolean        = str.matches("[-+]?\\d+(\\.\\d+)?")
@@ -42,11 +45,11 @@ object AttributeModelBsonParser {
     // For compatibility, use numeric value of exclusive min/max if found
     val minimum = doc
       .get("minimum").map(bsonValueToString)
-      .orElse(doc.get("items.minimum").map(bsonValueToString))
+      .orElse(itemsDoc.flatMap(_.get("minimum").map(bsonValueToString)))
       .orElse(ifNumeric(exclusiveMinimumStr))
     val maximum = doc
       .get("maximum").map(bsonValueToString)
-      .orElse(doc.get("items.maximum").map(bsonValueToString))
+      .orElse(itemsDoc.flatMap(_.get("maximum").map(bsonValueToString)))
       .orElse(ifNumeric(exclusiveMaximumStr))
 
     // ---
@@ -55,18 +58,17 @@ object AttributeModelBsonParser {
 
     // Returns a string describing an array type
     def parseArrayTypeStr(): String = {
-      val dimsOpt = doc.getAs[Array[Int]]("dimensions").map(_.toList)
       val items = doc.getAs[BSONDocument]("items")
-      val t       = items.flatMap(_.getAs[String]("type"))
-      val e       = items.flatMap(_.getAs[Array[String]]("enum").map(_.toList))
+      val t     = items.flatMap(_.getAs[String]("type"))
+      val e     = items.flatMap(_.getAs[Array[String]]("enum").map(_.toList))
       val s = if (t.isDefined) {
         parseTypeStr(t)
       } else if (e.isDefined) {
         "enum: (" + e.get.mkString(", ") + ")"
       } else "?"
 
-      if (dimsOpt.isDefined)
-        s"array[${dimsOpt.get.mkString(",")}] of $s"
+      if (maybeDimensions.isDefined)
+        s"array[${maybeDimensions.get.mkString(",")}] of $s"
       else
         s"array of $s"
     }
@@ -106,20 +108,26 @@ object AttributeModelBsonParser {
 
     // If type is "struct", attributeList gives the fields of the struct
     val attributesList = if (typeStr == "struct") {
-        for (subDoc <- doc.getAs[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
-          yield AttributeModelBsonParser(subDoc)
+      for (subDoc <- doc.getAs[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
+        yield AttributeModelBsonParser(subDoc)
     } else if (typeStr == "array of struct") {
-      doc.getAs[BSONDocument]("items").toList.flatMap(items =>
-      for (subDoc <- items.getAs[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
-        yield AttributeModelBsonParser(subDoc))
-    }
-    else Nil
+      doc
+        .getAs[BSONDocument]("items")
+        .toList
+        .flatMap(
+          items =>
+            for (subDoc <- items.getAs[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
+              yield AttributeModelBsonParser(subDoc)
+        )
+    } else Nil
 
     AttributeModel(
       name,
       description,
       maybeType,
       maybeEnum,
+      maybeArrayType,
+      maybeDimensions,
       units,
       maxItems,
       minItems,

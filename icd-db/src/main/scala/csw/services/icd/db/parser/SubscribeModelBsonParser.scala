@@ -41,7 +41,7 @@ object SubscribeInfoBsonParser {
       component = doc.getAs[String](BaseModelBsonParser.componentKey).get,
       name = doc.getAs[String]("name").getOrElse(""),
       usage = doc.getAs[String]("usage").map(HtmlMarkup.gfmToHtml).getOrElse(""),
-      requiredRate = doc.getAs[Double]("requiredRate").getOrElse(0.0),
-      maxRate = doc.getAs[Double]("maxRate").getOrElse(0.0)
+      requiredRate = safeNumGet("requiredRate", doc),
+      maxRate = safeNumGet("maxRate", doc)
     )
 }

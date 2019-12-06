@@ -473,17 +473,18 @@ object IcdToHtml {
       else {
         div(
           for (eventInfo <- eventList) yield {
+            val eventModel = eventInfo.eventModel
             val subscribers =
               eventInfo.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
             val subscriberInfo = span(strong(s"$subscriberStr: "), if (subscribers.isEmpty) "none" else subscribers)
-            val headings       = List("Min Rate", "Max Rate", "Archive", "Archive Duration", "Archive Rate", "Required Rate")
+            val headings       = List("Max Rate", "Archive", "Archive Duration", "Bytes per Event", "Year Accumulation", "Required Rate")
             val rowList = List(
               List(
-                HtmlMarkup.formatRate(eventInfo.eventModel.minRate),
-                HtmlMarkup.formatRate(eventInfo.eventModel.maxRate),
-                yesNo(eventInfo.eventModel.archive),
-                eventInfo.eventModel.archiveDuration,
-                HtmlMarkup.formatRate(eventInfo.eventModel.archiveRate),
+                HtmlMarkup.formatRate(eventModel.maxRate),
+                yesNo(eventModel.archive),
+                eventModel.archiveDuration,
+                eventModel.totalSizeInBytes.toString,
+                if (eventModel.maxRate == 0) "" else eventModel.totalArchiveSpacePerYear,
                 eventInfo.subscribers
                   .map(
                     s => // Add required rate for subscribers that set it
@@ -498,13 +499,13 @@ object IcdToHtml {
             )
             div(cls := "nopagebreak")(
               nh.H4(
-                s"${singlePubType(pubType)}: ${eventInfo.eventModel.name}",
-                idFor(compName, "publishes", pubType, eventInfo.eventModel.name)
+                s"${singlePubType(pubType)}: ${eventModel.name}",
+                idFor(compName, "publishes", pubType, eventModel.name)
               ),
-              if (eventInfo.eventModel.requirements.isEmpty) div()
-              else p(strong("Requirements: "), eventInfo.eventModel.requirements.mkString(", ")),
+              if (eventModel.requirements.isEmpty) div()
+              else p(strong("Requirements: "), eventModel.requirements.mkString(", ")),
               p(publisherInfo, ", ", subscriberInfo),
-              raw(eventInfo.eventModel.description),
+              raw(eventModel.description),
               // Include usage text from subscribers that define it
               div(
                 eventInfo.subscribers.map(
@@ -518,7 +519,7 @@ object IcdToHtml {
                 )
               ),
               HtmlMarkup.mkTable(headings, rowList),
-              attributeListMarkup(eventInfo.eventModel.name, eventInfo.eventModel.attributesList),
+              attributeListMarkup(eventModel.name, eventModel.attributesList),
               hr
             )
           }

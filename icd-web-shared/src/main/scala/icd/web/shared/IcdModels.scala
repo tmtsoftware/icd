@@ -1,12 +1,13 @@
 package icd.web.shared
 
+import java.util.Locale
+
 /**
  * Holds the set of models associated with the set of standard ICD files
  * (the files found in each directory of an ICD definition. Each file is optional).
  * See icd/resources/ for the related schema files.
  */
 trait IcdModels {
-
   import IcdModels._
 
   val subsystemModel: Option[SubsystemModel]
@@ -20,6 +21,62 @@ trait IcdModels {
  * Defines the basic model classes matching the icd schema files (in icd/resources).
  */
 object IcdModels {
+
+  // --- Size estimates for archiving event attributes --
+
+  val doubleSize = 8
+
+  // Used in case no array dimensions were specified
+  val defaultArrayDims = List(4)
+
+  // Size in bytes used when no type was found
+  val defaultTypeSize = 4
+
+  // For csw coord types, max length of tag name (TODO: Count bytes or 2-byte chars?)
+  val tagSize = 7
+
+  // Guess average catalog name length
+  val catalogNameSize = 16
+
+  // Size of CSW Angle class
+  val angleSize = 16
+
+  // Size of CSW EqFrame instance
+  val eqFrameSize = 4
+
+  // Size of CSW ProperMotion instance
+  val properMotionSize = 16
+
+  // Max length of CSW SolarSystemObject name
+  val solarSystemObjectSize = 7
+
+  // Cycles Per Year for 1 Hz
+  val hzToCpy = 31536000
+
+  /**
+   * Convert a quantity in bytes to a human-readable string such as "4.0 MB".
+   */
+  private def bytesToString(size: Long): String = {
+    val TB = 1L << 40
+    val GB = 1L << 30
+    val MB = 1L << 20
+    val KB = 1L << 10
+
+    val (value, unit) = {
+      if (size >= 2 * TB) {
+        (size.asInstanceOf[Double] / TB, "TB")
+      } else if (size >= 2 * GB) {
+        (size.asInstanceOf[Double] / GB, "GB")
+      } else if (size >= 2 * MB) {
+        (size.asInstanceOf[Double] / MB, "MB")
+      } else if (size >= 2 * KB) {
+        (size.asInstanceOf[Double] / KB, "KB")
+      } else {
+        (size.asInstanceOf[Double], "B")
+      }
+    }
+    "%.1f %s".format(value, unit)
+  }
 
   /**
    * Contains the common component and subsystem names that are in the top level model objects
@@ -96,6 +153,8 @@ object IcdModels {
       description: String,
       maybeType: Option[String],
       maybeEnum: Option[List[String]],
+      maybeArrayType: Option[String],
+      maybeDimensions: Option[List[Int]],
       units: String,
       maxItems: Option[String],
       minItems: Option[String],
@@ -106,7 +165,76 @@ object IcdModels {
       defaultValue: String,
       typeStr: String,
       attributesList: List[AttributeModel]
-  ) extends NameDesc
+  ) extends NameDesc {
+
+    // Estimate size required to archive the value(s) for this attribute
+    private def getTypeSize(typeName: String): Int = {
+      typeName match {
+        case "array" =>
+          // Use the given array dimensions, or guess if none given (may not be known ahead of time?)
+          maybeDimensions.getOrElse(defaultArrayDims).product * maybeArrayType.map(getTypeSize).getOrElse(defaultTypeSize)
+        case "struct" => attributesList.map(_.totalSizeInBytes).sum
+        // Assume boolean encoded as 1/0 byte?
+        case "boolean" => 1
+        case "integer" => 4
+        case "number"  => 8
+        // Can't know string size. Make a guess at the average size...
+        case "string"  => 16
+        case "byte"    => 1
+        case "short"   => 2
+        case "long"    => 4
+        case "float"   => 4
+        case "double"  => 8
+        case "taiDate" => 16
+        case "utcDate" => 16
+        case "raDec"   => 16
+        //  EqCoord(tag: Tag, ra: Angle, dec: Angle, frame: EqFrame, catalogName: String, pm: ProperMotion)
+        case "eqCoord" => tagSize + 2 * angleSize + eqFrameSize + catalogNameSize + properMotionSize
+        // SolarSystemCoord(tag: Tag, body: SolarSystemObject)
+        case "coord" | "solarSystemCoord" => tagSize + solarSystemObjectSize
+        //  case class MinorPlanetCoord(
+        //      tag: Tag,
+        //      epoch: Double,            // TT as a Modified Julian Date
+        //      inclination: Angle,       // degrees
+        //      longAscendingNode: Angle, // degrees
+        //      argOfPerihelion: Angle,   // degrees
+        //      meanDistance: Double,     // AU
+        //      eccentricity: Double,
+        //      meanAnomaly: Angle // degrees
+        //  ) extends Coord
+        case "minorPlanetCoord" => tagSize + 3 * doubleSize + 4 * angleSize
+        //  case class CometCoord(
+        //      tag: Tag,
+        //      epochOfPerihelion: Double,  // TT as a Modified Julian Date
+        //      inclination: Angle,         // degrees
+        //      longAscendingNode: Angle,   // degrees
+        //      argOfPerihelion: Angle,     // degrees
+        //      perihelionDistance: Double, // AU
+        //      eccentricity: Double
+        //  ) extends Coord
+        case "cometCoord" => tagSize + 3 * doubleSize + 3 * angleSize
+        //  case class AltAzCoord(tag: Tag, alt: Angle, az: Angle) extends Coord {
+        case "altAzCoord" => tagSize + 2 * angleSize
+        case _            => defaultTypeSize
+      }
+    }
+
+    /**
+     * Calculated (or estimated, worst case) total size in bytes for this attribute (for archiving)
+     */
+    lazy val totalSizeInBytes: Int = {
+      maybeType match {
+        case Some(typeName) =>
+          getTypeSize(typeName)
+        case None =>
+          maybeEnum match {
+            // Take length of longest enum as worst case
+            case Some(enums) => enums.map(_.length).max
+            case _           => 0
+          }
+      }
+    }
+  }
 
   /**
    * Model for a commands configuration that a component receives
@@ -239,12 +367,24 @@ object IcdModels {
       name: String,
       description: String,
       requirements: List[String],
+      // Deprecated: Only used with schema-v1.0
       minRate: Double,
+      // In Hz
       maxRate: Double,
       archive: Boolean,
       archiveDuration: String,
+      // Deprecated: Only used with schema-v1.0
       archiveRate: Double,
       attributesList: List[AttributeModel]
-  ) extends NameDesc
+  ) extends NameDesc {
+    // Estimated size in bytes of this event
+    lazy val totalSizeInBytes: Int = name.length + attributesList.map(_.totalSizeInBytes).sum
+
+    // Estimated number of bytes to archive this event at the maxRate for a year
+    lazy val totalArchiveBytesPerYear: Long = math.round(totalSizeInBytes * maxRate * hzToCpy)
+
+    // String describing estimated space required per year to archive this event (if archive is true)
+    lazy val totalArchiveSpacePerYear: String = if (archive) bytesToString(totalArchiveBytesPerYear) else ""
+  }
 
 }

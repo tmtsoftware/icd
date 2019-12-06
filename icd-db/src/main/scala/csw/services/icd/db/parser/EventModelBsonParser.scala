@@ -14,11 +14,11 @@ object EventModelBsonParser {
       name = doc.getAs[String]("name").get,
       description = doc.getAs[String]("description").map(HtmlMarkup.gfmToHtml).getOrElse(""),
       requirements = doc.getAs[Array[String]]("requirements").map(_.toList).getOrElse(Nil),
-      minRate = doc.getAs[Double]("minRate").getOrElse(0.0),
-      maxRate = doc.getAs[Double]("maxRate").getOrElse(0.0),
+      minRate = safeNumGet("minRate", doc),
+      maxRate = safeNumGet("maxRate", doc),
       archive = doc.getAs[Boolean]("archive").getOrElse(false),
       archiveDuration = doc.getAs[String]("archiveDuration").getOrElse(""),
-      archiveRate = doc.getAs[Double]("archiveRate").getOrElse(0.0),
+      archiveRate = safeNumGet("archiveRate", doc),
       attributesList =
         for (subDoc <- doc.getAs[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
           yield AttributeModelBsonParser(subDoc),

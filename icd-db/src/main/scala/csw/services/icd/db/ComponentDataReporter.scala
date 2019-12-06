@@ -5,6 +5,7 @@ import icd.web.shared.IcdModels.EventModel
 import collection.immutable.Set
 import scala.util.Try
 
+// XXX TODO FIXME (use of typeStr vs. maybeType?)
 object ComponentDataReporter {
   def printAllUsedUnits(db: IcdDb): Unit = {
     var units      = Set[String]()
