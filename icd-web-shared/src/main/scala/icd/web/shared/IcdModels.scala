@@ -63,13 +63,13 @@ object IcdModels {
     val KB = 1L << 10
 
     val (value, unit) = {
-      if (size >= 2 * TB) {
+      if (size >= TB) {
         (size.asInstanceOf[Double] / TB, "TB")
-      } else if (size >= 2 * GB) {
+      } else if (size >= GB) {
         (size.asInstanceOf[Double] / GB, "GB")
-      } else if (size >= 2 * MB) {
+      } else if (size >= MB) {
         (size.asInstanceOf[Double] / MB, "MB")
-      } else if (size >= 2 * KB) {
+      } else if (size >= KB) {
         (size.asInstanceOf[Double] / KB, "KB")
       } else {
         (size.asInstanceOf[Double], "B")

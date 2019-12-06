@@ -9,7 +9,16 @@ import icd.web.shared.IcdModels.{ComponentModel, EventModel}
 
 object ArchivedItemsReport {
 
-  case class ArchiveInfo(component: String, prefix: String, eventType: String, name: String, description: String)
+  case class ArchiveInfo(
+      component: String,
+      prefix: String,
+      eventType: String,
+      name: String,
+      maxRate: Double,
+      sizeInBytes: Int,
+      yearlyAccumulation: String,
+      description: String
+  )
 
 }
 
@@ -29,7 +38,19 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
       val comp = c.component.replace("-", "-\n") // save horizontal space
       list
         .filter(_.archive)
-        .map(e => ArchiveInfo(comp, c.prefix, eventType, e.name, e.description))
+        .map(
+          e =>
+            ArchiveInfo(
+              comp,
+              c.prefix,
+              eventType,
+              e.name,
+              e.maxRate,
+              e.totalSizeInBytes,
+              e.totalArchiveSpacePerYear,
+              e.description
+            )
+        )
     }
 
     val result = for {
@@ -67,6 +88,9 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
                 th("Prefix"),
                 th("Type"),
                 th("Name"),
+                th("Max", br, "Rate"),
+                th("Size", br, "Bytes"),
+                th("Yearly", br, "Accum."),
                 th("Description")
               )
             ),
@@ -76,9 +100,12 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
               } yield {
                 tr(
                   td(p(item.component)),
-                  td(p(item.prefix)),
+                  td(p(raw(item.prefix.replace(".", ".<br/>")))),
                   td(p(item.eventType)),
                   td(p(item.name)),
+                  td(p(if (item.maxRate == 0) "" else item.maxRate.toString)),
+                  td(p(item.sizeInBytes)),
+                  td(p(if (item.maxRate == 0) "" else item.yearlyAccumulation)),
                   td(raw(firstParagraph(item.description)))
                 )
               }

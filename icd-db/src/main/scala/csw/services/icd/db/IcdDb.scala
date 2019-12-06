@@ -110,7 +110,7 @@ object IcdDb extends App {
 
     opt[File]('a', "archived") valueName "<outputFile>" action { (x, c) =>
       c.copy(archived = Some(x))
-    } text "Generates an 'Archived Items' report to the given file in a format based on the file's suffix (html, pdf)"
+    } text "Generates an 'Archived Items' report for all subsystems (or the given one) to the given file in a format based on the file's suffix (html, pdf)"
 
     opt[Unit]("allSubsystems") action { (_, c) =>
       c.copy(allSubsystems = Some(()))
