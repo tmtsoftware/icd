@@ -5,6 +5,7 @@ import java.util.UUID
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.{Parser, PegdownExtensions}
 import com.vladsch.flexmark.profiles.pegdown.{Extensions, PegdownOptionsAdapter}
+import icd.web.shared.IcdModels.EventModel
 import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
 import org.jsoup.nodes.Document.OutputSettings
@@ -72,7 +73,10 @@ object HtmlMarkup extends Extensions {
   // Enforce self-closing tags (e.g. for <img> tags) so that PDF generator will not fail.
   private val os = new OutputSettings().syntax(OutputSettings.Syntax.xml)
 
-  def formatRate(rate: Double): String = if (rate == 0) "" else s"$rate Hz"
+  def formatRate(maybeRate: Option[Double]): TypedTag[String] = {
+    val rate = maybeRate.getOrElse(EventModel.defaultMaxRate)
+    if (maybeRate.isEmpty) em(s"$rate Hz *") else span(s"$rate Hz")
+  }
 
   def formatRate(compName: String, rate: Double): String = if (rate == 0) "" else s"<strong>$compName:</strong> $rate Hz"
 

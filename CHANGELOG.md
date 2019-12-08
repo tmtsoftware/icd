@@ -3,6 +3,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [ICD v0.17] - 2019-12-06
+
+### Added
+
+- Added *total event size* and *yearly accumulation* to the display for archived events (also added to the Archived Items report produced by icd-db).
+   Note that for some types, such as strings, the sizes are only guesses, since the string length is not known ahead of time. Also, the yearly accumulation is only displayed if `maxRate` is set (see below).
+
+### Removed
+
+- Removed `minRate` and `archiveRate` from the 2.0 JSON Schema for APIs. From now on, only `maxRate` should be used, which is the maximum publish rate for the event in Hz. This is used to calculate the *yearly accumulation* or size of the data for archived events for a year.
+
 ## [ICD v0.16] - 2019-11-18
 
 ### Added

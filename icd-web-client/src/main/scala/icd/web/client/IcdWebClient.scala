@@ -6,7 +6,7 @@ import org.scalajs.dom.{PopStateEvent, document}
 import org.scalajs.dom.raw.HTMLStyleElement
 
 import scala.concurrent.Future
-import scala.scalajs.js.annotation.JSExportTopLevel
+import scala.scalajs.js.annotation.{JSExportTopLevel, JSGlobalScope}
 import scalatags.JsDom.TypedTag
 import scalacss.ScalatagsCss._
 
@@ -16,6 +16,15 @@ import Components._
 import icd.web.client.SelectDialog.SelectDialogListener
 import org.scalajs.dom.ext.Ajax
 import play.api.libs.json.Json
+
+import scala.scalajs.js
+
+// Need to reset this JavaScript variable after loading a new API or ICD. See resources/resize.js
+@js.native
+@JSGlobalScope
+object Globals extends js.Object {
+  var navbarExpandAll: Boolean = js.native
+}
 
 /**
  * Main class for the ICD web app.
@@ -301,6 +310,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   ): Future[Unit] = {
     sidebar.clearComponents()
     mainContent.clearContent()
+    Globals.navbarExpandAll = false
     val f = if (maybeSv.isDefined) {
       showBusyCursorWhile {
         components

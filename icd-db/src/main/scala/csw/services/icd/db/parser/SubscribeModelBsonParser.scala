@@ -2,7 +2,7 @@ package csw.services.icd.db.parser
 
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.{SubscribeModel, SubscribeModelInfo}
-import reactivemongo.bson.BSONDocument
+import reactivemongo.bson.{BSONDocument, BSONNumberLike}
 
 /**
  * See resources/subscribe-schema.conf
@@ -42,6 +42,6 @@ object SubscribeInfoBsonParser {
       name = doc.getAs[String]("name").getOrElse(""),
       usage = doc.getAs[String]("usage").map(HtmlMarkup.gfmToHtml).getOrElse(""),
       requiredRate = safeNumGet("requiredRate", doc),
-      maxRate = safeNumGet("maxRate", doc)
+      maxRate = doc.getAs[BSONNumberLike]("maxRate").map(_.toDouble)
     )
 }

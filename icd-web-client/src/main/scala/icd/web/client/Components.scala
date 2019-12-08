@@ -399,7 +399,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     (btn, row)
   }
 
-  private def formatRate(rate: Double): String = if (rate == 0.0) "" else s"$rate Hz"
+  private def formatRate(maybeRate: Option[Double]) = {
+    import scalatags.JsDom.all._
+    val rate = maybeRate.getOrElse(EventModel.defaultMaxRate)
+    val el   = if (maybeRate.isEmpty) em(s"$rate Hz *") else span(s"$rate Hz")
+    el.render.outerHTML
+  }
 
   // Generates the HTML markup to display the component's publish information
   private def publishMarkup(compName: String, maybePublishes: Option[Publishes]) = {
@@ -409,14 +414,18 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     // Returns a table row displaying more details for the given event
     def makeEventDetailsRow(eventInfo: EventInfo) = {
       val eventModel = eventInfo.eventModel
-      val headings       = List("Max Rate", "Archive", "Archive Duration", "Bytes per Event", "Year Accumulation")
+      val totalArchiveSpacePerYear =
+        if (eventModel.totalArchiveSpacePerYear.isEmpty) ""
+        else if (eventModel.maybeMaxRate.isEmpty) em(eventModel.totalArchiveSpacePerYear).render.outerHTML
+        else span(eventModel.totalArchiveSpacePerYear).render.outerHTML
+      val headings = List("Max Rate", "Archive", "Archive Duration", "Bytes per Event", "Year Accumulation")
       val rowList = List(
         List(
-          formatRate(eventModel.maxRate),
+          formatRate(eventModel.maybeMaxRate),
           yesNo(eventModel.archive),
           eventModel.archiveDuration,
           eventModel.totalSizeInBytes.toString,
-          if (eventModel.maxRate == 0) "" else eventModel.totalArchiveSpacePerYear,
+          totalArchiveSpacePerYear
         )
       )
 
@@ -424,6 +433,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         if (eventModel.requirements.isEmpty) div()
         else p(strong("Requirements: "), eventModel.requirements.mkString(", ")),
         mkTable(headings, rowList),
+        if (eventModel.maybeMaxRate.isEmpty) span("* Value of maxRate missing from model file: Default value of 1 Hz assumed.")
+        else span(),
         attributeListMarkup("Attributes", eventModel.attributesList)
       )
     }
@@ -535,23 +546,26 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Returns a table row displaying more details for the given subscription
     def makeDetailsRow(si: DetailedSubscribeInfo) = {
-      val sInfo = si.subscribeModelInfo
+      val sInfo   = si.subscribeModelInfo
+      val maxRate = si.eventModel.flatMap(_.maybeMaxRate)
       val headings =
-        List("Subsystem", "Component", "Prefix.Name", "Required Rate", "Max Rate", "Publisher's Min Rate", "Publisher's Max Rate")
+        List("Subsystem", "Component", "Prefix.Name", "Max Rate", "Publisher's Max Rate")
       val rowList = List(
         List(
           sInfo.subsystem,
           sInfo.component,
           si.path,
-          formatRate(sInfo.requiredRate),
           formatRate(sInfo.maxRate),
-          formatRate(si.eventModel.map(_.minRate).getOrElse(0.0)),
-          formatRate(si.eventModel.map(_.maxRate).getOrElse(0.0))
+          formatRate(maxRate)
         )
       )
 
       val attrTable = si.eventModel.map(t => attributeListMarkup("Attributes", t.attributesList)).getOrElse(div())
-      div(mkTable(headings, rowList), attrTable)
+      div(
+        mkTable(headings, rowList),
+        if (maxRate.isEmpty) span("* Value of maxRate missing from model file: Default value of 1 Hz assumed.") else span(),
+        attrTable
+      )
     }
 
     def subscribeListMarkup(pubType: String, subscribeList: List[DetailedSubscribeInfo]) = {

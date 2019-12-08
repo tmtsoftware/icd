@@ -1,3 +1,5 @@
+var navbarExpandAll = false;
+
 $(document).ready(function () {
 
     // Make the sidebar resizable using jquery-ui resizable
@@ -27,7 +29,6 @@ $(document).ready(function () {
 
     // Implement Expand/Collapse toolbar button
     // (based on http://jsfiddle.net/KyleMit/f8ypa/)
-    var navbarExpandAll = false;
     $('#expand-init').click(function () {
         if (navbarExpandAll) {
             navbarExpandAll = false;

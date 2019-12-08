@@ -3,7 +3,7 @@ package csw.services.icd.db
 import java.io.{File, FileOutputStream}
 
 import csw.services.icd.IcdToPdf
-import csw.services.icd.db.ArchivedItemsReport.ArchiveInfo
+import csw.services.icd.db.ArchivedItemsReport._
 import csw.services.icd.html.IcdToHtml
 import icd.web.shared.IcdModels.{ComponentModel, EventModel}
 
@@ -14,12 +14,11 @@ object ArchivedItemsReport {
       prefix: String,
       eventType: String,
       name: String,
-      maxRate: Double,
+      maybeMaxRate: Option[Double],
       sizeInBytes: Int,
       yearlyAccumulation: String,
       description: String
   )
-
 }
 
 case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
@@ -45,7 +44,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
               c.prefix,
               eventType,
               e.name,
-              e.maxRate,
+              e.maybeMaxRate,
               e.totalSizeInBytes,
               e.totalArchiveSpacePerYear,
               e.description
@@ -98,14 +97,17 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
               for {
                 item <- getArchivedItems
               } yield {
+                val maxRate = item.maybeMaxRate.getOrElse(EventModel.defaultMaxRate)
                 tr(
                   td(p(item.component)),
                   td(p(raw(item.prefix.replace(".", ".<br/>")))),
                   td(p(item.eventType)),
                   td(p(item.name)),
-                  td(p(if (item.maxRate == 0) "" else item.maxRate.toString)),
+                  td(
+                    p(if (item.maybeMaxRate.isEmpty) em(maxRate.toString) else span(maxRate.toString))
+                  ),
                   td(p(item.sizeInBytes)),
-                  td(p(if (item.maxRate == 0) "" else item.yearlyAccumulation)),
+                  td(p(if (item.maybeMaxRate.isEmpty) em(item.yearlyAccumulation) else span(item.yearlyAccumulation))),
                   td(raw(firstParagraph(item.description)))
                 )
               }

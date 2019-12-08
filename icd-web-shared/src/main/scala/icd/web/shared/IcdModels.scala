@@ -347,7 +347,7 @@ object IcdModels {
       name: String,
       usage: String,
       requiredRate: Double,
-      maxRate: Double
+      maxRate: Option[Double]
   ) extends SubsystemComponentName
 
   /**
@@ -360,6 +360,11 @@ object IcdModels {
       modelVersion: String
   )
 
+  object EventModel {
+    // Use 1hz if maxRate is not defined and display the result in italics
+    val defaultMaxRate = 1.0
+  }
+
   /**
    * Models the event published by a component
    */
@@ -367,21 +372,18 @@ object IcdModels {
       name: String,
       description: String,
       requirements: List[String],
-      // Deprecated: Only used with schema-v1.0
-      minRate: Double,
-      // In Hz
-      maxRate: Double,
+      maybeMaxRate: Option[Double],
       archive: Boolean,
       archiveDuration: String,
-      // Deprecated: Only used with schema-v1.0
-      archiveRate: Double,
       attributesList: List[AttributeModel]
   ) extends NameDesc {
+    import EventModel._
+
     // Estimated size in bytes of this event
     lazy val totalSizeInBytes: Int = name.length + attributesList.map(_.totalSizeInBytes).sum
 
     // Estimated number of bytes to archive this event at the maxRate for a year
-    lazy val totalArchiveBytesPerYear: Long = math.round(totalSizeInBytes * maxRate * hzToCpy)
+    lazy val totalArchiveBytesPerYear: Long = math.round(totalSizeInBytes * maybeMaxRate.getOrElse(defaultMaxRate) * hzToCpy)
 
     // String describing estimated space required per year to archive this event (if archive is true)
     lazy val totalArchiveSpacePerYear: String = if (archive) bytesToString(totalArchiveBytesPerYear) else ""

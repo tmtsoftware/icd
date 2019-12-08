@@ -5,7 +5,7 @@ import icd.web.shared._
 import scalatags.Text
 import Headings.idFor
 import HtmlMarkup.yesNo
-import icd.web.shared.IcdModels.{AttributeModel, ComponentModel}
+import icd.web.shared.IcdModels.{AttributeModel, ComponentModel, EventModel}
 
 /**
  * Handles converting ICD API from GFM to HTML
@@ -345,7 +345,6 @@ object IcdToHtml {
     val subscriberInfo = span(strong("Subscriber: "), s"${component.subsystem}.$compName")
 
     def subscribeListMarkup(pubType: String, subscribeList: List[DetailedSubscribeInfo]): Text.TypedTag[String] = {
-      def formatRate(rate: Double): String = if (rate == 0.0) "" else s"$rate Hz"
 
       // Warn if no publisher found for subscibed item
       def getWarning(info: DetailedSubscribeInfo) = info.warning.map { msg =>
@@ -359,6 +358,7 @@ object IcdToHtml {
             val sInfo = si.subscribeModelInfo
             val publisherInfo =
               span(strong("Publisher: "), s"${si.subscribeModelInfo.subsystem}.${si.subscribeModelInfo.component}")
+            val maxRate = si.eventModel.flatMap(_.maybeMaxRate)
             div(cls := "nopagebreak")(
               nh.H4(s"${singlePubType(pubType)}: ${sInfo.name}", idFor(compName, "subscribes", pubType, sInfo.name)),
               p(publisherInfo, ", ", subscriberInfo),
@@ -371,9 +371,7 @@ object IcdToHtml {
                     th("Subsystem"),
                     th("Component"),
                     th("Prefix.Name"),
-                    th("Required Rate"),
                     th("Max Rate"),
-                    th("Publisher's Min Rate"),
                     th("Publisher's Max Rate")
                   )
                 ),
@@ -382,13 +380,12 @@ object IcdToHtml {
                     td(sInfo.subsystem),
                     td(sInfo.component),
                     td(si.path),
-                    td(formatRate(sInfo.requiredRate)),
-                    td(formatRate(sInfo.maxRate)),
-                    td(formatRate(si.eventModel.map(_.minRate).getOrElse(0.0))),
-                    td(formatRate(si.eventModel.map(_.maxRate).getOrElse(0.0)))
+                    td(HtmlMarkup.formatRate(sInfo.maxRate)),
+                    td(HtmlMarkup.formatRate(maxRate))
                   )
                 )
               ),
+              if (maxRate.isEmpty) span("* Value of maxRate missing from model file: Default value of 1 Hz assumed.") else span(),
               si.eventModel.map(t => attributeListMarkup(t.name, t.attributesList))
             )
           }
@@ -477,14 +474,19 @@ object IcdToHtml {
             val subscribers =
               eventInfo.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
             val subscriberInfo = span(strong(s"$subscriberStr: "), if (subscribers.isEmpty) "none" else subscribers)
-            val headings       = List("Max Rate", "Archive", "Archive Duration", "Bytes per Event", "Year Accumulation", "Required Rate")
+            val totalArchiveSpacePerYear =
+              if (eventModel.totalArchiveSpacePerYear.isEmpty) ""
+              else if (eventModel.maybeMaxRate.isEmpty) em(eventModel.totalArchiveSpacePerYear).render
+              else span(eventModel.totalArchiveSpacePerYear).render
+            val headings =
+              List("Max Rate", "Archive", "Archive Duration", "Bytes per Event", "Year Accumulation", "Required Rate")
             val rowList = List(
               List(
-                HtmlMarkup.formatRate(eventModel.maxRate),
+                HtmlMarkup.formatRate(eventModel.maybeMaxRate).render,
                 yesNo(eventModel.archive),
                 eventModel.archiveDuration,
                 eventModel.totalSizeInBytes.toString,
-                if (eventModel.maxRate == 0) "" else eventModel.totalArchiveSpacePerYear,
+                totalArchiveSpacePerYear,
                 eventInfo.subscribers
                   .map(
                     s => // Add required rate for subscribers that set it

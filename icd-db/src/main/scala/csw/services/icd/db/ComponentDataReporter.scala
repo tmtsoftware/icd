@@ -6,6 +6,7 @@ import collection.immutable.Set
 import scala.util.Try
 
 // XXX TODO FIXME (use of typeStr vs. maybeType?)
+// XXX TODO FIXME: Make sure this produces the same results as the ArchivedItemsReport (Or remove this class?)
 object ComponentDataReporter {
   def printAllUsedUnits(db: IcdDb): Unit = {
     var units      = Set[String]()
@@ -68,23 +69,14 @@ object ComponentDataReporter {
   }
 
   def listEventData(items: List[EventModel]): Double = {
-    val DEFAULT_RATE  = 0.1 // TODO move somewhere
     var totalDataRate = 0.0
     items.foreach { item =>
+      val maxRate = item.maybeMaxRate.getOrElse(EventModel.defaultMaxRate)
       println(
-        s"Item Name: ${item.name}, min rate = ${item.minRate}, max rate=${item.maxRate}, archiveRate=${item.archiveRate}, archive=${item.archive}"
+        s"Item Name: ${item.name}, max rate=$maxRate, archive=${item.archive}"
       )
       if (item.archive) {
-        val rate = if (item.archiveRate > 0.0) {
-          item.archiveRate
-        } else if (item.maxRate > 0.0) {
-          item.maxRate
-        } else if (item.minRate > 0.0) {
-          item.minRate
-        } else {
-          DEFAULT_RATE
-        }
-        println(s"Item is archived at a rate of $rate Hz")
+        println(s"Item is archived at a rate of $maxRate Hz")
         var itemData = 8 // 8-bytes for timestamp
         item.attributesList.foreach { att =>
           print(s"-- Attribute ${att.name}: type=${att.typeStr}")
@@ -107,7 +99,7 @@ object ComponentDataReporter {
             }
           }
         }
-        val dataRate = itemData * rate * 3600.0 / 1000000.0
+        val dataRate = itemData * maxRate * 3600.0 / 1000000.0
         if (itemData > 0) {
           totalDataRate += dataRate
           println(s"Total size of event: $itemData bytes.  data rate: $dataRate MB/hour")
