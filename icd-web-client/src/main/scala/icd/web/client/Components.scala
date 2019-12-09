@@ -401,8 +401,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   private def formatRate(maybeRate: Option[Double]) = {
     import scalatags.JsDom.all._
-    val rate = maybeRate.getOrElse(EventModel.defaultMaxRate)
-    val el   = if (maybeRate.isEmpty) em(s"$rate Hz *") else span(s"$rate Hz")
+    val (maxRate, defaultMaxRateUsed) = EventModel.getMaxRate(maybeRate)
+    val el   = if (defaultMaxRateUsed) em(s"$maxRate Hz *") else span(s"$maxRate Hz")
     el.render.outerHTML
   }
 

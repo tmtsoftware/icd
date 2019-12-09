@@ -1,7 +1,5 @@
 package icd.web.shared
 
-import java.util.Locale
-
 /**
  * Holds the set of models associated with the set of standard ICD files
  * (the files found in each directory of an ICD definition. Each file is optional).
@@ -28,6 +26,9 @@ object IcdModels {
 
   // Used in case no array dimensions were specified
   val defaultArrayDims = List(4)
+
+  // Can't know string size. Make a guess at the average size...
+  val defaultStringSize = 80
 
   // Size in bytes used when no type was found
   val defaultTypeSize = 4
@@ -56,7 +57,7 @@ object IcdModels {
   /**
    * Convert a quantity in bytes to a human-readable string such as "4.0 MB".
    */
-  private def bytesToString(size: Long): String = {
+  def bytesToString(size: Long): String = {
     val TB = 1L << 40
     val GB = 1L << 30
     val MB = 1L << 20
@@ -156,8 +157,8 @@ object IcdModels {
       maybeArrayType: Option[String],
       maybeDimensions: Option[List[Int]],
       units: String,
-      maxItems: Option[String],
-      minItems: Option[String],
+      maxItems: Option[Int],
+      minItems: Option[Int],
       minimum: Option[String],
       maximum: Option[String],
       exclusiveMinimum: Boolean,
@@ -172,14 +173,14 @@ object IcdModels {
       typeName match {
         case "array" =>
           // Use the given array dimensions, or guess if none given (may not be known ahead of time?)
-          maybeDimensions.getOrElse(defaultArrayDims).product * maybeArrayType.map(getTypeSize).getOrElse(defaultTypeSize)
+          val d = maxItems.map(List(_)).getOrElse(defaultArrayDims)
+          maybeDimensions.getOrElse(d).product * maybeArrayType.map(getTypeSize).getOrElse(defaultTypeSize)
         case "struct" => attributesList.map(_.totalSizeInBytes).sum
         // Assume boolean encoded as 1/0 byte?
         case "boolean" => 1
         case "integer" => 4
         case "number"  => 8
-        // Can't know string size. Make a guess at the average size...
-        case "string"  => 16
+        case "string"  => defaultStringSize
         case "byte"    => 1
         case "short"   => 2
         case "long"    => 4
@@ -363,6 +364,12 @@ object IcdModels {
   object EventModel {
     // Use 1hz if maxRate is not defined and display the result in italics
     val defaultMaxRate = 1.0
+
+    // Returns a pair of (maxRate, defaultUsed), where defaultUsed is true if maxRate is None or 0
+    def getMaxRate(rate: Option[Double]): (Double, Boolean) = {
+      val v = rate.getOrElse(defaultMaxRate)
+      if (rate.isEmpty || v == 0) (defaultMaxRate, true) else (v, false)
+    }
   }
 
   /**
@@ -379,11 +386,17 @@ object IcdModels {
   ) extends NameDesc {
     import EventModel._
 
+    // Estimate of overhead size for any csw event (without the paramset)
+    def eventOverhead: Int = 100 + name.length
+
     // Estimated size in bytes of this event
-    lazy val totalSizeInBytes: Int = name.length + attributesList.map(_.totalSizeInBytes).sum
+    lazy val totalSizeInBytes: Int = eventOverhead + attributesList.map(_.totalSizeInBytes).sum
 
     // Estimated number of bytes to archive this event at the maxRate for a year
-    lazy val totalArchiveBytesPerYear: Long = math.round(totalSizeInBytes * maybeMaxRate.getOrElse(defaultMaxRate) * hzToCpy)
+    lazy val totalArchiveBytesPerYear: Long = {
+      val (maxRate, _) = getMaxRate(maybeMaxRate)
+      math.round(totalSizeInBytes * maxRate * hzToCpy)
+    }
 
     // String describing estimated space required per year to archive this event (if archive is true)
     lazy val totalArchiveSpacePerYear: String = if (archive) bytesToString(totalArchiveBytesPerYear) else ""

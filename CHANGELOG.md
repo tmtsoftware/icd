@@ -8,7 +8,9 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - Added *total event size* and *yearly accumulation* to the display for archived events (also added to the Archived Items report produced by icd-db).
-   Note that for some types, such as strings, the sizes are only guesses, since the string length is not known ahead of time. Also, the yearly accumulation is only displayed if `maxRate` is set (see below).
+   Note that for some types, such as strings, the sizes are only guesses, since the string length is not known ahead of time. 
+   If `maxRate` is zero or not defined, 1 Hz is assumed.
+   Note also that the actual space required to archive events may be much less, due to the storage format (CBOR), compression, etc.
 
 ### Removed
 

@@ -87,7 +87,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
                 th("Prefix"),
                 th("Type"),
                 th("Name"),
-                th("Max", br, "Rate"),
+                th("Max", br, "Rate Hz"),
                 th("Size", br, "Bytes"),
                 th("Yearly", br, "Accum."),
                 th("Description")
@@ -97,22 +97,23 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
               for {
                 item <- getArchivedItems
               } yield {
-                val maxRate = item.maybeMaxRate.getOrElse(EventModel.defaultMaxRate)
+                val (maxRate, defaultMaxRateUsed) = EventModel.getMaxRate(item.maybeMaxRate)
                 tr(
                   td(p(item.component)),
                   td(p(raw(item.prefix.replace(".", ".<br/>")))),
                   td(p(item.eventType)),
                   td(p(item.name)),
                   td(
-                    p(if (item.maybeMaxRate.isEmpty) em(maxRate.toString) else span(maxRate.toString))
+                    p(if (defaultMaxRateUsed) em(maxRate.toString + "*") else span(maxRate.toString))
                   ),
                   td(p(item.sizeInBytes)),
-                  td(p(if (item.maybeMaxRate.isEmpty) em(item.yearlyAccumulation) else span(item.yearlyAccumulation))),
+                  td(p(if (defaultMaxRateUsed) em(item.yearlyAccumulation + "*") else span(item.yearlyAccumulation))),
                   td(raw(firstParagraph(item.description)))
                 )
               }
             )
-          )
+          ),
+          span("* Assumes 1 Hz if maxRate is not specified or is 0.")
         )
       )
     )

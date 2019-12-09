@@ -1,12 +1,10 @@
 package csw.services.icd.db
 
+import icd.web.shared.IcdModels
 import icd.web.shared.IcdModels.EventModel
 
 import collection.immutable.Set
-import scala.util.Try
 
-// XXX TODO FIXME (use of typeStr vs. maybeType?)
-// XXX TODO FIXME: Make sure this produces the same results as the ArchivedItemsReport (Or remove this class?)
 object ComponentDataReporter {
   def printAllUsedUnits(db: IcdDb): Unit = {
     var units      = Set[String]()
@@ -46,99 +44,48 @@ object ComponentDataReporter {
   }
 
   def listData(db: IcdDb, subsystem: String): Unit = {
-    val publishInfo            = db.query.getPublishInfo(subsystem)
-    var componentTotalDataRate = 0.0
+    val publishInfo = db.query.getPublishInfo(subsystem)
     publishInfo.foreach { componentPublishInfo =>
       println(s" ----  ${componentPublishInfo.componentName} ----- ")
-      componentTotalDataRate = 0.0
       val componentModel = db.query.getComponentModel(subsystem, componentPublishInfo.componentName)
-      componentModel.foreach { cm =>
-        db.query.getPublishModel(cm).foreach { cpm =>
-          if (cpm.eventList.nonEmpty) {
+      val totals = componentModel.flatMap { cm =>
+        db.query.getPublishModel(cm).map { cpm =>
+          val totalEventData = if (cpm.eventList.nonEmpty) {
             println("--- Event Data")
-            componentTotalDataRate += listEventData(cpm.eventList)
-          }
-          if (cpm.observeEventList.nonEmpty) {
+            listEventData(cpm.eventList)
+          } else 0
+          val totalObserveData = if (cpm.observeEventList.nonEmpty) {
             println("--- Observe Event Data")
-            componentTotalDataRate += listEventData(cpm.observeEventList)
-          }
+            listEventData(cpm.observeEventList)
+          } else 0
+          (totalEventData, totalObserveData)
         }
       }
-      println(s"==== Total archived data rate for ${componentPublishInfo.componentName}: $componentTotalDataRate MB/hour")
-    }
-  }
+      val pair          = totals.unzip
+      val totalEvents   = pair._1.sum
+      val totalObserves = pair._2.sum
+      if (totalEvents != 0 && totalObserves != 0) {
+        val name     = componentPublishInfo.componentName
+        val totalStr = IcdModels.bytesToString(totalEvents + totalObserves)
+        println(s"==== Total archived data per year for $name: $totalStr")
 
-  def listEventData(items: List[EventModel]): Double = {
-    var totalDataRate = 0.0
-    items.foreach { item =>
-      val maxRate = item.maybeMaxRate.getOrElse(EventModel.defaultMaxRate)
-      println(
-        s"Item Name: ${item.name}, max rate=$maxRate, archive=${item.archive}"
-      )
-      if (item.archive) {
-        println(s"Item is archived at a rate of $maxRate Hz")
-        var itemData = 8 // 8-bytes for timestamp
-        item.attributesList.foreach { att =>
-          print(s"-- Attribute ${att.name}: type=${att.typeStr}")
-          if (att.typeStr.startsWith("array of ")) {
-            // if dimensions not specified, use maxItems.  If that is not specified, use 1
-            val numItems = Try(att.maxItems.getOrElse("1").toInt).getOrElse(1)
-            getSizeOfType(att.typeStr.drop(9)) match {
-              case Some(s) =>
-                val sz = s * numItems
-                println(s", size=$sz byte(s)")
-                itemData += sz
-              case None => println(", cannot determine event size.  Skipping")
-            }
-          } else {
-            getSizeOfType(att.typeStr) match {
-              case Some(s) =>
-                println(s", size=$s byte(s)")
-                itemData += s
-              case None => println(", cannot determine event size.  Skipping")
-            }
-          }
-        }
-        val dataRate = itemData * maxRate * 3600.0 / 1000000.0
-        if (itemData > 0) {
-          totalDataRate += dataRate
-          println(s"Total size of event: $itemData bytes.  data rate: $dataRate MB/hour")
-        }
       }
     }
-    println(s"Total data rate for this component model: $totalDataRate")
-    totalDataRate
   }
 
-  def getSizeOfType(dtype: String): Option[Int] = dtype match {
-    case s if s.startsWith("boolean") => Some(1)
-    case s if s.startsWith("byte")    => Some(1)
-    case s if s.startsWith("short")   => Some(2)
-    case s if s.startsWith("enum")    => Some(4)
-    case s if s.startsWith("integer") => Some(4)
-    case s if s.startsWith("float")   => Some(4)
-    case s if s.startsWith("long")    => Some(8)
-    case s if s.startsWith("double")  => Some(8)
-    case s if s.startsWith("string")  => Some(80)
-    case s if s.startsWith("array[") =>
-      var s1          = s.drop(6)
-      var numElements = 1
-      var commaLoc    = s1.indexOf(',')
-      val endLoc      = s1.indexOf(']')
-      if (commaLoc < endLoc) {
-        while (commaLoc != -1) {
-          val s2 = s1.take(commaLoc)
-          numElements *= s2.toInt
-          s1 = s1.drop(commaLoc + 1)
-          commaLoc = s1.indexOf(',')
-        }
-      }
-      val newEndLoc = s1.indexOf(']')
-      val s3        = s1.substring(0, newEndLoc)
-      numElements *= s3.toInt
-      s1 = s1.drop(newEndLoc + 5)
-      getSizeOfType(s1).map(_ * numElements)
-    case _ => None
+  def listEventData(events: List[EventModel]): Long = {
+    val totals = events.map { event =>
+      val (maxRate, defaultMaxRateUsed) = EventModel.getMaxRate(event.maybeMaxRate)
+      println(s"Item Name: ${event.name}, max rate=$maxRate, archive=${event.archive}")
+      if (event.archive) {
+        val s = if (defaultMaxRateUsed) " (by default since not specified)" else ""
+        println(s"Item is archived at a rate of $maxRate Hz$s")
+        println(s"Total size of event: ${event.totalSizeInBytes} bytes. Yearly accumulation: ${event.totalArchiveSpacePerYear}")
+        event.totalArchiveBytesPerYear
+      } else 0
+    }
+    val sum = totals.sum
+    println(s"Total data accumulation per year for this component model: ${IcdModels.bytesToString(sum)}")
+    sum
   }
-
 }

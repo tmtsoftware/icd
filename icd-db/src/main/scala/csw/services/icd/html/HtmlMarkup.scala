@@ -74,8 +74,8 @@ object HtmlMarkup extends Extensions {
   private val os = new OutputSettings().syntax(OutputSettings.Syntax.xml)
 
   def formatRate(maybeRate: Option[Double]): TypedTag[String] = {
-    val rate = maybeRate.getOrElse(EventModel.defaultMaxRate)
-    if (maybeRate.isEmpty) em(s"$rate Hz *") else span(s"$rate Hz")
+    val (maxRate, defaultMaxRateUsed) = EventModel.getMaxRate(maybeRate)
+    if (defaultMaxRateUsed) em(s"$maxRate Hz *") else span(s"$maxRate Hz")
   }
 
   def formatRate(compName: String, rate: Double): String = if (rate == 0) "" else s"<strong>$compName:</strong> $rate Hz"
