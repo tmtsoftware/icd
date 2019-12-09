@@ -433,7 +433,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         if (eventModel.requirements.isEmpty) div()
         else p(strong("Requirements: "), eventModel.requirements.mkString(", ")),
         mkTable(headings, rowList),
-        if (eventModel.maybeMaxRate.isEmpty) span("* Value of maxRate missing from model file: Default value of 1 Hz assumed.")
+        if (eventModel.maybeMaxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.")
         else span(),
         attributeListMarkup("Attributes", eventModel.attributesList)
       )
@@ -563,7 +563,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       val attrTable = si.eventModel.map(t => attributeListMarkup("Attributes", t.attributesList)).getOrElse(div())
       div(
         mkTable(headings, rowList),
-        if (maxRate.isEmpty) span("* Value of maxRate missing from model file: Default value of 1 Hz assumed.") else span(),
+        if (maxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.") else span(),
         attrTable
       )
     }

@@ -385,7 +385,7 @@ object IcdToHtml {
                   )
                 )
               ),
-              if (maxRate.isEmpty) span("* Value of maxRate missing from model file: Default value of 1 Hz assumed.") else span(),
+              if (maxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.") else span(),
               si.eventModel.map(t => attributeListMarkup(t.name, t.attributesList))
             )
           }

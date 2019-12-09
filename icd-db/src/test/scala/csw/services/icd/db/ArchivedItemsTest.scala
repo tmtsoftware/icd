@@ -36,6 +36,7 @@ class ArchivedItemsTest extends FunSuite {
         info.publishes.get.eventList.foreach { pubInfo =>
         val m = pubInfo.eventModel
           println(s"XXX Event ${m.name} size = ${m.totalSizeInBytes}, archive = ${m.archive},  yearly: ${m.totalArchiveSpacePerYear}")
+          // TODO verify sizes...
         }
       }
   }
