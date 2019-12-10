@@ -208,7 +208,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       // For ICDs, add the descriptions of the two subsystems at top
       if (isIcd) {
         val targetSubsystemInfo    = maybeTargetSubsystemInfo.get
-        val targetSubsystemVersion = maybeTargetSubsystem.map(_.maybeVersion).getOrElse(TitleInfo.unpublished)
+        val targetSubsystemVersion = maybeTargetSubsystem.flatMap(_.maybeVersion).getOrElse(TitleInfo.unpublished)
         mainContent.appendElement(
           div(
             Styles.component,

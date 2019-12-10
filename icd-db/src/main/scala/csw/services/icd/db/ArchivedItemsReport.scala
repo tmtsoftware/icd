@@ -6,19 +6,23 @@ import csw.services.icd.IcdToPdf
 import csw.services.icd.db.ArchivedItemsReport._
 import csw.services.icd.html.IcdToHtml
 import icd.web.shared.IcdModels.{ComponentModel, EventModel}
+import scalatags.Text
 
 object ArchivedItemsReport {
 
   case class ArchiveInfo(
+      subsystem: String,
       component: String,
       prefix: String,
       eventType: String,
-      name: String,
-      maybeMaxRate: Option[Double],
-      sizeInBytes: Int,
-      yearlyAccumulation: String,
-      description: String
-  )
+      eventModel: EventModel
+  ) {
+    val name: String                 = eventModel.name
+    val maybeMaxRate: Option[Double] = eventModel.maybeMaxRate
+    val sizeInBytes: Int             = eventModel.totalSizeInBytes
+    val yearlyAccumulation: String   = eventModel.totalArchiveSpacePerYear
+    val description: String          = eventModel.description
+  }
 }
 
 case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
@@ -37,19 +41,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
       val comp = c.component.replace("-", "-\n") // save horizontal space
       list
         .filter(_.archive)
-        .map(
-          e =>
-            ArchiveInfo(
-              comp,
-              c.prefix,
-              eventType,
-              e.name,
-              e.maybeMaxRate,
-              e.totalSizeInBytes,
-              e.totalArchiveSpacePerYear,
-              e.description
-            )
-        )
+        .map(e => ArchiveInfo(c.subsystem, comp, c.prefix, eventType, e))
     }
 
     val result = for {
@@ -63,6 +55,29 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
     result.flatten
   }
 
+  private def totalsTable(archivedItems: List[ArchiveInfo]): Text.TypedTag[String] = {
+    import scalatags.Text.all._
+    val subsystems = archivedItems.map(_.subsystem).distinct
+    table(
+      thead(
+        tr(
+          th("Subsystem"),
+          th("Yearly", br, "Accum.")
+        )
+      ),
+      tbody(
+        for {
+          subsystem <- subsystems
+        } yield {
+          tr(
+            td(p(subsystem)),
+            td(p(EventModel.getTotalArchiveSpace(archivedItems.filter(_.subsystem == subsystem).map(_.eventModel))))
+          )
+        }
+      )
+    )
+  }
+
   // Generates the HTML for the report
   private def makeReport(): String = {
     import scalatags.Text.all._
@@ -72,6 +87,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
       if (i == -1) s else s.substring(0, i + 4)
     }
 
+    val archivedItems: List[ArchiveInfo] = getArchivedItems
     val markup = html(
       head(
         scalatags.Text.tags2.title("Archived Items"),
@@ -95,7 +111,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
             ),
             tbody(
               for {
-                item <- getArchivedItems
+                item <- archivedItems
               } yield {
                 val (maxRate, defaultMaxRateUsed) = EventModel.getMaxRate(item.maybeMaxRate)
                 tr(
@@ -111,9 +127,15 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
                   td(raw(firstParagraph(item.description)))
                 )
               }
-            )
+            )          strong(p(s"Total archive space required for"))
+
           ),
-          span("* Assumes 1 Hz if maxRate is not specified or is 0.")
+          span("* Assumes 1 Hz if maxRate is not specified or is 0."),
+          h3("Totals for Subsystems"),
+          totalsTable(archivedItems),
+          if (maybeSubsystem.isEmpty)
+            strong(p(s"Total archive space required for one year: ${EventModel.getTotalArchiveSpace(archivedItems.map(_.eventModel))}"))
+          else span()
         )
       )
     )
