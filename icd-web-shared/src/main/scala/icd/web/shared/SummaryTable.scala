@@ -3,7 +3,7 @@ package icd.web.shared
 import scalatags.Text
 import scalatags.Text.all._
 import icd.web.shared.ComponentInfo.{Alarms, CurrentStates, Events, ObserveEvents}
-import icd.web.shared.IcdModels.ComponentModel
+import icd.web.shared.IcdModels.{ComponentModel, EventModel}
 import Headings.idFor
 
 //noinspection DuplicatedCode
@@ -57,6 +57,8 @@ object SummaryTable {
           span(s"${subscriber.subsystem}.${subscriber.component}", " ")
       }
 
+      val showYearlyAccum = !isIcd && itemType.endsWith("Events")
+
       if (list.isEmpty) div()
       else {
         div(
@@ -68,6 +70,7 @@ object SummaryTable {
                 th(subscribers),
                 th("Prefix"),
                 th("Name"),
+                if (showYearlyAccum) th("Yearly", br, "Accum.") else span(),
                 th("Description")
               )
             ),
@@ -80,11 +83,20 @@ object SummaryTable {
                   td(p(info.subscribers.map(linkToSubscriber))),
                   td(p(a(href := s"#${info.publisher.component}")(info.publisher.prefix))),
                   td(p(a(href := s"#${idFor(info.publisher.component, action, itemType, info.item.name)}")(info.item.name))),
+                  if (showYearlyAccum) {
+                    val yearlyAccum =
+                      if (itemType.endsWith("Events")) info.item.asInstanceOf[EventModel].totalArchiveSpacePerYear else ""
+                    td(yearlyAccum)
+                  } else span(),
                   td(raw(firstParagraph(info.item.description)))
                 )
               }
             )
-          )
+          ),
+          if (showYearlyAccum) {
+            val sumTotal = EventModel.getTotalArchiveSpace(list.map(_.item.asInstanceOf[EventModel]))
+            p(s"Total yearly accumulation of archived data for $itemType $heading $sourceStr: $sumTotal")
+          } else span()
         )
       }
     }

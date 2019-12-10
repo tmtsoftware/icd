@@ -370,6 +370,11 @@ object IcdModels {
       val v = rate.getOrElse(defaultMaxRate)
       if (rate.isEmpty || v == 0) (defaultMaxRate, true) else (v, false)
     }
+
+    // Returns a string describing the total archive space for a year for all of the given event models
+    def getTotalArchiveSpace(models: List[EventModel]): String = {
+      bytesToString(models.map(_.totalArchiveBytesPerYear).sum)
+    }
   }
 
   /**
