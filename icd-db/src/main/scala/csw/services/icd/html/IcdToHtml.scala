@@ -161,6 +161,7 @@ object IcdToHtml {
   // Generates the HTML markup to display the component information
   private def markupForComponent(info: ComponentInfo, nh: NumberedHeadings, forApi: Boolean): Text.TypedTag[String] = {
     import scalatags.Text.all._
+
     div(cls := "pagebreakBefore")(
       nh.H2(info.componentModel.title, info.componentModel.component),
       componentInfoTableMarkup(info),
@@ -464,7 +465,6 @@ object IcdToHtml {
     val compName      = component.component
     val subscriberStr = if (forApi) "Subscribers" else "Subscriber"
     val publisherInfo = span(strong("Publisher: "), s"${component.subsystem}.$compName")
-
     def publishEventListMarkup(pubType: String, eventList: List[EventInfo]): Text.TypedTag[String] = {
       if (eventList.isEmpty) div()
       else {
@@ -563,6 +563,21 @@ object IcdToHtml {
       }
     }
 
+    def totalArchiveSpace(): Text.TypedTag[String] = {
+      val totalYearlyArchiveSpace = {
+        val eventList = maybePublishes.toList.flatMap(p => (p.eventList ++ p.observeEventList).map(_.eventModel))
+        EventModel.getTotalArchiveSpace(eventList)
+      }
+      if (totalYearlyArchiveSpace.nonEmpty)
+        strong(
+          p(
+            s"Total yearly space required for archiving events published by ${component.subsystem}.$compName: $totalYearlyArchiveSpace"
+          )
+        )
+      else span()
+
+    }
+
     maybePublishes match {
       case None => div()
       case Some(publishes) =>
@@ -573,6 +588,8 @@ object IcdToHtml {
             hr,
             publishEventListMarkup("Events", publishes.eventList),
             publishEventListMarkup("Observe Events", publishes.observeEventList),
+            if (forApi) totalArchiveSpace() else span(),
+            publishEventListMarkup("Current States", publishes.currentStateList),
             publishAlarmListMarkup(publishes.alarmList)
           )
         } else div()

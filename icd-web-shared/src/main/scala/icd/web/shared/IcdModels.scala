@@ -58,25 +58,28 @@ object IcdModels {
    * Convert a quantity in bytes to a human-readable string such as "4.0 MB".
    */
   def bytesToString(size: Long): String = {
-    val TB = 1L << 40
-    val GB = 1L << 30
-    val MB = 1L << 20
-    val KB = 1L << 10
+    if (size == 0L) ""
+    else {
+      val TB = 1L << 40
+      val GB = 1L << 30
+      val MB = 1L << 20
+      val KB = 1L << 10
 
-    val (value, unit) = {
-      if (size >= TB) {
-        (size.asInstanceOf[Double] / TB, "TB")
-      } else if (size >= GB) {
-        (size.asInstanceOf[Double] / GB, "GB")
-      } else if (size >= MB) {
-        (size.asInstanceOf[Double] / MB, "MB")
-      } else if (size >= KB) {
-        (size.asInstanceOf[Double] / KB, "KB")
-      } else {
-        (size.asInstanceOf[Double], "B")
+      val (value, unit) = {
+        if (size >= TB) {
+          (size.asInstanceOf[Double] / TB, "TB")
+        } else if (size >= GB) {
+          (size.asInstanceOf[Double] / GB, "GB")
+        } else if (size >= MB) {
+          (size.asInstanceOf[Double] / MB, "MB")
+        } else if (size >= KB) {
+          (size.asInstanceOf[Double] / KB, "KB")
+        } else {
+          (size.asInstanceOf[Double], "B")
+        }
       }
+      "%.1f %s".format(value, unit)
     }
-    "%.1f %s".format(value, unit)
   }
 
   /**
@@ -373,7 +376,7 @@ object IcdModels {
 
     // Returns a string describing the total archive space for a year for all of the given event models
     def getTotalArchiveSpace(models: List[EventModel]): String = {
-      bytesToString(models.map(_.totalArchiveBytesPerYear).sum)
+      bytesToString(models.filter(_.archive).map(_.totalArchiveBytesPerYear).sum)
     }
   }
 

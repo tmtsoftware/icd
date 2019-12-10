@@ -59,6 +59,13 @@ object SummaryTable {
 
       val showYearlyAccum = !isIcd && itemType.endsWith("Events")
 
+      def totalArchiveSpace(): Text.TypedTag[String] = {
+        val sumTotal = EventModel.getTotalArchiveSpace(list.map(_.item.asInstanceOf[EventModel]))
+        if (sumTotal.nonEmpty)
+          strong(p(s"Total yearly space required for archiving events published by $sourceStr: $sumTotal"))
+        else span()
+      }
+
       if (list.isEmpty) div()
       else {
         div(
@@ -93,10 +100,7 @@ object SummaryTable {
               }
             )
           ),
-          if (showYearlyAccum) {
-            val sumTotal = EventModel.getTotalArchiveSpace(list.map(_.item.asInstanceOf[EventModel]))
-            p(s"Total yearly accumulation of archived data for $itemType $heading $sourceStr: $sumTotal")
-          } else span()
+          if (showYearlyAccum) totalArchiveSpace() else span()
         )
       }
     }

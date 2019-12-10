@@ -12,7 +12,7 @@ import org.scalajs.dom.raw.{HTMLButtonElement, HTMLDivElement, HTMLElement, HTML
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import Components._
-import org.scalajs.dom.html.{Anchor, Div}
+import org.scalajs.dom.html.{Anchor, Div, Element}
 import play.api.libs.json._
 
 import scala.util.Failure
@@ -99,7 +99,7 @@ object Components {
  * @param mainContent used to display information about selected components
  * @param listener    called when the user clicks on a component link in the (subscriber, publisher, etc)
  */
-//noinspection DuplicatedCode
+//noinspection DuplicatedCode,SameParameterValue
 case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   import Components._
@@ -402,14 +402,16 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def formatRate(maybeRate: Option[Double]) = {
     import scalatags.JsDom.all._
     val (maxRate, defaultMaxRateUsed) = EventModel.getMaxRate(maybeRate)
-    val el   = if (defaultMaxRateUsed) em(s"$maxRate Hz *") else span(s"$maxRate Hz")
+    val el                            = if (defaultMaxRateUsed) em(s"$maxRate Hz *") else span(s"$maxRate Hz")
     el.render.outerHTML
   }
 
   // Generates the HTML markup to display the component's publish information
-  private def publishMarkup(compName: String, maybePublishes: Option[Publishes]) = {
+  private def publishMarkup(component: ComponentModel, maybePublishes: Option[Publishes], forApi: Boolean) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
+
+    val compName = component.component
 
     // Returns a table row displaying more details for the given event
     def makeEventDetailsRow(eventInfo: EventInfo) = {
@@ -523,6 +525,20 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         )
     }
 
+    def totalArchiveSpace(): TypedTag[Element] = {
+      val totalYearlyArchiveSpace = {
+        val eventList = maybePublishes.toList.flatMap(p => (p.eventList ++ p.observeEventList).map(_.eventModel))
+        EventModel.getTotalArchiveSpace(eventList)
+      }
+      if (totalYearlyArchiveSpace.nonEmpty)
+        strong(
+          p(
+            s"Total yearly space required for archiving events published by ${component.subsystem}.$compName: $totalYearlyArchiveSpace"
+          )
+        )
+      else span()
+    }
+
     maybePublishes match {
       case None => div()
       case Some(publishes) =>
@@ -532,6 +548,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             raw(publishes.description),
             publishEventListMarkup("Events", publishes.eventList),
             publishEventListMarkup("Observe Events", publishes.observeEventList),
+            if (forApi) totalArchiveSpace() else span(),
             publishEventListMarkup("Current States", publishes.currentStateList),
             publishAlarmListMarkup(publishes.alarmList)
           )
@@ -540,10 +557,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Generates the HTML markup to display the component's subscribe information
-  private def subscribeMarkup(compName: String, maybeSubscribes: Option[Subscribes]) = {
+  private def subscribeMarkup(component: ComponentModel, maybeSubscribes: Option[Subscribes]) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
+    val compName = component.component
     // Returns a table row displaying more details for the given subscription
     def makeDetailsRow(si: DetailedSubscribeInfo) = {
       val sInfo   = si.subscribeModelInfo
@@ -757,8 +775,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Generates the markup for the commands section (description plus received and sent)
-  private def commandsMarkup(compName: String, maybeCommands: Option[Commands], forApi: Boolean) = {
+  private def commandsMarkup(component: ComponentModel, maybeCommands: Option[Commands], forApi: Boolean) = {
     import scalatags.JsDom.all._
+    val compName = component.component
     maybeCommands match {
       case None => div()
       case Some(commands) =>
@@ -814,9 +833,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       h2(info.componentModel.component),
       componentInfoTableMarkup(info),
       raw(info.componentModel.description),
-      publishMarkup(info.componentModel.component, info.publishes),
-      subscribeMarkup(info.componentModel.component, info.subscribes),
-      commandsMarkup(info.componentModel.component, info.commands, forApi)
+      publishMarkup(info.componentModel, info.publishes, forApi),
+      subscribeMarkup(info.componentModel, info.subscribes),
+      commandsMarkup(info.componentModel, info.commands, forApi)
     )
   }
 
