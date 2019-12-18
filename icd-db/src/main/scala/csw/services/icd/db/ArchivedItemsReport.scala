@@ -127,8 +127,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
                   td(raw(firstParagraph(item.description)))
                 )
               }
-            )          strong(p(s"Total archive space required for"))
-
+            )
           ),
           span("* Assumes 1 Hz if maxRate is not specified or is 0."),
           h3("Totals for Subsystems"),
