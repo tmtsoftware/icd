@@ -10,7 +10,6 @@ import diffson.playJson._
 import diffson.lcs._
 import diffson.jsonpatch._
 import diffson.jsonpatch.lcsdiff.remembering._
-import com.typesafe.config.ConfigFactory
 import csw.services.icd.db.parser.{ComponentModelBsonParser, PublishModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import reactivemongo.api.{Cursor, WriteConcern}
@@ -57,16 +56,7 @@ object IcdVersionManager {
   val dateKey             = "date"
   val commentKey          = "comment"
 
-  val queryAny = BSONDocument()
-
-  /**
-   * A list of all known TMT subsystems (read from the same resources file used in validating the ICDs)
-   */
-  val allSubsystems: List[String] = {
-    import scala.jdk.CollectionConverters._
-    val config = ConfigFactory.parseResources("2.0/subsystem.conf")
-    config.getStringList("enum").asScala.toList
-  }
+  val queryAny: BSONDocument = BSONDocument()
 
   /**
    * Holds a collection path for a component or subsystem and it's version
@@ -135,7 +125,7 @@ object IcdVersionManager {
    * Wraps a subsystem name and optional version
    */
   case class SubsystemAndVersion(subsystem: String, maybeVersion: Option[String]) extends Ordered[SubsystemAndVersion] {
-    if (!allSubsystems.contains(subsystem)) {
+    if (!Subsystems.allSubsystems.contains(subsystem)) {
       throw new IllegalArgumentException(s"Unknown subsystem: $subsystem")
     }
 
@@ -148,7 +138,7 @@ object IcdVersionManager {
 
     // Used to sort subsystems alphabetically, to avoid duplicates, since A->B should be the same as B->A
     override def compare(that: SubsystemAndVersion): Int = {
-      subsystem.compare(that.subsystem)
+      Subsystems.compare(subsystem, that.subsystem)
     }
   }
 
@@ -661,9 +651,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * @param target    the ICD's target subsystem
    */
   def getIcdVersions(subsystem: String, target: String): List[IcdVersionInfo] = {
-    // ICDs are stored with the two subsystems sorted by name
     val subsystems = List(subsystem, target)
-    val sorted     = subsystems.sorted
+    val sorted     = Subsystems.sorted(subsystems)
     val s          = sorted.head
     val t          = sorted.tail.head
 

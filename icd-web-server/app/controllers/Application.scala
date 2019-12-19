@@ -262,7 +262,7 @@ class Application @Inject()(
   def getIcdVersions(subsystem: String, target: String) = Action { implicit request =>
     // convert list to use shared IcdVersion class
     val list =
-      allIcdVersions.find(i => i.subsystems.contains(subsystem) && i.subsystems.contains(target)).toList.flatMap(_.icds).map {
+      allIcdVersions.find(i => i.subsystems.head == subsystem && i.subsystems.tail.head == target).toList.flatMap(_.icds).map {
         icd =>
           val icdVersion = IcdVersion(icd.icdVersion, subsystem, icd.versions.head, target, icd.versions.tail.head)
           IcdVersionInfo(icdVersion, icd.user, icd.comment, icd.date)

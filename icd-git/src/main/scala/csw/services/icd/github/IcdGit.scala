@@ -1,7 +1,7 @@
 package csw.services.icd.github
 
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
-import csw.services.icd.db.{IcdDb, IcdDbDefaults, IcdDbException, IcdVersionManager}
+import csw.services.icd.db.{IcdDb, IcdDbDefaults, IcdDbException, IcdVersionManager, Subsystems}
 
 /**
  * Implements the icd-git command line application, which is used to manage ICD versions in Git and
@@ -143,7 +143,7 @@ object IcdGit extends App {
         needsVersion: Boolean
     ): Option[SubsystemAndVersion] = {
       if (sv.isEmpty) {
-        println(s"Please enter the $prompt subsystem: (one of ${IcdVersionManager.allSubsystems.mkString(", ")})")
+        println(s"Please enter the $prompt subsystem: (one of ${Subsystems.allSubsystems.mkString(", ")})")
         val s = readLine()
         if (s == null || s.isEmpty) sv
         else

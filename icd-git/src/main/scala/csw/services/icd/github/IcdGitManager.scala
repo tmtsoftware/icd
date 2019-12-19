@@ -6,7 +6,7 @@ import java.nio.file.{FileSystems, Files, Paths}
 import csw.services.icd.{IcdValidator, Problem}
 import csw.services.icd.db.ApiVersions.ApiEntry
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
-import csw.services.icd.db.{ApiVersions, IcdDb, IcdVersionManager, IcdVersions}
+import csw.services.icd.db.{ApiVersions, IcdDb, IcdVersionManager, IcdVersions, Subsystems}
 import icd.web.shared.{ApiVersionInfo, IcdVersion, IcdVersionInfo, PublishInfo}
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
@@ -202,7 +202,7 @@ object IcdGitManager {
    */
   def list(subsystems: List[SubsystemAndVersion], allIcdVersions: List[IcdVersions]): Option[IcdVersions] = {
     if (subsystems.size != 2) error("Expected two subsystems that make up an ICD")
-    allIcdVersions.find(i => i.subsystems == subsystems.sorted.map(_.subsystem))
+    allIcdVersions.find(i => i.subsystems == Subsystems.sorted(subsystems.map(_.subsystem)))
   }
 
   /**
@@ -226,7 +226,7 @@ object IcdGitManager {
   ): Option[IcdVersions.IcdEntry] = {
     import IcdVersions._
     // sort by convention to avoid duplicates
-    val (s, t) = if (subsystem > target) (target, subsystem) else (subsystem, target)
+    val (s, t) = if (Subsystems.compare(subsystem, target) > 0) (target, subsystem) else (subsystem, target)
     // Checkout the icds repo in a temp dir
     val gitWorkDir = Files.createTempDirectory("icds").toFile
     try {
@@ -528,7 +528,7 @@ object IcdGitManager {
         // sort by convention to avoid duplicate ICDs,
         subsystemList.sorted
       } else {
-        IcdVersionManager.allSubsystems.map(s => SubsystemAndVersion(s, None))
+        Subsystems.allSubsystems.map(s => SubsystemAndVersion(s, None))
       }
     }
     subsystems.foreach(ingest(db, _, feedback, allApiVersions))
@@ -652,6 +652,7 @@ object IcdGitManager {
     "RTC"    -> "45a2a564c0e57fe628e10214aa9f0924bfc4e8fe",
     "SCMS"   -> "13916c6a742b3f37f8c6a131a1ff9291edf3f781",
     "SOSS"   -> "48684f6dc2a54d290c69edbfdd4909528a2b27a7",
+    "TINS"   -> "4acb42a07e098f5acd3998a638ca11184b6e3110",
     "WFOS"   -> "330391bb97a21ff5c888594517019cb65f5c34fc"
   )
 
@@ -672,7 +673,7 @@ object IcdGitManager {
    */
   def getPublishInfo: List[PublishInfo] = {
     val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
-    IcdVersionManager.allSubsystems.map { subsystem =>
+    Subsystems.allSubsystems.map { subsystem =>
       val subsystemGitInfo = getSubsystemGitInfo(subsystem)
       val maybeApiVersions = allApiVersions.find(_.subsystem == subsystem)
       val maybeApiVersionList = maybeApiVersions.toList
@@ -681,7 +682,7 @@ object IcdGitManager {
           ApiVersionInfo(subsystem, apiEntry.version, apiEntry.user, apiEntry.comment, apiEntry.date)
         }
       val icdVersions = allIcdVersions
-        .filter(_.subsystems.contains(subsystem))
+        .filter(_.subsystems.head == subsystem)
         .flatMap { icdVersions =>
           val subsystem1 = icdVersions.subsystems.head
           val subsystem2 = icdVersions.subsystems.tail.head

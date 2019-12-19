@@ -27,9 +27,6 @@ object IcdVersions {
    * Creates an IcdVersions object from a string in JSON format
    */
   def fromJson(s: String): IcdVersions = Json.fromJson[IcdVersions](Json.parse(s)).get
-
-//  // Define sorting for IcdVersions
-//  implicit def ordering[A <: IcdVersions]: Ordering[A] = Ordering.by(e => e.subsystems.head)
 }
 
 /**
@@ -66,9 +63,6 @@ object ApiVersions {
    * Creates an IcdVersions object from a string in JSON format
    */
   def fromJson(s: String): ApiVersions = Json.fromJson[ApiVersions](Json.parse(s)).get
-
-//  // Define sorting for ApiVersions
-//  implicit def ordering[A <: ApiVersions]: Ordering[A] = Ordering.by(e => e.subsystem)
 }
 
 /**
