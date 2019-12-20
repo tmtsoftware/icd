@@ -7,7 +7,7 @@ import org.scalatest.Ignore
 @Ignore
 object PerfTest extends App {
   val db             = IcdDb("icds2")
-  val compName       = "lgsWfs"
+  val compName       = "Corrections"
   val query          = IcdDbQuery(db.db, db.admin, Some(List("TEST")))
   val versionManager = IcdVersionManager(query)
 
@@ -25,10 +25,13 @@ object PerfTest extends App {
           )
         }
       }
-      assert(info.subscribes.nonEmpty)
-      assert(info.subscribes.get.subscribeInfo.nonEmpty)
-      info.subscribes.get.subscribeInfo.foreach { subInfo =>
-        println(s"$compName subscribes to ${subInfo.subscribeModelInfo.name} from ${subInfo.subscribeModelInfo.subsystem}")
+      for {
+        subscribes    <- info.subscribes
+        subscribeInfo <- subscribes.subscribeInfo
+      } {
+        println(
+          s"$compName subscribes to ${subscribeInfo.subscribeModelInfo.name} from ${subscribeInfo.subscribeModelInfo.subsystem}"
+        )
       }
     }
   System.exit(0)
