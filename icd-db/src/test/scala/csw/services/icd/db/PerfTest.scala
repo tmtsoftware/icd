@@ -6,7 +6,6 @@ import org.scalatest.Ignore
 // For performance test on already existing DB
 @Ignore
 object PerfTest extends App {
-  // XXX TODO FIXME
   val db             = IcdDb("icds2")
   val compName       = "lgsWfs"
   val query          = IcdDbQuery(db.db, db.admin, Some(List("TEST")))
