@@ -142,6 +142,8 @@ object IcdModels {
    * @param description      description of the attribute
    * @param maybeType        an optional string describing the type (either this or maybeEnum should be defined)
    * @param maybeEnum        an optional string describing the enum type (either this or maybeType should be defined)
+   * @param maybeArrayType   if type is array, this should be the type of the array elements
+   * @param maybeDimensions  if type is array, this should be the sizes of each dimension (optional)
    * @param units            description of the value's units
    * @param maxItems         optional max number of values in an array value (in string format)
    * @param minItems         optional min number of values in an array value (in string format)
@@ -151,6 +153,7 @@ object IcdModels {
    * @param exclusiveMaximum true if the max value in exclusive
    * @param defaultValue     default value (as a string, which may be empty)
    * @param typeStr          a generated text description of the type
+   * @param attributesList   If type or array type is "struct", this should be a list of attributes in the struct
    */
   case class AttributeModel(
       name: String,
