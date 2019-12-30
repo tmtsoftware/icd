@@ -42,10 +42,10 @@ object SelectDialog {
 
   private val msg =
     """
-      |Choose an ICD and version to display below. Or select only a subsystem to see the API.
-      |Selecting a subsystem and target subsystem displays the ICD between the two.
+      |Choose an ICD and version to display below. Or select only a single subsystem to see the API.
+      |Selecting two subsystems displays the ICD between the two.
       |To narrow the focus, you can optionally select a component in each subsystem.
-      |To display only a subsystem API again, make sure the target subsystem is set to "Select Subsystem".
+      |To display only a subsystem API again, make sure the second subsystem is set to "Select Subsystem".
       |""".stripMargin
 }
 
@@ -58,7 +58,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   val subsystem = Subsystem(SourceSubsystemListener)
   val targetSubsystem = Subsystem(
     TargetSubsystemListener,
-    labelStr = "Target",
+    labelStr = "Second Subsystem",
     placeholderMsg = "Select Subsystem",
     enablePlaceholder = true
   )

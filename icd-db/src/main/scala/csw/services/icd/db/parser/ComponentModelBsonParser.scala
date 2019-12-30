@@ -2,7 +2,7 @@ package csw.services.icd.db.parser
 
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.ComponentModel
-import reactivemongo.bson.BSONDocument
+import reactivemongo.api.bson.BSONDocument
 
 /**
  * See resources/component-schema.conf
@@ -14,14 +14,14 @@ object ComponentModelBsonParser {
     else
       Some(
         ComponentModel(
-          componentType = doc.getAs[String]("componentType").get,
-          subsystem = doc.getAs[String](BaseModelBsonParser.subsystemKey).get,
-          component = doc.getAs[String](BaseModelBsonParser.componentKey).get,
-          prefix = doc.getAs[String]("prefix").get,
-          title = doc.getAs[String]("title").get,
-          description = HtmlMarkup.gfmToHtml(doc.getAs[String]("description").get),
-          modelVersion = doc.getAs[String]("modelVersion").get,
-          wbsId = doc.getAs[String]("wbsId").getOrElse("")
+          componentType = doc.getAsOpt[String]("componentType").get,
+          subsystem = doc.getAsOpt[String](BaseModelBsonParser.subsystemKey).get,
+          component = doc.getAsOpt[String](BaseModelBsonParser.componentKey).get,
+          prefix = doc.getAsOpt[String]("prefix").get,
+          title = doc.getAsOpt[String]("title").get,
+          description = HtmlMarkup.gfmToHtml(doc.getAsOpt[String]("description").get),
+          modelVersion = doc.getAsOpt[String]("modelVersion").get,
+          wbsId = doc.getAsOpt[String]("wbsId").getOrElse("")
         )
       )
   }

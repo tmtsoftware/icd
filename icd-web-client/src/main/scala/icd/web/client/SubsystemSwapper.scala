@@ -12,7 +12,7 @@ case class SubsystemSwapper(listener: () => Unit) extends Displayable {
     button(
       tpe := "button",
       cls := "btn btn-default glyphicon glyphicon-resize-vertical",
-      title := "Swap source and target subsystems",
+      title := "Swap first and second subsystems",
       onclick := listener
     ).render
   }

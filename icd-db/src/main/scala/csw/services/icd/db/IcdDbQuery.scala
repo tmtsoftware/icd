@@ -2,20 +2,15 @@ package csw.services.icd.db
 
 import csw.services.icd._
 import csw.services.icd.StdName._
-import csw.services.icd.db.parser.{
-  CommandModelBsonParser,
-  ComponentModelBsonParser,
-  PublishModelBsonParser,
-  SubscribeModelBsonParser,
-  SubsystemModelBsonParser
-}
+import csw.services.icd.db.parser.{CommandModelBsonParser, ComponentModelBsonParser, PublishModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels
 import icd.web.shared.IcdModels._
+import play.api.libs.json.JsObject
 import reactivemongo.api.DefaultDB
-import reactivemongo.api.collections.bson.BSONCollection
-import reactivemongo.bson.BSONDocument
-import reactivemongo.play.json._
+import reactivemongo.api.bson.BSONDocument
+import reactivemongo.api.bson.collection.BSONCollection
+import reactivemongo.play.json.compat._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
@@ -160,7 +155,7 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
   }
 
   def collectionHead(coll: BSONCollection): Option[BSONDocument] = {
-    coll.find(BSONDocument(), None).one[BSONDocument].await
+    coll.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await
   }
 
   /**
@@ -171,7 +166,7 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
       for (entry <- getEntries if entry.component.isDefined)
         yield {
           val coll = entry.component.get
-          val doc  = coll.find(BSONDocument(), None).one[BSONDocument].await.get
+          val doc  = coll.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await.get
           ComponentModelBsonParser(doc)
         }
     x.flatten
@@ -202,7 +197,7 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
   def queryComponents(query: BSONDocument): List[ComponentModel] = {
     getEntries.flatMap {
       _.component.flatMap { coll =>
-        val maybeDoc = coll.find(query, None).one[BSONDocument].await
+        val maybeDoc = coll.find(query, Option.empty[JsObject]).one[BSONDocument].await
         maybeDoc.flatMap(ComponentModelBsonParser(_))
       }
     }
@@ -252,7 +247,7 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
   def getSubsystemNames: List[String] = {
     getEntries.flatMap {
       _.subsystem.flatMap { coll =>
-        val doc = coll.find(BSONDocument(), None).one[BSONDocument].await.get
+        val doc = coll.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await.get
         SubsystemModelBsonParser(doc).map(_.subsystem)
       }
     }

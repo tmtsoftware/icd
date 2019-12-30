@@ -98,7 +98,7 @@ object IcdGit extends App {
 
     opt[Unit]("ingest") action { (_, c) =>
       c.copy(ingest = true)
-    } text "Ingests the selected subsystem and target subsystem model files and ICDs from GitHub into the ICD database (Ingests all subsystems, if neither option is given)"
+    } text "Ingests the selected subsystem model files and ICDs from GitHub into the ICD database (Ingests all subsystems, if no subsystem options given)"
 
     help("help")
     version("version")

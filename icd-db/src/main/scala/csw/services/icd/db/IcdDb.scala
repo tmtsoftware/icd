@@ -9,9 +9,10 @@ import csw.services.icd.db.ComponentDataReporter._
 import diffson.playJson.DiffsonProtocol
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.Json
-import reactivemongo.api.{DefaultDB, MongoConnection, MongoDriver}
+import reactivemongo.api.{AsyncDriver, DefaultDB, MongoConnection}
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 object IcdDbDefaults {
   private val conf          = ConfigFactory.load
@@ -23,12 +24,15 @@ object IcdDbDefaults {
   val tmpCollSuffix = ".tmp"
 
   def connectToDatabase(host: String, port: Int, dbName: String): DefaultDB = {
-    val mongoUri   = s"mongodb://$host:$port/$dbName"
-    val driver     = new MongoDriver
-    val uri        = MongoConnection.parseURI(mongoUri).get
-    val dn         = uri.db.get
-    val connection = driver.connection(uri, None, strictUri = false).get
-    connection.database(dn).await
+    val mongoUri = s"mongodb://$host:$port/$dbName"
+    val driver = new AsyncDriver
+    val database = for {
+      uri <- Future.fromTry(MongoConnection.parseURI(mongoUri))
+      con <- driver.connect(uri)
+      dn  <- Future(uri.db.get)
+      db  <- con.database(dn)
+    } yield db
+    database.await
   }
 }
 
@@ -75,17 +79,17 @@ object IcdDb extends App {
       c.copy(subsystem = Some(x))
     } text "Specifies the subsystem (and optional version) to be used by any following options"
 
-    opt[String]('t', "target") valueName "<subsystem>[:version]" action { (x, c) =>
+    opt[String]('t', "subsystem2") valueName "<subsystem>[:version]" action { (x, c) =>
       c.copy(target = Some(x))
-    } text "Specifies the target subsystem (and optional version) to be used by any following options"
+    } text "Specifies the second subsystem (and optional version) in an ICD to be used by any following options"
 
-    opt[String]("target-component") valueName "<name>" action { (x, c) =>
+    opt[String]("component2") valueName "<name>" action { (x, c) =>
       c.copy(targetComponent = Some(x))
-    } text "Specifies the target subsytem component to be used by any following options (target must also be specified)"
+    } text "Specifies the subsytem2 component to be used by any following options (subsystem2 must also be specified)"
 
     opt[String]("icdversion") valueName "<icd-version>" action { (x, c) =>
       c.copy(icdVersion = Some(x))
-    } text "Specifies the version to be used by any following options (overrides subsystem and target versions)"
+    } text "Specifies the version to be used by any following options (overrides subsystem and subsystem2 versions)"
 
     opt[File]('o', "out") valueName "<outputFile>" action { (x, c) =>
       c.copy(outputFile = Some(x))
@@ -290,7 +294,7 @@ case class IcdDb(
     port: Int = IcdDbDefaults.defaultPort
 ) {
 
-  val db: DefaultDB = IcdDbDefaults.connectToDatabase(host, port, dbName)
+  val db: DefaultDB    = IcdDbDefaults.connectToDatabase(host, port, dbName)
   val admin: DefaultDB = IcdDbDefaults.connectToDatabase(host, port, "admin")
 
   // Clean up on exit

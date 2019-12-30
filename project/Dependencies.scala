@@ -5,13 +5,13 @@ object Dependencies {
   val Version               = "0.17"
   val ScalaVersion          = "2.13.1"
   val AkkaVersion          = "2.5.25"
-  val PlayVersion           = "2.7.3"
-  val PlayJsonVersion       = "2.7.4"
+  val PlayVersion           = "2.8.0"
+  val PlayJsonVersion       = "2.8.1"
   val ScalaTagsVersion      = "0.7.0"
   val BootstrapVersion      = "3.4.1"
   val JQueryVersion         = "2.2.1"
   val JQueryUiVersion       = "1.12.1"
-  val BootstrapTableVersion = "1.14.1"
+  val BootstrapTableVersion = "1.15.5"
 
   val akkaSlf4j = "com.typesafe.akka" %% "akka-slf4j" % AkkaVersion
 
@@ -27,8 +27,9 @@ object Dependencies {
   val itextpdf    = "com.itextpdf"         % "itextpdf"     % "5.5.13.1"
   val xmlworker   = "com.itextpdf.tool"    % "xmlworker"    % "5.5.13.1"
 
-  val reactivemongo = "org.reactivemongo" %% "reactivemongo" % "0.18.6"
-  val play2Reactivemongo = "org.reactivemongo" %% "play2-reactivemongo" % "0.18.6-play27"
+  val reactivemongo = "org.reactivemongo" %% "reactivemongo" % "0.19.7"
+  val play2Reactivemongo = "org.reactivemongo" %% "play2-reactivemongo" % "0.19.7-play28"
+  val reactivemongoPlayJsonCompat = "org.reactivemongo" %% "reactivemongo-play-json-compat" % "0.19.7-play28"
 
   val diffson = "org.gnieh" %% "diffson-play-json" % "4.0.0"
 
@@ -43,7 +44,7 @@ object Dependencies {
 
   val playJson    = "com.typesafe.play" %% "play-json"    % PlayJsonVersion
   val jqueryUi    = "org.webjars"       % "jquery-ui"     % JQueryUiVersion
-  val webjarsPlay = "org.webjars"       %% "webjars-play" % "2.7.3"
+  val webjarsPlay = "org.webjars"       %% "webjars-play" % "2.8.0"
   // Note: Updating to bootstrap-4 could be a lot of work...
   val bootstrap      = "org.webjars"       % "bootstrap"       % BootstrapVersion
   val bootstrapTable = "org.webjars.bower" % "bootstrap-table" % BootstrapTableVersion

@@ -1,8 +1,8 @@
 package csw.services.icd.db.parser
 
-import reactivemongo.bson.BSONDocument
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.SubsystemModel
+import reactivemongo.api.bson.BSONDocument
 
 /**
  * See resources/subsystem-schema.conf
@@ -14,10 +14,10 @@ object SubsystemModelBsonParser {
     else
       Some(
         SubsystemModel(
-          subsystem = doc.getAs[String]("subsystem").get,
-          title = doc.getAs[String]("title").get,
-          description = HtmlMarkup.gfmToHtml(doc.getAs[String]("description").get),
-          modelVersion = doc.getAs[String]("modelVersion").get
+          subsystem = doc.getAsOpt[String]("subsystem").get,
+          title = doc.getAsOpt[String]("title").get,
+          description = HtmlMarkup.gfmToHtml(doc.getAsOpt[String]("description").get),
+          modelVersion = doc.getAsOpt[String]("modelVersion").get
         )
       )
   }

@@ -24,6 +24,7 @@ lazy val `icd-db` = project
         logbackClassic,
         reactivemongo,
         play2Reactivemongo,
+        reactivemongoPlayJsonCompat,
         scalaCsv,
         playJson,
         jsonSchemaValidator,

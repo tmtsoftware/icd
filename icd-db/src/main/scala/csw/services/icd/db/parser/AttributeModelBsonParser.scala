@@ -2,7 +2,7 @@ package csw.services.icd.db.parser
 
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.AttributeModel
-import reactivemongo.bson.{BSONBoolean, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONString, BSONValue}
+import reactivemongo.api.bson.{BSONBoolean, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONString, BSONValue}
 
 /**
  * This model is a value that is based on the json-schema "ref": "resource:/json-schema.json".
@@ -20,14 +20,14 @@ object AttributeModelBsonParser {
   }
 
   def apply(doc: BSONDocument): AttributeModel = {
-    val name            = doc.getAs[String]("name").getOrElse("")
-    val description     = doc.getAs[String]("description").map(HtmlMarkup.gfmToHtml).getOrElse("")
-    val maybeType       = doc.getAs[String]("type")
-    val maybeEnum       = doc.getAs[Array[String]]("enum").map(_.toList)
-    val units           = doc.getAs[String]("units").map(HtmlMarkup.gfmToHtml).getOrElse("")
-    val maxItems        = doc.getAs[Int]("maxItems")
-    val minItems        = doc.getAs[Int]("minItems")
-    val maybeDimensions = doc.getAs[Array[Int]]("dimensions").map(_.toList)
+    val name            = doc.getAsOpt[String]("name").getOrElse("")
+    val description     = doc.getAsOpt[String]("description").map(HtmlMarkup.gfmToHtml).getOrElse("")
+    val maybeType       = doc.getAsOpt[String]("type")
+    val maybeEnum       = doc.getAsOpt[Array[String]]("enum").map(_.toList)
+    val units           = doc.getAsOpt[String]("units").map(HtmlMarkup.gfmToHtml).getOrElse("")
+    val maxItems        = doc.getAsOpt[Int]("maxItems")
+    val minItems        = doc.getAsOpt[Int]("minItems")
+    val maybeDimensions = doc.getAsOpt[Array[Int]]("dimensions").map(_.toList)
     val itemsDoc = doc.get("items").map(_.asInstanceOf[BSONDocument])
     val maybeArrayType  = itemsDoc.flatMap(_.get("type").map(bsonValueToString))
 
@@ -54,13 +54,13 @@ object AttributeModelBsonParser {
 
     // ---
 
-    val defaultValue = doc.getAs[String]("default").getOrElse("")
+    val defaultValue = doc.getAsOpt[String]("default").getOrElse("")
 
     // Returns a string describing an array type
     def parseArrayTypeStr(): String = {
-      val items = doc.getAs[BSONDocument]("items")
-      val t     = items.flatMap(_.getAs[String]("type"))
-      val e     = items.flatMap(_.getAs[Array[String]]("enum").map(_.toList))
+      val items = doc.getAsOpt[BSONDocument]("items")
+      val t     = items.flatMap(_.getAsOpt[String]("type"))
+      val e     = items.flatMap(_.getAsOpt[Array[String]]("enum").map(_.toList))
       val s = if (t.isDefined) {
         parseTypeStr(t)
       } else if (e.isDefined) {
@@ -104,19 +104,19 @@ object AttributeModelBsonParser {
       } else t
     }
 
-    val typeStr = parseTypeStr(doc.getAs[String]("type"))
+    val typeStr = parseTypeStr(doc.getAsOpt[String]("type"))
 
     // If type is "struct", attributeList gives the fields of the struct
     val attributesList = if (typeStr == "struct") {
-      for (subDoc <- doc.getAs[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
+      for (subDoc <- doc.getAsOpt[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
         yield AttributeModelBsonParser(subDoc)
     } else if (typeStr == "array of struct") {
       doc
-        .getAs[BSONDocument]("items")
+        .getAsOpt[BSONDocument]("items")
         .toList
         .flatMap(
           items =>
-            for (subDoc <- items.getAs[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
+            for (subDoc <- items.getAsOpt[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
               yield AttributeModelBsonParser(subDoc)
         )
     } else Nil

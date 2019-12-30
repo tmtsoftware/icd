@@ -1,11 +1,11 @@
 package csw.services.icd.db
 
 import play.api.libs.json.{JsNumber, JsObject}
-import reactivemongo.play.json._
 import csw.services.icd._
 import reactivemongo.api.DefaultDB
-import reactivemongo.api.collections.bson.BSONCollection
-import reactivemongo.bson.{BSONDocument, BSONNumberLike}
+import reactivemongo.api.bson.{BSONDocument, BSONNumberLike}
+import reactivemongo.api.bson.collection.BSONCollection
+import reactivemongo.play.json.compat._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -42,8 +42,8 @@ case class IcdDbManager(db: DefaultDB, versionManager: IcdVersionManager) {
 
   // Updates an object in an existing collection, keeping the same _version number
   private def update(coll: BSONCollection, tmpColl: BSONCollection, obj: JsObject): Unit = {
-    val doc = coll.find(BSONDocument(), None).one[BSONDocument].await.get
-    val currentVersion = doc.getAs[BSONNumberLike](versionKey).get.toInt
+    val doc = coll.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await.get
+    val currentVersion = doc.getAsOpt[BSONNumberLike](versionKey).get.toInt.get
     tmpColl.insert.one(obj + (versionKey -> JsNumber(currentVersion))).await
   }
 }
