@@ -349,7 +349,9 @@ object IcdGit extends App {
       IcdGitManager.ingest(db, options.subsystems, (s: String) => println(s), allApiVersions, allIcdVersions)
     } catch {
       case ex: IcdDbException => error("Failed to connect to mongodb. Make sure mongod server is running.")
-      case ex: Exception      => error(s"Unable to drop the existing ICD database: $ex")
+      case ex: Exception      =>
+        ex.printStackTrace()
+        error(s"Unable to drop the existing ICD database: $ex")
     }
 
   }

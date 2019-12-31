@@ -10,7 +10,7 @@ import diffson.jsonpatch._
 import diffson.jsonpatch.lcsdiff.remembering._
 import csw.services.icd.db.parser.{ComponentModelBsonParser, PublishModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
 import play.api.libs.json.{JsObject, JsValue, Json}
-import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONObjectID}
+import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONInteger, BSONObjectID}
 import reactivemongo.api.{Cursor, WriteConcern}
 import reactivemongo.play.json.compat._
 import reactivemongo.api.bson.collection.BSONCollection
@@ -297,7 +297,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
         def getPartVersion(path: String): Option[Int] = {
           val coll     = db.collection[BSONCollection](path)
           val maybeDoc = coll.find(queryAny, Option.empty[JsObject]).one[BSONDocument].await
-          maybeDoc.flatMap(_.getAsOpt[Int](versionKey))
+          maybeDoc.flatMap(_.getAsOpt[BSONInteger](versionKey).map(_.value))
         }
 
         def filter(p: IcdPath) = p.subsystem == sv.subsystem && sv.maybeComponent.fold(true)(_ => p.component == path)
@@ -378,7 +378,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
     // Note: Doc might not exist in current version, but exist in an older, published version
     coll.find(queryAny, Option.empty[JsObject]).one[BSONDocument].await match {
       case Some(doc) =>
-        val currentVersion = doc.getAsOpt[Int](versionKey).get
+        val currentVersion = doc.getAsOpt[BSONInteger](versionKey).get.value
         if (version == currentVersion) doc else getPublishedDoc
 
       case None =>
@@ -530,7 +530,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
     val versions = for (path <- paths) yield {
       val coll            = db.collection[BSONCollection](path)
       val obj             = coll.find(queryAny, Option.empty[JsObject]).one[BSONDocument].await.get
-      val version         = obj.getAsOpt[Int](versionKey).get
+      val version         = obj.getAsOpt[BSONInteger](versionKey).get.value
       val id              = obj.getAsOpt[BSONObjectID](idKey).get
       val versionCollName = versionCollectionName(path)
       val exists          = collectionNames.contains(versionCollName)
