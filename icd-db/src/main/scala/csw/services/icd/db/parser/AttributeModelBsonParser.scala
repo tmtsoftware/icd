@@ -2,8 +2,7 @@ package csw.services.icd.db.parser
 
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.AttributeModel
-import reactivemongo.api.bson.{BSONBoolean, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONString, BSONValue}
-
+import reactivemongo.api.bson._
 /**
  * This model is a value that is based on the json-schema "ref": "resource:/json-schema.json".
  * In this case it can define a primitive type, enum, array, or object, for example.

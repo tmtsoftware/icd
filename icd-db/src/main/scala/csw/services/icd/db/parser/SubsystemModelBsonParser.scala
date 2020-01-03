@@ -2,7 +2,7 @@ package csw.services.icd.db.parser
 
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.SubsystemModel
-import reactivemongo.api.bson.BSONDocument
+import reactivemongo.api.bson._
 
 /**
  * See resources/subsystem-schema.conf

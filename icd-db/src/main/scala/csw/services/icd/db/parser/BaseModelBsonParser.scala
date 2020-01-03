@@ -1,7 +1,7 @@
 package csw.services.icd.db.parser
 
 import icd.web.shared.IcdModels.BaseModel
-import reactivemongo.api.bson.BSONDocument
+import reactivemongo.api.bson._
 
 /**
  * Fake model class used to hold only the subsystem and component name

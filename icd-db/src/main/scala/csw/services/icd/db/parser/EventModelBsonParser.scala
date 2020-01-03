@@ -2,7 +2,7 @@ package csw.services.icd.db.parser
 
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.EventModel
-import reactivemongo.api.bson.{BSONDocument, BSONNumberLike}
+import reactivemongo.api.bson._
 
 /**
  * See resources/event-schema.conf

@@ -3,10 +3,9 @@ package csw.services.icd.db
 import play.api.libs.json.{JsNumber, JsObject}
 import csw.services.icd._
 import reactivemongo.api.DefaultDB
-import reactivemongo.api.bson.{BSONDocument, BSONNumberLike}
 import reactivemongo.api.bson.collection.BSONCollection
+import reactivemongo.api.bson._
 import reactivemongo.play.json.compat._
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
