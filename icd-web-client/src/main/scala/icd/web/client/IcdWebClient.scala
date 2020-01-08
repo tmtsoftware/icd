@@ -61,12 +61,13 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   private val selectItem   = NavbarItem("Select", "Select the API or ICD to display", selectSubsystems())
   private val selectDialog = SelectDialog(mainContent, Selector)
+  private val statusDialog = StatusDialog(mainContent, selectDialog)
 
   private val fileUploadItem   = NavbarItem("Upload", "Select icd model files to ingest into the icd database", showUploadDialog())
   private val fileUploadDialog = FileUploadDialog(subsystemNames, csrfToken, inputDirSupported)
 
   private val publishItem   = NavbarItem("Publish", "Shows dialog to publish APIs and ICDs", showPublishDialog())
-  private val publishDialog = PublishDialog(mainContent, subsystemNames)
+  private val publishDialog = PublishDialog(mainContent)
 
   // Call popState() when the user presses the browser Back button
   dom.window.onpopstate = popState _
@@ -75,7 +76,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   doLayout()
 
   // Refresh the list of published APIs and ICDs when the user refreshes the web app
-  updatePublished().onComplete(_ => selectSubsystems())
+  updatePublished().onComplete(_ => showStatus())
 
   // If uploads are not allowed, hide the item (Doing this in the background caused issues with jquery)
   isUploadAllowed.map { uploadAllowed =>
@@ -120,6 +121,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Update the list of Subsystem options
   private def updateSubsystemOptions(items: List[String]): Future[Unit] = {
+    statusDialog.updateSubsystemOptions(items)
     selectDialog.updateSubsystemOptions(items)
   }
 
@@ -151,6 +153,24 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         _ <- selectDialog.subsystem.setSubsystemWithVersion(maybeSv, saveHistory = false)
         _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(maybeTargetSv, saveHistory = false)
       } {}
+    }
+  }
+
+  // Called when the Home/TMT ICD Database navbar item is selected (or through browser history)
+  private def showStatus(
+      maybeSv: Option[String] = None,
+      saveHistory: Boolean = true
+  )(): Unit = {
+    setSidebarVisible(false)
+    mainContent.setContent(statusDialog, "TMT ICD Database")
+    if (saveHistory) {
+      pushState(viewType = StatusView)
+    } else {
+      for {
+        _ <- subsystemNames.update()
+      } {
+        statusDialog.setSubsystem(maybeSv, saveHistory = false)
+      }
     }
   }
 
@@ -263,6 +283,10 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
           case UploadView  => showUploadDialog(saveHistory = false)()
           case PublishView => showPublishDialog(saveHistory = false)()
           case VersionView => showVersionHistory(saveHistory = false)()
+          case StatusView => showStatus(
+            hist.maybeSourceSubsystem.map(_.subsystem),
+            saveHistory = false
+          )
           case SelectView =>
             selectSubsystems(
               hist.maybeSourceSubsystem,

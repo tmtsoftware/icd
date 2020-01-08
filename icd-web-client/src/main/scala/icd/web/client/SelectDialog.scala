@@ -58,7 +58,6 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   val subsystem = Subsystem(SourceSubsystemListener)
   val targetSubsystem = Subsystem(
     TargetSubsystemListener,
-    labelStr = "Second Subsystem",
     placeholderMsg = "Select Subsystem",
     enablePlaceholder = true
   )

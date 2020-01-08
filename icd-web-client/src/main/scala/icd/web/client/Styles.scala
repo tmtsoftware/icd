@@ -171,6 +171,20 @@ object Styles extends StyleSheet.Inline {
     padding(20 px, 0 px, 20 px, 0 px)
   )
 
+  val statusDialogLabel = style(
+    addClassNames("col-xs-1"),
+    padding(6 px, 6 px, 0 px, 16 px)
+  )
+
+  val statusDialogSubsystem = style(
+    addClassNames("col-xs-2"),
+    padding(0 px, 0 px, 0 px, 12 px)
+  )
+
+  val statusDialogSubsystemRow = style(
+    padding(0 px, 0 px, 20 px, 0 px)
+  )
+
   val scrollableDiv = style(
     width(100 %%),
     height(100 %%),

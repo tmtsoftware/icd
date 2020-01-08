@@ -168,7 +168,12 @@ object Routes {
   /**
    * Gets PublishInfo for every subsystem
    */
-  val getPublishInfo = "/getPublishInfo"
+  def getPublishInfo(maybeSubsystem: Option[String]): String = {
+    maybeSubsystem match {
+      case Some(subsystem) => s"/getPublishInfo?subsystem=$subsystem"
+      case None            => "/getPublishInfo"
+    }
+  }
 
   /**
    * For POST of PublishApiInfo to publish an API

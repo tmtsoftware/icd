@@ -16,6 +16,7 @@ object BrowserHistory {
       JsString(v match {
         case ComponentView => "ComponentView"
         case IcdView       => "IcdView"
+        case StatusView    => "StatusView"
         case SelectView    => "SelectView"
         case UploadView    => "UploadView"
         case PublishView    => "PublishView"
@@ -26,6 +27,7 @@ object BrowserHistory {
       JsSuccess(s match {
         case "ComponentView" => ComponentView
         case "IcdView"       => IcdView
+        case "StatusView"    => StatusView
         case "SelectView"    => SelectView
         case "UploadView"    => UploadView
         case "PublishView"    => PublishView
@@ -37,6 +39,9 @@ object BrowserHistory {
 
   // Type of a view in the application, used to restore the view
   sealed trait ViewType
+
+  // View subsystem status (Home view)
+  case object StatusView extends ViewType
 
   // View controls for selecting icds, subsystems, components, versions
   case object SelectView extends ViewType

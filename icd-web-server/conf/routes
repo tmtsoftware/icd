@@ -48,7 +48,7 @@ GET         /diff/:subsystem/:versions                  controllers.Application.
 GET         /isUploadAllowed                            controllers.Application.isUploadAllowed
 
 # Gets PublishInfo for every subsystem
-GET         /getPublishInfo                             controllers.Application.getPublishInfo
+GET         /getPublishInfo                             controllers.Application.getPublishInfo(subsystem: Option[String])
 
 # Publishs a given subsystem API on GitHub
 POST        /publishApi                                 controllers.Application.publishApi()

@@ -304,8 +304,8 @@ class Application @Inject()(
   /**
    * Responds with the JSON for the PublishInfo for every subsystem
    */
-  def getPublishInfo = Action { implicit request =>
-    val publishInfo = IcdGitManager.getPublishInfo
+  def getPublishInfo(maybeSubsystem: Option[String]) = Action { implicit request =>
+    val publishInfo = IcdGitManager.getPublishInfo(maybeSubsystem)
     Ok(Json.toJson(publishInfo))
   }
 

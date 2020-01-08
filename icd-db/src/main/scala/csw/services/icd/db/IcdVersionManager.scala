@@ -8,7 +8,12 @@ import diffson.playJson._
 import diffson.lcs._
 import diffson.jsonpatch._
 import diffson.jsonpatch.lcsdiff.remembering._
-import csw.services.icd.db.parser.{ComponentModelBsonParser, PublishModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
+import csw.services.icd.db.parser.{
+  ComponentModelBsonParser,
+  PublishModelBsonParser,
+  SubscribeModelBsonParser,
+  SubsystemModelBsonParser
+}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import reactivemongo.api.bson.{BSONDateTime, BSONDocument}
 import reactivemongo.api.{Cursor, WriteConcern}
@@ -662,7 +667,6 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * @param target    the ICD's target subsystem
    */
   def getIcdVersions(subsystem: String, target: String): List[IcdVersionInfo] = {
-    import reactivemongo.play.json.compat._
     val subsystems = List(subsystem, target)
     val sorted     = Subsystems.sorted(subsystems)
     val s          = sorted.head
@@ -670,7 +674,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
 
     if (collectionExists(icdCollName)) {
       val coll = db.collection[BSONCollection](icdCollName)
-      val docs =
+      val docs = {
+        import reactivemongo.play.json.compat._
         coll
           .find(BSONDocument(subsystemKey -> s, targetKey -> t), Option.empty[JsObject])
           .sort(BSONDocument(idKey -> -1))
@@ -678,8 +683,10 @@ case class IcdVersionManager(query: IcdDbQuery) {
           .collect[Array](-1, Cursor.FailOnError[Array[BSONDocument]]())
           .await
           .toList
+      }
       docs
         .map { doc =>
+          import reactivemongo.api.bson._
           val icdVersion       = doc.getAsOpt[String](versionStrKey).get
           val subsystem        = doc.getAsOpt[String](subsystemKey).get
           val subsystemVersion = doc.getAsOpt[String](subsystemVersionKey).get

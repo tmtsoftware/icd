@@ -17,7 +17,7 @@ import scala.util.{Failure, Success}
 /**
  * Displays a table with the version history
  */
-case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemNames) extends Displayable {
+case class PublishDialog(mainContent: MainContent) extends Displayable {
 
   import icd.web.shared.JsonSupport._
 
@@ -421,26 +421,6 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
     ).render
   }
 
-  // Gets information about the published state of all of the subsystems
-  private def getPublishInfo: Future[List[PublishInfo]] = {
-    Ajax
-      .get(Routes.getPublishInfo)
-      .map { r =>
-        Json.fromJson[Array[PublishInfo]](Json.parse(r.responseText)) match {
-          case JsSuccess(ar: Array[PublishInfo], _: JsPath) =>
-            ar.toList
-          case e: JsError =>
-            mainContent.displayInternalError(JsError.toJson(e).toString())
-            Nil
-        }
-      }
-      .recover {
-        case ex =>
-          mainContent.displayInternalError(ex)
-          Nil
-      }
-  }
-
   /**
    * Updates the dialog with the current state of the subsystem releases on GitHub
    */
@@ -448,7 +428,7 @@ case class PublishDialog(mainContent: MainContent, subsystemNames: SubsystemName
     contentDiv.innerHTML = ""
     contentDiv.appendChild(p(em("Getting the current release status from GitHub...")).render)
 
-    val f = getPublishInfo
+    val f = IcdUtil.getPublishInfo(None, mainContent)
     f.onComplete {
       case Success(list) =>
         contentDiv.innerHTML = ""

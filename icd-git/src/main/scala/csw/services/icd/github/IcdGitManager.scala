@@ -670,10 +670,16 @@ object IcdGitManager {
    * Returns information about the publish state for each known subsystem,
    * including the latest API version, list of ICDs each subsystem is involved in,
    * whether there are changes ready to be published...
+   *
+   * @param maybeSubsystem return info only for the given subsystem (default: for all known subsystems)
    */
-  def getPublishInfo: List[PublishInfo] = {
+  def getPublishInfo(maybeSubsystem: Option[String] = None): List[PublishInfo] = {
     val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
-    Subsystems.allSubsystems.map { subsystem =>
+    val subsystems = maybeSubsystem match {
+      case Some(subsystem) => List(subsystem)
+      case None => Subsystems.allSubsystems
+    }
+    subsystems.map { subsystem =>
       val subsystemGitInfo = getSubsystemGitInfo(subsystem)
       val maybeApiVersions = allApiVersions.find(_.subsystem == subsystem)
       val maybeApiVersionList = maybeApiVersions.toList
