@@ -61,13 +61,18 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   private val selectItem   = NavbarItem("Select", "Select the API or ICD to display", selectSubsystems())
   private val selectDialog = SelectDialog(mainContent, Selector)
-  private val statusDialog = StatusDialog(mainContent, selectDialog)
+
+  private val statusItem   = NavbarItem("Status", "Display the published status of a selected subsystem", showStatus())
+  private val statusDialog = StatusDialog(mainContent)
 
   private val fileUploadItem   = NavbarItem("Upload", "Select icd model files to ingest into the icd database", showUploadDialog())
   private val fileUploadDialog = FileUploadDialog(subsystemNames, csrfToken, inputDirSupported)
 
   private val publishItem   = NavbarItem("Publish", "Shows dialog to publish APIs and ICDs", showPublishDialog())
   private val publishDialog = PublishDialog(mainContent)
+
+  // Used to keep track of the current dialog, so that we know which subsystem to use for History, PDF buttons
+  private var currentView: ViewType = StatusView
 
   // Call popState() when the user presses the browser Back button
   dom.window.onpopstate = popState _
@@ -105,6 +110,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     // Add CSS styles
     head.appendChild(Styles.render[TypedTag[HTMLStyleElement]].render)
 
+    navbar.addItem(statusItem)
     navbar.addItem(selectItem)
     navbar.addItem(fileUploadItem)
     navbar.addItem(historyItem)
@@ -144,6 +150,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   )(): Unit = {
     setSidebarVisible(false)
     mainContent.setContent(selectDialog, "Select Subsystems and Components")
+    currentView = SelectView
     if (saveHistory) {
       pushState(viewType = SelectView)
     } else {
@@ -163,6 +170,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   )(): Unit = {
     setSidebarVisible(false)
     mainContent.setContent(statusDialog, "TMT ICD Database")
+    currentView = StatusView
     if (saveHistory) {
       pushState(viewType = StatusView)
     } else {
@@ -283,10 +291,11 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
           case UploadView  => showUploadDialog(saveHistory = false)()
           case PublishView => showPublishDialog(saveHistory = false)()
           case VersionView => showVersionHistory(saveHistory = false)()
-          case StatusView => showStatus(
-            hist.maybeSourceSubsystem.map(_.subsystem),
-            saveHistory = false
-          )
+          case StatusView =>
+            showStatus(
+              hist.maybeSourceSubsystem.map(_.subsystem),
+              saveHistory = false
+            )
           case SelectView =>
             selectSubsystems(
               hist.maybeSourceSubsystem,
@@ -345,6 +354,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
           }
       }
     } else Future.successful(())
+    currentView = SelectView
     if (saveHistory) {
       pushState(viewType = SelectView)
       pushState(viewType = IcdView)
@@ -354,21 +364,24 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Called when the "Show ICD Version History" menu item is selected
   private def showVersionHistory(saveHistory: Boolean = true)(): Unit = {
-    selectDialog.icdChooser.getSelectedIcd match {
-      case Some(icdName) =>
-        historyDialog.setIcd(icdName)
-        setSidebarVisible(false)
-        mainContent.setContent(historyDialog, s"ICD Version History: ${icdName.subsystem} to ${icdName.target}")
-        if (saveHistory) pushState(viewType = VersionView)
-      case None =>
-        selectDialog.subsystem.getSelectedSubsystem match {
-          case Some(name) =>
-            historyDialog.setSubsystem(name)
-            setSidebarVisible(false)
-            mainContent.setContent(historyDialog, s"Subsystem API Version History: $name")
-            if (saveHistory) pushState(viewType = VersionView)
-          case None =>
-        }
+    def showApiVersionHistory(subsystem: String): Unit = {
+      historyDialog.setSubsystem(subsystem)
+      setSidebarVisible(false)
+      mainContent.setContent(historyDialog, s"Subsystem API Version History: $subsystem")
+      if (saveHistory) pushState(viewType = VersionView)
+    }
+    if (currentView == StatusView) {
+      statusDialog.getSelectedSubsystem.foreach(showApiVersionHistory)
+    } else {
+      selectDialog.icdChooser.getSelectedIcd match {
+        case Some(icdName) =>
+          historyDialog.setIcd(icdName)
+          setSidebarVisible(false)
+          mainContent.setContent(historyDialog, s"ICD Version History: ${icdName.subsystem} to ${icdName.target}")
+          if (saveHistory) pushState(viewType = VersionView)
+        case None =>
+          selectDialog.subsystem.getSelectedSubsystem.foreach(showApiVersionHistory)
+      }
     }
   }
 

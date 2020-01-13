@@ -19,9 +19,8 @@ object StatusDialog {
 /**
  * Displays the current published status of a selected subsystem.
  * @param mainContent used to display errors
- * @param selectDialog used to update the subsystem choice in the select dialog to match this dialog
  */
-case class StatusDialog(mainContent: MainContent, selectDialog: SelectDialog) extends Displayable {
+case class StatusDialog(mainContent: MainContent) extends Displayable {
   import StatusDialog._
 
   // The subsystem combobox
@@ -71,10 +70,6 @@ case class StatusDialog(mainContent: MainContent, selectDialog: SelectDialog) ex
 
   private def apiTable(pubInfo: PublishInfo): JsDom.TypedTag[Table] = {
     val apiVersionInfo = pubInfo.apiVersions.head
-    // Make the subsystem selection in the select dialog match this one
-    val sv = SubsystemWithVersion(apiVersionInfo.subsystem, Some(apiVersionInfo.version), None)
-    selectDialog.subsystem.setSubsystemWithVersion(Some(sv))
-
     table(
       Styles.componentTable,
       attr("data-toggle") := "table",
@@ -152,7 +147,7 @@ case class StatusDialog(mainContent: MainContent, selectDialog: SelectDialog) ex
   }
 
   // Gets the currently selected subsystem name
-  private def getSelectedSubsystem: Option[String] =
+  def getSelectedSubsystem: Option[String] =
     subsystemItem.value match {
       case `placeholderMsg` => None
       case subsystemName    => Some(subsystemName)
@@ -176,7 +171,6 @@ case class StatusDialog(mainContent: MainContent, selectDialog: SelectDialog) ex
         case None =>
           subsystemItem.value = placeholderMsg
       }
-      subsystemSelected(maybeSubsystem)
     }
   }
 
