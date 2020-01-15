@@ -15,7 +15,7 @@ object BrowserHistory {
     (v: ViewType) =>
       JsString(v match {
         case ComponentView => "ComponentView"
-        case IcdView       => "IcdView"
+//        case IcdView       => "IcdView"
         case StatusView    => "StatusView"
         case SelectView    => "SelectView"
         case UploadView    => "UploadView"
@@ -26,7 +26,7 @@ object BrowserHistory {
     case JsString(s) =>
       JsSuccess(s match {
         case "ComponentView" => ComponentView
-        case "IcdView"       => IcdView
+//        case "IcdView"       => IcdView
         case "StatusView"    => StatusView
         case "SelectView"    => SelectView
         case "UploadView"    => UploadView
@@ -49,8 +49,8 @@ object BrowserHistory {
   // Viewing components selected in sidebar
   case object ComponentView extends ViewType
 
-  // Viewing an ICD
-  case object IcdView extends ViewType
+//  // Viewing an ICD
+//  case object IcdView extends ViewType
 
   // Uploading ICD files
   case object UploadView extends ViewType

@@ -152,7 +152,12 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     mainContent.setContent(selectDialog, "Select Subsystems and Components")
     currentView = SelectView
     if (saveHistory) {
-      pushState(viewType = SelectView)
+      pushState(
+        viewType = SelectView,
+        maybeSourceSubsystem = selectDialog.subsystem.getSubsystemWithVersion,
+        maybeTargetSubsystem = selectDialog.targetSubsystem.getSubsystemWithVersion,
+        maybeIcd = selectDialog.icdChooser.getSelectedIcdVersion
+      )
     } else {
       for {
         _ <- subsystemNames.update()
@@ -164,20 +169,17 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   // Called when the Home/TMT ICD Database navbar item is selected (or through browser history)
-  private def showStatus(
-      maybeSv: Option[String] = None,
-      saveHistory: Boolean = true
-  )(): Unit = {
+  private def showStatus(maybeSubsystem: Option[String] = None, saveHistory: Boolean = true)(): Unit = {
     setSidebarVisible(false)
     mainContent.setContent(statusDialog, "TMT ICD Database")
     currentView = StatusView
     if (saveHistory) {
-      pushState(viewType = StatusView)
+      pushState(viewType = StatusView, maybeSourceSubsystem = maybeSubsystem.map(SubsystemWithVersion(_, None, None)))
     } else {
       for {
         _ <- subsystemNames.update()
       } {
-        statusDialog.setSubsystem(maybeSv, saveHistory = false)
+        statusDialog.setSubsystem(maybeSubsystem, saveHistory = false)
       }
     }
   }
@@ -258,11 +260,18 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
    *
    * If a single component is selected, it should be passed as compName.
    */
-  private def pushState(viewType: ViewType, compName: Option[String] = None, replace: Boolean = false): Unit = {
+  private def pushState(
+      viewType: ViewType,
+      compName: Option[String] = None,
+      replace: Boolean = false,
+      maybeSourceSubsystem: Option[SubsystemWithVersion] = None,
+      maybeTargetSubsystem: Option[SubsystemWithVersion] = None,
+      maybeIcd: Option[IcdVersion] = None
+  ): Unit = {
     val hist = BrowserHistory(
-      selectDialog.subsystem.getSubsystemWithVersion,
-      selectDialog.targetSubsystem.getSubsystemWithVersion,
-      selectDialog.icdChooser.getSelectedIcdVersion,
+      maybeSourceSubsystem,
+      maybeTargetSubsystem,
+      maybeIcd,
       viewType,
       compName
     )
@@ -280,40 +289,40 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     BrowserHistory.popState(e).foreach { hist =>
       e.preventDefault()
       // Make sure to wait for futures to complete, so things happen in the right order
-      for {
-        _ <- selectDialog.subsystem
-              .setSubsystemWithVersion(hist.maybeSourceSubsystem, saveHistory = false, findMatchingIcd = false)
-        _ <- selectDialog.targetSubsystem
-              .setSubsystemWithVersion(hist.maybeTargetSubsystem, saveHistory = false, findMatchingIcd = false)
-        _ <- selectDialog.icdChooser.setIcdWithVersion(hist.maybeIcd, notifyListener = false, saveHistory = false)
-      } {
-        hist.viewType match {
-          case UploadView  => showUploadDialog(saveHistory = false)()
-          case PublishView => showPublishDialog(saveHistory = false)()
-          case VersionView => showVersionHistory(saveHistory = false)()
-          case StatusView =>
-            showStatus(
-              hist.maybeSourceSubsystem.map(_.subsystem),
-              saveHistory = false
-            )
-          case SelectView =>
+      hist.viewType match {
+        case UploadView  => showUploadDialog(saveHistory = false)()
+        case PublishView => showPublishDialog(saveHistory = false)()
+        case VersionView => showVersionHistory(saveHistory = false)()
+        case StatusView =>
+          showStatus(
+            hist.maybeSourceSubsystem.map(_.subsystem),
+            saveHistory = false
+          )
+        case SelectView =>
+          for {
+            _ <- selectDialog.subsystem
+                  .setSubsystemWithVersion(hist.maybeSourceSubsystem, saveHistory = false, findMatchingIcd = false)
+            _ <- selectDialog.targetSubsystem
+                  .setSubsystemWithVersion(hist.maybeTargetSubsystem, saveHistory = false, findMatchingIcd = false)
+            _ <- selectDialog.icdChooser.setIcdWithVersion(hist.maybeIcd, notifyListener = false, saveHistory = false)
+          } {
             selectSubsystems(
               hist.maybeSourceSubsystem,
               hist.maybeTargetSubsystem,
               hist.maybeIcd,
               saveHistory = false
             )()
-          case ComponentView | IcdView =>
-            updateComponentDisplay(
-              hist.maybeSourceSubsystem,
-              hist.maybeTargetSubsystem,
-              hist.maybeIcd,
-              selectDialog.searchAllSubsystems(),
-              saveHistory = false
-            ).foreach { _ =>
-              hist.currentCompnent.foreach(compName => goToComponent(compName, replace = true))
-            }
-        }
+          }
+        case ComponentView /*| IcdView*/ =>
+          updateComponentDisplay(
+            hist.maybeSourceSubsystem,
+            hist.maybeTargetSubsystem,
+            hist.maybeIcd,
+            selectDialog.searchAllSubsystems(),
+            saveHistory = false
+          ).foreach { _ =>
+            hist.currentCompnent.foreach(compName => goToComponent(compName, replace = true))
+          }
       }
     }
   }
@@ -356,8 +365,13 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     } else Future.successful(())
     currentView = SelectView
     if (saveHistory) {
-      pushState(viewType = SelectView)
-      pushState(viewType = IcdView)
+      pushState(
+        viewType = SelectView,
+        maybeSourceSubsystem = selectDialog.subsystem.getSubsystemWithVersion,
+        maybeTargetSubsystem = selectDialog.targetSubsystem.getSubsystemWithVersion,
+        maybeIcd = selectDialog.icdChooser.getSelectedIcdVersion
+      )
+//      pushState(viewType = IcdView)
     }
     f
   }
