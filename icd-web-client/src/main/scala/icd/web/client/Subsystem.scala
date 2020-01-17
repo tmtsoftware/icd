@@ -23,13 +23,11 @@ object Subsystem {
      * Called when a subsystem is selected
      *
      * @param maybeSv     optional selected subsystem and version
-     * @param saveHistory if true, push the browser history state, otherwise not
      * @param findMatchingIcd if true, update the ICD item if a matching published ICD can be found
      * @return a future indicating when changes are done
      */
     def subsystemSelected(
         maybeSv: Option[SubsystemWithVersion],
-        saveHistory: Boolean = true,
         findMatchingIcd: Boolean = true
     ): Future[Unit]
   }
@@ -170,13 +168,11 @@ case class Subsystem(
    * Sets (or clears) the selected subsystem and version.
    *
    * @param maybeSv        optional subsystem name and version to set (clear if None)
-   * @param saveHistory    if true, save the current state to the browser history
    * @param findMatchingIcd if true, update the ICD item if a matching published ICD can be found
    * @return a future indicating when any event handlers have completed
    */
   def setSubsystemWithVersion(
       maybeSv: Option[SubsystemWithVersion],
-      saveHistory: Boolean = true,
       findMatchingIcd: Boolean = true
   ): Future[Unit] = {
     if (maybeSv == getSubsystemWithVersion)
@@ -205,7 +201,7 @@ case class Subsystem(
     }
     for {
       _ <- updateSubsystemVersionOptions(maybeSv.flatMap(_.maybeVersion))
-      _ <- listener.subsystemSelected(maybeSv, saveHistory, findMatchingIcd = false)
+      _ <- listener.subsystemSelected(maybeSv, findMatchingIcd = false)
     } yield {}
   }
 
@@ -241,8 +237,7 @@ case class Subsystem(
    * @return a future indicating when any event handlers have completed
    */
   def setSelectedSubsystemVersion(
-      maybeVersion: Option[String],
-      saveHistory: Boolean = true
+      maybeVersion: Option[String]
   ): Future[Unit] = {
     if (maybeVersion == getSelectedSubsystemVersion)
       Future.successful()
@@ -251,7 +246,7 @@ case class Subsystem(
         case Some(s) => versionItem.value = s
         case None    => versionItem.value = unpublishedVersion
       }
-      listener.subsystemSelected(getSubsystemWithVersion, saveHistory, findMatchingIcd = false)
+      listener.subsystemSelected(getSubsystemWithVersion, findMatchingIcd = false)
     }
   }
 

@@ -55,14 +55,14 @@ object SelectDialog {
 //noinspection DuplicatedCode
 case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener) extends Displayable {
 
-  val subsystem = Subsystem(SourceSubsystemListener)
-  val targetSubsystem = Subsystem(
+  val subsystem: Subsystem = Subsystem(SourceSubsystemListener)
+  val targetSubsystem: Subsystem = Subsystem(
     TargetSubsystemListener,
     placeholderMsg = "Select Subsystem",
     enablePlaceholder = true
   )
-  val subsystemSwapper = SubsystemSwapper(swapSubsystems)
-  val icdChooser       = IcdChooser(IcdChooserListener)
+  val subsystemSwapper: SubsystemSwapper = SubsystemSwapper(swapSubsystems)
+  val icdChooser: IcdChooser = IcdChooser(IcdChooserListener)
 
   // Displays the Apply button
   private val applyButton: Button = {
@@ -117,7 +117,6 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
     // Called when the source subsystem (or version) combobox selection is changed
     override def subsystemSelected(
         maybeSv: Option[SubsystemWithVersion],
-        saveHistory: Boolean,
         findMatchingIcd: Boolean
     ): Future[Unit] = {
       val maybeTargetSv = targetSubsystem.getSubsystemWithVersion
@@ -142,7 +141,6 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
     // Called when the target subsystem or version combobox selection is changed
     override def subsystemSelected(
         maybeTargetSv: Option[SubsystemWithVersion],
-        saveHistory: Boolean,
         findMatchingIcd: Boolean
     ): Future[Unit] = {
       val maybeSv = subsystem.getSubsystemWithVersion
@@ -171,23 +169,23 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       icdChooser.selectMatchingIcd(sv2, Some(sv1))
       val selectedSubsystemComponent       = subsystem.getSelectedComponent
       val selectedTargetSubsystemComponent = targetSubsystem.getSelectedComponent
-      subsystem.setSubsystemWithVersion(Some(sv2), saveHistory = false, findMatchingIcd = false)
+      subsystem.setSubsystemWithVersion(Some(sv2), findMatchingIcd = false)
       subsystem.setSelectedComponent(selectedTargetSubsystemComponent)
-      targetSubsystem.setSubsystemWithVersion(Some(sv1), saveHistory = false, findMatchingIcd = false)
+      targetSubsystem.setSubsystemWithVersion(Some(sv1), findMatchingIcd = false)
       targetSubsystem.setSelectedComponent(selectedSubsystemComponent)
     }
   }
 
   private object IcdChooserListener extends IcdListener {
     // Called when the ICD (or ICD version) combobox selection is changed
-    override def icdSelected(maybeIcdVersion: Option[IcdVersion], saveHistory: Boolean = true): Future[Unit] = {
+    override def icdSelected(maybeIcdVersion: Option[IcdVersion]): Future[Unit] = {
       maybeIcdVersion match {
         case Some(icdVersion) =>
           val sv       = SubsystemWithVersion(icdVersion.subsystem, Some(icdVersion.subsystemVersion), None)
           val targetSv = SubsystemWithVersion(icdVersion.target, Some(icdVersion.targetVersion), None)
           for {
-            _ <- subsystem.setSubsystemWithVersion(Some(sv), saveHistory = false, findMatchingIcd = false)
-            _ <- targetSubsystem.setSubsystemWithVersion(Some(targetSv), saveHistory = false, findMatchingIcd = false)
+            _ <- subsystem.setSubsystemWithVersion(Some(sv), findMatchingIcd = false)
+            _ <- targetSubsystem.setSubsystemWithVersion(Some(targetSv), findMatchingIcd = false)
           } yield {
             val enabled = subsystem.getSelectedSubsystem.isDefined
             targetSubsystem.setEnabled(enabled)

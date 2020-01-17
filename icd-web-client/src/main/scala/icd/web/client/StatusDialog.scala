@@ -1,6 +1,7 @@
 package icd.web.client
 
-import icd.web.shared.{IcdVersionInfo, PublishInfo, SubsystemWithVersion}
+import icd.web.client.StatusDialog.StatusDialogListener
+import icd.web.shared.{ApiVersionInfo, IcdVersion, IcdVersionInfo, PublishInfo, SubsystemWithVersion}
 import org.scalajs.dom
 import org.scalajs.dom.Element
 import org.scalajs.dom.html.{Div, Table}
@@ -12,6 +13,15 @@ import scalacss.ScalatagsCss._
 import scalatags.JsDom
 
 object StatusDialog {
+
+  /**
+   * Type of a listener for actions in the Status dialog
+   */
+  trait StatusDialogListener {
+    def apiSelected(sv: SubsystemWithVersion): Unit
+    def icdSelected(icdVersion: IcdVersion): Unit
+  }
+
   val msg                    = "Select a subsystem to see the current status."
   val placeholderMsg: String = "Select subsystem"
 }
@@ -20,7 +30,7 @@ object StatusDialog {
  * Displays the current published status of a selected subsystem.
  * @param mainContent used to display errors
  */
-case class StatusDialog(mainContent: MainContent) extends Displayable {
+case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener) extends Displayable {
   import StatusDialog._
 
   // The subsystem combobox
@@ -68,6 +78,18 @@ case class StatusDialog(mainContent: MainContent) extends Displayable {
     result.reverse
   }
 
+  // Action when user clicks on an API version to view the API
+  private def clickedOnApi(apiVersionInfo: ApiVersionInfo)(e: dom.Event): Unit = {
+    e.preventDefault()
+    listener.apiSelected(SubsystemWithVersion(apiVersionInfo.subsystem, Some(apiVersionInfo.version), None))
+  }
+
+  // Action when user clicks on an ICD version to view the ICD
+  private def clickedOnIcd(iv: IcdVersion)(e: dom.Event): Unit = {
+    e.preventDefault()
+    listener.icdSelected(iv)
+  }
+
   private def apiTable(pubInfo: PublishInfo): JsDom.TypedTag[Table] = {
     val apiVersionInfo = pubInfo.apiVersions.head
     table(
@@ -86,7 +108,14 @@ case class StatusDialog(mainContent: MainContent) extends Displayable {
       tbody(
         tr(
           td(apiVersionInfo.subsystem),
-          td(apiVersionInfo.version),
+          td(
+            a(
+              title := s"Select this API for viewing",
+              apiVersionInfo.version,
+              href := "#",
+              onclick := clickedOnApi(apiVersionInfo) _
+            )
+          ),
           td(formatDate(apiVersionInfo.date)),
           td(apiVersionInfo.user),
           td(apiVersionInfo.comment),
@@ -116,7 +145,14 @@ case class StatusDialog(mainContent: MainContent) extends Displayable {
           tr(
             td(s"${iv.subsystem}-${iv.subsystemVersion}"),
             td(s"${iv.target}-${iv.targetVersion}"),
-            td(iv.icdVersion),
+            td(
+              a(
+                title := s"Select this ICD for viewing",
+                iv.icdVersion,
+                href := "#",
+                onclick := clickedOnIcd(iv) _
+              )
+            ),
             td(formatDate(icdVersionInfo.date)),
             td(icdVersionInfo.user),
             td(icdVersionInfo.comment)

@@ -24,10 +24,9 @@ object IcdChooser {
      * Called when an ICD is selected
      *
      * @param maybeIcdVersion the selected ICD, or None if no ICD is selected
-     * @param saveHistory     if true, push the browser history state, otherwise not
      * @return a future indicating when changes are done
      */
-    def icdSelected(maybeIcdVersion: Option[IcdVersion], saveHistory: Boolean = true): Future[Unit]
+    def icdSelected(maybeIcdVersion: Option[IcdVersion]): Future[Unit]
   }
 
   private val emptyOptionMsg     = "Select an ICD"
@@ -144,17 +143,19 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
       maybeIcdVersion match {
         case Some(icdVersion) =>
           val value = Json.toJson(IcdName(icdVersion.subsystem, icdVersion.target)).toString()
-          icdItem.value = value                                  // JSON
+          icdItem.value = value // JSON
+          val f = updateIcdVersionOptions()
           versionItem.value = Json.toJson(icdVersion).toString() // JSON
           if (notifyListener)
-            listener.icdSelected(maybeIcdVersion, saveHistory)
-          else Future.successful()
+            Future.sequence(List(f, listener.icdSelected(maybeIcdVersion))).map(_ => ())
+          else f
         case None =>
           icdItem.value = emptyOptionMsg
+          val f = updateIcdVersionOptions()
           versionItem.value = unpublishedVersion
           if (notifyListener)
-            listener.icdSelected(None, saveHistory)
-          else Future.successful()
+            Future.sequence(List(f, listener.icdSelected(None))).map(_ => ())
+          else f
       }
     }
   }
@@ -268,10 +269,8 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
    */
   def setSelectedIcdVersion(
       maybeVersion: Option[IcdVersion],
-      notifyListener: Boolean = true,
-      saveHistory: Boolean = true
+      notifyListener: Boolean = true
   ): Future[Unit] = {
-
     val maybeSelectedVersion = getSelectedIcdVersion
     if (maybeVersion == maybeSelectedVersion)
       Future.successful()
@@ -282,9 +281,9 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
         case None =>
           versionItem.value = unpublishedVersion
       }
-      if (notifyListener)
-        listener.icdSelected(maybeSelectedVersion, saveHistory)
-      else Future.successful()
+      if (notifyListener) {
+        listener.icdSelected(maybeSelectedVersion)
+      } else Future.successful()
     }
   }
 
@@ -311,7 +310,6 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   private def updateIcdVersionOptions(versions: List[IcdVersion]): Future[Unit] = {
 
     import scalatags.JsDom.all._
-
     while (versionItem.options.length != 0) {
       versionItem.remove(0)
     }

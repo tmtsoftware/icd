@@ -14,6 +14,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import BrowserHistory._
 import Components._
 import icd.web.client.SelectDialog.SelectDialogListener
+import icd.web.client.StatusDialog.StatusDialogListener
 import org.scalajs.dom.ext.Ajax
 import play.api.libs.json.Json
 
@@ -63,7 +64,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val selectDialog = SelectDialog(mainContent, Selector)
 
   private val statusItem   = NavbarItem("Status", "Display the published status of a selected subsystem", showStatus())
-  private val statusDialog = StatusDialog(mainContent)
+  private val statusDialog = StatusDialog(mainContent, StatusListener)
 
   private val fileUploadItem   = NavbarItem("Upload", "Select icd model files to ingest into the icd database", showUploadDialog())
   private val fileUploadDialog = FileUploadDialog(subsystemNames, csrfToken, inputDirSupported)
@@ -162,8 +163,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       for {
         _ <- subsystemNames.update()
         _ <- selectDialog.icdChooser.setIcdWithVersion(maybeIcd, saveHistory = false)
-        _ <- selectDialog.subsystem.setSubsystemWithVersion(maybeSv, saveHistory = false)
-        _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(maybeTargetSv, saveHistory = false)
+        _ <- selectDialog.subsystem.setSubsystemWithVersion(maybeSv, findMatchingIcd = false)
+        _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(maybeTargetSv, findMatchingIcd = false)
       } {}
     }
   }
@@ -230,8 +231,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         case _ =>
           val maybeLinkSv = Some(SubsystemWithVersion(link.subsystem, None, Some(link.compName)))
           for {
-            _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(None, saveHistory = false)
-            _ <- selectDialog.subsystem.setSubsystemWithVersion(maybeLinkSv, saveHistory = false)
+            _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(None)
+            _ <- selectDialog.subsystem.setSubsystemWithVersion(maybeLinkSv)
             _ <- selectDialog.applySettings()
           } yield {
             goToComponent(link.compName)
@@ -301,9 +302,9 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         case SelectView =>
           for {
             _ <- selectDialog.subsystem
-                  .setSubsystemWithVersion(hist.maybeSourceSubsystem, saveHistory = false, findMatchingIcd = false)
+                  .setSubsystemWithVersion(hist.maybeSourceSubsystem, findMatchingIcd = false)
             _ <- selectDialog.targetSubsystem
-                  .setSubsystemWithVersion(hist.maybeTargetSubsystem, saveHistory = false, findMatchingIcd = false)
+                  .setSubsystemWithVersion(hist.maybeTargetSubsystem, findMatchingIcd = false)
             _ <- selectDialog.icdChooser.setIcdWithVersion(hist.maybeIcd, notifyListener = false, saveHistory = false)
           } {
             selectSubsystems(
@@ -334,7 +335,39 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         maybeIcd: Option[IcdVersion],
         searchAllSubsystems: Boolean
     ): Future[Unit] = {
+      pushState(
+        viewType = SelectView,
+        maybeSourceSubsystem = maybeSv,
+        maybeTargetSubsystem = maybeTargetSv,
+        maybeIcd = maybeIcd
+      )
       updateComponentDisplay(maybeSv, maybeTargetSv, maybeIcd, searchAllSubsystems)
+    }
+  }
+
+  private object StatusListener extends StatusDialogListener {
+    override def apiSelected(sv: SubsystemWithVersion): Unit = {
+      val maybeSv = Some(sv)
+      pushState(viewType = SelectView, maybeSourceSubsystem = maybeSv)
+      selectSubsystems(maybeSv = maybeSv, saveHistory = false)
+    }
+
+    override def icdSelected(icdVersion: IcdVersion): Unit = {
+      val maybeSourceSubsystem = Some(SubsystemWithVersion(icdVersion.subsystem, Some(icdVersion.subsystemVersion), None))
+      val maybeTargetSubsystem = Some(SubsystemWithVersion(icdVersion.target, Some(icdVersion.targetVersion), None))
+      val maybeIcd             = Some(icdVersion)
+      pushState(
+        viewType = SelectView,
+        maybeSourceSubsystem = maybeSourceSubsystem,
+        maybeTargetSubsystem = maybeTargetSubsystem,
+        maybeIcd = maybeIcd
+      )
+      selectSubsystems(
+        maybeSv = maybeSourceSubsystem,
+        maybeTargetSv = maybeTargetSubsystem,
+        maybeIcd = maybeIcd,
+        saveHistory = false
+      )
     }
   }
 
