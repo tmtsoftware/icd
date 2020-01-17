@@ -3,6 +3,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Added a new overview/status dialog that displays a table of the latest published APIs and ICDs for a selected subsystem
+
+### Changed
+
+- Changed the default value of the `icd.allowUpload` property to false. To enable the Upload dialog when using the icd web server, start it like this:
+ ```
+    icdwebserver -Dicd.allowUpload=true
+``` 
+
 ## [ICD v0.17] - 2019-12-06
 
 ### Added
