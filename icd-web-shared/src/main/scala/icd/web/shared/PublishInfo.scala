@@ -16,6 +16,14 @@ case class PublishInfo(
 )
 
 /**
+ * Holds the credentials needed to publish a subsystem API or ICD
+ *
+ * @param user GitHub user name
+ * @param password GitHub password
+ */
+case class GitHubCredentials(user: String, password: String)
+
+/**
  * Holds the information needed to publish a subsystem API
  *
  * @param subsystem the subsystem to publish

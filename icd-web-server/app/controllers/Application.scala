@@ -310,6 +310,28 @@ class Application @Inject()(
   }
 
   /**
+   * Checks if the given GitHub user and password are valid for publish
+   */
+  def checkGitHubCredentials() = Action { implicit request =>
+    val maybeGitHubCredentials = request.body.asJson.map(json => Json.fromJson[GitHubCredentials](json).get)
+    if (maybeGitHubCredentials.isEmpty) {
+      BadRequest("Missing POST data of type GitHubCredentials")
+    } else {
+      val gitHubCredentials = maybeGitHubCredentials.get
+      try {
+        IcdGitManager.checkGitHubCredentials(gitHubCredentials)
+        Ok.as(JSON)
+      } catch {
+        case ex: TransportException =>
+          Unauthorized(ex.getMessage)
+        case ex: Exception =>
+          ex.printStackTrace()
+          BadRequest(ex.getMessage)
+      }
+    }
+  }
+
+  /**
    * Publish the selected API (add an entry for the current commit of the master branch on GitHub)
    */
   def publishApi() = Action { implicit request =>

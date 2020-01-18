@@ -45,6 +45,8 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
   private def compareButton(subsystem: String): Button = {
     import scalatags.JsDom.all._
     button(
+      `type` := "submit",
+      cls := "btn btn-primary",
       title := "Compare two selected subsystem versions",
       onclick := compareHandler(subsystem) _
     )("Compare").render

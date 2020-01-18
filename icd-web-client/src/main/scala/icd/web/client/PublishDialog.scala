@@ -7,7 +7,7 @@ import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalajs.dom.{Element, document}
-import org.scalajs.dom.html.{Button, Input}
+import org.scalajs.dom.html.{Button, Div, Input}
 import org.scalajs.dom.raw.{HTMLButtonElement, HTMLInputElement}
 import scalatags.JsDom.all._
 
@@ -24,10 +24,11 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
   // Main version div
   private val contentDiv = div(id := "publishDialog").render
 
-  private val helpMsg = """
-                          |Select a single subsystem API below, or two subsystems for an ICD.
-                          |Then enter your GitHub credentials and a comment and click Publish.
-                          |""".stripMargin
+  private val helpMsg =
+    """
+      |Select a single subsystem API below, or two subsystems for an ICD.
+      |Then enter your GitHub credentials and a comment and click Publish.
+      |""".stripMargin
 
   private val publishLabelMsg = "To publish an API or ICD, first select one or two subsystems above."
 
@@ -37,6 +38,8 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
   private def makePublishButton(): Button = {
     import scalatags.JsDom.all._
     button(
+      `type` := "submit",
+      cls := "btn btn-primary",
       id := "publishButton",
       title := "Publish the selected API, or ICD if two APIs are selected",
       onclick := publishHandler _,
@@ -69,27 +72,26 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
   // Message about missing comment
   private val commentMissing = {
     import scalatags.JsDom.all._
-    div(id := "commentMissing", cls := "has-error hide", label(cls := "control-label", "Comment is required!"))
+    div(id := "commentMissing", cls := "has-error", label(cls := "control-label", "Comment is required!")).render
   }
 
   private def commentChanged(): Unit = {
     val comment = commentBox.value
-    val elem    = $id("commentMissing")
     if (comment.isEmpty)
-      elem.classList.remove("hide")
+      commentMissing.classList.remove("hide")
     else
-      elem.classList.add("hide")
+      commentMissing.classList.add("hide")
   }
 
   // Publish user name field
-  private val userNameBox = {
+  private val usernameBox = {
     import scalatags.JsDom.all._
     input(
       cls := "form-control",
-      name := "userName",
-      id := "userName",
+      name := "username",
+      id := "username",
       required,
-      onkeyup := userNameChanged _,
+      onkeyup := usernameChanged _,
       placeholder := "Enter your GitHub user name..."
     ).render
   }
@@ -100,18 +102,17 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
   }
 
   // Message about missing username
-  private val userNameMissing = {
+  private val usernameMissing = {
     import scalatags.JsDom.all._
-    div(id := "userNameMissing", cls := "has-error hide", label(cls := "control-label", "Username is required!"))
+    div(id := "usernameMissing", cls := "has-error", label(cls := "control-label", "Username is required!")).render
   }
 
-  private def userNameChanged(): Unit = {
-    val userName = userNameBox.value
-    val elem     = $id("userNameMissing")
-    if (userName.isEmpty)
-      elem.classList.remove("hide")
+  private def usernameChanged(): Unit = {
+    val username = usernameBox.value
+    if (username.isEmpty)
+      usernameMissing.classList.remove("hide")
     else
-      elem.classList.add("hide")
+      usernameMissing.classList.add("hide")
   }
 
   // Publish password field
@@ -131,23 +132,22 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
   // Message about missing password
   private val passwordMissing = {
     import scalatags.JsDom.all._
-    div(id := "passwordMissing", cls := "has-error hide", label(cls := "control-label", "Password is required!"))
+    div(id := "passwordMissing", cls := "has-error", label(cls := "control-label", "Password is required!")).render
   }
 
   // Message about incorrect password
   private val passwordIncorrect = {
     import scalatags.JsDom.all._
-    div(id := "passwordIncorrect", cls := "has-error hide", label(cls := "control-label", "Password is incorrect!"))
+    div(id := "passwordIncorrect", cls := "has-error hide", label(cls := "control-label", "Password or username is incorrect!")).render
   }
 
   private def passwordChanged(): Unit = {
     val password = passwordBox.value
-    val elem     = $id("passwordMissing")
     if (password.isEmpty)
-      elem.classList.remove("hide")
+      passwordMissing.classList.remove("hide")
     else
-      elem.classList.add("hide")
-    $id("passwordIncorrect").classList.add("hide")
+      passwordMissing.classList.add("hide")
+    passwordIncorrect.classList.add("hide")
   }
 
   // Message to display above publish button
@@ -163,15 +163,21 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
 
   }
 
-  // Updates the row for the newly published API
-  private def updateTableRow(apiVersionInfo: ApiVersionInfo): Unit = {
+  // Updates the row for the newly published API and returns a future indicating when done
+  private def updateTableRow(apiVersionInfo: ApiVersionInfo): Future[Unit] = {
     val subsystem = apiVersionInfo.subsystem
-    $id(s"${subsystem}Version").innerHTML = apiVersionInfo.version
-    $id(s"${subsystem}Date").innerHTML = apiVersionInfo.date
-    $id(s"${subsystem}User").innerHTML = apiVersionInfo.user
-    $id(s"${subsystem}Comment").innerHTML = apiVersionInfo.comment
-    $id(s"${subsystem}Status").innerHTML = upToDate
-    $id("publishButton").asInstanceOf[HTMLButtonElement].disabled = true
+    IcdUtil.getPublishInfo(Some(subsystem), mainContent).map {
+      pubInfoList =>
+        val publishInfo = pubInfoList.head
+        val cb = $id(s"${subsystem}Checkbox")
+        cb.asInstanceOf[HTMLInputElement].value = Json.toJson(publishInfo).toString()
+        $id(s"${subsystem}Version").innerHTML = apiVersionInfo.version
+        $id(s"${subsystem}Date").innerHTML = apiVersionInfo.date
+        $id(s"${subsystem}User").innerHTML = apiVersionInfo.user
+        $id(s"${subsystem}Comment").innerHTML = apiVersionInfo.comment
+        $id(s"${subsystem}Status").innerHTML = upToDate
+        $id("publishButton").asInstanceOf[HTMLButtonElement].disabled = true
+    }
   }
 
   private def displayAjaxErrors(f: Future[Unit]): Unit = {
@@ -181,7 +187,7 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
           case 400 => // BadRequest
             setPublishStatus(ex.xhr.responseText)
           case 401 => // Unauthorized
-            $id("passwordIncorrect").classList.remove("hide")
+            passwordIncorrect.classList.remove("hide")
           case 406 => // NotAcceptable
             setPublishStatus(ex.xhr.responseText)
         }
@@ -192,17 +198,17 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
   // Publish an API on GitHub
   private def publishApi(publishInfo: PublishInfo): Unit = {
     val majorVersion   = majorVersionCheckBox.checked
-    val user           = userNameBox.value
+    val user           = usernameBox.value
     val password       = passwordBox.value
     val comment        = commentBox.value
     val publishApiInfo = PublishApiInfo(publishInfo.subsystem, majorVersion, user, password, comment)
     val headers        = Map("Content-Type" -> "application/json")
-    val f = Ajax.post(url = Routes.publishApi, data = Json.toJson(publishApiInfo).toString(), headers = headers).map { r =>
+    val f = Ajax.post(url = Routes.publishApi, data = Json.toJson(publishApiInfo).toString(), headers = headers).flatMap { r =>
       r.status match {
         case 200 => // OK
           val apiVersionInfo = Json.fromJson[ApiVersionInfo](Json.parse(r.responseText)).get
           setPublishStatus(s"Published ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
-          updateTableRow(apiVersionInfo)
+          updateTableRow(apiVersionInfo).map(_ => ())
       }
     }
     displayAjaxErrors(f)
@@ -212,7 +218,7 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
   // Publish an ICD on GitHub
   private def publishIcd(publishInfo1: PublishInfo, publishInfo2: PublishInfo): Unit = {
     val majorVersion = majorVersionCheckBox.checked
-    val user         = userNameBox.value
+    val user         = usernameBox.value
     val password     = passwordBox.value
     val comment      = commentBox.value
     val publishIcdInfo = PublishIcdInfo(
@@ -357,8 +363,48 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
     )
   }
 
+  private def checkGitHubCredentials(e: dom.Event): Unit = {
+    val gitHubCredentials = GitHubCredentials(usernameBox.value, passwordBox.value)
+    val headers           = Map("Content-Type" -> "application/json")
+    val f =
+      Ajax.post(url = Routes.checkGitHubCredentials, data = Json.toJson(gitHubCredentials).toString(), headers = headers).map {
+        r =>
+          if (r.status == 200) {
+            $id("gitHubCredentials").classList.add("hide")
+            $id("contentDivPlaceholder").innerHTML = ""
+            $id("contentDivPlaceholder").appendChild(contentDiv)
+          }
+          ()
+      }
+    displayAjaxErrors(f)
+    showBusyCursorWhile(f)
+  }
+
+  // Returns the markup for getting the GitHub credentials
+  private def markupGitHubCredentials(): Div = {
+    import scalacss.ScalatagsCss._
+    usernameChanged()
+    passwordChanged()
+    div(
+      div(
+        id := "gitHubCredentials",
+        div(Styles.commentBox, label("Username")("*", usernameBox, usernameMissing)),
+        div(Styles.commentBox, label("Password")("*", passwordBox, passwordMissing, passwordIncorrect)),
+        button(
+          `type` := "submit",
+          cls := "btn btn-primary",
+          id := "applyButton",
+          title := s"Use the given GitHub credentials...",
+          onclick := checkGitHubCredentials _
+          //        disabled := true
+        )("Apply")
+      ),
+      div(id := "contentDivPlaceholder")
+    ).render
+  }
+
   // Returns the markup for displaying a table of subsystems
-  private def markupSubsystemTable(publishInfoList: List[PublishInfo]) = {
+  private def markupSubsystemTable(publishInfoList: List[PublishInfo]): Div = {
     import scalacss.ScalatagsCss._
     val publishButton = makePublishButton()
     val publishLabel  = label(id := "publishLabel", publishLabelMsg)
@@ -383,7 +429,7 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
             ),
             tbody(
               for (publishInfo <- publishInfoList) yield {
-                // XXX TODO: Display menu of versions
+                // XXX TODO: Display menu of versions?
                 val checkBox   = makeSubsystemCheckBox(publishInfo, publishButton).render
                 val apiVersion = publishInfo.apiVersions.headOption
                 val publishItem =
@@ -406,8 +452,6 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
           ),
           div(Styles.commentBox, label("Comments")("*", commentBox, commentMissing)),
           div(cls := "checkbox")(label(majorVersionCheckBox, "Increment major version")),
-          div(Styles.commentBox, label("Username")("*", userNameBox, userNameMissing)),
-          div(Styles.commentBox, label("Password")("*", passwordBox, passwordMissing, passwordIncorrect)),
           div(
             publishLabel,
             br,
@@ -433,15 +477,12 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
       case Success(list) =>
         contentDiv.innerHTML = ""
         contentDiv.appendChild(markupSubsystemTable(list))
-        // Update the warning messages
-        userNameChanged()
-        passwordChanged()
-        commentChanged()
       case Failure(ex) =>
         mainContent.displayInternalError(ex)
     }
     f.map(_ => ())
   }
 
-  def markup(): Element = contentDiv
+  //  def markup(): Element = contentDiv
+  def markup(): Element = markupGitHubCredentials()
 }

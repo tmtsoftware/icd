@@ -189,4 +189,9 @@ object Routes {
    * Post: Updates the cache of published APIs and ICDs (in case new ones were published)
    */
   val updatePublished = "/updatePublished"
+
+  /**
+   *  Post: Checks if the given GitHub user name and password are valid for publishing
+   */
+  val checkGitHubCredentials = "/checkGitHubCredentials"
 }

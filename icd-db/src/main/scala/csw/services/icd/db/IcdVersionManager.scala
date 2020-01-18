@@ -218,7 +218,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       maybeComponent: Option[String],
       versions: List[(String, Int)],
       comment: String,
-      userName: String,
+      username: String,
       majorVersion: Boolean,
       date: DateTime
   ): Unit = {
@@ -226,7 +226,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
     val parts = versions.map(v => BSONDocument("name" -> v._1, versionStrKey -> v._2))
     val version =
       maybeVersion.getOrElse(incrVersion(getLatestPublishedVersion(collectionNames, subsystem, maybeComponent), majorVersion))
-    val user = if (userName.nonEmpty) userName else System.getProperty("user.name")
+    val user = if (username.nonEmpty) username else System.getProperty("user.name")
     val obj = BSONDocument(
       versionStrKey -> version,
       userKey       -> user,
@@ -534,7 +534,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       maybeVersion: Option[String],
       majorVersion: Boolean,
       comment: String,
-      userName: String,
+      username: String,
       date: DateTime
   ): Unit = {
     import reactivemongo.api.bson._
@@ -567,13 +567,13 @@ case class IcdVersionManager(query: IcdDbQuery) {
     }
 
     // Add to collection of published subsystem versions
-    newVersion(collectionNames, subsystem, maybeVersion, None, versions, comment, userName, majorVersion, date)
+    newVersion(collectionNames, subsystem, maybeVersion, None, versions, comment, username, majorVersion, date)
 
     // Add to collection of published subsystem component versions
     getComponentNames(SubsystemWithVersion(subsystem, None, None)).foreach { name =>
       val prefix       = s"$subsystem.$name."
       val compVersions = versions.filter(p => p._1.startsWith(prefix))
-      newVersion(collectionNames, subsystem, maybeVersion, Some(name), compVersions, comment, userName, majorVersion, date)
+      newVersion(collectionNames, subsystem, maybeVersion, Some(name), compVersions, comment, username, majorVersion, date)
     }
   }
 

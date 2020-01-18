@@ -7,7 +7,7 @@ import csw.services.icd.{IcdValidator, Problem}
 import csw.services.icd.db.ApiVersions.ApiEntry
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.db.{ApiVersions, IcdDb, IcdVersionManager, IcdVersions, Subsystems}
-import icd.web.shared.{ApiVersionInfo, IcdVersion, IcdVersionInfo, PublishInfo}
+import icd.web.shared.{ApiVersionInfo, GitHubCredentials, IcdVersion, IcdVersionInfo, PublishInfo}
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.joda.time.{DateTime, DateTimeZone}
@@ -664,6 +664,20 @@ object IcdGitManager {
 //    println(s"""    "$subsystem" -> "$commitId", """)
     val isEmpty = emptyRepos.get(subsystem).contains(commitId)
     SubsystemGitInfo(commitId, isEmpty)
+  }
+
+  /**
+   * Checks that the given GitHub credentials are valid for publishing and throws an exception if not
+   */
+  def checkGitHubCredentials(gitHubCredentials: GitHubCredentials): Unit = {
+    val gitWorkDir = Files.createTempDirectory("icds").toFile
+    try {
+      val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
+      git.push.setCredentialsProvider(new UsernamePasswordCredentialsProvider(gitHubCredentials.user, gitHubCredentials.password)).call()
+      git.close()
+    } finally {
+      deleteDirectoryRecursively(gitWorkDir)
+    }
   }
 
   /**

@@ -71,6 +71,7 @@ object JsonSupport {
   implicit val icdVersionInfoFormat        = Json.format[IcdVersionInfo]
   implicit val apiVersionInfoFormat        = Json.format[ApiVersionInfo]
   implicit val publishInfoFormat           = Json.format[PublishInfo]
+  implicit val gitHubCredentialsFormat     = Json.format[GitHubCredentials]
   implicit val publishApiInfoFormat        = Json.format[PublishApiInfo]
   implicit val publishIcdInfoFormat        = Json.format[PublishIcdInfo]
 
