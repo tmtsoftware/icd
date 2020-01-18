@@ -166,17 +166,16 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
   // Updates the row for the newly published API and returns a future indicating when done
   private def updateTableRow(apiVersionInfo: ApiVersionInfo): Future[Unit] = {
     val subsystem = apiVersionInfo.subsystem
-    IcdUtil.getPublishInfo(Some(subsystem), mainContent).map {
-      pubInfoList =>
-        val publishInfo = pubInfoList.head
-        val cb = $id(s"${subsystem}Checkbox")
-        cb.asInstanceOf[HTMLInputElement].value = Json.toJson(publishInfo).toString()
-        $id(s"${subsystem}Version").innerHTML = apiVersionInfo.version
-        $id(s"${subsystem}Date").innerHTML = apiVersionInfo.date
-        $id(s"${subsystem}User").innerHTML = apiVersionInfo.user
-        $id(s"${subsystem}Comment").innerHTML = apiVersionInfo.comment
-        $id(s"${subsystem}Status").innerHTML = upToDate
-        $id("publishButton").asInstanceOf[HTMLButtonElement].disabled = true
+    IcdUtil.getPublishInfo(Some(subsystem), mainContent).map { pubInfoList =>
+      val publishInfo = pubInfoList.head
+      val cb          = $id(s"${subsystem}Checkbox")
+      cb.asInstanceOf[HTMLInputElement].value = Json.toJson(publishInfo).toString()
+      $id(s"${subsystem}Version").innerHTML = apiVersionInfo.version
+      $id(s"${subsystem}Date").innerHTML = apiVersionInfo.date
+      $id(s"${subsystem}User").innerHTML = apiVersionInfo.user
+      $id(s"${subsystem}Comment").innerHTML = apiVersionInfo.comment
+      $id(s"${subsystem}Status").innerHTML = upToDate
+      $id("publishButton").asInstanceOf[HTMLButtonElement].disabled = true
     }
   }
 
@@ -332,14 +331,19 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
         }
       } else {
         // ICD
-        val subsystems = publishInfoList.map(getSubsystemVersionStr)
-        val subsysStr  = s"${subsystems.mkString(" and ")}"
-        e.innerHTML = if (icdExists(publishInfoList)) {
-          publishButton.disabled = true
-          s"The ICD between $subsysStr already exists"
-        } else {
-          s"Click below to publish the ICD between $subsysStr:"
-        }
+        val subsystems     = publishInfoList.map(getSubsystemVersionStr)
+        val subsysStr      = s"${subsystems.mkString(" and ")}"
+        val noApiPublished = publishInfoList.exists(_.apiVersions.isEmpty)
+        if (noApiPublished) publishButton.disabled = true
+        e.innerHTML =
+          if (noApiPublished)
+            "The APIs for both subsystems in an ICD must already be published."
+          else if (icdExists(publishInfoList)) {
+            publishButton.disabled = true
+            s"The ICD between $subsysStr already exists"
+          } else {
+            s"Click below to publish the ICD between $subsysStr:"
+          }
       }
     } else {
       e.innerHTML = publishLabelMsg
