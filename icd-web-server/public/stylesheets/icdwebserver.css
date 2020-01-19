@@ -66,4 +66,7 @@
     cursor: move;
 }
 
-
+/* Fix problem with modal publish dialog popup: See https://stackoverflow.com/questions/44181031/bootstrap-modal-disabled */
+.modal-backdrop {
+    z-index: -1;
+}

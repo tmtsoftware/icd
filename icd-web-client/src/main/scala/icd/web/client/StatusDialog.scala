@@ -54,13 +54,15 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
     detailsDiv.innerHTML = ""
     maybeSubsystem.foreach { subsystem =>
       detailsDiv.appendChild(p(em(s"Getting $subsystem related information...")).render)
-      IcdUtil.getPublishInfo(maybeSubsystem, mainContent).onComplete {
+      val f = IcdUtil.getPublishInfo(maybeSubsystem, mainContent)
+      f.onComplete {
         case Success(pubInfoList) =>
           detailsDiv.innerHTML = ""
           detailsDiv.appendChild(detailsMarkup(pubInfoList.head))
         case Failure(ex) =>
           mainContent.displayInternalError(ex)
       }
+      showBusyCursorWhile(f.map(_ => ()))
     }
   }
 
