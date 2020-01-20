@@ -12,16 +12,26 @@ import scala.concurrent.ExecutionContext.Implicits.global
  */
 package object client {
 
+  // Used to deal with overlapping calls to showBusyCursorWhile (assuming JavaScript client is basically single threaded)
+  var busyCount = 0
+
   // Show/hide the busy cursor while the future is running
   def showBusyCursorWhile(f: Future[Unit]): Future[Unit] = {
     // Note: See implicit NodeList to List support in package object in this dir
-    val nodeList = document.querySelectorAll("div")
-    nodeList.map(_.asInstanceOf[HTMLDivElement]).foreach { divEl =>
-      divEl.style.cursor = "progress"
+    busyCount = busyCount + 1
+    if (busyCount == 1) {
+      val nodeList = document.querySelectorAll("div")
+      nodeList.map(_.asInstanceOf[HTMLDivElement]).foreach { divEl =>
+        divEl.style.cursor = "progress"
+      }
     }
     f.onComplete { _ =>
-      nodeList.map(_.asInstanceOf[HTMLDivElement]).foreach { divEl =>
-        divEl.style.cursor = "default"
+      busyCount = busyCount - 1
+      if (busyCount == 0) {
+        val nodeList = document.querySelectorAll("div")
+        nodeList.map(_.asInstanceOf[HTMLDivElement]).foreach { divEl =>
+          divEl.style.cursor = "default"
+        }
       }
     }
     f

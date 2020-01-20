@@ -35,19 +35,20 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
 
   private val upToDate = "Up to date"
 
+  // Used to show busy cursor only after enterring GitHub credentials, while still updating the GUI in the background
+  private var updateFuture: Future[Unit] = Future.successful()
+
   // Displays the Publish button (at the bottom of the dialog)
-  private def makePublishButton(): JsDom.TypedTag[Div] = {
-    import scalatags.JsDom.all._
-    div(
-      a(
-        href := "#",
-        cls := "btn btn-lg btn-success disabled",
-        id := "publishButton",
-        title := "Publish the selected API, or ICD if two APIs are selected",
-        attr("data-toggle") := "modal",
-        attr("data-target") := "#basicModal"
-      )("Publish")
-    )
+  private def makePublishButton(): Button = {
+    button(
+      `type` := "submit",
+      cls := "btn btn-primary",
+      id := "publishButton",
+      title := "Publish the selected API, or ICD if two APIs are selected",
+      disabled := true,
+      attr("data-toggle") := "modal",
+      attr("data-target") := "#basicModal"
+    )("Publish").render
   }
 
   private def makePublishModal(): JsDom.TypedTag[Div] = {
@@ -82,7 +83,8 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
   // Updates the message for the publish API confirmation modal dialog, displaying the version of teh API that will be published.
   private def setConfirmPublishApi(subsystem: String, version: String): Unit = {
     val v = nextVersion(version)
-    $id("confirmPublishMessage").innerHTML = s"Are you sure you want to publish the API $subsystem-$v?"
+    $id("confirmPublishMessage").innerHTML =
+      span("Are you sure you want to publish the API: ")(strong(s"$subsystem-$v?")).render.innerHTML
   }
 
   // Updates the message for the publish ICD confirmation modal dialog, , displaying the version of the ICD that will be published.
@@ -97,14 +99,16 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
       .foreach { icdVersionInfo =>
         val iv = icdVersionInfo.icdVersion
         val v  = nextVersion(iv.icdVersion)
-        $id("confirmPublishMessage").innerHTML =
-          s"Are you sure you want to publish the ICD ${iv.subsystem}-${iv.target}-$v between $subsysStr?"
+        $id("confirmPublishMessage").innerHTML = span("Are you sure you want to publish the ICD: ")(
+          strong(s"${iv.subsystem}-${iv.target}-$v"),
+          " between ",
+          s"$subsysStr?"
+        ).render.innerHTML
       }
   }
 
   // Displays a Publish API button in the table that just jumps to the main publish button
   private def readyToPublishButton(publishInfo: PublishInfo): Button = {
-    import scalatags.JsDom.all._
     button(
       title := s"Enter your GitHub credentials to Publish the API for ${publishInfo.subsystem} ...",
       onclick := readyToPublishHandler(publishInfo) _
@@ -113,7 +117,6 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
 
   // Publish comment box
   private val commentBox = {
-    import scalatags.JsDom.all._
     textarea(
       cls := "form-control",
       name := "comments",
@@ -126,7 +129,6 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
 
   // Message about missing comment
   private val commentMissing = {
-    import scalatags.JsDom.all._
     div(id := "commentMissing", cls := "has-error", label(cls := "control-label", "Comment is required!")).render
   }
 
@@ -140,7 +142,6 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
 
   // Publish user name field
   private val usernameBox = {
-    import scalatags.JsDom.all._
     input(
       cls := "form-control",
       name := "username",
@@ -152,13 +153,11 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
   }
 
   private val majorVersionCheckBox = {
-    import scalatags.JsDom.all._
     input(tpe := "checkbox", onchange := checkboxListener() _).render
   }
 
   // Message about missing username
   private val usernameMissing = {
-    import scalatags.JsDom.all._
     div(id := "usernameMissing", cls := "has-error", label(cls := "control-label", "Username is required!")).render
   }
 
@@ -172,7 +171,6 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
 
   // Publish password field
   private val passwordBox = {
-    import scalatags.JsDom.all._
     input(
       cls := "form-control",
       `type` := "password",
@@ -186,13 +184,11 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
 
   // Message about missing password
   private val passwordMissing = {
-    import scalatags.JsDom.all._
     div(id := "passwordMissing", cls := "has-error", label(cls := "control-label", "Password is required!")).render
   }
 
   // Message about incorrect password
   private val passwordIncorrect = {
-    import scalatags.JsDom.all._
     div(id := "passwordIncorrect", cls := "has-error hide", label(cls := "control-label", "Password or username is incorrect!")).render
   }
 
@@ -207,7 +203,6 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
 
   // Message to display above publish button
   private val messageItem = {
-    import scalatags.JsDom.all._
     div.render
   }
 
@@ -229,7 +224,7 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
       $id(s"${subsystem}User").innerHTML = apiVersionInfo.user
       $id(s"${subsystem}Comment").innerHTML = apiVersionInfo.comment
       $id(s"${subsystem}Status").innerHTML = upToDate
-      $id("publishButton").classList.add("disabled")
+      setPublishButtonDisabled(true)
     }
   }
 
@@ -293,7 +288,7 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
           setPublishStatus(
             s"Published ICD-${v.subsystem}-${v.target}-${v.icdVersion} between ${v.subsystem}-${v.subsystemVersion} and ${v.target}-${v.targetVersion}"
           )
-          $id("publishButton").classList.add("disabled")
+          setPublishButtonDisabled(true)
       }
     }
     displayAjaxErrors(f)
@@ -357,15 +352,13 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
     s"${p.subsystem}$versionStr"
   }
 
+  def setPublishButtonDisabled(disabled: Boolean): Unit = {
+    $id("publishButton").asInstanceOf[Button].disabled = disabled
+  }
+
   // Called when one of the API checkboxes is clicked to update the enabled state of the publish
   // button
   private def checkboxListener()(e: dom.Event): Unit = {
-    def setPublishButtonDisabled(disabled: Boolean): Unit = {
-      if (disabled)
-        $id("publishButton").classList.add("disabled")
-      else
-        $id("publishButton").classList.remove("disabled")
-    }
     setPublishStatus("")
     val checked = document.querySelectorAll("input[name='api']:checked")
 
@@ -437,6 +430,7 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
             $id("gitHubCredentials").classList.add("hide")
             $id("contentDivPlaceholder").innerHTML = ""
             $id("contentDivPlaceholder").appendChild(contentDiv)
+            showBusyCursorWhile(updateFuture)
           }
           ()
       }
@@ -544,7 +538,8 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
       case Failure(ex) =>
         mainContent.displayInternalError(ex)
     }
-    f.map(_ => ())
+    updateFuture = f.map(_ => ())
+    updateFuture
   }
 
   //  def markup(): Element = contentDiv
