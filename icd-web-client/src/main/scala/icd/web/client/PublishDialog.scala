@@ -38,19 +38,25 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
   // Used to show busy cursor only after enterring GitHub credentials, while still updating the GUI in the background
   private var updateFuture: Future[Unit] = Future.successful()
 
-  // Displays the Publish button (at the bottom of the dialog)
-  private def makePublishButton(): Button = {
+  // Displays the Publish (Unpublish) button (at the bottom of the dialog)
+  private def makePublishButton(unpublish: Boolean): Button = {
+    val buttonClass = if (unpublish) "btn" else "btn btn-primary"
+    val buttonId    = if (unpublish) "unpublishButton" else "publishButton"
+    val s           = if (unpublish) "Unpublish" else "Publish"
+    val buttonTitle = s"$s the selected API, or ICD if two APIs are selected"
     button(
       `type` := "submit",
-      cls := "btn btn-primary",
-      id := "publishButton",
-      title := "Publish the selected API, or ICD if two APIs are selected",
+      cls := buttonClass,
+      id := buttonId,
+      title := buttonTitle,
       disabled := true,
+      onclick := publishButtonClicked(unpublish) _,
       attr("data-toggle") := "modal",
       attr("data-target") := "#basicModal"
-    )("Publish").render
+    )(s).render
   }
 
+  // Makes the popup confirmation for publish (unpublish)
   private def makePublishModal(): JsDom.TypedTag[Div] = {
     div(cls := "modal fade", id := "basicModal", tabindex := "-1", role := "dialog", style := "padding-top: 130px")(
       div(cls := "modal-dialog")(
@@ -60,13 +66,11 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
             h4(cls := "modal-title")("Confirm Publish")
           ),
           div(cls := "modal-body")(
-            h3(id := "confirmPublishMessage")("Are you sure you want to publish XXX")
+            h3(id := "confirmPublishMessage")(s"Are you sure you want to ...")
           ),
           div(cls := "modal-footer")(
             button(`type` := "button", cls := "btn btn-default", attr("data-dismiss") := "modal")("Cancel"),
-            button(`type` := "button", cls := "btn btn-primary", attr("data-dismiss") := "modal", onclick := publishHandler _)(
-              "Publish"
-            )
+            button(id := "confirmPublishButton", `type` := "button", cls := "btn btn-primary", attr("data-dismiss") := "modal")
           )
         )
       )
@@ -80,15 +84,24 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
     if (majorVersion) s"${maj.toInt + 1}.0" else s"$maj.${min.toInt + 1}"
   }
 
-  // Updates the message for the publish API confirmation modal dialog, displaying the version of teh API that will be published.
-  private def setConfirmPublishApi(subsystem: String, version: String): Unit = {
-    val v = nextVersion(version)
-    $id("confirmPublishMessage").innerHTML =
-      span("Are you sure you want to publish the API: ")(strong(s"$subsystem-$v?")).render.innerHTML
+  // Updates the message for the (un)publish API confirmation modal dialog, displaying the version of teh API that will be (un)published.
+  private def setConfirmPublishApi(unpublish: Boolean, subsystem: String, version: String): Unit = {
+    if (unpublish) {
+      $id("confirmPublishMessage").innerHTML =
+        span("Are you sure you want to unpublish the API: ")(strong(s"$subsystem-$version?")).render.innerHTML
+      $id("confirmPublishButton").innerHTML = "Unpublish"
+      $id("confirmPublishButton").asInstanceOf[Button].onclick = publishHandler(unpublish = true) _
+    } else {
+      val v = nextVersion(version)
+      $id("confirmPublishMessage").innerHTML =
+        span("Are you sure you want to publish the API: ")(strong(s"$subsystem-$v?")).render.innerHTML
+      $id("confirmPublishButton").innerHTML = "Publish"
+      $id("confirmPublishButton").asInstanceOf[Button].onclick = publishHandler(unpublish = false) _
+    }
   }
 
-  // Updates the message for the publish ICD confirmation modal dialog, , displaying the version of the ICD that will be published.
-  private def setConfirmPublishIcd(subsysStr: String, publishInfoList: List[PublishInfo]): Unit = {
+  // Updates the message for the (un)publish ICD confirmation modal dialog, , displaying the version of the ICD that will be (un)published.
+  private def setConfirmPublishIcd(unpublish: Boolean, subsysStr: String, publishInfoList: List[PublishInfo]): Unit = {
     val p1 = publishInfoList.head
     val p2 = publishInfoList.tail.head
     p1.icdVersions
@@ -98,12 +111,16 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
       }
       .foreach { icdVersionInfo =>
         val iv = icdVersionInfo.icdVersion
-        val v  = nextVersion(iv.icdVersion)
-        $id("confirmPublishMessage").innerHTML = span("Are you sure you want to publish the ICD: ")(
+        val v  = if (unpublish) iv.icdVersion else nextVersion(iv.icdVersion)
+        val s  = if (unpublish) "unpublish" else "publish"
+        $id("confirmPublishMessage").innerHTML = span(s"Are you sure you want to $s the ICD: ")(
           strong(s"${iv.subsystem}-${iv.target}-$v"),
           " between ",
           s"$subsysStr?"
         ).render.innerHTML
+
+        $id("confirmPublishButton").innerHTML = if (unpublish) "Unpublish" else "Publish"
+        $id("confirmPublishButton").asInstanceOf[Button].onclick = publishHandler(unpublish) _
       }
   }
 
@@ -243,60 +260,127 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
     }
   }
 
-  // Publish an API on GitHub
-  private def publishApi(publishInfo: PublishInfo): Unit = {
-    val majorVersion   = majorVersionCheckBox.checked
-    val user           = usernameBox.value
-    val password       = passwordBox.value
-    val comment        = commentBox.value
-    val publishApiInfo = PublishApiInfo(publishInfo.subsystem, majorVersion, user, password, comment)
-    val headers        = Map("Content-Type" -> "application/json")
-    val f = Ajax.post(url = Routes.publishApi, data = Json.toJson(publishApiInfo).toString(), headers = headers).flatMap { r =>
-      r.status match {
-        case 200 => // OK
-          val apiVersionInfo = Json.fromJson[ApiVersionInfo](Json.parse(r.responseText)).get
-          setPublishStatus(s"Published ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
-          updateTableRow(apiVersionInfo).map(_ => ())
-      }
-    }
-    displayAjaxErrors(f)
-    showBusyCursorWhile(f.map(_ => ()))
-  }
-
-  // Publish an ICD on GitHub
-  private def publishIcd(publishInfo1: PublishInfo, publishInfo2: PublishInfo): Unit = {
+  // Publish (Unpublish) an API on GitHub
+  private def publishApi(unpublish: Boolean, publishInfo: PublishInfo): Unit = {
     val majorVersion = majorVersionCheckBox.checked
     val user         = usernameBox.value
     val password     = passwordBox.value
     val comment      = commentBox.value
-    val publishIcdInfo = PublishIcdInfo(
-      publishInfo1.subsystem,
-      publishInfo1.apiVersions.head.version,
-      publishInfo2.subsystem,
-      publishInfo2.apiVersions.head.version,
-      majorVersion,
-      user,
-      password,
-      comment
-    )
-    val headers = Map("Content-Type" -> "application/json")
-    val f = Ajax.post(url = Routes.publishIcd, data = Json.toJson(publishIcdInfo).toString(), headers = headers).map { r =>
-      r.status match {
-        case 200 => // OK
-          val icdVersionInfo = Json.fromJson[IcdVersionInfo](Json.parse(r.responseText)).get
-          val v              = icdVersionInfo.icdVersion
-          setPublishStatus(
-            s"Published ICD-${v.subsystem}-${v.target}-${v.icdVersion} between ${v.subsystem}-${v.subsystemVersion} and ${v.target}-${v.targetVersion}"
-          )
-          setPublishButtonDisabled(true)
+    val headers      = Map("Content-Type" -> "application/json")
+
+    val f = if (unpublish) {
+      val version          = publishInfo.apiVersions.head.version
+      val unpublishApiInfo = UnpublishApiInfo(publishInfo.subsystem, version, user, password, comment)
+      Ajax.post(url = Routes.unpublishApi, data = Json.toJson(unpublishApiInfo).toString(), headers = headers).flatMap { r =>
+        r.status match {
+          case 200 => // OK
+            val apiVersionInfo = Json.fromJson[ApiVersionInfo](Json.parse(r.responseText)).get
+            setPublishStatus(s"Unpublished ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
+            updateTableRow(apiVersionInfo).map(_ => ()) // XXX TODO FIXME
+        }
+      }
+    } else {
+      val publishApiInfo = PublishApiInfo(publishInfo.subsystem, majorVersion, user, password, comment)
+      Ajax.post(url = Routes.publishApi, data = Json.toJson(publishApiInfo).toString(), headers = headers).flatMap { r =>
+        r.status match {
+          case 200 => // OK
+            val apiVersionInfo = Json.fromJson[ApiVersionInfo](Json.parse(r.responseText)).get
+            setPublishStatus(s"Published ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
+            updateTableRow(apiVersionInfo).map(_ => ())
+        }
       }
     }
     displayAjaxErrors(f)
     showBusyCursorWhile(f.map(_ => ()))
   }
 
-  // Called when the Publish button is pressed
-  private def publishHandler(e: dom.Event): Unit = {
+  // Publish (Unpublish) an ICD on GitHub
+  private def publishIcd(unpublish: Boolean, publishInfo1: PublishInfo, publishInfo2: PublishInfo): Unit = {
+    val majorVersion = majorVersionCheckBox.checked
+    val user         = usernameBox.value
+    val password     = passwordBox.value
+    val comment      = commentBox.value
+    val headers      = Map("Content-Type" -> "application/json")
+    val icdVersion = publishInfo1.icdVersions.find { icdVersionInfo =>
+      val i = icdVersionInfo.icdVersion
+      i.subsystem == publishInfo1.subsystem && i.target == publishInfo2.subsystem
+    }
+    val f = if (unpublish) {
+      val unpublishIcdInfo = UnpublishIcdInfo(
+        icdVersion.get.icdVersion.icdVersion,
+        publishInfo1.subsystem,
+        publishInfo2.subsystem,
+        user,
+        password,
+        comment
+      )
+      Ajax.post(url = Routes.unpublishIcd, data = Json.toJson(unpublishIcdInfo).toString(), headers = headers).map { r =>
+        r.status match {
+          case 200 => // OK
+            val icdVersionInfo = Json.fromJson[IcdVersionInfo](Json.parse(r.responseText)).get
+            val v              = icdVersionInfo.icdVersion
+            setPublishStatus(
+              s"Unpublished ICD-${v.subsystem}-${v.target}-${v.icdVersion} between ${v.subsystem}-${v.subsystemVersion} and ${v.target}-${v.targetVersion}"
+            )
+            setPublishButtonDisabled(false) // XXX TODO FIXME
+        }
+      }
+    } else {
+      val publishIcdInfo = PublishIcdInfo(
+        publishInfo1.subsystem,
+        publishInfo1.apiVersions.head.version,
+        publishInfo2.subsystem,
+        publishInfo2.apiVersions.head.version,
+        majorVersion,
+        user,
+        password,
+        comment
+      )
+      Ajax.post(url = Routes.publishIcd, data = Json.toJson(publishIcdInfo).toString(), headers = headers).map { r =>
+        r.status match {
+          case 200 => // OK
+            val icdVersionInfo = Json.fromJson[IcdVersionInfo](Json.parse(r.responseText)).get
+            val v              = icdVersionInfo.icdVersion
+            setPublishStatus(
+              s"Published ICD-${v.subsystem}-${v.target}-${v.icdVersion} between ${v.subsystem}-${v.subsystemVersion} and ${v.target}-${v.targetVersion}"
+            )
+            setPublishButtonDisabled(true)
+        }
+      }
+    }
+    displayAjaxErrors(f)
+    showBusyCursorWhile(f.map(_ => ()))
+  }
+
+  // Called when the Publish button is pressed.
+  // Here we just update some labels. The actual publishing is done after confirmation.
+  private def publishButtonClicked(unpublish: Boolean)(e: dom.Event): Unit = {
+    val checked = document.querySelectorAll("input[name='api']:checked")
+    val enabled = checked.length == 1 || checked.length == 2
+    if (enabled) {
+      val publishInfoList = checked
+        .map(elem => elem.asInstanceOf[HTMLInputElement].value)
+        .toList
+        .map(s => Json.fromJson[PublishInfo](Json.parse(s)).get)
+      if (checked.length == 1) {
+        // API
+        val publishInfo = publishInfoList.head
+        if (unpublish || publishInfo.readyToPublish) {
+          setConfirmPublishApi(unpublish, publishInfo.subsystem, publishInfo.apiVersions.head.version)
+        }
+      } else {
+        // ICD
+        val subsystems = publishInfoList.map(getSubsystemVersionStr)
+        val subsysStr  = s"${subsystems.mkString(" and ")}"
+        if (unpublish || !icdExists(publishInfoList)) {
+          setConfirmPublishIcd(unpublish, subsysStr, publishInfoList)
+        }
+      }
+    }
+  }
+
+  // Called when the confirmation modal popup's Publish (Unpublish) button is pressed
+  private def publishHandler(unpublish: Boolean)(e: dom.Event): Unit = {
     setPublishStatus("")
     val checked = document.querySelectorAll("input[name='api']:checked")
     if (checked.length == 1 || checked.length == 2) {
@@ -307,13 +391,13 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
       if (checked.length == 1) {
         // API
         val publishInfo = publishInfoList.head
-        if (publishInfo.readyToPublish) {
-          publishApi(publishInfo)
+        if (unpublish || publishInfo.readyToPublish) {
+          publishApi(unpublish, publishInfo)
         }
       } else {
         // ICD
-        if (!icdExists(publishInfoList)) {
-          publishIcd(publishInfoList.head, publishInfoList.tail.head)
+        if (unpublish || !icdExists(publishInfoList)) {
+          publishIcd(unpublish, publishInfoList.head, publishInfoList.tail.head)
         }
       }
     }
@@ -356,6 +440,10 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
     $id("publishButton").asInstanceOf[Button].disabled = disabled
   }
 
+  def setUnpublishButtonDisabled(disabled: Boolean): Unit = {
+    $id("unpublishButton").asInstanceOf[Button].disabled = disabled
+  }
+
   // Called when one of the API checkboxes is clicked to update the enabled state of the publish
   // button
   private def checkboxListener()(e: dom.Event): Unit = {
@@ -364,6 +452,7 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
 
     val enabled = checked.length == 1 || checked.length == 2
     setPublishButtonDisabled(!enabled)
+    setUnpublishButtonDisabled(!enabled)
     // Set the label next to the publish button
     val e = $id("publishLabel")
     if (enabled) {
@@ -375,7 +464,6 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
         // API
         val publishInfo = publishInfoList.head
         e.innerHTML = if (publishInfo.readyToPublish) {
-          setConfirmPublishApi(publishInfo.subsystem, publishInfo.apiVersions.head.version)
           s"Click below to publish the API for ${publishInfo.subsystem}:"
         } else {
           setPublishButtonDisabled(true)
@@ -386,15 +474,18 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
         val subsystems     = publishInfoList.map(getSubsystemVersionStr)
         val subsysStr      = s"${subsystems.mkString(" and ")}"
         val noApiPublished = publishInfoList.exists(_.apiVersions.isEmpty)
-        if (noApiPublished) setPublishButtonDisabled(true)
+        if (noApiPublished) {
+          setPublishButtonDisabled(true)
+          setUnpublishButtonDisabled(true)
+        }
         e.innerHTML =
           if (noApiPublished)
             "The APIs for both subsystems in an ICD must already be published."
           else if (icdExists(publishInfoList)) {
             setPublishButtonDisabled(true)
+            setUnpublishButtonDisabled(false)
             s"The ICD between $subsysStr already exists"
           } else {
-            setConfirmPublishIcd(subsysStr, publishInfoList)
             s"Click below to publish the ICD between $subsysStr:"
           }
       }
@@ -513,9 +604,11 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
           div(
             publishLabel,
             br,
-            makePublishButton(),
+            makePublishButton(unpublish = false),
             " ",
-            publishStatus
+            publishStatus,
+            " ",
+            makePublishButton(unpublish = true)
           )
         )
       ),

@@ -35,6 +35,17 @@ case class GitHubCredentials(user: String, password: String)
 case class PublishApiInfo(subsystem: String, majorVersion: Boolean, user: String, password: String, comment: String)
 
 /**
+ * Holds the information needed to unpublish a subsystem API
+ *
+ * @param subsystem the subsystem to publish
+ * @param subsystemVersion the version of the subsystem to unpublish
+ * @param user GitHub user name
+ * @param password GitHub password
+ * @param comment Comment for unpublishing this version
+ */
+case class UnpublishApiInfo(subsystem: String, subsystemVersion: String, user: String, password: String, comment: String)
+
+/**
  * Holds the information needed to publish an ICD
  *
  * @param subsystem the first subsystem in the ICD
@@ -52,6 +63,25 @@ case class PublishIcdInfo(
     target: String,
     targetVersion: String,
     majorVersion: Boolean,
+    user: String,
+    password: String,
+    comment: String
+)
+
+/**
+ * Holds the information needed to unpublish an ICD
+ *
+ * @param icdVersion the version of the ICD to unpublish
+ * @param subsystem the first subsystem in the ICD
+ * @param target the second subsystem in the ICD
+ * @param user GitHub user name
+ * @param password GitHub password
+ * @param comment Comment for unpublishing this version
+ */
+case class UnpublishIcdInfo(
+    icdVersion: String,
+    subsystem: String,
+    target: String,
     user: String,
     password: String,
     comment: String

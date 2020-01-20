@@ -186,6 +186,16 @@ object Routes {
   val publishIcd = "/publishIcd"
 
   /**
+   * For POST of UnpublishApiInfo to unpublish an API
+   */
+  val unpublishApi = "/unpublishApi"
+
+  /**
+   * For POST of UnpublishIcdInfo to unpublish an ICD
+   */
+  val unpublishIcd = "/unpublishIcd"
+
+  /**
    * Post: Updates the cache of published APIs and ICDs (in case new ones were published)
    */
   val updatePublished = "/updatePublished"

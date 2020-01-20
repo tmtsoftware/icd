@@ -74,5 +74,7 @@ object JsonSupport {
   implicit val gitHubCredentialsFormat     = Json.format[GitHubCredentials]
   implicit val publishApiInfoFormat        = Json.format[PublishApiInfo]
   implicit val publishIcdInfoFormat        = Json.format[PublishIcdInfo]
+  implicit val unpublishApiInfoFormat      = Json.format[UnpublishApiInfo]
+  implicit val unpublishIcdInfoFormat      = Json.format[UnpublishIcdInfo]
 
 }

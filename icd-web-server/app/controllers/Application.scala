@@ -400,6 +400,64 @@ class Application @Inject()(
   }
 
   /**
+   * Unublish the selected API (removes an entry from the file in the master branch on GitHub)
+   */
+  def unpublishApi() = Action { implicit request =>
+    val maybeUnpublishApiInfo = request.body.asJson.map(json => Json.fromJson[UnpublishApiInfo](json).get)
+    if (maybeUnpublishApiInfo.isEmpty) {
+      BadRequest("Missing POST data of type UnpublishApiInfo")
+    } else {
+      val unpublishApiInfo = maybeUnpublishApiInfo.get
+      try {
+        val apiVersionInfo = IcdGitManager.unpublish(
+          SubsystemAndVersion(unpublishApiInfo.subsystem, Some(unpublishApiInfo.subsystemVersion)),
+          unpublishApiInfo.user,
+          unpublishApiInfo.password,
+          unpublishApiInfo.comment
+        )
+        updateAfterPublish()
+        Ok(Json.toJson(apiVersionInfo))
+      } catch {
+        case ex: TransportException =>
+          Unauthorized(ex.getMessage)
+        case ex: Exception =>
+          ex.printStackTrace()
+          BadRequest(ex.getMessage)
+      }
+    }
+  }
+
+  /**
+   * Unpublish an ICD (remove an entry in the icds file on the master branch of https://github.com/tmt-icd/ICD-Model-Files)
+   */
+  def unpublishIcd() = Action { implicit request =>
+    val maybeUnpublishIcdInfo = request.body.asJson.map(json => Json.fromJson[UnpublishIcdInfo](json).get)
+    if (maybeUnpublishIcdInfo.isEmpty) {
+      BadRequest("Missing POST data of type UnpublishIcdInfo")
+    } else {
+      val unpublishIcdInfo = maybeUnpublishIcdInfo.get
+      try {
+        val icdVersionInfo = IcdGitManager.unpublish(
+          unpublishIcdInfo.icdVersion,
+          unpublishIcdInfo.subsystem,
+          unpublishIcdInfo.target,
+          unpublishIcdInfo.user,
+          unpublishIcdInfo.password,
+          unpublishIcdInfo.comment
+        )
+        updateAfterPublish()
+        Ok(Json.toJson(icdVersionInfo))
+      } catch {
+        case ex: TransportException =>
+          Unauthorized(ex.getMessage)
+        case ex: Exception =>
+          ex.printStackTrace()
+          BadRequest(ex.getMessage)
+      }
+    }
+  }
+
+  /**
    * Updates the cache of published APIs and ICDs (in case new ones were published)
    */
   def updatePublished() = Action { implicit request =>
