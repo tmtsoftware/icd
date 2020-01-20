@@ -430,12 +430,12 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
             $id("gitHubCredentials").classList.add("hide")
             $id("contentDivPlaceholder").innerHTML = ""
             $id("contentDivPlaceholder").appendChild(contentDiv)
-            showBusyCursorWhile(updateFuture)
           }
           ()
       }
     displayAjaxErrors(f)
     showBusyCursorWhile(f)
+    f.foreach(_ => showBusyCursorWhile(updateFuture))
   }
 
   // Returns the markup for getting the GitHub credentials

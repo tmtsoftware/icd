@@ -45,6 +45,7 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
   private def compareButton(subsystem: String): Button = {
     import scalatags.JsDom.all._
     button(
+      disabled := true,
       `type` := "submit",
       cls := "btn btn-primary",
       title := "Compare two selected subsystem versions",
@@ -53,7 +54,7 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
   }
 
   // Displays the diff of two versions
-  private val diffDiv = div(id := "versionDiff").render
+  private val diffDiv = div(id := "versionDiff", style := "padding-bottom: 20px").render
 
   // Called when the Compare button is pressed
   private def compareHandler(subsystem: String)(e: dom.Event): Unit = {
@@ -136,7 +137,8 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
           |A number in a path is the zero based index of the changed item.
           |For example: "/publish/alarms/3/description" indicates that the change is in the fourth alarm's description.
           |""".stripMargin),
-      list.map(diffInfoMarkup)
+      list.map(diffInfoMarkup),
+      p(" ")
     ).render
   }
 
