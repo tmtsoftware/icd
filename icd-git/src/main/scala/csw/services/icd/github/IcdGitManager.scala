@@ -267,7 +267,7 @@ object IcdGitManager {
    * @param comment  the commit comment
    * @return the entry for the removed API, if found
    */
-  def unpublish(sv: SubsystemAndVersion, user: String, password: String, comment: String): Option[ApiVersions.ApiEntry] = {
+  def unpublish(sv: SubsystemAndVersion, user: String, password: String, comment: String): Option[ApiVersionInfo] = {
     import ApiVersions._
     // Checkout the apis repo in a temp dir
     val gitWorkDir = Files.createTempDirectory("apis").toFile
@@ -277,7 +277,7 @@ object IcdGitManager {
       val path             = Paths.get(file.getPath)
 
       // Get the list of published APIs for the subsystem from GitHub
-      val result =
+      val maybeApiEntry =
         if (!file.exists()) None
         else {
           val apiVersions = Some(ApiVersions.fromJson(new String(Files.readAllBytes(path))))
@@ -299,7 +299,7 @@ object IcdGitManager {
           maybeApi
         }
       git.close()
-      result
+      maybeApiEntry.map(e => ApiVersionInfo(sv.subsystem, e.version, e.user, e.comment, e.date))
     } finally {
       deleteDirectoryRecursively(gitWorkDir)
     }
@@ -673,7 +673,9 @@ object IcdGitManager {
     val gitWorkDir = Files.createTempDirectory("icds").toFile
     try {
       val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
-      git.push.setCredentialsProvider(new UsernamePasswordCredentialsProvider(gitHubCredentials.user, gitHubCredentials.password)).call()
+      git.push
+        .setCredentialsProvider(new UsernamePasswordCredentialsProvider(gitHubCredentials.user, gitHubCredentials.password))
+        .call()
       git.close()
     } finally {
       deleteDirectoryRecursively(gitWorkDir)
@@ -691,7 +693,7 @@ object IcdGitManager {
     val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
     val subsystems = maybeSubsystem match {
       case Some(subsystem) => List(subsystem)
-      case None => Subsystems.allSubsystems
+      case None            => Subsystems.allSubsystems
     }
     subsystems.map { subsystem =>
       val subsystemGitInfo = getSubsystemGitInfo(subsystem)

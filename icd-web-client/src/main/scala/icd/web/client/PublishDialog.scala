@@ -230,16 +230,15 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
   }
 
   // Updates the row for the newly published API and returns a future indicating when done
-  private def updateTableRow(apiVersionInfo: ApiVersionInfo): Future[Unit] = {
-    val subsystem = apiVersionInfo.subsystem
+  private def updateTableRow(subsystem: String, maybeApiVersionInfo: Option[ApiVersionInfo]): Future[Unit] = {
     IcdUtil.getPublishInfo(Some(subsystem), mainContent).map { pubInfoList =>
       val publishInfo = pubInfoList.head
       val cb          = $id(s"${subsystem}Checkbox")
       cb.asInstanceOf[HTMLInputElement].value = Json.toJson(publishInfo).toString()
-      $id(s"${subsystem}Version").innerHTML = apiVersionInfo.version
-      $id(s"${subsystem}Date").innerHTML = apiVersionInfo.date
-      $id(s"${subsystem}User").innerHTML = apiVersionInfo.user
-      $id(s"${subsystem}Comment").innerHTML = apiVersionInfo.comment
+      $id(s"${subsystem}Version").innerHTML = maybeApiVersionInfo.map(_.version).getOrElse("")
+      $id(s"${subsystem}Date").innerHTML = maybeApiVersionInfo.map(_.date).getOrElse("")
+      $id(s"${subsystem}User").innerHTML = maybeApiVersionInfo.map(_.user).getOrElse("")
+      $id(s"${subsystem}Comment").innerHTML = maybeApiVersionInfo.map(_.comment).getOrElse("")
       $id(s"${subsystem}Status").innerHTML = upToDate
       setPublishButtonDisabled(true)
     }
@@ -276,7 +275,8 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
           case 200 => // OK
             val apiVersionInfo = Json.fromJson[ApiVersionInfo](Json.parse(r.responseText)).get
             setPublishStatus(s"Unpublished ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
-            updateTableRow(apiVersionInfo).map(_ => ()) // XXX TODO FIXME
+            val maybeApiVersionInfo = publishInfo.apiVersions.tail.headOption
+            updateTableRow(publishInfo.subsystem, maybeApiVersionInfo).map(_ => ())
         }
       }
     } else {
@@ -286,7 +286,7 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
           case 200 => // OK
             val apiVersionInfo = Json.fromJson[ApiVersionInfo](Json.parse(r.responseText)).get
             setPublishStatus(s"Published ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
-            updateTableRow(apiVersionInfo).map(_ => ())
+            updateTableRow(publishInfo.subsystem, Some(apiVersionInfo)).map(_ => ())
         }
       }
     }
@@ -606,9 +606,9 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
             br,
             makePublishButton(unpublish = false),
             " ",
+            makePublishButton(unpublish = true),
+            br,
             publishStatus,
-            " ",
-            makePublishButton(unpublish = true)
           )
         )
       ),

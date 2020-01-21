@@ -409,14 +409,18 @@ class Application @Inject()(
     } else {
       val unpublishApiInfo = maybeUnpublishApiInfo.get
       try {
-        val apiVersionInfo = IcdGitManager.unpublish(
+        IcdGitManager.unpublish(
           SubsystemAndVersion(unpublishApiInfo.subsystem, Some(unpublishApiInfo.subsystemVersion)),
           unpublishApiInfo.user,
           unpublishApiInfo.password,
           unpublishApiInfo.comment
-        )
-        updateAfterPublish()
-        Ok(Json.toJson(apiVersionInfo))
+        ) match {
+          case Some(apiVersionInfo) =>
+            updateAfterPublish()
+            Ok(Json.toJson(apiVersionInfo))
+          case None =>
+            NotFound(s"${unpublishApiInfo.subsystem}-${unpublishApiInfo.subsystemVersion} was not found")
+        }
       } catch {
         case ex: TransportException =>
           Unauthorized(ex.getMessage)
