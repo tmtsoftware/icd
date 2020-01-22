@@ -84,17 +84,35 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
     if (majorVersion) s"${maj.toInt + 1}.0" else s"$maj.${min.toInt + 1}"
   }
 
+  // Returns names of ICDs containing the latest version of the subsystem
+  private def relatedIcds(publishInfo: PublishInfo): List[String] = {
+    val subsystem = publishInfo.subsystem
+    val version = publishInfo.apiVersions.head.version
+    publishInfo.icdVersions.filter { i =>
+      val iv = i.icdVersion
+      (iv.subsystem == subsystem && iv.subsystemVersion == version) || (iv.target == subsystem && iv.targetVersion == version)
+    }.map { i =>
+      val iv = i.icdVersion
+      s"${iv.subsystem}-${iv.target}-${iv.icdVersion}"
+    }
+  }
+
   // Updates the message for the (un)publish API confirmation modal dialog, displaying the version of teh API that will be (un)published.
-  private def setConfirmPublishApi(unpublish: Boolean, subsystem: String, version: String): Unit = {
+  private def setConfirmPublishApi(unpublish: Boolean, publishInfo: PublishInfo): Unit = {
+    val subsystem = publishInfo.subsystem
+    val version = publishInfo.apiVersions.head.version
+
     if (unpublish) {
+      val icds = relatedIcds(publishInfo).mkString(",")
+      val icdMsg = if (icds.isEmpty) "" else " and related ICDs: $icds"
       $id("confirmPublishMessage").innerHTML =
-        span("Are you sure you want to unpublish the API: ")(strong(s"$subsystem-$version?")).render.innerHTML
+        span("Are you sure you want to unpublish the API ")(strong(s"$subsystem-$version$icdMsg?")).render.innerHTML
       $id("confirmPublishButton").innerHTML = "Unpublish"
       $id("confirmPublishButton").asInstanceOf[Button].onclick = publishHandler(unpublish = true) _
     } else {
       val v = nextVersion(version)
       $id("confirmPublishMessage").innerHTML =
-        span("Are you sure you want to publish the API: ")(strong(s"$subsystem-$v?")).render.innerHTML
+        span("Are you sure you want to publish the API ")(strong(s"$subsystem-$v?")).render.innerHTML
       $id("confirmPublishButton").innerHTML = "Publish"
       $id("confirmPublishButton").asInstanceOf[Button].onclick = publishHandler(unpublish = false) _
     }
@@ -366,7 +384,7 @@ case class PublishDialog(mainContent: MainContent) extends Displayable {
         // API
         val publishInfo = publishInfoList.head
         if (unpublish || publishInfo.readyToPublish) {
-          setConfirmPublishApi(unpublish, publishInfo.subsystem, publishInfo.apiVersions.head.version)
+          setConfirmPublishApi(unpublish, publishInfo)
         }
       } else {
         // ICD

@@ -269,6 +269,7 @@ object IcdGitManager {
    */
   def unpublish(sv: SubsystemAndVersion, user: String, password: String, comment: String): Option[ApiVersionInfo] = {
     import ApiVersions._
+
     // Checkout the apis repo in a temp dir
     val gitWorkDir = Files.createTempDirectory("apis").toFile
     try {
