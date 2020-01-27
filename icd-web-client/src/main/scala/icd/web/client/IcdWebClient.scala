@@ -13,6 +13,7 @@ import scalacss.ScalatagsCss._
 import scala.concurrent.ExecutionContext.Implicits.global
 import BrowserHistory._
 import Components._
+import icd.web.client.PublishDialog.PublishDialogListener
 import icd.web.client.SelectDialog.SelectDialogListener
 import icd.web.client.StatusDialog.StatusDialogListener
 import org.scalajs.dom.ext.Ajax
@@ -70,7 +71,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val fileUploadDialog = FileUploadDialog(subsystemNames, csrfToken, inputDirSupported)
 
   private val publishItem   = NavbarItem("Publish", "Shows dialog to publish APIs and ICDs", showPublishDialog())
-  private val publishDialog = PublishDialog(mainContent)
+  private val publishDialog = PublishDialog(mainContent, PublishListener)
 
   // Used to keep track of the current dialog, so that we know which subsystem to use for History, PDF buttons
   private var currentView: ViewType = StatusView
@@ -98,7 +99,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     }
   }
 
-  // Updates the cache of published APIs and ICDs on teh server (in case new ones were published)
+  // Updates the cache of published APIs and ICDs on the server (in case new ones were published)
   private def updatePublished(): Future[Unit] = {
     val path = Routes.updatePublished
     Ajax.post(path).map { r =>
@@ -368,6 +369,14 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         maybeIcd = maybeIcd,
         saveHistory = false
       )
+    }
+  }
+
+  private object PublishListener extends PublishDialogListener {
+    override def publishChange(): Unit = {
+      updatePublished()
+      subsystemNames.update()
+      selectDialog.icdChooser.updateIcdOptions()
     }
   }
 

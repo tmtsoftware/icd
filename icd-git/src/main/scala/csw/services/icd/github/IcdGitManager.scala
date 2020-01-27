@@ -230,14 +230,14 @@ object IcdGitManager {
     // Checkout the icds repo in a temp dir
     val gitWorkDir = Files.createTempDirectory("icds").toFile
     try {
-      val git              = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
-      val (file, fileName) = getIcdFile(s, t, gitWorkDir)
-      val path             = Paths.get(file.getPath)
+      val git                    = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
+      val (icdFile, icdFileName) = getIcdFile(s, t, gitWorkDir)
+      val icdPath                = Paths.get(icdFile.getPath)
 
       // Get the list of published ICDs for the subsystem and target from GitHub
-      val exists      = file.exists()
-      val icdVersions = if (exists) Some(IcdVersions.fromJson(new String(Files.readAllBytes(path)))) else None
-      val icds        = icdVersions.map(_.icds).getOrElse(Nil)
+      val icdFileExists = icdFile.exists()
+      val icdVersions   = if (icdFileExists) Some(IcdVersions.fromJson(new String(Files.readAllBytes(icdPath)))) else None
+      val icds          = icdVersions.map(_.icds).getOrElse(Nil)
 
       val maybeIcd = icds.find(_.icdVersion == icdVersion)
       if (maybeIcd.isDefined) {
@@ -245,9 +245,9 @@ object IcdGitManager {
         val icdVersions = IcdVersions(List(s, t), icds.filter(_.icdVersion != icdVersion))
         val jsValue     = Json.toJson(icdVersions)
         val json        = Json.prettyPrint(jsValue)
-        Files.write(path, json.getBytes)
-        if (!exists) git.add.addFilepattern(fileName).call()
-        git.commit().setOnly(fileName).setMessage(comment).call
+        Files.write(icdPath, json.getBytes)
+        if (!icdFileExists) git.add.addFilepattern(icdFileName).call()
+        git.commit().setOnly(icdFileName).setMessage(comment).call
         updateHistoryFile(git, gitWorkDir)
         git.push.setCredentialsProvider(new UsernamePasswordCredentialsProvider(user, password)).call()
       }
@@ -260,6 +260,7 @@ object IcdGitManager {
 
   /**
    * Deletes the entry for a published API (in case one was made by error).
+   * To keep things consistent, any ICDs involving the given API version are also unpublished.
    *
    * @param sv       the subsystem and version
    * @param user     the GitHub user
@@ -270,18 +271,31 @@ object IcdGitManager {
   def unpublish(sv: SubsystemAndVersion, user: String, password: String, comment: String): Option[ApiVersionInfo] = {
     import ApiVersions._
 
+    def unpublishRelatedIcds(gitWorkDir: File): Unit = {
+      val (_, icds) = getAllVersions(gitWorkDir)
+      icds.foreach { icdVersions =>
+        val i = icdVersions.subsystems.indexOf(sv.subsystem)
+        if (i != -1) {
+          icdVersions.icds.filter(e => sv.maybeVersion.contains(e.versions(i))).foreach { icdEntry =>
+            unpublish(icdEntry.icdVersion, icdVersions.subsystems.head, icdVersions.subsystems.tail.head, user, password, comment)
+          }
+        }
+      }
+    }
+
     // Checkout the apis repo in a temp dir
     val gitWorkDir = Files.createTempDirectory("apis").toFile
     try {
-      val git              = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
-      val (file, fileName) = getApiFile(sv.subsystem, gitWorkDir)
-      val path             = Paths.get(file.getPath)
+      val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
+      unpublishRelatedIcds(gitWorkDir)
+      val (apiFile, apiFileName) = getApiFile(sv.subsystem, gitWorkDir)
+      val apiPath                = Paths.get(apiFile.getPath)
 
       // Get the list of published APIs for the subsystem from GitHub
       val maybeApiEntry =
-        if (!file.exists()) None
+        if (!apiFile.exists()) None
         else {
-          val apiVersions = Some(ApiVersions.fromJson(new String(Files.readAllBytes(path))))
+          val apiVersions = Some(ApiVersions.fromJson(new String(Files.readAllBytes(apiPath))))
           val apis        = apiVersions.map(_.apis).getOrElse(Nil)
           val maybeApi = sv.maybeVersion match {
             case Some(version) => apis.find(_.version == version)
@@ -292,8 +306,8 @@ object IcdGitManager {
             val apiVersions = ApiVersions(sv.subsystem, apis.filter(_.version != api.version))
             val jsValue     = Json.toJson(apiVersions)
             val json        = Json.prettyPrint(jsValue)
-            Files.write(path, json.getBytes)
-            git.commit().setOnly(fileName).setMessage(comment).call
+            Files.write(apiPath, json.getBytes)
+            git.commit().setOnly(apiFileName).setMessage(comment).call
             updateHistoryFile(git, gitWorkDir)
             git.push.setCredentialsProvider(new UsernamePasswordCredentialsProvider(user, password)).call()
           }
@@ -690,8 +704,25 @@ object IcdGitManager {
    *
    * @param maybeSubsystem return info only for the given subsystem (default: for all known subsystems)
    */
-  def getPublishInfo(maybeSubsystem: Option[String] = None): List[PublishInfo] = {
+  def getPublishInfo(maybeSubsystem: Option[String]): List[PublishInfo] = {
     val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
+    getPublishInfo(allApiVersions, allIcdVersions, maybeSubsystem)
+  }
+
+  /**
+   * Returns information about the publish state for each known subsystem,
+   * including the latest API version, list of ICDs each subsystem is involved in,
+   * whether there are changes ready to be published...
+   *
+   * @param allApiVersions list of published API versions
+   * @param allIcdVersions list of published ICD versions
+   * @param maybeSubsystem return info only for the given subsystem (default: for all known subsystems)
+   */
+  private def getPublishInfo(
+      allApiVersions: List[ApiVersions],
+      allIcdVersions: List[IcdVersions],
+      maybeSubsystem: Option[String]
+  ): List[PublishInfo] = {
     val subsystems = maybeSubsystem match {
       case Some(subsystem) => List(subsystem)
       case None            => Subsystems.allSubsystems
@@ -705,7 +736,7 @@ object IcdGitManager {
           ApiVersionInfo(subsystem, apiEntry.version, apiEntry.user, apiEntry.comment, apiEntry.date)
         }
       val icdVersions = allIcdVersions
-        .filter(_.subsystems.head == subsystem)
+        .filter(icdVersions => icdVersions.subsystems.contains(subsystem))
         .flatMap { icdVersions =>
           val subsystem1 = icdVersions.subsystems.head
           val subsystem2 = icdVersions.subsystems.tail.head

@@ -168,10 +168,14 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
   private def detailsMarkup(pubInfo: PublishInfo): Div = {
     div(cls := "panel panel-info")(
       div(cls := "panel-body")(
-        div(
-          h3(s"Current ${pubInfo.subsystem} API Status"),
-          apiTable(pubInfo)
-        ),
+        if (pubInfo.apiVersions.nonEmpty) {
+          div(
+            h3(s"Current ${pubInfo.subsystem} API Status"),
+            apiTable(pubInfo)
+          )
+        } else {
+          h3(s"No published APIs for ${pubInfo.subsystem} were found.")
+        },
         if (pubInfo.icdVersions.nonEmpty) {
           div(
             h3(s"Current ICDs involving ${pubInfo.subsystem}"),
