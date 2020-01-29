@@ -70,3 +70,9 @@
 .modal-backdrop {
     z-index: -1;
 }
+
+/* Busy cursor */
+.change-cursor {
+    cursor: progress !important;
+}
+

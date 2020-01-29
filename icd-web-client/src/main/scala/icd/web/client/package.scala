@@ -1,7 +1,7 @@
 package icd.web
 
 import org.scalajs.dom
-import org.scalajs.dom.raw.{Element, HTMLDivElement}
+import org.scalajs.dom.raw.Element
 import org.scalajs.dom.{DOMList, Node, document}
 
 import scala.concurrent.Future
@@ -15,15 +15,9 @@ package object client {
   // Show/hide the busy cursor while the future is running
   def showBusyCursorWhile(f: Future[Unit]): Future[Unit] = {
     // Note: See implicit NodeList to List support in package object in this dir
-    val nodeList = document.querySelectorAll("div")
-    nodeList.map(_.asInstanceOf[HTMLDivElement]).foreach { divEl =>
-      divEl.style.cursor = "progress"
-    }
+    document.querySelector("body").classList.add("change-cursor");
     f.onComplete { _ =>
-      val nodeList = document.querySelectorAll("div")
-      nodeList.map(_.asInstanceOf[HTMLDivElement]).foreach { divEl =>
-        divEl.style.cursor = "default"
-      }
+      document.querySelector("body").classList.remove("change-cursor");
     }
     f
   }

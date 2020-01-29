@@ -308,6 +308,8 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
     val comment      = commentBox.value
     val headers      = Map("Content-Type" -> "application/json")
 
+    setPublishButtonDisabled(true)
+    setUnpublishButtonDisabled(true)
     val f = if (unpublish) {
       val version          = publishInfo.apiVersions.head.version
       val unpublishApiInfo = UnpublishApiInfo(publishInfo.subsystem, version, user, password, comment)
@@ -356,6 +358,8 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
       val i = icdVersionInfo.icdVersion
       i.subsystem == publishInfo1.subsystem && i.target == publishInfo2.subsystem
     }
+    setPublishButtonDisabled(true)
+    setUnpublishButtonDisabled(true)
     val f = if (unpublish) {
       val unpublishIcdInfo = UnpublishIcdInfo(
         icdVersion.get.icdVersion.icdVersion,
@@ -693,7 +697,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
    */
   def update(): Future[Unit] = {
     contentDiv.innerHTML = ""
-    contentDiv.appendChild(p(em("Getting the current release status from GitHub...")).render)
+    contentDiv.appendChild(p(style := "cursor:progress", em("Getting the current release status from GitHub...")).render)
 
     val f = IcdUtil.getPublishInfo(None, mainContent)
     f.onComplete {
