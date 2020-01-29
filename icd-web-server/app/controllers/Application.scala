@@ -441,7 +441,7 @@ class Application @Inject()(
     } else {
       val unpublishIcdInfo = maybeUnpublishIcdInfo.get
       try {
-        val icdVersionInfo = IcdGitManager.unpublish(
+        val maybeIcdEntry = IcdGitManager.unpublish(
           unpublishIcdInfo.icdVersion,
           unpublishIcdInfo.subsystem,
           unpublishIcdInfo.target,
@@ -449,10 +449,17 @@ class Application @Inject()(
           unpublishIcdInfo.password,
           unpublishIcdInfo.comment
         )
-        updateAfterPublish()
-        Ok(Json.toJson(icdVersionInfo))
+        if (maybeIcdEntry.isDefined) {
+          updateAfterPublish()
+          val e = maybeIcdEntry.get
+          val icdVersion =
+            IcdVersion(e.icdVersion, unpublishIcdInfo.subsystem, e.versions.head, unpublishIcdInfo.target, e.versions.tail.head)
+          val icdVersionInfo = IcdVersionInfo(icdVersion, e.user, e.comment, e.date)
+          Ok(Json.toJson(icdVersionInfo))
+        } else NotFound(s"ICD version ${unpublishIcdInfo.icdVersion} was not found")
       } catch {
         case ex: TransportException =>
+          ex.printStackTrace()
           Unauthorized(ex.getMessage)
         case ex: Exception =>
           ex.printStackTrace()

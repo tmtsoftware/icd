@@ -101,9 +101,14 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
     icdItem.value match {
       case `emptyOptionMsg` => None
       case json =>
-        Json.fromJson[IcdName](Json.parse(json)) match {
-          case JsSuccess(icdName: IcdName, _: JsPath) => Some(icdName)
-          case _: JsError                             => None
+        try {
+          Json.fromJson[IcdName](Json.parse(json)) match {
+            case JsSuccess(icdName: IcdName, _: JsPath) => Some(icdName)
+            case _: JsError                             => None
+          }
+        } catch {
+          case ex: Exception =>
+            None
         }
     }
   }

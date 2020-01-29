@@ -102,9 +102,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Updates the cache of published APIs and ICDs on the server (in case new ones were published)
   private def updatePublished(): Future[Unit] = {
     val path = Routes.updatePublished
-    Ajax.post(path).map { r =>
-      Json.fromJson[Boolean](Json.parse(r.responseText)).get
-    }
+    // XXX TODO: Check response
+    Ajax.post(path).map(_ => ())
   }
 
   // Layout the components on the page
@@ -373,10 +372,14 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   private object PublishListener extends PublishDialogListener {
-    override def publishChange(): Unit = {
-      updatePublished()
-      subsystemNames.update()
-      selectDialog.icdChooser.updateIcdOptions()
+    override def publishChange(): Future[Unit] = {
+      for {
+        _ <- updatePublished()
+        _ <- subsystemNames.update()
+        _ <- selectDialog.icdChooser.updateIcdOptions()
+
+      } yield {
+      }
     }
   }
 

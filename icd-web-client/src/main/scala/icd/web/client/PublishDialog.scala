@@ -22,14 +22,14 @@ object PublishDialog {
     /**
      * Called when an API or ICD was published or unpublished
      */
-    def publishChange(): Unit
+    def publishChange(): Future[Unit]
   }
 }
 
 /**
  * Displays a table with the version history
  */
-case class PublishDialog(mainContent: MainContent, changeListener: PublishDialogListener) extends Displayable {
+case class PublishDialog(mainContent: MainContent, publishChangeListener: PublishDialogListener) extends Displayable {
 
   import icd.web.shared.JsonSupport._
 
@@ -189,7 +189,7 @@ case class PublishDialog(mainContent: MainContent, changeListener: PublishDialog
     else
       commentMissing.classList.add("hide")
     // Update the enabled states of the publish/unpublish buttons
-    checkboxListener()
+    changeListener()
   }
 
   // Publish user name field
@@ -205,7 +205,7 @@ case class PublishDialog(mainContent: MainContent, changeListener: PublishDialog
   }
 
   private val majorVersionCheckBox = {
-    input(tpe := "checkbox", onchange := checkboxListener _).render
+    input(tpe := "checkbox", onchange := changeListener _).render
   }
 
   // Message about missing username
@@ -265,21 +265,23 @@ case class PublishDialog(mainContent: MainContent, changeListener: PublishDialog
   }
 
   // Updates the row for the newly published API and returns a future indicating when done
-  private def updateTableRow(unpublish: Boolean, subsystem: String, maybeApiVersionInfo: Option[ApiVersionInfo]): Future[Unit] = {
+  private def updateTableRow(unpublish: Boolean, api: Boolean, subsystem: String, maybeApiVersionInfo: Option[ApiVersionInfo]): Future[Unit] = {
     IcdUtil.getPublishInfo(Some(subsystem), mainContent).map { pubInfoList =>
       val publishInfo = pubInfoList.head
       val cb          = $id(s"${subsystem}Checkbox")
       cb.asInstanceOf[HTMLInputElement].value = Json.toJson(publishInfo).toString()
-      $id(s"${subsystem}Version").innerHTML = maybeApiVersionInfo.map(_.version).getOrElse("")
-      $id(s"${subsystem}Date").innerHTML = maybeApiVersionInfo.map(_.date).getOrElse("")
-      $id(s"${subsystem}User").innerHTML = maybeApiVersionInfo.map(_.user).getOrElse("")
-      $id(s"${subsystem}Comment").innerHTML = maybeApiVersionInfo.map(_.comment).getOrElse("")
-      $id(s"${subsystem}Status").innerHTML =
-        if (unpublish)
-          div(readyToPublishButton(publishInfo)).render.innerHTML
-        else
-          div(upToDate).render.innerHTML
-      setPublishButtonDisabled(true)
+      if (api) {
+        $id(s"${subsystem}Version").innerHTML = maybeApiVersionInfo.map(_.version).getOrElse("")
+        $id(s"${subsystem}Date").innerHTML = maybeApiVersionInfo.map(_.date).getOrElse("")
+        $id(s"${subsystem}User").innerHTML = maybeApiVersionInfo.map(_.user).getOrElse("")
+        $id(s"${subsystem}Comment").innerHTML = maybeApiVersionInfo.map(_.comment).getOrElse("")
+        $id(s"${subsystem}Status").innerHTML =
+          if (unpublish)
+            div(readyToPublishButton(publishInfo)).render.innerHTML
+          else
+            div(upToDate).render.innerHTML
+        setPublishButtonDisabled(true)
+      }
     }
   }
 
@@ -312,10 +314,15 @@ case class PublishDialog(mainContent: MainContent, changeListener: PublishDialog
       Ajax.post(url = Routes.unpublishApi, data = Json.toJson(unpublishApiInfo).toString(), headers = headers).flatMap { r =>
         r.status match {
           case 200 => // OK
-            val apiVersionInfo = Json.fromJson[ApiVersionInfo](Json.parse(r.responseText)).get
-            setPublishStatus(s"Unpublished ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
+            val apiVersionInfo      = Json.fromJson[ApiVersionInfo](Json.parse(r.responseText)).get
             val maybeApiVersionInfo = publishInfo.apiVersions.tail.headOption
-            updateTableRow(unpublish, publishInfo.subsystem, maybeApiVersionInfo).map(_ => ())
+            for {
+              _ <- publishChangeListener.publishChange()
+              _ <- updateTableRow(unpublish, api = true, publishInfo.subsystem, maybeApiVersionInfo).map(_ => ())
+            } yield {
+              updateEnabledStates()
+              setPublishStatus(s"Unpublished ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
+            }
         }
       }
     } else {
@@ -324,13 +331,17 @@ case class PublishDialog(mainContent: MainContent, changeListener: PublishDialog
         r.status match {
           case 200 => // OK
             val apiVersionInfo = Json.fromJson[ApiVersionInfo](Json.parse(r.responseText)).get
-            setPublishStatus(s"Published ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
-            updateTableRow(unpublish, publishInfo.subsystem, Some(apiVersionInfo)).map(_ => ())
+            for {
+              _ <- publishChangeListener.publishChange()
+              _ <- updateTableRow(unpublish, api=true, publishInfo.subsystem, Some(apiVersionInfo)).map(_ => ())
+            } yield {
+              updateEnabledStates()
+              setPublishStatus(s"Published ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
+            }
         }
       }
     }
     displayAjaxErrors(f)
-    changeListener.publishChange()
     showBusyCursorWhile(f.map(_ => ()))
   }
 
@@ -354,15 +365,21 @@ case class PublishDialog(mainContent: MainContent, changeListener: PublishDialog
         password,
         comment
       )
-      Ajax.post(url = Routes.unpublishIcd, data = Json.toJson(unpublishIcdInfo).toString(), headers = headers).map { r =>
+      Ajax.post(url = Routes.unpublishIcd, data = Json.toJson(unpublishIcdInfo).toString(), headers = headers).flatMap { r =>
         r.status match {
           case 200 => // OK
             val icdVersionInfo = Json.fromJson[IcdVersionInfo](Json.parse(r.responseText)).get
             val v              = icdVersionInfo.icdVersion
-            setPublishStatus(
-              s"Unpublished ICD-${v.subsystem}-${v.target}-${v.icdVersion} between ${v.subsystem}-${v.subsystemVersion} and ${v.target}-${v.targetVersion}"
-            )
-            setPublishButtonDisabled(false) // XXX TODO FIXME
+            for {
+              _ <- publishChangeListener.publishChange()
+              _ <- updateTableRow(unpublish, api=false, publishInfo1.subsystem, publishInfo1.apiVersions.headOption).map(_ => ())
+              _ <- updateTableRow(unpublish, api=false, publishInfo2.subsystem, publishInfo2.apiVersions.headOption).map(_ => ())
+            } yield {
+              updateEnabledStates()
+              setPublishStatus(
+                s"Unpublished ICD-${v.subsystem}-${v.target}-${v.icdVersion} between ${v.subsystem}-${v.subsystemVersion} and ${v.target}-${v.targetVersion}"
+              )
+            }
         }
       }
     } else {
@@ -376,20 +393,25 @@ case class PublishDialog(mainContent: MainContent, changeListener: PublishDialog
         password,
         comment
       )
-      Ajax.post(url = Routes.publishIcd, data = Json.toJson(publishIcdInfo).toString(), headers = headers).map { r =>
+      Ajax.post(url = Routes.publishIcd, data = Json.toJson(publishIcdInfo).toString(), headers = headers).flatMap { r =>
         r.status match {
           case 200 => // OK
             val icdVersionInfo = Json.fromJson[IcdVersionInfo](Json.parse(r.responseText)).get
             val v              = icdVersionInfo.icdVersion
-            setPublishStatus(
-              s"Published ICD-${v.subsystem}-${v.target}-${v.icdVersion} between ${v.subsystem}-${v.subsystemVersion} and ${v.target}-${v.targetVersion}"
-            )
-            setPublishButtonDisabled(true)
+            for {
+              _ <- publishChangeListener.publishChange()
+              _ <- updateTableRow(unpublish, api=false, publishInfo1.subsystem, publishInfo1.apiVersions.headOption).map(_ => ())
+              _ <- updateTableRow(unpublish, api=false, publishInfo2.subsystem, publishInfo2.apiVersions.headOption).map(_ => ())
+            } yield {
+              updateEnabledStates()
+              setPublishStatus(
+                s"Published ICD-${v.subsystem}-${v.target}-${v.icdVersion} between ${v.subsystem}-${v.subsystemVersion} and ${v.target}-${v.targetVersion}"
+              )
+            }
         }
       }
     }
     displayAjaxErrors(f)
-    changeListener.publishChange()
     showBusyCursorWhile(f.map(_ => ()))
   }
 
@@ -445,7 +467,7 @@ case class PublishDialog(mainContent: MainContent, changeListener: PublishDialog
     // Check the subsystem checkbox, if not already
     val checkbox = document.querySelector(s"#${publishInfo.subsystem}Checkbox").asInstanceOf[Input]
     checkbox.checked = true
-    checkboxListener()
+    changeListener()
 
     $id("publishButton").scrollIntoView()
   }
@@ -481,10 +503,15 @@ case class PublishDialog(mainContent: MainContent, changeListener: PublishDialog
     $id("unpublishButton").asInstanceOf[Button].disabled = disabled || commentBox.value.isEmpty
   }
 
+  // Called when one of the API checkboxes is clicked, the comment is changed, etc. to update the labels and enabled states
+  private def changeListener(): Unit = {
+    setPublishStatus("")
+    updateEnabledStates()
+  }
+
   // Called when one of the API checkboxes is clicked to update the enabled state of the publish
   // button
-  private def checkboxListener(): Unit = {
-    setPublishStatus("")
+  private def updateEnabledStates(): Unit = {
     val checked = document.querySelectorAll("input[name='api']:checked")
 
     val enabled = checked.length == 1 || checked.length == 2
@@ -548,7 +575,7 @@ case class PublishDialog(mainContent: MainContent, changeListener: PublishDialog
           name := "api",
           title := s"Select this API to publish",
           tpe := "checkbox",
-          onchange := checkboxListener _,
+          onchange := changeListener _,
           value := Json.toJson(publishInfo).toString()
         ),
         publishInfo.subsystem
