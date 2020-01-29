@@ -7,6 +7,10 @@ All notable changes to this project will be documented in this file.
 
 - Added a new overview/status dialog that displays a table of the latest published APIs and ICDs for a selected subsystem
 
+- Added Unpublish button (Use in case you published something by mistake)
+
+- Added confirmation popup for publishing or unpublishing an API or ICD
+
 ### Changed
 
 - Changed the default value of the `icd.allowUpload` property to false. To enable the Upload dialog when using the icd web server, start it like this:
