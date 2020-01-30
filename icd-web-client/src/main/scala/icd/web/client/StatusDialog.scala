@@ -195,6 +195,14 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
       case subsystemName    => Some(subsystemName)
     }
 
+  // Gets the currently selected subsystem with version
+  def getSubsystemWithVersion: Option[SubsystemWithVersion] =
+    subsystemItem.value match {
+      case `placeholderMsg` => None
+      case subsystemName    =>
+        Some(SubsystemWithVersion(subsystemName, None, None))
+    }
+
   /**
    * Sets (or clears) the selected subsystem and version.
    *

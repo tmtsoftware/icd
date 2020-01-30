@@ -228,13 +228,28 @@ class Application @Inject()(
   /**
    * Returns the archived items report (PDF) for the given subsystem API
    *
-   * @param maybeSubsystem      the source subsystem
+   * @param subsystem      the source subsystem
+   * @param maybeVersion   the source subsystem's version (default: current)
+   * @param maybeComponent optional component (default: all in subsystem)
    */
-  def archivedItemsReport(maybeSubsystem: Option[String]) =
+  def archivedItemsReport(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String]) =
     Action { implicit request =>
       val out  = new ByteArrayOutputStream()
-      val html = ArchivedItemsReport(db, maybeSubsystem).makeReport()
-      IcdToPdf.saveAsPdf(out, html, showLogo = true)
+      val sv   = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
+      val html = ArchivedItemsReport(db, Some(sv)).makeReport()
+      IcdToPdf.saveAsPdf(out, html, showLogo = false)
+      val bytes = out.toByteArray
+      Ok(bytes).as("application/pdf")
+    }
+
+  /**
+   * Returns the archived items report (PDF) for all current subsystems
+   */
+  def archivedItemsReportFull() =
+    Action { implicit request =>
+      val out  = new ByteArrayOutputStream()
+      val html = ArchivedItemsReport(db, None).makeReport()
+      IcdToPdf.saveAsPdf(out, html, showLogo = false)
       val bytes = out.toByteArray
       Ok(bytes).as("application/pdf")
     }
@@ -268,6 +283,14 @@ class Application @Inject()(
     val list   = allIcdVersions.map(i => IcdName(i.subsystems.head, i.subsystems.tail.head))
     val sorted = list.sortWith((a, b) => a.subsystem.compareTo(b.subsystem) < 0)
     Ok(Json.toJson(sorted))
+  }
+
+  /**
+   * Gets the version of the icd software
+   */
+  def getReleaseVersion = Action { implicit request =>
+    val version = System.getProperty("ICD_VERSION")
+    Ok(Json.toJson(version))
   }
 
   /**

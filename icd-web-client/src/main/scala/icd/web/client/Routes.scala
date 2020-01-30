@@ -126,9 +126,17 @@ object Routes {
    * @return the URL path to use
    */
   def archivedItemsReport(sv: SubsystemWithVersion): String = {
-    // XXX TODO FIXME
     val attrs = getAttrs(sv.maybeVersion, sv.maybeComponent, searchAllSubsystems = false)
     s"/archivedItemsReport/${sv.subsystem}$attrs"
+  }
+
+  /**
+   * Returns the route to use to get an archived items report for all subsystems
+   *
+   * @return the URL path to use
+   */
+  def archivedItemsReportFull(): String = {
+    s"/archivedItemsReportFull"
   }
 
   /**
@@ -161,6 +169,11 @@ object Routes {
    * Gets a list of published ICD names
    */
   val icdNames = "/icdNames"
+
+  /**
+   * Gets the version of the icd software
+   */
+  val releaseVersion = "/releaseVersion"
 
   /**
    * Gets a list of versions for the ICD from subsystem to target

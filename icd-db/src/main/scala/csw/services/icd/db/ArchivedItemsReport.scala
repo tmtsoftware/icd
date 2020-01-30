@@ -6,6 +6,7 @@ import csw.services.icd.IcdToPdf
 import csw.services.icd.db.ArchivedItemsReport._
 import csw.services.icd.html.IcdToHtml
 import icd.web.shared.IcdModels.{ComponentModel, EventModel}
+import icd.web.shared.SubsystemWithVersion
 import scalatags.Text
 
 object ArchivedItemsReport {
@@ -25,13 +26,18 @@ object ArchivedItemsReport {
   }
 }
 
-case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
-  val query = new CachedIcdDbQuery(db.db, db.admin, maybeSubsystem.map(List(_)))
+/**
+ * Generates an "Archived Items" report for the given subsystem (or all subsystems)
+ * @param db the icd database
+ * @param maybeSv if defined, restrict report to this subsystem, version, component (otherwise: all current subsystems)
+ */
+case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion]) {
+  private val query          = new CachedIcdDbQuery(db.db, db.admin, maybeSv.map(sv => List(sv.subsystem)))
+  private val versionManager = new CachedIcdVersionManager(query)
 
   // Returns true if the given subsystem should be included in the report
   private def subsystemFilter(subsystem: String): Boolean = {
-    if (maybeSubsystem.isDefined) maybeSubsystem.contains(subsystem)
-    else !subsystem.startsWith("TEST")
+    !subsystem.startsWith("TEST")
   }
 
   // Gets all the archived items
@@ -44,13 +50,27 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
         .map(e => ArchiveInfo(c.subsystem, comp, c.prefix, eventType, e))
     }
 
-    val result = for {
-      component <- query.getComponents
-      if subsystemFilter(component.subsystem)
-      publishModel <- query.getPublishModel(component)
-    } yield {
-      getItems(component, "Events", publishModel.eventList) ++
-      getItems(component, "ObserveEvents", publishModel.observeEventList)
+    val result = if (maybeSv.isDefined) {
+      // Use given subsystem version and component, if defined
+      val sv = maybeSv.get
+      for {
+        models         <- versionManager.getModels(sv)
+        componentModel <- models.componentModel
+        if sv.maybeComponent.isEmpty || sv.maybeComponent.get == componentModel.component
+        publishModel   <- models.publishModel
+      } yield {
+        getItems(componentModel, "Events", publishModel.eventList) ++
+        getItems(componentModel, "ObserveEvents", publishModel.observeEventList)
+      }
+    } else {
+      for {
+        componentModel <- query.getComponents
+        if subsystemFilter(componentModel.subsystem)
+        publishModel <- query.getPublishModel(componentModel)
+      } yield {
+        getItems(componentModel, "Events", publishModel.eventList) ++
+        getItems(componentModel, "ObserveEvents", publishModel.observeEventList)
+      }
     }
     result.flatten
   }
@@ -87,14 +107,16 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
       if (i == -1) s else s.substring(0, i + 4)
     }
 
+    val titleExt = maybeSv.map(sv => s" for $sv").getOrElse("")
+    val title = s"Archived Items Report$titleExt"
     val archivedItems: List[ArchiveInfo] = getArchivedItems
     val markup = html(
       head(
-        scalatags.Text.tags2.title("Archived Items"),
+        scalatags.Text.tags2.title(title),
         scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss))
       ),
       body(
-        h2("Archived Items"),
+        h2(title),
         div(
           table(
             thead(
@@ -132,8 +154,10 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
           span("* Assumes 1 Hz if maxRate is not specified or is 0."),
           h3("Totals for Subsystems"),
           totalsTable(archivedItems),
-          if (maybeSubsystem.isEmpty)
-            strong(p(s"Total archive space required for one year: ${EventModel.getTotalArchiveSpace(archivedItems.map(_.eventModel))}"))
+          if (maybeSv.isEmpty)
+            strong(
+              p(s"Total archive space required for one year: ${EventModel.getTotalArchiveSpace(archivedItems.map(_.eventModel))}")
+            )
           else span()
         )
       )

@@ -53,8 +53,12 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val historyItem   = NavbarItem("History", "Display the version history for an API or ICD", showVersionHistory())
   private val historyDialog = HistoryDialog(mainContent)
 
-  private val pdfItem     = NavbarItem("PDF", "Generate and display a PDF for the API or ICD", makePdf)
-  private val archiveItem = NavbarItem("Archive", "Generate and display an archived items report", makeArchivedItemsReport)
+  private val pdfItem = NavbarItem("PDF", "Generate and display a PDF for the API or ICD", makePdf)
+  private val archiveItem = NavbarItem(
+    "Archive",
+    "Generate and display an 'Archived Items' report for the selected subsystem (or all subsystems)",
+    makeArchivedItemsReport
+  )
 
   private val navbar = Navbar()
   private val layout = Layout()
@@ -171,17 +175,37 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     }
   }
 
+  // Gets the software release version to display in the status page
+  def getReleaseVersion: Future[String] = {
+    Ajax
+      .get(Routes.releaseVersion)
+      .map { r =>
+        Json.fromJson[String](Json.parse(r.responseText)).map(v => s" [version $v]").getOrElse("")
+      }
+      .recover {
+        case ex =>
+          ex.printStackTrace()
+          ""
+      }
+  }
+
   // Called when the Home/TMT ICD Database navbar item is selected (or through browser history)
   private def showStatus(maybeSubsystem: Option[String] = None, saveHistory: Boolean = true)(): Unit = {
     setSidebarVisible(false)
-    mainContent.setContent(statusDialog, "TMT ICD Database")
     currentView = StatusView
     if (saveHistory) {
-      pushState(viewType = StatusView, maybeSourceSubsystem = maybeSubsystem.map(SubsystemWithVersion(_, None, None)))
+      for {
+        version <- getReleaseVersion
+      } {
+        mainContent.setContent(statusDialog, s"TMT ICD Database$version")
+        pushState(viewType = StatusView, maybeSourceSubsystem = maybeSubsystem.map(SubsystemWithVersion(_, None, None)))
+      }
     } else {
       for {
-        _ <- subsystemNames.update()
+        version <- getReleaseVersion
+        _       <- subsystemNames.update()
       } {
+        mainContent.setContent(statusDialog, s"TMT ICD Database$version")
         statusDialog.setSubsystem(maybeSubsystem, saveHistory = false)
       }
     }
@@ -417,7 +441,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         maybeTargetSubsystem = selectDialog.targetSubsystem.getSubsystemWithVersion,
         maybeIcd = selectDialog.icdChooser.getSelectedIcdVersion
       )
-//      pushState(viewType = IcdView)
     }
     f
   }
@@ -447,7 +470,11 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Gets a PDF of the currently selected ICD or subsystem API
   private def makePdf(): Unit = {
-    val maybeSv = selectDialog.subsystem.getSubsystemWithVersion
+    val maybeSv =
+      if (currentView == StatusView)
+        statusDialog.getSubsystemWithVersion
+      else selectDialog.subsystem.getSubsystemWithVersion
+
     maybeSv.foreach { sv =>
       val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion
       val maybeIcdVersion = selectDialog.icdChooser.getSelectedIcdVersion.map(_.icdVersion)
@@ -459,11 +486,16 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Gets a PDF with an Archived Items report for the currently selected subsystem API
   private def makeArchivedItemsReport(): Unit = {
-    // XXX TODO FIXME
-    val maybeSv = selectDialog.subsystem.getSubsystemWithVersion
-    maybeSv.foreach {sv =>
-      val uri     = Routes.archivedItemsReport(sv)
-      dom.window.open(uri) // opens in new window or tab
-    }
+    val maybeSv =
+      if (currentView == StatusView)
+        statusDialog.getSubsystemWithVersion
+      else selectDialog.subsystem.getSubsystemWithVersion
+
+    val uri =
+      if (maybeSv.isDefined)
+        Routes.archivedItemsReport(maybeSv.get)
+      else
+        Routes.archivedItemsReportFull()
+    dom.window.open(uri) // opens in new window or tab
   }
 }

@@ -6,7 +6,9 @@ import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd._
 import csw.services.icd.db.parser.{BaseModelParser, SubsystemModelParser}
 import csw.services.icd.db.ComponentDataReporter._
+import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import diffson.playJson.DiffsonProtocol
+import icd.web.shared.SubsystemWithVersion
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.Json
 import reactivemongo.api.{AsyncDriver, DefaultDB, MongoConnection}
@@ -275,7 +277,8 @@ object IcdDb extends App {
 
     // --archive option
     def archivedItemsReport(file: File): Unit = {
-      ArchivedItemsReport(db, options.subsystem).saveToFile(file)
+      val maybeSv = options.subsystem.map(SubsystemAndVersion(_)).map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, options.component))
+      ArchivedItemsReport(db, maybeSv).saveToFile(file)
     }
   }
 }
