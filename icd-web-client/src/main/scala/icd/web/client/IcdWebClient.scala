@@ -53,7 +53,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val historyItem   = NavbarItem("History", "Display the version history for an API or ICD", showVersionHistory())
   private val historyDialog = HistoryDialog(mainContent)
 
-  private val pdfItem = NavbarItem("PDF", "Generate and display a PDF for the API or ICD", makePdf)
+  private val pdfItem     = NavbarItem("PDF", "Generate and display a PDF for the API or ICD", makePdf)
+  private val archiveItem = NavbarItem("Archive", "Generate and display an archived items report", makeArchivedItemsReport)
 
   private val navbar = Navbar()
   private val layout = Layout()
@@ -116,6 +117,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     navbar.addItem(fileUploadItem)
     navbar.addItem(historyItem)
     navbar.addItem(pdfItem)
+    navbar.addItem(archiveItem)
     navbar.addItem(publishItem)
     navbar.addItem(expandToggler)
 
@@ -378,8 +380,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         _ <- subsystemNames.update()
         _ <- selectDialog.icdChooser.updateIcdOptions()
 
-      } yield {
-      }
+      } yield {}
     }
   }
 
@@ -452,7 +453,16 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       val maybeIcdVersion = selectDialog.icdChooser.getSelectedIcdVersion.map(_.icdVersion)
       val searchAll       = selectDialog.searchAllSubsystems()
       val uri             = Routes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll)
-      // dom.window.location.assign(uri) // opens in same window
+      dom.window.open(uri) // opens in new window or tab
+    }
+  }
+
+  // Gets a PDF with an Archived Items report for the currently selected subsystem API
+  private def makeArchivedItemsReport(): Unit = {
+    // XXX TODO FIXME
+    val maybeSv = selectDialog.subsystem.getSubsystemWithVersion
+    maybeSv.foreach {sv =>
+      val uri     = Routes.archivedItemsReport(sv)
       dom.window.open(uri) // opens in new window or tab
     }
   }

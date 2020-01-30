@@ -226,6 +226,20 @@ class Application @Inject()(
     }
 
   /**
+   * Returns the archived items report (PDF) for the given subsystem API
+   *
+   * @param maybeSubsystem      the source subsystem
+   */
+  def archivedItemsReport(maybeSubsystem: Option[String]) =
+    Action { implicit request =>
+      val out  = new ByteArrayOutputStream()
+      val html = ArchivedItemsReport(db, maybeSubsystem).makeReport()
+      IcdToPdf.saveAsPdf(out, html, showLogo = true)
+      val bytes = out.toByteArray
+      Ok(bytes).as("application/pdf")
+    }
+
+  /**
    * Returns a detailed list of the versions of the given subsystem
    */
   def getVersions(subsystem: String) = Action { implicit request =>

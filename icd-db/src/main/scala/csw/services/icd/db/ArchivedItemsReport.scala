@@ -79,7 +79,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSubsystem: Option[String]) {
   }
 
   // Generates the HTML for the report
-  private def makeReport(): String = {
+  def makeReport(): String = {
     import scalatags.Text.all._
 
     def firstParagraph(s: String): String = {

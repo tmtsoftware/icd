@@ -26,6 +26,9 @@ GET         /icdAsPdf/:subsystem/:target                controllers.Application.
 # Gets the PDF for the given subsystem API
 GET         /apiAsPdf/:subsystem                        controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean])
 
+# Gets an archived items report (PDF) for the given subsystem API (and component)
+GET         /archivedItemsReport                        controllers.Application.archivedItemsReport(subsystem: Option[String])
+
 # Gets the detailed information about the versions of a component or subsystem
 GET         /versions/:name                             controllers.Application.getVersions(name)
 
@@ -60,10 +63,10 @@ POST        /publishApi                                 controllers.Application.
 POST        /publishIcd                                 controllers.Application.publishIcd()
 
 # Unublishes a given subsystem API on GitHub
-POST        /unpublishApi                                 controllers.Application.unpublishApi()
+POST        /unpublishApi                               controllers.Application.unpublishApi()
 
 # Unublishes an ICD on GitHub
-POST        /unpublishIcd                                 controllers.Application.unpublishIcd()
+POST        /unpublishIcd                               controllers.Application.unpublishIcd()
 
 # Updates the cache of published APIs and ICDs (in case new ones were published)
 POST        /updatePublished                            controllers.Application.updatePublished()

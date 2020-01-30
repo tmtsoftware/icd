@@ -120,6 +120,18 @@ object Routes {
   }
 
   /**
+   * Returns the route to use to get an archived items report for the given Subsystem with selected components.
+   *
+   * @param sv       the subsystem
+   * @return the URL path to use
+   */
+  def archivedItemsReport(sv: SubsystemWithVersion): String = {
+    // XXX TODO FIXME
+    val attrs = getAttrs(sv.maybeVersion, sv.maybeComponent, searchAllSubsystems = false)
+    s"/archivedItemsReport/${sv.subsystem}$attrs"
+  }
+
+  /**
    * Returns the route to use to get a PDF of the API for the given Subsystem with selected components.
    *
    * @param sv     the subsystem
