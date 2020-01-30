@@ -5,11 +5,15 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Added a new overview/status dialog that displays a table of the latest published APIs and ICDs for a selected subsystem
+- Added a new overview/status dialog that displays a table of the latest published APIs and ICDs for a selected subsystem.
 
-- Added Unpublish button (Use in case you published something by mistake)
+- Added Unpublish button (Use in case you published something by mistake).
 
-- Added confirmation popup for publishing or unpublishing an API or ICD
+- Added confirmation popup for publishing or unpublishing an API or ICD.
+
+- Added an "Archive" item to the webapp that displays a PDF detailing the sizes of all archived items (events, etc.) in the selected subsystem and component (default: all subsystems).
+
+- Added the icd software version to the title in the Status page.
 
 ### Changed
 
