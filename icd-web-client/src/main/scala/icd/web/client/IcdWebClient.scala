@@ -193,7 +193,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private def showStatus(maybeSubsystem: Option[String] = None, saveHistory: Boolean = true)(): Unit = {
     setSidebarVisible(false)
     currentView = StatusView
-    val title = "Subsystem Publish Status"
+    val title = "TMT Interface Database System"
     if (saveHistory) {
       for {
         version <- getReleaseVersion
