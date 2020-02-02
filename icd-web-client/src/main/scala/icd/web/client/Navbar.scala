@@ -28,7 +28,7 @@ case class Navbar() extends Displayable {
           span(cls := "icon-bar"),
           span(cls := "icon-bar")
         ),
-        a(cls := "navbar-brand", href := "/")("TMT ICD Database")
+        a(cls := "navbar-brand", href := "/")("TMT Interface Database System")
       ),
       div(id := "icd-navbar", cls := "collapse navbar-collapse")(
         leftNavbar,

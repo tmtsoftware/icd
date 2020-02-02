@@ -1,15 +1,18 @@
-ICD - Interface Control Document Management
-===========================================
+# TMT Interface Database System (IDBS)
 
-This project contains support for creating, validating and viewing subsystem APIs and ICDs (Interface Control Document between two TMT subsystems).
+This project contains support for creating, validating and viewing TMT subsystem APIs and ICDs (Interface Control Document between two TMT subsystems).
 
-The validation is based on [JSON Schema](http://json-schema.org/),
+*You can find a detailed description of the IDBS software [here](https://docushare.tmt.org/docushare/dsweb/Get/Document-50189/OSW%20TN018-ICDDatabaseUserManual_REL02.pdf).*
+
+Subsystem APIs are described in model files. The model files are validated using [JSON Schema](http://json-schema.org/),
 however the schema descriptions as well as the model files may also be written in
 the simpler [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md) format.
 
 Versions of APIs and ICDs are managed in [GitHub repositories](https://github.com/tmt-icd/ICD-Model-Files.git) and 
 the subsystem model files can be imported from GitHub (with version history) into a local MongoDB database, which is used
 by command line applications and a web app.
+
+The [examples](examples) directory also contains some example API descriptions in both the old (1.0) and new (2.0) schema versions. Both schema versions are supported for backward compatibility, however the new version should be used for future work. To help in upgrading existing subsystem APIs, branches named `schema-2.0` have been created on GitHub for the existing subsystems. 
  
 Command line applications: [icd-db](icd-db), [icd-git](icd-git) and a web app ([icdwebserver](icd-web-server)) 
 are provided for working with APIs and ICDs, querying and viewing the data.
@@ -25,7 +28,7 @@ After starting the database, ingest the published ICDs, which are stored in GitH
 
     icd-git --ingest
 
-You should rerun this command occasionally to get any updates from newly published ICDs or APIs.
+You should rerun this command occasionally to get any updates from newly published ICDs or APIs (The icd web app automatically ingests any missing APIs and ICDs when started).
 
 ICD Subprojects
 ---------------
@@ -82,7 +85,7 @@ Importing ICD-Model-Files from GitHub into the ICD Database with Version History
 --------------------------------------------------------------------------------
 
 Using the [icd-git](icd-git) command line application you can publish subsystem APIs and ICDs between subsystems 
-(assuming you have the necessary access to the [GitHub repository](https://github.com/tmt-icd/ICD-Model-Files)).
+(assuming you have the necessary write access to the [GitHub repository](https://github.com/tmt-icd/ICD-Model-Files)).
 Publishing a subsystem API or ICD adds an entry to a JSON file on GitHub which is used later to extract specific 
 versions of the model files.
 
@@ -102,9 +105,9 @@ Known Issues
 ------------
 
 * Most Unix-like operating systems limit the system resources that a session may use. 
-  These limits may negatively impact MongoDB operation. 
+  These limits negatively impact MongoDB operation. 
   See [UNIX ulimit Settings](https://docs.mongodb.com/manual/reference/ulimit/) for more information.
-  csh/tcsh users can also run the command `unlimit` before starting `mongod`.
+  csh/tcsh users should run the command `unlimit` before starting `mongod`.
 
 * Including a comma in an unquoted string in an ICD model file can cause a NullPointerException.
 For example, don't do this: 

@@ -193,11 +193,12 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private def showStatus(maybeSubsystem: Option[String] = None, saveHistory: Boolean = true)(): Unit = {
     setSidebarVisible(false)
     currentView = StatusView
+    val title = "Subsystem Publish Status"
     if (saveHistory) {
       for {
         version <- getReleaseVersion
       } {
-        mainContent.setContent(statusDialog, s"TMT ICD Database$version")
+        mainContent.setContent(statusDialog, s"$title$version")
         pushState(viewType = StatusView, maybeSourceSubsystem = maybeSubsystem.map(SubsystemWithVersion(_, None, None)))
       }
     } else {
@@ -205,7 +206,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         version <- getReleaseVersion
         _       <- subsystemNames.update()
       } {
-        mainContent.setContent(statusDialog, s"TMT ICD Database$version")
+        mainContent.setContent(statusDialog, s"$title$version")
         statusDialog.setSubsystem(maybeSubsystem, saveHistory = false)
       }
     }

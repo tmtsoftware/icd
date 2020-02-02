@@ -22,7 +22,28 @@ object StatusDialog {
     def icdSelected(icdVersion: IcdVersion): Unit
   }
 
-  val msg                    = "Select a subsystem to see the current status."
+  // Message displayed at top of page
+  private val msg =
+    div(
+      p(
+        "The Interface Database System (IDBS) was created to help component builders and system engineering",
+        br,
+        "understand the programming interfaces of software components created with the TMT Common Software.",
+        br,
+        "See the GitHub ",
+        a(target := "_blank", href := "https://github.com/tmtsoftware/icd")("source"),
+        " and the ",
+        a(
+          target := "_blank",
+          href := "https://docushare.tmt.org/docushare/dsweb/Get/Document-50189/OSW%20TN018-ICDDatabaseUserManual_REL02.pdf"
+        )(
+          "IDBS user manual"
+        ),
+        " for more information"
+      ),
+      br,
+      p("Select a subsystem to see the current status:")
+    )
   val placeholderMsg: String = "Select subsystem"
 }
 
@@ -199,7 +220,7 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
   def getSubsystemWithVersion: Option[SubsystemWithVersion] =
     subsystemItem.value match {
       case `placeholderMsg` => None
-      case subsystemName    =>
+      case subsystemName =>
         Some(SubsystemWithVersion(subsystemName, None, None))
     }
 
@@ -246,7 +267,7 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
   override def markup(): Element = {
     div(
       cls := "container",
-      div(Styles.statusDialogSubsystemRow, p(msg)),
+      div(Styles.statusDialogSubsystemRow, msg),
       div(cls := "row")(
         div(Styles.statusDialogLabel)(label("Subsystem")),
         div(Styles.statusDialogSubsystem)(subsystemItem)

@@ -4,7 +4,7 @@
 
 @(debug: Boolean, assets: AssetsFinder, csrfToken: Csrf, webJarsUtil: WebJarsUtil)(implicit request: RequestHeader, environment: Environment)
 
-@main("TMT ICD Database", assets, webJarsUtil) {
+@main("TMT Interface Database System", assets, webJarsUtil) {
     @scalajs.html.scripts(
         "icdwebclient",
         name => assets.path(name).toString,

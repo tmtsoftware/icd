@@ -36,12 +36,15 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
   // Main version div
   private val contentDiv = div(id := "publishDialog").render
 
-  private val helpMsg =
-    """
-      |Select a single subsystem API below, or two subsystems for an ICD.
-      |Then enter your GitHub credentials and a comment and click Publish.
-      |""".stripMargin
-
+  private val helpMsg = p(
+    "Select a single subsystem API below, or two subsystems for an ICD. Then enter a comment and click Publish.",
+    br,
+    "If you discover that you need to change something after publishing, use the Unpublish button to unpublish ",
+    br,
+    "the API or ICD and then republish again later.",
+    br,
+    br
+  )
   private val publishLabelMsg = "To publish an API or ICD, first select one or two subsystems above."
 
   private val upToDate = "Up to date"
@@ -265,7 +268,12 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
   }
 
   // Updates the row for the newly published API and returns a future indicating when done
-  private def updateTableRow(unpublish: Boolean, api: Boolean, subsystem: String, maybeApiVersionInfo: Option[ApiVersionInfo]): Future[Unit] = {
+  private def updateTableRow(
+      unpublish: Boolean,
+      api: Boolean,
+      subsystem: String,
+      maybeApiVersionInfo: Option[ApiVersionInfo]
+  ): Future[Unit] = {
     IcdUtil.getPublishInfo(Some(subsystem), mainContent).map { pubInfoList =>
       val publishInfo = pubInfoList.head
       val cb          = $id(s"${subsystem}Checkbox")
@@ -335,7 +343,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
             val apiVersionInfo = Json.fromJson[ApiVersionInfo](Json.parse(r.responseText)).get
             for {
               _ <- publishChangeListener.publishChange()
-              _ <- updateTableRow(unpublish, api=true, publishInfo.subsystem, Some(apiVersionInfo)).map(_ => ())
+              _ <- updateTableRow(unpublish, api = true, publishInfo.subsystem, Some(apiVersionInfo)).map(_ => ())
             } yield {
               updateEnabledStates()
               setPublishStatus(s"Published ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
@@ -376,8 +384,10 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
             val v              = icdVersionInfo.icdVersion
             for {
               _ <- publishChangeListener.publishChange()
-              _ <- updateTableRow(unpublish, api=false, publishInfo1.subsystem, publishInfo1.apiVersions.headOption).map(_ => ())
-              _ <- updateTableRow(unpublish, api=false, publishInfo2.subsystem, publishInfo2.apiVersions.headOption).map(_ => ())
+              _ <- updateTableRow(unpublish, api = false, publishInfo1.subsystem, publishInfo1.apiVersions.headOption)
+                    .map(_ => ())
+              _ <- updateTableRow(unpublish, api = false, publishInfo2.subsystem, publishInfo2.apiVersions.headOption)
+                    .map(_ => ())
             } yield {
               updateEnabledStates()
               setPublishStatus(
@@ -404,8 +414,10 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
             val v              = icdVersionInfo.icdVersion
             for {
               _ <- publishChangeListener.publishChange()
-              _ <- updateTableRow(unpublish, api=false, publishInfo1.subsystem, publishInfo1.apiVersions.headOption).map(_ => ())
-              _ <- updateTableRow(unpublish, api=false, publishInfo2.subsystem, publishInfo2.apiVersions.headOption).map(_ => ())
+              _ <- updateTableRow(unpublish, api = false, publishInfo1.subsystem, publishInfo1.apiVersions.headOption)
+                    .map(_ => ())
+              _ <- updateTableRow(unpublish, api = false, publishInfo2.subsystem, publishInfo2.apiVersions.headOption)
+                    .map(_ => ())
             } yield {
               updateEnabledStates()
               setPublishStatus(
@@ -638,7 +650,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
       messageItem,
       div(cls := "panel panel-info")(
         div(cls := "panel-body")(
-          p(helpMsg),
+          helpMsg,
           table(
             Styles.componentTable,
             attr("data-toggle") := "table",

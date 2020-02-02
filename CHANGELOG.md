@@ -1,13 +1,15 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [ICD v1.0.0] - 
 
 ### Added
 
 - Added a new overview/status dialog that displays a table of the latest published APIs and ICDs for a selected subsystem.
 
-- Added Unpublish button (Use in case you published something by mistake).
+- Added Unpublish button (Use in case you published something by mistake). 
+  Note that the Publish dialog access is restricted to those with write access to the
+  [ICD-Model-Files](https://github.com/tmt-icd/ICD-Model-Files)  repository.
 
 - Added confirmation popup for publishing or unpublishing an API or ICD.
 
