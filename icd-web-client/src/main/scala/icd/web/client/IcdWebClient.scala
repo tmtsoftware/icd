@@ -90,10 +90,14 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Refresh the list of published APIs and ICDs when the user refreshes the web app
   updatePublished().onComplete(_ => showStatus())
 
-  // If uploads are not allowed, hide the item (Doing this in the background caused issues with jquery)
+  // If uploads are not allowed, hide the item (Doing this in the background caused issues with jquery).
+  // On a public server, uploads should be disabled, on local installations, publishing should be disabled.
   isUploadAllowed.map { uploadAllowed =>
-    if (!uploadAllowed)
+    if (uploadAllowed) {
+      publishItem.hide()
+    } else {
       fileUploadItem.hide()
+    }
   }
 
   // See if uploading model files is allowed in this configuration
