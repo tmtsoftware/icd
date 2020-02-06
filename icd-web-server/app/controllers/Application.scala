@@ -43,11 +43,7 @@ class Application @Inject()(
   import Application._
   import JsonSupport._
 
-  if (tryDb.isSuccess) {
-    println(
-      s"icdwebserver running on http://${System.getProperty("http.host", "localhost")}:${System.getProperty("http.port", "9000")}"
-    )
-  } else {
+  if (!tryDb.isSuccess) {
     println("Error: Failed to connect to the icd database. Make sure mongod is running.")
     System.exit(1)
   }
