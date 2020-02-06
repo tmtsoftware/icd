@@ -7,9 +7,7 @@ All notable changes to this project will be documented in this file.
 
 - Added a new overview/status dialog that displays a table of the latest published APIs and ICDs for a selected subsystem.
 
-- Added Unpublish button (Use in case you published something by mistake). 
-  Note that the Publish dialog access is restricted to those with write access to the
-  [ICD-Model-Files](https://github.com/tmt-icd/ICD-Model-Files)  repository.
+- Added Unpublish button to publish dialog (Use in case you published something by mistake). 
 
 - Added confirmation popup for publishing or unpublishing an API or ICD.
 
@@ -19,10 +17,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- Changed the default value of the `icd.allowUpload` property to false. To enable the Upload dialog when using the icd web server, start it like this:
- ```
-    icdwebserver -Dicd.allowUpload=true
-``` 
+- The Publish dialog access is restricted to those with write access to the
+  [ICD-Model-Files](https://github.com/tmt-icd/ICD-Model-Files)  repository
+  and is only enabled when starting icdwebserver with the `-Dicd.allowUpload=false`
+  option.
 
 ## [ICD v0.17] - 2019-12-06
 

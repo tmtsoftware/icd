@@ -8,6 +8,7 @@
 export SCALAJS_PROD=true
 
 dir=../install_icd
+rm -rf $dir
 
 # Make sure we can find sbt
 hash sbt 2>/dev/null || { echo >&2 "Please install sbt first.  Aborting."; exit 1; }
