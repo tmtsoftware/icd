@@ -44,4 +44,7 @@ for i in bin lib conf; do
     done
 done
 
+chmod +x icd-web-server.sh
+cp icd-web-server.sh $dir/bin
+
 rm -f $dir/bin/*.log.* $dir/bin/*.bat
