@@ -56,16 +56,17 @@ object AttributeModelBsonParser {
     val defaultValue = doc.getAsOpt[String]("default").getOrElse("")
 
     // Returns a string describing an array type
-    def parseArrayTypeStr(): String = {
+    def parseArrayTypeStr(doc: BSONDocument): String = {
       val items = doc.getAsOpt[BSONDocument]("items")
       val t     = items.flatMap(_.getAsOpt[String]("type"))
       val e     = items.flatMap(_.getAsOpt[Array[String]]("enum").map(_.toList))
       val s = if (t.isDefined) {
-        parseTypeStr(t)
+        parseTypeStr(items.get, t)
       } else if (e.isDefined) {
         "enum: (" + e.get.mkString(", ") + ")"
       } else "?"
 
+      val maybeDimensions = doc.getAsOpt[Array[Int]]("dimensions").map(_.toList)
       if (maybeDimensions.isDefined)
         s"array[${maybeDimensions.get.mkString(",")}] of $s"
       else
@@ -73,9 +74,8 @@ object AttributeModelBsonParser {
     }
 
     // Returns a string describing the given type or enum
-    def parseTypeStr(opt: Option[String]): String = {
+    def parseTypeStr(doc: BSONDocument, opt: Option[String]): String = {
       opt match {
-        case Some("array")   => parseArrayTypeStr()
         case Some("integer") => numberTypeStr("integer")
         case Some("number")  => numberTypeStr("double")
         case Some("short")   => numberTypeStr("short")
@@ -83,6 +83,7 @@ object AttributeModelBsonParser {
         case Some("float")   => numberTypeStr("float")
         case Some("double")  => numberTypeStr("double")
         case Some("byte")    => numberTypeStr("byte")
+        case Some("array")   => parseArrayTypeStr(doc)
         case Some(otherType) => otherType
         case None =>
           maybeEnum match {
@@ -103,7 +104,7 @@ object AttributeModelBsonParser {
       } else t
     }
 
-    val typeStr = parseTypeStr(doc.getAsOpt[String]("type"))
+    val typeStr = parseTypeStr(doc, doc.getAsOpt[String]("type"))
 
     // If type is "struct", attributeList gives the fields of the struct
     val attributesList = if (typeStr == "struct") {
