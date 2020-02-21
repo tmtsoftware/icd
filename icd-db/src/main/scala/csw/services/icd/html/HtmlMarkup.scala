@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.{Parser, PegdownExtensions}
-import com.vladsch.flexmark.profiles.pegdown.{Extensions, PegdownOptionsAdapter}
+import com.vladsch.flexmark.profile.pegdown.{Extensions, PegdownOptionsAdapter}
 import icd.web.shared.IcdModels.EventModel
 import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist

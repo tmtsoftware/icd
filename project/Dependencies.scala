@@ -7,7 +7,7 @@ object Dependencies {
   val AkkaVersion          = "2.5.25"
   val PlayVersion           = "2.8.1"
   val PlayJsonVersion       = "2.8.1"
-  val ScalaTagsVersion      = "0.7.0"
+  val ScalaTagsVersion      = "0.8.6"
   val BootstrapVersion      = "3.4.1"
   val JQueryVersion         = "2.2.1"
   val JQueryUiVersion       = "1.12.1"
@@ -17,27 +17,27 @@ object Dependencies {
 
   // command line dependencies
   val scopt = "com.github.scopt" %% "scopt" % "3.7.1"
-  val jsonSchemaValidator = "com.github.everit-org.json-schema" % "org.everit.json.schema" % "1.12.0"
+  val jsonSchemaValidator = "com.github.everit-org.json-schema" % "org.everit.json.schema" % "1.12.1"
   val ficus               = "com.iheart"                        %% "ficus"                 % "1.4.7"
-  val typesafeConfig      = "com.typesafe"                      % "config"                 % "1.3.4"
-  val scalaTest           = "org.scalatest"                     %% "scalatest"             % "3.0.8"
+  val typesafeConfig      = "com.typesafe"                      % "config"                 % "1.4.0"
+  val scalaTest           = "org.scalatest"                     %% "scalatest"             % "3.1.1"
 
-  val flexmarkAll = "com.vladsch.flexmark" % "flexmark-all" % "0.50.40"
+  val flexmarkAll = "com.vladsch.flexmark" % "flexmark-all" % "0.60.2"
   val scalaCsv    = "com.github.tototoshi" %% "scala-csv"   % "1.3.6"
   val itextpdf    = "com.itextpdf"         % "itextpdf"     % "5.5.13.1"
   val xmlworker   = "com.itextpdf.tool"    % "xmlworker"    % "5.5.13.1"
 
-  val reactivemongo = "org.reactivemongo" %% "reactivemongo" % "0.19.7"
-  val play2Reactivemongo = "org.reactivemongo" %% "play2-reactivemongo" % "0.19.7-play28"
-  val reactivemongoPlayJsonCompat = "org.reactivemongo" %% "reactivemongo-play-json-compat" % "0.19.7-play28"
+  val reactivemongo = "org.reactivemongo" %% "reactivemongo" % "0.20.3"
+  val play2Reactivemongo = "org.reactivemongo" %% "play2-reactivemongo" % "0.20.3-play28"
+  val reactivemongoPlayJsonCompat = "org.reactivemongo" %% "reactivemongo-play-json-compat" % "0.20.3-play28"
 
-  val diffson = "org.gnieh" %% "diffson-play-json" % "4.0.0"
+  val diffson = "org.gnieh" %% "diffson-play-json" % "4.0.2"
 
   val scalaLogging   = "com.typesafe.scala-logging" %% "scala-logging"   % "3.9.2"
   val logbackClassic = "ch.qos.logback"             % "logback-classic"  % "1.2.3"
   val scalatags      = "com.lihaoyi"                %% "scalatags"       % ScalaTagsVersion
-  val jsoup          = "org.jsoup"                  % "jsoup"            % "1.12.1"
-  val jgit           = "org.eclipse.jgit"           % "org.eclipse.jgit" % "5.5.0.201909110433-r"
+  val jsoup          = "org.jsoup"                  % "jsoup"            % "1.12.2"
+  val jgit           = "org.eclipse.jgit"           % "org.eclipse.jgit" % "5.6.1.202002131546-r"
 
   // web server dependencies
   val scalajsScripts = "com.vmunier" %% "scalajs-scripts" % "1.1.4"

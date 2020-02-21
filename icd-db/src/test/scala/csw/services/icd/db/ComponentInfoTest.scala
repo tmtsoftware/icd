@@ -4,10 +4,10 @@ import java.io.File
 
 import csw.services.icd.IcdValidator
 import icd.web.shared.SubsystemWithVersion
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 // XXX TODO: Add more detailed test, add IcdComponentInfo tests
-class ComponentInfoTest extends FunSuite {
+class ComponentInfoTest extends AnyFunSuite {
   val examplesDir = s"examples/${IcdValidator.currentSchemaVersion}"
   val dbName = "test"
 

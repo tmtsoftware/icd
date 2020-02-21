@@ -22,6 +22,9 @@ All notable changes to this project will be documented in this file.
   and is only enabled when starting icdwebserver with the `-Dicd.allowUpload=false`
   option.
 
+- Fixed issue that could cause PDF generation to fail if embedded HTML in description
+  text was not valid XHTML.
+
 ## [ICD v0.17] - 2019-12-06
 
 ### Added

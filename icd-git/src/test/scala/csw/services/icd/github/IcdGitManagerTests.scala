@@ -7,9 +7,10 @@ import csw.services.icd.db.IcdDb
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import icd.web.shared.IcdVersion
 import org.eclipse.jgit.api.Git
-import org.scalatest.{BeforeAndAfter, FunSuite}
+import org.scalatest.BeforeAndAfter
+import org.scalatest.funsuite.AnyFunSuite
 
-class IcdGitManagerTests extends FunSuite with BeforeAndAfter {
+class IcdGitManagerTests extends AnyFunSuite with BeforeAndAfter {
 
   private var repoDir: File = _
   private var git: Git      = _

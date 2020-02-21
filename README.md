@@ -116,8 +116,6 @@ description = The beam-splitter stage has an unacceptable position error, datum 
 This is a known bug in the Config class: See https://github.com/lightbend/config/issues/367.
 In general, it is safer to put description text in double quotes.
 
-* If you use embedded HTML in description texts (Normally GitHub style Markdown is preferred), make sure 
-  it is valid XHTML, with closed tags. This will be automatically checked in a future release.
 
 
 

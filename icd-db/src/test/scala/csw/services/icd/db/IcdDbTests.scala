@@ -4,13 +4,13 @@ import java.io.File
 
 import csw.services.icd.IcdValidator
 import icd.web.shared.ComponentInfo.CurrentStates
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 /**
  * Tests the IcdDb class (Note: Assumes mongod is running)
  */
 //@DoNotDiscover
-class IcdDbTests extends FunSuite {
+class IcdDbTests extends AnyFunSuite {
   val examplesDir = s"examples/${IcdValidator.currentSchemaVersion}"
   val dbName = "test"
 

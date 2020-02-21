@@ -29,7 +29,7 @@ object IcdDbDefaults {
     val mongoUri = s"mongodb://$host:$port/$dbName"
     val driver = new AsyncDriver
     val database = for {
-      uri <- Future.fromTry(MongoConnection.parseURI(mongoUri))
+      uri <- MongoConnection.fromString(mongoUri)
       con <- driver.connect(uri)
       dn  <- Future(uri.db.get)
       db  <- con.database(dn)

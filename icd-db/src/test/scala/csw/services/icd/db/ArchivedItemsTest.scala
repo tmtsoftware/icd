@@ -4,9 +4,9 @@ import java.io.File
 
 import csw.services.icd.IcdValidator
 import icd.web.shared.SubsystemWithVersion
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class ArchivedItemsTest extends FunSuite {
+class ArchivedItemsTest extends AnyFunSuite {
   val examplesDir = s"examples/${IcdValidator.currentSchemaVersion}"
   val dbName      = "test"
 

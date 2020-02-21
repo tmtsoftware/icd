@@ -4,14 +4,13 @@ import java.io.File
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions}
 import csw.services.icd.IcdValidator._
-import icd.web.shared.IcdModels
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 /**
  * Tests ICD schema validation
  */
 //noinspection TypeAnnotation
-class IcdValidatorTests extends FunSuite {
+class IcdValidatorTests extends AnyFunSuite {
 
   val testDir = {
     val d1 = new File("src/test/resources")
