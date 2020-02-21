@@ -8,14 +8,9 @@ import diffson.playJson._
 import diffson.lcs._
 import diffson.jsonpatch._
 import diffson.jsonpatch.lcsdiff.remembering._
-import csw.services.icd.db.parser.{
-  ComponentModelBsonParser,
-  PublishModelBsonParser,
-  SubscribeModelBsonParser,
-  SubsystemModelBsonParser
-}
+import csw.services.icd.db.parser.{ComponentModelBsonParser, PublishModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
 import play.api.libs.json.{JsObject, JsValue, Json}
-import reactivemongo.api.bson.{BSONDateTime, BSONDocument}
+import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONString}
 import reactivemongo.api.{Cursor, WriteConcern}
 import reactivemongo.api.bson.collection.BSONCollection
 
@@ -651,8 +646,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
           .toList
       docs
         .map { doc =>
-          val subsystem = doc.getAsOpt[String](subsystemKey).get
-          val target    = doc.getAsOpt[String](targetKey).get
+          val subsystem = doc.getAsOpt[BSONString](subsystemKey).map(_.value).get
+          val target    = doc.getAsOpt[BSONString](targetKey).map(_.value).get
           IcdName(subsystem, target)
         }
         .distinct
