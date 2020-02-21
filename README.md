@@ -68,12 +68,11 @@ ICD Web App
 To start the ICD web app on http://localhost:9000/, run `icdwebserver`,
 then go to http://localhost:9000 in a web browser.
 
-To run as a public server, you should use something like this to start it:
+To run as a public server, edit the provided script, [icd-wed-server.sh](icd-wed-server.sh), and change the
+settings (certificate, etc.) as needed for the server. 
 
-    icdwebserver -Dicd.allowUpload=false -Dhttp.host=$hostname -Dhttp.port=8080
-
-and then go to http://$hostname:8080. The `-Dicd.allowUpload=false` option hides the *upload* feature, which allows
-users to test their changes before publishing.
+Note that the `-Dicd.allowUpload=false` option hides the *upload* feature, which allows
+users to test their local changes before publishing. This option also makes the Publish tab visible.
 
 Note that the first time you start `icdwebserver`, it will update the ICD database from the released versions on GitHub. 
 
@@ -81,13 +80,13 @@ To start the web app with continuous compilation during development, you can use
 
 See [icd-web-server/README.md](icd-web-server/README.md) for more information.
 
-Importing ICD-Model-Files from GitHub into the ICD Database with Version History
---------------------------------------------------------------------------------
+Importing ICD-Model-Files from GitHub into the ICD Database with Version History (Using the Command Line Tools)
+------------------------------------------------------------------------------------------------------------------
 
 Using the [icd-git](icd-git) command line application you can publish subsystem APIs and ICDs between subsystems 
 (assuming you have the necessary write access to the [GitHub repository](https://github.com/tmt-icd/ICD-Model-Files)).
 Publishing a subsystem API or ICD adds an entry to a JSON file on GitHub which is used later to extract specific 
-versions of the model files.
+versions of the model files. 
 
 The app also lets you import subsystem model files directly from the
 [GitHub subsystem model file repositories](https://github.com/tmt-icd/)  into a local MongoDB database
@@ -117,18 +116,8 @@ description = The beam-splitter stage has an unacceptable position error, datum 
 This is a known bug in the Config class: See https://github.com/lightbend/config/issues/367.
 In general, it is safer to put description text in double quotes.
 
-Docker Install
---------------
-
-Two Docker related scripts are provided in the top level directory.
-
-* docker-build.sh - Runs `sbt docker:stage` and `docker build` to build the docker image
-
-* docker-run.sh - Can be used to run the ICD web server inside Docker
-
-__Note__ that *both* scripts should be edited to add the correct docker user.
-See comments in the scripts for more information.
-
+* If you use embedded HTML in description texts (Normally GitHub style Markdown is preferred), make sure 
+  it is valid XHTML, with closed tags. This will be automatically checked in a future release.
 
 
 
