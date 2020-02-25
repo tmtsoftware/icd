@@ -62,12 +62,12 @@ Example:
 > icd-db --ingest examples/NFIRAOS/
 > icd-db --list all
   NFIRAOS
-  envCtrl
+  env.ctrl
   lgsWfs
   nacqNhrwfs
   ndme
 > icd-db --list assemblies
-  envCtrl
+  env.ctrl
   lgsWfs
   nacqNhrwfs
   ndme
@@ -90,9 +90,9 @@ MongoDB shell version: 3.0.0
 connecting to: icds
 > show collections
 NFIRAOS.subsystem
-NFIRAOS.envCtrl.command
-NFIRAOS.envCtrl.component
-NFIRAOS.envCtrl.publish
+NFIRAOS.env.ctrl.command
+NFIRAOS.env.ctrl.component
+NFIRAOS.env.ctrl.publish
 NFIRAOS.lgsWfs.component
 NFIRAOS.lgsWfs.publish
 NFIRAOS.nacqNhrwfs.command

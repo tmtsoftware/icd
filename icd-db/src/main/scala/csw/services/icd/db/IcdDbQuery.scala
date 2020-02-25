@@ -2,7 +2,13 @@ package csw.services.icd.db
 
 import csw.services.icd._
 import csw.services.icd.StdName._
-import csw.services.icd.db.parser.{CommandModelBsonParser, ComponentModelBsonParser, PublishModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
+import csw.services.icd.db.parser.{
+  CommandModelBsonParser,
+  ComponentModelBsonParser,
+  PublishModelBsonParser,
+  SubscribeModelBsonParser,
+  SubsystemModelBsonParser
+}
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels
 import icd.web.shared.IcdModels._
@@ -25,7 +31,17 @@ object IcdDbQuery {
 
   // for working with dot separated paths
   private[db] case class IcdPath(path: String) {
-    lazy val parts: List[String] = path.split("\\.").toList
+    lazy val parts: List[String] = {
+      // allow embedded dots in component name
+      val l         = path.split("\\.").toList
+      val subsystem = l.head
+      val component = l.tail.dropRight(1).mkString(".")
+      val suffix    = l.reverse.head
+      if (component.nonEmpty)
+        List(subsystem, component, suffix)
+      else
+        List(subsystem, suffix)
+    }
 
     // The common path for an assembly, HCD, sequencer, etc.
     lazy val component: String = parts.dropRight(1).mkString(".")
@@ -146,7 +162,8 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
   private[db] def getEntries(paths: List[IcdPath]): List[IcdEntry] = {
     val compMap = paths.map(p => (p.component, paths.filter(_.component == p.component).map(_.path))).toMap
     val entries = compMap.keys.map(key => getEntry(db, key, compMap(key))).toList
-    entries.sortBy(entry => (IcdPath(entry.name).parts.length, entry.name))
+    // added ".v" below since IdbPath expects something after $subsystem.$component (component can have embedded dots)
+    entries.sortBy(entry => (IcdPath(entry.name + ".v").parts.length, entry.name))
   }
 
   private[db] def getEntries: List[IcdEntry] = {

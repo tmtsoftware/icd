@@ -31,9 +31,9 @@ class IcdDbTests extends AnyFunSuite {
     db.query.afterIngestFiles(problems, dbName)
 
     // query the DB
-    assert(db.query.getComponentNames == List("envCtrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
-    assert(db.query.getComponentNames("TEST") == List("envCtrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
-    assert(db.query.getAssemblyNames == List("envCtrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
+    assert(db.query.getComponentNames == List("env.ctrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
+    assert(db.query.getComponentNames("TEST") == List("env.ctrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
+    assert(db.query.getAssemblyNames == List("env.ctrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
     assert(db.query.getHcdNames == List())
     assert(db.query.getSubsystemNames == List("TEST"))
 
@@ -41,10 +41,10 @@ class IcdDbTests extends AnyFunSuite {
     assert(components.size == 5)
 
     // Test getting items based on the component name
-    val envCtrl = db.query.getComponentModel("TEST", "envCtrl").get
-    assert(envCtrl.component == "envCtrl")
+    val envCtrl = db.query.getComponentModel("TEST", "env.ctrl").get
+    assert(envCtrl.component == "env.ctrl")
     assert(envCtrl.componentType == "Assembly")
-    assert(envCtrl.prefix == "test.ncc.envCtrl")
+    assert(envCtrl.prefix == "test.ncc.env.ctrl")
 
     val commands = db.query.getCommandModel(envCtrl).get
     assert(commands.receive.size == 2)
@@ -79,11 +79,11 @@ class IcdDbTests extends AnyFunSuite {
     assert(published.size == 1)
     assert(published.head.publishType == CurrentStates)
 
-    //    val sensorList = db.query.publishes("test.ncc.envCtrl.sensors", "TEST", Events)
+    //    val sensorList = db.query.publishes("test.ncc.env.ctrl.sensors", "TEST", Events)
     //    assert(sensorList.size == 1)
-    //    assert(sensorList.head.componentName == "envCtrl")
+    //    assert(sensorList.head.componentName == "env.ctrl")
     //    assert(sensorList.head.item.publishType == Events)
-    //    assert(sensorList.head.prefix == "test.ncc.envCtrl")
+    //    assert(sensorList.head.prefix == "test.ncc.env.ctrl")
     //    assert(sensorList.head.item.name == "sensors")
 
     // Test accessing ICD models
