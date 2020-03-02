@@ -200,7 +200,7 @@ object IcdToHtml {
           val receiverStr         = s.receiver.map(r => s"${r.subsystem}.${r.component}").getOrElse("none")
           val receiverInfo        = span(strong("Receiver: "), receiverStr)
           div(cls := "nopagebreak")(
-            nh.H4(s.name, idFor(compName, "sends", "Commands", s.name)),
+            nh.H4(s.name, idFor(compName, "sends", "Commands", s.subsystem, s.component, s.name)),
             p(senderInfo, ", ", receiverInfo),
             receiveCommandModel match {
               case Some(m) =>
@@ -264,7 +264,7 @@ object IcdToHtml {
           val senders    = r.senders.map(s => s"${s.subsystem}.${s.component}").mkString(", ")
           val senderInfo = span(strong(s"$senderStr: "), if (senders.isEmpty) "none" else senders)
           div(cls := "nopagebreak")(
-            nh.H4(m.name, idFor(compName, "receives", "Commands", m.name)),
+            nh.H4(m.name, idFor(compName, "receives", "Commands", component.subsystem, compName, m.name)),
             p(senderInfo, ", ", receiverInfo),
             if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
             if (m.preconditions.isEmpty) div() else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
@@ -361,7 +361,10 @@ object IcdToHtml {
               span(strong("Publisher: "), s"${si.subscribeModelInfo.subsystem}.${si.subscribeModelInfo.component}")
             val maxRate = si.eventModel.flatMap(_.maybeMaxRate)
             div(cls := "nopagebreak")(
-              nh.H4(s"${singlePubType(pubType)}: ${sInfo.name}", idFor(compName, "subscribes", pubType, sInfo.name)),
+              nh.H4(
+                s"${singlePubType(pubType)}: ${sInfo.name}",
+                idFor(compName, "subscribes", pubType, sInfo.subsystem, sInfo.component, sInfo.name)
+              ),
               p(publisherInfo, ", ", subscriberInfo),
               raw(si.description),
               getWarning(si),
@@ -502,7 +505,7 @@ object IcdToHtml {
             div(cls := "nopagebreak")(
               nh.H4(
                 s"${singlePubType(pubType)}: ${eventModel.name}",
-                idFor(compName, "publishes", pubType, eventModel.name)
+                idFor(compName, "publishes", pubType, component.subsystem, compName, eventModel.name)
               ),
               if (eventModel.requirements.isEmpty) div()
               else p(strong("Requirements: "), eventModel.requirements.mkString(", ")),
@@ -549,7 +552,7 @@ object IcdToHtml {
               )
             )
             div(cls := "nopagebreak")(
-              nh.H4(s"Alarm: ${m.name}", idFor(compName, "publishes", "Alarms", m.name)),
+              nh.H4(s"Alarm: ${m.name}", idFor(compName, "publishes", "Alarms", component.subsystem, compName, m.name)),
               if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
               p(publisherInfo, ", ", subscriberInfo),
               raw(m.description),

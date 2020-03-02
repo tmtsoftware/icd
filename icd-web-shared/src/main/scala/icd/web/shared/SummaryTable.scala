@@ -89,7 +89,13 @@ object SummaryTable {
                   td(p(a(href := s"#${info.publisher.component}")(info.publisher.component))),
                   td(p(info.subscribers.map(linkToSubscriber))),
                   td(p(a(href := s"#${info.publisher.component}")(info.publisher.prefix))),
-                  td(p(a(href := s"#${idFor(info.publisher.component, action, itemType, info.item.name)}")(info.item.name))),
+                  td(
+                    p(
+                      a(
+                        href := s"#${idFor(info.publisher.component, action, itemType, info.publisher.subsystem, info.publisher.component, info.item.name)}"
+                      )(info.item.name)
+                    )
+                  ),
                   if (showYearlyAccum) {
                     val yearlyAccum =
                       if (itemType.endsWith("Events")) info.item.asInstanceOf[EventModel].totalArchiveSpacePerYear else ""
@@ -149,12 +155,17 @@ object SummaryTable {
                 }
 
                 // ICDs contain both subsystems, so we can link to them
-                // XXX TODO: Link targets should contain subsystem names!?
                 tr(
                   td(p(a(href := s"#${info.publisherComponent}")(info.publisherComponent))),
                   td(p(a(href := s"#${info.subscriber.component}")(info.subscriber.component))),
                   td(p(a(href := s"#${info.publisherComponent}")(prefixItem))),
-                  td(p(a(href := s"#${idFor(info.publisherComponent, action, itemType, info.item.name)}")(info.item.name))),
+                  td(
+                    p(
+                      a(
+                        href := s"#${idFor(info.publisherComponent, action, itemType, info.publisherSubsystem, info.publisherComponent, info.item.name)}"
+                      )(info.item.name)
+                    )
+                  ),
                   td(description)
                 )
               }
@@ -207,12 +218,17 @@ object SummaryTable {
                   case None      => raw(firstParagraph(info.item.description))
                 }
 
-                // XXX TODO FIXME: Link targets should contain subsystem names!?
                 tr(
                   td(p(publisherComponent)),
                   td(p(a(href := s"#${info.subscriber.component}")(info.subscriber.component))),
                   td(p(publisherPrefix)),
-                  td(p(a(href := s"#${idFor(info.subscriber.component, subscribes, itemType, info.item.name)}")(info.item.name))),
+                  td(
+                    p(
+                      a(
+                        href := s"#${idFor(info.subscriber.component, subscribes, itemType, info.publisherSubsystem, info.publisherComponent, info.item.name)}"
+                      )(info.item.name)
+                    )
+                  ),
                   td(description)
                 )
               }

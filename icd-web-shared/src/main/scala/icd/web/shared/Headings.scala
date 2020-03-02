@@ -8,14 +8,23 @@ object Headings {
   /**
    * Returns a unique id for a link target.
    *
-   * @param component component name
+   * @param thisComponent component name (Component being described)
    * @param action    publishes, subscribes, sends, receives
    * @param itemType  Event, Alarm, etc.
+   * @param subsystem the item's subsystem
+   * @param component the item's component name
    * @param name      item name
    * @return the id
    */
-  def idFor(component: String, action: String, itemType: String, name: String): String = {
-    s"$component-$action-$itemType-$name".replace(" ", "-")
+  def idFor(
+      thisComponent: String,
+      action: String,
+      itemType: String,
+      subsystem: String,
+      component: String,
+      name: String,
+  ): String = {
+    s"$thisComponent-$action-$itemType-$subsystem.$component.$name".replace(" ", "-")
   }
 }
 

@@ -463,7 +463,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                   tr(
                     td(
                       Styles.attributeCell,
-                      p(btn, a(id := idFor(compName, "publishes", pubType, t.eventModel.name))(t.eventModel.name))
+                      p(
+                        btn,
+                        a(id := idFor(compName, "publishes", pubType, component.subsystem, compName, t.eventModel.name))(
+                          t.eventModel.name
+                        )
+                      )
                     ),
                     td(raw(t.eventModel.description)),
                     td(p(t.subscribers.map(subscribeInfo => makeLinkForComponent(subscribeInfo.componentModel))))
@@ -513,7 +518,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                 val (btn, row) = hiddenRowMarkup(makeAlarmDetailsRow(t), 3)
                 List(
                   tr(
-                    td(Styles.attributeCell, p(btn, a(id := idFor(compName, "publishes", "Alarms", m.name))(m.name))),
+                    td(
+                      Styles.attributeCell,
+                      p(btn, a(id := idFor(compName, "publishes", "Alarms", component.subsystem, compName, m.name))(m.name))
+                    ),
                     td(raw(m.description)),
                     td(p(t.subscribers.map(si => makeLinkForComponent(si.componentModel))))
                   ),
@@ -627,7 +635,16 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                         Styles.attributeCell,
                         p(
                           btn,
-                          a(id := idFor(compName, "subscribes", pubType, s.subscribeModelInfo.name))(s.subscribeModelInfo.name)
+                          a(
+                            id := idFor(
+                              compName,
+                              "subscribes",
+                              pubType,
+                              s.subscribeModelInfo.subsystem,
+                              s.subscribeModelInfo.component,
+                              s.subscribeModelInfo.name
+                            )
+                          )(s.subscribeModelInfo.name)
                         )
                       ),
                       td(raw(s.description), getWarning(s), usage),
@@ -674,13 +691,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Generates the HTML markup to display the commands a component receives
-  private def receivedCommandsMarkup(compName: String, info: List[ReceivedCommandInfo]) = {
+  private def receivedCommandsMarkup(component: ComponentModel, info: List[ReceivedCommandInfo]) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
     // Only display non-empty tables
     if (info.isEmpty) div()
-    else
+    else {
+      val compName = component.component
       div(
         Styles.componentSection,
         h4(s"Command Configurations Received by $compName"),
@@ -700,7 +718,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               val (btn, row) = hiddenRowMarkup(makeReceivedCommandDetailsRow(r.receiveCommandModel), 3)
               List(
                 tr(
-                  td(Styles.attributeCell, p(btn, a(id := idFor(compName, "receives", "Commands", rc.name))(rc.name))),
+                  td(
+                    Styles.attributeCell,
+                    p(
+                      btn,
+                      a(id := idFor(compName, "receives", "Commands", component.subsystem, compName, rc.name))(rc.name)
+                    )
+                  ),
                   // XXX TODO: Make link to command description page with details
                   td(raw(rc.description)),
                   td(p(r.senders.map(makeLinkForComponent)))
@@ -711,12 +735,15 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           )
         )
       )
+    }
   }
 
   // Generates the HTML markup to display the commands a component sends
-  private def sentCommandsMarkup(compName: String, info: List[SentCommandInfo]) = {
+  private def sentCommandsMarkup(component: ComponentModel, info: List[SentCommandInfo]) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
+
+    val compName = component.component
 
     // Warn if no receiver found for sent command
     def getWarning(m: SentCommandInfo) = m.warning.map { msg =>
@@ -733,7 +760,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           val (btn, row) = hiddenRowMarkup(makeReceivedCommandDetailsRow(r), 3)
           List(
             tr(
-              td(Styles.attributeCell, p(btn, a(id := idFor(compName, "sends", "Commands", r.name))(r.name))),
+              td(
+                Styles.attributeCell,
+                p(btn, a(id := idFor(compName, "sends", "Commands", s.subsystem, s.component, s.name))(s.name))
+              ),
               // XXX TODO: Make link to command description page with details
               td(raw(r.description)),
               td(p(s.receiver.map(makeLinkForComponent)))
@@ -786,8 +816,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           div(
             h3(s"Commands for $compName"),
             raw(commands.description),
-            receivedCommandsMarkup(compName, commands.commandsReceived),
-            sentCommandsMarkup(compName, commands.commandsSent)
+            receivedCommandsMarkup(component, commands.commandsReceived),
+            sentCommandsMarkup(component, commands.commandsSent)
           )
     }
   }
