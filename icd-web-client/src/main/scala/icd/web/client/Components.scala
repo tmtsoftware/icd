@@ -279,7 +279,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             yield List(a2.name, a2.description, getTypeStr(a2.name, a2.typeStr), a2.units, a2.defaultValue)
         Some(
           div()(
-            p(strong(a(id := structIdStr(attrModel.name))(s"Attributes for ${attrModel.name} struct"))),
+            p(strong(a(name := structIdStr(attrModel.name))(s"Attributes for ${attrModel.name} struct"))),
             mkTable(headings, rowList2),
             // Handle structs embedded in other structs (or arrays of structs, etc.)
             structAttributesMarkup(attrModel.attributesList)
@@ -465,7 +465,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                       Styles.attributeCell,
                       p(
                         btn,
-                        a(id := idFor(compName, "publishes", pubType, component.subsystem, compName, t.eventModel.name))(
+                        a(name := idFor(compName, "publishes", pubType, component.subsystem, compName, t.eventModel.name))(
                           t.eventModel.name
                         )
                       )
@@ -520,7 +520,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                   tr(
                     td(
                       Styles.attributeCell,
-                      p(btn, a(id := idFor(compName, "publishes", "Alarms", component.subsystem, compName, m.name))(m.name))
+                      p(btn, a(name := idFor(compName, "publishes", "Alarms", component.subsystem, compName, m.name))(m.name))
                     ),
                     td(raw(m.description)),
                     td(p(t.subscribers.map(si => makeLinkForComponent(si.componentModel))))
@@ -636,7 +636,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                         p(
                           btn,
                           a(
-                            id := idFor(
+                            name := idFor(
                               compName,
                               "subscribes",
                               pubType,
@@ -722,7 +722,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                     Styles.attributeCell,
                     p(
                       btn,
-                      a(id := idFor(compName, "receives", "Commands", component.subsystem, compName, rc.name))(rc.name)
+                      a(name := idFor(compName, "receives", "Commands", component.subsystem, compName, rc.name))(rc.name)
                     )
                   ),
                   // XXX TODO: Make link to command description page with details
@@ -762,7 +762,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             tr(
               td(
                 Styles.attributeCell,
-                p(btn, a(id := idFor(compName, "sends", "Commands", s.subsystem, s.component, s.name))(s.name))
+                p(btn, a(name := idFor(compName, "sends", "Commands", s.subsystem, s.component, s.name))(s.name))
               ),
               // XXX TODO: Make link to command description page with details
               td(raw(r.description)),

@@ -48,24 +48,25 @@ trait Headings {
  * Plain, unnumbered html headings.
  */
 class HtmlHeadings extends Headings {
+  // Note: need to use "name :=" instead of "id :=" to make links work in PDFs with itextpdf-5.x!
 
   def H2(title: String, optionalId: String = ""): Text.TypedTag[String] = {
     val ident = makeId(title, optionalId)
-    h2(a(id := ident)(title))
+    h2(a(name := ident)(title))
   }
 
   def H3(title: String, optionalId: String = ""): Text.TypedTag[String] = {
     val ident = makeId(title, optionalId)
-    h3(a(id := ident)(title))
+    h3(a(name := ident)(title))
   }
 
   def H4(title: String, optionalId: String = ""): Text.TypedTag[String] = {
     val ident = makeId(title, optionalId)
-    h4(a(id := ident)(title))
+    h4(a(name := ident)(title))
   }
 
   def H5(title: String, optionalId: String = ""): Text.TypedTag[String] = {
     val ident = makeId(title, optionalId)
-    h5(a(id := ident)(title))
+    h5(a(name := ident)(title))
   }
 }

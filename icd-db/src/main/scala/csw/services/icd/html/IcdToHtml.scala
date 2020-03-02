@@ -117,9 +117,9 @@ object IcdToHtml {
     import scalatags.Text.all._
     titleInfo.maybeSubtitle match {
       case Some(subtitle) =>
-        h3(a(id := titleId), cls := "page-header")(titleInfo.title, br, small(subtitle))
+        h3(a(name := titleId), cls := "page-header")(titleInfo.title, br, small(subtitle))
       case None =>
-        h3(a(id := titleId), cls := "page-header")(titleInfo.title)
+        h3(a(name := titleId), cls := "page-header")(titleInfo.title)
     }
   }
 
@@ -428,7 +428,7 @@ object IcdToHtml {
             yield List(a2.name, a2.description, getTypeStr(a2.name, a2.typeStr), a2.units, a2.defaultValue)
         Some(
           div()(
-            p(strong(a(id := structIdStr(attrModel.name))(s"Attributes for ${attrModel.name} struct"))),
+            p(strong(a(name := structIdStr(attrModel.name))(s"Attributes for ${attrModel.name} struct"))),
             HtmlMarkup.mkTable(headings, rowList2),
             // Handle structs embedded in other structs (or arrays of structs, etc.)
             structAttributesMarkup(attrModel.attributesList)

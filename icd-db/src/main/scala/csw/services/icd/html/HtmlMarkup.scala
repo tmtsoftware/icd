@@ -23,7 +23,7 @@ trait HtmlMarkup {
    */
   protected def mkHeading(depth: Int, text: String): TypedTag[String] = {
     val heading = tag(s"h$depth")
-    heading(a(id := idStr)(text))
+    heading(a(name := idStr)(text))
   }
 
   /**
