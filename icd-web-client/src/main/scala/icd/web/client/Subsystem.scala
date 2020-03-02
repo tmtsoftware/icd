@@ -302,7 +302,7 @@ case class Subsystem(
   private def getSubsystemVersionOptions(subsystem: String): Future[List[String]] = {
     import play.api.libs.json._
     Ajax
-      .get(Routes.versionNames(subsystem))
+      .get(ClientRoutes.versionNames(subsystem))
       .map { r =>
         Json.fromJson[Array[String]](Json.parse(r.responseText)).get.toList
       }

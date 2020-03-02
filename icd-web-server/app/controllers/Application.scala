@@ -19,7 +19,7 @@ import play.api.{Configuration, Environment, Mode}
 import scala.util.Try
 
 // Defines the database used
-object Application {
+object ApplicationData {
   // Used to access the ICD database
   val tryDb: Try[IcdDb] = Try(IcdDb())
 }
@@ -40,7 +40,7 @@ class Application @Inject()(
     configuration: Configuration
 ) extends AbstractController(components) {
 
-  import Application._
+  import ApplicationData._
   import JsonSupport._
 
   if (!tryDb.isSuccess) {
@@ -115,10 +115,11 @@ class Application @Inject()(
   def componentInfo(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String], searchAll: Option[Boolean]) =
     Action { implicit request =>
       val sv              = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-      val query           = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem)))
+      val searchAllSubsystems = searchAll.getOrElse(false)
+      val subsystems = if (searchAllSubsystems) None else Some(List(sv.subsystem))
+      val query           = new CachedIcdDbQuery(db.db, db.admin, subsystems)
       val versionManager  = new CachedIcdVersionManager(query)
-      val displayWarnings = searchAll.getOrElse(false)
-      val infoList        = new ComponentInfoHelper(displayWarnings).getComponentInfoList(versionManager, sv)
+      val infoList        = new ComponentInfoHelper(displayWarnings = searchAllSubsystems).getComponentInfoList(versionManager, sv)
       Ok(Json.toJson(infoList))
     }
 

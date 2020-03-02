@@ -71,11 +71,11 @@ object IcdToHtml {
     import scalatags.Text.all._
 
     val nh = new NumberedHeadings
-    val (titleInfo, titleMarkup, summaryTable) =
+    val (titleInfo, summaryTable) =
       if (maybeSubsystemInfo.isDefined) {
         val si = maybeSubsystemInfo.get
         val ti = TitleInfo(si, None, None)
-        (ti, getTitleMarkup(ti), SummaryTable.displaySummary(si, None, infoList, nh))
+        (ti, SummaryTable.displaySummary(si, None, infoList, nh))
       } else if (infoList.size == 1) {
         // XXX TODO FIXME: When is this block called?
         val componentModel = infoList.head.componentModel
@@ -85,9 +85,9 @@ object IcdToHtml {
         val ti             = TitleInfo(s"API for $subsys.$comp", None, Some(desc))
         val sv             = SubsystemWithVersion(subsys, None, Some(comp))
         val si             = SubsystemInfo(sv, "", "")
-        (ti, getTitleMarkup(ti), SummaryTable.displaySummary(si, None, infoList, nh))
+        (ti, SummaryTable.displaySummary(si, None, infoList, nh))
       } else {
-        (TitleInfo("", None, None), div(), div())
+        (TitleInfo("", None, None), div())
       }
     val mainContent = div(
       summaryTable,
@@ -101,25 +101,25 @@ object IcdToHtml {
         scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss))
       ),
       body(
-        titleMarkup,
+        getTitleMarkup(titleInfo, titleId = "title"),
         div(cls := "pagebreakBefore"),
         h2("Table of Contents"),
         toc,
         div(cls := "pagebreakBefore"),
-        titleMarkup,
+        getTitleMarkup(titleInfo, titleId = "title2"),
         intro,
         mainContent
       )
     )
   }
 
-  def getTitleMarkup(titleInfo: TitleInfo, titleName: String = "title"): Text.TypedTag[String] = {
+  def getTitleMarkup(titleInfo: TitleInfo, titleId: String = "title"): Text.TypedTag[String] = {
     import scalatags.Text.all._
     titleInfo.maybeSubtitle match {
       case Some(subtitle) =>
-        h3(a(name := titleName), cls := "page-header")(titleInfo.title, br, small(subtitle))
+        h3(a(id := titleId), cls := "page-header")(titleInfo.title, br, small(subtitle))
       case None =>
-        h3(a(name := titleName), cls := "page-header")(titleInfo.title)
+        h3(a(id := titleId), cls := "page-header")(titleInfo.title)
     }
   }
 
@@ -425,7 +425,7 @@ object IcdToHtml {
             yield List(a2.name, a2.description, getTypeStr(a2.name, a2.typeStr), a2.units, a2.defaultValue)
         Some(
           div()(
-            p(strong(a(name := structIdStr(attrModel.name))(s"Attributes for ${attrModel.name} struct"))),
+            p(strong(a(id := structIdStr(attrModel.name))(s"Attributes for ${attrModel.name} struct"))),
             HtmlMarkup.mkTable(headings, rowList2),
             // Handle structs embedded in other structs (or arrays of structs, etc.)
             structAttributesMarkup(attrModel.attributesList)

@@ -321,7 +321,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
     val f = if (unpublish) {
       val version          = publishInfo.apiVersions.head.version
       val unpublishApiInfo = UnpublishApiInfo(publishInfo.subsystem, version, user, password, comment)
-      Ajax.post(url = Routes.unpublishApi, data = Json.toJson(unpublishApiInfo).toString(), headers = headers).flatMap { r =>
+      Ajax.post(url = ClientRoutes.unpublishApi, data = Json.toJson(unpublishApiInfo).toString(), headers = headers).flatMap { r =>
         r.status match {
           case 200 => // OK
             val apiVersionInfo      = Json.fromJson[ApiVersionInfo](Json.parse(r.responseText)).get
@@ -337,7 +337,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
       }
     } else {
       val publishApiInfo = PublishApiInfo(publishInfo.subsystem, majorVersion, user, password, comment)
-      Ajax.post(url = Routes.publishApi, data = Json.toJson(publishApiInfo).toString(), headers = headers).flatMap { r =>
+      Ajax.post(url = ClientRoutes.publishApi, data = Json.toJson(publishApiInfo).toString(), headers = headers).flatMap { r =>
         r.status match {
           case 200 => // OK
             val apiVersionInfo = Json.fromJson[ApiVersionInfo](Json.parse(r.responseText)).get
@@ -377,7 +377,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
         password,
         comment
       )
-      Ajax.post(url = Routes.unpublishIcd, data = Json.toJson(unpublishIcdInfo).toString(), headers = headers).flatMap { r =>
+      Ajax.post(url = ClientRoutes.unpublishIcd, data = Json.toJson(unpublishIcdInfo).toString(), headers = headers).flatMap { r =>
         r.status match {
           case 200 => // OK
             val icdVersionInfo = Json.fromJson[IcdVersionInfo](Json.parse(r.responseText)).get
@@ -407,7 +407,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
         password,
         comment
       )
-      Ajax.post(url = Routes.publishIcd, data = Json.toJson(publishIcdInfo).toString(), headers = headers).flatMap { r =>
+      Ajax.post(url = ClientRoutes.publishIcd, data = Json.toJson(publishIcdInfo).toString(), headers = headers).flatMap { r =>
         r.status match {
           case 200 => // OK
             val icdVersionInfo = Json.fromJson[IcdVersionInfo](Json.parse(r.responseText)).get
@@ -603,7 +603,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
     val gitHubCredentials = GitHubCredentials(usernameBox.value, passwordBox.value)
     val headers           = Map("Content-Type" -> "application/json")
     val f =
-      Ajax.post(url = Routes.checkGitHubCredentials, data = Json.toJson(gitHubCredentials).toString(), headers = headers).map {
+      Ajax.post(url = ClientRoutes.checkGitHubCredentials, data = Json.toJson(gitHubCredentials).toString(), headers = headers).map {
         r =>
           if (r.status == 200) {
             $id("gitHubCredentials").classList.add("hide")

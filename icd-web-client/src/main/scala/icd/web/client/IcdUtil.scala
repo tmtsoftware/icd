@@ -18,7 +18,7 @@ object IcdUtil {
    */
   def getPublishInfo(maybeSubsystem: Option[String], mainContent: MainContent): Future[List[PublishInfo]] = {
     Ajax
-      .get(Routes.getPublishInfo(maybeSubsystem))
+      .get(ClientRoutes.getPublishInfo(maybeSubsystem))
       .map { r =>
         Json.fromJson[Array[PublishInfo]](Json.parse(r.responseText)) match {
           case JsSuccess(ar: Array[PublishInfo], _: JsPath) =>

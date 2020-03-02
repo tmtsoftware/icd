@@ -102,7 +102,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // See if uploading model files is allowed in this configuration
   private def isUploadAllowed: Future[Boolean] = {
-    val path = Routes.isUploadAllowed
+    val path = ClientRoutes.isUploadAllowed
     Ajax.get(path).map { r =>
       Json.fromJson[Boolean](Json.parse(r.responseText)).get
     }
@@ -110,7 +110,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Updates the cache of published APIs and ICDs on the server (in case new ones were published)
   private def updatePublished(): Future[Unit] = {
-    val path = Routes.updatePublished
+    val path = ClientRoutes.updatePublished
     // XXX TODO: Check response
     Ajax.post(path).map(_ => ())
   }
@@ -182,7 +182,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Gets the software release version to display in the status page
   def getReleaseVersion: Future[String] = {
     Ajax
-      .get(Routes.releaseVersion)
+      .get(ClientRoutes.releaseVersion)
       .map { r =>
         Json.fromJson[String](Json.parse(r.responseText)).map(v => s" [version $v]").getOrElse("")
       }
@@ -484,7 +484,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion
       val maybeIcdVersion = selectDialog.icdChooser.getSelectedIcdVersion.map(_.icdVersion)
       val searchAll       = selectDialog.searchAllSubsystems()
-      val uri             = Routes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll)
+      val uri             = ClientRoutes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll)
       dom.window.open(uri) // opens in new window or tab
     }
   }
@@ -498,9 +498,9 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
     val uri =
       if (maybeSv.isDefined)
-        Routes.archivedItemsReport(maybeSv.get)
+        ClientRoutes.archivedItemsReport(maybeSv.get)
       else
-        Routes.archivedItemsReportFull()
+        ClientRoutes.archivedItemsReportFull()
     dom.window.open(uri) // opens in new window or tab
   }
 }

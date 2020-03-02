@@ -61,7 +61,7 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
     val checked = document.querySelectorAll("input[name='version']:checked").toList
     if (checked.size == 2) {
       val versions = checked.map(elem => elem.asInstanceOf[HTMLInputElement].value).sortWith(compareVersions)
-      val route    = Routes.diff(subsystem, versions)
+      val route    = ClientRoutes.diff(subsystem, versions)
       Ajax.get(route).map { r =>
         val list = Json.fromJson[Array[DiffInfo]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
         diffDiv.innerHTML = ""
@@ -241,7 +241,7 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
   // Gets the subsystem version info from the server
   private def getSubsystemVersionInfo(subsystem: String): Future[List[VersionInfo]] =
     Ajax
-      .get(Routes.versions(subsystem))
+      .get(ClientRoutes.versions(subsystem))
       .map { r =>
         Json.fromJson[Array[VersionInfo]](Json.parse(r.responseText)) match {
           case JsSuccess(ar: Array[VersionInfo], _: JsPath) =>
@@ -261,7 +261,7 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
   private def getIcdVersionInfo(icdName: IcdName): Future[List[IcdVersionInfo]] = {
     import play.api.libs.json._
     Ajax
-      .get(Routes.icdVersions(icdName))
+      .get(ClientRoutes.icdVersions(icdName))
       .map { r =>
         Json.fromJson[Array[IcdVersionInfo]](Json.parse(r.responseText)) match {
           case JsSuccess(ar: Array[IcdVersionInfo], _: JsPath) =>

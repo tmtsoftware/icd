@@ -6,7 +6,7 @@ import icd.web.shared.{SubsystemWithVersion, IcdName}
  * Defines URI routes to access the server API
  * (See icd-web-server/conf/routes file for server side)
  */
-object Routes {
+object ClientRoutes {
 
   /**
    * Gets a list of top level subsystem names

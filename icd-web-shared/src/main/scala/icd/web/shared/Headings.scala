@@ -41,22 +41,22 @@ trait Headings {
 class HtmlHeadings extends Headings {
 
   def H2(title: String, optionalId: String = ""): Text.TypedTag[String] = {
-    val id = makeId(title, optionalId)
-    h2(a(name := id)(title))
+    val ident = makeId(title, optionalId)
+    h2(a(id := ident)(title))
   }
 
   def H3(title: String, optionalId: String = ""): Text.TypedTag[String] = {
-    val id = makeId(title, optionalId)
-    h3(a(name := id)(title))
+    val ident = makeId(title, optionalId)
+    h3(a(id := ident)(title))
   }
 
   def H4(title: String, optionalId: String = ""): Text.TypedTag[String] = {
-    val id = makeId(title, optionalId)
-    h4(a(name := id)(title))
+    val ident = makeId(title, optionalId)
+    h4(a(id := ident)(title))
   }
 
   def H5(title: String, optionalId: String = ""): Text.TypedTag[String] = {
-    val id = makeId(title, optionalId)
-    h5(a(name := id)(title))
+    val ident = makeId(title, optionalId)
+    h5(a(id := ident)(title))
   }
 }

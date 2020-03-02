@@ -14,7 +14,7 @@ class FileUploadController @Inject()(env: Environment, webJarAssets: WebJarAsset
     extends AbstractController(components) {
 
   private val log     = play.Logger.of("application")
-  private lazy val db = Application.tryDb.get
+  private lazy val db = ApplicationData.tryDb.get
 
   // Server side of the upload ICD feature.
   // Supported file types: A directory containing icd config files (chrome)

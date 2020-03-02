@@ -23,7 +23,7 @@ case class SubsystemNames(mainContent: MainContent, listener: Listener) {
   // Gets the list of subsystems from the server
   private def getSubsystemNames: Future[List[String]] = {
     Ajax
-      .get(Routes.subsystems)
+      .get(ClientRoutes.subsystems)
       .map { r =>
         Json.fromJson[List[String]](Json.parse(r.responseText)).get
       }

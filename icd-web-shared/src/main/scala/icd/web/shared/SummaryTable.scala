@@ -62,7 +62,7 @@ object SummaryTable {
       def totalArchiveSpace(): Text.TypedTag[String] = {
         val sumTotal = EventModel.getTotalArchiveSpace(list.map(_.item.asInstanceOf[EventModel]))
         if (sumTotal.nonEmpty)
-          strong(p(s"Total yearly space required for archiving events published by $sourceStr: $sumTotal"))
+          p(strong(s"Total yearly space required for archiving events published by $sourceStr: $sumTotal"))
         else span()
       }
 

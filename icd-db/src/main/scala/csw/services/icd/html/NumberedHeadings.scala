@@ -43,39 +43,39 @@ class NumberedHeadings extends Headings {
    * A level 2 numbered heading
    */
   def H2(title: String, optionalId: String = ""): Text.TypedTag[String] = {
-    val id = makeId(title, optionalId)
+    val ident = makeId(title, optionalId)
     h2Counter = h2Counter + 1
     h3Counter = 0
     val ns = s"$h2Counter $title"
-    toc = TocEntry(id, ns, Nil) :: toc
-    h2(a(name := id)(ns))
+    toc = TocEntry(ident, ns, Nil) :: toc
+    h2(a(id := ident)(ns))
 
   }
 
   def H3(title: String, optionalId: String = ""): Text.TypedTag[String] = {
-    val id = makeId(title, optionalId)
+    val ident = makeId(title, optionalId)
     h3Counter = h3Counter + 1
     h4Counter = 0
     val ns = s"$h2Counter.$h3Counter $title"
-    toc.head.l = TocEntry(id, ns, Nil) :: toc.head.l
-    h3(a(name := id)(ns))
+    toc.head.l = TocEntry(ident, ns, Nil) :: toc.head.l
+    h3(a(id := ident)(ns))
   }
 
   def H4(title: String, optionalId: String = ""): Text.TypedTag[String] = {
-    val id = makeId(title, optionalId)
+    val ident = makeId(title, optionalId)
     h4Counter = h4Counter + 1
     h5Counter = 0
     val ns = s"$h2Counter.$h3Counter.$h4Counter $title"
-    toc.head.l.head.l = TocEntry(id, ns, Nil) :: toc.head.l.head.l
-    h4(a(name := id)(ns))
+    toc.head.l.head.l = TocEntry(ident, ns, Nil) :: toc.head.l.head.l
+    h4(a(id := ident)(ns))
   }
 
   def H5(title: String, optionalId: String = ""): Text.TypedTag[String] = {
-    val id = makeId(title, optionalId)
+    val ident = makeId(title, optionalId)
     h5Counter = h5Counter + 1
     h6Counter = 0
     val ns = s"$h2Counter.$h3Counter.$h4Counter.$h5Counter $title"
-    toc.head.l.head.l.head.l = TocEntry(id, ns, Nil) :: toc.head.l.head.l.head.l
-    h5(a(name := id)(ns))
+    toc.head.l.head.l.head.l = TocEntry(ident, ns, Nil) :: toc.head.l.head.l.head.l
+    h5(a(id := ident)(ns))
   }
 }

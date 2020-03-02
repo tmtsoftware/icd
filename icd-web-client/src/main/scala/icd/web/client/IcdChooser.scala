@@ -228,7 +228,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   // Update the ICD combobox options
   def updateIcdOptions(): Future[Unit] = {
     Ajax
-      .get(Routes.icdNames)
+      .get(ClientRoutes.icdNames)
       .flatMap { r =>
         val icdNames = Json.fromJson[Array[IcdName]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
         updateIcdOptions(icdNames)
@@ -328,7 +328,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   // Gets the list of available versions for the given ICD
   private def getIcdVersionOptions(icdName: IcdName): Future[List[IcdVersion]] = {
     Ajax
-      .get(Routes.icdVersions(icdName))
+      .get(ClientRoutes.icdVersions(icdName))
       .map { r =>
         Json.fromJson[Array[IcdVersionInfo]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
       }

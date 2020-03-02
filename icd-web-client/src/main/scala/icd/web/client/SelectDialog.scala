@@ -100,7 +100,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
 
   // Gets the list of subcomponents for the selected subsystem
   private def getComponentNames(sv: SubsystemWithVersion): Future[List[String]] = {
-    val path = Routes.components(sv.subsystem, sv.maybeVersion)
+    val path = ClientRoutes.components(sv.subsystem, sv.maybeVersion)
     Ajax
       .get(path)
       .map { r =>

@@ -127,12 +127,12 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean) {
           scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss))
         ),
         body(
-          getTitleMarkup(titleInfo),
+          getTitleMarkup(titleInfo, titleId = "title"),
           div(cls := "pagebreakBefore"),
           h2("Table of Contents"),
           toc,
           div(cls := "pagebreakBefore"),
-          getTitleMarkup(titleInfo),
+          getTitleMarkup(titleInfo, titleId = "title2"),
           mainContent
         )
       )

@@ -137,7 +137,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     }
 
     val xhr = new dom.XMLHttpRequest
-    xhr.open("POST", Routes.uploadFiles, async = true)
+    xhr.open("POST", ClientRoutes.uploadFiles, async = true)
 
     // Updates progress bar during upload
     def progressListener(e: dom.Event): Unit = {

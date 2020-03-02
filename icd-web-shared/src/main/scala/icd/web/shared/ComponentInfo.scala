@@ -167,7 +167,8 @@ case class DetailedSubscribeInfo(
   val path: String = publisher match {
     case Some(p) => s"${p.prefix}.${subscribeModelInfo.name}"
     case None =>
-      s"${subscribeModelInfo.subsystem}.${subscribeModelInfo.component}.${subscribeModelInfo.name}"
+      // XXX FIXME? Can only get prefix from other subsystems if "search all subsystems" option is selected
+      ""
   }
 }
 

@@ -140,7 +140,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       maybeTargetSv: Option[SubsystemWithVersion],
       searchAllSubsystems: Boolean
   ): Future[List[ComponentInfo]] = {
-    Ajax.get(Routes.icdComponentInfo(sv, maybeTargetSv, searchAllSubsystems)).map { r =>
+    Ajax.get(ClientRoutes.icdComponentInfo(sv, maybeTargetSv, searchAllSubsystems)).map { r =>
       val list = Json.fromJson[Array[ComponentInfo]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
       if (maybeTargetSv.isDefined) list.map(ComponentInfo.applyIcdFilter).filter(ComponentInfo.nonEmpty) else list
     }
@@ -168,7 +168,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   // Gets top level subsystem info from the server
   private def getSubsystemInfo(sv: SubsystemWithVersion): Future[SubsystemInfo] = {
-    val path = Routes.subsystemInfo(sv.subsystem, sv.maybeVersion)
+    val path = ClientRoutes.subsystemInfo(sv.subsystem, sv.maybeVersion)
     Ajax.get(path).map { r =>
       val subsystemInfo = Json.fromJson[SubsystemInfo](Json.parse(r.responseText)).get
       subsystemInfo.copy(sv = sv) // include the component, if specified
@@ -279,7 +279,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             yield List(a2.name, a2.description, getTypeStr(a2.name, a2.typeStr), a2.units, a2.defaultValue)
         Some(
           div()(
-            p(strong(a(name := structIdStr(attrModel.name))(s"Attributes for ${attrModel.name} struct"))),
+            p(strong(a(id := structIdStr(attrModel.name))(s"Attributes for ${attrModel.name} struct"))),
             mkTable(headings, rowList2),
             // Handle structs embedded in other structs (or arrays of structs, etc.)
             structAttributesMarkup(attrModel.attributesList)
@@ -463,7 +463,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                   tr(
                     td(
                       Styles.attributeCell,
-                      p(btn, a(name := idFor(compName, "publishes", pubType, t.eventModel.name))(t.eventModel.name))
+                      p(btn, a(id := idFor(compName, "publishes", pubType, t.eventModel.name))(t.eventModel.name))
                     ),
                     td(raw(t.eventModel.description)),
                     td(p(t.subscribers.map(subscribeInfo => makeLinkForComponent(subscribeInfo.componentModel))))
@@ -513,7 +513,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                 val (btn, row) = hiddenRowMarkup(makeAlarmDetailsRow(t), 3)
                 List(
                   tr(
-                    td(Styles.attributeCell, p(btn, a(name := idFor(compName, "publishes", "Alarms", m.name))(m.name))),
+                    td(Styles.attributeCell, p(btn, a(id := idFor(compName, "publishes", "Alarms", m.name))(m.name))),
                     td(raw(m.description)),
                     td(p(t.subscribers.map(si => makeLinkForComponent(si.componentModel))))
                   ),
@@ -627,7 +627,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                         Styles.attributeCell,
                         p(
                           btn,
-                          a(name := idFor(compName, "subscribes", pubType, s.subscribeModelInfo.name))(s.subscribeModelInfo.name)
+                          a(id := idFor(compName, "subscribes", pubType, s.subscribeModelInfo.name))(s.subscribeModelInfo.name)
                         )
                       ),
                       td(raw(s.description), getWarning(s), usage),
@@ -700,7 +700,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               val (btn, row) = hiddenRowMarkup(makeReceivedCommandDetailsRow(r.receiveCommandModel), 3)
               List(
                 tr(
-                  td(Styles.attributeCell, p(btn, a(name := idFor(compName, "receives", "Commands", rc.name))(rc.name))),
+                  td(Styles.attributeCell, p(btn, a(id := idFor(compName, "receives", "Commands", rc.name))(rc.name))),
                   // XXX TODO: Make link to command description page with details
                   td(raw(rc.description)),
                   td(p(r.senders.map(makeLinkForComponent)))
@@ -733,7 +733,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           val (btn, row) = hiddenRowMarkup(makeReceivedCommandDetailsRow(r), 3)
           List(
             tr(
-              td(Styles.attributeCell, p(btn, a(name := idFor(compName, "sends", "Commands", r.name))(r.name))),
+              td(Styles.attributeCell, p(btn, a(id := idFor(compName, "sends", "Commands", r.name))(r.name))),
               // XXX TODO: Make link to command description page with details
               td(raw(r.description)),
               td(p(s.receiver.map(makeLinkForComponent)))
