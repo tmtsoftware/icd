@@ -24,7 +24,8 @@ object Headings {
       component: String,
       name: String,
   ): String = {
-    s"$thisComponent-$action-$itemType-$subsystem.$component.$name".replace(" ", "-")
+    val iType = if (itemType.endsWith("s")) itemType.dropRight(1) else itemType
+    s"$thisComponent-$action-$iType-$subsystem.$component.$name".replace(" ", "-")
   }
 }
 

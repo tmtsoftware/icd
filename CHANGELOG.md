@@ -1,6 +1,20 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [ICD v1.0.1] -
+
+### Changed
+
+- Made changes to allow inner document links in MarkDown descriptions (DEOPSICDDB-54)
+
+- Changed link targets to ensure unique names (in case two events in differnt components have the same name) 
+
+- Fixed bug in web app dealing with "Search all Subsystems" option
+
+- Changes to allow embedded dots in component names
+
+- Updated dependencies to fix issue with PDF generation (DEOPSICDDB-93)
+ 
 ## [ICD v1.0.0] - 
 
 ### Added

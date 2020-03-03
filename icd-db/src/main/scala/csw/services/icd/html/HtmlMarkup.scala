@@ -7,8 +7,6 @@ import com.vladsch.flexmark.parser.{Parser, PegdownExtensions}
 import com.vladsch.flexmark.profile.pegdown.{Extensions, PegdownOptionsAdapter}
 import icd.web.shared.IcdModels.EventModel
 import org.jsoup.Jsoup
-import org.jsoup.safety.Whitelist
-import org.jsoup.nodes.Document.OutputSettings
 import scalatags.Text.all._
 import scalatags.Text.TypedTag
 
@@ -70,9 +68,6 @@ object HtmlMarkup extends Extensions {
   private val parser   = Parser.builder(options).build()
   private val renderer = HtmlRenderer.builder(options).build()
 
-  // Enforce self-closing tags (e.g. for <img> tags) so that PDF generator will not fail.
-  private val os = new OutputSettings().syntax(OutputSettings.Syntax.xml)
-
   def formatRate(maybeRate: Option[Double]): TypedTag[String] = {
     val (maxRate, defaultMaxRateUsed) = EventModel.getMaxRate(maybeRate)
     if (defaultMaxRateUsed) em(s"$maxRate Hz *") else span(s"$maxRate Hz")
@@ -100,11 +95,21 @@ object HtmlMarkup extends Extensions {
       try {
         // Convert markdown to HTML
         // Note: About 1/2 the time for generating the HTML for an ICD is spent parsing MarkDown strings
-        val s = stripLeadingWs(gfm)
+        val s    = stripLeadingWs(gfm)
         val html = renderer.render(parser.parse(s))
 
-        // Then clean it up with jsoup to avoid issues with the pdf generator (and for security)
-        Jsoup.clean(html, "", Whitelist.relaxed(), os)
+//        // Then clean it up with jsoup to avoid issues with the pdf generator (and for security)
+//        val whiteList = Whitelist.relaxed()
+//        // Enforce self-closing tags (e.g. for <img> tags) so that PDF generator will not fail.
+//        val os = new OutputSettings().syntax(OutputSettings.Syntax.xml)
+//        Jsoup.clean(html, "#", whiteList, os)
+
+        // Not using clean(), since it prevents the use of inner-document links (We don't know the required baseUri)
+        val document = Jsoup.parseBodyFragment(html)
+        document.outputSettings().syntax(org.jsoup.nodes.Document.OutputSettings.Syntax.xml)
+        document.outputSettings().charset("UTF-8")
+        document.body().html()
+
       } catch {
         case ex: Throwable =>
           println(s"Error converting markdown to HTML: $ex: Input was:\n$gfm")

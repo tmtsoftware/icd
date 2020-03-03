@@ -116,6 +116,38 @@ description = The beam-splitter stage has an unacceptable position error, datum 
 This is a known bug in the Config class: See https://github.com/lightbend/config/issues/367.
 In general, it is safer to put description text in double quotes.
 
+Tips
+----
 
+See the [examples/2.0](examples/2.0) directory for some example model files.
+The exact syntax is defined by JSON-Schema files in [src/main/resources/2.0](src/main/resources/2.0).
+
+Inner-Document Links
+--------------------
+
+It is possible to make inner-document links to existing anchors using Markdown syntax.
+The easiest way to see the syntax for the ids is to look at the generated HTML.
+For example, the output of:
+
+    icd-db -s NFIRAOS -o NFIRAOS.html
+
+(Note that the `name` attribute is used in the generated HTML instead of `id`, since the PDF generator requires that.)
+Many of the anchors have the following syntax:
+
+    $thisComponent-$action-$itemType-$subsystem.$component.$name" 
+
+where 
+
+* `$thisComponent` is the component being described
+* `$action` is one of {publishes, subscribes, sends, receives}
+* `$itemType` is one of {Event, ObserveEvent, Alarm, Command}
+* `$subsystem` is the subsystem for the item
+* `$component` is the component for the item
+* `$name` is the name of the item being published, subscribed to, or the command being sent or received
+
+For example, to link to the description of a published event named heartbeat in the lgsWfs component in the TEST subsystem:
+
+    See: [Example document internal link](#lgsWfs-publishes-Event-TEST.lgsWfs.heartbeat).
+ 
 
 
