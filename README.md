@@ -134,7 +134,7 @@ For example, the output of:
 (Note that the `name` attribute is used in the generated HTML instead of `id`, since the PDF generator requires that.)
 Many of the anchors have the following syntax:
 
-    $thisComponent-$action-$itemType-$subsystem.$component.$name" 
+    $thisComponent-$action-$itemType-$subsystem.$component.$name
 
 where 
 
