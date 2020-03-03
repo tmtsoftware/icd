@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 
 - Made changes to allow inner document links in MarkDown descriptions (DEOPSICDDB-54)
 
-- Changed link targets to ensure unique names (in case two events in differnt components have the same name) 
+- Changed link targets to ensure unique names (in case two events in different components have the same name) 
 
 - Fixed bug in web app dealing with "Search all Subsystems" option
 
