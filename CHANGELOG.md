@@ -1,7 +1,14 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-## [ICD v1.0.1] -
+## [ICD v1.0.2] - 2020-03-06
+
+### Changed
+
+- Fixed issue where subscribed telemetry and eventStreams were being ignored
+  (Now they are automatically converted to events, since telemetry and eventStreams have been removed in the new JSON schema)
+
+## [ICD v1.0.1] - 2020-03-03
 
 ### Changed
 
@@ -15,7 +22,7 @@ All notable changes to this project will be documented in this file.
 
 - Updated dependencies to fix issue with PDF generation (DEOPSICDDB-93)
  
-## [ICD v1.0.0] - 
+## [ICD v1.0.0] - 2020-02-21
 
 ### Added
 

@@ -19,11 +19,14 @@ object SubscribeModelBsonParser {
           for (subDoc <- subscribeDoc.getAsOpt[Array[BSONDocument]](name).map(_.toList).getOrElse(Nil))
             yield SubscribeInfoBsonParser(subDoc)
 
+        // For backward compatibility
+        val oldEvents = getItems("telemetry") ++ getItems("eventStreams")
+
         SubscribeModel(
           subsystem = doc.getAsOpt[String](BaseModelBsonParser.subsystemKey).get,
           component = doc.getAsOpt[String](BaseModelBsonParser.componentKey).get,
           description = subscribeDoc.getAsOpt[String]("description").map(HtmlMarkup.gfmToHtml).getOrElse(""),
-          eventList = getItems("events"),
+          eventList = oldEvents ++ getItems("events"),
           observeEventList = getItems("observeEvents"),
           currentStateList = getItems("currentStates"),
           alarmList = getItems("alarms")
