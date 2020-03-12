@@ -47,7 +47,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion])
       val comp = c.component.replace("-", "-\n") // save horizontal space
       list
         .filter(_.archive)
-        .map(e => ArchiveInfo(c.subsystem, comp, c.prefix, eventType, e))
+        .map(e => ArchiveInfo(c.subsystem, comp, c. prefix, eventType, e))
     }
 
     val result = if (maybeSv.isDefined) {

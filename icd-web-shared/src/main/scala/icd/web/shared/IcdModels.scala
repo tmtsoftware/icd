@@ -298,12 +298,14 @@ object IcdModels {
       componentType: String,
       subsystem: String,
       component: String,
-      prefix: String,
       title: String,
       description: String,
       modelVersion: String,
       wbsId: String
-  )
+  ) {
+    // Changed to enforce prefix = subsystem.component as in CSW
+    val prefix = s"$subsystem.$component"
+  }
 
   /**
    * The component's publish model
