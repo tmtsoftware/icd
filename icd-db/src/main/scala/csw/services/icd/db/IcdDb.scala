@@ -148,7 +148,6 @@ object IcdDb extends App {
 
     options.ingest.map { dir =>
       val problems = db.ingest(dir)
-      db.query.afterIngestFiles(problems, db.dbName)
       problems
     } match {
       case Some(problems) if problems.nonEmpty =>
@@ -314,12 +313,25 @@ case class IcdDb(
    * @param dir the top level directory containing one or more of the the standard set of ICD files
    *            and any number of subdirectories containing ICD files
    */
-  def ingest(dir: File = new File(".")): List[Problem] = {
+  private def ingestDirs(dir: File = new File(".")): List[Problem] = {
     val validateProblems = IcdValidator.validateDirRecursive(dir)
     if (validateProblems.nonEmpty)
       validateProblems
     else
       (dir :: subDirs(dir)).flatMap(ingestOneDir)
+  }
+
+  /**
+   * Ingests all the files with the standard names (stdNames) in the given directory and recursively
+   * in its subdirectories into the database.
+   *
+   * @param dir the top level directory containing one or more of the the standard set of ICD files
+   *            and any number of subdirectories containing ICD files
+   */
+  def ingest(dir: File = new File(".")): List[Problem] = {
+    val problems = ingestDirs(dir)
+    query.afterIngestFiles(problems, dbName)
+    problems
   }
 
   /**

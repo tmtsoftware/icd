@@ -6,7 +6,7 @@ import csw.services.icd.IcdValidator
 import icd.web.shared.SubsystemWithVersion
 import org.scalatest.funsuite.AnyFunSuite
 
-// XXX TODO: Add more detailed test, add IcdComponentInfo tests
+// XXX TODO: Add more detailed test, add IcdComponentInfo tests, test with old and new schemas!
 class ComponentInfoTest extends AnyFunSuite {
   val examplesDir = s"examples/${IcdValidator.currentSchemaVersion}"
   val dbName = "test"
@@ -26,11 +26,9 @@ class ComponentInfoTest extends AnyFunSuite {
     // ingest examples/TEST into the DB
     val problems = db.ingest(getTestDir(s"$examplesDir/TEST"))
     for (p <- problems) println(p)
-    db.query.afterIngestFiles(problems, dbName)
 
     val problems2 = db.ingest(getTestDir(s"$examplesDir/TEST2"))
     for (p <- problems2) println(p)
-    db.query.afterIngestFiles(problems2, dbName)
 
     new ComponentInfoHelper(displayWarnings = false)
       .getComponentInfo(versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")))

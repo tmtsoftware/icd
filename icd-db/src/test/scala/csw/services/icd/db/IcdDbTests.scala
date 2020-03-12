@@ -28,7 +28,6 @@ class IcdDbTests extends AnyFunSuite {
     val problems = db.ingest(getTestDir(s"$examplesDir/TEST"))
     for (p <- problems) println(p)
     assert(problems.isEmpty)
-    db.query.afterIngestFiles(problems, dbName)
 
     // query the DB
     assert(db.query.getComponentNames == List("env.ctrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))

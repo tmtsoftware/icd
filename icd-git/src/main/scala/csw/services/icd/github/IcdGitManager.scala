@@ -597,7 +597,6 @@ object IcdGitManager {
         feedback(s"Ingesting $subsystem-${e.version}")
         val problems = db.ingest(gitWorkDir)
         problems.foreach(p => feedback(p.errorMessage()))
-        db.query.afterIngestSubsystem(subsystem, problems, db.dbName)
         if (!problems.exists(_.severity != "warning")) {
           val date = DateTime.parse(e.date)
           db.versionManager.publishApi(subsystem, Some(e.version), majorVersion = false, e.comment, e.user, date)
