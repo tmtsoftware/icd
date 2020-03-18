@@ -82,29 +82,25 @@ class ComponentInfoHelper(displayWarnings: Boolean) {
    * @param models the model objects for the component
    */
   private def getPublishes(query: IcdDbQuery, models: IcdModels): Option[Publishes] = {
-    models.componentModel match {
+    models.publishModel match {
       case None => None
-      case Some(componentModel) =>
-        val prefix = componentModel.prefix
-        models.publishModel match {
-          case None => None
-          case Some(m) =>
-            val eventList = m.eventList.map { t =>
-              EventInfo(t, getSubscribers(query, prefix, t.name, t.description, Events))
-            }
-            val observeEventList = m.observeEventList.map { t =>
-              EventInfo(t, getSubscribers(query, prefix, t.name, t.description, ObserveEvents))
-            }
-            val currentStateList = m.currentStateList.map { t =>
-              EventInfo(t, getSubscribers(query, prefix, t.name, t.description, CurrentStates))
-            }
-            val alarmList = m.alarmList.map { al =>
-              AlarmInfo(al, getSubscribers(query, prefix, al.name, al.description, Alarms))
-            }
-            if (m.description.nonEmpty || eventList.nonEmpty || observeEventList.nonEmpty || alarmList.nonEmpty)
-              Some(Publishes(m.description, eventList, observeEventList, currentStateList, alarmList))
-            else None
+      case Some(m) =>
+        val prefix = s"${m.subsystem}.${m.component}"
+        val eventList = m.eventList.map { t =>
+          EventInfo(t, getSubscribers(query, prefix, t.name, t.description, Events))
         }
+        val observeEventList = m.observeEventList.map { t =>
+          EventInfo(t, getSubscribers(query, prefix, t.name, t.description, ObserveEvents))
+        }
+        val currentStateList = m.currentStateList.map { t =>
+          EventInfo(t, getSubscribers(query, prefix, t.name, t.description, CurrentStates))
+        }
+        val alarmList = m.alarmList.map { al =>
+          AlarmInfo(al, getSubscribers(query, prefix, al.name, al.description, Alarms))
+        }
+        if (m.description.nonEmpty || eventList.nonEmpty || observeEventList.nonEmpty || alarmList.nonEmpty)
+          Some(Publishes(m.description, eventList, observeEventList, currentStateList, alarmList))
+        else None
     }
   }
 
@@ -177,7 +173,14 @@ class ComponentInfoHelper(displayWarnings: Boolean) {
       sent <- cmd.send
     } yield {
       val recv = query.getCommand(sent.subsystem, sent.component, sent.name)
-      SentCommandInfo(sent.name, sent.subsystem, sent.component, recv, query.getComponentModel(sent.subsystem, sent.component), displayWarnings)
+      SentCommandInfo(
+        sent.name,
+        sent.subsystem,
+        sent.component,
+        recv,
+        query.getComponentModel(sent.subsystem, sent.component),
+        displayWarnings
+      )
     }
     result
   }

@@ -75,30 +75,26 @@ object IcdComponentInfo {
    * @param targetModelsList the target model objects
    */
   private def getPublishes(subsystem: String, models: IcdModels, targetModelsList: List[IcdModels]): Option[Publishes] = {
-    models.componentModel match {
+    models.publishModel match {
       case None => None
-      case Some(componentModel) =>
-        val prefix    = componentModel.prefix
-        val component = componentModel.component
-        models.publishModel match {
-          case None => None
-          case Some(m) =>
-            val eventList = m.eventList.map { t =>
-              EventInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, Events, targetModelsList))
-            }
-            val observeEventList = m.observeEventList.map { t =>
-              EventInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, ObserveEvents, targetModelsList))
-            }
-            val currentStateList = m.currentStateList.map { t =>
-              EventInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, CurrentStates, targetModelsList))
-            }
-            val alarmList = m.alarmList.map { al =>
-              AlarmInfo(al, getSubscribers(subsystem, component, prefix, al.name, al.description, Alarms, targetModelsList))
-            }
-            if (eventList.nonEmpty || observeEventList.nonEmpty || alarmList.nonEmpty)
-              Some(Publishes(m.description, eventList, observeEventList, currentStateList, alarmList))
-            else None
+      case Some(m) =>
+        val prefix    = s"${m.subsystem}.${m.component}"
+        val component = m.component
+        val eventList = m.eventList.map { t =>
+          EventInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, Events, targetModelsList))
         }
+        val observeEventList = m.observeEventList.map { t =>
+          EventInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, ObserveEvents, targetModelsList))
+        }
+        val currentStateList = m.currentStateList.map { t =>
+          EventInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, CurrentStates, targetModelsList))
+        }
+        val alarmList = m.alarmList.map { al =>
+          AlarmInfo(al, getSubscribers(subsystem, component, prefix, al.name, al.description, Alarms, targetModelsList))
+        }
+        if (eventList.nonEmpty || observeEventList.nonEmpty || alarmList.nonEmpty)
+          Some(Publishes(m.description, eventList, observeEventList, currentStateList, alarmList))
+        else None
     }
   }
 

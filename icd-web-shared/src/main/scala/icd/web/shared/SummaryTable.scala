@@ -144,11 +144,8 @@ object SummaryTable {
               for {
                 info <- list
               } yield {
-                // If this is an ICD or the publisher is in the same subsystem, we can link to it, since it is in this doc
-                val prefixItem = info.maybePublisher match {
-                  case Some(componentModel) => span(componentModel.prefix)
-                  case None                 => span()
-                }
+                val prefix = s"${info.publisherSubsystem}.${info.publisherComponent}"
+                val prefixItem = span(prefix)
                 val description = info.maybeWarning match {
                   case Some(msg) => p(em("Warning: ", msg))
                   case None      => raw(firstParagraph(info.item.description))
@@ -197,11 +194,8 @@ object SummaryTable {
               for {
                 info <- list
               } yield {
-                val prefixItem = info.maybePublisher match {
-                  case Some(componentModel) => span(componentModel.prefix)
-                  case None                 => span()
-                }
-
+                val prefix = s"${info.publisherSubsystem}.${info.publisherComponent}"
+                val prefixItem = span(prefix)
                 val publisherComponent =
                   if (info.publisherSubsystem == info.subscriber.subsystem)
                     a(href := s"#${info.publisherComponent}")(info.publisherComponent)

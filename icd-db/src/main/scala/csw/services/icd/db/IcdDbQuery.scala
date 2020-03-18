@@ -548,8 +548,7 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
   private def getSubscribedTo(component: ComponentModel): List[Subscribed] = {
     // Gets the full path of the subscribed item
     def getPath(i: SubscribeModelInfo): String = {
-      val pubComp = getComponentModel(i.subsystem, i.component)
-      val prefix  = pubComp.map(_.prefix).getOrElse("")
+      val prefix = s"${i.subsystem}.${i.component}"
       s"$prefix.${i.name}"
     }
 

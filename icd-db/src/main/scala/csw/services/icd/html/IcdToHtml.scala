@@ -599,7 +599,7 @@ object IcdToHtml {
     }
   }
 
-  // Generates a one line table with basic component informationdiv(
+  // Generates a one line table with basic component information
   private def componentInfoTableMarkup(info: ComponentInfo): Text.TypedTag[String] = {
     import scalatags.Text.all._
     div(
