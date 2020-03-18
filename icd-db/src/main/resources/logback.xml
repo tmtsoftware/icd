@@ -9,4 +9,8 @@
     <root level="warn">
         <appender-ref ref="STDOUT" />
     </root>
+
+    <logger name="ch.qos.logback.classic.joran" level="WARN" />
+    <logger name="reactivemongo" level="TRACE" />
+
 </configuration>
