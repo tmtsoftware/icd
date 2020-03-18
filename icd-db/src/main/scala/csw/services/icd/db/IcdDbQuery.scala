@@ -483,7 +483,7 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
    * then rename the temp collections by removing the .tmp suffix.
    * If there were fatal errors, delete the temp collections without renaming.
    */
-  private[db] def afterIngestSubsystem(subsystem: String, problems: List[Problem], dbName: String): Unit = {
+  def afterIngestSubsystem(subsystem: String, problems: List[Problem], dbName: String): Unit = {
     val tmpPaths = getCollectionNames
       .filter(name => name.startsWith(s"$subsystem.") && name.endsWith(IcdDbDefaults.tmpCollSuffix))
     val paths = getCollectionNames

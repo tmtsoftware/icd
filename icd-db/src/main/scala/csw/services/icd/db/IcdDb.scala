@@ -27,7 +27,7 @@ object IcdDbDefaults {
 
   def connectToDatabase(host: String, port: Int, dbName: String): DefaultDB = {
     val mongoUri = s"mongodb://$host:$port/$dbName"
-    val driver = new AsyncDriver
+    val driver   = new AsyncDriver
     val database = for {
       uri <- MongoConnection.fromString(mongoUri)
       con <- driver.connect(uri)
@@ -147,8 +147,7 @@ object IcdDb extends App {
     val db = IcdDb(options.dbName, options.host, options.port)
 
     options.ingest.map { dir =>
-      val problems = db.ingest(dir)
-      problems
+      db.ingestAndCleanup(dir)
     } match {
       case Some(problems) if problems.nonEmpty =>
         problems.foreach(println(_))
@@ -276,7 +275,9 @@ object IcdDb extends App {
 
     // --archive option
     def archivedItemsReport(file: File): Unit = {
-      val maybeSv = options.subsystem.map(SubsystemAndVersion(_)).map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, options.component))
+      val maybeSv = options.subsystem
+        .map(SubsystemAndVersion(_))
+        .map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, options.component))
       ArchivedItemsReport(db, maybeSv).saveToFile(file)
     }
   }
@@ -306,19 +307,24 @@ case class IcdDb(
   val versionManager: IcdVersionManager = IcdVersionManager(query)
   val manager: IcdDbManager             = IcdDbManager(db, versionManager)
 
+
   /**
    * Ingests all the files with the standard names (stdNames) in the given directory and recursively
    * in its subdirectories into the database.
+   * If a subsystem-model.conf was ingested, the previous data for that subsystem is removed first
+   * (to make sure renamed or removed components actually are gone).
    *
    * @param dir the top level directory containing one or more of the the standard set of ICD files
    *            and any number of subdirectories containing ICD files
+   * @return a pair of two lists: 1: A list of the configs in the directories, 2: A list describing any problems that occurred
    */
-  private def ingestDirs(dir: File = new File(".")): List[Problem] = {
-    val validateProblems = IcdValidator.validateDirRecursive(dir)
-    if (validateProblems.nonEmpty)
-      validateProblems
-    else
-      (dir :: subDirs(dir)).flatMap(ingestOneDir)
+  def ingestAndCleanup(dir: File = new File(".")): List[Problem] = {
+    val (configs, problems) = ingest(dir)
+    val subsystemList       = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.config.getString("subsystem"))
+    if (subsystemList.isEmpty)
+      query.afterIngestFiles(problems, dbName)
+    else subsystemList.foreach(query.afterIngestSubsystem(_, problems, dbName))
+    problems
   }
 
   /**
@@ -327,22 +333,27 @@ case class IcdDb(
    *
    * @param dir the top level directory containing one or more of the the standard set of ICD files
    *            and any number of subdirectories containing ICD files
+   * @return a pair of two lists: 1: A list of the configs in the directories, 2: A list describing any problems that occurred
    */
-  def ingest(dir: File = new File(".")): List[Problem] = {
-    val problems = ingestDirs(dir)
-    query.afterIngestFiles(problems, dbName)
-    problems
+  def ingest(dir: File = new File(".")): (List[StdConfig], List[Problem]) = {
+    val validateProblems = IcdValidator.validateDirRecursive(dir)
+    if (validateProblems.nonEmpty)
+      (Nil, validateProblems)
+    else {
+      val listOfPairs = (dir :: subDirs(dir)).map(ingestOneDir)
+      (listOfPairs.flatMap(_._1), listOfPairs.flatMap(_._2))
+    }
   }
 
   /**
    * Ingests all files with the standard names (stdNames) in the given directory (only) into the database.
    *
    * @param dir the directory containing the standard set of ICD files
-   * @return a list describing any problems that occured
+   * @return a pair of two lists: 1: A list of the configs in the directory, 2: A list describing any problems that occurred
    */
-  private[db] def ingestOneDir(dir: File): List[Problem] = {
+  private[db] def ingestOneDir(dir: File): (List[StdConfig], List[Problem]) = {
     val list = StdConfig.get(dir)
-    ingestConfigs(list)
+    (list, ingestConfigs(list))
   }
 
   /**
@@ -378,6 +389,7 @@ case class IcdDb(
    * @param name   the name of the collection in which to store this part of the API
    * @param config the config to be ingested into the datasbase
    */
+  //noinspection SameParameterValue
   private def ingestConfig(name: String, tmpName: String, config: Config): Unit = {
     import play.api.libs.json._
     import play.api.libs.json.Reads._

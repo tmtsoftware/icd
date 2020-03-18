@@ -23,8 +23,9 @@ class ArchivedItemsTest extends AnyFunSuite {
     val versionManager = IcdVersionManager(query)
 
     // ingest examples/TEST into the DB
-    val problems = db.ingest(getTestDir(s"$examplesDir/TEST"))
+    val problems = db.ingestAndCleanup(getTestDir(s"$examplesDir/TEST"))
     for (p <- problems) println(p)
+    db.query.afterIngestFiles(problems, dbName)
 
     new ComponentInfoHelper(displayWarnings = false)
       .getComponentInfo(versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")))

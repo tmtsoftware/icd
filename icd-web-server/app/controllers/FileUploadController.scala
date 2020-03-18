@@ -66,7 +66,12 @@ class FileUploadController @Inject()(env: Environment, webJarAssets: WebJarAsset
       NotAcceptable(Json.toJson(validateProblems))
     } else {
       val problems = list.flatMap(db.ingestConfig)
-      db.query.afterIngestFiles(problems, db.dbName)
+      // Determine the subsystems being ingested, in order to remove previous subsystem if a new one is being ingested.
+      // This helps to avoid problems when a component was renamed, so that the old component's mongodb collection is removed.
+      val subsystemList = list.filter(_.stdName == StdName.subsystemFileNames).map(_.config.getString("subsystem"))
+      if (subsystemList.isEmpty)
+        db.query.afterIngestFiles(problems, db.dbName)
+      else subsystemList.foreach(db.query.afterIngestSubsystem(_, problems, db.dbName))
       if (problems.nonEmpty) {
         NotAcceptable(Json.toJson(problems))
       } else {
