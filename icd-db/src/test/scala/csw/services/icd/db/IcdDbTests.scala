@@ -44,7 +44,7 @@ class IcdDbTests extends AnyFunSuite {
     val envCtrl = db.query.getComponentModel("TEST", "env.ctrl").get
     assert(envCtrl.component == "env.ctrl")
     assert(envCtrl.componentType == "Assembly")
-    assert(envCtrl.prefix == "test.ncc.env.ctrl")
+    assert(envCtrl.prefix == "TEST.env.ctrl")
 
     val commands = db.query.getCommandModel(envCtrl).get
     assert(commands.receive.size == 2)
