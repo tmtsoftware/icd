@@ -18,10 +18,10 @@ object ComponentModelBsonParser {
       val subsystem      = doc.getAsOpt[String](BaseModelBsonParser.subsystemKey).get
       val component      = doc.getAsOpt[String](BaseModelBsonParser.componentKey).get
       val prefix         = s"$subsystem.$component"
-      val declaredPrefix = doc.getAsOpt[String]("prefix").getOrElse(prefix)
-      if (declaredPrefix != prefix) {
-        log.warn(s"Prefix '$declaredPrefix' ignored. Using subsystem.component ($prefix) instead.")
-      }
+//      val declaredPrefix = doc.getAsOpt[String]("prefix").getOrElse(prefix)
+//      if (declaredPrefix != prefix) {
+//        log.warn(s"Prefix '$declaredPrefix' ignored. Using subsystem.component ($prefix) instead.")
+//      }
       Some(
         ComponentModel(
           componentType = doc.getAsOpt[String]("componentType").get,
