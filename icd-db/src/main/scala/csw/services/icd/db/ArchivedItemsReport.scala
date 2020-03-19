@@ -44,7 +44,9 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion])
   private def getArchivedItems: List[ArchiveInfo] = {
     // Gets the archived items from the list
     def getItems(c: ComponentModel, eventType: String, list: List[EventModel]): List[ArchiveInfo] = {
-      val comp = c.component.replace("-", "-\n") // save horizontal space
+      val comp = c.component
+        .replace("-", "-\n") // save horizontal space (old version)
+        .replace("_", "_\n") // save horizontal space (new version, '-' not allowed)
       list
         .filter(_.archive)
         .map(e => ArchiveInfo(c.subsystem, comp, c. prefix, eventType, e))
