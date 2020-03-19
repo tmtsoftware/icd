@@ -425,6 +425,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       searchAllSubsystems: Boolean,
       saveHistory: Boolean = true
   ): Future[Unit] = {
+    println(s"XXX Update comp display: sv = $maybeSv, target = $maybeTargetSv")
     sidebar.clearComponents()
     mainContent.clearContent()
     Globals.navbarExpandAll = false
