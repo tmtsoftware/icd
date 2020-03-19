@@ -143,9 +143,10 @@ class Application @Inject()(
   ): Action[AnyContent] = Action { implicit request =>
     val sv             = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     val targetSv       = SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
-    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)))
-    val versionManager = new CachedIcdVersionManager(query)
-    val infoList       = IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv)
+    // XXX TODO FIXME: Need to use correct versions!
+//    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)))
+//    val versionManager = new CachedIcdVersionManager(query)
+    val infoList       = IcdComponentInfo.getComponentInfoList(db.versionManager, sv, targetSv)
     Ok(Json.toJson(infoList))
   }
 
