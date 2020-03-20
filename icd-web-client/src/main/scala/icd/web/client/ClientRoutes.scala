@@ -25,7 +25,7 @@ object ClientRoutes {
     val versionAttr         = maybeVersion.map(v => s"version=$v")
     val componentAttr       = maybeComponent.map(c => s"component=$c")
     val searchAllAttr       = if (searchAllSubsystems) Some("searchAll=true") else None
-    val targetVersionAttr   = maybeTargetVersion.map(v => s"tagetVersion=$v")
+    val targetVersionAttr   = maybeTargetVersion.map(v => s"targetVersion=$v")
     val targetComponentAttr = maybeTargetCompName.map(c => s"targetComponent=$c")
     val icdVersionAttr      = maybeIcdVersion.map(v => s"icdVersion=$v")
     val attrs =
