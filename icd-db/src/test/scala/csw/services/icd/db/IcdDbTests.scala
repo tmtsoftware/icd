@@ -60,7 +60,7 @@ class IcdDbTests extends AnyFunSuite {
     assert(eventList.size == 3)
     val logging = eventList.head
     assert(logging.name == "logToFile")
-    assert(!logging.archive)
+    assert(logging.archive)
 
     val currentStateList = publish.currentStateList
     val sensors = currentStateList.find(_.name == "sensors").get
