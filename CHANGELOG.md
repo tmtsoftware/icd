@@ -1,6 +1,20 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [ICD v1.1.0] - 2020-03-21
+
+### Changed
+
+- For modelVersion = "2.0": Removed the "prefix" setting from component-model.conf, 
+   since after changes in CSW, prefix is always just $subsystem.$component
+  (Component names can contain dots and spaces, except leading or trailing)
+
+- For modelVersion = "2.0": Component names can no longer contain a dash "-" (to match changes in CSW)
+
+- Fixed an issue where the version of the second subsystem in an ICD was ignored
+
+- Fixed an issue where after renaming a component, the old name could show up
+
 ## [ICD v1.0.2] - 2020-03-06
 
 ### Changed
