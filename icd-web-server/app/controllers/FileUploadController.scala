@@ -69,14 +69,25 @@ class FileUploadController @Inject()(env: Environment, webJarAssets: WebJarAsset
       // Determine the subsystems being ingested, in order to remove previous subsystem if a new one is being ingested.
       // This helps to avoid problems when a component was renamed, so that the old component's mongodb collection is removed.
       val subsystemList = list.filter(_.stdName == StdName.subsystemFileNames).map(_.config.getString("subsystem"))
-      if (subsystemList.isEmpty)
-        db.query.afterIngestFiles(problems, db.dbName)
-      else subsystemList.foreach(db.query.afterIngestSubsystem(_, problems, db.dbName))
-      if (problems.nonEmpty) {
-        NotAcceptable(Json.toJson(problems))
+
+      // Check for duplicate subsystem-model.conf file (found one in TCS)
+      val duplicates = subsystemList.diff(subsystemList.toSet.toList)
+      if (duplicates.nonEmpty) {
+        val dupFileList = list.filter(_.stdName == StdName.subsystemFileNames).map(_.fileName).mkString(", ")
+        val p = Problem("error", s"Duplicate subsystem-model.conf found: $dupFileList") :: problems
+        NotAcceptable(Json.toJson(p))
       } else {
-        // XXX TODO: Check if all referenced component names are valid
-        Ok.as(JSON)
+        if (subsystemList.isEmpty)
+          db.query.afterIngestFiles(problems, db.dbName)
+        else {
+          subsystemList.foreach(db.query.afterIngestSubsystem(_, problems, db.dbName))
+        }
+        if (problems.nonEmpty) {
+          NotAcceptable(Json.toJson(problems))
+        } else {
+          // XXX TODO: Check if all referenced component names are valid and no duplicate componen-model.conf files were found!
+          Ok.as(JSON)
+        }
       }
     }
   }

@@ -307,7 +307,6 @@ case class IcdDb(
   val versionManager: IcdVersionManager = IcdVersionManager(query)
   val manager: IcdDbManager             = IcdDbManager(db, versionManager)
 
-
   /**
    * Ingests all the files with the standard names (stdNames) in the given directory and recursively
    * in its subdirectories into the database.
@@ -321,10 +320,19 @@ case class IcdDb(
   def ingestAndCleanup(dir: File = new File(".")): List[Problem] = {
     val (configs, problems) = ingest(dir)
     val subsystemList       = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.config.getString("subsystem"))
-    if (subsystemList.isEmpty)
-      query.afterIngestFiles(problems, dbName)
-    else subsystemList.foreach(query.afterIngestSubsystem(_, problems, dbName))
-    problems
+
+    // Check for duplicate subsystem-model.conf file (found one in TCS)
+    val duplicates = subsystemList.diff(subsystemList.toSet.toList)
+    if (duplicates.nonEmpty) {
+      val dupFileList = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.fileName).mkString(", ")
+      Problem("error", s"Duplicate subsystem-model.conf found: $dupFileList") :: problems
+    } else {
+      if (subsystemList.isEmpty)
+        query.afterIngestFiles(problems, dbName)
+      else subsystemList.foreach(query.afterIngestSubsystem(_, problems, dbName))
+      problems
+    }
+
   }
 
   /**
