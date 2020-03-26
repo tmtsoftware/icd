@@ -194,13 +194,13 @@ object IcdToHtml {
     if (info.isEmpty) div()
     else {
       div(
-        nh.H3(sentCommandsTitle(compName)),
+        nh.H4(sentCommandsTitle(compName)),
         for (s <- info) yield {
           val receiveCommandModel = s.receiveCommandModel
           val receiverStr         = s.receiver.map(r => s"${r.subsystem}.${r.component}").getOrElse("none")
           val receiverInfo        = span(strong("Receiver: "), receiverStr)
           div(cls := "nopagebreak")(
-            nh.H4(s.name, idFor(compName, "sends", "Commands", s.subsystem, s.component, s.name)),
+            nh.H5(s.name, idFor(compName, "sends", "Commands", s.subsystem, s.component, s.name)),
             p(senderInfo, ", ", receiverInfo),
             receiveCommandModel match {
               case Some(m) =>
@@ -234,6 +234,7 @@ object IcdToHtml {
       case Some(commands) =>
         if (commands.commandsReceived.nonEmpty || commands.commandsSent.nonEmpty) {
           div(
+            nh.H3(s"Commands for ${component.component}"),
             raw(commands.description),
             receivedCommandsMarkup(component, commands.commandsReceived, nh, forApi),
             if (forApi) sentCommandsMarkup(component, commands.commandsSent, nh) else div()
@@ -258,13 +259,13 @@ object IcdToHtml {
     if (info.isEmpty) div()
     else {
       div(
-        nh.H3(receivedCommandsTitle(compName)),
+        nh.H4(receivedCommandsTitle(compName)),
         for (r <- info) yield {
           val m          = r.receiveCommandModel
           val senders    = r.senders.map(s => s"${s.subsystem}.${s.component}").mkString(", ")
           val senderInfo = span(strong(s"$senderStr: "), if (senders.isEmpty) "none" else senders)
           div(cls := "nopagebreak")(
-            nh.H4(m.name, idFor(compName, "receives", "Commands", component.subsystem, compName, m.name)),
+            nh.H5(m.name, idFor(compName, "receives", "Commands", component.subsystem, compName, m.name)),
             p(senderInfo, ", ", receiverInfo),
             if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
             if (m.preconditions.isEmpty) div() else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
