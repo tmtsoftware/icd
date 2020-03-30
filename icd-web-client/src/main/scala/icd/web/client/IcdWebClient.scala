@@ -53,10 +53,15 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val historyItem   = NavbarItem("History", "Display the version history for an API or ICD", showVersionHistory())
   private val historyDialog = HistoryDialog(mainContent)
 
-  private val pdfItem = NavbarItem("PDF", "Generate and display a PDF for the API or ICD", makePdf)
-  private val archiveItem = NavbarItem(
+  private val orientations = List("portait", "landscape")
+
+  private val pdfItem =
+    NavbarDropDownItem("PDF", "Generate and display a PDF for the API or ICD", orientations, makePdf)
+
+  private val archiveItem = NavbarDropDownItem(
     "Archive",
     "Generate and display an 'Archived Items' report for the selected subsystem (or all subsystems)",
+    orientations,
     makeArchivedItemsReport
   )
 
@@ -474,7 +479,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   // Gets a PDF of the currently selected ICD or subsystem API
-  private def makePdf(): Unit = {
+  private def makePdf(orientation: String): Unit = {
     val maybeSv =
       if (currentView == StatusView)
         statusDialog.getSubsystemWithVersion
@@ -484,13 +489,13 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion
       val maybeIcdVersion = selectDialog.icdChooser.getSelectedIcdVersion.map(_.icdVersion)
       val searchAll       = selectDialog.searchAllSubsystems()
-      val uri             = ClientRoutes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll)
+      val uri             = ClientRoutes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll, orientation)
       dom.window.open(uri) // opens in new window or tab
     }
   }
 
   // Gets a PDF with an Archived Items report for the currently selected subsystem API
-  private def makeArchivedItemsReport(): Unit = {
+  private def makeArchivedItemsReport(orientation: String): Unit = {
     val maybeSv =
       if (currentView == StatusView)
         statusDialog.getSubsystemWithVersion
@@ -498,9 +503,9 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
     val uri =
       if (maybeSv.isDefined)
-        ClientRoutes.archivedItemsReport(maybeSv.get)
+        ClientRoutes.archivedItemsReport(maybeSv.get, orientation)
       else
-        ClientRoutes.archivedItemsReportFull()
+        ClientRoutes.archivedItemsReportFull(orientation)
     dom.window.open(uri) // opens in new window or tab
   }
 }

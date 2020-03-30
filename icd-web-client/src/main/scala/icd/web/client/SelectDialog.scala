@@ -215,6 +215,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       cls := "container",
       div(Styles.selectDialogSubsystemRow, p(msg)),
       div(Styles.selectDialogIcdRow, icdChooser.markup()),
+      p(strong("Or")),
       div(Styles.selectDialogSubsystemRow, subsystem.markup()),
       div(Styles.subsystemSwapper, subsystemSwapper.markup()),
       div(Styles.selectDialogSubsystemRow, targetSubsystem.markup()),

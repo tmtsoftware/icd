@@ -20,7 +20,8 @@ object ClientRoutes {
       searchAllSubsystems: Boolean,
       maybeTargetVersion: Option[String] = None,
       maybeTargetCompName: Option[String] = None,
-      maybeIcdVersion: Option[String] = None
+      maybeIcdVersion: Option[String] = None,
+      maybeOrientation: Option[String] = None
   ): String = {
     val versionAttr         = maybeVersion.map(v => s"version=$v")
     val componentAttr       = maybeComponent.map(c => s"component=$c")
@@ -28,8 +29,10 @@ object ClientRoutes {
     val targetVersionAttr   = maybeTargetVersion.map(v => s"targetVersion=$v")
     val targetComponentAttr = maybeTargetCompName.map(c => s"targetComponent=$c")
     val icdVersionAttr      = maybeIcdVersion.map(v => s"icdVersion=$v")
+    val orientationAttr     = maybeOrientation.map(o => s"orientation=$o")
     val attrs =
-      (versionAttr ++ componentAttr ++ searchAllAttr ++ targetVersionAttr ++ targetComponentAttr ++ icdVersionAttr).mkString("&")
+      (versionAttr ++ componentAttr ++ searchAllAttr ++ targetVersionAttr ++ targetComponentAttr ++ icdVersionAttr ++ orientationAttr)
+        .mkString("&")
     if (attrs.isEmpty) "" else s"?$attrs"
   }
 
@@ -67,6 +70,7 @@ object ClientRoutes {
    *
    * @param sv       the subsystem
    * @param maybeTargetSv defines the optional target subsystem and version
+   * @param searchAllSubsystems if true, search all subsystems in the database for references, subscribers, etc.
    * @return the URL path to use
    */
   def icdComponentInfo(
@@ -96,16 +100,19 @@ object ClientRoutes {
    * @param sv       the subsystem
    * @param maybeTargetSv defines the optional target subsystem and version
    * @param icdVersion optional ICD version
+   * @param searchAllSubsystems if true, search all subsystems in the database for references, subscribers, etc.
+   * @param orientation portrait or landscape orientation
    * @return the URL path to use
    */
   def icdAsPdf(
       sv: SubsystemWithVersion,
       maybeTargetSv: Option[SubsystemWithVersion],
       icdVersion: Option[String],
-      searchAllSubsystems: Boolean
+      searchAllSubsystems: Boolean,
+      orientation: String
   ): String = {
     maybeTargetSv match {
-      case None => apiAsPdf(sv, searchAllSubsystems)
+      case None => apiAsPdf(sv, searchAllSubsystems, orientation)
       case Some(targetSv) =>
         val attrs = getAttrs(
           sv.maybeVersion,
@@ -113,7 +120,8 @@ object ClientRoutes {
           searchAllSubsystems = false,
           targetSv.maybeVersion,
           targetSv.maybeComponent,
-          icdVersion
+          icdVersion,
+          maybeOrientation = Some(orientation)
         )
         s"/icdAsPdf/${sv.subsystem}/${targetSv.subsystem}$attrs"
     }
@@ -125,8 +133,8 @@ object ClientRoutes {
    * @param sv       the subsystem
    * @return the URL path to use
    */
-  def archivedItemsReport(sv: SubsystemWithVersion): String = {
-    val attrs = getAttrs(sv.maybeVersion, sv.maybeComponent, searchAllSubsystems = false)
+  def archivedItemsReport(sv: SubsystemWithVersion, orientation: String): String = {
+    val attrs = getAttrs(sv.maybeVersion, sv.maybeComponent, searchAllSubsystems = false, maybeOrientation = Some(orientation))
     s"/archivedItemsReport/${sv.subsystem}$attrs"
   }
 
@@ -135,18 +143,20 @@ object ClientRoutes {
    *
    * @return the URL path to use
    */
-  def archivedItemsReportFull(): String = {
-    s"/archivedItemsReportFull"
+  def archivedItemsReportFull(orientation: String): String = {
+    s"/archivedItemsReportFull?orientation=$orientation"
   }
 
   /**
    * Returns the route to use to get a PDF of the API for the given Subsystem with selected components.
    *
    * @param sv     the subsystem
+   * @param searchAllSubsystems if true, search all subsystems in the database for references, subscribers, etc.
+   * @param orientation portrait or landscape orientation
    * @return the URL path to use
    */
-  def apiAsPdf(sv: SubsystemWithVersion, searchAllSubsystems: Boolean): String = {
-    val attrs = getAttrs(sv.maybeVersion, sv.maybeComponent, searchAllSubsystems)
+  def apiAsPdf(sv: SubsystemWithVersion, searchAllSubsystems: Boolean, orientation: String): String = {
+    val attrs = getAttrs(sv.maybeVersion, sv.maybeComponent, searchAllSubsystems, maybeOrientation = Some(orientation))
     s"/apiAsPdf/${sv.subsystem}$attrs"
   }
 

@@ -43,7 +43,11 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean) {
    * @param maybeTargetSv optional target subsystem
    * @return future list of objects describing the components
    */
-  private def getComponentInfo(versionManager: IcdVersionManager, sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): List[ComponentInfo] = {
+  private def getComponentInfo(
+      versionManager: IcdVersionManager,
+      sv: SubsystemWithVersion,
+      maybeTargetSv: Option[SubsystemWithVersion]
+  ): List[ComponentInfo] = {
     maybeTargetSv match {
       case Some(targetSv) => IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv)
       case None           => new ComponentInfoHelper(searchAllSubsystems).getComponentInfoList(versionManager, sv)
@@ -61,7 +65,6 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean) {
     val maybeSubsystems = if (searchAllSubsystems) None else Some(List(sv.subsystem))
     val query           = new CachedIcdDbQuery(db.db, db.admin, maybeSubsystems)
     val versionManager  = new CachedIcdVersionManager(query)
-
 
     val markup = for {
       subsystemInfo <- getSubsystemInfo(sv)
@@ -92,7 +95,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean) {
 
     // Use caching, since we need to look at all the components multiple times, in order to determine who
     // subscribes, who calls commands, etc.
-    val query = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)))
+    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)))
     val versionManager = new CachedIcdVersionManager(query)
 
     val markup = for {
@@ -109,6 +112,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean) {
       val subsystemVersion       = subsystemInfo.sv.maybeVersion.getOrElse(unpublished)
       val targetSubsystemVersion = targetSubsystemInfo.sv.maybeVersion.getOrElse(unpublished)
       val mainContent = div(
+        style := "width: 100%;",
         p(strong(s"${subsystemInfo.sv.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
         raw(subsystemInfo.description),
         p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
@@ -149,6 +153,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean) {
    * @param maybeTarget          optional target subsystem, followed by optional :version
    * @param maybeTargetComponent optional name of target component (default is to use all target components)
    * @param maybeIcdVersion      optional icd version (overrides source and target subsystem versions)
+   * @param maybeOrientation     If set, should be "portait" or "landscape" (default: landscape)
    * @param file                 the file in which to save the document (should end with .html or .pdf)
    */
   def saveToFile(
@@ -157,6 +162,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean) {
       maybeTarget: Option[String],
       maybeTargetComponent: Option[String],
       maybeIcdVersion: Option[String],
+      maybeOrientation: Option[String],
       file: File
   ): Unit = {
 
@@ -166,7 +172,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean) {
       out.close()
     }
 
-    def saveAsPdf(html: String): Unit = IcdToPdf.saveAsPdf(file, html, showLogo = true)
+    def saveAsPdf(html: String): Unit = IcdToPdf.saveAsPdf(file, html, showLogo = true, maybeOrientation = maybeOrientation)
 
     val s1 = IcdVersionManager.SubsystemAndVersion(subsystemStr)
 

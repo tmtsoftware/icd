@@ -122,6 +122,10 @@ object IcdDb extends App {
       c.copy(allSubsystems = Some(()))
     } text "Include all subsystems in searches for publishers, subscribers, etc. while generating API doc (Default: only consider the one subsystem)"
 
+    opt[String]("orientation") valueName "portait or landscape" action { (x, c) =>
+      c.copy(orientation = Some(x))
+    } text "For PDF output: The page orientation: portait or landscape (default: landscape)"
+
     help("help")
     version("version")
   }
@@ -197,6 +201,7 @@ object IcdDb extends App {
         options.target,
         options.targetComponent,
         options.icdVersion,
+        options.orientation,
         file
       )
     }
@@ -270,7 +275,7 @@ object IcdDb extends App {
 
     // --missing option
     def missingItemsReport(file: File): Unit = {
-      MissingItemsReport(db, options).saveToFile(file)
+      MissingItemsReport(db, options).saveToFile(file, options.orientation)
     }
 
     // --archive option
@@ -278,7 +283,7 @@ object IcdDb extends App {
       val maybeSv = options.subsystem
         .map(SubsystemAndVersion(_))
         .map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, options.component))
-      ArchivedItemsReport(db, maybeSv).saveToFile(file)
+      ArchivedItemsReport(db, maybeSv).saveToFile(file, options.orientation)
     }
   }
 }

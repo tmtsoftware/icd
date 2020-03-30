@@ -53,7 +53,7 @@ case class Subsystem(
     listener: SubsystemListener,
     labelStr: String = "Subsystem",
     placeholderMsg: String = "Select subsystem",
-    enablePlaceholder: Boolean = false
+    enablePlaceholder: Boolean = true
 ) extends Displayable {
 
   // The subsystem combobox

@@ -19,46 +19,46 @@ object IcdToHtml {
     lines.mkString("\n")
   }
 
-  /**
-   * Gets the HTML for the document
-   *
-   * @param models list of ICD models for the different parts of the ICD
-   * @return a string in HTML format
-   */
-  def getAsHtml(models: List[IcdModels]): String = {
-    val maybeSubsystemInfo =
-      models.head.subsystemModel.map(s => SubsystemInfo(SubsystemWithVersion(s.subsystem, None, None), s.title, s.description))
-    val infoList = for {
-      m              <- models
-      componentModel <- m.componentModel
-    } yield {
-      val publishes = m.publishModel.map { pm =>
-        val eventList        = pm.eventList.map(EventInfo(_, Nil))
-        val observeEventList = pm.observeEventList.map(EventInfo(_, Nil))
-        val currentStateList = pm.currentStateList.map(EventInfo(_, Nil))
-        val alarmList        = pm.alarmList.map(AlarmInfo(_, Nil))
-        Publishes(pm.description, eventList, observeEventList, currentStateList, alarmList)
-      }
-      val subscribes = m.subscribeModel.map { sm =>
-        val eventList = sm.eventList.map(ev => DetailedSubscribeInfo(Events, ev, None, None, None, warnings = false))
-        val observeEventList =
-          sm.observeEventList.map(ev => DetailedSubscribeInfo(ObserveEvents, ev, None, None, None, warnings = false))
-        val currentStateList =
-          sm.currentStateList.map(ev => DetailedSubscribeInfo(CurrentStates, ev, None, None, None, warnings = false))
-        val alarmList = sm.alarmList.map(ev => DetailedSubscribeInfo(Alarms, ev, None, None, None, warnings = false))
-        Subscribes(sm.description, eventList ++ observeEventList ++ currentStateList ++ alarmList)
-      }
-      val commands = m.commandModel.map { cm =>
-        val commandsReceived = cm.receive.map(r => ReceivedCommandInfo(r, Nil))
-        val commandsSent     = cm.send.map(s => SentCommandInfo(s.name, s.subsystem, s.component, None, None, warnings = false))
-        Commands(cm.description, commandsReceived, commandsSent)
-      }
-      ComponentInfo(componentModel, publishes, subscribes, commands)
-    }
-
-    val markup = getApiAsHtml(maybeSubsystemInfo, infoList)
-    markup.render
-  }
+//  /**
+//   * Gets the HTML for the document
+//   *
+//   * @param models list of ICD models for the different parts of the ICD
+//   * @return a string in HTML format
+//   */
+//  def getAsHtml(models: List[IcdModels]): String = {
+//    val maybeSubsystemInfo =
+//      models.head.subsystemModel.map(s => SubsystemInfo(SubsystemWithVersion(s.subsystem, None, None), s.title, s.description))
+//    val infoList = for {
+//      m              <- models
+//      componentModel <- m.componentModel
+//    } yield {
+//      val publishes = m.publishModel.map { pm =>
+//        val eventList        = pm.eventList.map(EventInfo(_, Nil))
+//        val observeEventList = pm.observeEventList.map(EventInfo(_, Nil))
+//        val currentStateList = pm.currentStateList.map(EventInfo(_, Nil))
+//        val alarmList        = pm.alarmList.map(AlarmInfo(_, Nil))
+//        Publishes(pm.description, eventList, observeEventList, currentStateList, alarmList)
+//      }
+//      val subscribes = m.subscribeModel.map { sm =>
+//        val eventList = sm.eventList.map(ev => DetailedSubscribeInfo(Events, ev, None, None, None, warnings = false))
+//        val observeEventList =
+//          sm.observeEventList.map(ev => DetailedSubscribeInfo(ObserveEvents, ev, None, None, None, warnings = false))
+//        val currentStateList =
+//          sm.currentStateList.map(ev => DetailedSubscribeInfo(CurrentStates, ev, None, None, None, warnings = false))
+//        val alarmList = sm.alarmList.map(ev => DetailedSubscribeInfo(Alarms, ev, None, None, None, warnings = false))
+//        Subscribes(sm.description, eventList ++ observeEventList ++ currentStateList ++ alarmList)
+//      }
+//      val commands = m.commandModel.map { cm =>
+//        val commandsReceived = cm.receive.map(r => ReceivedCommandInfo(r, Nil))
+//        val commandsSent     = cm.send.map(s => SentCommandInfo(s.name, s.subsystem, s.component, None, None, warnings = false))
+//        Commands(cm.description, commandsReceived, commandsSent)
+//      }
+//      ComponentInfo(componentModel, publishes, subscribes, commands)
+//    }
+//
+//    val markup = getApiAsHtml(maybeSubsystemInfo, infoList)
+//    markup.render
+//  }
 
   /**
    * Returns an HTML tags describing the given components in the given subsystem.
@@ -90,6 +90,7 @@ object IcdToHtml {
         (TitleInfo("", None, None), div())
       }
     val mainContent = div(
+      style := "width: 100%;",
       summaryTable,
       displayDetails(infoList, nh, forApi = true)
     )

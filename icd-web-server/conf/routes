@@ -21,16 +21,16 @@ GET         /componentInfo/:subsystem                   controllers.Application.
 GET         /icdComponentInfo/:subsystem/:target        controllers.Application.icdComponentInfo(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String])
 
 # Gets the PDF for the given ICD
-GET         /icdAsPdf/:subsystem/:target                controllers.Application.icdAsPdf(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String])
+GET         /icdAsPdf/:subsystem/:target                controllers.Application.icdAsPdf(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String], orientation: Option[String])
 
 # Gets the PDF for the given subsystem API
-GET         /apiAsPdf/:subsystem                        controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean])
+GET         /apiAsPdf/:subsystem                        controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], orientation: Option[String])
 
 # Gets an archived items report (PDF) for the given subsystem API (and component)
-GET         /archivedItemsReport/:subsystem             controllers.Application.archivedItemsReport(subsystem, version: Option[String], component: Option[String])
+GET         /archivedItemsReport/:subsystem             controllers.Application.archivedItemsReport(subsystem, version: Option[String], component: Option[String], orientation: Option[String])
 
 # Gets an archived items report (PDF) for the given subsystem API (and component)
-GET         /archivedItemsReportFull                    controllers.Application.archivedItemsReportFull()
+GET         /archivedItemsReportFull                    controllers.Application.archivedItemsReportFull(orientation: Option[String])
 
 # Gets the detailed information about the versions of a component or subsystem
 GET         /versions/:name                             controllers.Application.getVersions(name)

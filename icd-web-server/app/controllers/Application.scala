@@ -114,12 +114,12 @@ class Application @Inject()(
    */
   def componentInfo(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String], searchAll: Option[Boolean]) =
     Action { implicit request =>
-      val sv              = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
+      val sv                  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
       val searchAllSubsystems = searchAll.getOrElse(false)
-      val subsystems = if (searchAllSubsystems) None else Some(List(sv.subsystem))
-      val query           = new CachedIcdDbQuery(db.db, db.admin, subsystems)
-      val versionManager  = new CachedIcdVersionManager(query)
-      val infoList        = new ComponentInfoHelper(displayWarnings = searchAllSubsystems).getComponentInfoList(versionManager, sv)
+      val subsystems          = if (searchAllSubsystems) None else Some(List(sv.subsystem))
+      val query               = new CachedIcdDbQuery(db.db, db.admin, subsystems)
+      val versionManager      = new CachedIcdVersionManager(query)
+      val infoList            = new ComponentInfoHelper(displayWarnings = searchAllSubsystems).getComponentInfoList(versionManager, sv)
       Ok(Json.toJson(infoList))
     }
 
@@ -159,6 +159,7 @@ class Application @Inject()(
    * @param maybeTargetVersion optional target subsystem's version (default: current)
    * @param maybeTargetComponent optional target component name (default: all in target subsystem)
    * @param maybeIcdVersion    optional ICD version (default: current)
+   * @param maybeOrientation   If set, should be "portait" or "landscape" (default: landscape)
    */
   def icdAsPdf(
       subsystem: String,
@@ -167,7 +168,8 @@ class Application @Inject()(
       target: String,
       maybeTargetVersion: Option[String],
       maybeTargetComponent: Option[String],
-      maybeIcdVersion: Option[String]
+      maybeIcdVersion: Option[String],
+      maybeOrientation: Option[String]
   ): Action[AnyContent] = Action { implicit request =>
     val out = new ByteArrayOutputStream()
 
@@ -192,7 +194,7 @@ class Application @Inject()(
 
     IcdDbPrinter(db, searchAllSubsystems = false).getIcdAsHtml(sv, targetSv, iv) match {
       case Some(html) =>
-        IcdToPdf.saveAsPdf(out, html, showLogo = true)
+        IcdToPdf.saveAsPdf(out, html, showLogo = true, maybeOrientation = maybeOrientation)
         val bytes = out.toByteArray
         Ok(bytes).as("application/pdf")
       case None =>
@@ -207,14 +209,21 @@ class Application @Inject()(
    * @param maybeVersion   the source subsystem's version (default: current)
    * @param maybeComponent optional component (default: all in subsystem)
    * @param searchAll if true, search all components for API dependencies
+   * @param maybeOrientation If set, should be "portait" or "landscape" (default: landscape)
    */
-  def apiAsPdf(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String], searchAll: Option[Boolean]) =
+  def apiAsPdf(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      searchAll: Option[Boolean],
+      maybeOrientation: Option[String]
+  ) =
     Action { implicit request =>
       val out = new ByteArrayOutputStream()
       val sv  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
       IcdDbPrinter(db, searchAll.getOrElse(false)).getApiAsHtml(sv) match {
         case Some(html) =>
-          IcdToPdf.saveAsPdf(out, html, showLogo = true)
+          IcdToPdf.saveAsPdf(out, html, showLogo = true, maybeOrientation = maybeOrientation)
           val bytes = out.toByteArray
           Ok(bytes).as("application/pdf")
         case None =>
@@ -228,25 +237,32 @@ class Application @Inject()(
    * @param subsystem      the source subsystem
    * @param maybeVersion   the source subsystem's version (default: current)
    * @param maybeComponent optional component (default: all in subsystem)
+   * @param maybeOrientation If set, should be "portait" or "landscape" (default: landscape)
    */
-  def archivedItemsReport(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String]) =
+  def archivedItemsReport(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      maybeOrientation: Option[String]
+  ) =
     Action { implicit request =>
       val out  = new ByteArrayOutputStream()
       val sv   = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
       val html = ArchivedItemsReport(db, Some(sv)).makeReport()
-      IcdToPdf.saveAsPdf(out, html, showLogo = false)
+      IcdToPdf.saveAsPdf(out, html, showLogo = false, maybeOrientation = maybeOrientation)
       val bytes = out.toByteArray
       Ok(bytes).as("application/pdf")
     }
 
   /**
    * Returns the archived items report (PDF) for all current subsystems
+   * @param maybeOrientation If set, should be "portait" or "landscape" (default: landscape)
    */
-  def archivedItemsReportFull() =
+  def archivedItemsReportFull(maybeOrientation: Option[String]) =
     Action { implicit request =>
       val out  = new ByteArrayOutputStream()
       val html = ArchivedItemsReport(db, None).makeReport()
-      IcdToPdf.saveAsPdf(out, html, showLogo = false)
+      IcdToPdf.saveAsPdf(out, html, showLogo = false, maybeOrientation = maybeOrientation)
       val bytes = out.toByteArray
       Ok(bytes).as("application/pdf")
     }

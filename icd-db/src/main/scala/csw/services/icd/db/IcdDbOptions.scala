@@ -26,5 +26,6 @@ case class IcdDbOptions(
     archived: Option[File] = None,
     listData: Option[String] = None,
     allUnits: Option[Unit] = None,
-    allSubsystems: Option[Unit] = None
+    allSubsystems: Option[Unit] = None,
+    orientation: Option[String] = None
 )

@@ -80,10 +80,11 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
     .map(c => s"${c.subsystem}.${c.component}")
 
   // Make the report only for the selected subsystems (-s and -t options), or all subsystems by default
-  private val subsystemsWithVersions = if (selectedSubsystemsWithVersions.nonEmpty)
-    selectedSubsystemsWithVersions
-  else
-    query.getSubsystemNames.map(SubsystemWithVersion(_, None, None))
+  private val subsystemsWithVersions =
+    if (selectedSubsystemsWithVersions.nonEmpty)
+      selectedSubsystemsWithVersions
+    else
+      query.getSubsystemNames.map(SubsystemWithVersion(_, None, None))
 
   // Returns a list of items missing a publisher, subscriber, sender or receiver
   private def getMissingItems: Items = {
@@ -425,7 +426,7 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
   /**
    * Saves the report in HTML or PDF, depending on the file suffix
    */
-  def saveToFile(file: File): Unit = {
+  def saveToFile(file: File, maybeOrientation: Option[String]): Unit = {
 
     def saveAsHtml(html: String): Unit = {
       val out = new FileOutputStream(file)
@@ -433,7 +434,7 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
       out.close()
     }
 
-    def saveAsPdf(html: String): Unit = IcdToPdf.saveAsPdf(file, html, showLogo = false)
+    def saveAsPdf(html: String): Unit = IcdToPdf.saveAsPdf(file, html, showLogo = false, maybeOrientation = maybeOrientation)
 
     file.getName.split('.').drop(1).lastOption match {
       case Some("html") => saveAsHtml(makeReport())

@@ -42,15 +42,18 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion])
 
   // Gets all the archived items
   private def getArchivedItems: List[ArchiveInfo] = {
-    // Gets the archived items from the list
-    def getItems(c: ComponentModel, eventType: String, list: List[EventModel]): List[ArchiveInfo] = {
-      val comp = c.component
-        .replace("-", "-\n") // save horizontal space (old version)
+    // Save horizontal space in the table by wrapping at certain chars
+    def saveSpace(s: String): String = {
+      s.replace("-", "-\n") // save horizontal space (old version)
         .replace("_", "_\n") // save horizontal space (new version, '-' not allowed)
         .replace(".", ".\n")
+    }
+
+    // Gets the archived items from the list
+    def getItems(c: ComponentModel, eventType: String, list: List[EventModel]): List[ArchiveInfo] = {
       list
         .filter(_.archive)
-        .map(e => ArchiveInfo(c.subsystem, comp, c. prefix, eventType, e))
+        .map(e => ArchiveInfo(c.subsystem, saveSpace(c.component), saveSpace(c.prefix), eventType, e))
     }
 
     val result = if (maybeSv.isDefined) {
@@ -60,7 +63,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion])
         models         <- versionManager.getModels(sv)
         componentModel <- models.componentModel
         if sv.maybeComponent.isEmpty || sv.maybeComponent.get == componentModel.component
-        publishModel   <- models.publishModel
+        publishModel <- models.publishModel
       } yield {
         getItems(componentModel, "Events", publishModel.eventList) ++
         getItems(componentModel, "ObserveEvents", publishModel.observeEventList)
@@ -81,7 +84,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion])
   private def totalsTable(archivedItems: List[ArchiveInfo]): Text.TypedTag[String] = {
     import scalatags.Text.all._
     val subsystems = archivedItems.map(_.subsystem).distinct
-    table(
+    table(style := "width=100%;",
       thead(
         tr(
           th("Subsystem"),
@@ -110,8 +113,8 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion])
       if (i == -1) s else s.substring(0, i + 4)
     }
 
-    val titleExt = maybeSv.map(sv => s" for $sv").getOrElse("")
-    val title = s"Archived Items Report$titleExt"
+    val titleExt                         = maybeSv.map(sv => s" for $sv").getOrElse("")
+    val title                            = s"Archived Items Report$titleExt"
     val archivedItems: List[ArchiveInfo] = getArchivedItems
     val markup = html(
       head(
@@ -171,7 +174,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion])
   /**
    * Saves the report in HTML or PDF, depending on the file suffix
    */
-  def saveToFile(file: File): Unit = {
+  def saveToFile(file: File, maybeOrientation: Option[String]): Unit = {
 
     def saveAsHtml(html: String): Unit = {
       val out = new FileOutputStream(file)
@@ -180,7 +183,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion])
     }
 
     def saveAsPdf(html: String): Unit =
-      IcdToPdf.saveAsPdf(file, html, showLogo = false)
+      IcdToPdf.saveAsPdf(file, html, showLogo = false, maybeOrientation = maybeOrientation)
 
     val html = makeReport()
     file.getName.split('.').drop(1).lastOption match {
