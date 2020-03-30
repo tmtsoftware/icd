@@ -1,6 +1,12 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## Unpublished
+
+### Added
+
+- Added option to generate PDFs in portait or landscape orientation
+
 ## [ICD v1.1.0] - 2020-03-21
 
 ### Changed
