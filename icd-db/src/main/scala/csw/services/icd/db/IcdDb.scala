@@ -179,10 +179,10 @@ object IcdDb extends App {
         if (opt.startsWith("s"))
           db.query.getSubsystemNames
         else if (opt.startsWith("as"))
-          db.query.getAssemblyNames
+          db.query.getAssemblyNames(options.subsystem)
         else if (opt.startsWith("h"))
-          db.query.getHcdNames
-        else db.query.getComponentNames
+          db.query.getHcdNames(options.subsystem)
+        else db.query.getComponentNames(options.subsystem)
       for (name <- list) println(name)
     }
 

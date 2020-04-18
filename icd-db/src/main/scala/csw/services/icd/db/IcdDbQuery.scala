@@ -231,32 +231,32 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
   /**
    * Returns a list of all the component names in the DB
    */
-  def getComponentNames: List[String] = getComponents.map(_.component)
-
-  /**
-   * Returns a list of all the component names in the DB belonging to the given subsystem.
-   * Note: This method assumes the current version of the subsystem.
-   * Use IcdVersionManager.getComponentNames to access any version of the subsystem.
-   */
-  def getComponentNames(subsystem: String): List[String] = {
-    getCollectionNames
-      .filter(name => name.startsWith(s"$subsystem.") && !name.endsWith(IcdVersionManager.versionSuffix))
-      .map(IcdPath)
-      .filter(p => p.parts.length == 3)
-      .map(_.parts.tail.head)
-      .toList
+  def getComponentNames(maybeSubsystem: Option[String]): List[String] = {
+    getComponents
+      .filter(m => maybeSubsystem.isEmpty || maybeSubsystem.contains(m.subsystem))
+      .map(_.component)
       .sorted
   }
 
   /**
    * Returns a list of all the assembly ICDs in the database
    */
-  def getAssemblyNames: List[String] = getComponents("Assembly").map(_.component)
+  def getAssemblyNames(maybeSubsystem: Option[String]): List[String] = {
+    getComponents("Assembly")
+      .filter(m => maybeSubsystem.isEmpty || maybeSubsystem.contains(m.subsystem))
+      .map(_.component)
+      .sorted
+  }
 
   /**
    * Returns a list of all the assembly ICDs in the database
    */
-  def getHcdNames: List[String] = getComponents("HCD").map(_.component)
+  def getHcdNames(maybeSubsystem: Option[String]): List[String] = {
+    getComponents("HCD")
+      .filter(m => maybeSubsystem.isEmpty || maybeSubsystem.contains(m.subsystem))
+      .map(_.component)
+      .sorted
+  }
 
   /**
    * Returns a list of all subsystem names in the database.

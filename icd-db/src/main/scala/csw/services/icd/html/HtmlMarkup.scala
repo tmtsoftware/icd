@@ -7,8 +7,10 @@ import com.vladsch.flexmark.parser.{Parser, PegdownExtensions}
 import com.vladsch.flexmark.profile.pegdown.{Extensions, PegdownOptionsAdapter}
 import icd.web.shared.IcdModels.EventModel
 import org.jsoup.Jsoup
+import org.jsoup.safety.{Cleaner, Whitelist}
 import scalatags.Text.all._
 import scalatags.Text.TypedTag
+import org.jsoup.nodes.Document.OutputSettings.Syntax.xml
 
 /**
  * Defines HTML markup
@@ -104,12 +106,15 @@ object HtmlMarkup extends Extensions {
 //        val os = new OutputSettings().syntax(OutputSettings.Syntax.xml)
 //        Jsoup.clean(html, "#", whiteList, os)
 
-        // Not using clean(), since it prevents the use of inner-document links (We don't know the required baseUri)
+        // Not using Jsoup.clean(), since it prevents the use of inner-document links (We don't know the required baseUri)
         val document = Jsoup.parseBodyFragment(html)
-        document.outputSettings().syntax(org.jsoup.nodes.Document.OutputSettings.Syntax.xml)
+        document.outputSettings().syntax(xml)
         document.outputSettings().charset("UTF-8")
+//        val whiteList = Whitelist.relaxed()
+//        val cleaner = new Cleaner(whiteList)
+//        val clean = cleaner.clean(document)
+//        clean.body().html()
         document.body().html()
-
       } catch {
         case ex: Throwable =>
           println(s"Error converting markdown to HTML: $ex: Input was:\n$gfm")

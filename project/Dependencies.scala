@@ -4,7 +4,7 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 object Dependencies {
   val Version               = "1.1.0"
   val ScalaVersion          = "2.13.1"
-  val AkkaVersion          = "2.5.25"
+  val AkkaVersion           = "2.5.25"
   val PlayVersion           = "2.8.1"
   val PlayJsonVersion       = "2.8.1"
   val ScalaTagsVersion      = "0.8.6"
@@ -16,7 +16,7 @@ object Dependencies {
   val akkaSlf4j = "com.typesafe.akka" %% "akka-slf4j" % AkkaVersion
 
   // command line dependencies
-  val scopt = "com.github.scopt" %% "scopt" % "3.7.1"
+  val scopt               = "com.github.scopt"                  %% "scopt"                 % "3.7.1"
   val jsonSchemaValidator = "com.github.everit-org.json-schema" % "org.everit.json.schema" % "1.12.1"
   val ficus               = "com.iheart"                        %% "ficus"                 % "1.4.7"
   val typesafeConfig      = "com.typesafe"                      % "config"                 % "1.4.0"
@@ -24,11 +24,12 @@ object Dependencies {
 
   val flexmarkAll = "com.vladsch.flexmark" % "flexmark-all" % "0.60.2"
   val scalaCsv    = "com.github.tototoshi" %% "scala-csv"   % "1.3.6"
-  val itextpdf    = "com.itextpdf"         % "itextpdf"     % "5.5.13.1"
-  val xmlworker   = "com.itextpdf.tool"    % "xmlworker"    % "5.5.13.1"
 
-  val reactivemongo = "org.reactivemongo" %% "reactivemongo" % "0.20.3"
-  val play2Reactivemongo = "org.reactivemongo" %% "play2-reactivemongo" % "0.20.3-play28"
+  val itext7Core  = "com.itextpdf"         % "itext7-core"  % "7.1.10" pomOnly ()
+  val html2pdf    = "com.itextpdf"         % "html2pdf"     % "2.1.7"
+
+  val reactivemongo               = "org.reactivemongo" %% "reactivemongo"                  % "0.20.3"
+  val play2Reactivemongo          = "org.reactivemongo" %% "play2-reactivemongo"            % "0.20.3-play28"
   val reactivemongoPlayJsonCompat = "org.reactivemongo" %% "reactivemongo-play-json-compat" % "0.20.3-play28"
 
   val diffson = "org.gnieh" %% "diffson-play-json" % "4.0.2"
