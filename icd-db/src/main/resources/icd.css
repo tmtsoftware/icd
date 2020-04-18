@@ -174,7 +174,8 @@ table tbody tr td p, table tbody tr td div p {
     page-break-before: always;
 }
 
-.nopagebreak {
-    page-break-inside: avoid;
-}
+/* Note: This caused itext 7 to throw an exception when creating a PDF for IRIS */
+/*.nopagebreak {*/
+/*    page-break-inside: avoid;*/
+/*}*/
 
