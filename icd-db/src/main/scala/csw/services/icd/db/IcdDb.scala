@@ -122,9 +122,9 @@ object IcdDb extends App {
       c.copy(allSubsystems = Some(()))
     } text "Include all subsystems in searches for publishers, subscribers, etc. while generating API doc (Default: only consider the one subsystem)"
 
-    opt[String]("orientation") valueName "portait or landscape" action { (x, c) =>
+    opt[String]("orientation") valueName "portrait or landscape" action { (x, c) =>
       c.copy(orientation = Some(x))
-    } text "For PDF output: The page orientation: portait or landscape (default: landscape)"
+    } text "For PDF output: The page orientation: portrait or landscape (default: landscape)"
 
     help("help")
     version("version")

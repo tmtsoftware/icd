@@ -55,7 +55,7 @@ object IcdToPdf {
    * @param file     the name of the file in which to save the PDF
    * @param html     the input doc in HTML format
    * @param showLogo if true insert the TMT logo
-   * @param maybeOrientation If set, should be "portait" or "landscape" (default: landscape)
+   * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
    */
   def saveAsPdf(file: File, html: String, showLogo: Boolean, maybeOrientation: Option[String]): Unit = {
     val out = new FileOutputStream(file)
@@ -69,7 +69,7 @@ object IcdToPdf {
    * @param out      the output stream in which to save the PDF
    * @param html     the input doc in HTML format
    * @param showLogo if true insert the TMT logo
-   * @param maybeOrientation If set, should be "portait" or "landscape" (default: landscape)
+   * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
    */
   def saveAsPdf(out: OutputStream, html: String, showLogo: Boolean, maybeOrientation: Option[String]): Unit = {
     val orientation = maybeOrientation.getOrElse("landscape")

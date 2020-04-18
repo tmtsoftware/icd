@@ -159,7 +159,7 @@ class Application @Inject()(
    * @param maybeTargetVersion optional target subsystem's version (default: current)
    * @param maybeTargetComponent optional target component name (default: all in target subsystem)
    * @param maybeIcdVersion    optional ICD version (default: current)
-   * @param maybeOrientation   If set, should be "portait" or "landscape" (default: landscape)
+   * @param maybeOrientation   If set, should be "portrait" or "landscape" (default: landscape)
    */
   def icdAsPdf(
       subsystem: String,
@@ -209,7 +209,7 @@ class Application @Inject()(
    * @param maybeVersion   the source subsystem's version (default: current)
    * @param maybeComponent optional component (default: all in subsystem)
    * @param searchAll if true, search all components for API dependencies
-   * @param maybeOrientation If set, should be "portait" or "landscape" (default: landscape)
+   * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
    */
   def apiAsPdf(
       subsystem: String,
@@ -237,7 +237,7 @@ class Application @Inject()(
    * @param subsystem      the source subsystem
    * @param maybeVersion   the source subsystem's version (default: current)
    * @param maybeComponent optional component (default: all in subsystem)
-   * @param maybeOrientation If set, should be "portait" or "landscape" (default: landscape)
+   * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
    */
   def archivedItemsReport(
       subsystem: String,
@@ -256,7 +256,7 @@ class Application @Inject()(
 
   /**
    * Returns the archived items report (PDF) for all current subsystems
-   * @param maybeOrientation If set, should be "portait" or "landscape" (default: landscape)
+   * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
    */
   def archivedItemsReportFull(maybeOrientation: Option[String]) =
     Action { implicit request =>
