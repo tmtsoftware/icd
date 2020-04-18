@@ -5,7 +5,10 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Added option to generate PDFs in portrait or landscape orientation
+- Added option to generate PDFs in portrait or landscape orientation 
+ (Landscape orientation is preferred, so that there is enough room in the many tables in the PDF output.)
+
+- Updated itextpdf dependency verion to itext-7
 
 ## [ICD v1.1.0] - 2020-03-21
 
