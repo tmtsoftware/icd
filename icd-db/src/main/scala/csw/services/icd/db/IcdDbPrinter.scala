@@ -153,7 +153,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean) {
    * @param maybeTarget          optional target subsystem, followed by optional :version
    * @param maybeTargetComponent optional name of target component (default is to use all target components)
    * @param maybeIcdVersion      optional icd version (overrides source and target subsystem versions)
-   * @param maybeOrientation     If set, should be "portait" or "landscape" (default: landscape)
+   * @param maybeOrientation     If set, should be "portrait" or "landscape" (default: landscape)
    * @param file                 the file in which to save the document (should end with .html or .pdf)
    */
   def saveToFile(

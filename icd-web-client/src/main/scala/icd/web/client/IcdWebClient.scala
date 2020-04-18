@@ -53,7 +53,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val historyItem   = NavbarItem("History", "Display the version history for an API or ICD", showVersionHistory())
   private val historyDialog = HistoryDialog(mainContent)
 
-  private val orientations = List("portait", "landscape")
+  private val orientations = List("portrait", "landscape")
 
   private val pdfItem =
     NavbarDropDownItem("PDF", "Generate and display a PDF for the API or ICD", orientations, makePdf)

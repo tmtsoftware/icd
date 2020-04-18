@@ -23,7 +23,7 @@ object IcdToPdf {
       val url   = getClass.getClassLoader.getResource("tmt.png")
       val image = new Image(ImageDataFactory.create(url))
       val x     = pageSize.getLeft + pageSize.getWidth / 2 - image.getImageWidth / 2
-      val y     = pageSize.getBottom + pageSize.getHeight / 2 - image.getImageHeight / 2
+      val y     = pageSize.getBottom + pageSize.getHeight / 2
       val rect = new Rectangle(x, y, x + image.getImageWidth, y - image.getImageHeight)
       new Canvas(pdfCanvas, pdfDocument, rect).add(image)
     }
@@ -59,7 +59,7 @@ object IcdToPdf {
    * @param file             the name of the file in which to save the PDF
    * @param html             the input doc in HTML format
    * @param showLogo         if true insert the TMT logo
-   * @param maybeOrientation If set, should be "portait" or "landscape" (default: landscape)
+   * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
    */
   def saveAsPdf(file: File, html: String, showLogo: Boolean, maybeOrientation: Option[String]): Unit = {
     val out = new FileOutputStream(file)
@@ -73,7 +73,7 @@ object IcdToPdf {
    * @param out              the output stream in which to save the PDF
    * @param html             the input doc in HTML format
    * @param showLogo         if true insert the TMT logo
-   * @param maybeOrientation If set, should be "portait" or "landscape" (default: landscape)
+   * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
    */
   def saveAsPdf(out: OutputStream, html: String, showLogo: Boolean, maybeOrientation: Option[String]): Unit = {
     val orientation              = maybeOrientation.getOrElse("landscape")
