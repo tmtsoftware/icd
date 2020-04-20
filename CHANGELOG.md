@@ -3,12 +3,17 @@ All notable changes to this project will be documented in this file.
 
 ## Unpublished
 
+## [ICD v1.1.1] - 2020-04-20
+
 ### Added
 
 - Added option to generate PDFs in portrait or landscape orientation 
- (Landscape orientation is preferred, so that there is enough room in the many tables in the PDF output.)
+ (Landscape orientation is preferred, so that there is enough room in the many tables in the PDF output).
 
-- Updated itextpdf dependency verion to itext-7
+- Updated itextpdf dependency version to itext-7
+
+- PDFs for published APIs and ICDs are now cached (Only for full, published APIs and ICDs without references 
+  to external subsystems - i.e.: The "Search all Subsystems" option is not checked).
 
 ## [ICD v1.1.0] - 2020-03-21
 

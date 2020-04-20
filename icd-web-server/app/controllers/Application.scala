@@ -1,9 +1,9 @@
 package controllers
 
-import java.io.ByteArrayOutputStream
+import java.io.{ByteArrayOutputStream, File}
 
 import javax.inject._
-import csw.services.icd.IcdToPdf
+import csw.services.icd.{IcdToPdf, PdfCache}
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
 import csw.services.icd.db._
 import csw.services.icd.github.IcdGitManager
@@ -12,7 +12,7 @@ import icd.web.shared.{IcdVersion, _}
 import org.eclipse.jgit.api.errors.TransportException
 import org.webjars.play._
 import play.api.libs.json.Json
-import play.filters.csrf.{CSRF, CSRFAddToken, CSRFCheck}
+import play.filters.csrf.{CSRF, CSRFAddToken}
 import play.api.mvc._
 import play.api.{Configuration, Environment, Mode}
 
@@ -22,6 +22,12 @@ import scala.util.Try
 object ApplicationData {
   // Used to access the ICD database
   val tryDb: Try[IcdDb] = Try(IcdDb())
+
+  // Cache of PDF files for published API and ICD versions
+  val maybeCache: Option[PdfCache] =
+    if (IcdDbDefaults.conf.getBoolean("icd.pdf.cache.enabled"))
+      Some(new PdfCache(new File(IcdDbDefaults.conf.getString("icd.pdf.cache.dir"))))
+    else None
 }
 
 /**
@@ -32,10 +38,10 @@ object ApplicationData {
 class Application @Inject()(
     env: Environment,
     addToken: CSRFAddToken,
-    checkToken: CSRFCheck,
+//    checkToken: CSRFCheck,
     assets: AssetsFinder,
     webJarsUtil: WebJarsUtil,
-    webJarAssets: WebJarAssets,
+//    webJarAssets: WebJarAssets,
     components: ControllerComponents,
     configuration: Configuration
 ) extends AbstractController(components) {
@@ -171,7 +177,6 @@ class Application @Inject()(
       maybeIcdVersion: Option[String],
       maybeOrientation: Option[String]
   ): Action[AnyContent] = Action { implicit request =>
-    val out = new ByteArrayOutputStream()
 
     // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
     // if only the subsystem or target versions were given, use those (default to latest versions)
@@ -192,10 +197,9 @@ class Application @Inject()(
       )
     }
 
-    IcdDbPrinter(db, searchAllSubsystems = false).getIcdAsHtml(sv, targetSv, iv) match {
-      case Some(html) =>
-        IcdToPdf.saveAsPdf(out, html, showLogo = true, maybeOrientation = maybeOrientation)
-        val bytes = out.toByteArray
+    val icdPrinter = IcdDbPrinter(db, searchAllSubsystems = false, maybeCache)
+    icdPrinter.saveIcdAsPdf(sv, targetSv, iv, maybeOrientation) match {
+      case Some(bytes) =>
         Ok(bytes).as("application/pdf")
       case None =>
         NotFound
@@ -219,12 +223,11 @@ class Application @Inject()(
       maybeOrientation: Option[String]
   ) =
     Action { implicit request =>
-      val out = new ByteArrayOutputStream()
-      val sv  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-      IcdDbPrinter(db, searchAll.getOrElse(false)).getApiAsHtml(sv) match {
-        case Some(html) =>
-          IcdToPdf.saveAsPdf(out, html, showLogo = true, maybeOrientation = maybeOrientation)
-          val bytes = out.toByteArray
+      val sv                  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
+      val searchAllSubsystems = searchAll.getOrElse(false)
+      val icdPrinter          = IcdDbPrinter(db, searchAllSubsystems, maybeCache)
+      icdPrinter.saveApiAsPdf(sv, maybeOrientation) match {
+        case Some(bytes) =>
           Ok(bytes).as("application/pdf")
         case None =>
           NotFound

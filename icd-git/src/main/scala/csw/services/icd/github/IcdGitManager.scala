@@ -3,11 +3,11 @@ package csw.services.icd.github
 import java.io.{File, PrintWriter}
 import java.nio.file.{FileSystems, Files, Paths}
 
-import csw.services.icd.{IcdValidator, Problem}
+import csw.services.icd.{IcdValidator, PdfCache, Problem}
 import csw.services.icd.db.ApiVersions.ApiEntry
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
-import csw.services.icd.db.{ApiVersions, IcdDb, IcdVersionManager, IcdVersions, Subsystems}
-import icd.web.shared.{ApiVersionInfo, GitHubCredentials, IcdVersion, IcdVersionInfo, PublishInfo}
+import csw.services.icd.db.{ApiVersions, IcdDb, IcdDbDefaults, IcdVersionManager, IcdVersions, Subsystems}
+import icd.web.shared.{ApiVersionInfo, GitHubCredentials, IcdVersion, IcdVersionInfo, PublishInfo, SubsystemWithVersion}
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.joda.time.{DateTime, DateTimeZone}
@@ -21,6 +21,12 @@ import scala.jdk.CollectionConverters._
  */
 //noinspection DuplicatedCode
 object IcdGitManager {
+  // Cache of PDF files for published API and ICD versions
+  val maybeCache: Option[PdfCache] =
+    if (IcdDbDefaults.conf.getBoolean("icd.pdf.cache.enabled"))
+      Some(new PdfCache(new File(IcdDbDefaults.conf.getString("icd.pdf.cache.dir"))))
+    else None
+
   //  For testing you can override the parent GitHub URI of the subsystem model file repos
   //  (The model files are then in $gitParentUri/$subsystem-Model-Files)
   private val gitParentUri = {
@@ -242,6 +248,7 @@ object IcdGitManager {
       val maybeIcd = icds.find(_.icdVersion == icdVersion)
       if (maybeIcd.isDefined) {
         // Write the file without the given ICD version
+        val icdEntry = maybeIcd.get
         val icdVersions = IcdVersions(List(s, t), icds.filter(_.icdVersion != icdVersion))
         val jsValue     = Json.toJson(icdVersions)
         val json        = Json.prettyPrint(jsValue)
@@ -250,6 +257,10 @@ object IcdGitManager {
         git.commit().setOnly(icdFileName).setMessage(comment).call
         updateHistoryFile(git, gitWorkDir)
         git.push.setCredentialsProvider(new UsernamePasswordCredentialsProvider(user, password)).call()
+        // Remove any cached PDFs for this version
+        val sv = SubsystemWithVersion(subsystem, icdEntry.versions.headOption, None)
+        val targetSv = SubsystemWithVersion(target, icdEntry.versions.reverse.headOption, None)
+        maybeCache.foreach(_.deleteIcd(sv, targetSv))
       }
       git.close()
       maybeIcd
@@ -310,6 +321,8 @@ object IcdGitManager {
             git.commit().setOnly(apiFileName).setMessage(comment).call
             updateHistoryFile(git, gitWorkDir)
             git.push.setCredentialsProvider(new UsernamePasswordCredentialsProvider(user, password)).call()
+            // Remove any cached PDFs for this version
+            maybeCache.foreach(_.deleteApi(SubsystemWithVersion(sv.subsystem, sv.maybeVersion, None)))
           }
           maybeApi
         }

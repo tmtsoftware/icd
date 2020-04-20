@@ -84,7 +84,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion])
   private def totalsTable(archivedItems: List[ArchiveInfo]): Text.TypedTag[String] = {
     import scalatags.Text.all._
     val subsystems = archivedItems.map(_.subsystem).distinct
-    table(style := "width=100%;",
+    table(style := "width:100%;",
       thead(
         tr(
           th("Subsystem"),

@@ -17,7 +17,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 object IcdDbDefaults {
-  private val conf          = ConfigFactory.load
+  val conf: Config          = ConfigFactory.load
   val defaultPort: Int      = conf.getInt("icd.db.port")
   val defaultHost: String   = conf.getString("icd.db.host")
   val defaultDbName: String = conf.getString("icd.db.name")
@@ -40,6 +40,11 @@ object IcdDbDefaults {
 
 //noinspection DuplicatedCode
 object IcdDb extends App {
+  // Cache of PDF files for published API and ICD versions
+  val maybeCache: Option[PdfCache] =
+    if (IcdDbDefaults.conf.getBoolean("icd.pdf.cache.enabled"))
+      Some(new PdfCache(new File(IcdDbDefaults.conf.getString("icd.pdf.cache.dir"))))
+    else None
 
   // Parser for the command line options
   private val parser = new scopt.OptionParser[IcdDbOptions]("icd-db") {
@@ -195,7 +200,7 @@ object IcdDb extends App {
     def output(file: File): Unit = {
       if (options.subsystem.isEmpty) error("Missing required subsystem name: Please specify --subsystem <name>")
       val searchAllSubsystems = options.allSubsystems.isDefined && options.target.isEmpty
-      IcdDbPrinter(db, searchAllSubsystems).saveToFile(
+      IcdDbPrinter(db, searchAllSubsystems, maybeCache).saveToFile(
         options.subsystem.get,
         options.component,
         options.target,

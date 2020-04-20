@@ -1,8 +1,9 @@
 package csw.services.icd.db
 
-import java.io.{File, FileOutputStream}
+import java.io.{ByteArrayOutputStream, File, FileOutputStream}
+import java.nio.file.Files
 
-import csw.services.icd.IcdToPdf
+import csw.services.icd.{IcdToPdf, PdfCache}
 import csw.services.icd.html.{IcdToHtml, NumberedHeadings}
 import icd.web.shared.TitleInfo.unpublished
 import icd.web.shared.{SubsystemWithVersion, _}
@@ -17,7 +18,7 @@ import IcdToHtml._
  *                            (Default: Search only one subsystem for API, two for ICD)
  */
 //noinspection DuplicatedCode
-case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean) {
+case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Option[PdfCache]) {
 
   /**
    * Gets information about a named subsystem (or component, if sv.maybeComponent is defined)
@@ -166,6 +167,8 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean) {
       file: File
   ): Unit = {
 
+    val isPdf = file.getName.endsWith(".pdf")
+
     def saveAsHtml(html: String): Unit = {
       val out = new FileOutputStream(file)
       out.write(html.getBytes)
@@ -176,48 +179,107 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean) {
 
     val s1 = IcdVersionManager.SubsystemAndVersion(subsystemStr)
 
-    val (subsys, targ, icdV) = maybeTarget match {
+    val (subsys, maybeTarg, maybeIcdV) = maybeTarget match {
       case Some(t) => // ICD
         val s2 = IcdVersionManager.SubsystemAndVersion(t)
         // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
         // if only the subsystem or target versions were given, use those (default to latest versions)
-        val v  = maybeIcdVersion.getOrElse("*")
-        val iv = db.versionManager.getIcdVersions(s1.subsystem, s2.subsystem).find(_.icdVersion.icdVersion == v).map(_.icdVersion)
-        val (sv, targetSv) = if (iv.isDefined) {
-          val i = iv.get
+        val v = maybeIcdVersion.getOrElse("*")
+        val maybeIv =
+          db.versionManager.getIcdVersions(s1.subsystem, s2.subsystem).find(_.icdVersion.icdVersion == v).map(_.icdVersion)
+        val (sv, maybeTargetSv) = if (maybeIv.isDefined) {
+          val i = maybeIv.get
           (
-            Some(SubsystemWithVersion(i.subsystem, Some(i.subsystemVersion), maybeComponent)),
+            SubsystemWithVersion(i.subsystem, Some(i.subsystemVersion), maybeComponent),
             Some(SubsystemWithVersion(i.target, Some(i.targetVersion), maybeTargetComponent))
           )
         } else {
           (
-            Some(SubsystemWithVersion(s1.subsystem, s1.maybeVersion, maybeComponent)),
+            SubsystemWithVersion(s1.subsystem, s1.maybeVersion, maybeComponent),
             Some(SubsystemWithVersion(s2.subsystem, s2.maybeVersion, maybeTargetComponent))
           )
         }
-        (sv, targetSv, iv)
+        (sv, maybeTargetSv, maybeIv)
 
       case None => // API
-        val sv       = Some(SubsystemWithVersion(s1.subsystem, s1.maybeVersion, maybeComponent))
-        val targetSv = None
-        (sv, targetSv, None)
+        val sv = SubsystemWithVersion(s1.subsystem, s1.maybeVersion, maybeComponent)
+        (sv, None, None)
     }
 
-    val maybeHtml = if (maybeTarget.isDefined) {
-      getIcdAsHtml(subsys.get, targ.get, icdV)
+    val maybeCachedBytes = if (isPdf) {
+      if (maybeTarg.isDefined)
+        maybeCache.flatMap(_.getIcd(subsys, maybeTarg.get, maybeOrientation, searchAllSubsystems))
+      else
+        maybeCache.flatMap(_.getApi(subsys, maybeOrientation, searchAllSubsystems))
+    } else None
+
+    if (maybeCachedBytes.isDefined) {
+      val out = new FileOutputStream(file)
+      out.write(maybeCachedBytes.get)
+      out.close()
     } else {
-      getApiAsHtml(subsys.get)
-    }
+      val maybeHtml = if (maybeTarg.isDefined) {
+        getIcdAsHtml(subsys, maybeTarg.get, maybeIcdV)
+      } else {
+        getApiAsHtml(subsys)
+      }
 
-    maybeHtml match {
-      case Some(html) =>
-        file.getName.split('.').drop(1).lastOption match {
-          case Some("html") => saveAsHtml(html)
-          case Some("pdf")  => saveAsPdf(html)
-          case _            => println(s"Unsupported output format: Expected *.html or *.pdf")
-        }
-      case None =>
-        println(s"Failed to generate $file. You might need to run: 'icd-git --ingest' first to update the database.")
+      maybeHtml match {
+        case Some(html) =>
+          file.getName.split('.').drop(1).lastOption match {
+            case Some("html") =>
+              saveAsHtml(html)
+            case Some("pdf")  =>
+              saveAsPdf(html)
+              maybeCache.foreach{
+                _.save(subsys, maybeTarg, maybeOrientation, searchAllSubsystems, file)
+              }
+
+            case _            => println(s"Unsupported output format: Expected *.html or *.pdf")
+          }
+        case None =>
+          println(s"Failed to generate $file. You might need to run: 'icd-git --ingest' first to update the database.")
+      }
     }
+  }
+
+  /**
+   * Saves the API for the given subsystem version in PDF format and returns a byte array containing the PDF
+   * data, if successful.
+   * @param sv the subsystem with version
+   * @param maybeOrientation optional orientation (default: "landscape")
+   * @return byte array with the PDF data
+   */
+  def saveApiAsPdf(sv: SubsystemWithVersion, maybeOrientation: Option[String]): Option[Array[Byte]] = {
+    val maybeCachedBytes = maybeCache.flatMap(_.getApi(sv, maybeOrientation, searchAllSubsystems))
+    if (maybeCachedBytes.isDefined)
+      maybeCachedBytes
+    else
+      getApiAsHtml(sv).map { html =>
+        val out = new ByteArrayOutputStream()
+        IcdToPdf.saveAsPdf(out, html, showLogo = true, maybeOrientation = maybeOrientation)
+        val bytes = out.toByteArray
+        maybeCache.foreach(_.saveApi(sv, maybeOrientation, searchAllSubsystems, bytes))
+        bytes
+      }
+  }
+
+  def saveIcdAsPdf(
+      sv: SubsystemWithVersion,
+      targetSv: SubsystemWithVersion,
+      iv: Option[IcdVersion],
+      maybeOrientation: Option[String]
+  ): Option[Array[Byte]] = {
+    val maybeCachedBytes = maybeCache.flatMap(_.getIcd(sv, targetSv, maybeOrientation, searchAllSubsystems))
+    if (maybeCachedBytes.isDefined)
+      maybeCachedBytes
+    else
+      getIcdAsHtml(sv, targetSv, iv).map { html =>
+        val out = new ByteArrayOutputStream()
+        IcdToPdf.saveAsPdf(out, html, showLogo = true, maybeOrientation = maybeOrientation)
+        val bytes = out.toByteArray
+        maybeCache.foreach(_.saveIcd(sv, targetSv, maybeOrientation, searchAllSubsystems, bytes))
+        bytes
+      }
   }
 }
