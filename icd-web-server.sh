@@ -4,5 +4,6 @@
 # It can be used to run icdwebserver with publishing enabled and uploading disabled.
 
 logdir=$HOME/.icd
+logfile=$logdir/icd.log
 test -d $logdir || mkdir $logdir
-exec icdwebserver -Dicd.allowUpload=false -Dhttp.port=80 > $logdir 2>&1
+exec icdwebserver -Dicd.allowUpload=false -Dhttp.port=80 > $logfile 2>&1
