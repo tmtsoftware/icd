@@ -11,9 +11,11 @@ import icd.web.shared.SubsystemWithVersion
  * @param cacheDir the root directory for storing the PDF files (/icd-version will be appended)
  */
 class PdfCache(cacheDir: File) {
-  val softwareVersion: String = System.getProperty("ICD_VERSION")
+  val defaultSoftwareVersion  = "dev"
+  val softwareVersion: String = Option(System.getProperty("ICD_VERSION")).getOrElse(defaultSoftwareVersion)
   val dir                     = new File(cacheDir, softwareVersion)
-  dir.mkdirs()
+  if (softwareVersion != defaultSoftwareVersion)
+    dir.mkdirs()
 
   // Gets the file used to store the given API version
   private def getFile(sv: SubsystemWithVersion, maybeOrientation: Option[String]): File = {
@@ -30,7 +32,7 @@ class PdfCache(cacheDir: File) {
 
   // Gets the PDF data for the given API version
   def getApi(sv: SubsystemWithVersion, maybeOrientation: Option[String], searchAllSubsystems: Boolean): Option[Array[Byte]] = {
-    if (sv.maybeVersion.isEmpty || sv.maybeComponent.isDefined || searchAllSubsystems) {
+    if (softwareVersion == defaultSoftwareVersion || sv.maybeVersion.isEmpty || sv.maybeComponent.isDefined || searchAllSubsystems) {
       None
     } else {
       val file = getFile(sv, maybeOrientation)
@@ -53,7 +55,7 @@ class PdfCache(cacheDir: File) {
       searchAllSubsystems: Boolean,
       data: Array[Byte]
   ): Unit = {
-    if (sv.maybeVersion.isDefined && sv.maybeComponent.isEmpty && !searchAllSubsystems) {
+    if (softwareVersion != defaultSoftwareVersion && sv.maybeVersion.isDefined && sv.maybeComponent.isEmpty && !searchAllSubsystems) {
       val file = getFile(sv, maybeOrientation)
       val out  = new FileOutputStream(file)
       out.write(data)
@@ -68,7 +70,8 @@ class PdfCache(cacheDir: File) {
       maybeOrientation: Option[String],
       searchAllSubsystems: Boolean
   ): Option[Array[Byte]] = {
-    if (sv.maybeVersion.isEmpty || targetSv.maybeVersion.isEmpty || sv.maybeComponent.isDefined || targetSv.maybeComponent.isDefined || searchAllSubsystems) {
+    if (softwareVersion == defaultSoftwareVersion || sv.maybeVersion.isEmpty || targetSv.maybeVersion.isEmpty
+        || sv.maybeComponent.isDefined || targetSv.maybeComponent.isDefined || searchAllSubsystems) {
       None
     } else {
       val file = getFile(sv, targetSv, maybeOrientation)
@@ -92,7 +95,9 @@ class PdfCache(cacheDir: File) {
       searchAllSubsystems: Boolean,
       data: Array[Byte]
   ): Unit = {
-    if (sv.maybeVersion.isDefined && targetSv.maybeVersion.isDefined && sv.maybeComponent.isEmpty && targetSv.maybeComponent.isEmpty && !searchAllSubsystems) {
+    if (softwareVersion != defaultSoftwareVersion && sv.maybeVersion.isDefined
+        && targetSv.maybeVersion.isDefined && sv.maybeComponent.isEmpty
+        && targetSv.maybeComponent.isEmpty && !searchAllSubsystems) {
       val file = getFile(sv, targetSv, maybeOrientation)
       val out  = new FileOutputStream(file)
       out.write(data)
@@ -108,8 +113,9 @@ class PdfCache(cacheDir: File) {
       searchAllSubsystems: Boolean,
       file: File
   ): Unit = {
-    if (sv.maybeVersion.isDefined && maybeTargetSv.forall(_.maybeVersion.isDefined) && sv.maybeComponent.isEmpty && maybeTargetSv
-          .forall(_.maybeComponent.isEmpty) && !searchAllSubsystems) {
+    if (softwareVersion != defaultSoftwareVersion && sv.maybeVersion.isDefined
+        && maybeTargetSv.forall(_.maybeVersion.isDefined) && sv.maybeComponent.isEmpty
+        && maybeTargetSv.forall(_.maybeComponent.isEmpty) && !searchAllSubsystems) {
       val data = Files.readAllBytes(file.toPath)
       if (maybeTargetSv.isDefined)
         saveIcd(sv, maybeTargetSv.get, maybeOrientation, searchAllSubsystems, data)

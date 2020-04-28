@@ -17,43 +17,38 @@ object Styles extends StyleSheet.Inline {
     width(100 %%),
     position.fixed,
     top(50 px),
-    // Increase top offset in the range 750 to 1170 px,
+    // Increase top offset in the range 400 to 790 px,
     // since the navbar items wrap around at that size
-    media.minWidth(750 px).maxWidth(1170 px)(top(170 px)),
-    media.print(top(0 px)),
+    media.minWidth(400 px).maxWidth(790 px)(top(100 px)),
     left(0 px),
     display.block,
-    media.print(width.auto, height.auto, display.block, overflow.visible, float.none, position.static)
   )
 
   val mainContent: StyleA = style(
     addClassName("col-xs-11"),
     padding(0 px, 0 px, 0 px, 0 px),
     height(100 %%),
-    media.print(width.auto, height.auto, display.block, overflow.visible, float.none, position.static)
   )
 
   val main = style(
     position.relative,
     height(100 %%),
-    overflowY.auto,
+    overflow.auto,
     padding(0 px, 0 px, 0 px, 15 px),
-    media.print(width.auto, height.auto, display.block, overflow.visible, float.none, position.static)
   )
 
   val contentDiv = style(
     float.left,
-    media.print(float.none)
   )
 
   val sidebarWrapper = style(
-    addClassNames("col-xs-1", "hidden-print", "hide"),
+    addClassNames("col-xs-1", "hide"),
     height(100 %%)
   )
 
   val sidebar = style(
     height(100 %%),
-    overflowY.auto
+    overflow.auto
   )
 
   val listGroupItem = style(
