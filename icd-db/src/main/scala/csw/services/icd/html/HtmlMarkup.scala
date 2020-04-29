@@ -7,7 +7,6 @@ import com.vladsch.flexmark.parser.{Parser, PegdownExtensions}
 import com.vladsch.flexmark.profile.pegdown.{Extensions, PegdownOptionsAdapter}
 import icd.web.shared.IcdModels.EventModel
 import org.jsoup.Jsoup
-import org.jsoup.safety.{Cleaner, Whitelist}
 import scalatags.Text.all._
 import scalatags.Text.TypedTag
 import org.jsoup.nodes.Document.OutputSettings.Syntax.xml
