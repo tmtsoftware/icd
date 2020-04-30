@@ -3,6 +3,17 @@ All notable changes to this project will be documented in this file.
 
 ## Unpublished
 
+### Added
+
+- Added an optional "role" field for received commands. The allowed values are "eng", "admin" or "user" (default: "user").
+  Sending a command to a component will require the correct user role in the CSW AAS auth service.
+
+### Changed
+
+- Minor CSS changes to support different screen sizes
+
+- Updated icd-web-server.sh script (used to run on public server)
+
 ## [ICD v1.1.1] - 2020-04-20
 
 ### Added
