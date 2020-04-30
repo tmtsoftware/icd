@@ -686,7 +686,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       p(strong("Completion Type: "), m.completionType),
       resultTypeMarkup(m.resultType),
       if (m.completionConditions.isEmpty) div()
-      else div(p(strong("Completion Conditions: "), ol(m.completionConditions.map(cc => li(raw(cc))))))
+      else div(p(strong("Completion Conditions: "), ol(m.completionConditions.map(cc => li(raw(cc)))))),
+      if (m.role.isEmpty) div()
+      else div(p(strong("Required User Role: "), m.role.get))
     )
   }
 

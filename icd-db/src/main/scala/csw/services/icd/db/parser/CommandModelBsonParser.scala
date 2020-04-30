@@ -23,7 +23,8 @@ object ReceiveCommandModelBsonParser {
       resultType =
         for (subDoc <- doc.getAsOpt[Array[BSONDocument]]("resultType").map(_.toList).getOrElse(Nil))
           yield AttributeModelBsonParser(subDoc),
-      completionConditions = doc.getAsOpt[Array[String]]("completionCondition").map(_.toList).getOrElse(Nil)
+      completionConditions = doc.getAsOpt[Array[String]]("completionCondition").map(_.toList).getOrElse(Nil),
+      role = doc.getAsOpt[String]("role")
     )
   }
 }

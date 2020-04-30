@@ -252,7 +252,10 @@ object IcdModels {
    * @param preconditions  an array of preconditions
    * @param postconditions an array of postconditions
    * @param requiredArgs   list of names of required args
-   * @param args           describes the command argumemnts (configuration fields)
+   * @param completionType Indicates the completion type of a command: See CSW CommandService API for details
+   * @param resultType     Defines an array of parameters in the result (For commands that return a result)
+   * @param completionConditions  For oneway commands, describes the conditions for determining command completion (if applicable)
+   * @param role   The required user role/authorization for the command ("eng", "admin" or "user" (default))
    */
   case class ReceiveCommandModel(
       name: String,
@@ -264,7 +267,8 @@ object IcdModels {
       args: List[AttributeModel],
       completionType: String,
       resultType: List[AttributeModel],
-      completionConditions: List[String]
+      completionConditions: List[String],
+      role: Option[String]
   ) extends NameDesc
 
   /**
