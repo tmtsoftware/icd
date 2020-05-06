@@ -192,8 +192,8 @@ object IcdModels {
         case "long"    => 4
         case "float"   => 4
         case "double"  => 8
-        case "taiDate" => 16
-        case "utcDate" => 16
+        case "taiDate" => 12
+        case "utcDate" => 12
         case "raDec"   => 16
         //  EqCoord(tag: Tag, ra: Angle, dec: Angle, frame: EqFrame, catalogName: String, pm: ProperMotion)
         case "eqCoord" => tagSize + 2 * angleSize + eqFrameSize + catalogNameSize + properMotionSize
