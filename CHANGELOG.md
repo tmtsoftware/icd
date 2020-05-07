@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - Added an optional "role" field for received commands. The allowed values are "eng", "admin" or "user" (default: "user").
-  Sending a command to a component will require the correct user role in the CSW AAS auth service.
+  Sending a command to a component will require the correct user role for the subsystem in the CSW AAS auth service.
 
 ### Changed
 
