@@ -1,7 +1,7 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-## Unpublished
+## [ICD v1.1.2] - 2020-05-14
 
 ### Added
 
@@ -11,6 +11,8 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Minor CSS changes to support different screen sizes
+
+- Updated archive size for taiDate type to 12 bytes (was 16)
 
 - Updated icd-web-server.sh script (used to run on public server)
 
