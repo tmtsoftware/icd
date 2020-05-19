@@ -49,7 +49,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
 
   private val upToDate = "Up to date"
 
-  // Used to show busy cursor only after entering GitHub credentials, while still updating the GUI in the background
+  // Used to show busy cursor only after enterring GitHub credentials, while still updating the GUI in the background
   private var updateFuture: Future[Unit] = Future.successful()
 
   // Displays the Publish (Unpublish) button (at the bottom of the dialog)
