@@ -13,6 +13,7 @@ import scalacss.ScalatagsCss._
 import scala.concurrent.ExecutionContext.Implicits.global
 import BrowserHistory._
 import Components._
+import icd.web.client.PasswordDialog.PasswordDialogListener
 import icd.web.client.PublishDialog.PublishDialogListener
 import icd.web.client.SelectDialog.SelectDialogListener
 import icd.web.client.StatusDialog.StatusDialogListener
@@ -71,6 +72,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Get the list of subsystems from the server and update the two comboboxes
   private val subsystemNames = SubsystemNames(mainContent, updateSubsystemOptions)
 
+  private val passwordDialog = PasswordDialog(mainContent, PasswordListener)
+
   private val selectItem   = NavbarItem("Select", "Select the API or ICD to display", selectSubsystems())
   private val selectDialog = SelectDialog(mainContent, Selector)
 
@@ -93,7 +96,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   doLayout()
 
   // Refresh the list of published APIs and ICDs when the user refreshes the web app
-  updatePublished().onComplete(_ => showStatus())
+//  updatePublished().onComplete(_ => showStatus())
+  showPasswordDialog()
 
   // If uploads are not allowed, hide the item (Doing this in the background caused issues with jquery).
   // On a public server, uploads should be disabled, on local installations, publishing should be disabled.
@@ -157,6 +161,16 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     }
   }
 
+  // Hide or show the navbar
+  private def setNavbarVisible(show: Boolean): Unit = {
+    val s = document.querySelector(".navbar")
+    if (show) {
+      s.classList.remove("hide")
+    } else {
+      s.classList.add("hide")
+    }
+  }
+
   // Called when the Select navbar item is selected (or through browser history)
   private def selectSubsystems(
       maybeSv: Option[SubsystemWithVersion] = None,
@@ -196,6 +210,27 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
           ex.printStackTrace()
           ""
       }
+  }
+
+  private def showPasswordDialog(saveHistory: Boolean = true)(): Unit = {
+    setSidebarVisible(false)
+    setNavbarVisible(false)
+    currentView = StatusView
+    val title = "TMT Interface Database System"
+    if (saveHistory) {
+      for {
+        version <- getReleaseVersion
+      } {
+        mainContent.setContent(passwordDialog, s"$title$version")
+//        pushState(viewType = StatusView, maybeSourceSubsystem = maybeSubsystem.map(SubsystemWithVersion(_, None, None)))
+      }
+    } else {
+      for {
+        version <- getReleaseVersion
+      } {
+        mainContent.setContent(passwordDialog, s"$title$version")
+      }
+    }
   }
 
   // Called when the Home/TMT ICD Database navbar item is selected (or through browser history)
@@ -404,6 +439,13 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         maybeIcd = maybeIcd,
         saveHistory = false
       )
+    }
+  }
+
+  private object PasswordListener extends PasswordDialogListener {
+    override def authenticated(token: String): Unit = {
+      setNavbarVisible(true)
+      updatePublished().onComplete(_ => showStatus())
     }
   }
 

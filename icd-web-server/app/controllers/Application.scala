@@ -8,6 +8,7 @@ import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
 import csw.services.icd.db._
 import csw.services.icd.github.IcdGitManager
 import diffson.playJson.DiffsonProtocol
+import icd.web.shared.SharedUtils.Credentials
 import icd.web.shared.{IcdVersion, _}
 import org.eclipse.jgit.api.errors.TransportException
 import org.webjars.play._
@@ -373,6 +374,28 @@ class Application @Inject()(
       val gitHubCredentials = maybeGitHubCredentials.get
       try {
         IcdGitManager.checkGitHubCredentials(gitHubCredentials)
+        Ok.as(JSON)
+      } catch {
+        case ex: TransportException =>
+          Unauthorized(ex.getMessage)
+        case ex: Exception =>
+          ex.printStackTrace()
+          BadRequest(ex.getMessage)
+      }
+    }
+  }
+
+  /**
+   * Checks if the given user and password are valid for using the web app
+   */
+  def checkCredentials() = Action { implicit request =>
+    val maybeCredentials = request.body.asJson.map(json => Json.fromJson[Credentials](json).get)
+    if (maybeCredentials.isEmpty) {
+      BadRequest("Missing POST data of type Credentials")
+    } else {
+      val credentials = maybeCredentials.get
+      try {
+        // XXX TODO check password
         Ok.as(JSON)
       } catch {
         case ex: TransportException =>

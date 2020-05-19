@@ -239,4 +239,9 @@ object ClientRoutes {
    *  Post: Checks if the given GitHub user name and password are valid for publishing
    */
   val checkGitHubCredentials = "/checkGitHubCredentials"
+
+  /**
+   *  Post: Checks if the given user name and password are valid for using the web app
+   */
+  val checkCredentials = "/checkCredentials"
 }

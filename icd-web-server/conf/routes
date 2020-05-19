@@ -62,6 +62,9 @@ GET         /getPublishInfo                             controllers.Application.
 # Checks if the given GitHub user and password are valid for publish
 POST        /checkGitHubCredentials                     controllers.Application.checkGitHubCredentials()
 
+# Checks if the given user and password are valid for using the web app
+POST        /checkCredentials                           controllers.Application.checkCredentials()
+
 # Publishes a given subsystem API on GitHub
 POST        /publishApi                                 controllers.Application.publishApi()
 
