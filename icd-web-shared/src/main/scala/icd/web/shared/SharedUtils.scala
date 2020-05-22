@@ -12,7 +12,9 @@ object SharedUtils {
    * @param user  user name
    * @param password  password
    */
-  case class Credentials(user: String, password: String)
+  case class Credentials(user: String, password: String) {
+    override def toString: String = s"$user:$password"
+  }
 
   /**
    * Removes any columns that do not contain any values

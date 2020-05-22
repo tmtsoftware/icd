@@ -36,8 +36,8 @@ case class PasswordDialog(mainContent: MainContent, listener: PasswordDialogList
   private val usernameBox = {
     input(
       cls := "form-control",
-      name := "username",
-      id := "username",
+      name := "icd-username",
+      id := "icd-username",
       required,
       onkeyup := usernameChanged _,
       placeholder := "Enter the user name..."
@@ -62,8 +62,8 @@ case class PasswordDialog(mainContent: MainContent, listener: PasswordDialogList
     input(
       cls := "form-control",
       `type` := "password",
-      name := "password",
-      id := "password",
+      name := "icd-password",
+      id := "icd-password",
       onkeyup := passwordChanged _,
       required,
       placeholder := "Enter the password..."
@@ -93,6 +93,7 @@ case class PasswordDialog(mainContent: MainContent, listener: PasswordDialogList
   private def checkCredentials(e: dom.Event): Unit = {
     val credentials = Credentials(usernameBox.value, passwordBox.value)
     val headers     = Map("Content-Type" -> "application/json")
+    // TODO: encypt before sending
     val data = Json.toJson(credentials).toString()
     val f =
       Ajax

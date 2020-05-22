@@ -2,6 +2,7 @@ package csw.services.icd.github
 
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.db.{IcdDb, IcdDbDefaults, IcdDbException, IcdVersionManager, Subsystems}
+import icd.web.shared.BuildInfo
 
 /**
  * Implements the icd-git command line application, which is used to manage ICD versions in Git and
@@ -42,7 +43,7 @@ object IcdGit extends App {
 
   // Parser for the command line options
   private val parser = new scopt.OptionParser[Options]("icd-git") {
-    head("icd-git", System.getProperty("ICD_VERSION"))
+    head("icd-git", BuildInfo.version)
 
     opt[Unit]('l', "list") action { (_, c) =>
       c.copy(list = true)

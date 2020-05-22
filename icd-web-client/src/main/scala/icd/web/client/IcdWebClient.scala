@@ -1,6 +1,6 @@
 package icd.web.client
 
-import icd.web.shared.{IcdVersion, SubsystemWithVersion}
+import icd.web.shared.{BuildInfo, IcdVersion, SubsystemWithVersion}
 import org.scalajs.dom
 import org.scalajs.dom.{PopStateEvent, document}
 import org.scalajs.dom.raw.HTMLStyleElement
@@ -77,6 +77,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val selectItem   = NavbarItem("Select", "Select the API or ICD to display", selectSubsystems())
   private val selectDialog = SelectDialog(mainContent, Selector)
 
+  private val logoutItem   = NavbarItem("Logout", "Log out of the icd web app", logout)
+
   private val statusItem   = NavbarItem("Status", "Display the published status of a selected subsystem", showStatus())
   private val statusDialog = StatusDialog(mainContent, StatusListener)
 
@@ -95,23 +97,37 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Initial browser state
   doLayout()
 
-  // Refresh the list of published APIs and ICDs when the user refreshes the web app
-//  updatePublished().onComplete(_ => showStatus())
-  showPasswordDialog()
-
   // If uploads are not allowed, hide the item (Doing this in the background caused issues with jquery).
   // On a public server, uploads should be disabled, on local installations, publishing should be disabled.
-  isUploadAllowed.map { uploadAllowed =>
-    if (uploadAllowed) {
-      publishItem.hide()
-    } else {
+  isPublicServer.foreach { publicServer =>
+    if (publicServer) {
+      // If user is logged in, skip the login dialog
+      checkForCookie().foreach { loggedIn =>
+        // Refresh the list of published APIs and ICDs when the user refreshes the web app
+        if (loggedIn)
+          updatePublished().onComplete(_ => showStatus())
+        else
+          showPasswordDialog()
+      }
       fileUploadItem.hide()
+    } else {
+      updatePublished().onComplete(_ => showStatus())
+      publishItem.hide()
+      logoutItem.hide()
     }
   }
 
-  // See if uploading model files is allowed in this configuration
-  private def isUploadAllowed: Future[Boolean] = {
-    val path = ClientRoutes.isUploadAllowed
+  // Returns future(true) if user is logged in
+  private def checkForCookie(): Future[Boolean] = {
+    val path = ClientRoutes.checkForCookie
+    Ajax.get(path).map { r =>
+      Json.fromJson[Boolean](Json.parse(r.responseText)).get
+    }
+  }
+
+  // See if this is a public server
+  private def isPublicServer: Future[Boolean] = {
+    val path = ClientRoutes.isPublicServer
     Ajax.get(path).map { r =>
       Json.fromJson[Boolean](Json.parse(r.responseText)).get
     }
@@ -137,6 +153,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     navbar.addItem(archiveItem)
     navbar.addItem(publishItem)
     navbar.addItem(expandToggler)
+    navbar.addRightSideItem(logoutItem)
 
     layout.addItem(sidebar)
     layout.addItem(mainContent)
@@ -198,39 +215,14 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     }
   }
 
-  // Gets the software release version to display in the status page
-  def getReleaseVersion: Future[String] = {
-    Ajax
-      .get(ClientRoutes.releaseVersion)
-      .map { r =>
-        Json.fromJson[String](Json.parse(r.responseText)).map(v => s" [version $v]").getOrElse("")
-      }
-      .recover {
-        case ex =>
-          ex.printStackTrace()
-          ""
-      }
-  }
-
   private def showPasswordDialog(saveHistory: Boolean = true)(): Unit = {
     setSidebarVisible(false)
     setNavbarVisible(false)
-    currentView = StatusView
-    val title = "TMT Interface Database System"
-    if (saveHistory) {
-      for {
-        version <- getReleaseVersion
-      } {
-        mainContent.setContent(passwordDialog, s"$title$version")
+//    currentView = StatusView
+    val title   = "TMT Interface Database System"
+    mainContent.setContent(passwordDialog, s"$title ${BuildInfo.version}")
+//        if (saveHistory)
 //        pushState(viewType = StatusView, maybeSourceSubsystem = maybeSubsystem.map(SubsystemWithVersion(_, None, None)))
-      }
-    } else {
-      for {
-        version <- getReleaseVersion
-      } {
-        mainContent.setContent(passwordDialog, s"$title$version")
-      }
-    }
   }
 
   // Called when the Home/TMT ICD Database navbar item is selected (or through browser history)
@@ -239,20 +231,23 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     currentView = StatusView
     val title = "TMT Interface Database System"
     if (saveHistory) {
-      for {
-        version <- getReleaseVersion
-      } {
-        mainContent.setContent(statusDialog, s"$title$version")
-        pushState(viewType = StatusView, maybeSourceSubsystem = maybeSubsystem.map(SubsystemWithVersion(_, None, None)))
-      }
+      mainContent.setContent(statusDialog, s"$title ${BuildInfo.version}")
+      pushState(viewType = StatusView, maybeSourceSubsystem = maybeSubsystem.map(SubsystemWithVersion(_, None, None)))
     } else {
       for {
-        version <- getReleaseVersion
         _       <- subsystemNames.update()
       } {
-        mainContent.setContent(statusDialog, s"$title$version")
+        mainContent.setContent(statusDialog, s"$title ${BuildInfo.version}")
         statusDialog.setSubsystem(maybeSubsystem, saveHistory = false)
       }
+    }
+  }
+
+  private def logout(): Future[Unit] = {
+    val path = ClientRoutes.logout
+    Ajax.post(path).map { _ =>
+      showPasswordDialog()
+      ()
     }
   }
 
@@ -443,9 +438,11 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   private object PasswordListener extends PasswordDialogListener {
+    // Called when the correct username and password were given and the apply button pressed
     override def authenticated(token: String): Unit = {
       setNavbarVisible(true)
-      updatePublished().onComplete(_ => showStatus())
+      // Show the status dialog
+      updatePublished().foreach(_ => showStatus())
     }
   }
 

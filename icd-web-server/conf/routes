@@ -41,9 +41,6 @@ GET         /versionNames/:name                         controllers.Application.
 # Gets a list of published ICD names
 GET         /icdNames                                   controllers.Application.getIcdNames
 
-# Gets the version of the icd software
-GET         /releaseVersion                             controllers.Application.getReleaseVersion
-
 # Gets a list of versions for the ICD from subsystem to target
 GET         /icdVersions/:subsystem/:target             controllers.Application.getIcdVersions(subsystem, target)
 
@@ -53,8 +50,8 @@ POST        /uploadFiles                                controllers.FileUploadCo
 # Gets the differences between two versions (version strings separated by a comma)
 GET         /diff/:subsystem/:versions                  controllers.Application.diff(subsystem, versions)
 
-# Returns OK(true) if Uploads should be allowed in the web app
-GET         /isUploadAllowed                            controllers.Application.isUploadAllowed
+# Returns OK(true) if this is a public icd web server (upload not allowed,publish allowed, password protected)
+GET         /isPublicServer                            controllers.Application.isPublicServer
 
 # Gets PublishInfo for every subsystem
 GET         /getPublishInfo                             controllers.Application.getPublishInfo(subsystem: Option[String])
@@ -64,6 +61,12 @@ POST        /checkGitHubCredentials                     controllers.Application.
 
 # Checks if the given user and password are valid for using the web app
 POST        /checkCredentials                           controllers.Application.checkCredentials()
+
+# Checks if the user is already logged in
+GET        /checkForCookie                              controllers.Application.checkForCookie()
+
+# Logs out of the web app
+POST        /logout                                     controllers.Application.logout()
 
 # Publishes a given subsystem API on GitHub
 POST        /publishApi                                 controllers.Application.publishApi()

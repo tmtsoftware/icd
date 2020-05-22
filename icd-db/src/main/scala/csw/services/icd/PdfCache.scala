@@ -3,7 +3,7 @@ package csw.services.icd
 import java.io.{File, FileOutputStream}
 import java.nio.file.Files
 
-import icd.web.shared.SubsystemWithVersion
+import icd.web.shared.{BuildInfo, SubsystemWithVersion}
 
 /**
  * Implements a cache of PDF files for published API and ICD releases.
@@ -12,7 +12,7 @@ import icd.web.shared.SubsystemWithVersion
  */
 class PdfCache(cacheDir: File) {
   val defaultSoftwareVersion  = "dev"
-  val softwareVersion: String = Option(System.getProperty("ICD_VERSION")).getOrElse(defaultSoftwareVersion)
+  val softwareVersion: String = BuildInfo.version
   val dir                     = new File(cacheDir, softwareVersion)
   if (softwareVersion != defaultSoftwareVersion)
     dir.mkdirs()

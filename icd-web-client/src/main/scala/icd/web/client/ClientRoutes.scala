@@ -181,11 +181,6 @@ object ClientRoutes {
   val icdNames = "/icdNames"
 
   /**
-   * Gets the version of the icd software
-   */
-  val releaseVersion = "/releaseVersion"
-
-  /**
    * Gets a list of versions for the ICD from subsystem to target
    */
   def icdVersions(icdName: IcdName) = s"/icdVersions/${icdName.subsystem}/${icdName.target}"
@@ -196,9 +191,9 @@ object ClientRoutes {
   def diff(subsystem: String, versions: List[String]) = s"/diff/$subsystem/${versions.mkString(",")}"
 
   /**
-   * Returns OK(true) if Uploads should be allowed in the web app
+   * Returns OK(true) if this is running as a public server (where uploads are disabled, publish is enabled)
    */
-  val isUploadAllowed = "/isUploadAllowed"
+  val isPublicServer = "/isPublicServer"
 
   /**
    * Gets PublishInfo for every subsystem
@@ -244,4 +239,14 @@ object ClientRoutes {
    *  Post: Checks if the given user name and password are valid for using the web app
    */
   val checkCredentials = "/checkCredentials"
+
+  /**
+   *  Post: Checks if the user is logged in
+   */
+  val checkForCookie = "/checkForCookie"
+
+  /**
+   * Post: Log out of the web app
+   */
+  val logout = "/logout"
 }
