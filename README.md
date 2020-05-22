@@ -71,7 +71,7 @@ then go to http://localhost:9000 in a web browser.
 To run as a public server, edit the provided script, [icd-wed-server.sh](icd-wed-server.sh), and change the
 settings (certificate, etc.) as needed for the server. 
 
-Note that the `-Dicd.allowUpload=false` option hides the *upload* feature, which allows
+Note that the `-Dicd.isPublicServer=true` option hides the *upload* feature, which allows
 users to test their local changes before publishing. This option also makes the Publish tab visible.
 
 Note that the first time you start `icdwebserver`, it will update the ICD database from the released versions on GitHub. 

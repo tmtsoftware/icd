@@ -233,11 +233,11 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
         val icdNames = Json.fromJson[Array[IcdName]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
         updateIcdOptions(icdNames)
       }
-      .recover {
-        case ex =>
-          ex.printStackTrace() // XXX TODO
-          Nil
-      }
+//      .recover {
+//        case ex =>
+//          ex.printStackTrace() // XXX TODO
+//          Nil
+//      }
   }
 
   // Update the ICD combobox options
@@ -301,9 +301,9 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
           .flatMap { list => // Future!
             updateIcdVersionOptions(list)
           }
-          .recover {
-            case ex => ex.printStackTrace()
-          }
+//          .recover {
+//            case ex => ex.printStackTrace()
+//          }
       case None =>
         updateIcdVersionOptions(Nil).map { _ =>
           versionItem.value = unpublishedVersion
@@ -332,11 +332,11 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
       .map { r =>
         Json.fromJson[Array[IcdVersionInfo]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
       }
-      .recover {
-        case ex =>
-          ex.printStackTrace() // XXX TODO
-          Nil
-      }
+//      .recover {
+//        case ex =>
+//          ex.printStackTrace() // XXX TODO
+//          Nil
+//      }
       .map(list => list.map(_.icdVersion))
   }
 

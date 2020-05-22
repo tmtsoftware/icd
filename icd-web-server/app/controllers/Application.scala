@@ -3,19 +3,25 @@ package controllers
 import java.io.{ByteArrayOutputStream, File}
 
 import javax.inject._
+import java.security.MessageDigest
+
+import controllers.ApplicationData.AuthAction
 import csw.services.icd.{IcdToPdf, PdfCache}
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
 import csw.services.icd.db._
 import csw.services.icd.github.IcdGitManager
 import diffson.playJson.DiffsonProtocol
+import icd.web.shared.SharedUtils.Credentials
 import icd.web.shared.{IcdVersion, _}
 import org.eclipse.jgit.api.errors.TransportException
 import org.webjars.play._
 import play.api.libs.json.Json
+import play.api.mvc.Cookie.SameSite.Strict
 import play.filters.csrf.{CSRF, CSRFAddToken}
 import play.api.mvc._
 import play.api.{Configuration, Environment, Mode}
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 // Defines the database used
@@ -28,6 +34,24 @@ object ApplicationData {
     if (IcdDbDefaults.conf.getBoolean("icd.pdf.cache.enabled"))
       Some(new PdfCache(new File(IcdDbDefaults.conf.getString("icd.pdf.cache.dir"))))
     else None
+
+  // Name of cookie used for login username:password
+  val cookieName = "icd.credentials.sha"
+
+  // Action that requires authorization
+  class AuthAction @Inject()(parser: BodyParsers.Default, configuration: Configuration)(implicit ec: ExecutionContext)
+      extends ActionBuilderImpl(parser) {
+    override def invokeBlock[A](request: Request[A], block: Request[A] => Future[Result]): Future[Result] = {
+      if (configuration.get[Boolean]("icd.isPublicServer")) {
+        request.cookies.get(cookieName) match {
+          case Some(cookie) if configuration.get[String](cookieName) == cookie.value => block(request)
+          case _    => Future(Results.Unauthorized("Invalid user token"))
+        }
+      } else {
+        block(request)
+      }
+    }
+  }
 }
 
 /**
@@ -38,12 +62,11 @@ object ApplicationData {
 class Application @Inject()(
     env: Environment,
     addToken: CSRFAddToken,
-//    checkToken: CSRFCheck,
     assets: AssetsFinder,
     webJarsUtil: WebJarsUtil,
-//    webJarAssets: WebJarAssets,
     components: ControllerComponents,
-    configuration: Configuration
+    configuration: Configuration,
+    authAction: AuthAction
 ) extends AbstractController(components) {
 
   import ApplicationData._
@@ -57,6 +80,9 @@ class Application @Inject()(
 
   // Cache of API and ICD versions published on GitHub (cached for better performance)
   private var (allApiVersions, allIcdVersions) = IcdGitManager.ingestMissing(db)
+
+  // The expected SHA of username:password from application.conf
+  val expectedSha = configuration.get[String](cookieName)
 
   // Update the database and cache after a new API or ICD was published (or in case one was published)
   private def updateAfterPublish(): Unit = {
@@ -88,7 +114,7 @@ class Application @Inject()(
   /**
    * Gets information about a named subsystem
    */
-  def subsystemInfo(subsystem: String, maybeVersion: Option[String]) = Action { implicit request =>
+  def subsystemInfo(subsystem: String, maybeVersion: Option[String]) = authAction { implicit request =>
     // Get the subsystem info from the database, or if not found, look in the published GitHub repo
     val sv = SubsystemWithVersion(subsystem, maybeVersion, None)
     db.versionManager.getSubsystemModel(sv) match {
@@ -104,7 +130,7 @@ class Application @Inject()(
   /**
    * Gets a list of components belonging to the given version of the given subsystem
    */
-  def components(subsystem: String, maybeVersion: Option[String]) = Action { implicit request =>
+  def components(subsystem: String, maybeVersion: Option[String]) = authAction { implicit request =>
     val sv    = SubsystemWithVersion(subsystem, maybeVersion, None)
     val names = db.versionManager.getComponentNames(sv)
     Ok(Json.toJson(names))
@@ -119,7 +145,7 @@ class Application @Inject()(
    * @param searchAll if true, search all components for API dependencies
    */
   def componentInfo(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String], searchAll: Option[Boolean]) =
-    Action { implicit request =>
+    authAction { implicit request =>
       val sv                  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
       val searchAllSubsystems = searchAll.getOrElse(false)
       val subsystems          = if (searchAllSubsystems) None else Some(List(sv.subsystem))
@@ -146,7 +172,7 @@ class Application @Inject()(
       target: String,
       maybeTargetVersion: Option[String],
       maybeTargetComponent: Option[String]
-  ): Action[AnyContent] = Action { implicit request =>
+  ): Action[AnyContent] = authAction { implicit request =>
     val sv             = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     val targetSv       = SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
     val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)))
@@ -177,7 +203,6 @@ class Application @Inject()(
       maybeIcdVersion: Option[String],
       maybeOrientation: Option[String]
   ): Action[AnyContent] = Action { implicit request =>
-
     // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
     // if only the subsystem or target versions were given, use those (default to latest versions)
     val v = maybeIcdVersion.getOrElse("*")
@@ -248,7 +273,7 @@ class Application @Inject()(
       maybeComponent: Option[String],
       maybeOrientation: Option[String]
   ) =
-    Action { implicit request =>
+    authAction { implicit request =>
       val out  = new ByteArrayOutputStream()
       val sv   = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
       val html = ArchivedItemsReport(db, Some(sv)).makeReport()
@@ -262,7 +287,7 @@ class Application @Inject()(
    * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
    */
   def archivedItemsReportFull(maybeOrientation: Option[String]) =
-    Action { implicit request =>
+    authAction { implicit request =>
       val out  = new ByteArrayOutputStream()
       val html = ArchivedItemsReport(db, None).makeReport()
       IcdToPdf.saveAsPdf(out, html, showLogo = false, maybeOrientation = maybeOrientation)
@@ -273,7 +298,7 @@ class Application @Inject()(
   /**
    * Returns a detailed list of the versions of the given subsystem
    */
-  def getVersions(subsystem: String) = Action { implicit request =>
+  def getVersions(subsystem: String) = authAction { implicit request =>
     val versions = allApiVersions
       .filter(_.subsystem == subsystem)
       .flatMap(_.apis)
@@ -284,7 +309,7 @@ class Application @Inject()(
   /**
    * Returns a list of version names for the given subsystem
    */
-  def getVersionNames(subsystem: String) = Action { implicit request =>
+  def getVersionNames(subsystem: String) = authAction { implicit request =>
     val versions = allApiVersions
       .filter(_.subsystem == subsystem)
       .flatMap(_.apis)
@@ -302,17 +327,9 @@ class Application @Inject()(
   }
 
   /**
-   * Gets the version of the icd software
-   */
-  def getReleaseVersion = Action { implicit request =>
-    val version = System.getProperty("ICD_VERSION")
-    Ok(Json.toJson(version))
-  }
-
-  /**
    * Gets a list of versions for the ICD from subsystem to target subsystem
    */
-  def getIcdVersions(subsystem: String, target: String) = Action { implicit request =>
+  def getIcdVersions(subsystem: String, target: String) = authAction { implicit request =>
     // convert list to use shared IcdVersion class
     val list =
       allIcdVersions.find(i => i.subsystems.head == subsystem && i.subsystems.tail.head == target).toList.flatMap(_.icds).map {
@@ -334,7 +351,7 @@ class Application @Inject()(
   /**
    * Gets the difference between two subsystem versions
    */
-  def diff(subsystem: String, versionsStr: String) = Action { implicit request =>
+  def diff(subsystem: String, versionsStr: String) = authAction { implicit request =>
     val versions = versionsStr.split(',')
     val v1       = versions.head
     val v2       = versions.tail.head
@@ -346,18 +363,17 @@ class Application @Inject()(
   }
 
   /**
-   * Returns OK(true) if Uploads should be allowed in the web app
-   * (Should be set to false when running as a public server, on when running locally during development)
+   * Returns OK(true) if this is a public icd web server (upload not allowed,publish allowed, password protected)
    */
-  def isUploadAllowed = Action { implicit request =>
-    val allowed = configuration.get[Boolean]("icd.allowUpload")
-    Ok(Json.toJson(allowed))
+  def isPublicServer = Action { implicit request =>
+    val publicServer = configuration.get[Boolean]("icd.isPublicServer")
+    Ok(Json.toJson(publicServer))
   }
 
   /**
    * Responds with the JSON for the PublishInfo for every subsystem
    */
-  def getPublishInfo(maybeSubsystem: Option[String]) = Action { implicit request =>
+  def getPublishInfo(maybeSubsystem: Option[String]) = authAction { implicit request =>
     val publishInfo = IcdGitManager.getPublishInfo(maybeSubsystem)
     Ok(Json.toJson(publishInfo))
   }
@@ -365,7 +381,7 @@ class Application @Inject()(
   /**
    * Checks if the given GitHub user and password are valid for publish
    */
-  def checkGitHubCredentials() = Action { implicit request =>
+  def checkGitHubCredentials() = authAction { implicit request =>
     val maybeGitHubCredentials = request.body.asJson.map(json => Json.fromJson[GitHubCredentials](json).get)
     if (maybeGitHubCredentials.isEmpty) {
       BadRequest("Missing POST data of type GitHubCredentials")
@@ -384,10 +400,59 @@ class Application @Inject()(
     }
   }
 
+  private def convertBytesToHex(bytes: Array[Byte]): String = {
+    val sb = new StringBuilder
+    for (b <- bytes) {
+      sb.append(String.format("%02x", Byte.box(b)))
+    }
+    sb.toString
+  }
+
+  /**
+   * Checks if the given user and password are valid for using the web app
+   */
+  def checkCredentials() = Action { implicit request =>
+    val maybeCredentials = request.body.asJson.map(json => Json.fromJson[Credentials](json).get)
+    if (maybeCredentials.isEmpty) {
+      BadRequest("Missing POST data of type Credentials")
+    } else {
+      val credentials = maybeCredentials.get
+      try {
+        val sha = convertBytesToHex(MessageDigest.getInstance("SHA-256").digest(credentials.toString.getBytes))
+//        println(s"XXX sha = $sha")
+        if (sha == expectedSha)
+          Ok.as(JSON).withCookies(Cookie(cookieName, sha, sameSite = Some(Strict)))
+        else
+          Unauthorized("Wrong user name or password")
+      } catch {
+        case ex: Exception =>
+          ex.printStackTrace()
+          BadRequest(ex.getMessage)
+      }
+    }
+  }
+
+  /**
+   * Checks if the user is already logged in (returns true if logged in)
+   */
+  def checkForCookie() = Action { implicit request =>
+    request.cookies.get(cookieName) match {
+      case Some(cookie) => Ok(Json.toJson(cookie.value == expectedSha))
+      case None         => Ok(Json.toJson(false))
+    }
+  }
+
+  /**
+   * Log out of the web app
+   */
+  def logout() = authAction { implicit request =>
+    Ok.as(JSON).discardingCookies(DiscardingCookie(cookieName))
+  }
+
   /**
    * Publish the selected API (add an entry for the current commit of the master branch on GitHub)
    */
-  def publishApi() = Action { implicit request =>
+  def publishApi() = authAction { implicit request =>
     val maybePublishApiInfo = request.body.asJson.map(json => Json.fromJson[PublishApiInfo](json).get)
     if (maybePublishApiInfo.isEmpty) {
       BadRequest("Missing POST data of type PublishApiInfo")
@@ -423,7 +488,7 @@ class Application @Inject()(
   /**
    * Publish an ICD (add an entry to the icds file on the master branch of https://github.com/tmt-icd/ICD-Model-Files)
    */
-  def publishIcd() = Action { implicit request =>
+  def publishIcd() = authAction { implicit request =>
     val maybePublishIcdInfo = request.body.asJson.map(json => Json.fromJson[PublishIcdInfo](json).get)
     if (maybePublishIcdInfo.isEmpty) {
       BadRequest("Missing POST data of type PublishIcdInfo")
@@ -455,7 +520,7 @@ class Application @Inject()(
   /**
    * Unublish the selected API (removes an entry from the file in the master branch on GitHub)
    */
-  def unpublishApi() = Action { implicit request =>
+  def unpublishApi() = authAction { implicit request =>
     val maybeUnpublishApiInfo = request.body.asJson.map(json => Json.fromJson[UnpublishApiInfo](json).get)
     if (maybeUnpublishApiInfo.isEmpty) {
       BadRequest("Missing POST data of type UnpublishApiInfo")
@@ -487,7 +552,7 @@ class Application @Inject()(
   /**
    * Unpublish an ICD (remove an entry in the icds file on the master branch of https://github.com/tmt-icd/ICD-Model-Files)
    */
-  def unpublishIcd() = Action { implicit request =>
+  def unpublishIcd() = authAction { implicit request =>
     val maybeUnpublishIcdInfo = request.body.asJson.map(json => Json.fromJson[UnpublishIcdInfo](json).get)
     if (maybeUnpublishIcdInfo.isEmpty) {
       BadRequest("Missing POST data of type UnpublishIcdInfo")
@@ -524,7 +589,7 @@ class Application @Inject()(
   /**
    * Updates the cache of published APIs and ICDs (in case new ones were published)
    */
-  def updatePublished() = Action { implicit request =>
+  def updatePublished() = authAction { implicit request =>
     updateAfterPublish()
     Ok.as(JSON)
   }

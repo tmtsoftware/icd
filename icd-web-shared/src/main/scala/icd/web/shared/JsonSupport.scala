@@ -2,6 +2,7 @@ package icd.web.shared
 
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels._
+import icd.web.shared.SharedUtils.Credentials
 import play.api.libs.json._
 
 //noinspection TypeAnnotation
@@ -72,6 +73,7 @@ object JsonSupport {
   implicit val apiVersionInfoFormat        = Json.format[ApiVersionInfo]
   implicit val publishInfoFormat           = Json.format[PublishInfo]
   implicit val gitHubCredentialsFormat     = Json.format[GitHubCredentials]
+  implicit val credentialsFormat           = Json.format[Credentials]
   implicit val publishApiInfoFormat        = Json.format[PublishApiInfo]
   implicit val publishIcdInfoFormat        = Json.format[PublishIcdInfo]
   implicit val unpublishApiInfoFormat      = Json.format[UnpublishApiInfo]

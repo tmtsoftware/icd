@@ -275,9 +275,9 @@ case class Subsystem(
             val version = maybeVersion.getOrElse(unpublishedVersion)
             versionItem.value = version
           }
-          .recover {
-            case ex => ex.printStackTrace()
-          }
+//          .recover {
+//            case ex => ex.printStackTrace()
+//          }
       case None =>
         versionItem.value = unpublishedVersion
         Future.successful()
@@ -306,11 +306,11 @@ case class Subsystem(
       .map { r =>
         Json.fromJson[Array[String]](Json.parse(r.responseText)).get.toList
       }
-      .recover {
-        case ex =>
-          ex.printStackTrace() // XXX TODO
-          Nil
-      }
+//      .recover {
+//        case ex =>
+//          ex.printStackTrace() // XXX TODO
+//          Nil
+//      }
   }
 
 }

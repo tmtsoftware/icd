@@ -28,11 +28,11 @@ object IcdUtil {
             Nil
         }
       }
-      .recover {
-        case ex =>
-          mainContent.displayInternalError(ex)
-          Nil
-      }
+//      .recover {
+//        case ex =>
+//          mainContent.displayInternalError(ex)
+//          Nil
+//      }
   }
 
 }

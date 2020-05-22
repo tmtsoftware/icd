@@ -103,6 +103,11 @@ lazy val icdWebClient = (project in file("icd-web-client"))
 
 // contains simple case classes used for data transfer that are shared between the client and server
 lazy val icdWebShared = (crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Pure) in file("icd-web-shared"))
+  .enablePlugins(BuildInfoPlugin)
+  .settings(
+    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
+    buildInfoPackage := "icd.web.shared"
+  )
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(

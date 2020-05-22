@@ -27,11 +27,11 @@ case class SubsystemNames(mainContent: MainContent, listener: Listener) {
       .map { r =>
         Json.fromJson[List[String]](Json.parse(r.responseText)).get
       }
-      .recover {
-        case ex =>
-          mainContent.displayInternalError(ex)
-          Nil
-      }
+//      .recover {
+//        case ex =>
+//          mainContent.displayInternalError(ex)
+//          Nil
+//      }
   }
 
   private def notifyListener(items: List[String]): Future[Unit] = {

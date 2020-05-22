@@ -5,6 +5,17 @@ package icd.web.shared
  */
 object SharedUtils {
 
+
+  /**
+   * Holds the credentials needed to use the web app
+   *
+   * @param user  user name
+   * @param password  password
+   */
+  case class Credentials(user: String, password: String) {
+    override def toString: String = s"$user:$password"
+  }
+
   /**
    * Removes any columns that do not contain any values
    *

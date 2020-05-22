@@ -106,11 +106,11 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       .map { r =>
         Json.fromJson[Array[String]](Json.parse(r.responseText)).map(_.toList).get
       }
-      .recover {
-        case ex =>
-          mainContent.displayInternalError(ex)
-          Nil
-      }
+//      .recover {
+//        case ex =>
+//          mainContent.displayInternalError(ex)
+//          Nil
+//      }
   }
 
   private object SourceSubsystemListener extends SubsystemListener {

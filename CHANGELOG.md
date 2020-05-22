@@ -81,7 +81,7 @@ All notable changes to this project will be documented in this file.
 
 - The Publish dialog access is restricted to those with write access to the
   [ICD-Model-Files](https://github.com/tmt-icd/ICD-Model-Files)  repository
-  and is only enabled when starting icdwebserver with the `-Dicd.allowUpload=false`
+  and is only enabled when starting icdwebserver with the `-Dicd.isPublicServer=true`
   option.
 
 - Fixed issue that could cause PDF generation to fail if embedded HTML in description
@@ -107,8 +107,8 @@ All notable changes to this project will be documented in this file.
 - Added a new Publish dialog to the icd web app
 
 - The `Upload` feature in the icd web app. which allows you to ingest local model files into the ICD database,
-  can now be disabled by changing the `icd.allowUpload` configuration setting 
-  in icd-web-server/application.conf or by starting the web app like this: `icdwebserver -Dicd.allowUpload=false`.
+  can now be disabled by changing the `icd.isPublicServer` configuration setting 
+  in icd-web-server/application.conf or by starting the web app like this: `icdwebserver -Dicd.isPublicServer=true`.
   The Upload feature should be disabled when `icdwebserver` is running in a public network and should only 
   display the actual API and ICD releases, which are stored on GitHub. 
   

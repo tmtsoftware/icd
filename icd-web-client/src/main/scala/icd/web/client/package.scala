@@ -57,4 +57,5 @@ package object client {
 
     override def apply(idx: Int): T = nodes(idx)
   }
+
 }

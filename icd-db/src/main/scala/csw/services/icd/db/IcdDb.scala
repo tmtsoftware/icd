@@ -8,7 +8,7 @@ import csw.services.icd.db.parser.{BaseModelParser, SubsystemModelParser}
 import csw.services.icd.db.ComponentDataReporter._
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import diffson.playJson.DiffsonProtocol
-import icd.web.shared.SubsystemWithVersion
+import icd.web.shared.{BuildInfo, SubsystemWithVersion}
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.Json
 import reactivemongo.api.{AsyncDriver, DefaultDB, MongoConnection}
@@ -48,7 +48,7 @@ object IcdDb extends App {
 
   // Parser for the command line options
   private val parser = new scopt.OptionParser[IcdDbOptions]("icd-db") {
-    head("icd-db", System.getProperty("ICD_VERSION"))
+    head("icd-db", BuildInfo.version)
 
     opt[String]('d', "db") valueName "<name>" action { (x, c) =>
       c.copy(dbName = x)

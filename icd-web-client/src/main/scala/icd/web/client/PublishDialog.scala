@@ -199,8 +199,8 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
   private val usernameBox = {
     input(
       cls := "form-control",
-      name := "username",
-      id := "username",
+      name := "github-username",
+      id := "github-username",
       required,
       onkeyup := usernameChanged _,
       placeholder := "Enter your GitHub user name..."
@@ -229,8 +229,8 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
     input(
       cls := "form-control",
       `type` := "password",
-      name := "password",
-      id := "password",
+      name := "github-password",
+      id := "github-password",
       onkeyup := passwordChanged _,
       required,
       placeholder := "Enter your GitHub password..."

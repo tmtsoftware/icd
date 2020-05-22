@@ -251,11 +251,11 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
             Nil
         }
       }
-      .recover {
-        case ex =>
-          mainContent.displayInternalError(ex)
-          Nil
-      }
+//      .recover {
+//        case ex =>
+//          mainContent.displayInternalError(ex)
+//          Nil
+//      }
 
   // Gets the ICD version info from the server
   private def getIcdVersionInfo(icdName: IcdName): Future[List[IcdVersionInfo]] = {
@@ -271,11 +271,11 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
             Nil
         }
       }
-      .recover {
-        case ex =>
-          mainContent.displayInternalError(ex)
-          Nil
-      }
+//      .recover {
+//        case ex =>
+//          mainContent.displayInternalError(ex)
+//          Nil
+//      }
   }
 
   def setSubsystem(subsystem: String): Unit = {
