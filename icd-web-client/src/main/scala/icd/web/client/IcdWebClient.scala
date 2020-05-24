@@ -2,7 +2,7 @@ package icd.web.client
 
 import icd.web.shared.{BuildInfo, IcdVersion, SubsystemWithVersion}
 import org.scalajs.dom
-import org.scalajs.dom.{PopStateEvent, document}
+import org.scalajs.dom.{MouseEvent, PopStateEvent, document}
 import org.scalajs.dom.raw.HTMLStyleElement
 
 import scala.concurrent.Future
@@ -18,6 +18,7 @@ import icd.web.client.PublishDialog.PublishDialogListener
 import icd.web.client.SelectDialog.SelectDialogListener
 import icd.web.client.StatusDialog.StatusDialogListener
 import org.scalajs.dom.ext.Ajax
+import org.w3c.dom.html.HTMLAnchorElement
 import play.api.libs.json.Json
 
 import scala.scalajs.js
@@ -77,7 +78,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val selectItem   = NavbarItem("Select", "Select the API or ICD to display", selectSubsystems())
   private val selectDialog = SelectDialog(mainContent, Selector)
 
-  private val logoutItem   = NavbarItem("Logout", "Log out of the icd web app", logout)
+  private val logoutItem = NavbarItem("Logout", "Log out of the icd web app", logout)
 
   private val statusItem   = NavbarItem("Status", "Display the published status of a selected subsystem", showStatus())
   private val statusDialog = StatusDialog(mainContent, StatusListener)
@@ -219,7 +220,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     setSidebarVisible(false)
     setNavbarVisible(false)
 //    currentView = StatusView
-    val title   = "TMT Interface Database System"
+    val title = "TMT Interface Database System"
     mainContent.setContent(passwordDialog, s"$title ${BuildInfo.version}")
 //        if (saveHistory)
 //        pushState(viewType = StatusView, maybeSourceSubsystem = maybeSubsystem.map(SubsystemWithVersion(_, None, None)))
@@ -235,7 +236,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       pushState(viewType = StatusView, maybeSourceSubsystem = maybeSubsystem.map(SubsystemWithVersion(_, None, None)))
     } else {
       for {
-        _       <- subsystemNames.update()
+        _ <- subsystemNames.update()
       } {
         mainContent.setContent(statusDialog, s"$title ${BuildInfo.version}")
         statusDialog.setSubsystem(maybeSubsystem, saveHistory = false)
@@ -270,8 +271,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private object LeftSidebarListener extends SidebarListener {
     // Called when a component link is selected in the sidebar
     override def componentSelected(componentName: String): Unit = {
-      goToComponent(componentName)
-      pushState(viewType = ComponentView, compName = Some(componentName), replace = true)
+      goToComponent(componentName, saveHistory = false)
     }
   }
 
@@ -290,10 +290,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       Some(link.subsystem) match {
         case `maybeSubsystem` if maybeSv.flatMap(_.maybeComponent).isEmpty =>
           goToComponent(link.compName)
-          pushState(viewType = ComponentView, compName = Some(link.compName), replace = true)
         case `maybeTargetSubsystem` if maybeTargetSv.flatMap(_.maybeComponent).isEmpty =>
           goToComponent(link.compName)
-          pushState(viewType = ComponentView, compName = Some(link.compName), replace = true)
         case _ =>
           val maybeLinkSv = Some(SubsystemWithVersion(link.subsystem, None, Some(link.compName)))
           for {
@@ -302,7 +300,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
             _ <- selectDialog.applySettings()
           } yield {
             goToComponent(link.compName)
-            pushState(viewType = ComponentView, compName = Some(link.compName), replace = true)
           }
       }
 
@@ -310,13 +307,17 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   // Jump to the component description
-  private def goToComponent(compName: String, replace: Boolean = false): Unit = {
+  private def goToComponent(compName: String, replace: Boolean = false, saveHistory: Boolean = true): Unit = {
     val compId = Components.getComponentInfoId(compName)
     if (replace) {
       val baseUrl = dom.window.location.href.split('#')(0)
-      dom.window.location.replace(s"$baseUrl#$compId")
+      val url     = s"$baseUrl#$compId"
+      dom.window.location.replace(url)
+      if (saveHistory) pushState(viewType = ComponentView, compName = Some(compName), replace)
     } else {
-      dom.window.location.hash = s"#$compId"
+      val url = s"#$compId"
+      dom.window.location.hash = url
+      if (saveHistory) pushState(viewType = ComponentView, compName = Some(compName), replace)
     }
   }
 
@@ -333,14 +334,16 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       replace: Boolean = false,
       maybeSourceSubsystem: Option[SubsystemWithVersion] = None,
       maybeTargetSubsystem: Option[SubsystemWithVersion] = None,
-      maybeIcd: Option[IcdVersion] = None
+      maybeIcd: Option[IcdVersion] = None,
+      maybeUri: Option[String] = None
   ): Unit = {
     val hist = BrowserHistory(
       maybeSourceSubsystem,
       maybeTargetSubsystem,
       maybeIcd,
       viewType,
-      compName
+      compName,
+      maybeUri
     )
     if (replace) {
       hist.replaceState()
@@ -388,7 +391,11 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
             selectDialog.searchAllSubsystems(),
             saveHistory = false
           ).foreach { _ =>
-            hist.currentCompnent.foreach(compName => goToComponent(compName, replace = true))
+            if (hist.maybeUri.isDefined) {
+              hist.maybeUri.foreach(uri => dom.window.location.replace(uri))
+            } else {
+              hist.currentCompnent.foreach(compName => goToComponent(compName, saveHistory = false))
+            }
           }
       }
     }
@@ -491,7 +498,28 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         maybeIcd = selectDialog.icdChooser.getSelectedIcdVersion
       )
     }
+    f.foreach(_ => addLinkHandlers())
     f
+  }
+
+  private def linkListener(e: dom.Event): Unit = {
+    val ar = e.target.toString.split('#')
+    if (ar.length == 2) {
+      val uri = s"#${ar.tail.head}"
+      pushState(
+        replace = false,
+        viewType = ComponentView,
+        maybeSourceSubsystem = selectDialog.subsystem.getSubsystemWithVersion,
+        maybeTargetSubsystem = selectDialog.targetSubsystem.getSubsystemWithVersion,
+        maybeIcd = selectDialog.icdChooser.getSelectedIcdVersion,
+        maybeUri = Some(uri)
+      )
+    }
+  }
+
+  private def addLinkHandlers(): Unit = {
+    val links = document.getElementsByTagName("a")
+    links.toArray.foreach(x => x.addEventListener("click", linkListener))
   }
 
   // Called when the "Show ICD Version History" menu item is selected

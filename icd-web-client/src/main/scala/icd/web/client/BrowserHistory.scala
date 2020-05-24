@@ -81,13 +81,15 @@ object BrowserHistory {
  * @param maybeIcd             optional ICD with version, if one was selected
  * @param viewType             indicates the type of data being displayed
  * @param currentCompnent      optional current component
+ * @param maybeUri             optional URI fragment (with '#')
  */
 case class BrowserHistory(
     maybeSourceSubsystem: Option[SubsystemWithVersion],
     maybeTargetSubsystem: Option[SubsystemWithVersion],
     maybeIcd: Option[IcdVersion],
     viewType: ViewType,
-    currentCompnent: Option[String]
+    currentCompnent: Option[String],
+    maybeUri: Option[String] = None
 ) {
 
   // Pushes the current application history state (Note that the title is ignored in some browsers)
