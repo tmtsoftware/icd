@@ -8,8 +8,7 @@ import play.api.mvc._
 import play.api.libs.json._
 import play.api.libs.Files
 
-class FileUploadController @Inject()(components: ControllerComponents)
-    extends AbstractController(components) {
+class FileUploadController @Inject()(components: ControllerComponents) extends AbstractController(components) {
 
   private val log     = play.Logger.of("application")
   private lazy val db = ApplicationData.tryDb.get
@@ -67,10 +66,14 @@ class FileUploadController @Inject()(components: ControllerComponents)
       val subsystemList = list.filter(_.stdName == StdName.subsystemFileNames).map(_.config.getString("subsystem"))
 
       // Check for duplicate subsystem-model.conf file (found one in TCS)
-      val duplicates = subsystemList.diff(subsystemList.toSet.toList)
-      if (duplicates.nonEmpty) {
+      val duplicateSubsystems = subsystemList.diff(subsystemList.toSet.toList)
+      val duplicateComponents = db.checkForDuplicateComponentNames(list)
+      if (duplicateSubsystems.nonEmpty) {
         val dupFileList = list.filter(_.stdName == StdName.subsystemFileNames).map(_.fileName).mkString(", ")
         val p = Problem("error", s"Duplicate subsystem-model.conf found: $dupFileList") :: problems
+        NotAcceptable(Json.toJson(p))
+      } else if (duplicateComponents.nonEmpty) {
+        val p = Problem("error", s"Duplicate component names found: ${duplicateComponents.mkString(", ")}") :: problems
         NotAcceptable(Json.toJson(p))
       } else {
         if (subsystemList.isEmpty)

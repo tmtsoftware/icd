@@ -126,8 +126,11 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     }
 
     // list ignored files:
-    for (file <- invalidFiles)
-      displayProblem(Problem("warning", s"${getFilePath(file)}: Ignored"))
+    for (file <- invalidFiles) {
+      val path = getFilePath(file)
+      if (!path.endsWith(".iml") && !path.endsWith(".project"))
+        displayProblem(Problem("warning", s"$path: Ignored"))
+    }
   }
 
   // Starts uploading the selected files (or files in selected directory) to the server

@@ -317,6 +317,18 @@ case class IcdDb(
   val versionManager: IcdVersionManager = IcdVersionManager(query)
   val manager: IcdDbManager             = IcdDbManager(db, versionManager)
 
+  // Check for duplicate component names
+  def checkForDuplicateComponentNames(list: List[StdConfig]): List[String] = {
+    val componentModels = list.flatMap {
+      case x if x.stdName.isComponentModel =>
+        val subsystem = x.config.getString("subsystem")
+        val component = x.config.getString("component")
+        Some(s"$subsystem.$component")
+      case _ => None
+    }
+    componentModels.groupBy(identity).collect { case (x, List(_, _, _*)) => x }.toList
+  }
+
   /**
    * Ingests all the files with the standard names (stdNames) in the given directory and recursively
    * in its subdirectories into the database.
@@ -332,17 +344,19 @@ case class IcdDb(
     val subsystemList       = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.config.getString("subsystem"))
 
     // Check for duplicate subsystem-model.conf file (found one in TCS)
-    val duplicates = subsystemList.diff(subsystemList.toSet.toList)
-    if (duplicates.nonEmpty) {
+    val duplicateSubsystems = subsystemList.diff(subsystemList.toSet.toList)
+    val duplicateComponents = checkForDuplicateComponentNames(configs)
+    if (duplicateSubsystems.nonEmpty) {
       val dupFileList = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.fileName).mkString(", ")
       Problem("error", s"Duplicate subsystem-model.conf found: $dupFileList") :: problems
+    } else if (duplicateComponents.nonEmpty) {
+      Problem("error", s"Duplicate component names found: ${duplicateComponents.mkString(", ")}") :: problems
     } else {
       if (subsystemList.isEmpty)
         query.afterIngestFiles(problems, dbName)
       else subsystemList.foreach(query.afterIngestSubsystem(_, problems, dbName))
       problems
     }
-
   }
 
   /**

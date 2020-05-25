@@ -157,7 +157,7 @@ object IcdValidator {
    * @return a list of problems, if any were found
    */
   def validateStdName(inputConfig: Config, stdName: StdName, schemaVersion: String, fileName: String): List[Problem] = {
-    checkSchemaVersion(schemaVersion, fileName.toString) match {
+    checkSchemaVersion(schemaVersion, fileName) match {
       case Right(version) =>
         val schemaPath   = s"$version/${stdName.schema}"
         val schemaConfig = ConfigFactory.parseResources(schemaPath)
