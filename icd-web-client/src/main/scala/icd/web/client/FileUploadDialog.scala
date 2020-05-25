@@ -68,6 +68,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   // Clears the problem messages display
   private def clearProblems(): Unit = {
     messagesItem.innerHTML = ""
+    problemSet = Set[Problem]()
   }
 
   // Gets the full path, if supported (webkit/chrome), otherwise the simple file name

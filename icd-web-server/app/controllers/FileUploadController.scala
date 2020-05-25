@@ -4,13 +4,11 @@ import javax.inject.Inject
 import com.typesafe.config.ConfigException
 import csw.services.icd.db.StdConfig
 import csw.services.icd.{IcdValidator, Problem, StdName}
-import play.api.Environment
 import play.api.mvc._
 import play.api.libs.json._
-import org.webjars.play._
 import play.api.libs.Files
 
-class FileUploadController @Inject()(env: Environment, webJarAssets: WebJarAssets, components: ControllerComponents)
+class FileUploadController @Inject()(components: ControllerComponents)
     extends AbstractController(components) {
 
   private val log     = play.Logger.of("application")
@@ -25,11 +23,10 @@ class FileUploadController @Inject()(env: Environment, webJarAssets: WebJarAsset
       val list = files.flatMap { filePart =>
         StdConfig.get(filePart.ref.path.toFile, filePart.filename)
       }
-      val comment =
-        request.body.asFormUrlEncoded.getOrElse("comment", List("")).head
-      ingestConfigs(list, comment)
+      ingestConfigs(list)
     } catch {
       case e: ConfigException =>
+        e.printStackTrace()
         val msg = e.getMessage
         log.error(msg, e)
         NotAcceptable(Json.toJson(List(Problem("error", msg))))
@@ -44,10 +41,9 @@ class FileUploadController @Inject()(env: Environment, webJarAssets: WebJarAsset
    * Uploads/ingests the given API config files
    *
    * @param list    list of objects based on uploaded ICD files
-   * @param comment change comment from user
    * @return the HTTP result (OK, or NotAcceptable[list of Problems in JSON format])
    */
-  private def ingestConfigs(list: List[StdConfig], comment: String): Result = {
+  private def ingestConfigs(list: List[StdConfig]): Result = {
     import net.ceedubs.ficus.Ficus._
 
     // Note: The user may have selected a top level dir containing subdirs that use different schema versions,
