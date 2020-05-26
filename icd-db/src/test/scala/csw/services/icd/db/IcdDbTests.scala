@@ -47,13 +47,13 @@ class IcdDbTests extends AnyFunSuite {
     assert(envCtrl.prefix == "TEST.env.ctrl")
 
     val commands = db.query.getCommandModel(envCtrl).get
-    assert(commands.receive.size == 2)
+    assert(commands.receive.size == 4)
 
     assert(commands.receive.head.name == "ENVIRONMENTAL_CONTROL_INITIALIZE")
     assert(commands.receive.head.requirements.head == "INT-TEST-AOESW-0400")
 
-    assert(commands.receive.last.name == "ENVIRONMENTAL_CONTROL_STOP")
-    assert(commands.receive.last.requirements.head == "INT-TEST-AOESW-0405")
+    assert(commands.receive.tail.head.name == "ENVIRONMENTAL_CONTROL_STOP")
+    assert(commands.receive.tail.head.requirements.head == "INT-TEST-AOESW-0405")
 
     val publish   = db.query.getPublishModel(envCtrl).get
     val eventList = publish.eventList
