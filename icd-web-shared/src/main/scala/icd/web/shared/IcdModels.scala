@@ -332,7 +332,6 @@ object IcdModels {
    * @param description      a top level description of the subscribed items
    * @param eventList        list of subscribed events
    * @param observeEventList list of subscribed observe events
-   * @param alarmList        list of subscribed alarms
    */
   case class SubscribeModel(
       subsystem: String,
@@ -340,8 +339,7 @@ object IcdModels {
       description: String,
       eventList: List[SubscribeModelInfo],
       observeEventList: List[SubscribeModelInfo],
-      currentStateList: List[SubscribeModelInfo],
-      alarmList: List[SubscribeModelInfo]
+      currentStateList: List[SubscribeModelInfo]
   )
 
   /**

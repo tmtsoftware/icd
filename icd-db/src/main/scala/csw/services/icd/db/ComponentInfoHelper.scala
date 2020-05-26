@@ -95,11 +95,8 @@ class ComponentInfoHelper(displayWarnings: Boolean) {
         val currentStateList = m.currentStateList.map { t =>
           EventInfo(t, getSubscribers(query, prefix, t.name, t.description, CurrentStates))
         }
-        val alarmList = m.alarmList.map { al =>
-          AlarmInfo(al, getSubscribers(query, prefix, al.name, al.description, Alarms))
-        }
-        if (m.description.nonEmpty || eventList.nonEmpty || observeEventList.nonEmpty || alarmList.nonEmpty)
-          Some(Publishes(m.description, eventList, observeEventList, currentStateList, alarmList))
+        if (m.description.nonEmpty || eventList.nonEmpty || observeEventList.nonEmpty || m.alarmList.nonEmpty)
+          Some(Publishes(m.description, eventList, observeEventList, currentStateList, m.alarmList))
         else None
     }
   }
@@ -118,15 +115,15 @@ class ComponentInfoHelper(displayWarnings: Boolean) {
         t            <- query.getModels(si.subsystem, Some(si.component))
         publishModel <- t.publishModel
       } yield {
-        val (maybeEvent, maybeAlarm) = publishType match {
-          case Events        => (publishModel.eventList.find(t => t.name == si.name), None)
-          case ObserveEvents => (publishModel.observeEventList.find(t => t.name == si.name), None)
-          case CurrentStates => (publishModel.currentStateList.find(t => t.name == si.name), None)
-          case Alarms        => (None, publishModel.alarmList.find(a => a.name == si.name))
+        val maybeEvent = publishType match {
+          case Events        => publishModel.eventList.find(t => t.name == si.name)
+          case ObserveEvents => publishModel.observeEventList.find(t => t.name == si.name)
+          case CurrentStates => publishModel.currentStateList.find(t => t.name == si.name)
+          case Alarms => None
         }
-        DetailedSubscribeInfo(publishType, si, maybeEvent, maybeAlarm, t.componentModel, displayWarnings)
+        DetailedSubscribeInfo(publishType, si, maybeEvent, t.componentModel, displayWarnings)
       }
-      x.headOption.getOrElse(DetailedSubscribeInfo(publishType, si, None, None, None, displayWarnings))
+      x.headOption.getOrElse(DetailedSubscribeInfo(publishType, si, None, None, displayWarnings))
     }
 
     models.subscribeModel match {
@@ -134,8 +131,7 @@ class ComponentInfoHelper(displayWarnings: Boolean) {
       case Some(m) =>
         val subscribeInfo = m.eventList.map(getInfo(Events, _)) ++
           m.observeEventList.map(getInfo(ObserveEvents, _)) ++
-          m.currentStateList.map(getInfo(CurrentStates, _)) ++
-          m.alarmList.map(getInfo(Alarms, _))
+          m.currentStateList.map(getInfo(CurrentStates, _))
         val desc = m.description
         if (desc.nonEmpty || subscribeInfo.nonEmpty)
           Some(Subscribes(desc, subscribeInfo))

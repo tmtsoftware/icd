@@ -51,7 +51,6 @@ object JsonSupport {
   implicit val subscribeInfoFormat         = Json.format[SubscribeInfo]
   implicit val eventInfoFormat             = Json.format[EventInfo]
   implicit val alarmModelFormat            = Json.format[AlarmModel]
-  implicit val alarmInfoFormat             = Json.format[AlarmInfo]
   implicit val detailedSubscribeInfoFormat = Json.format[DetailedSubscribeInfo]
   implicit val publishesFormat             = Json.format[Publishes]
   implicit val subscribesFormat            = Json.format[Subscribes]
