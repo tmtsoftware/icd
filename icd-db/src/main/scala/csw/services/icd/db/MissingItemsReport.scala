@@ -29,11 +29,9 @@ object MissingItemsReport {
   }
 
   case class Items(
-      publishedAlarms: List[PublishedItemInfo],
       publishedEvents: List[PublishedItemInfo],
       publishedObserveEvents: List[PublishedItemInfo],
       publishedCurrentStates: List[PublishedItemInfo],
-      subscribedAlarms: List[SubscribedItemInfo],
       subscribedEvents: List[SubscribedItemInfo],
       subscribedObserveEvents: List[SubscribedItemInfo],
       subscribedCurrentStates: List[SubscribedItemInfo],
@@ -42,11 +40,9 @@ object MissingItemsReport {
       badComponentNames: Set[String]
   ) {
     def isEmpty: Boolean =
-      publishedAlarms.isEmpty &&
         publishedEvents.isEmpty &&
         publishedObserveEvents.isEmpty &&
         publishedCurrentStates.isEmpty &&
-        subscribedAlarms.isEmpty &&
         subscribedEvents.isEmpty &&
         subscribedObserveEvents.isEmpty &&
         subscribedCurrentStates.isEmpty &&
@@ -116,12 +112,10 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
         val publishModel           = models.publishModel
         val subscribeModel         = models.subscribeModel
         val commandModel           = models.commandModel
-        val publishedAlarms        = getPublishedItems(component, publishModel.map(_.alarmList.map(_.name)).getOrElse(Nil))
         val publishedEvents        = getPublishedItems(component, publishModel.map(_.eventList.map(_.name)).getOrElse(Nil))
         val publishedObserveEvents = getPublishedItems(component, publishModel.map(_.observeEventList.map(_.name)).getOrElse(Nil))
         val publishedCurrentStates = getPublishedItems(component, publishModel.map(_.currentStateList.map(_.name)).getOrElse(Nil))
 
-        val subscribedAlarms        = getSubscribedItems(component, subscribeModel.map(_.alarmList).getOrElse(Nil))
         val subscribedEvents        = getSubscribedItems(component, subscribeModel.map(_.eventList).getOrElse(Nil))
         val subscribedObserveEvents = getSubscribedItems(component, subscribeModel.map(_.observeEventList).getOrElse(Nil))
         val subscribedCurrentStates = getSubscribedItems(component, subscribeModel.map(_.currentStateList).getOrElse(Nil))
@@ -135,11 +129,9 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
         def getSubComp(i: SubscribedItemInfo)    = s"${i.subscriberSubsystem}.${i.subscriberComponent}"
 
         val compRefs =
-          publishedAlarms.map(getPubComp) ++
             publishedEvents.map(getPubComp) ++
             publishedObserveEvents.map(getPubComp) ++
             publishedCurrentStates.map(getPubComp) ++
-            subscribedAlarms.map(getSubPubComp) ++ subscribedAlarms.map(getSubComp) ++
             subscribedEvents.map(getSubPubComp) ++ subscribedEvents.map(getSubComp) ++
             subscribedObserveEvents.map(getSubPubComp) ++ subscribedObserveEvents.map(getSubComp) ++
             subscribedCurrentStates.map(getSubPubComp) ++ subscribedCurrentStates.map(getSubComp) ++
@@ -149,11 +141,9 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
         val badComponentNames = compRefs.filter(!compSet.contains(_)).toSet
 
         Items(
-          publishedAlarms,
           publishedEvents,
           publishedObserveEvents,
           publishedCurrentStates,
-          subscribedAlarms,
           subscribedEvents,
           subscribedObserveEvents,
           subscribedCurrentStates,
@@ -176,8 +166,6 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
 
     val items = getItems
 
-    val publishedAlarms           = items.flatMap(_.publishedAlarms)
-    val publishedAlarmMap         = publishedAlarms.map(a => a.key -> a).toMap
     val publishedEvents           = items.flatMap(_.publishedEvents)
     val publishedEventsMap        = publishedEvents.map(e => e.key -> e).toMap
     val publishedObserveEvents    = items.flatMap(_.publishedObserveEvents)
@@ -185,8 +173,6 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
     val publishedCurrentStates    = items.flatMap(_.publishedCurrentStates)
     val publishedCurrentStatesMap = publishedCurrentStates.map(e => e.key -> e).toMap
 
-    val subscribedAlarms           = items.flatMap(_.subscribedAlarms)
-    val subscribedAlarmsMap        = subscribedAlarms.map(a => a.key -> a).toMap
     val subscribedEvents           = items.flatMap(_.subscribedEvents)
     val subscribedEventsMap        = subscribedEvents.map(e => e.key -> e).toMap
     val subscribedObserveEvents    = items.flatMap(_.subscribedObserveEvents)
@@ -199,12 +185,10 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
     val sentCommands       = items.flatMap(_.sentCommands)
     val sentCommandsMap    = sentCommands.map(c => c.key -> c).toMap
 
-    val publishedAlarmsWithNoSubscribers        = getPubNoSub(publishedAlarms, subscribedAlarmsMap)
     val publishedEventsWithNoSubscribers        = getPubNoSub(publishedEvents, subscribedEventsMap)
     val publishedObserveEventsWithNoSubscribers = getPubNoSub(publishedObserveEvents, subscribedObserveEventsMap)
     val publishedCurrentStatesWithNoSubscribers = getPubNoSub(publishedCurrentStates, subscribedCurrentStatesMap)
 
-    val subscribedAlarmsWithNoPublisher        = getSubNoPub(subscribedAlarms, publishedAlarmMap)
     val subscribedEventsWithNoPublisher        = getSubNoPub(subscribedEvents, publishedEventsMap)
     val subscribedObserveEventsWithNoPublisher = getSubNoPub(subscribedObserveEvents, publishedObserveEventsMap)
     val subscribedCurrentStatesWithNoPublisher = getSubNoPub(subscribedCurrentStates, publishedCurrentStatesMap)
@@ -215,11 +199,9 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
     val badComponentNames = items.flatMap(_.badComponentNames).toSet
 
     Items(
-      publishedAlarmsWithNoSubscribers,
       publishedEventsWithNoSubscribers,
       publishedObserveEventsWithNoSubscribers,
       publishedCurrentStatesWithNoSubscribers,
-      subscribedAlarmsWithNoPublisher,
       subscribedEventsWithNoPublisher,
       subscribedObserveEventsWithNoPublisher,
       subscribedCurrentStatesWithNoPublisher,
@@ -309,11 +291,9 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
       ),
       body(
         h2("Missing Items"),
-        missingPubItemMarkup("Published Alarms with no Subscribers", missingItems.publishedAlarms),
         missingPubItemMarkup("Published Events with no Subscribers", missingItems.publishedEvents),
         missingPubItemMarkup("Published Observe Events with no Subscribers", missingItems.publishedObserveEvents),
         missingPubItemMarkup("Published Current States with no Subscribers", missingItems.publishedCurrentStates),
-        missingSubItemMarkup("Subscribed Alarms that are not Published Anywhere", missingItems.subscribedAlarms),
         missingSubItemMarkup("Subscribed Events that are not Published Anywhere", missingItems.subscribedEvents),
         missingSubItemMarkup("Subscribed Observe Events that are not Published Anywhere", missingItems.subscribedObserveEvents),
         missingSubItemMarkup("Subscribed CurrentStates that are not Published Anywhere", missingItems.subscribedCurrentStates),
@@ -403,12 +383,10 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
       System.exit(1)
     }
 
-    missingPubItemCsv(dir, "Published Alarms with no Subscribers", missingItems.publishedAlarms)
     missingPubItemCsv(dir, "Published Events with no Subscribers", missingItems.publishedEvents)
     missingPubItemCsv(dir, "Published Observe Events with no Subscribers", missingItems.publishedObserveEvents)
     missingPubItemCsv(dir, "Published Current States with no Subscribers", missingItems.publishedCurrentStates)
 
-    missingSubItemCsv(dir, "Subscribed Alarms that are not Published Anywhere", missingItems.subscribedAlarms)
     missingSubItemCsv(dir, "Subscribed Events that are not Published Anywhere", missingItems.subscribedEvents)
     missingSubItemCsv(dir, "Subscribed Observe Events that are not Published Anywhere", missingItems.subscribedObserveEvents)
     missingSubItemCsv(dir, "Subscribed Current States that are not Published Anywhere", missingItems.subscribedCurrentStates)
