@@ -5,7 +5,7 @@ import icd.web.shared._
 import scalatags.Text
 import Headings.idFor
 import HtmlMarkup.yesNo
-import icd.web.shared.IcdModels.{AttributeModel, ComponentModel, EventModel}
+import icd.web.shared.IcdModels.{AlarmModel, AttributeModel, ComponentModel, EventModel}
 
 /**
  * Handles converting ICD API from GFM to HTML
@@ -61,7 +61,7 @@ object IcdToHtml {
         scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss))
       ),
       body(
-        getTitleMarkup(titleInfo, titleId = "title"),
+        getTitleMarkup(titleInfo),
         div(cls := "pagebreakBefore"),
         h2("Table of Contents"),
         toc,
@@ -171,7 +171,7 @@ object IcdToHtml {
                   if (m.postconditions.isEmpty) div()
                   else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
                   raw(m.description),
-                  if (m.args.isEmpty) div() else parameterListMarkup(m.name, m.args, m.requiredArgs, nh)
+                  if (m.args.isEmpty) div() else parameterListMarkup(m.name, m.args, m.requiredArgs)
                 )
               case None => s.warning.map(msg => p(em(" Warning: ", msg)))
             }
@@ -232,9 +232,9 @@ object IcdToHtml {
             if (m.postconditions.isEmpty) div()
             else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
             raw(m.description),
-            parameterListMarkup(m.name, m.args, m.requiredArgs, nh),
+            parameterListMarkup(m.name, m.args, m.requiredArgs),
             p(strong("Completion Type: "), m.completionType),
-            resultTypeMarkup(m.resultType, nh),
+            resultTypeMarkup(m.resultType),
             if (m.completionConditions.isEmpty) div()
             else div(p(strong("Completion Conditions: "), ol(m.completionConditions.map(cc => li(raw(cc)))))),
             if (m.role.isEmpty) div()
@@ -253,7 +253,7 @@ object IcdToHtml {
     else typeStr
   }
 
-  private def resultTypeMarkup(attributesList: List[AttributeModel], nh: NumberedHeadings): Text.TypedTag[String] = {
+  private def resultTypeMarkup(attributesList: List[AttributeModel]): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (attributesList.isEmpty) div()
     else {
@@ -270,8 +270,7 @@ object IcdToHtml {
   private def parameterListMarkup(
       nameStr: String,
       attributesList: List[AttributeModel],
-      requiredArgs: List[String],
-      nh: NumberedHeadings
+      requiredArgs: List[String]
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (attributesList.isEmpty) div()
@@ -495,15 +494,11 @@ object IcdToHtml {
       }
     }
 
-    def publishAlarmListMarkup(alarmList: List[AlarmInfo]): Text.TypedTag[String] = {
+    def publishAlarmListMarkup(alarmList: List[AlarmModel]): Text.TypedTag[String] = {
       if (alarmList.isEmpty) div()
       else {
         div(
-          for (t <- alarmList) yield {
-            val m = t.alarmModel
-            val subscribers =
-              t.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
-            val subscriberInfo = span(strong(s"$subscriberStr: "), if (subscribers.isEmpty) "none" else subscribers)
+          for (m <- alarmList) yield {
             val headings       = List("Severity Levels", "Location", "Alarm Type", "Acknowledge", "Latched")
             val rowList = List(
               List(
@@ -517,7 +512,7 @@ object IcdToHtml {
             div(cls := "nopagebreak")(
               nh.H4(s"Alarm: ${m.name}", idFor(compName, "publishes", "Alarms", component.subsystem, compName, m.name)),
               if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
-              p(publisherInfo, ", ", subscriberInfo),
+              p(publisherInfo),
               raw(m.description),
               p(strong("Probable Cause: "), raw(m.probableCause)),
               p(strong("Operator Response: "), raw(m.operatorResponse)),

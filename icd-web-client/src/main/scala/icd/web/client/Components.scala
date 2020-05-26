@@ -482,9 +482,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
 
     // Returns a table row displaying more details for the given alarm
-    def makeAlarmDetailsRow(t: AlarmInfo) = {
+    def makeAlarmDetailsRow(m: AlarmModel) = {
       val headings = List("Severity Levels", "Location", "Alarm Type", "Acknowledge", "Latched")
-      val m        = t.alarmModel
       val rowList = List(
         List(m.severityLevels.mkString(", "), m.location, m.alarmType, yesNo(m.acknowledge), yesNo(m.latched))
       )
@@ -498,7 +497,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
 
     // Returns the markup for the published alarms
-    def publishAlarmListMarkup(alarmList: List[AlarmInfo]) = {
+    def publishAlarmListMarkup(alarmList: List[AlarmModel]) = {
       if (alarmList.isEmpty) div()
       else
         div(
@@ -508,22 +507,19 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             thead(
               tr(
                 th("Name"),
-                th("Description"),
-                th("Subscribers")
+                th("Description")
               )
             ),
             tbody(
-              for (t <- alarmList) yield {
-                val m          = t.alarmModel
-                val (btn, row) = hiddenRowMarkup(makeAlarmDetailsRow(t), 3)
+              for (m <- alarmList) yield {
+                val (btn, row) = hiddenRowMarkup(makeAlarmDetailsRow(m), 3)
                 List(
                   tr(
                     td(
                       Styles.attributeCell,
                       p(btn, a(name := idFor(compName, "publishes", "Alarms", component.subsystem, compName, m.name))(m.name))
                     ),
-                    td(raw(m.description)),
-                    td(p(t.subscribers.map(si => makeLinkForComponent(si.componentModel))))
+                    td(raw(m.description))
                   ),
                   row
                 )
@@ -807,7 +803,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Generates the markup for the commands section (description plus received and sent)
-  private def commandsMarkup(component: ComponentModel, maybeCommands: Option[Commands], forApi: Boolean) = {
+  private def commandsMarkup(component: ComponentModel, maybeCommands: Option[Commands]) = {
     import scalatags.JsDom.all._
     val compName = component.component
     maybeCommands match {
@@ -867,7 +863,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       raw(info.componentModel.description),
       publishMarkup(info.componentModel, info.publishes, forApi),
       subscribeMarkup(info.componentModel, info.subscribes),
-      commandsMarkup(info.componentModel, info.commands, forApi)
+      commandsMarkup(info.componentModel, info.commands)
     )
   }
 

@@ -89,11 +89,8 @@ object IcdComponentInfo {
         val currentStateList = m.currentStateList.map { t =>
           EventInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, CurrentStates, targetModelsList))
         }
-        val alarmList = m.alarmList.map { al =>
-          AlarmInfo(al, getSubscribers(subsystem, component, prefix, al.name, al.description, Alarms, targetModelsList))
-        }
-        if (eventList.nonEmpty || observeEventList.nonEmpty || alarmList.nonEmpty)
-          Some(Publishes(m.description, eventList, observeEventList, currentStateList, alarmList))
+        if (eventList.nonEmpty || observeEventList.nonEmpty || m.alarmList.nonEmpty)
+          Some(Publishes(m.description, eventList, observeEventList, currentStateList, m.alarmList))
         else None
     }
   }
@@ -106,7 +103,7 @@ object IcdComponentInfo {
    * @param prefix           the publisher component's prefix
    * @param name             simple name of the published item
    * @param desc             description of the item
-   * @param pubType          One of Event, ObserveEvent, Alarm.
+   * @param pubType          One of Event, ObserveEvent.
    * @param targetModelsList the target model objects for the ICD
    */
   private def getSubscribers(
@@ -142,7 +139,7 @@ object IcdComponentInfo {
         case Events        => subscribeModel.eventList
         case ObserveEvents => subscribeModel.observeEventList
         case CurrentStates => subscribeModel.currentStateList
-        case Alarms        => subscribeModel.alarmList
+        case Alarms        => Nil
       }
     }
 
@@ -172,13 +169,13 @@ object IcdComponentInfo {
         if componentModel.component == si.component && componentModel.subsystem == si.subsystem
         publishModel <- t.publishModel
       } yield {
-        val (maybeEvent, maybeAlarm) = publishType match {
-          case Events        => (publishModel.eventList.find(t => t.name == si.name), None)
-          case ObserveEvents => (publishModel.observeEventList.find(t => t.name == si.name), None)
-          case CurrentStates => (publishModel.currentStateList.find(t => t.name == si.name), None)
-          case Alarms        => (None, publishModel.alarmList.find(a => a.name == si.name))
+        val maybeEvent = publishType match {
+          case Events        => publishModel.eventList.find(t => t.name == si.name)
+          case ObserveEvents => publishModel.observeEventList.find(t => t.name == si.name)
+          case CurrentStates => publishModel.currentStateList.find(t => t.name == si.name)
+          case Alarms        => None
         }
-        DetailedSubscribeInfo(publishType, si, maybeEvent, maybeAlarm, Some(componentModel), warnings = true)
+        DetailedSubscribeInfo(publishType, si, maybeEvent, Some(componentModel))
       }
       x.headOption
     }
@@ -188,8 +185,7 @@ object IcdComponentInfo {
       case Some(m) =>
         val subscribeInfo = (m.eventList.map(getInfo(Events, _)) ++
           m.observeEventList.map(getInfo(ObserveEvents, _)) ++
-          m.currentStateList.map(getInfo(CurrentStates, _)) ++
-          m.alarmList.map(getInfo(Alarms, _))).flatten
+          m.currentStateList.map(getInfo(CurrentStates, _))).flatten
         val desc = m.description
         if (subscribeInfo.nonEmpty)
           Some(Subscribes(desc, subscribeInfo))
@@ -283,8 +279,7 @@ object IcdComponentInfo {
         sent.subsystem,
         sent.component,
         Some(recv),
-        query.getComponentModel(sent.subsystem, sent.component),
-        warnings = true
+        query.getComponentModel(sent.subsystem, sent.component)
       )
     }
     result

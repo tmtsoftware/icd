@@ -557,8 +557,7 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
         List(
           subscribeModel.eventList.map(i => Subscribed(component, i, Events, getPath(i))),
           subscribeModel.observeEventList.map(i => Subscribed(component, i, ObserveEvents, getPath(i))),
-          subscribeModel.currentStateList.map(i => Subscribed(component, i, CurrentStates, getPath(i))),
-          subscribeModel.alarmList.map(i => Subscribed(component, i, Alarms, getPath(i)))
+          subscribeModel.currentStateList.map(i => Subscribed(component, i, CurrentStates, getPath(i)))
         ).flatten
       case None => Nil
     }
