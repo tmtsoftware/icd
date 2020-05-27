@@ -22,7 +22,7 @@ object AlarmModelBsonParser {
       alarmType = doc.getAsOpt[String]("alarmType").getOrElse(""),
       probableCause = HtmlMarkup.gfmToHtml(doc.getAsOpt[String]("probableCause").getOrElse("")),
       operatorResponse = HtmlMarkup.gfmToHtml(doc.getAsOpt[String]("operatorResponse").getOrElse("")),
-      acknowledge = doc.getAsOpt[Boolean]("acknowledge").getOrElse(false),
+      autoAck = doc.getAsOpt[Boolean]("autoAck").getOrElse(false),
       latched = doc.getAsOpt[Boolean]("latched").getOrElse(false)
     )
   }

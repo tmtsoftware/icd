@@ -499,13 +499,13 @@ object IcdToHtml {
       else {
         div(
           for (m <- alarmList) yield {
-            val headings       = List("Severity Levels", "Location", "Alarm Type", "Acknowledge", "Latched")
+            val headings       = List("Severity Levels", "Location", "Alarm Type", "Auto Ack", "Latched")
             val rowList = List(
               List(
                 m.severityLevels.mkString(", "),
                 m.location,
                 m.alarmType,
-                yesNo(m.acknowledge),
+                yesNo(m.autoAck),
                 yesNo(m.latched)
               )
             )

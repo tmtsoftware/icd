@@ -119,7 +119,7 @@ object IcdModels {
    *                         Discrepancy, Instrument, RateChange, RecipeDriven, Safety, Statistical, System)
    * @param probableCause    The probable cause for each level or for all levels
    * @param operatorResponse Instructions or information to help the operator respond to the alarm
-   * @param acknowledge      Does this alarm require an acknowledge by the operator?
+   * @param autoAck      Does this alarm require an autoAck by the operator?
    * @param latched          Should this alarm be latched?
    */
   case class AlarmModel(
@@ -131,7 +131,7 @@ object IcdModels {
       alarmType: String,
       probableCause: String,
       operatorResponse: String,
-      acknowledge: Boolean,
+      autoAck: Boolean,
       latched: Boolean
   ) extends NameDesc
 
