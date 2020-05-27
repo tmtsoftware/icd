@@ -37,6 +37,8 @@ __Note: If you are using modelVersion 2.0, please update and run: `icd-git --ing
 
 - Updated icd-web-server.sh script (used to run on public server)
 
+- Removed unneeded subsystems
+
 ## [ICD v1.1.1] - 2020-04-20
 
 ### Added
