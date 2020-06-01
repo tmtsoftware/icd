@@ -1,13 +1,16 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-## [ICD v1.2.1] - 2020-05-26
+## [ICD v1.2.1] - 2020-06-01
 
 ### Added
 
 - Added error message for duplicate component name in different directories
 
 - Added simple auth/login dialog for use on public servers (Use -Dicd.isPublicServer=true)
+
+- Added code to automatically tag API GitHub repos when an API is published (For example: "v1.2"),
+  to make it easier to compare API versions 
 
 ### Changed
 
