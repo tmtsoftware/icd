@@ -24,6 +24,7 @@ class IcdGitManagerTests extends AnyFunSuite with BeforeAndAfter {
   before {
     repoDir = Files.createTempDirectory("test").toFile
     git = Git.init.setDirectory(repoDir).setBare(true).call
+//    csw.services.icd.github.parent.uri
     System.setProperty("csw.services.icd.github.uri", repoDir.toURI.toString)
   }
 
@@ -42,7 +43,7 @@ class IcdGitManagerTests extends AnyFunSuite with BeforeAndAfter {
     assert(IcdGitManager.list(subsysList, IcdGitManager.getAllVersions._2).isEmpty)
 
     // Publish API for TEST subsystem
-    val i1 = IcdGitManager.publish("TEST", majorVersion = false, user, password, comment)
+    val i1 = IcdGitManager.publish("TEST", majorVersion = false, user, password, comment, updateTag=false)
     assert(i1.version == "1.0")
     assert(i1.comment == comment)
     assert(i1.user == user)
@@ -59,7 +60,7 @@ class IcdGitManagerTests extends AnyFunSuite with BeforeAndAfter {
     assert(api.comment == comment)
 
     // Publish API for TEST2 subsystem
-    val i2 = IcdGitManager.publish("TEST2", majorVersion = false, user, password, comment + " 2")
+    val i2 = IcdGitManager.publish("TEST2", majorVersion = false, user, password, comment + " 2", updateTag=false)
     assert(i2.version == "1.0")
     assert(i2.comment == comment + " 2")
     assert(i2.user == user)

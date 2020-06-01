@@ -9,6 +9,8 @@ import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.db.{ApiVersions, IcdDb, IcdDbDefaults, IcdVersionManager, IcdVersions, Subsystems}
 import icd.web.shared.{ApiVersionInfo, GitHubCredentials, IcdVersion, IcdVersionInfo, PublishInfo, SubsystemWithVersion}
 import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.lib.ObjectId
+import org.eclipse.jgit.revwalk.RevWalk
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.Json
@@ -248,7 +250,7 @@ object IcdGitManager {
       val maybeIcd = icds.find(_.icdVersion == icdVersion)
       if (maybeIcd.isDefined) {
         // Write the file without the given ICD version
-        val icdEntry = maybeIcd.get
+        val icdEntry    = maybeIcd.get
         val icdVersions = IcdVersions(List(s, t), icds.filter(_.icdVersion != icdVersion))
         val jsValue     = Json.toJson(icdVersions)
         val json        = Json.prettyPrint(jsValue)
@@ -258,7 +260,7 @@ object IcdGitManager {
         updateHistoryFile(git, gitWorkDir)
         git.push.setCredentialsProvider(new UsernamePasswordCredentialsProvider(user, password)).call()
         // Remove any cached PDFs for this version
-        val sv = SubsystemWithVersion(subsystem, icdEntry.versions.headOption, None)
+        val sv       = SubsystemWithVersion(subsystem, icdEntry.versions.headOption, None)
         val targetSv = SubsystemWithVersion(target, icdEntry.versions.reverse.headOption, None)
         maybeCache.foreach(_.deleteIcd(sv, targetSv))
       }
@@ -277,9 +279,11 @@ object IcdGitManager {
    * @param user     the GitHub user
    * @param password the GitHub password
    * @param comment  the commit comment
+   * @param updateTag if true, update the version tag on GitHub
    * @return the entry for the removed API, if found
    */
-  def unpublish(sv: SubsystemAndVersion, user: String, password: String, comment: String): Option[ApiVersionInfo] = {
+  def unpublish(sv: SubsystemAndVersion, user: String, password: String, comment: String,
+                updateTag: Boolean = true): Option[ApiVersionInfo] = {
     import ApiVersions._
 
     def unpublishRelatedIcds(gitWorkDir: File): Unit = {
@@ -321,12 +325,15 @@ object IcdGitManager {
             git.commit().setOnly(apiFileName).setMessage(comment).call
             updateHistoryFile(git, gitWorkDir)
             git.push.setCredentialsProvider(new UsernamePasswordCredentialsProvider(user, password)).call()
+            git.close()
             // Remove any cached PDFs for this version
             maybeCache.foreach(_.deleteApi(SubsystemWithVersion(sv.subsystem, sv.maybeVersion, None)))
+            // Remove the version tag from the GitHub repo
+            if (updateTag)
+              tag(ApiVersions(sv.subsystem, List(api)), user, password, comment, (s: String) => println(s), remove = true)
           }
           maybeApi
         }
-      git.close()
       maybeApiEntry.map(e => ApiVersionInfo(sv.subsystem, e.version, e.user, e.comment, e.date))
     } finally {
       deleteDirectoryRecursively(gitWorkDir)
@@ -341,8 +348,11 @@ object IcdGitManager {
    * @param user         the GitHub user
    * @param password     the GitHub password
    * @param comment      the commit comment
+   * @param updateTag    if true, update the version tag on GitHub
+   * @return an object describing the published API
    */
-  def publish(subsystem: String, majorVersion: Boolean, user: String, password: String, comment: String): ApiVersionInfo = {
+  def publish(subsystem: String, majorVersion: Boolean, user: String, password: String, comment: String,
+              updateTag: Boolean = true): ApiVersionInfo = {
     // Checkout the icds repo in a temp dir
     val gitWorkDir = Files.createTempDirectory("icds").toFile
     try {
@@ -378,11 +388,79 @@ object IcdGitManager {
       updateHistoryFile(git, gitWorkDir)
       git.push.setCredentialsProvider(new UsernamePasswordCredentialsProvider(user, password)).call()
       git.close()
+      if (updateTag)
+        tag(ApiVersions(subsystem, List(apiEntry)), user, password, comment, (s: String) => println(s))
       ApiVersionInfo(subsystem, apiEntry.version, user, comment, date)
     } finally {
       deleteDirectoryRecursively(gitWorkDir)
     }
   }
+
+  /**
+   * Updates the tags for the given subsystem's API (or all APIs) on GitHub to match the published versions
+   *
+   * @param apiVersions  the versions of the API to tag
+   * @param user         the GitHub user
+   * @param password     the GitHub password
+   * @param comment      the commit comment
+   * @param feedback     function to display messages while working
+   * @param remove       if true, remove the tag
+   */
+  def tag(
+      apiVersions: ApiVersions,
+      user: String,
+      password: String,
+      comment: String,
+      feedback: String => Unit,
+      remove: Boolean = false
+  ): Unit = {
+    // Checkout the subsystem repo in a temp dir
+    val subsystem  = apiVersions.subsystem
+    val url        = getSubsystemGitHubUrl(subsystem)
+    val gitWorkDir = Files.createTempDirectory("apis").toFile
+    try {
+      val git  = Git.cloneRepository.setDirectory(gitWorkDir).setURI(url).call()
+      val walk = new RevWalk(git.getRepository)
+      apiVersions.apis.reverse.foreach { e =>
+        val commit = walk.parseCommit(ObjectId.fromString(e.commit))
+        if (remove) {
+          feedback(s"Removing tag $subsystem: v${e.version}")
+          // TODO: Does not seem to work
+          git.tagDelete().setTags(s"v${e.version}").call()
+        } else {
+          feedback(s"Tagging $subsystem: v${e.version}")
+          git.tag().setForceUpdate(true).setMessage(comment).setName(s"v${e.version}").setObjectId(commit).call()
+        }
+      }
+      git.push().setPushTags().setCredentialsProvider(new UsernamePasswordCredentialsProvider(user, password)).call()
+      git.close()
+    } finally {
+      deleteDirectoryRecursively(gitWorkDir)
+    }
+  }
+
+//  /**
+//   * Updates the tags for the given subsystem's API (or all APIs) on GitHub to match the published versions
+//   *
+//   * @param maybeSubsystem if defined, tag this subsystem's API repo, otherwise tag all released API repos
+//   * @param user         the GitHub user
+//   * @param password     the GitHub password
+//   * @param comment      the commit comment
+//   * @param feedback       function to display messages while working
+//   */
+//  def tag(maybeSubsystem: Option[String], user: String, password: String, comment: String, feedback: String => Unit): Unit = {
+//    // Checkout the icds repo in a temp dir
+//    val gitWorkDir = Files.createTempDirectory("icds").toFile
+//    try {
+//      Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call.close()
+//      val (apis, _) = getAllVersions(gitWorkDir)
+//      apis.filter(api => maybeSubsystem.isEmpty || maybeSubsystem.contains(api.subsystem)).foreach { api =>
+//        tag(api, user, password, comment, feedback)
+//      }
+//    } finally {
+//      deleteDirectoryRecursively(gitWorkDir)
+//    }
+//  }
 
   /**
    * Updates the History.md file on the git repo to contain a readable release history in markdown format
@@ -662,12 +740,12 @@ object IcdGitManager {
   // This is used to speed up the check if a repo is empty. If the commit id changes,
   // then we assume somebody added something.
   private val emptyRepos = Map(
-    "CIS"    -> "7f42a42871015c5e5bdaea64f49bd26619217314",
-    "CLN"    -> "29eefda09df5b1415ca69724ee131aafadcb2f87",
-    "CRYO"   -> "73714a1bee9fc38c4a14ab4e9e5d3bfa731c7136",
-    "CSW"    -> "0be40700817fb3ffd4393aba58207a696ae16321",
-    "DMS"    -> "f9b257eded51a2daf1b13b28ef16a781f21882c7",
-    "DPS"    -> "132c3aacfb1f13bed0751bf4ead3ae14827b4092",
+    "CIS"  -> "7f42a42871015c5e5bdaea64f49bd26619217314",
+    "CLN"  -> "29eefda09df5b1415ca69724ee131aafadcb2f87",
+    "CRYO" -> "73714a1bee9fc38c4a14ab4e9e5d3bfa731c7136",
+    "CSW"  -> "0be40700817fb3ffd4393aba58207a696ae16321",
+    "DMS"  -> "f9b257eded51a2daf1b13b28ef16a781f21882c7",
+    "DPS"  -> "132c3aacfb1f13bed0751bf4ead3ae14827b4092",
 //    "FMCS"   -> "cc40c0589cbcfe299ed2166de85f2d6a83743643",
 //    "GMS"    -> "ed5023527d099a042bbddd1c85d9ecdec9bf4942",
     "LGSF"   -> "b01dfa73a1f3e5c677f819aa855e8158e12c1bc5",
@@ -675,14 +753,14 @@ object IcdGitManager {
     "NSCU"   -> "5f26e4dd18bee60f0c631e625d4b02558dccd3e1",
 //    "PFCS"   -> "a01b55689f5d36436c7018acfa0888f598bf6a7d",
 //    "PSFR"   -> "21413dae346a90dba6e3dfb1fca53dab96d46d31",
-    "REFR"   -> "e57687a18f61875deea19cb1ba83ceca3d1fc9a5",
+    "REFR" -> "e57687a18f61875deea19cb1ba83ceca3d1fc9a5",
 //    "RPG"    -> "a62a7d5ee0354d5402124bfc56a88c46f9845979",
 //    "RTC"    -> "45a2a564c0e57fe628e10214aa9f0924bfc4e8fe",
-    "SCMS"   -> "13916c6a742b3f37f8c6a131a1ff9291edf3f781",
-    "SOSS"   -> "48684f6dc2a54d290c69edbfdd4909528a2b27a7",
-    "SUM"   -> "2864dbc7ec2dbdc5762405d57683c1c97a31cd12",
+    "SCMS" -> "13916c6a742b3f37f8c6a131a1ff9291edf3f781",
+    "SOSS" -> "48684f6dc2a54d290c69edbfdd4909528a2b27a7",
+    "SUM"  -> "2864dbc7ec2dbdc5762405d57683c1c97a31cd12",
 //    "TINS"   -> "4acb42a07e098f5acd3998a638ca11184b6e3110",
-    "WFOS"   -> "330391bb97a21ff5c888594517019cb65f5c34fc"
+    "WFOS" -> "330391bb97a21ff5c888594517019cb65f5c34fc"
   )
 
   case class SubsystemGitInfo(commitId: String, isEmpty: Boolean)

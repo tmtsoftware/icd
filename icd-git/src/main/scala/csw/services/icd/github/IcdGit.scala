@@ -1,7 +1,7 @@
 package csw.services.icd.github
 
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
-import csw.services.icd.db.{IcdDb, IcdDbDefaults, IcdDbException, IcdVersionManager, Subsystems}
+import csw.services.icd.db.{IcdDb, IcdDbDefaults, IcdDbException, Subsystems}
 import icd.web.shared.BuildInfo
 
 /**
@@ -27,6 +27,7 @@ object IcdGit extends App {
       interactive: Boolean = false,
       publish: Boolean = false,
       unpublish: Boolean = false,
+//      tag: Boolean = false,
       majorVersion: Boolean = false,
       user: Option[String] = None,
       password: Option[String] = None,
@@ -68,6 +69,10 @@ object IcdGit extends App {
     opt[Unit]("unpublish") action { (_, c) =>
       c.copy(unpublish = true)
     } text "Deletes the entry for the given API or ICD version (Use together with --subsystems, --icdversion)"
+
+//    opt[Unit]("tag") action { (_, c) =>
+//      c.copy(tag = true)
+//    } text "Updates the tags for the selected subsystem's GitHub repo to match the published releases"
 
     opt[Unit]("major") action { (_, c) =>
       c.copy(majorVersion = true)
@@ -127,6 +132,7 @@ object IcdGit extends App {
     if (options.list) list(options)
     if (options.unpublish) unpublish(options)
     if (options.publish) publish(options)
+//    if (options.tag) tag(options)
     if (options.ingest) ingest(options)
     System.exit(0)
   }
@@ -174,7 +180,7 @@ object IcdGit extends App {
     }
 
     // Get the user name and password and return the pair
-    def readCredentials(opts: Options): (Option[String], Option[String]) = {
+    def readCredentials(): (Option[String], Option[String]) = {
       val user =
         if (options.user.isDefined) options.user
         else {
@@ -227,7 +233,7 @@ object IcdGit extends App {
     val subsysList       = (maybeSubsys ++ maybeTarget ++ rest).toList
     val icdVersion       = if (options.unpublish) readIcdVersion(options.copy(subsystems = subsysList)) else options.icdVersion
     val needsPassword    = options.publish || options.unpublish
-    val (user, password) = if (needsPassword) readCredentials(options) else (options.user, options.password)
+    val (user, password) = if (needsPassword) readCredentials() else (options.user, options.password)
     val comment          = if (options.publish) readComment() else options.comment
     options.copy(subsystems = subsysList, icdVersion = icdVersion, user = user, password = password, comment = comment)
   }
@@ -338,6 +344,16 @@ object IcdGit extends App {
     }
   }
 
+//  // Update the GitHub tags for the selected subsystem
+//  private def tag(options: Options): Unit = {
+//    if (options.password.isEmpty) error("Missing required --password option")
+//    val user     = options.user.getOrElse(defaultUser)
+//    val password = options.password.get
+//    val comment  = options.comment.getOrElse("No comment")
+//    val maybeSubsystem = options.subsystems.headOption.map(_.subsystem)
+//    IcdGitManager.tag(maybeSubsystem, user, password, comment, (s: String) => println(s))
+//  }
+
   // Handle the --ingest option
   private def ingest(options: Options): Unit = {
     try {
@@ -349,8 +365,8 @@ object IcdGit extends App {
         options.subsystems.foreach(sv => db.query.dropSubsystem(sv.subsystem))
       IcdGitManager.ingest(db, options.subsystems, (s: String) => println(s), allApiVersions, allIcdVersions)
     } catch {
-      case ex: IcdDbException => error("Failed to connect to mongodb. Make sure mongod server is running.")
-      case ex: Exception      =>
+      case _: IcdDbException => error("Failed to connect to mongodb. Make sure mongod server is running.")
+      case ex: Exception =>
         ex.printStackTrace()
         error(s"Unable to drop the existing ICD database: $ex")
     }
