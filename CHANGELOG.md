@@ -1,5 +1,6 @@
 # Change Log
 All notable changes to this project will be documented in this file.
+See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
 ## [ICD v1.2.1] - 2020-06-01
 
