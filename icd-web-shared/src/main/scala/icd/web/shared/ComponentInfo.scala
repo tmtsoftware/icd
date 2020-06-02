@@ -140,7 +140,11 @@ case class DetailedSubscribeInfo(
 
   val warning: Option[String] =
     if (!warnings || eventModel.nonEmpty) None
-    else {
+    else if (publisher.isEmpty) {
+      Some(
+        s"Component ${subscribeModelInfo.subsystem}.${subscribeModelInfo.component} was not found"
+      )
+    } else {
       Some(
         s"${subscribeModelInfo.subsystem}.${subscribeModelInfo.component} does not publish $itemType: ${subscribeModelInfo.name}"
       )
@@ -188,7 +192,9 @@ case class SentCommandInfo(
 
   val warning: Option[String] =
     if (!warnings || receiveCommandModel.nonEmpty) None
-    else {
+    else if (receiver.isEmpty) {
+      Some(s"Component $subsystem.$component was not found")
+    } else {
       Some(s"$subsystem.$component does not define configuration: $name")
     }
 }
