@@ -25,6 +25,8 @@ __Note: If you are using modelVersion 2.0, please update and run: `icd-git --ing
 
 - Removed `-Dicd.allowUpload=false` option, replaced with `-Dicd.isPublicServer=true`, which controls 
   the features displayed when running the icd web server on a public server. 
+  
+- Improved warning message displayed in HTML/PDF output for missing components
 
 ## [ICD v1.1.2] - 2020-05-14
 
