@@ -89,8 +89,8 @@ object IcdComponentInfo {
         val currentStateList = m.currentStateList.map { t =>
           EventInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, CurrentStates, targetModelsList))
         }
-        if (eventList.nonEmpty || observeEventList.nonEmpty || m.alarmList.nonEmpty)
-          Some(Publishes(m.description, eventList, observeEventList, currentStateList, m.alarmList))
+        if (eventList.nonEmpty || observeEventList.nonEmpty)
+          Some(Publishes(m.description, eventList, observeEventList, currentStateList, Nil))
         else None
     }
   }
