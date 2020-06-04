@@ -56,6 +56,7 @@ class PdfCache(cacheDir: File) {
       data: Array[Byte]
   ): Unit = {
     if (softwareVersion != defaultSoftwareVersion && sv.maybeVersion.isDefined && sv.maybeComponent.isEmpty && !searchAllSubsystems) {
+      dir.mkdirs()
       val file = getFile(sv, maybeOrientation)
       val out  = new FileOutputStream(file)
       out.write(data)
@@ -98,6 +99,7 @@ class PdfCache(cacheDir: File) {
     if (softwareVersion != defaultSoftwareVersion && sv.maybeVersion.isDefined
         && targetSv.maybeVersion.isDefined && sv.maybeComponent.isEmpty
         && targetSv.maybeComponent.isEmpty && !searchAllSubsystems) {
+      dir.mkdirs()
       val file = getFile(sv, targetSv, maybeOrientation)
       val out  = new FileOutputStream(file)
       out.write(data)

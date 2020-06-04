@@ -51,7 +51,7 @@ POST        /uploadFiles                                controllers.FileUploadCo
 GET         /diff/:subsystem/:versions                  controllers.Application.diff(subsystem, versions)
 
 # Returns OK(true) if this is a public icd web server (upload not allowed,publish allowed, password protected)
-GET         /isPublicServer                            controllers.Application.isPublicServer
+GET         /isPublicServer                             controllers.Application.isPublicServer
 
 # Gets PublishInfo for every subsystem
 GET         /getPublishInfo                             controllers.Application.getPublishInfo(subsystem: Option[String])
@@ -63,7 +63,7 @@ POST        /checkGitHubCredentials                     controllers.Application.
 POST        /checkCredentials                           controllers.Application.checkCredentials()
 
 # Checks if the user is already logged in
-GET        /checkForCookie                              controllers.Application.checkForCookie()
+GET         /checkForCookie                             controllers.Application.checkForCookie()
 
 # Logs out of the web app
 POST        /logout                                     controllers.Application.logout()
@@ -85,6 +85,8 @@ POST        /updatePublished                            controllers.Application.
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                               controllers.Assets.versioned(file)
+
+GET         /robots.txt                                 controllers.Assets.at(path="/public", file="robots.txt")
 
 # WebJars
 ->          /webjars                                    webjars.Routes
