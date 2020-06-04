@@ -101,7 +101,7 @@ object IcdVersionManager {
   }
 
   /**
-   * Represents the difference between two versions of an subsystem or component part in the db
+   * Represents the difference between two versions of a subsystem or component part in the db
    * (parts have names that end with "icd", "component", "publish", "subscribe", "command")
    *
    * @param path  the path to a part of the subsystem or component (for example: "NFIRAOS.lgsWfs.publish")
