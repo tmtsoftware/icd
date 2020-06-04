@@ -8,6 +8,10 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 
 - Fixed a bug that requires rebuilding the icd database. This is done automatically when you run icdwebserver,
   or you can run `icd-git --ingest` to do it manually. 
+  
+- Added the following subsystems back to the allowed list for the 2.0 model file schema: ENC, STR, M2S, M3S, TINS
+  and created the related repos under https://github.com/tmt-icd/.
+
 
 ## [ICD v1.2.1] - 2020-06-01
 
