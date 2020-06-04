@@ -2,7 +2,7 @@
 
 This project contains support for creating, validating and viewing TMT subsystem APIs and ICDs (Interface Control Document between two TMT subsystems).
 
-*You can find a detailed description of the IDBS software [here](https://docushare.tmt.org/docushare/dsweb/Get/Document-50189/OSW%20TN018-ICDDatabaseUserManual_REL02.pdf).*
+*You can find a detailed description of the IDBS software [here](https://docushare.tmt.org/docushare/dsweb/Get/Version-111751/OSW%20TN018-ICDDatabaseUserManual_REL04.pdf).*
 
 Subsystem APIs are described in model files. The model files are validated using [JSON Schema](http://json-schema.org/),
 however the schema descriptions as well as the model files may also be written in
