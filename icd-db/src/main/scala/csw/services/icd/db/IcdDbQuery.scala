@@ -137,7 +137,7 @@ object IcdDbQuery {
  * Support for querying the ICD database
  * (Note: This class works on the current, unpublished versions. See IcdVersionManager for use with versions.)
  *
- * @param db the icds2 DB handle
+ * @param db the icd DB handle
  * @param admin the admin DB handle
  * @param maybeSubsystems if defined, limit the list of subsystems searched
  */
@@ -470,7 +470,7 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
     tmpPaths.foreach { tmpCollName =>
       if (fatalErrors.isEmpty) {
         val collName = baseName(tmpCollName, IcdDbDefaults.tmpCollSuffix)
-        admin.renameCollection(dbName, tmpCollName, collName, dropExisting = true).await
+          admin.renameCollection(dbName, tmpCollName, collName, dropExisting = true).await
       } else {
         val coll = db.collection[BSONCollection](tmpCollName)
         coll.drop(failIfNotFound = false).await

@@ -2,6 +2,13 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
+## [ICD v1.3.0] - 2020-06-04
+
+### Changed
+
+- Fixed a bug that requires rebuilding the icd database. This is done automatically when you run icdwebserver,
+  or you can run `icd-git --ingest` to do it manually. 
+
 ## [ICD v1.2.1] - 2020-06-01
 
 ### Added

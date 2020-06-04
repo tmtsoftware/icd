@@ -36,6 +36,16 @@ object IcdDbDefaults {
     } yield db
     database.await
   }
+
+  // Deletes the given mongo db, if it exists
+  def deleteDatabase(host: String, port: Int, dbName: String): Unit = {
+    try {
+      connectToDatabase(host, port, dbName).drop().await
+    } catch {
+      case _: Exception =>
+    }
+  }
+
 }
 
 //noinspection DuplicatedCode
@@ -306,6 +316,9 @@ case class IcdDb(
     host: String = IcdDbDefaults.defaultHost,
     port: Int = IcdDbDefaults.defaultPort
 ) {
+  // Cleanup databases from earlier releases
+  IcdDbDefaults.deleteDatabase(host, port, "icds")
+  IcdDbDefaults.deleteDatabase(host, port, "icds2")
 
   val db: DefaultDB    = IcdDbDefaults.connectToDatabase(host, port, dbName)
   val admin: DefaultDB = IcdDbDefaults.connectToDatabase(host, port, "admin")

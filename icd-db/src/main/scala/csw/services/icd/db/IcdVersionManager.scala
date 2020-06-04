@@ -8,7 +8,12 @@ import diffson.playJson._
 import diffson.lcs._
 import diffson.jsonpatch._
 import diffson.jsonpatch.lcsdiff.remembering._
-import csw.services.icd.db.parser.{ComponentModelBsonParser, PublishModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
+import csw.services.icd.db.parser.{
+  ComponentModelBsonParser,
+  PublishModelBsonParser,
+  SubscribeModelBsonParser,
+  SubsystemModelBsonParser
+}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONString}
 import reactivemongo.api.{Cursor, WriteConcern}
@@ -546,7 +551,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       val id              = obj.getAsOpt[BSONObjectID](idKey).get
       val versionCollName = versionCollectionName(path)
       val exists          = collectionNames.contains(versionCollName)
-      if (!exists || diff(db(versionCollName), obj).isDefined) {
+      val lastVersion = if (!exists || diff(db(versionCollName), obj).isDefined) {
         // Update version history
         val v = db.collection[BSONCollection](versionCollName)
         if (exists) {
@@ -557,8 +562,10 @@ case class IcdVersionManager(query: IcdDbQuery) {
         // increment version for unpublished working copy
         val mod = BSONDocument("$set" -> BSONDocument(versionKey -> (version + 1)))
         coll.update.one(queryAny, mod).await
-      }
-      (path, version)
+        version
+      } else
+        version - 1
+      (path, lastVersion)
     }
 
     // Add to collection of published subsystem versions
