@@ -287,7 +287,7 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
     val markup = html(
       head(
         scalatags.Text.tags2.title("Missing Items"),
-        scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss))
+        scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss(options.fontSize)))
       ),
       body(
         h2("Missing Items"),

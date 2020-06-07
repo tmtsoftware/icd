@@ -1,13 +1,13 @@
 package csw.services.icd.db
 
 import java.io.{ByteArrayOutputStream, File, FileOutputStream}
-import java.nio.file.Files
 
 import csw.services.icd.{IcdToPdf, PdfCache}
 import csw.services.icd.html.{IcdToHtml, NumberedHeadings}
 import icd.web.shared.TitleInfo.unpublished
 import icd.web.shared.{SubsystemWithVersion, _}
 import IcdToHtml._
+
 
 /**
  * Creates an HTML or PDF document for a subsystem, component or ICD based on data from the database
@@ -59,8 +59,9 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
    * Returns an HTML document describing the given components in the given subsystem.
    *
    * @param sv the selected subsystem and version
+   * @param maybeFontSize optional base font size for body text
    */
-  def getApiAsHtml(sv: SubsystemWithVersion): Option[String] = {
+  def getApiAsHtml(sv: SubsystemWithVersion, maybeFontSize: Option[Int]): Option[String] = {
     // Use caching, since we need to look at all the components multiple times, in order to determine who
     // subscribes, who calls commands, etc.
     val maybeSubsystems = if (searchAllSubsystems) None else Some(List(sv.subsystem))
@@ -71,7 +72,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
       subsystemInfo <- getSubsystemInfo(sv)
     } yield {
       val infoList = getComponentInfo(versionManager, sv, None)
-      IcdToHtml.getApiAsHtml(Some(subsystemInfo), infoList)
+      IcdToHtml.getApiAsHtml(Some(subsystemInfo), infoList, maybeFontSize)
     }
     markup.map(_.render)
   }
@@ -87,11 +88,14 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
    * @param sv              the selected subsystem and version
    * @param targetSv        the target subsystem and version
    * @param maybeIcdVersion optional ICD version, to be displayed in the title
+   * @param maybeFontSize   optional base font size for body text
+   *
    */
   def getIcdAsHtml(
       sv: SubsystemWithVersion,
       targetSv: SubsystemWithVersion,
-      maybeIcdVersion: Option[IcdVersion]
+      maybeIcdVersion: Option[IcdVersion],
+      maybeFontSize: Option[Int]
   ): Option[String] = {
 
     // Use caching, since we need to look at all the components multiple times, in order to determine who
@@ -129,10 +133,10 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
       html(
         head(
           scalatags.Text.tags2.title(titleInfo.title),
-          scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss))
+          scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss(maybeFontSize)))
         ),
         body(
-          getTitleMarkup(titleInfo, titleId = "title"),
+          getTitleMarkup(titleInfo),
           div(cls := "pagebreakBefore"),
           h2("Table of Contents"),
           toc,
@@ -155,6 +159,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
    * @param maybeTargetComponent optional name of target component (default is to use all target components)
    * @param maybeIcdVersion      optional icd version (overrides source and target subsystem versions)
    * @param maybeOrientation     If set, should be "portrait" or "landscape" (default: landscape)
+   * @param maybeFontSize        optional base font size for body text
    * @param file                 the file in which to save the document (should end with .html or .pdf)
    */
   def saveToFile(
@@ -164,6 +169,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
       maybeTargetComponent: Option[String],
       maybeIcdVersion: Option[String],
       maybeOrientation: Option[String],
+      maybeFontSize: Option[Int],
       file: File
   ): Unit = {
 
@@ -219,9 +225,9 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
       out.close()
     } else {
       val maybeHtml = if (maybeTarg.isDefined) {
-        getIcdAsHtml(subsys, maybeTarg.get, maybeIcdV)
+        getIcdAsHtml(subsys, maybeTarg.get, maybeIcdV, maybeFontSize)
       } else {
-        getApiAsHtml(subsys)
+        getApiAsHtml(subsys, maybeFontSize)
       }
 
       maybeHtml match {
@@ -229,13 +235,13 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
           file.getName.split('.').drop(1).lastOption match {
             case Some("html") =>
               saveAsHtml(html)
-            case Some("pdf")  =>
+            case Some("pdf") =>
               saveAsPdf(html)
-              maybeCache.foreach{
+              maybeCache.foreach {
                 _.save(subsys, maybeTarg, maybeOrientation, searchAllSubsystems, file)
               }
 
-            case _            => println(s"Unsupported output format: Expected *.html or *.pdf")
+            case _ => println(s"Unsupported output format: Expected *.html or *.pdf")
           }
         case None =>
           println(s"Failed to generate $file. You might need to run: 'icd-git --ingest' first to update the database.")
@@ -248,14 +254,15 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
    * data, if successful.
    * @param sv the subsystem with version
    * @param maybeOrientation optional orientation (default: "landscape")
+   * @param maybeBaseFontSize optional base font size for body text
    * @return byte array with the PDF data
    */
-  def saveApiAsPdf(sv: SubsystemWithVersion, maybeOrientation: Option[String]): Option[Array[Byte]] = {
+  def saveApiAsPdf(sv: SubsystemWithVersion, maybeOrientation: Option[String], maybeBaseFontSize: Option[Int]): Option[Array[Byte]] = {
     val maybeCachedBytes = maybeCache.flatMap(_.getApi(sv, maybeOrientation, searchAllSubsystems))
     if (maybeCachedBytes.isDefined)
       maybeCachedBytes
     else
-      getApiAsHtml(sv).map { html =>
+      getApiAsHtml(sv, maybeBaseFontSize).map { html =>
         val out = new ByteArrayOutputStream()
         IcdToPdf.saveAsPdf(out, html, showLogo = true, maybeOrientation = maybeOrientation)
         val bytes = out.toByteArray
@@ -268,13 +275,14 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
       sv: SubsystemWithVersion,
       targetSv: SubsystemWithVersion,
       iv: Option[IcdVersion],
-      maybeOrientation: Option[String]
+      maybeOrientation: Option[String],
+      maybeFontSize: Option[Int]
   ): Option[Array[Byte]] = {
     val maybeCachedBytes = maybeCache.flatMap(_.getIcd(sv, targetSv, maybeOrientation, searchAllSubsystems))
     if (maybeCachedBytes.isDefined)
       maybeCachedBytes
     else
-      getIcdAsHtml(sv, targetSv, iv).map { html =>
+      getIcdAsHtml(sv, targetSv, iv,maybeFontSize).map { html =>
         val out = new ByteArrayOutputStream()
         IcdToPdf.saveAsPdf(out, html, showLogo = true, maybeOrientation = maybeOrientation)
         val bytes = out.toByteArray

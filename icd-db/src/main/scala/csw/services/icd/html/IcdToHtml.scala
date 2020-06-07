@@ -5,6 +5,7 @@ import icd.web.shared._
 import scalatags.Text
 import Headings.idFor
 import HtmlMarkup.yesNo
+import csw.services.icd.db.IcdDbDefaults
 import icd.web.shared.IcdModels.{AlarmModel, AttributeModel, ComponentModel, EventModel}
 
 /**
@@ -13,20 +14,28 @@ import icd.web.shared.IcdModels.{AlarmModel, AttributeModel, ComponentModel, Eve
 //noinspection DuplicatedCode
 object IcdToHtml {
 
-  def getCss: String = {
+  def getCss(maybeBaseFontSize: Option[Int]): String = {
+    val fontIncr = maybeBaseFontSize.getOrElse(IcdDbDefaults.defaultFontSize) - IcdDbDefaults.defaultFontSize
     val stream = getClass.getResourceAsStream("/icd.css")
-    val lines  = scala.io.Source.fromInputStream(stream).getLines()
+    val lines = scala.io.Source.fromInputStream(stream).getLines().map { line =>
+      // change font size
+      if (line.stripLeading().startsWith("font-size: ") && line.stripTrailing().endsWith("px;")) {
+        val fontSize = line.substring(line.indexOf(": ")+2).dropRight(3).toInt + fontIncr
+        s"    font-size: ${fontSize}px;"
+      } else line
+    }
     lines.mkString("\n")
   }
 
   /**
-   * Returns an HTML tags describing the given components in the given subsystem.
+   * Returns HTML describing the given components in the given subsystem.
    *
    * @param maybeSubsystemInfo contains info about the subsystem, if known
    * @param infoList           details about each component and what it publishes, subscribes to, etc.
    * @return the html tags
    */
-  def getApiAsHtml(maybeSubsystemInfo: Option[SubsystemInfo], infoList: List[ComponentInfo]): Text.TypedTag[String] = {
+  def getApiAsHtml(maybeSubsystemInfo: Option[SubsystemInfo], infoList: List[ComponentInfo],
+                   maybeBaseFontSize: Option[Int]): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
     val nh = new NumberedHeadings
@@ -58,7 +67,7 @@ object IcdToHtml {
     html(
       head(
         scalatags.Text.tags2.title(titleInfo.title),
-        scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss))
+        scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss(maybeBaseFontSize)))
       ),
       body(
         getTitleMarkup(titleInfo),
@@ -499,7 +508,7 @@ object IcdToHtml {
       else {
         div(
           for (m <- alarmList) yield {
-            val headings       = List("Severity Levels", "Location", "Alarm Type", "Auto Ack", "Latched")
+            val headings = List("Severity Levels", "Location", "Alarm Type", "Auto Ack", "Latched")
             val rowList = List(
               List(
                 m.severityLevels.mkString(", "),

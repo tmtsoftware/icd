@@ -22,6 +22,8 @@ object IcdDbDefaults {
   val defaultHost: String   = conf.getString("icd.db.host")
   val defaultDbName: String = conf.getString("icd.db.name")
 
+  val defaultFontSize: Int      = 10
+
   // Suffix used for temp collections while ingesting model files into the DB
   val tmpCollSuffix = ".tmp"
 
@@ -141,6 +143,10 @@ object IcdDb extends App {
       c.copy(orientation = Some(x))
     } text "For PDF output: The page orientation: portrait or landscape (default: landscape)"
 
+    opt[Int]("fontSize") valueName "" action { (x, c) =>
+      c.copy(fontSize = Some(x))
+    } text "For PDF or HTML file output: The base font size in px for body text (default: 10)"
+
     help("help")
     version("version")
   }
@@ -217,6 +223,7 @@ object IcdDb extends App {
         options.targetComponent,
         options.icdVersion,
         options.orientation,
+        options.fontSize,
         file
       )
     }
@@ -298,7 +305,7 @@ object IcdDb extends App {
       val maybeSv = options.subsystem
         .map(SubsystemAndVersion(_))
         .map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, options.component))
-      ArchivedItemsReport(db, maybeSv).saveToFile(file, options.orientation)
+      ArchivedItemsReport(db, maybeSv).saveToFile(file, options.orientation, options.fontSize)
     }
   }
 }

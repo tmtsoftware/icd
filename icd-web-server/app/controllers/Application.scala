@@ -45,7 +45,7 @@ object ApplicationData {
       if (configuration.get[Boolean]("icd.isPublicServer")) {
         request.cookies.get(cookieName) match {
           case Some(cookie) if configuration.get[String](cookieName) == cookie.value => block(request)
-          case _    => Future(Results.Unauthorized("Invalid user token"))
+          case _                                                                     => Future(Results.Unauthorized("Invalid user token"))
         }
       } else {
         block(request)
@@ -201,7 +201,8 @@ class Application @Inject()(
       maybeTargetVersion: Option[String],
       maybeTargetComponent: Option[String],
       maybeIcdVersion: Option[String],
-      maybeOrientation: Option[String]
+      maybeOrientation: Option[String],
+      maybeBaseFontSize: Option[Int]
   ): Action[AnyContent] = Action { implicit request =>
     // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
     // if only the subsystem or target versions were given, use those (default to latest versions)
@@ -223,7 +224,7 @@ class Application @Inject()(
     }
 
     val icdPrinter = IcdDbPrinter(db, searchAllSubsystems = false, maybeCache)
-    icdPrinter.saveIcdAsPdf(sv, targetSv, iv, maybeOrientation) match {
+    icdPrinter.saveIcdAsPdf(sv, targetSv, iv, maybeOrientation, maybeBaseFontSize) match {
       case Some(bytes) =>
         Ok(bytes).as("application/pdf")
       case None =>
@@ -239,19 +240,21 @@ class Application @Inject()(
    * @param maybeComponent optional component (default: all in subsystem)
    * @param searchAll if true, search all components for API dependencies
    * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
+   * @param maybeBaseFontSize optional base font size for body text
    */
   def apiAsPdf(
       subsystem: String,
       maybeVersion: Option[String],
       maybeComponent: Option[String],
       searchAll: Option[Boolean],
-      maybeOrientation: Option[String]
+      maybeOrientation: Option[String],
+      maybeBaseFontSize: Option[Int]
   ) =
     Action { implicit request =>
       val sv                  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
       val searchAllSubsystems = searchAll.getOrElse(false)
       val icdPrinter          = IcdDbPrinter(db, searchAllSubsystems, maybeCache)
-      icdPrinter.saveApiAsPdf(sv, maybeOrientation) match {
+      icdPrinter.saveApiAsPdf(sv, maybeOrientation, maybeBaseFontSize) match {
         case Some(bytes) =>
           Ok(bytes).as("application/pdf")
         case None =>
@@ -266,17 +269,19 @@ class Application @Inject()(
    * @param maybeVersion   the source subsystem's version (default: current)
    * @param maybeComponent optional component (default: all in subsystem)
    * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
+   * @param maybeBaseFontSize base font size for body text (default: 10)
    */
   def archivedItemsReport(
       subsystem: String,
       maybeVersion: Option[String],
       maybeComponent: Option[String],
-      maybeOrientation: Option[String]
+      maybeOrientation: Option[String],
+      maybeBaseFontSize: Option[Int]
   ) =
     authAction { implicit request =>
       val out  = new ByteArrayOutputStream()
       val sv   = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-      val html = ArchivedItemsReport(db, Some(sv)).makeReport()
+      val html = ArchivedItemsReport(db, Some(sv)).makeReport(maybeBaseFontSize)
       IcdToPdf.saveAsPdf(out, html, showLogo = false, maybeOrientation = maybeOrientation)
       val bytes = out.toByteArray
       Ok(bytes).as("application/pdf")
@@ -285,11 +290,12 @@ class Application @Inject()(
   /**
    * Returns the archived items report (PDF) for all current subsystems
    * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
+   * @param maybeBaseFontSize base font size for body text (default: 10)
    */
-  def archivedItemsReportFull(maybeOrientation: Option[String]) =
+  def archivedItemsReportFull(maybeOrientation: Option[String], maybeBaseFontSize: Option[Int]) =
     authAction { implicit request =>
       val out  = new ByteArrayOutputStream()
-      val html = ArchivedItemsReport(db, None).makeReport()
+      val html = ArchivedItemsReport(db, None).makeReport(maybeBaseFontSize)
       IcdToPdf.saveAsPdf(out, html, showLogo = false, maybeOrientation = maybeOrientation)
       val bytes = out.toByteArray
       Ok(bytes).as("application/pdf")

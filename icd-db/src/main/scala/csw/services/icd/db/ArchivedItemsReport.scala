@@ -105,7 +105,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion])
   }
 
   // Generates the HTML for the report
-  def makeReport(): String = {
+  def makeReport(maybeBaseFontSize: Option[Int]): String = {
     import scalatags.Text.all._
 
     def firstParagraph(s: String): String = {
@@ -119,7 +119,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion])
     val markup = html(
       head(
         scalatags.Text.tags2.title(title),
-        scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss))
+        scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss(maybeBaseFontSize)))
       ),
       body(
         h2(title),
@@ -174,7 +174,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion])
   /**
    * Saves the report in HTML or PDF, depending on the file suffix
    */
-  def saveToFile(file: File, maybeOrientation: Option[String]): Unit = {
+  def saveToFile(file: File, maybeOrientation: Option[String], maybeBaseFontSize: Option[Int]): Unit = {
 
     def saveAsHtml(html: String): Unit = {
       val out = new FileOutputStream(file)
@@ -185,7 +185,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion])
     def saveAsPdf(html: String): Unit =
       IcdToPdf.saveAsPdf(file, html, showLogo = false, maybeOrientation = maybeOrientation)
 
-    val html = makeReport()
+    val html = makeReport(maybeBaseFontSize)
     file.getName.split('.').drop(1).lastOption match {
       case Some("html") => saveAsHtml(html)
       case Some("pdf")  => saveAsPdf(html)
