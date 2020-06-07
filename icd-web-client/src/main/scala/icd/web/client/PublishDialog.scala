@@ -66,13 +66,13 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
       disabled := true,
       onclick := publishButtonClicked(unpublish) _,
       attr("data-toggle") := "modal",
-      attr("data-target") := "#basicModal"
+      attr("data-target") := "#publishModal"
     )(s).render
   }
 
   // Makes the popup confirmation for publish (unpublish)
   private def makePublishModal(): JsDom.TypedTag[Div] = {
-    div(cls := "modal fade", id := "basicModal", tabindex := "-1", role := "dialog", style := "padding-top: 130px")(
+    div(cls := "modal fade", id := "publishModal", tabindex := "-1", role := "dialog", style := "padding-top: 130px")(
       div(cls := "modal-dialog")(
         div(cls := "modal-content")(
           div(cls := "modal-header")(

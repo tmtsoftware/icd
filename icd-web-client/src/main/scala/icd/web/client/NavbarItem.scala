@@ -2,6 +2,9 @@ package icd.web.client
 
 import org.scalajs.dom
 import org.scalajs.dom._
+import org.scalajs.dom.html.Div
+import org.scalajs.dom.raw.HTMLInputElement
+import scalatags.JsDom
 
 /**
  * A simple navbar item with the given label.
@@ -13,6 +16,98 @@ import org.scalajs.dom._
 case class NavbarItem(labelStr: String, tip: String, listener: () => Unit) extends Displayable {
   import scalatags.JsDom.all._
   private val item = li(a(onclick := listener, title := tip)(labelStr)).render
+
+  // Returns the HTML markup for the navbar item
+  def markup(): Element = item
+
+  def hide(): Unit = item.classList.add("hide")
+}
+
+/**
+ * A navbar item with the given label that displays a popup with PDF options.
+ *
+ * @param labelStr the label to display
+ * @param tip the tool tip to display when hovering over the item
+ * @param listener called when the item is clicked with (orientation, fontSize)
+ */
+case class NavbarPdfItem(labelStr: String, tip: String, listener: (String, Int) => Unit) extends Displayable {
+  import scalatags.JsDom.all._
+
+  private def pdfModalListener(): Unit = {
+    val orientation = document
+      .querySelectorAll("input[name='orientation']:checked")
+      .map(elem => elem.asInstanceOf[HTMLInputElement].value)
+      .toList
+      .head
+    val fontSize = document
+      .querySelectorAll("input[name='fontSize']:checked")
+      .map(elem => elem.asInstanceOf[HTMLInputElement].value)
+      .toList
+      .head
+      .toInt
+    listener(orientation, fontSize)
+  }
+
+  // Makes the popup with options for generating the PDF
+  private def makePdfModal(): JsDom.TypedTag[Div] = {
+    div(cls := "modal fade", id := "pdfModal", tabindex := "-1", role := "dialog", style := "padding-top: 130px")(
+      div(cls := "modal-dialog")(
+        div(cls := "modal-content")(
+          div(cls := "modal-header")(
+            button(`type` := "button", cls := "close", attr("data-dismiss") := "modal")(raw("&times;")),
+            h4(cls := "modal-title")("PDF Options")
+          ),
+          div(cls := "modal-body")(
+            form(
+              h5(s"Orientation:"),
+              div(cls := "radio")(
+                label(input(`type` := "radio", name := "orientation", value := "portrait"))("portrait")
+              ),
+              div(cls := "radio")(
+                label(input(`type` := "radio", name := "orientation", value := "landscape", checked))("landscape")
+              ),
+              p(),
+              hr,
+              p(),
+              h5(s"Font Size:"),
+              div(cls := "radio")(
+                label(input(`type` := "radio", name := "fontSize", value := "10", checked))("Default")
+              ),
+              div(cls := "radio")(
+                label(input(`type` := "radio", name := "fontSize", value := "12"))("L")
+              ),
+              div(cls := "radio")(
+                label(input(`type` := "radio", name := "fontSize", value := "14"))("XL")
+              ),
+              div(cls := "radio")(
+                label(input(`type` := "radio", name := "fontSize", value := "16"))("XXL")
+              )
+            )
+          ),
+          div(cls := "modal-footer")(
+            button(`type` := "button", cls := "btn btn-default", attr("data-dismiss") := "modal")("Cancel"),
+            button(
+              onclick := pdfModalListener _,
+              id := "confirmPdfOptionsButton",
+              `type` := "button",
+              cls := "btn btn-primary",
+              attr("data-dismiss") := "modal"
+            )("Apply")
+          )
+        )
+      )
+    )
+  }
+
+  private val item = li(
+    makePdfModal(),
+    a(
+      href := "#",
+      title := tip,
+      attr("data-toggle") := "modal",
+      attr("data-target") := "#pdfModal"
+    )(labelStr)
+  ).render
 
   // Returns the HTML markup for the navbar item
   def markup(): Element = item

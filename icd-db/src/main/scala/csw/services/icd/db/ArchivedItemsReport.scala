@@ -105,7 +105,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion])
   }
 
   // Generates the HTML for the report
-  def makeReport(maybeBaseFontSize: Option[Int]): String = {
+  def makeReport(maybeFontSize: Option[Int]): String = {
     import scalatags.Text.all._
 
     def firstParagraph(s: String): String = {
@@ -119,7 +119,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion])
     val markup = html(
       head(
         scalatags.Text.tags2.title(title),
-        scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss(maybeBaseFontSize)))
+        scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss(maybeFontSize)))
       ),
       body(
         h2(title),

@@ -254,15 +254,15 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
    * data, if successful.
    * @param sv the subsystem with version
    * @param maybeOrientation optional orientation (default: "landscape")
-   * @param maybeBaseFontSize optional base font size for body text
+   * @param maybeFontSize optional base font size for body text
    * @return byte array with the PDF data
    */
-  def saveApiAsPdf(sv: SubsystemWithVersion, maybeOrientation: Option[String], maybeBaseFontSize: Option[Int]): Option[Array[Byte]] = {
+  def saveApiAsPdf(sv: SubsystemWithVersion, maybeOrientation: Option[String], maybeFontSize: Option[Int]): Option[Array[Byte]] = {
     val maybeCachedBytes = maybeCache.flatMap(_.getApi(sv, maybeOrientation, searchAllSubsystems))
     if (maybeCachedBytes.isDefined)
       maybeCachedBytes
     else
-      getApiAsHtml(sv, maybeBaseFontSize).map { html =>
+      getApiAsHtml(sv, maybeFontSize).map { html =>
         val out = new ByteArrayOutputStream()
         IcdToPdf.saveAsPdf(out, html, showLogo = true, maybeOrientation = maybeOrientation)
         val bytes = out.toByteArray

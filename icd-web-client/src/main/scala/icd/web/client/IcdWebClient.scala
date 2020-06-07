@@ -57,13 +57,11 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   private val orientations = List("portrait", "landscape")
 
-  private val pdfItem =
-    NavbarDropDownItem("PDF", "Generate and display a PDF for the API or ICD", orientations, makePdf)
+  private val pdfItem = NavbarPdfItem("PDF", "Generate and display a PDF for the API or ICD", makePdf)
 
-  private val archiveItem = NavbarDropDownItem(
+  private val archiveItem = NavbarPdfItem(
     "Archive",
     "Generate and display an 'Archived Items' report for the selected subsystem (or all subsystems)",
-    orientations,
     makeArchivedItemsReport
   )
 
@@ -546,7 +544,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   // Gets a PDF of the currently selected ICD or subsystem API
-  private def makePdf(orientation: String): Unit = {
+  private def makePdf(orientation: String, fontSize: Int): Unit = {
     val maybeSv =
       if (currentView == StatusView)
         statusDialog.getSubsystemWithVersion
@@ -556,13 +554,13 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion
       val maybeIcdVersion = selectDialog.icdChooser.getSelectedIcdVersion.map(_.icdVersion)
       val searchAll       = selectDialog.searchAllSubsystems()
-      val uri             = ClientRoutes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll, orientation)
+      val uri             = ClientRoutes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll, orientation, fontSize)
       dom.window.open(uri) // opens in new window or tab
     }
   }
 
   // Gets a PDF with an Archived Items report for the currently selected subsystem API
-  private def makeArchivedItemsReport(orientation: String): Unit = {
+  private def makeArchivedItemsReport(orientation: String, fontSize: Int): Unit = {
     val maybeSv =
       if (currentView == StatusView)
         statusDialog.getSubsystemWithVersion
@@ -570,9 +568,9 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
     val uri =
       if (maybeSv.isDefined)
-        ClientRoutes.archivedItemsReport(maybeSv.get, orientation)
+        ClientRoutes.archivedItemsReport(maybeSv.get, orientation, fontSize)
       else
-        ClientRoutes.archivedItemsReportFull(orientation)
+        ClientRoutes.archivedItemsReportFull(orientation, fontSize)
     dom.window.open(uri) // opens in new window or tab
   }
 }

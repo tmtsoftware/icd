@@ -21,7 +21,8 @@ object ClientRoutes {
       maybeTargetVersion: Option[String] = None,
       maybeTargetCompName: Option[String] = None,
       maybeIcdVersion: Option[String] = None,
-      maybeOrientation: Option[String] = None
+      maybeOrientation: Option[String] = None,
+      maybeFontSize: Option[Int] = None
   ): String = {
     val versionAttr         = maybeVersion.map(v => s"version=$v")
     val componentAttr       = maybeComponent.map(c => s"component=$c")
@@ -30,8 +31,9 @@ object ClientRoutes {
     val targetComponentAttr = maybeTargetCompName.map(c => s"targetComponent=$c")
     val icdVersionAttr      = maybeIcdVersion.map(v => s"icdVersion=$v")
     val orientationAttr     = maybeOrientation.map(o => s"orientation=$o")
+    val fontSizeAttr        = maybeFontSize.map(n => s"fontSize=$n")
     val attrs =
-      (versionAttr ++ componentAttr ++ searchAllAttr ++ targetVersionAttr ++ targetComponentAttr ++ icdVersionAttr ++ orientationAttr)
+      (versionAttr ++ componentAttr ++ searchAllAttr ++ targetVersionAttr ++ targetComponentAttr ++ icdVersionAttr ++ orientationAttr ++ fontSizeAttr)
         .mkString("&")
     if (attrs.isEmpty) "" else s"?$attrs"
   }
@@ -102,6 +104,7 @@ object ClientRoutes {
    * @param icdVersion optional ICD version
    * @param searchAllSubsystems if true, search all subsystems in the database for references, subscribers, etc.
    * @param orientation portrait or landscape orientation
+   * @param fontSize size of base body font (default 10)
    * @return the URL path to use
    */
   def icdAsPdf(
@@ -109,10 +112,11 @@ object ClientRoutes {
       maybeTargetSv: Option[SubsystemWithVersion],
       icdVersion: Option[String],
       searchAllSubsystems: Boolean,
-      orientation: String
+      orientation: String,
+      fontSize: Int
   ): String = {
     maybeTargetSv match {
-      case None => apiAsPdf(sv, searchAllSubsystems, orientation)
+      case None => apiAsPdf(sv, searchAllSubsystems, orientation, fontSize)
       case Some(targetSv) =>
         val attrs = getAttrs(
           sv.maybeVersion,
@@ -121,7 +125,8 @@ object ClientRoutes {
           targetSv.maybeVersion,
           targetSv.maybeComponent,
           icdVersion,
-          maybeOrientation = Some(orientation)
+          maybeOrientation = Some(orientation),
+          maybeFontSize = Some(fontSize)
         )
         s"/icdAsPdf/${sv.subsystem}/${targetSv.subsystem}$attrs"
     }
@@ -133,8 +138,14 @@ object ClientRoutes {
    * @param sv       the subsystem
    * @return the URL path to use
    */
-  def archivedItemsReport(sv: SubsystemWithVersion, orientation: String): String = {
-    val attrs = getAttrs(sv.maybeVersion, sv.maybeComponent, searchAllSubsystems = false, maybeOrientation = Some(orientation))
+  def archivedItemsReport(sv: SubsystemWithVersion, orientation: String, fontSize: Int): String = {
+    val attrs = getAttrs(
+      sv.maybeVersion,
+      sv.maybeComponent,
+      searchAllSubsystems = false,
+      maybeOrientation = Some(orientation),
+      maybeFontSize = Some(fontSize)
+    )
     s"/archivedItemsReport/${sv.subsystem}$attrs"
   }
 
@@ -143,8 +154,8 @@ object ClientRoutes {
    *
    * @return the URL path to use
    */
-  def archivedItemsReportFull(orientation: String): String = {
-    s"/archivedItemsReportFull?orientation=$orientation"
+  def archivedItemsReportFull(orientation: String, fontSize: Int): String = {
+    s"/archivedItemsReportFull?orientation=$orientation,fontSize=$fontSize"
   }
 
   /**
@@ -155,8 +166,14 @@ object ClientRoutes {
    * @param orientation portrait or landscape orientation
    * @return the URL path to use
    */
-  def apiAsPdf(sv: SubsystemWithVersion, searchAllSubsystems: Boolean, orientation: String): String = {
-    val attrs = getAttrs(sv.maybeVersion, sv.maybeComponent, searchAllSubsystems, maybeOrientation = Some(orientation))
+  def apiAsPdf(sv: SubsystemWithVersion, searchAllSubsystems: Boolean, orientation: String, fontSize: Int): String = {
+    val attrs = getAttrs(
+      sv.maybeVersion,
+      sv.maybeComponent,
+      searchAllSubsystems,
+      maybeOrientation = Some(orientation),
+      maybeFontSize = Some(fontSize)
+    )
     s"/apiAsPdf/${sv.subsystem}$attrs"
   }
 

@@ -269,19 +269,19 @@ class Application @Inject()(
    * @param maybeVersion   the source subsystem's version (default: current)
    * @param maybeComponent optional component (default: all in subsystem)
    * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
-   * @param maybeBaseFontSize base font size for body text (default: 10)
+   * @param maybeFontSize base font size for body text (default: 10)
    */
   def archivedItemsReport(
       subsystem: String,
       maybeVersion: Option[String],
       maybeComponent: Option[String],
       maybeOrientation: Option[String],
-      maybeBaseFontSize: Option[Int]
+      maybeFontSize: Option[Int]
   ) =
     authAction { implicit request =>
       val out  = new ByteArrayOutputStream()
       val sv   = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-      val html = ArchivedItemsReport(db, Some(sv)).makeReport(maybeBaseFontSize)
+      val html = ArchivedItemsReport(db, Some(sv)).makeReport(maybeFontSize)
       IcdToPdf.saveAsPdf(out, html, showLogo = false, maybeOrientation = maybeOrientation)
       val bytes = out.toByteArray
       Ok(bytes).as("application/pdf")
@@ -290,12 +290,12 @@ class Application @Inject()(
   /**
    * Returns the archived items report (PDF) for all current subsystems
    * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
-   * @param maybeBaseFontSize base font size for body text (default: 10)
+   * @param maybeFontSize base font size for body text (default: 10)
    */
-  def archivedItemsReportFull(maybeOrientation: Option[String], maybeBaseFontSize: Option[Int]) =
+  def archivedItemsReportFull(maybeOrientation: Option[String], maybeFontSize: Option[Int]) =
     authAction { implicit request =>
       val out  = new ByteArrayOutputStream()
-      val html = ArchivedItemsReport(db, None).makeReport(maybeBaseFontSize)
+      val html = ArchivedItemsReport(db, None).makeReport(maybeFontSize)
       IcdToPdf.saveAsPdf(out, html, showLogo = false, maybeOrientation = maybeOrientation)
       val bytes = out.toByteArray
       Ok(bytes).as("application/pdf")
