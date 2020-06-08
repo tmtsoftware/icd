@@ -214,9 +214,9 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
 
     val maybeCachedBytes = if (isPdf) {
       if (maybeTarg.isDefined)
-        maybeCache.flatMap(_.getIcd(subsys, maybeTarg.get, maybeOrientation, searchAllSubsystems))
+        maybeCache.flatMap(_.getIcd(subsys, maybeTarg.get, maybeOrientation, maybeFontSize, searchAllSubsystems))
       else
-        maybeCache.flatMap(_.getApi(subsys, maybeOrientation, searchAllSubsystems))
+        maybeCache.flatMap(_.getApi(subsys, maybeOrientation, maybeFontSize, searchAllSubsystems))
     } else None
 
     if (maybeCachedBytes.isDefined) {
@@ -238,7 +238,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
             case Some("pdf") =>
               saveAsPdf(html)
               maybeCache.foreach {
-                _.save(subsys, maybeTarg, maybeOrientation, searchAllSubsystems, file)
+                _.save(subsys, maybeTarg, maybeOrientation, maybeFontSize, searchAllSubsystems, file)
               }
 
             case _ => println(s"Unsupported output format: Expected *.html or *.pdf")
@@ -258,7 +258,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
    * @return byte array with the PDF data
    */
   def saveApiAsPdf(sv: SubsystemWithVersion, maybeOrientation: Option[String], maybeFontSize: Option[Int]): Option[Array[Byte]] = {
-    val maybeCachedBytes = maybeCache.flatMap(_.getApi(sv, maybeOrientation, searchAllSubsystems))
+    val maybeCachedBytes = maybeCache.flatMap(_.getApi(sv, maybeOrientation, maybeFontSize, searchAllSubsystems))
     if (maybeCachedBytes.isDefined)
       maybeCachedBytes
     else
@@ -266,7 +266,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
         val out = new ByteArrayOutputStream()
         IcdToPdf.saveAsPdf(out, html, showLogo = true, maybeOrientation = maybeOrientation)
         val bytes = out.toByteArray
-        maybeCache.foreach(_.saveApi(sv, maybeOrientation, searchAllSubsystems, bytes))
+        maybeCache.foreach(_.saveApi(sv, maybeOrientation, maybeFontSize, searchAllSubsystems, bytes))
         bytes
       }
   }
@@ -278,7 +278,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
       maybeOrientation: Option[String],
       maybeFontSize: Option[Int]
   ): Option[Array[Byte]] = {
-    val maybeCachedBytes = maybeCache.flatMap(_.getIcd(sv, targetSv, maybeOrientation, searchAllSubsystems))
+    val maybeCachedBytes = maybeCache.flatMap(_.getIcd(sv, targetSv, maybeOrientation, maybeFontSize, searchAllSubsystems))
     if (maybeCachedBytes.isDefined)
       maybeCachedBytes
     else
@@ -286,7 +286,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
         val out = new ByteArrayOutputStream()
         IcdToPdf.saveAsPdf(out, html, showLogo = true, maybeOrientation = maybeOrientation)
         val bytes = out.toByteArray
-        maybeCache.foreach(_.saveIcd(sv, targetSv, maybeOrientation, searchAllSubsystems, bytes))
+        maybeCache.foreach(_.saveIcd(sv, targetSv, maybeOrientation, maybeFontSize, searchAllSubsystems, bytes))
         bytes
       }
   }

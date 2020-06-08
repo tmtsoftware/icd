@@ -2,6 +2,16 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
+## [ICD v1.3.1] - 2020-06-08
+
+### Added
+
+- Added icd-db command line option to increase font size for PDFs.
+
+### Changed
+
+- Changed PDF and Archive buttons to display a popup with options for orientation and font size.
+
 ## [ICD v1.3.0] - 2020-06-04
 
 ### Changed

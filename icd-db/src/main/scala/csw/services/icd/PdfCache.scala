@@ -18,24 +18,40 @@ class PdfCache(cacheDir: File) {
     dir.mkdirs()
 
   // Gets the file used to store the given API version
-  private def getFile(sv: SubsystemWithVersion, maybeOrientation: Option[String]): File = {
-    val name = s"${sv.subsystem}-${sv.maybeVersion.get}-${maybeOrientation.getOrElse("landscape")}.pdf"
+  private def getFile(
+      sv: SubsystemWithVersion,
+      maybeOrientation: Option[String],
+      maybeFontSize: Option[Int]
+  ): File = {
+    val name = s"${sv.subsystem}-${sv.maybeVersion.get}-${maybeOrientation.getOrElse("landscape")}-${maybeFontSize
+      .getOrElse(10)}.pdf"
     new File(dir, name)
   }
 
   // Gets the file used to store the ICD between the two subsystem versions
-  private def getFile(sv: SubsystemWithVersion, targetSv: SubsystemWithVersion, maybeOrientation: Option[String]): File = {
+  private def getFile(
+      sv: SubsystemWithVersion,
+      targetSv: SubsystemWithVersion,
+      maybeOrientation: Option[String],
+      maybeFontSize: Option[Int]
+  ): File = {
     val name =
-      s"${sv.subsystem}-${sv.maybeVersion.get}--${targetSv.subsystem}-${targetSv.maybeVersion.get}-${maybeOrientation.getOrElse("landscape")}.pdf"
+      s"${sv.subsystem}-${sv.maybeVersion.get}--${targetSv.subsystem}-${targetSv.maybeVersion.get}-${maybeOrientation.getOrElse("landscape")}-${maybeFontSize
+        .getOrElse(10)}.pdf"
     new File(dir, name)
   }
 
   // Gets the PDF data for the given API version
-  def getApi(sv: SubsystemWithVersion, maybeOrientation: Option[String], searchAllSubsystems: Boolean): Option[Array[Byte]] = {
+  def getApi(
+      sv: SubsystemWithVersion,
+      maybeOrientation: Option[String],
+      maybeFontSize: Option[Int],
+      searchAllSubsystems: Boolean
+  ): Option[Array[Byte]] = {
     if (softwareVersion == defaultSoftwareVersion || sv.maybeVersion.isEmpty || sv.maybeComponent.isDefined || searchAllSubsystems) {
       None
     } else {
-      val file = getFile(sv, maybeOrientation)
+      val file = getFile(sv, maybeOrientation, maybeFontSize)
       if (file.exists()) {
         try {
           Some(Files.readAllBytes(file.toPath))
@@ -52,12 +68,13 @@ class PdfCache(cacheDir: File) {
   def saveApi(
       sv: SubsystemWithVersion,
       maybeOrientation: Option[String],
+      maybeFontSize: Option[Int],
       searchAllSubsystems: Boolean,
       data: Array[Byte]
   ): Unit = {
     if (softwareVersion != defaultSoftwareVersion && sv.maybeVersion.isDefined && sv.maybeComponent.isEmpty && !searchAllSubsystems) {
       dir.mkdirs()
-      val file = getFile(sv, maybeOrientation)
+      val file = getFile(sv, maybeOrientation, maybeFontSize)
       val out  = new FileOutputStream(file)
       out.write(data)
       out.close()
@@ -69,13 +86,14 @@ class PdfCache(cacheDir: File) {
       sv: SubsystemWithVersion,
       targetSv: SubsystemWithVersion,
       maybeOrientation: Option[String],
+      maybeFontSize: Option[Int],
       searchAllSubsystems: Boolean
   ): Option[Array[Byte]] = {
     if (softwareVersion == defaultSoftwareVersion || sv.maybeVersion.isEmpty || targetSv.maybeVersion.isEmpty
         || sv.maybeComponent.isDefined || targetSv.maybeComponent.isDefined || searchAllSubsystems) {
       None
     } else {
-      val file = getFile(sv, targetSv, maybeOrientation)
+      val file = getFile(sv, targetSv, maybeOrientation, maybeFontSize)
       if (file.exists()) {
         try {
           Some(Files.readAllBytes(file.toPath))
@@ -93,6 +111,7 @@ class PdfCache(cacheDir: File) {
       sv: SubsystemWithVersion,
       targetSv: SubsystemWithVersion,
       maybeOrientation: Option[String],
+      maybeFontSize: Option[Int],
       searchAllSubsystems: Boolean,
       data: Array[Byte]
   ): Unit = {
@@ -100,7 +119,7 @@ class PdfCache(cacheDir: File) {
         && targetSv.maybeVersion.isDefined && sv.maybeComponent.isEmpty
         && targetSv.maybeComponent.isEmpty && !searchAllSubsystems) {
       dir.mkdirs()
-      val file = getFile(sv, targetSv, maybeOrientation)
+      val file = getFile(sv, targetSv, maybeOrientation, maybeFontSize)
       val out  = new FileOutputStream(file)
       out.write(data)
       out.close()
@@ -112,6 +131,7 @@ class PdfCache(cacheDir: File) {
       sv: SubsystemWithVersion,
       maybeTargetSv: Option[SubsystemWithVersion],
       maybeOrientation: Option[String],
+      maybeFontSize: Option[Int],
       searchAllSubsystems: Boolean,
       file: File
   ): Unit = {
@@ -120,19 +140,21 @@ class PdfCache(cacheDir: File) {
         && maybeTargetSv.forall(_.maybeComponent.isEmpty) && !searchAllSubsystems) {
       val data = Files.readAllBytes(file.toPath)
       if (maybeTargetSv.isDefined)
-        saveIcd(sv, maybeTargetSv.get, maybeOrientation, searchAllSubsystems, data)
+        saveIcd(sv, maybeTargetSv.get, maybeOrientation, maybeFontSize, searchAllSubsystems, data)
       else
-        saveApi(sv, maybeOrientation, searchAllSubsystems, data)
+        saveApi(sv, maybeOrientation, maybeFontSize, searchAllSubsystems, data)
     }
   }
 
   // Deletes the cached PDF file (or files) for the given API
   def deleteApi(sv: SubsystemWithVersion): Unit = {
     if (sv.maybeVersion.isDefined && sv.maybeComponent.isEmpty) {
-      val files = List(getFile(sv, Some("portrait")), getFile(sv, Some("landscape")))
-      files.foreach { file =>
-        if (file.exists())
-          file.delete()
+      List(10, 12, 14, 16).foreach { fontSize =>
+        List("portrait", "landscape").foreach { orientation =>
+          val file = getFile(sv, Some(orientation), Some(fontSize))
+          if (file.exists())
+            file.delete()
+        }
       }
     }
   }
@@ -141,10 +163,12 @@ class PdfCache(cacheDir: File) {
   def deleteIcd(sv: SubsystemWithVersion, targetSv: SubsystemWithVersion): Unit = {
     if (sv.maybeVersion.isDefined && sv.maybeComponent.isEmpty
         && targetSv.maybeVersion.isDefined && targetSv.maybeComponent.isEmpty) {
-      val files = List(getFile(sv, targetSv, Some("portrait")), getFile(sv, targetSv, Some("landscape")))
-      files.foreach { file =>
-        if (file.exists())
-          file.delete()
+      List(10, 12, 14, 16).foreach { fontSize =>
+        List("portrait", "landscape").foreach { orientation =>
+          val file = getFile(sv, targetSv, Some(orientation), Some(fontSize))
+          if (file.exists())
+            file.delete()
+        }
       }
     }
   }
