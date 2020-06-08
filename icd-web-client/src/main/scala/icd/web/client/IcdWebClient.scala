@@ -55,9 +55,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val historyItem   = NavbarItem("History", "Display the version history for an API or ICD", showVersionHistory())
   private val historyDialog = HistoryDialog(mainContent)
 
-  private val orientations = List("portrait", "landscape")
-
   private val pdfItem = NavbarPdfItem("PDF", "Generate and display a PDF for the API or ICD", makePdf)
+  pdfItem.setEnabled(false)
 
   private val archiveItem = NavbarPdfItem(
     "Archive",
@@ -74,12 +73,12 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val passwordDialog = PasswordDialog(mainContent, PasswordListener)
 
   private val selectItem   = NavbarItem("Select", "Select the API or ICD to display", selectSubsystems())
-  private val selectDialog = SelectDialog(mainContent, Selector)
+  private val selectDialog = SelectDialog(mainContent, Selector, pdfItem)
 
   private val logoutItem = NavbarItem("Logout", "Log out of the icd web app", logout)
 
   private val statusItem   = NavbarItem("Status", "Display the published status of a selected subsystem", showStatus())
-  private val statusDialog = StatusDialog(mainContent, StatusListener)
+  private val statusDialog = StatusDialog(mainContent, StatusListener, pdfItem)
 
   private val fileUploadItem   = NavbarItem("Upload", "Select icd model files to ingest into the icd database", showUploadDialog())
   private val fileUploadDialog = FileUploadDialog(subsystemNames, csrfToken, inputDirSupported)

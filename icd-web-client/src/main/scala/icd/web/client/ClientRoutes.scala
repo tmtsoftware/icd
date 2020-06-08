@@ -155,7 +155,7 @@ object ClientRoutes {
    * @return the URL path to use
    */
   def archivedItemsReportFull(orientation: String, fontSize: Int): String = {
-    s"/archivedItemsReportFull?orientation=$orientation,fontSize=$fontSize"
+    s"/archivedItemsReportFull?orientation=$orientation&fontSize=$fontSize"
   }
 
   /**

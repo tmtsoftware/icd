@@ -35,12 +35,12 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: (String, Int) 
 
   private def pdfModalListener(): Unit = {
     val orientation = document
-      .querySelectorAll("input[name='orientation']:checked")
+      .querySelectorAll(s"input[name='orientation$labelStr']:checked")
       .map(elem => elem.asInstanceOf[HTMLInputElement].value)
       .toList
       .head
     val fontSize = document
-      .querySelectorAll("input[name='fontSize']:checked")
+      .querySelectorAll(s"input[name='fontSize$labelStr']:checked")
       .map(elem => elem.asInstanceOf[HTMLInputElement].value)
       .toList
       .head
@@ -50,7 +50,7 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: (String, Int) 
 
   // Makes the popup with options for generating the PDF
   private def makePdfModal(): JsDom.TypedTag[Div] = {
-    div(cls := "modal fade", id := "pdfModal", tabindex := "-1", role := "dialog", style := "padding-top: 130px")(
+    div(cls := "modal fade", id := s"pdfModal$labelStr", tabindex := "-1", role := "dialog", style := "padding-top: 130px")(
       div(cls := "modal-dialog")(
         div(cls := "modal-content")(
           div(cls := "modal-header")(
@@ -61,26 +61,26 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: (String, Int) 
             form(
               h5(s"Orientation:"),
               div(cls := "radio")(
-                label(input(`type` := "radio", name := "orientation", value := "portrait"))("portrait")
+                label(input(`type` := "radio", name := s"orientation$labelStr", value := "portrait"))("portrait")
               ),
               div(cls := "radio")(
-                label(input(`type` := "radio", name := "orientation", value := "landscape", checked))("landscape")
+                label(input(`type` := "radio", name := s"orientation$labelStr", value := "landscape", checked))("landscape")
               ),
               p(),
               hr,
               p(),
               h5(s"Font Size:"),
               div(cls := "radio")(
-                label(input(`type` := "radio", name := "fontSize", value := "10", checked))("Default")
+                label(input(`type` := "radio", name := s"fontSize$labelStr", value := "10", checked))("Default")
               ),
               div(cls := "radio")(
-                label(input(`type` := "radio", name := "fontSize", value := "12"))("L")
+                label(input(`type` := "radio", name := s"fontSize$labelStr", value := "12"))("L")
               ),
               div(cls := "radio")(
-                label(input(`type` := "radio", name := "fontSize", value := "14"))("XL")
+                label(input(`type` := "radio", name := s"fontSize$labelStr", value := "14"))("XL")
               ),
               div(cls := "radio")(
-                label(input(`type` := "radio", name := "fontSize", value := "16"))("XXL")
+                label(input(`type` := "radio", name := s"fontSize$labelStr", value := "16"))("XXL")
               )
             )
           ),
@@ -88,7 +88,6 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: (String, Int) 
             button(`type` := "button", cls := "btn btn-default", attr("data-dismiss") := "modal")("Cancel"),
             button(
               onclick := pdfModalListener _,
-              id := "confirmPdfOptionsButton",
               `type` := "button",
               cls := "btn btn-primary",
               attr("data-dismiss") := "modal"
@@ -105,7 +104,7 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: (String, Int) 
       href := "#",
       title := tip,
       attr("data-toggle") := "modal",
-      attr("data-target") := "#pdfModal"
+      attr("data-target") := s"#pdfModal$labelStr"
     )(labelStr)
   ).render
 
@@ -113,6 +112,13 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: (String, Int) 
   def markup(): Element = item
 
   def hide(): Unit = item.classList.add("hide")
+
+  def setEnabled(enabled: Boolean): Unit = {
+    if (enabled)
+      item.classList.remove("disabled")
+    else
+      item.classList.add("disabled")
+  }
 }
 
 /**
