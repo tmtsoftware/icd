@@ -56,12 +56,13 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
       .map(elem => elem.asInstanceOf[HTMLInputElement].value)
       .toList
       .head
-    val details = document
-      .querySelectorAll(s"input[name='details$labelStr']:checked")
-      .map(elem => elem.asInstanceOf[HTMLInputElement].value)
-      .toList
-      .head
-      .toBoolean
+//    val details = document
+//      .querySelectorAll(s"input[name='details$labelStr']:checked")
+//      .map(elem => elem.asInstanceOf[HTMLInputElement].value)
+//      .toList
+//      .head
+//      .toBoolean
+    val details = true
     listener(PdfOptions(orientation, fontSize, lineHeight, paperSize, details))
   }
 
@@ -109,19 +110,19 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
               PdfOptions.paperSizes.map(x =>
                 makeRadioButton(s"paperSize$labelStr", x, PdfOptions.defaultPaperSize)
               ),
-              hr,
-              p(),
-              h5(s"Details:"),
-              div(cls := "radio")(
-                label(input(`type` := "radio", name := s"details$labelStr", value := "true", checked))(
-                  "Show the details for all events, commands, alarms (default)"
-                )
-              ),
-              div(cls := "radio")(
-                label(input(`type` := "radio", name := s"details$labelStr", value := "false"))(
-                  "Include only the details that are expanded in the HTML view"
-                )
-              )
+//              hr,
+//              p(),
+//              h5(s"Details:"),
+//              div(cls := "radio")(
+//                label(input(`type` := "radio", name := s"details$labelStr", value := "true", checked))(
+//                  "Show the details for all events, commands, alarms (default)"
+//                )
+//              ),
+//              div(cls := "radio")(
+//                label(input(`type` := "radio", name := s"details$labelStr", value := "false"))(
+//                  "Include only the details that are expanded in the HTML view"
+//                )
+//              )
             )
           ),
           div(cls := "modal-footer")(
