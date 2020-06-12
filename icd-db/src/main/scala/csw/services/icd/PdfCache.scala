@@ -3,7 +3,7 @@ package csw.services.icd
 import java.io.{File, FileOutputStream}
 import java.nio.file.Files
 
-import icd.web.shared.{BuildInfo, SubsystemWithVersion}
+import icd.web.shared.{BuildInfo, PdfOptions, SubsystemWithVersion}
 
 /**
  * Implements a cache of PDF files for published API and ICD releases.
@@ -20,11 +20,10 @@ class PdfCache(cacheDir: File) {
   // Gets the file used to store the given API version
   private def getFile(
       sv: SubsystemWithVersion,
-      maybeOrientation: Option[String],
-      maybeFontSize: Option[Int]
+      pdfOptions: PdfOptions
   ): File = {
-    val name = s"${sv.subsystem}-${sv.maybeVersion.get}-${maybeOrientation.getOrElse("landscape")}-${maybeFontSize
-      .getOrElse(10)}.pdf"
+    import pdfOptions._
+    val name = s"${sv.subsystem}-${sv.maybeVersion.get}-$orientation-$fontSize-$lineHeight-$paperSize.pdf"
     new File(dir, name)
   }
 
@@ -32,26 +31,24 @@ class PdfCache(cacheDir: File) {
   private def getFile(
       sv: SubsystemWithVersion,
       targetSv: SubsystemWithVersion,
-      maybeOrientation: Option[String],
-      maybeFontSize: Option[Int]
+      pdfOptions: PdfOptions
   ): File = {
+    import pdfOptions._
     val name =
-      s"${sv.subsystem}-${sv.maybeVersion.get}--${targetSv.subsystem}-${targetSv.maybeVersion.get}-${maybeOrientation.getOrElse("landscape")}-${maybeFontSize
-        .getOrElse(10)}.pdf"
+      s"${sv.subsystem}-${sv.maybeVersion.get}--${targetSv.subsystem}-${targetSv.maybeVersion.get}-$orientation-$fontSize-$lineHeight-$paperSize.pdf"
     new File(dir, name)
   }
 
   // Gets the PDF data for the given API version
   def getApi(
       sv: SubsystemWithVersion,
-      maybeOrientation: Option[String],
-      maybeFontSize: Option[Int],
+      pdfOptions: PdfOptions,
       searchAllSubsystems: Boolean
   ): Option[Array[Byte]] = {
-    if (softwareVersion == defaultSoftwareVersion || sv.maybeVersion.isEmpty || sv.maybeComponent.isDefined || searchAllSubsystems) {
+    if (softwareVersion == defaultSoftwareVersion || sv.maybeVersion.isEmpty || sv.maybeComponent.isDefined || searchAllSubsystems || !pdfOptions.details) {
       None
     } else {
-      val file = getFile(sv, maybeOrientation, maybeFontSize)
+      val file = getFile(sv, pdfOptions)
       if (file.exists()) {
         try {
           Some(Files.readAllBytes(file.toPath))
@@ -67,14 +64,13 @@ class PdfCache(cacheDir: File) {
   // Saves the data for the given API version
   def saveApi(
       sv: SubsystemWithVersion,
-      maybeOrientation: Option[String],
-      maybeFontSize: Option[Int],
+      pdfOptions: PdfOptions,
       searchAllSubsystems: Boolean,
       data: Array[Byte]
   ): Unit = {
-    if (softwareVersion != defaultSoftwareVersion && sv.maybeVersion.isDefined && sv.maybeComponent.isEmpty && !searchAllSubsystems) {
+    if (softwareVersion != defaultSoftwareVersion && sv.maybeVersion.isDefined && sv.maybeComponent.isEmpty && !searchAllSubsystems || !pdfOptions.details) {
       dir.mkdirs()
-      val file = getFile(sv, maybeOrientation, maybeFontSize)
+      val file = getFile(sv, pdfOptions)
       val out  = new FileOutputStream(file)
       out.write(data)
       out.close()
@@ -85,15 +81,14 @@ class PdfCache(cacheDir: File) {
   def getIcd(
       sv: SubsystemWithVersion,
       targetSv: SubsystemWithVersion,
-      maybeOrientation: Option[String],
-      maybeFontSize: Option[Int],
+      pdfOptions: PdfOptions,
       searchAllSubsystems: Boolean
   ): Option[Array[Byte]] = {
     if (softwareVersion == defaultSoftwareVersion || sv.maybeVersion.isEmpty || targetSv.maybeVersion.isEmpty
-        || sv.maybeComponent.isDefined || targetSv.maybeComponent.isDefined || searchAllSubsystems) {
+        || sv.maybeComponent.isDefined || targetSv.maybeComponent.isDefined || searchAllSubsystems || !pdfOptions.details) {
       None
     } else {
-      val file = getFile(sv, targetSv, maybeOrientation, maybeFontSize)
+      val file = getFile(sv, targetSv, pdfOptions)
       if (file.exists()) {
         try {
           Some(Files.readAllBytes(file.toPath))
@@ -110,8 +105,7 @@ class PdfCache(cacheDir: File) {
   def saveIcd(
       sv: SubsystemWithVersion,
       targetSv: SubsystemWithVersion,
-      maybeOrientation: Option[String],
-      maybeFontSize: Option[Int],
+      pdfOptions: PdfOptions,
       searchAllSubsystems: Boolean,
       data: Array[Byte]
   ): Unit = {
@@ -119,7 +113,7 @@ class PdfCache(cacheDir: File) {
         && targetSv.maybeVersion.isDefined && sv.maybeComponent.isEmpty
         && targetSv.maybeComponent.isEmpty && !searchAllSubsystems) {
       dir.mkdirs()
-      val file = getFile(sv, targetSv, maybeOrientation, maybeFontSize)
+      val file = getFile(sv, targetSv, pdfOptions)
       val out  = new FileOutputStream(file)
       out.write(data)
       out.close()
@@ -130,30 +124,40 @@ class PdfCache(cacheDir: File) {
   def save(
       sv: SubsystemWithVersion,
       maybeTargetSv: Option[SubsystemWithVersion],
-      maybeOrientation: Option[String],
-      maybeFontSize: Option[Int],
+      pdfOptions: PdfOptions,
       searchAllSubsystems: Boolean,
       file: File
   ): Unit = {
     if (softwareVersion != defaultSoftwareVersion && sv.maybeVersion.isDefined
         && maybeTargetSv.forall(_.maybeVersion.isDefined) && sv.maybeComponent.isEmpty
-        && maybeTargetSv.forall(_.maybeComponent.isEmpty) && !searchAllSubsystems) {
+        && maybeTargetSv.forall(_.maybeComponent.isEmpty) && !searchAllSubsystems || !pdfOptions.details) {
       val data = Files.readAllBytes(file.toPath)
       if (maybeTargetSv.isDefined)
-        saveIcd(sv, maybeTargetSv.get, maybeOrientation, maybeFontSize, searchAllSubsystems, data)
+        saveIcd(sv, maybeTargetSv.get, pdfOptions, searchAllSubsystems, data)
       else
-        saveApi(sv, maybeOrientation, maybeFontSize, searchAllSubsystems, data)
+        saveApi(sv, pdfOptions, searchAllSubsystems, data)
     }
   }
 
+  //  val orientations = List("landscape", "portrait")
+  //  val fontSizes    = List(10, 12, 14, 16)
+  //  val lineHeights  = List(1.6, 1.4, 1.2, 1.0)
+  //  val paperSizes   = List("Letter", "Legal", "A4", "A3")
+
   // Deletes the cached PDF file (or files) for the given API
   def deleteApi(sv: SubsystemWithVersion): Unit = {
+    import PdfOptions._
     if (sv.maybeVersion.isDefined && sv.maybeComponent.isEmpty) {
-      List(10, 12, 14, 16).foreach { fontSize =>
-        List("portrait", "landscape").foreach { orientation =>
-          val file = getFile(sv, Some(orientation), Some(fontSize))
-          if (file.exists())
-            file.delete()
+      orientations.foreach { orient =>
+        fontSizes.foreach { fs =>
+          lineHeights.foreach { lh =>
+            paperSizes.foreach { ps =>
+              val pdfOptions = PdfOptions(orient, fs, lh, ps, details = true)
+              val file       = getFile(sv, pdfOptions)
+              if (file.exists())
+                file.delete()
+            }
+          }
         }
       }
     }
@@ -161,13 +165,19 @@ class PdfCache(cacheDir: File) {
 
   // Deletes the cached PDF file (or files) for the ICD between the given APIs
   def deleteIcd(sv: SubsystemWithVersion, targetSv: SubsystemWithVersion): Unit = {
+    import PdfOptions._
     if (sv.maybeVersion.isDefined && sv.maybeComponent.isEmpty
         && targetSv.maybeVersion.isDefined && targetSv.maybeComponent.isEmpty) {
-      List(10, 12, 14, 16).foreach { fontSize =>
-        List("portrait", "landscape").foreach { orientation =>
-          val file = getFile(sv, targetSv, Some(orientation), Some(fontSize))
-          if (file.exists())
-            file.delete()
+      orientations.foreach { orient =>
+        fontSizes.foreach { fs =>
+          lineHeights.foreach { lh =>
+            paperSizes.foreach { ps =>
+              val pdfOptions = PdfOptions(orient, fs, lh, ps, details = true)
+              val file       = getFile(sv, targetSv, pdfOptions)
+              if (file.exists())
+                file.delete()
+            }
+          }
         }
       }
     }

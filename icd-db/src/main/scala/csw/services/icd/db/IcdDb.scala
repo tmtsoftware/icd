@@ -8,7 +8,7 @@ import csw.services.icd.db.parser.{BaseModelParser, SubsystemModelParser}
 import csw.services.icd.db.ComponentDataReporter._
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import diffson.playJson.DiffsonProtocol
-import icd.web.shared.{BuildInfo, SubsystemWithVersion}
+import icd.web.shared.{BuildInfo, PdfOptions, SubsystemWithVersion}
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.Json
 import reactivemongo.api.{AsyncDriver, DefaultDB, MongoConnection}
@@ -21,8 +21,6 @@ object IcdDbDefaults {
   val defaultPort: Int      = conf.getInt("icd.db.port")
   val defaultHost: String   = conf.getString("icd.db.host")
   val defaultDbName: String = conf.getString("icd.db.name")
-
-  val defaultFontSize: Int      = 10
 
   // Suffix used for temp collections while ingesting model files into the DB
   val tmpCollSuffix = ".tmp"
@@ -147,6 +145,14 @@ object IcdDb extends App {
       c.copy(fontSize = Some(x))
     } text "For PDF or HTML file output: The base font size in px for body text (default: 10)"
 
+    opt[String]("lineHeight") valueName "height" action { (x, c) =>
+      c.copy(lineHeight = Some(x))
+    } text "For PDF or HTML file output: The line height (default: 1.6)"
+
+    opt[String]("paperSize") valueName "portrait or landscape" action { (x, c) =>
+      c.copy(paperSize = Some(x))
+    } text "For PDF output: The paper size (One of: Letter, Legal, A4, A3, default: Letter)"
+
     help("help")
     version("version")
   }
@@ -170,6 +176,25 @@ object IcdDb extends App {
   // Run the application
   private def run(options: IcdDbOptions): Unit = {
     val db = IcdDb(options.dbName, options.host, options.port)
+
+    def error(msg: String): Unit = {
+      println(msg)
+      System.exit(1)
+    }
+
+    try {
+      options.lineHeight.map(_.toFloat)
+    } catch {
+      case e: Exception =>
+        error("Expected a floating point value for line height")
+    }
+    val pdfOptions = PdfOptions(
+      options.orientation,
+      options.fontSize,
+      options.lineHeight,
+      options.paperSize,
+      Some(true)
+    )
 
     options.ingest.map { dir =>
       db.ingestAndCleanup(dir)
@@ -207,11 +232,6 @@ object IcdDb extends App {
       for (name <- list) println(name)
     }
 
-    def error(msg: String): Unit = {
-      println(msg)
-      System.exit(1)
-    }
-
     // --output option
     def output(file: File): Unit = {
       if (options.subsystem.isEmpty) error("Missing required subsystem name: Please specify --subsystem <name>")
@@ -222,8 +242,7 @@ object IcdDb extends App {
         options.target,
         options.targetComponent,
         options.icdVersion,
-        options.orientation,
-        options.fontSize,
+        pdfOptions,
         file
       )
     }
@@ -297,7 +316,7 @@ object IcdDb extends App {
 
     // --missing option
     def missingItemsReport(file: File): Unit = {
-      MissingItemsReport(db, options).saveToFile(file, options.orientation)
+      MissingItemsReport(db, options, pdfOptions).saveToFile(file, pdfOptions)
     }
 
     // --archive option
@@ -305,7 +324,7 @@ object IcdDb extends App {
       val maybeSv = options.subsystem
         .map(SubsystemAndVersion(_))
         .map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, options.component))
-      ArchivedItemsReport(db, maybeSv).saveToFile(file, options.orientation, options.fontSize)
+      ArchivedItemsReport(db, maybeSv).saveToFile(file, pdfOptions)
     }
   }
 }

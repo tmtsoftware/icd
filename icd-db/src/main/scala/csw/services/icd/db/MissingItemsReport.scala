@@ -5,7 +5,7 @@ import java.io._
 import csw.services.icd.IcdToPdf
 import csw.services.icd.html.IcdToHtml
 import icd.web.shared.IcdModels._
-import icd.web.shared.SubsystemWithVersion
+import icd.web.shared.{PdfOptions, SubsystemWithVersion}
 import scalatags.Text
 
 /**
@@ -58,9 +58,10 @@ object MissingItemsReport {
  *
  * @param db      the database to use
  * @param options command line options used to narrow the scope of the report to given subsystems and components
+ * @param pdfOptions PDF generation options
  */
 //noinspection DuplicatedCode
-case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
+case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfOptions) {
   import MissingItemsReport._
 
   private val selectedSubsystemsWithVersions = List(options.subsystem, options.target).flatten
@@ -287,7 +288,7 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
     val markup = html(
       head(
         scalatags.Text.tags2.title("Missing Items"),
-        scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss(options.fontSize)))
+        scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss(pdfOptions)))
       ),
       body(
         h2("Missing Items"),
@@ -404,7 +405,7 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
   /**
    * Saves the report in HTML or PDF, depending on the file suffix
    */
-  def saveToFile(file: File, maybeOrientation: Option[String]): Unit = {
+  def saveToFile(file: File, pdfOptions: PdfOptions): Unit = {
 
     def saveAsHtml(html: String): Unit = {
       val out = new FileOutputStream(file)
@@ -412,7 +413,7 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions) {
       out.close()
     }
 
-    def saveAsPdf(html: String): Unit = IcdToPdf.saveAsPdf(file, html, showLogo = false, maybeOrientation = maybeOrientation)
+    def saveAsPdf(html: String): Unit = IcdToPdf.saveAsPdf(file, html, showLogo = false, pdfOptions)
 
     file.getName.split('.').drop(1).lastOption match {
       case Some("html") => saveAsHtml(makeReport())

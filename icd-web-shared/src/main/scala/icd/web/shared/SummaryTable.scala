@@ -9,6 +9,9 @@ import Headings.idFor
 //noinspection DuplicatedCode
 object SummaryTable {
 
+  // Insert a <wbr/> tag to help wrapping
+  private def wrap(s: String) = raw(s.replace(".", ".<wbr/>").replace("_", "_<wbr/>"))
+
   /**
    * Displays a summary of the events published and commands received by the subsystem
    *
@@ -52,9 +55,9 @@ object SummaryTable {
 
       def linkToSubscriber(subscriber: ComponentModel) = {
         if ((isIcd && subscriber.subsystem == maybeTargetSv.get.subsystem) || subscriber.subsystem == subsystemInfo.sv.subsystem)
-          span(a(href := s"#${subscriber.component}")(subscriber.component), " ")
+          span(a(href := s"#${subscriber.component}")(wrap(subscriber.component)), " ")
         else
-          span(s"${subscriber.subsystem}.${subscriber.component}", " ")
+          span(wrap(s"${subscriber.subsystem}.${subscriber.component}"), " ")
       }
 
       val showYearlyAccum = !isIcd && itemType.endsWith("Events")
@@ -86,14 +89,14 @@ object SummaryTable {
                 info <- list
               } yield {
                 tr(
-                  td(p(a(href := s"#${info.publisher.component}")(info.publisher.component))),
+                  td(p(a(href := s"#${info.publisher.component}")(wrap(info.publisher.component)))),
                   td(p(info.subscribers.map(linkToSubscriber))),
-                  td(p(a(href := s"#${info.publisher.component}")(info.publisher.prefix))),
+                  td(p(a(href := s"#${info.publisher.component}")(wrap(info.publisher.prefix)))),
                   td(
                     p(
                       a(
                         href := s"#${idFor(info.publisher.component, action, itemType, info.publisher.subsystem, info.publisher.component, info.item.name)}"
-                      )(info.item.name)
+                      )(wrap(info.item.name))
                     )
                   ),
                   if (showYearlyAccum) {
@@ -144,7 +147,7 @@ object SummaryTable {
               for {
                 info <- list
               } yield {
-                val prefix = s"${info.publisherSubsystem}.${info.publisherComponent}"
+                val prefix = wrap(s"${info.publisherSubsystem}.${info.publisherComponent}")
                 val prefixItem = span(prefix)
                 val description = info.maybeWarning match {
                   case Some(msg) => p(em("Warning: ", msg))
@@ -153,14 +156,14 @@ object SummaryTable {
 
                 // ICDs contain both subsystems, so we can link to them
                 tr(
-                  td(p(a(href := s"#${info.publisherComponent}")(info.publisherComponent))),
-                  td(p(a(href := s"#${info.subscriber.component}")(info.subscriber.component))),
+                  td(p(a(href := s"#${info.publisherComponent}")(wrap(info.publisherComponent)))),
+                  td(p(a(href := s"#${info.subscriber.component}")(wrap(info.subscriber.component)))),
                   td(p(a(href := s"#${info.publisherComponent}")(prefixItem))),
                   td(
                     p(
                       a(
                         href := s"#${idFor(info.publisherComponent, action, itemType, info.publisherSubsystem, info.publisherComponent, info.item.name)}"
-                      )(info.item.name)
+                      )(wrap(info.item.name))
                     )
                   ),
                   td(description)
@@ -194,13 +197,13 @@ object SummaryTable {
               for {
                 info <- list
               } yield {
-                val prefix = s"${info.publisherSubsystem}.${info.publisherComponent}"
+                val prefix = wrap(s"${info.publisherSubsystem}.${info.publisherComponent}")
                 val prefixItem = span(prefix)
                 val publisherComponent =
                   if (info.publisherSubsystem == info.subscriber.subsystem)
-                    a(href := s"#${info.publisherComponent}")(info.publisherComponent)
+                    a(href := s"#${info.publisherComponent}")(wrap(info.publisherComponent))
                   // XXX TODO FIXME: Make link in web app for components in other subsystems also!
-                  else span(s"${info.publisherSubsystem}.${info.publisherComponent}")
+                  else span(wrap(s"${info.publisherSubsystem}.${info.publisherComponent}"))
 
                 val publisherPrefix =
                   if (info.publisherSubsystem == info.subscriber.subsystem)
@@ -220,7 +223,7 @@ object SummaryTable {
                     p(
                       a(
                         href := s"#${idFor(info.subscriber.component, subscribes, itemType, info.publisherSubsystem, info.publisherComponent, info.item.name)}"
-                      )(info.item.name)
+                      )(wrap(info.item.name))
                     )
                   ),
                   td(description)

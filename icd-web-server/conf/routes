@@ -20,17 +20,17 @@ GET         /componentInfo/:subsystem                   controllers.Application.
 # Gets information about a component in a given version of an ICD
 GET         /icdComponentInfo/:subsystem/:target        controllers.Application.icdComponentInfo(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String])
 
+
 # Gets the PDF for the given ICD
-GET         /icdAsPdf/:subsystem/:target                controllers.Application.icdAsPdf(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String], orientation: Option[String], fontSize: Option[Int])
+GET         /icdAsPdf/:subsystem/:target                controllers.Application.icdAsPdf(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
 
 # Gets the PDF for the given subsystem API
-GET         /apiAsPdf/:subsystem                        controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], orientation: Option[String], fontSize: Option[Int])
+GET         /apiAsPdf/:subsystem                        controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
+# Gets an archived items report (PDF) for the given subsystem API (and component)
+GET         /archivedItemsReport/:subsystem             controllers.Application.archivedItemsReport(subsystem, version: Option[String], component: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
 
 # Gets an archived items report (PDF) for the given subsystem API (and component)
-GET         /archivedItemsReport/:subsystem             controllers.Application.archivedItemsReport(subsystem, version: Option[String], component: Option[String], orientation: Option[String], fontSize: Option[Int])
-
-# Gets an archived items report (PDF) for the given subsystem API (and component)
-GET         /archivedItemsReportFull                    controllers.Application.archivedItemsReportFull(orientation: Option[String], fontSize: Option[Int])
+GET         /archivedItemsReportFull                    controllers.Application.archivedItemsReportFull(orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
 
 # Gets the detailed information about the versions of a component or subsystem
 GET         /versions/:name                             controllers.Application.getVersions(name)

@@ -128,6 +128,7 @@ table {
     padding: 0;
     table-layout: fixed;
     word-wrap: break-word;
+    /*word-wrap: break-all;*/
 }
 
 table tr {

@@ -1,5 +1,6 @@
 package icd.web.client
 
+import icd.web.shared.PdfOptions
 import org.scalajs.dom
 import org.scalajs.dom._
 import org.scalajs.dom.html.Div
@@ -30,7 +31,7 @@ case class NavbarItem(labelStr: String, tip: String, listener: () => Unit) exten
  * @param tip the tool tip to display when hovering over the item
  * @param listener called when the item is clicked with (orientation, fontSize)
  */
-case class NavbarPdfItem(labelStr: String, tip: String, listener: (String, Int) => Unit) extends Displayable {
+case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => Unit) extends Displayable {
   import scalatags.JsDom.all._
 
   private def pdfModalListener(): Unit = {
@@ -45,7 +46,33 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: (String, Int) 
       .toList
       .head
       .toInt
-    listener(orientation, fontSize)
+    val lineHeight = document
+      .querySelectorAll(s"input[name='lineHeight$labelStr']:checked")
+      .map(elem => elem.asInstanceOf[HTMLInputElement].value)
+      .toList
+      .head
+    val paperSize = document
+      .querySelectorAll(s"input[name='paperSize$labelStr']:checked")
+      .map(elem => elem.asInstanceOf[HTMLInputElement].value)
+      .toList
+      .head
+    val details = document
+      .querySelectorAll(s"input[name='details$labelStr']:checked")
+      .map(elem => elem.asInstanceOf[HTMLInputElement].value)
+      .toList
+      .head
+      .toBoolean
+    listener(PdfOptions(orientation, fontSize, lineHeight, paperSize, details))
+  }
+
+  private def makeRadioButton(nameStr: String, valueStr: String, defaultValue: String, units: Option[String] = None) = {
+    val unitsStr = units.map(" " + _).getOrElse("")
+    div(cls := "radio-inline")(
+      if (valueStr == defaultValue)
+        label(input(`type` := "radio", name := nameStr, value := valueStr, checked))(s"$valueStr$unitsStr (default)")
+      else
+        label(input(`type` := "radio", name := nameStr, value := valueStr))(s"$valueStr$unitsStr")
+    )
   }
 
   // Makes the popup with options for generating the PDF
@@ -60,27 +87,40 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: (String, Int) 
           div(cls := "modal-body")(
             form(
               h5(s"Orientation:"),
-              div(cls := "radio")(
-                label(input(`type` := "radio", name := s"orientation$labelStr", value := "portrait"))("portrait")
-              ),
-              div(cls := "radio")(
-                label(input(`type` := "radio", name := s"orientation$labelStr", value := "landscape", checked))("landscape")
+              PdfOptions.orientations.map(x =>
+                makeRadioButton(s"orientation$labelStr", x, PdfOptions.defaultOrientation)
               ),
               p(),
               hr,
               p(),
               h5(s"Font Size:"),
+              PdfOptions.fontSizes.map(x =>
+                makeRadioButton(s"fontSize$labelStr", x.toString, PdfOptions.defaultFontSize.toString, Some("px"))
+              ),
+              hr,
+              p(),
+              h5(s"Line Height:"),
+              PdfOptions.lineHeights.map(x =>
+                makeRadioButton(s"lineHeight$labelStr", x, PdfOptions.defaultLineHeight)
+              ),
+              hr,
+              p(),
+              h5(s"Paper Size:"),
+              PdfOptions.paperSizes.map(x =>
+                makeRadioButton(s"paperSize$labelStr", x, PdfOptions.defaultPaperSize)
+              ),
+              hr,
+              p(),
+              h5(s"Details:"),
               div(cls := "radio")(
-                label(input(`type` := "radio", name := s"fontSize$labelStr", value := "10", checked))("Default")
+                label(input(`type` := "radio", name := s"details$labelStr", value := "true", checked))(
+                  "Show the details for all events, commands, alarms (default)"
+                )
               ),
               div(cls := "radio")(
-                label(input(`type` := "radio", name := s"fontSize$labelStr", value := "12"))("L")
-              ),
-              div(cls := "radio")(
-                label(input(`type` := "radio", name := s"fontSize$labelStr", value := "14"))("XL")
-              ),
-              div(cls := "radio")(
-                label(input(`type` := "radio", name := s"fontSize$labelStr", value := "16"))("XXL")
+                label(input(`type` := "radio", name := s"details$labelStr", value := "false"))(
+                  "Include only the details that are expanded in the HTML view"
+                )
               )
             )
           ),

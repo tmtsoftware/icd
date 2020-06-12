@@ -1,6 +1,6 @@
 package icd.web.client
 
-import icd.web.shared.{SubsystemWithVersion, IcdName}
+import icd.web.shared.{IcdName, PdfOptions, SubsystemWithVersion}
 
 /**
  * Defines URI routes to access the server API
@@ -17,23 +17,30 @@ object ClientRoutes {
   private def getAttrs(
       maybeVersion: Option[String],
       maybeComponent: Option[String],
-      searchAllSubsystems: Boolean,
+      maybeSearchAllSubsystems: Option[Boolean] = None,
       maybeTargetVersion: Option[String] = None,
       maybeTargetCompName: Option[String] = None,
       maybeIcdVersion: Option[String] = None,
-      maybeOrientation: Option[String] = None,
-      maybeFontSize: Option[Int] = None
+      maybePdfOptions: Option[PdfOptions] = None
   ): String = {
     val versionAttr         = maybeVersion.map(v => s"version=$v")
     val componentAttr       = maybeComponent.map(c => s"component=$c")
-    val searchAllAttr       = if (searchAllSubsystems) Some("searchAll=true") else None
+    val searchAllAttr       = maybeSearchAllSubsystems.map(b => s"searchAll=$b")
     val targetVersionAttr   = maybeTargetVersion.map(v => s"targetVersion=$v")
     val targetComponentAttr = maybeTargetCompName.map(c => s"targetComponent=$c")
     val icdVersionAttr      = maybeIcdVersion.map(v => s"icdVersion=$v")
-    val orientationAttr     = maybeOrientation.map(o => s"orientation=$o")
-    val fontSizeAttr        = maybeFontSize.map(n => s"fontSize=$n")
+    val pdfAttrs = maybePdfOptions.map(
+      o =>
+        List(
+          s"orientation=${o.orientation}",
+          s"fontSize=${o.fontSize}",
+          s"lineHeight=${o.lineHeight}",
+          s"paperSize=${o.paperSize}",
+          s"details=${o.details}"
+        ).mkString("&")
+    )
     val attrs =
-      (versionAttr ++ componentAttr ++ searchAllAttr ++ targetVersionAttr ++ targetComponentAttr ++ icdVersionAttr ++ orientationAttr ++ fontSizeAttr)
+      (versionAttr ++ componentAttr ++ searchAllAttr ++ targetVersionAttr ++ targetComponentAttr ++ icdVersionAttr ++ pdfAttrs)
         .mkString("&")
     if (attrs.isEmpty) "" else s"?$attrs"
   }
@@ -61,7 +68,7 @@ object ClientRoutes {
    * @return the URL path to use
    */
   def componentInfo(sv: SubsystemWithVersion, searchAllSubsystems: Boolean): String = {
-    val attrs = getAttrs(sv.maybeVersion, sv.maybeComponent, searchAllSubsystems)
+    val attrs = getAttrs(sv.maybeVersion, sv.maybeComponent, Some(searchAllSubsystems))
     s"/componentInfo/${sv.subsystem}$attrs"
   }
 
@@ -86,9 +93,8 @@ object ClientRoutes {
         val attrs = getAttrs(
           sv.maybeVersion,
           sv.maybeComponent,
-          searchAllSubsystems = false,
-          targetSv.maybeVersion,
-          targetSv.maybeComponent
+          maybeTargetVersion = targetSv.maybeVersion,
+          maybeTargetCompName = targetSv.maybeComponent
         )
         s"/icdComponentInfo/${sv.subsystem}/${targetSv.subsystem}$attrs"
     }
@@ -103,8 +109,7 @@ object ClientRoutes {
    * @param maybeTargetSv defines the optional target subsystem and version
    * @param icdVersion optional ICD version
    * @param searchAllSubsystems if true, search all subsystems in the database for references, subscribers, etc.
-   * @param orientation portrait or landscape orientation
-   * @param fontSize size of base body font (default 10)
+   * @param pdfOptions options for PDF generation
    * @return the URL path to use
    */
   def icdAsPdf(
@@ -112,21 +117,18 @@ object ClientRoutes {
       maybeTargetSv: Option[SubsystemWithVersion],
       icdVersion: Option[String],
       searchAllSubsystems: Boolean,
-      orientation: String,
-      fontSize: Int
+      pdfOptions: PdfOptions
   ): String = {
     maybeTargetSv match {
-      case None => apiAsPdf(sv, searchAllSubsystems, orientation, fontSize)
+      case None => apiAsPdf(sv, searchAllSubsystems, pdfOptions)
       case Some(targetSv) =>
         val attrs = getAttrs(
           sv.maybeVersion,
           sv.maybeComponent,
-          searchAllSubsystems = false,
-          targetSv.maybeVersion,
-          targetSv.maybeComponent,
-          icdVersion,
-          maybeOrientation = Some(orientation),
-          maybeFontSize = Some(fontSize)
+          maybeTargetVersion = targetSv.maybeVersion,
+          maybeTargetCompName = targetSv.maybeComponent,
+          maybeIcdVersion = icdVersion,
+          maybePdfOptions = Some(pdfOptions)
         )
         s"/icdAsPdf/${sv.subsystem}/${targetSv.subsystem}$attrs"
     }
@@ -138,13 +140,11 @@ object ClientRoutes {
    * @param sv       the subsystem
    * @return the URL path to use
    */
-  def archivedItemsReport(sv: SubsystemWithVersion, orientation: String, fontSize: Int): String = {
+  def archivedItemsReport(sv: SubsystemWithVersion, options: PdfOptions): String = {
     val attrs = getAttrs(
       sv.maybeVersion,
       sv.maybeComponent,
-      searchAllSubsystems = false,
-      maybeOrientation = Some(orientation),
-      maybeFontSize = Some(fontSize)
+      maybePdfOptions = Some(options)
     )
     s"/archivedItemsReport/${sv.subsystem}$attrs"
   }
@@ -154,8 +154,13 @@ object ClientRoutes {
    *
    * @return the URL path to use
    */
-  def archivedItemsReportFull(orientation: String, fontSize: Int): String = {
-    s"/archivedItemsReportFull?orientation=$orientation&fontSize=$fontSize"
+  def archivedItemsReportFull(options: PdfOptions): String = {
+    val attrs = getAttrs(
+      None,
+      None,
+      maybePdfOptions = Some(options)
+    )
+    s"/archivedItemsReportFull$attrs"
   }
 
   /**
@@ -163,16 +168,15 @@ object ClientRoutes {
    *
    * @param sv     the subsystem
    * @param searchAllSubsystems if true, search all subsystems in the database for references, subscribers, etc.
-   * @param orientation portrait or landscape orientation
+   * @param options options for PDF generation
    * @return the URL path to use
    */
-  def apiAsPdf(sv: SubsystemWithVersion, searchAllSubsystems: Boolean, orientation: String, fontSize: Int): String = {
+  def apiAsPdf(sv: SubsystemWithVersion, searchAllSubsystems: Boolean, options: PdfOptions): String = {
     val attrs = getAttrs(
       sv.maybeVersion,
       sv.maybeComponent,
-      searchAllSubsystems,
-      maybeOrientation = Some(orientation),
-      maybeFontSize = Some(fontSize)
+      maybeSearchAllSubsystems = Some(searchAllSubsystems),
+      maybePdfOptions = Some(options)
     )
     s"/apiAsPdf/${sv.subsystem}$attrs"
   }

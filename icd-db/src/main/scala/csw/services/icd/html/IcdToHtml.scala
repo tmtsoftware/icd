@@ -5,7 +5,6 @@ import icd.web.shared._
 import scalatags.Text
 import Headings.idFor
 import HtmlMarkup.yesNo
-import csw.services.icd.db.IcdDbDefaults
 import icd.web.shared.IcdModels.{AlarmModel, AttributeModel, ComponentModel, EventModel}
 
 /**
@@ -14,14 +13,25 @@ import icd.web.shared.IcdModels.{AlarmModel, AttributeModel, ComponentModel, Eve
 //noinspection DuplicatedCode
 object IcdToHtml {
 
-  def getCss(maybeBaseFontSize: Option[Int]): String = {
-    val fontIncr = maybeBaseFontSize.getOrElse(IcdDbDefaults.defaultFontSize) - IcdDbDefaults.defaultFontSize
-    val stream = getClass.getResourceAsStream("/icd.css")
+  /**
+   * Returns the CSS for saving to an HTML or PDF file, with changes according to the given options.
+   */
+  def getCss(pdfOptions: PdfOptions): String = {
+    import pdfOptions._
+    import PdfOptions._
+
+    val fontIncr = fontSize - defaultFontSize
+    val stream = this.getClass.getResourceAsStream("/icd.css")
     val lines = scala.io.Source.fromInputStream(stream).getLines().map { line =>
       // change font size
       if (line.stripLeading().startsWith("font-size: ") && line.stripTrailing().endsWith("px;")) {
         val fontSize = line.substring(line.indexOf(": ")+2).dropRight(3).toInt + fontIncr
         s"    font-size: ${fontSize}px;"
+      } else line
+    }.map{ line =>
+      // change line height
+      if (line.stripLeading().startsWith("line-height: ")) {
+        s"    line-height: $lineHeight;"
       } else line
     }
     lines.mkString("\n")
@@ -35,7 +45,7 @@ object IcdToHtml {
    * @return the html tags
    */
   def getApiAsHtml(maybeSubsystemInfo: Option[SubsystemInfo], infoList: List[ComponentInfo],
-                   maybeBaseFontSize: Option[Int]): Text.TypedTag[String] = {
+                   pdfOptions: PdfOptions): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
     val nh = new NumberedHeadings
@@ -67,7 +77,7 @@ object IcdToHtml {
     html(
       head(
         scalatags.Text.tags2.title(titleInfo.title),
-        scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss(maybeBaseFontSize)))
+        scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss(pdfOptions)))
       ),
       body(
         getTitleMarkup(titleInfo),

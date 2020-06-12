@@ -10,6 +10,7 @@ import com.itextpdf.kernel.pdf.canvas.PdfCanvas
 import com.itextpdf.kernel.pdf.{PdfDocument, PdfPage, PdfWriter}
 import com.itextpdf.layout.element.{Image, Paragraph}
 import com.itextpdf.layout.{Canvas, Document}
+import icd.web.shared.PdfOptions
 
 /**
  * Handles converting an ICD API from HTML to PDF format
@@ -24,7 +25,7 @@ object IcdToPdf {
       val image = new Image(ImageDataFactory.create(url))
       val x     = pageSize.getLeft + pageSize.getWidth / 2 - image.getImageWidth / 2
       val y     = pageSize.getBottom + pageSize.getHeight / 2
-      val rect = new Rectangle(x, y, x + image.getImageWidth, y - image.getImageHeight)
+      val rect  = new Rectangle(x, y, x + image.getImageWidth, y - image.getImageHeight)
       new Canvas(pdfCanvas, pdfDocument, rect).add(image)
     }
 
@@ -59,11 +60,11 @@ object IcdToPdf {
    * @param file             the name of the file in which to save the PDF
    * @param html             the input doc in HTML format
    * @param showLogo         if true insert the TMT logo
-   * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
+   * @param pdfOptions       options for PDF generation
    */
-  def saveAsPdf(file: File, html: String, showLogo: Boolean, maybeOrientation: Option[String]): Unit = {
+  def saveAsPdf(file: File, html: String, showLogo: Boolean, pdfOptions: PdfOptions): Unit = {
     val out = new FileOutputStream(file)
-    saveAsPdf(out, html, showLogo, maybeOrientation)
+    saveAsPdf(out, html, showLogo, pdfOptions)
     out.close()
   }
 
@@ -73,11 +74,19 @@ object IcdToPdf {
    * @param out              the output stream in which to save the PDF
    * @param html             the input doc in HTML format
    * @param showLogo         if true insert the TMT logo
-   * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
+   * @param pdfOptions       options for PDF generation
    */
-  def saveAsPdf(out: OutputStream, html: String, showLogo: Boolean, maybeOrientation: Option[String]): Unit = {
-    val orientation              = maybeOrientation.getOrElse("landscape")
-    val pageSize                 = if (orientation == "landscape") PageSize.LETTER.rotate() else PageSize.LETTER
+  def saveAsPdf(out: OutputStream, html: String, showLogo: Boolean, pdfOptions: PdfOptions): Unit = {
+    import pdfOptions._
+
+    val basePageSize = paperSize match {
+      case "Legal" => PageSize.LEGAL
+      case "A4"    => PageSize.A4
+      case "A3"    => PageSize.A3
+      case _       => PageSize.LETTER
+    }
+    val pageSize = if (orientation == "landscape") basePageSize.rotate() else basePageSize
+
     val writer: PdfWriter        = new PdfWriter(out)
     val pdfDocument: PdfDocument = new PdfDocument(writer)
     val document                 = new Document(pdfDocument)
@@ -86,7 +95,6 @@ object IcdToPdf {
     pdfDocument.addEventHandler(PdfDocumentEvent.END_PAGE, handler)
     HtmlConverter.convertToPdf(new ByteArrayInputStream(html.getBytes()), pdfDocument)
     out.close()
-    //    pdfDocument.close()
     document.close()
   }
 }
