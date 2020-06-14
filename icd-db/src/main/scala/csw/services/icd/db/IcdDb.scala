@@ -193,7 +193,8 @@ object IcdDb extends App {
       options.fontSize,
       options.lineHeight,
       options.paperSize,
-      Some(true)
+      Some(true),
+      Nil
     )
 
     options.ingest.map { dir =>

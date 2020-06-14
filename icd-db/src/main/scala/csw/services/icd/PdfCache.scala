@@ -27,6 +27,31 @@ class PdfCache(cacheDir: File) {
     new File(dir, name)
   }
 
+  // Returns true if the PDF cache should be used
+  private def useCache(
+                        sv: SubsystemWithVersion,
+                        targetSv: SubsystemWithVersion,
+                        pdfOptions: PdfOptions,
+                        searchAllSubsystems: Boolean
+                      ): Boolean = {
+    useCache(sv, pdfOptions, searchAllSubsystems) &&
+      targetSv.maybeVersion.isDefined &&
+      targetSv.maybeComponent.isEmpty
+  }
+
+  // Returns true if the PDF cache should be used
+  private def useCache(
+                        sv: SubsystemWithVersion,
+                        pdfOptions: PdfOptions,
+                        searchAllSubsystems: Boolean
+                      ): Boolean = {
+    softwareVersion != defaultSoftwareVersion &&
+      sv.maybeVersion.isDefined &&
+      sv.maybeComponent.isEmpty &&
+      !searchAllSubsystems &&
+      pdfOptions.details
+  }
+
   // Gets the file used to store the ICD between the two subsystem versions
   private def getFile(
       sv: SubsystemWithVersion,
@@ -45,9 +70,7 @@ class PdfCache(cacheDir: File) {
       pdfOptions: PdfOptions,
       searchAllSubsystems: Boolean
   ): Option[Array[Byte]] = {
-    if (softwareVersion == defaultSoftwareVersion || sv.maybeVersion.isEmpty || sv.maybeComponent.isDefined || searchAllSubsystems || !pdfOptions.details) {
-      None
-    } else {
+    if (useCache(sv, pdfOptions, searchAllSubsystems)) {
       val file = getFile(sv, pdfOptions)
       if (file.exists()) {
         try {
@@ -58,7 +81,7 @@ class PdfCache(cacheDir: File) {
             None
         }
       } else None
-    }
+    } else None
   }
 
   // Saves the data for the given API version
@@ -68,7 +91,7 @@ class PdfCache(cacheDir: File) {
       searchAllSubsystems: Boolean,
       data: Array[Byte]
   ): Unit = {
-    if (softwareVersion != defaultSoftwareVersion && sv.maybeVersion.isDefined && sv.maybeComponent.isEmpty && !searchAllSubsystems || !pdfOptions.details) {
+    if (useCache(sv, pdfOptions, searchAllSubsystems)) {
       dir.mkdirs()
       val file = getFile(sv, pdfOptions)
       val out  = new FileOutputStream(file)
@@ -84,10 +107,7 @@ class PdfCache(cacheDir: File) {
       pdfOptions: PdfOptions,
       searchAllSubsystems: Boolean
   ): Option[Array[Byte]] = {
-    if (softwareVersion == defaultSoftwareVersion || sv.maybeVersion.isEmpty || targetSv.maybeVersion.isEmpty
-        || sv.maybeComponent.isDefined || targetSv.maybeComponent.isDefined || searchAllSubsystems || !pdfOptions.details) {
-      None
-    } else {
+    if (useCache(sv, targetSv, pdfOptions, searchAllSubsystems)) {
       val file = getFile(sv, targetSv, pdfOptions)
       if (file.exists()) {
         try {
@@ -98,7 +118,7 @@ class PdfCache(cacheDir: File) {
             None
         }
       } else None
-    }
+    } else None
   }
 
   // Saves the PDF data for the ICD between the given subsyetem versions
@@ -109,9 +129,7 @@ class PdfCache(cacheDir: File) {
       searchAllSubsystems: Boolean,
       data: Array[Byte]
   ): Unit = {
-    if (softwareVersion != defaultSoftwareVersion && sv.maybeVersion.isDefined
-        && targetSv.maybeVersion.isDefined && sv.maybeComponent.isEmpty
-        && targetSv.maybeComponent.isEmpty && !searchAllSubsystems) {
+    if (useCache(sv, targetSv, pdfOptions, searchAllSubsystems)) {
       dir.mkdirs()
       val file = getFile(sv, targetSv, pdfOptions)
       val out  = new FileOutputStream(file)
@@ -128,9 +146,12 @@ class PdfCache(cacheDir: File) {
       searchAllSubsystems: Boolean,
       file: File
   ): Unit = {
-    if (softwareVersion != defaultSoftwareVersion && sv.maybeVersion.isDefined
-        && maybeTargetSv.forall(_.maybeVersion.isDefined) && sv.maybeComponent.isEmpty
-        && maybeTargetSv.forall(_.maybeComponent.isEmpty) && !searchAllSubsystems || !pdfOptions.details) {
+    val doIt = if (maybeTargetSv.isDefined)
+      useCache(sv, maybeTargetSv.get, pdfOptions, searchAllSubsystems)
+    else
+      useCache(sv, pdfOptions, searchAllSubsystems)
+
+    if (doIt) {
       val data = Files.readAllBytes(file.toPath)
       if (maybeTargetSv.isDefined)
         saveIcd(sv, maybeTargetSv.get, pdfOptions, searchAllSubsystems, data)
@@ -138,11 +159,6 @@ class PdfCache(cacheDir: File) {
         saveApi(sv, pdfOptions, searchAllSubsystems, data)
     }
   }
-
-  //  val orientations = List("landscape", "portrait")
-  //  val fontSizes    = List(10, 12, 14, 16)
-  //  val lineHeights  = List(1.6, 1.4, 1.2, 1.0)
-  //  val paperSizes   = List("Letter", "Legal", "A4", "A3")
 
   // Deletes the cached PDF file (or files) for the given API
   def deleteApi(sv: SubsystemWithVersion): Unit = {
@@ -152,7 +168,7 @@ class PdfCache(cacheDir: File) {
         fontSizes.foreach { fs =>
           lineHeights.foreach { lh =>
             paperSizes.foreach { ps =>
-              val pdfOptions = PdfOptions(orient, fs, lh, ps, details = true)
+              val pdfOptions = PdfOptions(orient, fs, lh, ps, details = true, Nil)
               val file       = getFile(sv, pdfOptions)
               if (file.exists())
                 file.delete()
@@ -172,7 +188,7 @@ class PdfCache(cacheDir: File) {
         fontSizes.foreach { fs =>
           lineHeights.foreach { lh =>
             paperSizes.foreach { ps =>
-              val pdfOptions = PdfOptions(orient, fs, lh, ps, details = true)
+              val pdfOptions = PdfOptions(orient, fs, lh, ps, details = true, Nil)
               val file       = getFile(sv, targetSv, pdfOptions)
               if (file.exists())
                 file.delete()

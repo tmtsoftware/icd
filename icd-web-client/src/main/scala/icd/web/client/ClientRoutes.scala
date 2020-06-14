@@ -36,7 +36,8 @@ object ClientRoutes {
           s"fontSize=${o.fontSize}",
           s"lineHeight=${o.lineHeight}",
           s"paperSize=${o.paperSize}",
-          s"details=${o.details}"
+          s"details=${o.details}",
+          s"expanded=${o.expandedIds.mkString(",")}"
         ).mkString("&")
     )
     val attrs =

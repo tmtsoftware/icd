@@ -17,14 +17,16 @@ object PdfOptions {
       maybeFontSize: Option[Int],
       maybeLineHeight: Option[String],
       maybePaperSize: Option[String],
-      maybeDetails: Option[Boolean]
+      maybeDetails: Option[Boolean],
+      expandedIds: List[String]
   ): PdfOptions =
     PdfOptions(
       maybeOrientation.getOrElse(defaultOrientation),
       maybeFontSize.getOrElse(defaultFontSize),
       maybeLineHeight.getOrElse(defaultLineHeight),
       maybePaperSize.getOrElse(defaultPaperSize),
-      maybeDetails.getOrElse(defaultDetails)
+      maybeDetails.getOrElse(defaultDetails),
+      expandedIds
     )
 }
 
@@ -39,5 +41,7 @@ case class PdfOptions(
     paperSize: String,
     // true: Show the details for all events, commands, alarms (default)
     // false: Include only the details that are expanded in the HTML view
-    details: Boolean
+    details: Boolean,
+    // List of ids for expanded details
+    expandedIds: List[String]
 )

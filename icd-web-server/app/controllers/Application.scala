@@ -204,8 +204,12 @@ class Application @Inject()(
       maybeFontSize: Option[Int],
       maybeLineHeight: Option[String],
       maybePaperSize: Option[String],
-      maybeDetails: Option[Boolean]
+      maybeDetails: Option[Boolean],
+      maybeExpandedIds: Option[String]
   ): Action[AnyContent] = Action { implicit request =>
+    // val expandedLinkIds     = request.body.asJson.map(json => Json.fromJson[List[String]](json).get).getOrElse(Nil)
+    val expandedLinkIds = maybeExpandedIds.map(_.split(',').toList).getOrElse(Nil)
+
     // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
     // if only the subsystem or target versions were given, use those (default to latest versions)
     val v = maybeIcdVersion.getOrElse("*")
@@ -224,7 +228,7 @@ class Application @Inject()(
         SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
       )
     }
-    val pdfOptions = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails)
+    val pdfOptions = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedLinkIds)
 
     val icdPrinter = IcdDbPrinter(db, searchAllSubsystems = false, maybeCache)
     icdPrinter.saveIcdAsPdf(sv, targetSv, iv, pdfOptions) match {
@@ -252,13 +256,16 @@ class Application @Inject()(
       maybeFontSize: Option[Int],
       maybeLineHeight: Option[String],
       maybePaperSize: Option[String],
-      maybeDetails: Option[Boolean]
+      maybeDetails: Option[Boolean],
+      maybeExpandedIds: Option[String]
   ) =
     Action { implicit request =>
+//      val expandedLinkIds     = request.body.asJson.map(json => Json.fromJson[List[String]](json).get).getOrElse(Nil)
+      val expandedLinkIds     = maybeExpandedIds.map(_.split(',').toList).getOrElse(Nil)
       val sv                  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
       val searchAllSubsystems = searchAll.getOrElse(false)
       val icdPrinter          = IcdDbPrinter(db, searchAllSubsystems, maybeCache)
-      val pdfOptions          = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails)
+      val pdfOptions          = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedLinkIds)
       icdPrinter.saveApiAsPdf(sv, pdfOptions) match {
         case Some(bytes) =>
           Ok(bytes).as("application/pdf")
@@ -283,13 +290,12 @@ class Application @Inject()(
       maybeOrientation: Option[String],
       maybeFontSize: Option[Int],
       maybeLineHeight: Option[String],
-      maybePaperSize: Option[String],
-      maybeDetails: Option[Boolean]
+      maybePaperSize: Option[String]
   ) =
     authAction { implicit request =>
       val out        = new ByteArrayOutputStream()
       val sv         = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-      val pdfOptions = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails)
+      val pdfOptions = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, None, Nil)
       val html       = ArchivedItemsReport(db, Some(sv)).makeReport(pdfOptions)
       IcdToPdf.saveAsPdf(out, html, showLogo = false, pdfOptions)
       val bytes = out.toByteArray
@@ -305,12 +311,11 @@ class Application @Inject()(
       maybeOrientation: Option[String],
       maybeFontSize: Option[Int],
       maybeLineHeight: Option[String],
-      maybePaperSize: Option[String],
-      maybeDetails: Option[Boolean]
+      maybePaperSize: Option[String]
   ) =
     authAction { implicit request =>
       val out        = new ByteArrayOutputStream()
-      val pdfOptions = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails)
+      val pdfOptions = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, None, Nil)
       val html       = ArchivedItemsReport(db, None).makeReport(pdfOptions)
       IcdToPdf.saveAsPdf(out, html, showLogo = false, pdfOptions)
       val bytes = out.toByteArray

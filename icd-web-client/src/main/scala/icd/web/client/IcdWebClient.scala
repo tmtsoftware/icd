@@ -2,7 +2,7 @@ package icd.web.client
 
 import icd.web.shared.{BuildInfo, IcdVersion, PdfOptions, SubsystemWithVersion}
 import org.scalajs.dom
-import org.scalajs.dom.{MouseEvent, PopStateEvent, document}
+import org.scalajs.dom.{MouseEvent, PopStateEvent, Window, document}
 import org.scalajs.dom.raw.HTMLStyleElement
 
 import scala.concurrent.Future
@@ -554,6 +554,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       val maybeIcdVersion = selectDialog.icdChooser.getSelectedIcdVersion.map(_.icdVersion)
       val searchAll       = selectDialog.searchAllSubsystems()
       val uri             = ClientRoutes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll, pdfOptions)
+
       dom.window.open(uri) // opens in new window or tab
     }
   }

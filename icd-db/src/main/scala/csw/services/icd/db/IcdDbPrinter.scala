@@ -124,9 +124,9 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
         raw(targetSubsystemInfo.description),
         SummaryTable.displaySummary(subsystemInfo, Some(targetSv), infoList, nh),
         makeIntro(titleInfo1),
-        displayDetails(infoList, nh, forApi = false),
+        displayDetails(infoList, nh, forApi = false, pdfOptions),
         makeIntro(titleInfo2),
-        displayDetails(infoList2, nh, forApi = false)
+        displayDetails(infoList2, nh, forApi = false, pdfOptions)
       )
       val toc = nh.mkToc()
 

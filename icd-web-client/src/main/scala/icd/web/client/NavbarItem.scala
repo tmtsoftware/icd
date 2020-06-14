@@ -56,14 +56,29 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
       .map(elem => elem.asInstanceOf[HTMLInputElement].value)
       .toList
       .head
-//    val details = document
-//      .querySelectorAll(s"input[name='details$labelStr']:checked")
-//      .map(elem => elem.asInstanceOf[HTMLInputElement].value)
-//      .toList
-//      .head
-//      .toBoolean
-    val details = true
-    listener(PdfOptions(orientation, fontSize, lineHeight, paperSize, details))
+    val details = document
+      .querySelectorAll(s"input[name='details$labelStr']:checked")
+      .map(elem => elem.asInstanceOf[HTMLInputElement].value)
+      .toList
+      .head
+      .toBoolean
+
+    val expandedLinkIds = if (details) Nil else getExpandedIds
+    listener(PdfOptions(orientation, fontSize, lineHeight, paperSize, details, expandedLinkIds))
+  }
+
+  // Finds all button items with aria-expanded=true, then gets the "name" attr of the following "a" element.
+  // Returns list of ids for expanded rows.
+  private def getExpandedIds: List[String] = {
+    Array
+      .from(document.querySelectorAll("[aria-expanded]"))
+      .flatMap { el =>
+        val attr = el.attributes.getNamedItem("aria-expanded")
+        if (attr.value == "true" && el.nodeName.equalsIgnoreCase("button")) {
+          Some(el.parentNode.lastChild.attributes.getNamedItem("name").value)
+        } else None
+      }
+      .toList
   }
 
   private def makeRadioButton(nameStr: String, valueStr: String, defaultValue: String, units: Option[String] = None) = {
@@ -88,41 +103,34 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
           div(cls := "modal-body")(
             form(
               h5(s"Orientation:"),
-              PdfOptions.orientations.map(x =>
-                makeRadioButton(s"orientation$labelStr", x, PdfOptions.defaultOrientation)
-              ),
+              PdfOptions.orientations.map(x => makeRadioButton(s"orientation$labelStr", x, PdfOptions.defaultOrientation)),
               p(),
               hr,
               p(),
               h5(s"Font Size:"),
-              PdfOptions.fontSizes.map(x =>
-                makeRadioButton(s"fontSize$labelStr", x.toString, PdfOptions.defaultFontSize.toString, Some("px"))
-              ),
+              PdfOptions.fontSizes
+                .map(x => makeRadioButton(s"fontSize$labelStr", x.toString, PdfOptions.defaultFontSize.toString, Some("px"))),
               hr,
               p(),
               h5(s"Line Height:"),
-              PdfOptions.lineHeights.map(x =>
-                makeRadioButton(s"lineHeight$labelStr", x, PdfOptions.defaultLineHeight)
-              ),
+              PdfOptions.lineHeights.map(x => makeRadioButton(s"lineHeight$labelStr", x, PdfOptions.defaultLineHeight)),
               hr,
               p(),
               h5(s"Paper Size:"),
-              PdfOptions.paperSizes.map(x =>
-                makeRadioButton(s"paperSize$labelStr", x, PdfOptions.defaultPaperSize)
+              PdfOptions.paperSizes.map(x => makeRadioButton(s"paperSize$labelStr", x, PdfOptions.defaultPaperSize)),
+              hr,
+              p(),
+              h5(s"Details:"),
+              div(cls := "radio")(
+                label(input(`type` := "radio", name := s"details$labelStr", value := "true", checked))(
+                  "Show the details for all events, commands, alarms (default)"
+                )
               ),
-//              hr,
-//              p(),
-//              h5(s"Details:"),
-//              div(cls := "radio")(
-//                label(input(`type` := "radio", name := s"details$labelStr", value := "true", checked))(
-//                  "Show the details for all events, commands, alarms (default)"
-//                )
-//              ),
-//              div(cls := "radio")(
-//                label(input(`type` := "radio", name := s"details$labelStr", value := "false"))(
-//                  "Include only the details that are expanded in the HTML view"
-//                )
-//              )
+              div(cls := "radio")(
+                label(input(`type` := "radio", name := s"details$labelStr", value := "false"))(
+                  "Include only the details that are expanded in the HTML view"
+                )
+              )
             )
           ),
           div(cls := "modal-footer")(
