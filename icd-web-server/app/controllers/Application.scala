@@ -191,6 +191,11 @@ class Application @Inject()(
    * @param maybeTargetVersion optional target subsystem's version (default: current)
    * @param maybeTargetComponent optional target component name (default: all in target subsystem)
    * @param maybeIcdVersion    optional ICD version (default: current)
+   * @param maybeOrientation   "portrait" or "landscape" (default)
+   * @param maybeFontSize       base font size
+   * @param maybeLineHeight     line-height for HTML
+   * @param maybePaperSize      Letter, Legal, A4, A3, default: Letter
+   * @param maybeDetails        If true, the PDF lists all detailed info, otherwise only the expanded rows in web app
    */
   def icdAsPdf(
       subsystem: String,
@@ -204,11 +209,9 @@ class Application @Inject()(
       maybeFontSize: Option[Int],
       maybeLineHeight: Option[String],
       maybePaperSize: Option[String],
-      maybeDetails: Option[Boolean],
-      maybeExpandedIds: Option[String]
+      maybeDetails: Option[Boolean]
   ): Action[AnyContent] = Action { implicit request =>
-    // val expandedLinkIds     = request.body.asJson.map(json => Json.fromJson[List[String]](json).get).getOrElse(Nil)
-    val expandedLinkIds = maybeExpandedIds.map(_.split(',').toList).getOrElse(Nil)
+    val expandedIds = request.body.asFormUrlEncoded.get("expandedIds").headOption.getOrElse("").split(',').toList
 
     // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
     // if only the subsystem or target versions were given, use those (default to latest versions)
@@ -228,7 +231,7 @@ class Application @Inject()(
         SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
       )
     }
-    val pdfOptions = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedLinkIds)
+    val pdfOptions = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedIds)
 
     val icdPrinter = IcdDbPrinter(db, searchAllSubsystems = false, maybeCache)
     icdPrinter.saveIcdAsPdf(sv, targetSv, iv, pdfOptions) match {
@@ -246,6 +249,11 @@ class Application @Inject()(
    * @param maybeVersion   the source subsystem's version (default: current)
    * @param maybeComponent optional component (default: all in subsystem)
    * @param searchAll if true, search all components for API dependencies
+   * @param maybeOrientation   "portrait" or "landscape" (default)
+   * @param maybeFontSize       base font size
+   * @param maybeLineHeight     line-height for HTML
+   * @param maybePaperSize      Letter, Legal, A4, A3, default: Letter
+   * @param maybeDetails        If true, the PDF lists all detailed info, otherwise only the expanded rows in web app
    */
   def apiAsPdf(
       subsystem: String,
@@ -256,16 +264,14 @@ class Application @Inject()(
       maybeFontSize: Option[Int],
       maybeLineHeight: Option[String],
       maybePaperSize: Option[String],
-      maybeDetails: Option[Boolean],
-      maybeExpandedIds: Option[String]
+      maybeDetails: Option[Boolean]
   ) =
     Action { implicit request =>
-//      val expandedLinkIds     = request.body.asJson.map(json => Json.fromJson[List[String]](json).get).getOrElse(Nil)
-      val expandedLinkIds     = maybeExpandedIds.map(_.split(',').toList).getOrElse(Nil)
+      val expandedIds = request.body.asFormUrlEncoded.get("expandedIds").headOption.getOrElse("").split(',').toList
       val sv                  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
       val searchAllSubsystems = searchAll.getOrElse(false)
       val icdPrinter          = IcdDbPrinter(db, searchAllSubsystems, maybeCache)
-      val pdfOptions          = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedLinkIds)
+      val pdfOptions          = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedIds)
       icdPrinter.saveApiAsPdf(sv, pdfOptions) match {
         case Some(bytes) =>
           Ok(bytes).as("application/pdf")

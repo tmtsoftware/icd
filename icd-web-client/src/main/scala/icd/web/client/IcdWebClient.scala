@@ -18,7 +18,7 @@ import icd.web.client.PublishDialog.PublishDialogListener
 import icd.web.client.SelectDialog.SelectDialogListener
 import icd.web.client.StatusDialog.StatusDialogListener
 import org.scalajs.dom.ext.Ajax
-import org.w3c.dom.html.HTMLAnchorElement
+import org.w3c.dom.html.{HTMLAnchorElement, HTMLFormElement}
 import play.api.libs.json.Json
 
 import scala.scalajs.js
@@ -216,11 +216,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private def showPasswordDialog(saveHistory: Boolean = true)(): Unit = {
     setSidebarVisible(false)
     setNavbarVisible(false)
-//    currentView = StatusView
     val title = "TMT Interface Database System"
     mainContent.setContent(passwordDialog, s"$title ${BuildInfo.version}")
-//        if (saveHistory)
-//        pushState(viewType = StatusView, maybeSourceSubsystem = maybeSubsystem.map(SubsystemWithVersion(_, None, None)))
   }
 
   // Called when the Home/TMT ICD Database navbar item is selected (or through browser history)
@@ -544,6 +541,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Gets a PDF of the currently selected ICD or subsystem API
   private def makePdf(pdfOptions: PdfOptions): Unit = {
+    import scalatags.JsDom.all._
     val maybeSv =
       if (currentView == StatusView)
         statusDialog.getSubsystemWithVersion
@@ -555,7 +553,14 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       val searchAll       = selectDialog.searchAllSubsystems()
       val uri             = ClientRoutes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll, pdfOptions)
 
-      dom.window.open(uri) // opens in new window or tab
+      // We need to do a POST in case expandedIds are passed, which can be very long, so create a temp form
+      val formId = "tmpPdfForm"
+      val tmpForm = form(id := formId, method := "POST", action := uri, target := "_blank")(
+        input(`type` := "hidden", name := "expandedIds", value := pdfOptions.expandedIds.mkString(","))
+      ).render
+      document.body.appendChild(tmpForm)
+      tmpForm.submit();
+      document.body.removeChild(tmpForm);
     }
   }
 
