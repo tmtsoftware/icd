@@ -137,21 +137,21 @@ object IcdDb extends App {
       c.copy(allSubsystems = Some(()))
     } text "Include all subsystems in searches for publishers, subscribers, etc. while generating API doc (Default: only consider the one subsystem)"
 
-    opt[String]("orientation") valueName "portrait or landscape" action { (x, c) =>
+    opt[String]("orientation") valueName "[portrait|landscape]" action { (x, c) =>
       c.copy(orientation = Some(x))
-    } text "For PDF output: The page orientation: portrait or landscape (default: landscape)"
+    } text "For PDF output: The page orientation (default: landscape)"
 
-    opt[Int]("fontSize") valueName "" action { (x, c) =>
+    opt[Int]("fontSize") valueName "<size>" action { (x, c) =>
       c.copy(fontSize = Some(x))
     } text "For PDF or HTML file output: The base font size in px for body text (default: 10)"
 
-    opt[String]("lineHeight") valueName "height" action { (x, c) =>
+    opt[String]("lineHeight") valueName "<height>" action { (x, c) =>
       c.copy(lineHeight = Some(x))
     } text "For PDF or HTML file output: The line height (default: 1.6)"
 
-    opt[String]("paperSize") valueName "portrait or landscape" action { (x, c) =>
+    opt[String]("paperSize") valueName "[Letter|Legal|A4|A3]" action { (x, c) =>
       c.copy(paperSize = Some(x))
-    } text "For PDF output: The paper size (One of: Letter, Legal, A4, A3, default: Letter)"
+    } text "For PDF output: The paper size (default: Letter)"
 
     help("help")
     version("version")
