@@ -21,9 +21,15 @@ GET         /componentInfo/:subsystem                   controllers.Application.
 GET         /icdComponentInfo/:subsystem/:target        controllers.Application.icdComponentInfo(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String])
 
 # Gets the PDF for the given ICD
+GET         /icdAsPdf/:subsystem/:target                controllers.Application.icdAsPdf(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
+
+# Gets the PDF for the given ICD (using POST to pass list of expanded row ids)
 POST         /icdAsPdf/:subsystem/:target                controllers.Application.icdAsPdf(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
 
 # Gets the PDF for the given subsystem API
+GET         /apiAsPdf/:subsystem                        controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
+
+# Gets the PDF for the given subsystem API (using POST to pass list of expanded row ids)
 POST         /apiAsPdf/:subsystem                        controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
 
 # Gets an archived items report (PDF) for the given subsystem API (and component)

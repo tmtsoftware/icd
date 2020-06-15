@@ -553,14 +553,18 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       val searchAll       = selectDialog.searchAllSubsystems()
       val uri             = ClientRoutes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll, pdfOptions)
 
-      // We need to do a POST in case expandedIds are passed, which can be very long, so create a temp form
-      val formId = "tmpPdfForm"
-      val tmpForm = form(id := formId, method := "POST", action := uri, target := "_blank")(
-        input(`type` := "hidden", name := "expandedIds", value := pdfOptions.expandedIds.mkString(","))
-      ).render
-      document.body.appendChild(tmpForm)
-      tmpForm.submit();
-      document.body.removeChild(tmpForm);
+      if (!pdfOptions.details && pdfOptions.expandedIds.nonEmpty) {
+        // We need to do a POST in case expandedIds are passed, which can be very long, so create a temp form
+        val formId = "tmpPdfForm"
+        val tmpForm = form(id := formId, method := "POST", action := uri, target := "_blank")(
+          input(`type` := "hidden", name := "expandedIds", value := pdfOptions.expandedIds.mkString(","))
+        ).render
+        document.body.appendChild(tmpForm)
+        tmpForm.submit();
+        document.body.removeChild(tmpForm);
+      } else {
+        dom.window.open(uri) // opens in new window or tab
+      }
     }
   }
 

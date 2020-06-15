@@ -211,7 +211,9 @@ class Application @Inject()(
       maybePaperSize: Option[String],
       maybeDetails: Option[Boolean]
   ): Action[AnyContent] = Action { implicit request =>
-    val expandedIds = request.body.asFormUrlEncoded.get("expandedIds").headOption.getOrElse("").split(',').toList
+    val expandedIds = if (request.method == "POST")
+      request.body.asFormUrlEncoded.get("expandedIds").headOption.getOrElse("").split(',').toList
+    else Nil
 
     // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
     // if only the subsystem or target versions were given, use those (default to latest versions)
@@ -267,7 +269,9 @@ class Application @Inject()(
       maybeDetails: Option[Boolean]
   ) =
     Action { implicit request =>
-      val expandedIds = request.body.asFormUrlEncoded.get("expandedIds").headOption.getOrElse("").split(',').toList
+      val expandedIds = if (request.method == "POST")
+        request.body.asFormUrlEncoded.get("expandedIds").headOption.getOrElse("").split(',').toList
+      else Nil
       val sv                  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
       val searchAllSubsystems = searchAll.getOrElse(false)
       val icdPrinter          = IcdDbPrinter(db, searchAllSubsystems, maybeCache)
