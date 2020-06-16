@@ -69,6 +69,30 @@ object IcdGitManager {
     }
   }
 
+  // Gets the API entry for the master branch of the given subsystem, if not empty
+  private def getMasterApiVersion(subsystem: String): Option[ApiVersions.ApiEntry] = {
+    /*
+    import org.eclipse.jgit.internal.storage.file.FileRepository
+    import org.eclipse.jgit.lib.Repository
+    import org.eclipse.jgit.revwalk.RevCommit
+    val repository: Repository = new FileRepository("/path/to/repository/.git")
+    val treeName: String = "refs/heads/master"// tag or branch
+    import scala.collection.JavaConversions._
+    for (commit <- git.log.add(repository.resolve(treeName)).call)  { System.out.println(commit.getName) }
+     */
+
+    // Add master branch as pseudo version
+    val info = getSubsystemGitInfo(subsystem)
+    if (!info.isEmpty) {
+      // XXX TODO FIXME: Do a shallow clone and use above code?
+      val date    = DateTime.now().withZone(DateTimeZone.UTC).toString()
+      val user    = ""
+      val comment = ""
+      println(s"XXX  master commit id for $subsystem = ${info.commitId}")
+      Some(ApiVersions.ApiEntry("master", info.commitId, user, comment, date))
+    } else None
+  }
+
   /**
    * Gets a list of information about all of the published API and ICD versions by reading any
    * apis/api-*.json and icds/icd-*.json files from the GitHub repo.
@@ -89,6 +113,11 @@ object IcdGitManager {
       .map(path => ApiVersions.fromJson(new String(Files.readAllBytes(path))))
       .filter(_.apis.nonEmpty)
       .sorted
+      .flatMap { apiVersions =>
+        // Add master branch as pseudo version
+        getMasterApiVersion(apiVersions.subsystem)
+          .map(master => ApiVersions(apiVersions.subsystem, master :: apiVersions.apis))
+      }
 
     val icdVersions = Option(icdsDir.listFiles)
       .getOrElse(Array())
@@ -339,7 +368,7 @@ object IcdGitManager {
           }
           maybeApi
         }
-      maybeApiEntry.map(e => ApiVersionInfo(sv.subsystem, e.version, e.user, e.comment, e.date))
+      maybeApiEntry.map(e => ApiVersionInfo(sv.subsystem, e.version, e.user, e.comment, e.date, e.commit))
     } finally {
       deleteDirectoryRecursively(gitWorkDir)
     }
@@ -401,7 +430,7 @@ object IcdGitManager {
       git.close()
       if (updateTag)
         tag(ApiVersions(subsystem, List(apiEntry)), user, password, comment, (s: String) => println(s))
-      ApiVersionInfo(subsystem, apiEntry.version, user, comment, date)
+      ApiVersionInfo(subsystem, apiEntry.version, user, comment, date, commit)
     } finally {
       deleteDirectoryRecursively(gitWorkDir)
     }
@@ -702,7 +731,7 @@ object IcdGitManager {
         db.query.afterIngestSubsystem(subsystem, problems, db.dbName)
         if (!problems.exists(_.severity != "warning")) {
           val date = DateTime.parse(e.date)
-          db.versionManager.publishApi(subsystem, Some(e.version), majorVersion = false, e.comment, e.user, date)
+          db.versionManager.publishApi(subsystem, Some(e.version), majorVersion = false, e.comment, e.user, date, e.commit)
         }
       }
       git.close()
@@ -834,7 +863,7 @@ object IcdGitManager {
       val maybeApiVersionList = maybeApiVersions.toList
         .flatMap(_.apis)
         .map { apiEntry =>
-          ApiVersionInfo(subsystem, apiEntry.version, apiEntry.user, apiEntry.comment, apiEntry.date)
+          ApiVersionInfo(subsystem, apiEntry.version, apiEntry.user, apiEntry.comment, apiEntry.date, apiEntry.commit)
         }
       val icdVersions = allIcdVersions
         .filter(icdVersions => icdVersions.subsystems.contains(subsystem))
@@ -878,9 +907,11 @@ object IcdGitManager {
     // Ingest any missing published subsystem versions
     val missingSubsystemVersions = allApiVersions
       .flatMap { apiVersions =>
-        val versions = db.versionManager.getVersionNames(apiVersions.subsystem).toSet
+        val versions = db.versionManager.getVersions(apiVersions.subsystem).tail.toSet
         apiVersions.apis
-          .filter(apiEntry => !versions.contains(apiEntry.version))
+          .filter(
+            apiEntry => !versions.exists(info => info.maybeVersion.contains(apiEntry.version) && info.commit == apiEntry.commit)
+          )
           .map(apiEntry => SubsystemAndVersion(apiVersions.subsystem, Some(apiEntry.version)))
       }
     if (missingSubsystemVersions.nonEmpty) {

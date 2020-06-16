@@ -57,6 +57,7 @@ object IcdVersionManager {
   val userKey             = "user"
   val dateKey             = "date"
   val commentKey          = "comment"
+  val commitKey           = "commit"
 
   val queryAny: BSONDocument = BSONDocument()
 
@@ -77,7 +78,7 @@ object IcdVersionManager {
    * @param date         the date of the change
    * @param parts        names and versions of the subsystem or component parts
    */
-  case class VersionInfo(maybeVersion: Option[String], user: String, comment: String, date: DateTime, parts: List[PartInfo]) {
+  case class VersionInfo(maybeVersion: Option[String], user: String, comment: String, date: DateTime, commit: String, parts: List[PartInfo]) {
     // Gets the version of the part with the given path
     def getPartVersion(path: String): Option[Int] = {
       val list = for (part <- parts if part.path == path) yield part.version
@@ -94,6 +95,7 @@ object IcdVersionManager {
       val user         = doc.getAsOpt[String](userKey).get
       val comment      = doc.getAsOpt[String](commentKey).get
       val date         = new DateTime(doc.getAsOpt[BSONDateTime](dateKey).get.value, DateTimeZone.UTC)
+      val commit       = doc.getAsOpt[String](commitKey).get
       val partDocs     = doc.getAsOpt[Array[BSONDocument]](partsKey).get.toList
       val parts = partDocs.map { part =>
         val name    = part.getAsOpt[String]("name").get
@@ -101,7 +103,7 @@ object IcdVersionManager {
         PartInfo(name, version)
       }
 
-      VersionInfo(maybeVersion, user, comment, date, parts)
+      VersionInfo(maybeVersion, user, comment, date, commit, parts)
     }
   }
 
@@ -163,7 +165,7 @@ object IcdVersionManager {
      * Validates the format of the given version string
      */
     def checkVersion(v: String): Unit = {
-      if (!v.matches("\\d+\\.\\d+")) throw new IllegalArgumentException(s"Invalid subsystem version: $v")
+      if (v != "master" && !v.matches("\\d+\\.\\d+")) throw new IllegalArgumentException(s"Invalid subsystem version: $v")
     }
   }
 
@@ -220,7 +222,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
       comment: String,
       username: String,
       majorVersion: Boolean,
-      date: DateTime
+      date: DateTime,
+      commit: String
   ): Unit = {
 
     val parts = versions.map(v => BSONDocument("name" -> v._1, versionStrKey -> v._2))
@@ -232,10 +235,12 @@ case class IcdVersionManager(query: IcdDbQuery) {
       userKey       -> user,
       commentKey    -> comment,
       dateKey       -> BSONDateTime(date.getMillis),
+      commitKey     -> commit,
       partsKey      -> parts
     )
     val path = maybeComponent.fold(subsystem)(compName => s"$subsystem.$compName")
     val coll = db.collection[BSONCollection](versionCollectionName(path))
+    coll.delete().one(BSONDocument(versionStrKey -> version)).await
     coll.insert.one(obj).await
   }
 
@@ -314,8 +319,9 @@ case class IcdVersionManager(query: IcdDbQuery) {
         val now     = new DateTime(DateTimeZone.UTC)
         val user    = ""
         val comment = "Working version, unpublished"
+        val commit = ""
         val parts   = paths.map(p => (p, getPartVersion(p))).flatMap(pair => pair._2.map(version => PartInfo(pair._1, version)))
-        Some(VersionInfo(None, user, comment, now, parts))
+        Some(VersionInfo(None, user, comment, now, commit, parts))
     }
   }
 
@@ -528,6 +534,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * @param majorVersion if true (and no subsystem version was given), increment the subsystem's major version
    * @param comment      change comment
    * @param date         the publish date (UTC)
+   * @param commit       the Git commit id (used to check for changes in master branch)
    */
   def publishApi(
       subsystem: String,
@@ -535,7 +542,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
       majorVersion: Boolean,
       comment: String,
       username: String,
-      date: DateTime
+      date: DateTime,
+      commit: String
   ): Unit = {
     import reactivemongo.api.bson._
     import reactivemongo.play.json.compat._
@@ -569,13 +577,24 @@ case class IcdVersionManager(query: IcdDbQuery) {
     }
 
     // Add to collection of published subsystem versions
-    newVersion(collectionNames, subsystem, maybeVersion, None, versions, comment, username, majorVersion, date)
+    newVersion(collectionNames, subsystem, maybeVersion, None, versions, comment, username, majorVersion, date, commit)
 
     // Add to collection of published subsystem component versions
     getComponentNames(SubsystemWithVersion(subsystem, None, None)).foreach { name =>
       val prefix       = s"$subsystem.$name."
       val compVersions = versions.filter(p => p._1.startsWith(prefix))
-      newVersion(collectionNames, subsystem, maybeVersion, Some(name), compVersions, comment, username, majorVersion, date)
+      newVersion(
+        collectionNames,
+        subsystem,
+        maybeVersion,
+        Some(name),
+        compVersions,
+        comment,
+        username,
+        majorVersion,
+        date,
+        commit
+      )
     }
   }
 
@@ -590,6 +609,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * @param targetVersion    the target subsystem version
    * @param user             the user who made the release
    * @param comment          comment to go with this version
+   * @param date             publish date for this version
    */
   def addIcdVersion(
       icdVersion: String,
@@ -615,8 +635,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
         targetKey           -> target,
         targetVersionKey    -> targetVersion,
         userKey             -> user,
-        dateKey             -> BSONDateTime(date.getMillis),
-        commentKey          -> comment
+        commentKey          -> comment,
+        dateKey             -> BSONDateTime(date.getMillis)
       )
       db.collection[BSONCollection](icdCollName).insert.one(obj).await
     } else {

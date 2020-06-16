@@ -115,7 +115,7 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
   }
 
   private def apiTable(pubInfo: PublishInfo): JsDom.TypedTag[Table] = {
-    val apiVersionInfo = pubInfo.apiVersions.head
+    val apiVersionInfo = pubInfo.apiVersions.tail.head
     table(
       Styles.componentTable,
       attr("data-toggle") := "table",

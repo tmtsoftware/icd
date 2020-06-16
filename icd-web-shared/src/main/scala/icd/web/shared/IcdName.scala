@@ -36,5 +36,6 @@ case class IcdVersionInfo(icdVersion: IcdVersion, user: String, comment: String,
  * @param user      the user that published the version
  * @param comment   the publish comment
  * @param date      the date the ICD was published
+ * @param commit    the git commit id
  */
-case class ApiVersionInfo(subsystem: String, version: String, user: String, comment: String, date: String)
+case class ApiVersionInfo(subsystem: String, version: String, user: String, comment: String, date: String, commit: String)
