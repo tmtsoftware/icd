@@ -16,6 +16,9 @@ import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.Json
 
 import scala.jdk.CollectionConverters._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.DurationLong
+import scala.concurrent.{Await, Future}
 
 /**
  * Provides methods for managing ICD versions in Git and
@@ -105,19 +108,27 @@ object IcdGitManager {
     val apiMatcher = FileSystems.getDefault.getPathMatcher(s"glob:$apisDir/api-*.json")
     val icdMatcher = FileSystems.getDefault.getPathMatcher(s"glob:$icdsDir/icd-*.json")
 
-    val apiVersions = Option(apisDir.listFiles)
-      .getOrElse(Array())
-      .toList
-      .map(_.toPath)
-      .filter(apiMatcher.matches)
-      .map(path => ApiVersions.fromJson(new String(Files.readAllBytes(path))))
-      .filter(_.apis.nonEmpty)
-      .sorted
-      .flatMap { apiVersions =>
-        // Add master branch as pseudo version
-        getMasterApiVersion(apiVersions.subsystem)
-          .map(master => ApiVersions(apiVersions.subsystem, master :: apiVersions.apis))
-      }
+    val apiVersions = Await.result(
+      Future
+        .sequence(
+          Option(apisDir.listFiles)
+            .getOrElse(Array())
+            .toList
+            .map(_.toPath)
+            .filter(apiMatcher.matches)
+            .map(path => ApiVersions.fromJson(new String(Files.readAllBytes(path))))
+            .filter(_.apis.nonEmpty)
+            .sorted
+            .map { apiVersions =>
+              // Add master branch as pseudo version, do in parallel for performance
+              Future(getMasterApiVersion(apiVersions.subsystem)).map(
+                _.toList.map(master => ApiVersions(apiVersions.subsystem, master :: apiVersions.apis))
+              )
+            }
+        )
+        .map(_.flatten),
+      300.seconds
+    )
 
     val icdVersions = Option(icdsDir.listFiles)
       .getOrElse(Array())
