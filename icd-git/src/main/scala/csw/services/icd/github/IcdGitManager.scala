@@ -108,7 +108,7 @@ object IcdGitManager {
     val apiMatcher = FileSystems.getDefault.getPathMatcher(s"glob:$apisDir/api-*.json")
     val icdMatcher = FileSystems.getDefault.getPathMatcher(s"glob:$icdsDir/icd-*.json")
 
-    val apiVersions = Await.result(
+    val apiVersions =
       Future
         .sequence(
           Option(apisDir.listFiles)
@@ -126,9 +126,8 @@ object IcdGitManager {
               )
             }
         )
-        .map(_.flatten),
-      300.seconds
-    )
+        .map(_.flatten)
+        .await
 
     val icdVersions = Option(icdsDir.listFiles)
       .getOrElse(Array())
