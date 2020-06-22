@@ -871,7 +871,7 @@ object IcdGitManager {
       val subsystemGitInfo = getSubsystemGitInfo(subsystem)
       val maybeApiVersions = allApiVersions.find(_.subsystem == subsystem)
       val maybeApiVersionList = maybeApiVersions.toList
-        .flatMap(_.apis)
+        .flatMap(_.apis.tail) // skip master version
         .map { apiEntry =>
           ApiVersionInfo(subsystem, apiEntry.version, apiEntry.user, apiEntry.comment, apiEntry.date, apiEntry.commit)
         }
@@ -887,7 +887,7 @@ object IcdGitManager {
             IcdVersionInfo(icdVersion, icdEntry.user, icdEntry.comment, icdEntry.date)
           }
         }
-      val publishedCommitId = maybeApiVersions.map(_.apis.head.commit)
+      val publishedCommitId = maybeApiVersions.map(_.apis.tail.head.commit)
       val readyToPublish    = !(subsystemGitInfo.isEmpty || publishedCommitId.contains(subsystemGitInfo.commitId))
       PublishInfo(subsystem, maybeApiVersionList, icdVersions, readyToPublish)
     }
