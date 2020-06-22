@@ -69,7 +69,8 @@ lazy val icdWebServer = (project in file("icd-web-server"))
     compile in Compile := ((compile in Compile) dependsOn scalaJSPipeline).value,
     includeFilter in (Assets, LessKeys.less) := "icd.less",
     libraryDependencies ++=
-      compileScope(filters, guice, scalajsScripts, playJson, jqueryUi, webjarsPlay, bootstrap, bootstrapTable) ++
+      compileScope(filters, guice, scalajsScripts, akkaActorTyped, akkaActor, akkaStream,
+        playJson, jqueryUi, webjarsPlay, bootstrap, bootstrapTable) ++
         testScope(specs2)
   )
   .enablePlugins(PlayScala, SbtWeb, DockerPlugin)

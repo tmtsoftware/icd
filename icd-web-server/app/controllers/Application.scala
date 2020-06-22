@@ -1,18 +1,15 @@
 package controllers
 
-import java.io.{ByteArrayOutputStream, File}
-
 import javax.inject._
 import java.security.MessageDigest
 
+import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.ActorRef
 import controllers.ApplicationData.AuthAction
-import csw.services.icd.{IcdToPdf, PdfCache}
-import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
 import csw.services.icd.db._
 import csw.services.icd.github.IcdGitManager
-import diffson.playJson.DiffsonProtocol
 import icd.web.shared.SharedUtils.Credentials
-import icd.web.shared.{IcdVersion, _}
+import icd.web.shared._
 import org.eclipse.jgit.api.errors.TransportException
 import org.webjars.play._
 import play.api.libs.json.Json
@@ -20,39 +17,20 @@ import play.api.mvc.Cookie.SameSite.Strict
 import play.filters.csrf.{CSRF, CSRFAddToken}
 import play.api.mvc._
 import play.api.{Configuration, Environment, Mode}
+import akka.actor.typed.scaladsl.AskPattern._
+import akka.util.Timeout
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.concurrent.duration._
 
-// Defines the database used
-object ApplicationData {
-  // Used to access the ICD database
-  val tryDb: Try[IcdDb] = Try(IcdDb())
+import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
 
-  // Cache of PDF files for published API and ICD versions
-  val maybeCache: Option[PdfCache] =
-    if (IcdDbDefaults.conf.getBoolean("icd.pdf.cache.enabled"))
-      Some(new PdfCache(new File(IcdDbDefaults.conf.getString("icd.pdf.cache.dir"))))
-    else None
-
-  // Name of cookie used for login username:password
-  val cookieName = "icd.credentials.sha"
-
-  // Action that requires authorization
-  class AuthAction @Inject()(parser: BodyParsers.Default, configuration: Configuration)(implicit ec: ExecutionContext)
-      extends ActionBuilderImpl(parser) {
-    override def invokeBlock[A](request: Request[A], block: Request[A] => Future[Result]): Future[Result] = {
-      if (configuration.get[Boolean]("icd.isPublicServer")) {
-        request.cookies.get(cookieName) match {
-          case Some(cookie) if configuration.get[String](cookieName) == cookie.value => block(request)
-          case _                                                                     => Future(Results.Unauthorized("Invalid user token"))
-        }
-      } else {
-        block(request)
-      }
-    }
-  }
-}
+//@ImplementedBy(classOf[MyExecutionContextImpl])
+//trait MyExecutionContext extends ExecutionContext
+//
+//class MyExecutionContextImpl @Inject()(system: akka.actor.ActorSystem)
+//    extends CustomExecutionContext(system, "my.executor")
+//    with MyExecutionContext
 
 /**
  * Provides the interface between the web client and the server
@@ -60,6 +38,8 @@ object ApplicationData {
 //noinspection TypeAnnotation,DuplicatedCode
 @Singleton
 class Application @Inject()(
+    actorSystem: akka.actor.ActorSystem,
+//    myExecutionContext: MyExecutionContext,
     env: Environment,
     addToken: CSRFAddToken,
     assets: AssetsFinder,
@@ -71,24 +51,26 @@ class Application @Inject()(
 
   import ApplicationData._
   import JsonSupport._
+  import ApplicationActor._
+
+  implicit val timeout          = Timeout(120.seconds)
+  implicit val typedActorSystem = actorSystem.toTyped
+//  implicit val ec               = myExecutionContext
+  import actorSystem._
 
   if (!tryDb.isSuccess) {
     println("Error: Failed to connect to the icd database. Make sure mongod is running.")
     System.exit(1)
   }
-  private val db = tryDb.get
-
-  // Cache of API and ICD versions published on GitHub (cached for better performance)
-  private var (allApiVersions, allIcdVersions) = IcdGitManager.ingestMissing(db)
+  private val db: IcdDb = tryDb.get
 
   // The expected SHA of username:password from application.conf
   val expectedSha = configuration.get[String](cookieName)
 
-  // Update the database and cache after a new API or ICD was published (or in case one was published)
-  private def updateAfterPublish(): Unit = {
-    val pair = IcdGitManager.ingestMissing(db)
-    allApiVersions = pair._1
-    allIcdVersions = pair._2
+  // Use an actor to manage concurrent access to cached data
+  val appActor: ActorRef[ApplicationActor.Messages] = {
+    val behavior = ApplicationActor.create(db)
+    actorSystem.spawn(behavior, "app-actor")
   }
 
   // Somehow disabling the CSRF filter in application.conf and adding it here was needed to make this work
@@ -104,36 +86,28 @@ class Application @Inject()(
   /**
    * Gets a list of top level subsystem names
    */
-  def subsystemNames = Action { implicit request =>
-    val subsystemsInDb          = db.query.getSubsystemNames
-    val publishedSubsystemNames = allApiVersions.map(_.subsystem)
-    val names                   = publishedSubsystemNames ++ subsystemsInDb
-    Ok(Json.toJson(names.toSet.toList.sorted))
+  def subsystemNames = Action.async {
+    val resp: Future[List[String]] = appActor ? GetSubsystemNames
+    resp.map(names => Ok(Json.toJson(names)))
   }
 
   /**
    * Gets information about a named subsystem
    */
-  def subsystemInfo(subsystem: String, maybeVersion: Option[String]) = authAction { implicit request =>
-    // Get the subsystem info from the database, or if not found, look in the published GitHub repo
-    val sv = SubsystemWithVersion(subsystem, maybeVersion, None)
-    db.versionManager.getSubsystemModel(sv) match {
-      case Some(model) =>
-        // Found in db
-        val info = SubsystemInfo(sv, model.title, model.description)
-        Ok(Json.toJson(info))
-      case None =>
-        NotFound
+  def subsystemInfo(subsystem: String, maybeVersion: Option[String]) = authAction.async {
+    val resp: Future[Option[SubsystemInfo]] = appActor ? (GetSubsystemInfo(subsystem, maybeVersion, _))
+    resp.map {
+      case Some(info) => Ok(Json.toJson(info))
+      case None       => NotFound
     }
   }
 
   /**
    * Gets a list of components belonging to the given version of the given subsystem
    */
-  def components(subsystem: String, maybeVersion: Option[String]) = authAction { implicit request =>
-    val sv    = SubsystemWithVersion(subsystem, maybeVersion, None)
-    val names = db.versionManager.getComponentNames(sv)
-    Ok(Json.toJson(names))
+  def components(subsystem: String, maybeVersion: Option[String]) = authAction.async {
+    val resp: Future[List[String]] = appActor ? (GetComponents(subsystem, maybeVersion, _))
+    resp.map(names => Ok(Json.toJson(names)))
   }
 
   /**
@@ -145,14 +119,9 @@ class Application @Inject()(
    * @param searchAll if true, search all components for API dependencies
    */
   def componentInfo(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String], searchAll: Option[Boolean]) =
-    authAction { implicit request =>
-      val sv                  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-      val searchAllSubsystems = searchAll.getOrElse(false)
-      val subsystems          = if (searchAllSubsystems) None else Some(List(sv.subsystem))
-      val query               = new CachedIcdDbQuery(db.db, db.admin, subsystems)
-      val versionManager      = new CachedIcdVersionManager(query)
-      val infoList            = new ComponentInfoHelper(displayWarnings = searchAllSubsystems).getComponentInfoList(versionManager, sv)
-      Ok(Json.toJson(infoList))
+    authAction.async {
+      val resp: Future[List[ComponentInfo]] = appActor ? (GetComponentInfo(subsystem, maybeVersion, maybeComponent, searchAll, _))
+      resp.map(info => Ok(Json.toJson(info)))
     }
 
   /**
@@ -172,13 +141,17 @@ class Application @Inject()(
       target: String,
       maybeTargetVersion: Option[String],
       maybeTargetComponent: Option[String]
-  ): Action[AnyContent] = authAction { implicit request =>
-    val sv             = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-    val targetSv       = SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
-    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)))
-    val versionManager = new CachedIcdVersionManager(query)
-    val infoList       = IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv)
-    Ok(Json.toJson(infoList))
+  ): Action[AnyContent] = authAction.async {
+    val resp: Future[List[ComponentInfo]] = appActor ? (GetIcdComponentInfo(
+      subsystem,
+      maybeVersion,
+      maybeComponent,
+      target,
+      maybeTargetVersion,
+      maybeTargetComponent,
+      _
+    ))
+    resp.map(info => Ok(Json.toJson(info)))
   }
 
   /**
@@ -210,33 +183,31 @@ class Application @Inject()(
       maybeLineHeight: Option[String],
       maybePaperSize: Option[String],
       maybeDetails: Option[Boolean]
-  ): Action[AnyContent] = Action { implicit request =>
-    val expandedIds = if (request.method == "POST")
-      request.body.asFormUrlEncoded.get("expandedIds").headOption.getOrElse("").split(',').toList
-    else Nil
+  ): Action[AnyContent] = Action.async { implicit request =>
+    val expandedIds =
+      if (request.method == "POST")
+        request.body.asFormUrlEncoded.get("expandedIds").headOption.getOrElse("").split(',').toList
+      else Nil
 
-    // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
-    // if only the subsystem or target versions were given, use those (default to latest versions)
-    val v = maybeIcdVersion.getOrElse("*")
-
-    val versions = db.versionManager.getIcdVersions(subsystem, target)
-    val iv       = versions.find(_.icdVersion.icdVersion == v).map(_.icdVersion)
-    val (sv, targetSv) = if (iv.isDefined) {
-      val i = iv.get
-      (
-        SubsystemWithVersion(i.subsystem, Some(i.subsystemVersion), maybeComponent),
-        SubsystemWithVersion(i.target, Some(i.targetVersion), maybeTargetComponent)
+    val resp: Future[Option[Array[Byte]]] = appActor ? (
+      GetIcdAsPdf(
+        subsystem,
+        maybeVersion,
+        maybeComponent,
+        target,
+        maybeTargetVersion,
+        maybeTargetComponent,
+        maybeIcdVersion,
+        maybeOrientation,
+        maybeFontSize,
+        maybeLineHeight,
+        maybePaperSize,
+        maybeDetails,
+        expandedIds,
+        _
       )
-    } else {
-      (
-        SubsystemWithVersion(subsystem, maybeVersion, maybeComponent),
-        SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
-      )
-    }
-    val pdfOptions = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedIds)
-
-    val icdPrinter = IcdDbPrinter(db, searchAllSubsystems = false, maybeCache)
-    icdPrinter.saveIcdAsPdf(sv, targetSv, iv, pdfOptions) match {
+    )
+    resp.map {
       case Some(bytes) =>
         Ok(bytes).as("application/pdf")
       case None =>
@@ -268,15 +239,27 @@ class Application @Inject()(
       maybePaperSize: Option[String],
       maybeDetails: Option[Boolean]
   ) =
-    Action { implicit request =>
-      val expandedIds = if (request.method == "POST")
-        request.body.asFormUrlEncoded.get("expandedIds").headOption.getOrElse("").split(',').toList
-      else Nil
-      val sv                  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-      val searchAllSubsystems = searchAll.getOrElse(false)
-      val icdPrinter          = IcdDbPrinter(db, searchAllSubsystems, maybeCache)
-      val pdfOptions          = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedIds)
-      icdPrinter.saveApiAsPdf(sv, pdfOptions) match {
+    Action.async { implicit request =>
+      val expandedIds =
+        if (request.method == "POST")
+          request.body.asFormUrlEncoded.get("expandedIds").headOption.getOrElse("").split(',').toList
+        else Nil
+      val resp: Future[Option[Array[Byte]]] = appActor ? (
+        GetApiAsPdf(
+          subsystem,
+          maybeVersion,
+          maybeComponent,
+          searchAll,
+          maybeOrientation,
+          maybeFontSize,
+          maybeLineHeight,
+          maybePaperSize,
+          maybeDetails,
+          expandedIds,
+          _
+        )
+      )
+      resp.map {
         case Some(bytes) =>
           Ok(bytes).as("application/pdf")
         case None =>
@@ -302,14 +285,25 @@ class Application @Inject()(
       maybeLineHeight: Option[String],
       maybePaperSize: Option[String]
   ) =
-    authAction { implicit request =>
-      val out        = new ByteArrayOutputStream()
-      val sv         = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-      val pdfOptions = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, None, Nil)
-      val html       = ArchivedItemsReport(db, Some(sv)).makeReport(pdfOptions)
-      IcdToPdf.saveAsPdf(out, html, showLogo = false, pdfOptions)
-      val bytes = out.toByteArray
-      Ok(bytes).as("application/pdf")
+    authAction.async {
+      val resp: Future[Option[Array[Byte]]] = appActor ? (
+        GetArchivedItemsReport(
+          subsystem,
+          maybeVersion,
+          maybeComponent,
+          maybeOrientation,
+          maybeFontSize,
+          maybeLineHeight,
+          maybePaperSize,
+          _
+        )
+      )
+      resp.map {
+        case Some(bytes) =>
+          Ok(bytes).as("application/pdf")
+        case None =>
+          NotFound
+      }
     }
 
   /**
@@ -323,86 +317,68 @@ class Application @Inject()(
       maybeLineHeight: Option[String],
       maybePaperSize: Option[String]
   ) =
-    authAction { implicit request =>
-      val out        = new ByteArrayOutputStream()
-      val pdfOptions = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, None, Nil)
-      val html       = ArchivedItemsReport(db, None).makeReport(pdfOptions)
-      IcdToPdf.saveAsPdf(out, html, showLogo = false, pdfOptions)
-      val bytes = out.toByteArray
-      Ok(bytes).as("application/pdf")
+    authAction.async {
+      val resp: Future[Option[Array[Byte]]] = appActor ? (
+        GetArchivedItemsReportFull(
+          maybeOrientation,
+          maybeFontSize,
+          maybeLineHeight,
+          maybePaperSize,
+          _
+        )
+      )
+      resp.map {
+        case Some(bytes) =>
+          Ok(bytes).as("application/pdf")
+        case None =>
+          NotFound
+      }
     }
 
   /**
    * Returns a detailed list of the versions of the given subsystem
    */
-  def getVersions(subsystem: String) = authAction { implicit request =>
-    val versions = allApiVersions
-      .filter(_.subsystem == subsystem)
-      .flatMap(_.apis)
-      .map(a => VersionInfo(Some(a.version), a.user, a.comment, a.date))
-    Ok(Json.toJson(versions))
+  def getVersions(subsystem: String) = authAction.async {
+    val resp: Future[List[VersionInfo]] = appActor ? (GetVersions(subsystem, _))
+    resp.map(versions => Ok(Json.toJson(versions)))
   }
 
   /**
    * Returns a list of version names for the given subsystem
    */
-  def getVersionNames(subsystem: String) = authAction { implicit request =>
-    val versions = allApiVersions
-      .filter(_.subsystem == subsystem)
-      .flatMap(_.apis)
-      .map(_.version)
-    Ok(Json.toJson(versions))
+  def getVersionNames(subsystem: String) = authAction.async {
+    val resp: Future[List[String]] = appActor ? (GetVersionNames(subsystem, _))
+    resp.map(names => Ok(Json.toJson(names)))
   }
 
   /**
    * Gets a list of ICD names as pairs of (subsystem, targetSubsystem)
    */
-  def getIcdNames = Action { implicit request =>
-    val list   = allIcdVersions.map(i => IcdName(i.subsystems.head, i.subsystems.tail.head))
-    val sorted = list.sortWith((a, b) => a.subsystem.compareTo(b.subsystem) < 0)
-    Ok(Json.toJson(sorted))
+  def getIcdNames = Action.async {
+    val resp: Future[List[IcdName]] = appActor ? GetIcdNames
+    resp.map(names => Ok(Json.toJson(names)))
   }
 
   /**
    * Gets a list of versions for the ICD from subsystem to target subsystem
    */
-  def getIcdVersions(subsystem: String, target: String) = authAction { implicit request =>
-    // convert list to use shared IcdVersion class
-    val list =
-      allIcdVersions.find(i => i.subsystems.head == subsystem && i.subsystems.tail.head == target).toList.flatMap(_.icds).map {
-        icd =>
-          val icdVersion = IcdVersion(icd.icdVersion, subsystem, icd.versions.head, target, icd.versions.tail.head)
-          IcdVersionInfo(icdVersion, icd.user, icd.comment, icd.date)
-      }
-    Ok(Json.toJson(list))
-  }
-
-  // Packages the diff information for return to browser
-  private def getDiffInfo(diff: VersionDiff): DiffInfo = {
-    import DiffsonProtocol._
-    val jsValue = Json.toJson(diff.patch)
-    val s       = Json.prettyPrint(jsValue)
-    DiffInfo(diff.path, s)
+  def getIcdVersions(subsystem: String, target: String) = authAction.async {
+    val resp: Future[List[IcdVersionInfo]] = appActor ? (GetIcdVersions(subsystem, target, _))
+    resp.map(list => Ok(Json.toJson(list)))
   }
 
   /**
    * Gets the difference between two subsystem versions
    */
-  def diff(subsystem: String, versionsStr: String) = authAction { implicit request =>
-    val versions = versionsStr.split(',')
-    val v1       = versions.head
-    val v2       = versions.tail.head
-    val v1Opt    = if (v1.nonEmpty) Some(v1) else None
-    val v2Opt    = if (v2.nonEmpty) Some(v2) else None
-    // convert list to use shared IcdVersion class
-    val list = db.versionManager.diff(subsystem, v1Opt, v2Opt).map(getDiffInfo)
-    Ok(Json.toJson(list))
+  def diff(subsystem: String, versionsStr: String) = authAction.async {
+    val resp: Future[List[DiffInfo]] = appActor ? (GetDiff(subsystem, versionsStr, _))
+    resp.map(list => Ok(Json.toJson(list)))
   }
 
   /**
    * Returns OK(true) if this is a public icd web server (upload not allowed,publish allowed, password protected)
    */
-  def isPublicServer = Action { implicit request =>
+  def isPublicServer = Action {
     val publicServer = configuration.get[Boolean]("icd.isPublicServer")
     Ok(Json.toJson(publicServer))
   }
@@ -410,7 +386,7 @@ class Application @Inject()(
   /**
    * Responds with the JSON for the PublishInfo for every subsystem
    */
-  def getPublishInfo(maybeSubsystem: Option[String]) = authAction { implicit request =>
+  def getPublishInfo(maybeSubsystem: Option[String]) = authAction {
     val publishInfo = IcdGitManager.getPublishInfo(maybeSubsystem)
     Ok(Json.toJson(publishInfo))
   }
@@ -482,42 +458,38 @@ class Application @Inject()(
   /**
    * Log out of the web app
    */
-  def logout() = authAction { implicit request =>
+  def logout() = authAction {
     Ok.as(JSON).discardingCookies(DiscardingCookie(cookieName))
   }
 
   /**
    * Publish the selected API (add an entry for the current commit of the master branch on GitHub)
    */
-  def publishApi() = authAction { implicit request =>
+  def publishApi() = authAction.async { implicit request =>
     val maybePublishApiInfo = request.body.asJson.map(json => Json.fromJson[PublishApiInfo](json).get)
     if (maybePublishApiInfo.isEmpty) {
-      BadRequest("Missing POST data of type PublishApiInfo")
+      Future(BadRequest("Missing POST data of type PublishApiInfo"))
     } else {
       val publishApiInfo = maybePublishApiInfo.get
-      try {
-        val problems = IcdGitManager.validate(publishApiInfo.subsystem)
-        if (problems.nonEmpty) {
-          val msg =
-            s"The version of ${publishApiInfo.subsystem} on GitHub did not pass validation: ${problems.map(_.toString).mkString(", ")}."
-          NotAcceptable(msg)
-        } else {
-          val apiVersionInfo = IcdGitManager.publish(
-            publishApiInfo.subsystem,
-            publishApiInfo.majorVersion,
-            publishApiInfo.user,
-            publishApiInfo.password,
-            publishApiInfo.comment
-          )
-          updateAfterPublish()
-          Ok(Json.toJson(apiVersionInfo))
+      val problems       = IcdGitManager.validate(publishApiInfo.subsystem)
+      if (problems.nonEmpty) {
+        val msg =
+          s"The version of ${publishApiInfo.subsystem} on GitHub did not pass validation: ${problems.map(_.toString).mkString(", ")}."
+        Future(NotAcceptable(msg))
+      } else {
+        val resp: Future[Try[ApiVersionInfo]] = appActor ? (PublishApi(publishApiInfo, _))
+        resp.map {
+          case Success(info) =>
+            Ok(Json.toJson(info))
+          case Failure(ex) =>
+            ex match {
+              case ex: TransportException =>
+                Unauthorized(ex.getMessage)
+              case ex: Exception =>
+                ex.printStackTrace()
+                BadRequest(ex.getMessage)
+            }
         }
-      } catch {
-        case ex: TransportException =>
-          Unauthorized(ex.getMessage)
-        case ex: Exception =>
-          ex.printStackTrace()
-          BadRequest(ex.getMessage)
       }
     }
   }
@@ -525,31 +497,24 @@ class Application @Inject()(
   /**
    * Publish an ICD (add an entry to the icds file on the master branch of https://github.com/tmt-icd/ICD-Model-Files)
    */
-  def publishIcd() = authAction { implicit request =>
+  def publishIcd() = authAction.async { implicit request =>
     val maybePublishIcdInfo = request.body.asJson.map(json => Json.fromJson[PublishIcdInfo](json).get)
     if (maybePublishIcdInfo.isEmpty) {
-      BadRequest("Missing POST data of type PublishIcdInfo")
+      Future(BadRequest("Missing POST data of type PublishIcdInfo"))
     } else {
-      val publishIcdInfo = maybePublishIcdInfo.get
-      try {
-        val sv         = SubsystemAndVersion(publishIcdInfo.subsystem, Some(publishIcdInfo.subsystemVersion))
-        val tv         = SubsystemAndVersion(publishIcdInfo.target, Some(publishIcdInfo.targetVersion))
-        val subsystems = List(sv, tv)
-        val icdVersionInfo = IcdGitManager.publish(
-          subsystems,
-          publishIcdInfo.majorVersion,
-          publishIcdInfo.user,
-          publishIcdInfo.password,
-          publishIcdInfo.comment
-        )
-        updateAfterPublish()
-        Ok(Json.toJson(icdVersionInfo))
-      } catch {
-        case ex: TransportException =>
-          Unauthorized(ex.getMessage)
-        case ex: Exception =>
-          ex.printStackTrace()
-          BadRequest(ex.getMessage)
+      val publishIcdInfo                    = maybePublishIcdInfo.get
+      val resp: Future[Try[IcdVersionInfo]] = appActor ? (PublishIcd(publishIcdInfo, _))
+      resp.map {
+        case Success(info) =>
+          Ok(Json.toJson(info))
+        case Failure(ex) =>
+          ex match {
+            case ex: TransportException =>
+              Unauthorized(ex.getMessage)
+            case ex: Exception =>
+              ex.printStackTrace()
+              BadRequest(ex.getMessage)
+          }
       }
     }
   }
@@ -557,31 +522,30 @@ class Application @Inject()(
   /**
    * Unublish the selected API (removes an entry from the file in the master branch on GitHub)
    */
-  def unpublishApi() = authAction { implicit request =>
+  def unpublishApi() = authAction.async { implicit request =>
     val maybeUnpublishApiInfo = request.body.asJson.map(json => Json.fromJson[UnpublishApiInfo](json).get)
     if (maybeUnpublishApiInfo.isEmpty) {
-      BadRequest("Missing POST data of type UnpublishApiInfo")
+      Future(BadRequest("Missing POST data of type UnpublishApiInfo"))
     } else {
-      val unpublishApiInfo = maybeUnpublishApiInfo.get
-      try {
-        IcdGitManager.unpublish(
-          SubsystemAndVersion(unpublishApiInfo.subsystem, Some(unpublishApiInfo.subsystemVersion)),
-          unpublishApiInfo.user,
-          unpublishApiInfo.password,
-          unpublishApiInfo.comment
-        ) match {
-          case Some(apiVersionInfo) =>
-            updateAfterPublish()
-            Ok(Json.toJson(apiVersionInfo))
-          case None =>
-            NotFound(s"${unpublishApiInfo.subsystem}-${unpublishApiInfo.subsystemVersion} was not found")
-        }
-      } catch {
-        case ex: TransportException =>
-          Unauthorized(ex.getMessage)
-        case ex: Exception =>
-          ex.printStackTrace()
-          BadRequest(ex.getMessage)
+      val unpublishApiInfo                          = maybeUnpublishApiInfo.get
+      val resp: Future[Try[Option[ApiVersionInfo]]] = appActor ? (UnpublishApi(unpublishApiInfo, _))
+      resp.map {
+        case Success(info) =>
+          info match {
+            case Some(apiVersionInfo) =>
+              Ok(Json.toJson(apiVersionInfo))
+            case None =>
+              NotFound(s"${unpublishApiInfo.subsystem}-${unpublishApiInfo.subsystemVersion} was not found")
+          }
+          Ok(Json.toJson(info))
+        case Failure(ex) =>
+          ex match {
+            case ex: TransportException =>
+              Unauthorized(ex.getMessage)
+            case ex: Exception =>
+              ex.printStackTrace()
+              BadRequest(ex.getMessage)
+          }
       }
     }
   }
@@ -589,36 +553,30 @@ class Application @Inject()(
   /**
    * Unpublish an ICD (remove an entry in the icds file on the master branch of https://github.com/tmt-icd/ICD-Model-Files)
    */
-  def unpublishIcd() = authAction { implicit request =>
+  def unpublishIcd() = authAction.async { implicit request =>
     val maybeUnpublishIcdInfo = request.body.asJson.map(json => Json.fromJson[UnpublishIcdInfo](json).get)
     if (maybeUnpublishIcdInfo.isEmpty) {
-      BadRequest("Missing POST data of type UnpublishIcdInfo")
+      Future(BadRequest("Missing POST data of type UnpublishIcdInfo"))
     } else {
-      val unpublishIcdInfo = maybeUnpublishIcdInfo.get
-      try {
-        val maybeIcdEntry = IcdGitManager.unpublish(
-          unpublishIcdInfo.icdVersion,
-          unpublishIcdInfo.subsystem,
-          unpublishIcdInfo.target,
-          unpublishIcdInfo.user,
-          unpublishIcdInfo.password,
-          unpublishIcdInfo.comment
-        )
-        if (maybeIcdEntry.isDefined) {
-          updateAfterPublish()
-          val e = maybeIcdEntry.get
-          val icdVersion =
-            IcdVersion(e.icdVersion, unpublishIcdInfo.subsystem, e.versions.head, unpublishIcdInfo.target, e.versions.tail.head)
-          val icdVersionInfo = IcdVersionInfo(icdVersion, e.user, e.comment, e.date)
-          Ok(Json.toJson(icdVersionInfo))
-        } else NotFound(s"ICD version ${unpublishIcdInfo.icdVersion} was not found")
-      } catch {
-        case ex: TransportException =>
-          ex.printStackTrace()
-          Unauthorized(ex.getMessage)
-        case ex: Exception =>
-          ex.printStackTrace()
-          BadRequest(ex.getMessage)
+      val unpublishIcdInfo                          = maybeUnpublishIcdInfo.get
+      val resp: Future[Try[Option[IcdVersionInfo]]] = appActor ? (UnpublishIcd(unpublishIcdInfo, _))
+      resp.map {
+        case Success(info) =>
+          info match {
+            case Some(icdVersionInfo) =>
+              Ok(Json.toJson(icdVersionInfo))
+            case None =>
+              NotFound(s"ICD version ${unpublishIcdInfo.icdVersion} was not found")
+          }
+          Ok(Json.toJson(info))
+        case Failure(ex) =>
+          ex match {
+            case ex: TransportException =>
+              Unauthorized(ex.getMessage)
+            case ex: Exception =>
+              ex.printStackTrace()
+              BadRequest(ex.getMessage)
+          }
       }
     }
   }
@@ -626,8 +584,8 @@ class Application @Inject()(
   /**
    * Updates the cache of published APIs and ICDs (in case new ones were published)
    */
-  def updatePublished() = authAction { implicit request =>
-    updateAfterPublish()
+  def updatePublished() = authAction {
+    appActor ? UpdatePublished
     Ok.as(JSON)
   }
 }
