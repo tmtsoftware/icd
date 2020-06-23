@@ -91,7 +91,7 @@ object IcdGitManager {
       val date    = DateTime.now().withZone(DateTimeZone.UTC).toString()
       val user    = ""
       val comment = ""
-      println(s"XXX  master commit id for $subsystem = ${info.commitId}")
+//      println(s"XXX  master commit id for $subsystem = ${info.commitId}")
       Some(ApiVersions.ApiEntry("master", info.commitId, user, comment, date))
     } else None
   }
