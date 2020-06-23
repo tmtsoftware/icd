@@ -24,9 +24,13 @@ object HistoryDialog {
 
   // Compare two version strings (maj.min)
   private def compareVersions(v1: String, v2: String): Boolean = {
-    val (maj1, min1) = splitVersion(v1)
-    val (maj2, min2) = splitVersion(v2)
-    maj1 < maj2 || maj1 == maj2 && min1 < min2
+    if (v1 == "master") false
+    else if (v2 == "master") true
+    else {
+      val (maj1, min1) = splitVersion(v1)
+      val (maj2, min2) = splitVersion(v2)
+      maj1 < maj2 || maj1 == maj2 && min1 < min2
+    }
   }
 }
 
@@ -131,8 +135,7 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
 
     div(
       h2(s"Changes to $subsystem"),
-      p(
-        """
+      p("""
           |Note: The paths in the tables below indicate the relative location of the change.
           |A number in a path is the zero based index of the changed item.
           |For example: "/publish/alarms/3/description" indicates that the change is in the fourth alarm's description.

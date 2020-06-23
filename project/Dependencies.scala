@@ -6,6 +6,7 @@ object Dependencies {
   val ScalaVersion          = "2.13.1"
   val AkkaVersion           = "2.6.6"
   val PlayVersion           = "2.8.1"
+//  val PlayJsonVersion       = "2.9.0"
   val PlayJsonVersion       = "2.8.1"
   val ScalaTagsVersion      = "0.8.6"
   val BootstrapVersion      = "3.4.1"
@@ -28,8 +29,8 @@ object Dependencies {
   val flexmarkAll = "com.vladsch.flexmark" % "flexmark-all" % "0.60.2"
   val scalaCsv    = "com.github.tototoshi" %% "scala-csv"   % "1.3.6"
 
-  val itext7Core  = "com.itextpdf"         % "itext7-core"  % "7.1.10" pomOnly ()
-  val html2pdf    = "com.itextpdf"         % "html2pdf"     % "2.1.7"
+  val itext7Core  = "com.itextpdf"         % "itext7-core"  % "7.1.11" pomOnly ()
+  val html2pdf    = "com.itextpdf"         % "html2pdf"     % "3.0.0"
 
   val reactivemongo               = "org.reactivemongo" %% "reactivemongo"                  % "0.20.3"
   val play2Reactivemongo          = "org.reactivemongo" %% "play2-reactivemongo"            % "0.20.3-play28"

@@ -26,7 +26,7 @@ object IcdToPdf {
       val x     = pageSize.getLeft + pageSize.getWidth / 2 - image.getImageWidth / 2
       val y     = pageSize.getBottom + pageSize.getHeight / 2
       val rect  = new Rectangle(x, y, x + image.getImageWidth, y - image.getImageHeight)
-      new Canvas(pdfCanvas, pdfDocument, rect).add(image)
+      new Canvas(pdfCanvas, rect).add(image)
     }
 
     override def handleEvent(event: Event): Unit = {
@@ -40,7 +40,7 @@ object IcdToPdf {
         val x                          = pageSize.getRight - 40
         val y                          = pageSize.getBottom + 30
         val rect                       = new Rectangle(x, y, x + 40, y - 30)
-        val canvas: Canvas             = new Canvas(pdfCanvas, pdfDocument, rect)
+        val canvas: Canvas             = new Canvas(pdfCanvas, rect)
         val pageNumber                 = pdfDocument.getPageNumber(page)
         canvas.add(new Paragraph(String.valueOf(pageNumber)))
 

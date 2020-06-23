@@ -282,6 +282,7 @@ object IcdDb extends App {
     // Check that the version is in the correct format
     def checkVersion(maybeVersion: Option[String]): Unit = {
       maybeVersion match {
+        case Some("master") =>
         case Some(version) =>
           val versionRegex = """\d+\.\d+""".r
           version match {
