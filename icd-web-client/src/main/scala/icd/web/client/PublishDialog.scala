@@ -49,9 +49,6 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
 
   private val upToDate = "Up to date"
 
-  // Used to show busy cursor only after entering GitHub credentials, while still updating the GUI in the background
-  private var updateFuture: Future[Unit] = Future.successful()
-
   // Displays the Publish (Unpublish) button (at the bottom of the dialog)
   private def makePublishButton(unpublish: Boolean): Button = {
     val buttonClass = if (unpublish) "btn" else "btn btn-primary"
@@ -614,7 +611,6 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
       }
     displayAjaxErrors(f)
     showBusyCursorWhile(f)
-    f.foreach(_ => showBusyCursorWhile(updateFuture))
   }
 
   // Returns the markup for getting the GitHub credentials
@@ -719,8 +715,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
       case Failure(ex) =>
         mainContent.displayInternalError(ex)
     }
-    updateFuture = f.map(_ => ())
-    updateFuture
+    f.map(_ => ())
   }
 
   //  def markup(): Element = contentDiv
