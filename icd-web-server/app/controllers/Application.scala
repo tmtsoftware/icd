@@ -432,7 +432,6 @@ class Application @Inject()(
       val credentials = maybeCredentials.get
       try {
         val sha = convertBytesToHex(MessageDigest.getInstance("SHA-256").digest(credentials.toString.getBytes))
-//        println(s"XXX sha = $sha")
         if (sha == expectedSha)
           Ok.as(JSON).withCookies(Cookie(cookieName, sha, sameSite = Some(Strict)))
         else

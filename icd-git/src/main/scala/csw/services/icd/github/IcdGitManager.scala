@@ -91,7 +91,6 @@ object IcdGitManager {
       val date    = DateTime.now().withZone(DateTimeZone.UTC).toString()
       val user    = ""
       val comment = ""
-//      println(s"XXX  master commit id for $subsystem = ${info.commitId}")
       Some(ApiVersions.ApiEntry("master", info.commitId, user, comment, date))
     } else None
   }
@@ -865,7 +864,7 @@ object IcdGitManager {
   ): List[PublishInfo] = {
     val subsystems = maybeSubsystem match {
       case Some(subsystem) => List(subsystem)
-      case None            => Subsystems.allSubsystems
+      case None            => Subsystems.allSubsystems.sorted
     }
     subsystems.map { subsystem =>
       val subsystemGitInfo = getSubsystemGitInfo(subsystem)

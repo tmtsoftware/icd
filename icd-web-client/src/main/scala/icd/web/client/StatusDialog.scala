@@ -80,7 +80,7 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
       f.onComplete {
         case Success(pubInfoList) =>
           detailsDiv.innerHTML = ""
-          detailsDiv.appendChild(detailsMarkup(pubInfoList.head))
+          pubInfoList.headOption.foreach(pubInfo => detailsDiv.appendChild(detailsMarkup(pubInfo)))
         case Failure(ex) =>
           mainContent.displayInternalError(ex)
       }
@@ -115,7 +115,7 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
   }
 
   private def apiTable(pubInfo: PublishInfo): JsDom.TypedTag[Table] = {
-    val apiVersionInfo = pubInfo.apiVersions.tail.head
+    val apiVersionInfo = pubInfo.apiVersions.head
     table(
       Styles.componentTable,
       attr("data-toggle") := "table",
