@@ -318,19 +318,20 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
     val f = if (unpublish) {
       val version          = publishInfo.apiVersions.head.version
       val unpublishApiInfo = UnpublishApiInfo(publishInfo.subsystem, version, user, password, comment)
-      Ajax.post(url = ClientRoutes.unpublishApi, data = Json.toJson(unpublishApiInfo).toString(), headers = headers).flatMap { r =>
-        r.status match {
-          case 200 => // OK
-            val apiVersionInfo      = Json.fromJson[ApiVersionInfo](Json.parse(r.responseText)).get
-            val maybeApiVersionInfo = publishInfo.apiVersions.tail.headOption
-            for {
-              _ <- publishChangeListener.publishChange()
-              _ <- updateTableRow(unpublish, api = true, publishInfo.subsystem, maybeApiVersionInfo).map(_ => ())
-            } yield {
-              updateEnabledStates()
-              setPublishStatus(s"Unpublished ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
-            }
-        }
+      Ajax.post(url = ClientRoutes.unpublishApi, data = Json.toJson(unpublishApiInfo).toString(), headers = headers).flatMap {
+        r =>
+          r.status match {
+            case 200 => // OK
+              val apiVersionInfo      = Json.fromJson[ApiVersionInfo](Json.parse(r.responseText)).get
+              val maybeApiVersionInfo = publishInfo.apiVersions.tail.headOption
+              for {
+                _ <- publishChangeListener.publishChange()
+                _ <- updateTableRow(unpublish, api = true, publishInfo.subsystem, maybeApiVersionInfo).map(_ => ())
+              } yield {
+                updateEnabledStates()
+                setPublishStatus(s"Unpublished ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
+              }
+          }
       }
     } else {
       val publishApiInfo = PublishApiInfo(publishInfo.subsystem, majorVersion, user, password, comment)
@@ -374,24 +375,25 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
         password,
         comment
       )
-      Ajax.post(url = ClientRoutes.unpublishIcd, data = Json.toJson(unpublishIcdInfo).toString(), headers = headers).flatMap { r =>
-        r.status match {
-          case 200 => // OK
-            val icdVersionInfo = Json.fromJson[IcdVersionInfo](Json.parse(r.responseText)).get
-            val v              = icdVersionInfo.icdVersion
-            for {
-              _ <- publishChangeListener.publishChange()
-              _ <- updateTableRow(unpublish, api = false, publishInfo1.subsystem, publishInfo1.apiVersions.headOption)
-                    .map(_ => ())
-              _ <- updateTableRow(unpublish, api = false, publishInfo2.subsystem, publishInfo2.apiVersions.headOption)
-                    .map(_ => ())
-            } yield {
-              updateEnabledStates()
-              setPublishStatus(
-                s"Unpublished ICD-${v.subsystem}-${v.target}-${v.icdVersion} between ${v.subsystem}-${v.subsystemVersion} and ${v.target}-${v.targetVersion}"
-              )
-            }
-        }
+      Ajax.post(url = ClientRoutes.unpublishIcd, data = Json.toJson(unpublishIcdInfo).toString(), headers = headers).flatMap {
+        r =>
+          r.status match {
+            case 200 => // OK
+              val icdVersionInfo = Json.fromJson[IcdVersionInfo](Json.parse(r.responseText)).get
+              val v              = icdVersionInfo.icdVersion
+              for {
+                _ <- publishChangeListener.publishChange()
+                _ <- updateTableRow(unpublish, api = false, publishInfo1.subsystem, publishInfo1.apiVersions.headOption)
+                      .map(_ => ())
+                _ <- updateTableRow(unpublish, api = false, publishInfo2.subsystem, publishInfo2.apiVersions.headOption)
+                      .map(_ => ())
+              } yield {
+                updateEnabledStates()
+                setPublishStatus(
+                  s"Unpublished ICD-${v.subsystem}-${v.target}-${v.icdVersion} between ${v.subsystem}-${v.subsystemVersion} and ${v.target}-${v.targetVersion}"
+                )
+              }
+          }
       }
     } else {
       val publishIcdInfo = PublishIcdInfo(
@@ -600,15 +602,16 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
     val gitHubCredentials = GitHubCredentials(usernameBox.value, passwordBox.value)
     val headers           = Map("Content-Type" -> "application/json")
     val f =
-      Ajax.post(url = ClientRoutes.checkGitHubCredentials, data = Json.toJson(gitHubCredentials).toString(), headers = headers).map {
-        r =>
+      Ajax
+        .post(url = ClientRoutes.checkGitHubCredentials, data = Json.toJson(gitHubCredentials).toString(), headers = headers)
+        .map { r =>
           if (r.status == 200) {
             $id("gitHubCredentials").classList.add("hide")
             $id("contentDivPlaceholder").innerHTML = ""
             $id("contentDivPlaceholder").appendChild(contentDiv)
           }
           ()
-      }
+        }
     displayAjaxErrors(f)
     showBusyCursorWhile(f)
   }
@@ -705,7 +708,12 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
    */
   def update(): Future[Unit] = {
     contentDiv.innerHTML = ""
-    contentDiv.appendChild(p(style := "cursor:progress", em("Getting the current release status from GitHub...")).render)
+    val loaderDiv =
+      div(
+        p(style := "cursor:progress", em("Getting the current release status from GitHub...")),
+        div(cls := "loader")
+      ).render
+    contentDiv.appendChild(loaderDiv)
 
     val f = IcdUtil.getPublishInfo(None, mainContent)
     f.onComplete {
