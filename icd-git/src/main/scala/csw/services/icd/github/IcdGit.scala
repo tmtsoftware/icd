@@ -35,7 +35,8 @@ object IcdGit extends App {
       dbName: String = IcdDbDefaults.defaultDbName,
       host: String = IcdDbDefaults.defaultHost,
       port: Int = IcdDbDefaults.defaultPort,
-      ingest: Boolean = false
+      ingest: Boolean = false,
+      ingestMissing: Boolean = false
   )
 
   private def parseSubsystemsArg(s: String): List[SubsystemAndVersion] = {
@@ -106,6 +107,10 @@ object IcdGit extends App {
       c.copy(ingest = true)
     } text "Ingests the selected subsystem model files and ICDs from GitHub into the ICD database (Ingests all subsystems, if no subsystem options given)"
 
+    opt[Unit]("ingestMissing") action { (_, c) =>
+      c.copy(ingestMissing = true)
+    } text "Ingests any APIs or ICDs that were published, but are not yet in the local database, plus any master branch versions"
+
     help("help")
     version("version")
   }
@@ -134,6 +139,7 @@ object IcdGit extends App {
     if (options.publish) publish(options)
 //    if (options.tag) tag(options)
     if (options.ingest) ingest(options)
+    if (options.ingestMissing) ingestMissing(options)
     System.exit(0)
   }
 
@@ -370,6 +376,10 @@ object IcdGit extends App {
         ex.printStackTrace()
         error(s"Unable to drop the existing ICD database: $ex")
     }
+  }
 
+  private def ingestMissing(options: Options): Unit = {
+    val db = IcdDb(options.dbName, options.host, options.port)
+    IcdGitManager.ingestMissing(db)
   }
 }
