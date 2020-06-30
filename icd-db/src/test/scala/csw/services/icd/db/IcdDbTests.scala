@@ -37,16 +37,16 @@ class IcdDbTests extends AnyFunSuite {
     assert(db.query.getHcdNames(None) == List())
     assert(db.query.getSubsystemNames == List("TEST"))
 
-    val components = db.query.getComponents
+    val components = db.query.getComponents(None)
     assert(components.size == 5)
 
     // Test getting items based on the component name
-    val envCtrl = db.query.getComponentModel("TEST", "env.ctrl").get
+    val envCtrl = db.query.getComponentModel("TEST", "env.ctrl", None).get
     assert(envCtrl.component == "env.ctrl")
     assert(envCtrl.componentType == "Assembly")
     assert(envCtrl.prefix == "TEST.env.ctrl")
 
-    val commands = db.query.getCommandModel(envCtrl).get
+    val commands = db.query.getCommandModel(envCtrl, None).get
     assert(commands.receive.size == 4)
 
     assert(commands.receive.head.name == "ENVIRONMENTAL_CONTROL_INITIALIZE")
@@ -55,7 +55,7 @@ class IcdDbTests extends AnyFunSuite {
     assert(commands.receive.tail.head.name == "ENVIRONMENTAL_CONTROL_STOP")
     assert(commands.receive.tail.head.requirements.head == "INT-TEST-AOESW-0405")
 
-    val publish   = db.query.getPublishModel(envCtrl).get
+    val publish   = db.query.getPublishModel(envCtrl, None).get
     val eventList = publish.eventList
     assert(eventList.size == 3)
     val logging = eventList.head
@@ -75,7 +75,7 @@ class IcdDbTests extends AnyFunSuite {
     assert(temp_ngsWfs.units == "<p>degC</p>")
 
     // Test publish queries
-    val published = db.query.getPublished(envCtrl).filter(p => p.name == "sensors" && p.publishType == CurrentStates)
+    val published = db.query.getPublished(envCtrl, None).filter(p => p.name == "sensors" && p.publishType == CurrentStates)
     assert(published.size == 1)
     assert(published.head.publishType == CurrentStates)
 
@@ -151,7 +151,7 @@ class IcdDbTests extends AnyFunSuite {
 
   // XXX TODO: Turn this into a test
   def testModels(db: IcdDb): Unit = {
-    val modelsList = db.query.getModels("TEST")
+    val modelsList = db.query.getModels("TEST", None, None)
     val publishInfo = for (models <- modelsList) yield {
       models.publishModel.foreach { publishModel =>
         publishModel.eventList.foreach { eventModel =>
@@ -168,10 +168,10 @@ class IcdDbTests extends AnyFunSuite {
     modelsList.foreach { models =>
       models.commandModel.foreach { commandModel =>
         commandModel.receive.foreach { receiveCommandModel =>
-          val opt = db.query.getCommand(commandModel.subsystem, commandModel.component, receiveCommandModel.name)
+          val opt = db.query.getCommand(commandModel.subsystem, commandModel.component, receiveCommandModel.name, None)
           assert(opt.get == receiveCommandModel)
           val senders = db.query
-            .getCommandSenders(commandModel.subsystem, commandModel.component, receiveCommandModel.name)
+            .getCommandSenders(commandModel.subsystem, commandModel.component, receiveCommandModel.name, None)
             .map(_.component)
         }
       }
