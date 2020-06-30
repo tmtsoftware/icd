@@ -212,7 +212,7 @@ object IcdDb extends App {
     options.versions.foreach(listVersions)
     options.diff.foreach(diffVersions)
     options.missing.foreach(missingItemsReport)
-    options.archived.foreach(archivedItemsReport)
+    options.archived.foreach(file => archivedItemsReport(file, Some(pdfOptions)))
     options.listData.foreach(s => listData(db, s))
     options.allUnits.foreach(_ => printAllUsedUnits(db))
 
@@ -237,7 +237,7 @@ object IcdDb extends App {
     def output(file: File): Unit = {
       if (options.subsystem.isEmpty) error("Missing required subsystem name: Please specify --subsystem <name>")
       val searchAllSubsystems = options.allSubsystems.isDefined && options.target.isEmpty
-      IcdDbPrinter(db, searchAllSubsystems, maybeCache).saveToFile(
+      IcdDbPrinter(db, searchAllSubsystems, maybeCache, Some(pdfOptions)).saveToFile(
         options.subsystem.get,
         options.component,
         options.target,
@@ -322,11 +322,11 @@ object IcdDb extends App {
     }
 
     // --archive option
-    def archivedItemsReport(file: File): Unit = {
+    def archivedItemsReport(file: File, maybePdfOptions: Option[PdfOptions]): Unit = {
       val maybeSv = options.subsystem
         .map(SubsystemAndVersion(_))
         .map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, options.component))
-      ArchivedItemsReport(db, maybeSv).saveToFile(file, pdfOptions)
+      ArchivedItemsReport(db, maybeSv, maybePdfOptions).saveToFile(file, pdfOptions)
     }
   }
 }
@@ -437,7 +437,7 @@ case class IcdDb(
    * @return a list describing the problems, if any
    */
   private def ingestConfigs(list: List[StdConfig]): List[Problem] = {
-    list.flatMap(ingestConfig)
+    list.flatMap(stdConfig => ingestConfig(stdConfig))
   }
 
   /**

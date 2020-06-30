@@ -18,7 +18,7 @@ import IcdToHtml._
  *                            (Default: Search only one subsystem for API, two for ICD)
  */
 //noinspection DuplicatedCode
-case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Option[PdfCache]) {
+case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Option[PdfCache], maybePdfOptions: Option[PdfOptions]) {
 
   /**
    * Gets information about a named subsystem (or component, if sv.maybeComponent is defined)
@@ -26,12 +26,12 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
   private def getSubsystemInfo(sv: SubsystemWithVersion): Option[SubsystemInfo] = {
     if (sv.maybeComponent.isDefined) {
       db.versionManager
-        .getComponentModel(sv)
+        .getComponentModel(sv, maybePdfOptions)
         .map(m => SubsystemInfo(sv, m.title, m.description))
 
     } else {
       db.versionManager
-        .getSubsystemModel(sv)
+        .getSubsystemModel(sv, maybePdfOptions)
         .map(m => SubsystemInfo(sv, m.title, m.description))
     }
   }
@@ -50,8 +50,8 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
       maybeTargetSv: Option[SubsystemWithVersion]
   ): List[ComponentInfo] = {
     maybeTargetSv match {
-      case Some(targetSv) => IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv)
-      case None           => new ComponentInfoHelper(searchAllSubsystems).getComponentInfoList(versionManager, sv)
+      case Some(targetSv) => IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, maybePdfOptions)
+      case None           => new ComponentInfoHelper(searchAllSubsystems).getComponentInfoList(versionManager, sv, maybePdfOptions)
     }
   }
 
@@ -65,7 +65,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
     // Use caching, since we need to look at all the components multiple times, in order to determine who
     // subscribes, who calls commands, etc.
     val maybeSubsystems = if (searchAllSubsystems) None else Some(List(sv.subsystem))
-    val query           = new CachedIcdDbQuery(db.db, db.admin, maybeSubsystems)
+    val query           = new CachedIcdDbQuery(db.db, db.admin, maybeSubsystems, Some(pdfOptions))
     val versionManager  = new CachedIcdVersionManager(query)
 
     val markup = for {
@@ -100,7 +100,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
 
     // Use caching, since we need to look at all the components multiple times, in order to determine who
     // subscribes, who calls commands, etc.
-    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)))
+    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), Some(pdfOptions))
     val versionManager = new CachedIcdVersionManager(query)
 
     val markup = for {

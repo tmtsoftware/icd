@@ -2,18 +2,13 @@ package csw.services.icd.db
 
 import csw.services.icd._
 import icd.web.shared.IcdModels.{ComponentModel, SubsystemModel}
-import icd.web.shared.{IcdModels, IcdVersion, IcdVersionInfo, SubsystemWithVersion}
+import icd.web.shared.{IcdModels, IcdVersion, IcdVersionInfo, PdfOptions, SubsystemWithVersion}
 import org.joda.time.{DateTime, DateTimeZone}
 import diffson.playJson._
 import diffson.lcs._
 import diffson.jsonpatch._
 import diffson.jsonpatch.lcsdiff.remembering._
-import csw.services.icd.db.parser.{
-  ComponentModelBsonParser,
-  PublishModelBsonParser,
-  SubscribeModelBsonParser,
-  SubsystemModelBsonParser
-}
+import csw.services.icd.db.parser.{ComponentModelBsonParser, PublishModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONString}
 import reactivemongo.api.{Cursor, WriteConcern}
@@ -472,7 +467,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * @param subsystemOnly if true, return only the model for the subsystem
    * @return a list of IcdModels for the given version of the subsystem or component
    */
-  private[db] def getModels(sv: SubsystemWithVersion, subsystemOnly: Boolean = false): List[IcdModels] = {
+  private[db] def getModels(sv: SubsystemWithVersion, subsystemOnly: Boolean = false, maybePdfOptions: Option[PdfOptions]): List[IcdModels] = {
 
     // Holds all the model classes associated with a single ICD entry.
     case class Models(versionMap: Map[String, Int], entry: IcdEntry) extends IcdModels {
@@ -480,15 +475,15 @@ case class IcdVersionManager(query: IcdDbQuery) {
       private def getDocVersion(coll: BSONCollection): BSONDocument = getVersionOf(coll, versionMap(coll.name))
 
       override val subsystemModel: Option[SubsystemModel] =
-        entry.subsystem.flatMap(coll => SubsystemModelBsonParser(getDocVersion(coll)))
+        entry.subsystem.flatMap(coll => SubsystemModelBsonParser(getDocVersion(coll), maybePdfOptions))
       override val publishModel: Option[IcdModels.PublishModel] =
-        entry.publish.flatMap(coll => PublishModelBsonParser(getDocVersion(coll)))
+        entry.publish.flatMap(coll => PublishModelBsonParser(getDocVersion(coll), maybePdfOptions))
       override val subscribeModel: Option[IcdModels.SubscribeModel] =
-        entry.subscribe.flatMap(coll => SubscribeModelBsonParser(getDocVersion(coll)))
+        entry.subscribe.flatMap(coll => SubscribeModelBsonParser(getDocVersion(coll), maybePdfOptions))
       override val commandModel: Option[IcdModels.CommandModel] =
-        entry.command.flatMap(coll => parser.CommandModelBsonParser(getDocVersion(coll)))
+        entry.command.flatMap(coll => parser.CommandModelBsonParser(getDocVersion(coll), maybePdfOptions))
       override val componentModel: Option[IcdModels.ComponentModel] =
-        entry.component.flatMap(coll => ComponentModelBsonParser(getDocVersion(coll)))
+        entry.component.flatMap(coll => ComponentModelBsonParser(getDocVersion(coll), maybePdfOptions))
     }
 
     getVersion(sv) match {
@@ -510,8 +505,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * @param sv the subsystem and version
    * @return the subsystem model
    */
-  def getSubsystemModel(sv: SubsystemWithVersion): Option[SubsystemModel] = {
-    getModels(sv, subsystemOnly = true).headOption.flatMap(_.subsystemModel)
+  def getSubsystemModel(sv: SubsystemWithVersion, maybePdfOptions: Option[PdfOptions]): Option[SubsystemModel] = {
+    getModels(sv, subsystemOnly = true, maybePdfOptions).headOption.flatMap(_.subsystemModel)
   }
 
   /**
@@ -521,8 +516,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * @param sv the subsystem and version
    * @return the subsystem model
    */
-  def getComponentModel(sv: SubsystemWithVersion): Option[ComponentModel] = {
-    getModels(sv).headOption.flatMap(_.componentModel)
+  def getComponentModel(sv: SubsystemWithVersion, maybePdfOptions: Option[PdfOptions]): Option[ComponentModel] = {
+    getModels(sv, subsystemOnly = false, maybePdfOptions).headOption.flatMap(_.componentModel)
   }
 
   /**

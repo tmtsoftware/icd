@@ -8,10 +8,10 @@ import collection.immutable.Set
 object ComponentDataReporter {
   def printAllUsedUnits(db: IcdDb): Unit = {
     var units      = Set[String]()
-    val components = db.query.getComponents
+    val components = db.query.getComponents(None)
     components.foreach { componentModel =>
       println(s"--------- Component ${componentModel.component} --------")
-      val publishModel = db.query.getPublishModel(componentModel)
+      val publishModel = db.query.getPublishModel(componentModel, None)
       publishModel.foreach { model =>
         model.eventList.foreach { item =>
           println(s"----- Item ${item.name}")
@@ -28,7 +28,7 @@ object ComponentDataReporter {
           }
         }
       }
-      val commandModel = db.query.getCommandModel(componentModel)
+      val commandModel = db.query.getCommandModel(componentModel, None)
       commandModel.foreach(
         model =>
           model.receive.foreach { command =>
@@ -44,12 +44,12 @@ object ComponentDataReporter {
   }
 
   def listData(db: IcdDb, subsystem: String): Unit = {
-    val publishInfo = db.query.getPublishInfo(subsystem)
+    val publishInfo = db.query.getPublishInfo(subsystem, None)
     publishInfo.foreach { componentPublishInfo =>
       println(s" ----  ${componentPublishInfo.componentName} ----- ")
-      val componentModel = db.query.getComponentModel(subsystem, componentPublishInfo.componentName)
+      val componentModel = db.query.getComponentModel(subsystem, componentPublishInfo.componentName, None)
       val totals = componentModel.flatMap { cm =>
-        db.query.getPublishModel(cm).map { cpm =>
+        db.query.getPublishModel(cm, None).map { cpm =>
           val totalEventData = if (cpm.eventList.nonEmpty) {
             println("--- Event Data")
             listEventData(cpm.eventList)

@@ -31,6 +31,8 @@ object Dependencies {
 
   val itext7Core  = "com.itextpdf"         % "itext7-core"  % "7.1.11" pomOnly ()
   val html2pdf    = "com.itextpdf"         % "html2pdf"     % "3.0.0"
+  val jlatexmath = "org.scilab.forge" % "jlatexmath"  % "1.0.7"
+  val commonsIo = "commons-io" % "commons-io" % "2.7"
 
   val reactivemongo               = "org.reactivemongo" %% "reactivemongo"                  % "0.20.3"
   val play2Reactivemongo          = "org.reactivemongo" %% "play2-reactivemongo"            % "0.20.3-play28"

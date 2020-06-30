@@ -1,11 +1,16 @@
 package csw.services.icd.html
 
+import java.awt.Color
+import java.io.File
+import java.nio.file.Files
 import java.util.UUID
+import java.util.regex.Pattern
 
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.{Parser, PegdownExtensions}
 import com.vladsch.flexmark.profile.pegdown.{Extensions, PegdownOptionsAdapter}
 import icd.web.shared.IcdModels.EventModel
+import icd.web.shared.PdfOptions
 import org.jsoup.Jsoup
 import scalatags.Text.all._
 import scalatags.Text.TypedTag
@@ -82,6 +87,55 @@ object HtmlMarkup extends Extensions {
     s.stripMargin.linesIterator.toList.map(_.trim).mkString("\n")
   }
 
+  // Returns an inline HTML image for the given latex formula
+  // TODO: Could cache image string, but needs to take pdfOptions into account
+  private def renderFormula(latex: String, maybePdfOptions: Option[PdfOptions]): String = {
+    import org.scilab.forge.jlatexmath.TeXConstants
+    import org.scilab.forge.jlatexmath.TeXFormula
+    import org.apache.commons.io.FileUtils
+    import java.util.Base64
+    try {
+      val formula = new TeXFormula(latex)
+      val tmpFile = Files.createTempFile("icdmath", ".png")
+      val fontSize = maybePdfOptions.map(_.fontSize).getOrElse(PdfOptions.defaultFontSize).toFloat
+      formula.createPNG(
+        TeXConstants.STYLE_DISPLAY,
+        fontSize,
+        tmpFile.toString,
+        Color.white,
+        Color.black
+      )
+      val fileContent   = FileUtils.readFileToByteArray(tmpFile.toFile)
+      Files.delete(tmpFile)
+      val encodedString = Base64.getEncoder.encodeToString(fileContent)
+      s"<img src='data:image/png;base64,$encodedString'/>"
+    } catch {
+      case e: Exception =>
+      e.printStackTrace()
+      latex
+    }
+  }
+
+  // Replaces any math formulas between with the image of the rendered formula.
+  // Inline formulas may be between $` and `$.
+  // Block formulas are between ```math and ```.
+  private def processMath(s: String, maybePdfOptions: Option[PdfOptions]): String = {
+    val p  = Pattern.compile("\\$`(.*?)`\\$|```math([^`]*?)```")
+    val m  = p.matcher(s)
+    val sb = new StringBuffer
+    while (m.find) {
+      val g = m.group()
+      val formula = if (g.startsWith("$`")) {
+        g.drop(2).dropRight(2)
+      } else {
+        g.drop(7).dropRight(3)
+      }
+      m.appendReplacement(sb, renderFormula(formula, maybePdfOptions))
+    }
+    m.appendTail(sb)
+    sb.toString
+  }
+
   /**
    * Returns the HTML snippet for the given markdown (GFM)
    *
@@ -90,13 +144,13 @@ object HtmlMarkup extends Extensions {
    *
    * @param gfm the Git formatted markdown
    */
-  def gfmToHtml(gfm: String): String = {
+  def gfmToHtml(gfm: String, maybePdfOptions: Option[PdfOptions]): String = {
     if (isEmpty(gfm)) ""
     else
       try {
         // Convert markdown to HTML
         // Note: About 1/2 the time for generating the HTML for an ICD is spent parsing MarkDown strings
-        val s    = stripLeadingWs(gfm)
+        val s    = processMath(stripLeadingWs(gfm), maybePdfOptions)
         val html = renderer.render(parser.parse(s))
 
 //        // Then clean it up with jsoup to avoid issues with the pdf generator (and for security)

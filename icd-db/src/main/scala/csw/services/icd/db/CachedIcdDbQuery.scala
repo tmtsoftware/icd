@@ -3,6 +3,7 @@ package csw.services.icd.db
 import icd.web.shared.IcdModels.{CommandModel, ComponentModel, PublishModel, SubscribeModel}
 import reactivemongo.api.DefaultDB
 import csw.services.icd._
+import icd.web.shared.PdfOptions
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -13,7 +14,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * @param db the DefaultDB handle
  * @param maybeSubsystems limit the database searches to the given subsystems
  */
-class CachedIcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[List[String]]) extends IcdDbQuery(db, admin, maybeSubsystems) {
+class CachedIcdDbQuery(
+    db: DefaultDB,
+    admin: DefaultDB,
+    maybeSubsystems: Option[List[String]],
+    maybePdfOptions: Option[PdfOptions]
+) extends IcdDbQuery(db, admin, maybeSubsystems) {
   import IcdDbQuery._
 
   // --- Cached values ---
@@ -25,21 +31,21 @@ class CachedIcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[
   override def getCollectionNames: Set[String] = collectionNames
 
   private val entries        = super.getEntries
-  private val components     = super.getComponents
+  private val components     = super.getComponents(maybePdfOptions)
   private val subsystemNames = super.getSubsystemNames
 
   private val subscribeModelMap = getSubscribeModelMap(components)
   private val publishModelMap   = getPublishModelMap(components)
-  private val commandModelMap   = getCommandModelMap(components)
+  private val commandModelMap   = getCommandModelMap(components, maybePdfOptions)
 
-  private val subscribeInfo  = components.map(c => super.getSubscribeInfo(c))
+  private val subscribeInfo  = components.map(c => super.getSubscribeInfo(c, maybePdfOptions))
   private val publishInfoMap = getPublishInfoMap
 
   /**
    * Returns a map from subsystem name to list of PublishInfo for the subsystem
    */
   private def getPublishInfoMap: Map[String, List[PublishInfo]] = {
-    val list = for (s <- subsystemNames) yield s -> super.getPublishInfo(s)
+    val list = for (s <- subsystemNames) yield s -> super.getPublishInfo(s, maybePdfOptions)
     list.toMap
   }
 
@@ -51,7 +57,7 @@ class CachedIcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[
   private def getSubscribeModelMap(components: List[ComponentModel]): Map[Component, SubscribeModel] = {
     val list = for {
       componentModel <- components
-      subscribeModel <- super.getSubscribeModel(componentModel)
+      subscribeModel <- super.getSubscribeModel(componentModel, maybePdfOptions)
     } yield Component(componentModel.subsystem, componentModel.component) -> subscribeModel
     list.toMap
   }
@@ -64,7 +70,7 @@ class CachedIcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[
   private def getPublishModelMap(components: List[ComponentModel]): Map[Component, PublishModel] = {
     val list = for {
       componentModel <- components
-      publishModel   <- super.getPublishModel(componentModel)
+      publishModel   <- super.getPublishModel(componentModel, maybePdfOptions)
     } yield Component(componentModel.subsystem, componentModel.component) -> publishModel
     list.toMap
   }
@@ -74,10 +80,10 @@ class CachedIcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[
    *
    * @param components a list of component models
    */
-  private def getCommandModelMap(components: List[ComponentModel]): Map[Component, CommandModel] = {
+  private def getCommandModelMap(components: List[ComponentModel], maybePdfOptions: Option[PdfOptions]): Map[Component, CommandModel] = {
     val list = for {
       componentModel <- components
-      commandModel   <- super.getCommandModel(componentModel)
+      commandModel   <- super.getCommandModel(componentModel, maybePdfOptions)
     } yield Component(componentModel.subsystem, componentModel.component) -> commandModel
     list.toMap
   }
@@ -85,19 +91,19 @@ class CachedIcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[
   // --- Override these to use the cached values ---
   override def getEntries: List[IcdEntry] = entries
 
-  override def getComponents: List[ComponentModel] = components
+  override def getComponents(maybePdfOptions: Option[PdfOptions]): List[ComponentModel] = components
 
-  override def getPublishInfo(subsystem: String): List[PublishInfo] =
+  override def getPublishInfo(subsystem: String, maybePdfOptions: Option[PdfOptions]): List[PublishInfo] =
     publishInfoMap.getOrElse(subsystem, Nil)
 
-  override def getPublishModel(component: ComponentModel): Option[PublishModel] =
+  override def getPublishModel(component: ComponentModel, maybePdfOptions: Option[PdfOptions]): Option[PublishModel] =
     publishModelMap.get(Component(component.subsystem, component.component))
 
-  override def getSubscribeModel(component: ComponentModel): Option[SubscribeModel] =
+  override def getSubscribeModel(component: ComponentModel, maybePdfOptions: Option[PdfOptions]): Option[SubscribeModel] =
     subscribeModelMap.get(Component(component.subsystem, component.component))
 
-  override def getCommandModel(component: ComponentModel): Option[CommandModel] =
+  override def getCommandModel(component: ComponentModel, maybePdfOptions: Option[PdfOptions]): Option[CommandModel] =
     commandModelMap.get(Component(component.subsystem, component.component))
 
-  override def getSubscribeInfo: List[SubscribeInfo] = subscribeInfo
+  override def getSubscribeInfo(maybePdfOptions: Option[PdfOptions]): List[SubscribeInfo] = subscribeInfo
 }

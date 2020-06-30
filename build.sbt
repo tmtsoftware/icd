@@ -38,6 +38,8 @@ lazy val `icd-db` = project
         flexmarkAll,
         itext7Core,
         html2pdf,
+        jlatexmath,
+        commonsIo,
         diffson,
         scalaLogging,
         logbackClassic,

@@ -22,14 +22,16 @@ class ComponentInfoHelper(displayWarnings: Boolean) {
    */
   def getComponentInfoList(
       versionManager: IcdVersionManager,
-      sv: SubsystemWithVersion
+      sv: SubsystemWithVersion,
+      maybePdfOptions: Option[PdfOptions]
   ): List[ComponentInfo] = {
     val compNames = sv.maybeComponent match {
       case None           => versionManager.getComponentNames(sv)
       case Some(compName) => List(compName)
     }
     compNames.flatMap(
-      component => getComponentInfo(versionManager, SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component)))
+      component =>
+        getComponentInfo(versionManager, SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component)), maybePdfOptions)
     )
   }
 
@@ -40,14 +42,18 @@ class ComponentInfoHelper(displayWarnings: Boolean) {
    * @param sv       the subsystem and component
    * @return an object containing information about the component, if found
    */
-  def getComponentInfo(versionManager: IcdVersionManager, sv: SubsystemWithVersion): Option[ComponentInfo] = {
+  def getComponentInfo(
+      versionManager: IcdVersionManager,
+      sv: SubsystemWithVersion,
+      maybePdfOptions: Option[PdfOptions]
+  ): Option[ComponentInfo] = {
     // get the models for this component
-    val modelsList = versionManager.getModels(sv)
+    val modelsList = versionManager.getModels(sv, subsystemOnly = false, maybePdfOptions)
     modelsList.headOption.flatMap { icdModels =>
       val componentModel = icdModels.componentModel
-      val publishes      = getPublishes(versionManager.query, icdModels)
-      val subscribes     = getSubscribes(versionManager.query, icdModels)
-      val commands       = getCommands(versionManager.query, icdModels)
+      val publishes      = getPublishes(versionManager.query, icdModels, maybePdfOptions)
+      val subscribes     = getSubscribes(versionManager.query, icdModels, maybePdfOptions)
+      val commands       = getCommands(versionManager.query, icdModels, maybePdfOptions)
       componentModel.map { model =>
         ComponentInfo(model, publishes, subscribes, commands)
       }
@@ -68,9 +74,10 @@ class ComponentInfoHelper(displayWarnings: Boolean) {
       prefix: String,
       name: String,
       desc: String,
-      subscribeType: PublishType
+      subscribeType: PublishType,
+      maybePdfOptions: Option[PdfOptions]
   ): List[SubscribeInfo] = {
-    query.subscribes(s"$prefix.$name", subscribeType).map { s =>
+    query.subscribes(s"$prefix.$name", subscribeType, maybePdfOptions).map { s =>
       SubscribeInfo(s.component, s.subscribeType, s.subscribeModelInfo)
     }
   }
@@ -81,19 +88,19 @@ class ComponentInfoHelper(displayWarnings: Boolean) {
    * @param query  database query handle
    * @param models the model objects for the component
    */
-  private def getPublishes(query: IcdDbQuery, models: IcdModels): Option[Publishes] = {
+  private def getPublishes(query: IcdDbQuery, models: IcdModels, maybePdfOptions: Option[PdfOptions]): Option[Publishes] = {
     models.publishModel match {
       case None => None
       case Some(m) =>
         val prefix = s"${m.subsystem}.${m.component}"
         val eventList = m.eventList.map { t =>
-          EventInfo(t, getSubscribers(query, prefix, t.name, t.description, Events))
+          EventInfo(t, getSubscribers(query, prefix, t.name, t.description, Events, maybePdfOptions))
         }
         val observeEventList = m.observeEventList.map { t =>
-          EventInfo(t, getSubscribers(query, prefix, t.name, t.description, ObserveEvents))
+          EventInfo(t, getSubscribers(query, prefix, t.name, t.description, ObserveEvents, maybePdfOptions))
         }
         val currentStateList = m.currentStateList.map { t =>
-          EventInfo(t, getSubscribers(query, prefix, t.name, t.description, CurrentStates))
+          EventInfo(t, getSubscribers(query, prefix, t.name, t.description, CurrentStates, maybePdfOptions))
         }
         if (m.description.nonEmpty || eventList.nonEmpty || observeEventList.nonEmpty || m.alarmList.nonEmpty)
           Some(Publishes(m.description, eventList, observeEventList, currentStateList, m.alarmList))
@@ -107,19 +114,19 @@ class ComponentInfoHelper(displayWarnings: Boolean) {
    * @param query  the database query handle
    * @param models the model objects for the component
    */
-  private def getSubscribes(query: IcdDbQuery, models: IcdModels): Option[Subscribes] = {
+  private def getSubscribes(query: IcdDbQuery, models: IcdModels, maybePdfOptions: Option[PdfOptions]): Option[Subscribes] = {
 
     // Gets additional information about the given subscription, including info from the publisher
     def getInfo(publishType: PublishType, si: SubscribeModelInfo): DetailedSubscribeInfo = {
       val x = for {
-        t            <- query.getModels(si.subsystem, Some(si.component))
+        t            <- query.getModels(si.subsystem, Some(si.component), maybePdfOptions)
         publishModel <- t.publishModel
       } yield {
         val maybeEvent = publishType match {
           case Events        => publishModel.eventList.find(t => t.name == si.name)
           case ObserveEvents => publishModel.observeEventList.find(t => t.name == si.name)
           case CurrentStates => publishModel.currentStateList.find(t => t.name == si.name)
-          case Alarms => None
+          case Alarms        => None
         }
         DetailedSubscribeInfo(publishType, si, maybeEvent, t.componentModel, displayWarnings)
       }
@@ -146,12 +153,12 @@ class ComponentInfoHelper(displayWarnings: Boolean) {
    * @param query  database query handle
    * @param models model objects for component
    */
-  private def getCommandsReceived(query: IcdDbQuery, models: IcdModels): List[ReceivedCommandInfo] = {
+  private def getCommandsReceived(query: IcdDbQuery, models: IcdModels, maybePdfOptions: Option[PdfOptions]): List[ReceivedCommandInfo] = {
     for {
       cmd      <- models.commandModel.toList
       received <- cmd.receive
     } yield {
-      val senders = query.getCommandSenders(cmd.subsystem, cmd.component, received.name)
+      val senders = query.getCommandSenders(cmd.subsystem, cmd.component, received.name, maybePdfOptions)
       ReceivedCommandInfo(received, senders)
     }
   }
@@ -163,18 +170,18 @@ class ComponentInfoHelper(displayWarnings: Boolean) {
    * @param query  database query handle
    * @param models model objects for component
    */
-  private def getCommandsSent(query: IcdDbQuery, models: IcdModels): List[SentCommandInfo] = {
+  private def getCommandsSent(query: IcdDbQuery, models: IcdModels, maybePdfOptions: Option[PdfOptions]): List[SentCommandInfo] = {
     val result = for {
       cmd  <- models.commandModel.toList
       sent <- cmd.send
     } yield {
-      val recv = query.getCommand(sent.subsystem, sent.component, sent.name)
+      val recv = query.getCommand(sent.subsystem, sent.component, sent.name, maybePdfOptions)
       SentCommandInfo(
         sent.name,
         sent.subsystem,
         sent.component,
         recv,
-        query.getComponentModel(sent.subsystem, sent.component),
+        query.getComponentModel(sent.subsystem, sent.component, maybePdfOptions),
         displayWarnings
       )
     }
@@ -187,9 +194,9 @@ class ComponentInfoHelper(displayWarnings: Boolean) {
    * @param query  database query handle
    * @param models model objects for component
    */
-  private def getCommands(query: IcdDbQuery, models: IcdModels): Option[Commands] = {
-    val received = getCommandsReceived(query, models)
-    val sent     = getCommandsSent(query, models)
+  private def getCommands(query: IcdDbQuery, models: IcdModels, maybePdfOptions: Option[PdfOptions]): Option[Commands] = {
+    val received = getCommandsReceived(query, models, maybePdfOptions)
+    val sent     = getCommandsSent(query, models, maybePdfOptions)
     models.commandModel match {
       case None => None
       case Some(m) =>

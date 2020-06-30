@@ -3,6 +3,7 @@ package csw.services.icd.db.parser
 import com.typesafe.scalalogging.Logger
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.ComponentModel
+import icd.web.shared.PdfOptions
 import reactivemongo.api.bson._
 
 /**
@@ -12,7 +13,7 @@ object ComponentModelBsonParser {
 
   protected lazy val log: Logger = Logger("csw.services.icd.db.parser.ComponentModelBsonParser")
 
-  def apply(doc: BSONDocument): Option[ComponentModel] = {
+  def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): Option[ComponentModel] = {
     if (doc.isEmpty) None
     else {
       val subsystem      = doc.getAsOpt[String](BaseModelBsonParser.subsystemKey).get
@@ -28,7 +29,7 @@ object ComponentModelBsonParser {
           subsystem = subsystem,
           component = component,
           title = doc.getAsOpt[String]("title").get,
-          description = HtmlMarkup.gfmToHtml(doc.getAsOpt[String]("description").get),
+          description = HtmlMarkup.gfmToHtml(doc.getAsOpt[String]("description").get, maybePdfOptions),
           modelVersion = doc.getAsOpt[String]("modelVersion").get,
           wbsId = doc.getAsOpt[String]("wbsId").getOrElse("")
         )

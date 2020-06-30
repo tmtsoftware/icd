@@ -59,7 +59,7 @@ class ApplicationImpl(db: IcdDb) {
   def getSubsystemInfo(subsystem: String, maybeVersion: Option[String]): Option[SubsystemInfo] = {
     // Get the subsystem info from the database, or if not found, look in the published GitHub repo
     val sv = SubsystemWithVersion(subsystem, maybeVersion, None)
-    db.versionManager.getSubsystemModel(sv).map(model => SubsystemInfo(sv, model.title, model.description))
+    db.versionManager.getSubsystemModel(sv, None).map(model => SubsystemInfo(sv, model.title, model.description))
   }
 
   /**
@@ -87,9 +87,9 @@ class ApplicationImpl(db: IcdDb) {
     val sv                  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     val searchAllSubsystems = searchAll.getOrElse(false)
     val subsystems          = if (searchAllSubsystems) None else Some(List(sv.subsystem))
-    val query               = new CachedIcdDbQuery(db.db, db.admin, subsystems)
+    val query               = new CachedIcdDbQuery(db.db, db.admin, subsystems, None)
     val versionManager      = new CachedIcdVersionManager(query)
-    new ComponentInfoHelper(displayWarnings = searchAllSubsystems).getComponentInfoList(versionManager, sv)
+    new ComponentInfoHelper(displayWarnings = searchAllSubsystems).getComponentInfoList(versionManager, sv, None)
   }
 
   /**
@@ -112,9 +112,9 @@ class ApplicationImpl(db: IcdDb) {
   ): List[ComponentInfo] = {
     val sv             = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     val targetSv       = SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
-    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)))
+    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), None)
     val versionManager = new CachedIcdVersionManager(query)
-    IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv)
+    IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, None)
   }
 
   /**
@@ -170,7 +170,7 @@ class ApplicationImpl(db: IcdDb) {
     }
     val pdfOptions = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedIds)
 
-    val icdPrinter = IcdDbPrinter(db, searchAllSubsystems = false, maybeCache)
+    val icdPrinter = IcdDbPrinter(db, searchAllSubsystems = false, maybeCache, Some(pdfOptions))
     icdPrinter.saveIcdAsPdf(sv, targetSv, iv, pdfOptions)
   }
 
@@ -202,8 +202,8 @@ class ApplicationImpl(db: IcdDb) {
   ): Option[Array[Byte]] = {
     val sv                  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     val searchAllSubsystems = searchAll.getOrElse(false)
-    val icdPrinter          = IcdDbPrinter(db, searchAllSubsystems, maybeCache)
     val pdfOptions          = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedIds)
+    val icdPrinter          = IcdDbPrinter(db, searchAllSubsystems, maybeCache, Some(pdfOptions))
     icdPrinter.saveApiAsPdf(sv, pdfOptions)
   }
 
@@ -228,7 +228,7 @@ class ApplicationImpl(db: IcdDb) {
     val out        = new ByteArrayOutputStream()
     val sv         = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     val pdfOptions = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, None, Nil)
-    val html       = ArchivedItemsReport(db, Some(sv)).makeReport(pdfOptions)
+    val html       = ArchivedItemsReport(db, Some(sv), Some(pdfOptions)).makeReport(pdfOptions)
     IcdToPdf.saveAsPdf(out, html, showLogo = false, pdfOptions)
     Some(out.toByteArray)
   }
@@ -246,7 +246,7 @@ class ApplicationImpl(db: IcdDb) {
   ): Option[Array[Byte]] = {
     val out        = new ByteArrayOutputStream()
     val pdfOptions = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, None, Nil)
-    val html       = ArchivedItemsReport(db, None).makeReport(pdfOptions)
+    val html       = ArchivedItemsReport(db, None, Some(pdfOptions)).makeReport(pdfOptions)
     IcdToPdf.saveAsPdf(out, html, showLogo = false, pdfOptions)
     Some(out.toByteArray)
   }

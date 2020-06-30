@@ -2,15 +2,9 @@ package csw.services.icd.db
 
 import csw.services.icd._
 import csw.services.icd.StdName._
-import csw.services.icd.db.parser.{
-  CommandModelBsonParser,
-  ComponentModelBsonParser,
-  PublishModelBsonParser,
-  SubscribeModelBsonParser,
-  SubsystemModelBsonParser
-}
+import csw.services.icd.db.parser.{CommandModelBsonParser, ComponentModelBsonParser, PublishModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
 import icd.web.shared.ComponentInfo._
-import icd.web.shared.IcdModels
+import icd.web.shared.{IcdModels, PdfOptions}
 import icd.web.shared.IcdModels._
 import play.api.libs.json.JsObject
 import reactivemongo.api.DefaultDB
@@ -178,13 +172,13 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
   /**
    * Returns a list of models, one for each component in the db
    */
-  def getComponents: List[ComponentModel] = {
+  def getComponents(maybePdfOptions: Option[PdfOptions]): List[ComponentModel] = {
     val x =
       for (entry <- getEntries if entry.component.isDefined)
         yield {
           val coll = entry.component.get
           val doc  = coll.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await.get
-          ComponentModelBsonParser(doc)
+          ComponentModelBsonParser(doc, maybePdfOptions)
         }
     x.flatten
   }
@@ -211,11 +205,11 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
    *
    * @param query restricts the components returned (a MongoDBObject, for example)
    */
-  def queryComponents(query: BSONDocument): List[ComponentModel] = {
+  def queryComponents(query: BSONDocument, maybePdfOptions: Option[PdfOptions]): List[ComponentModel] = {
     getEntries.flatMap {
       _.component.flatMap { coll =>
         val maybeDoc = coll.find(query, Option.empty[JsObject]).one[BSONDocument].await
-        maybeDoc.flatMap(ComponentModelBsonParser(_))
+        maybeDoc.flatMap(ComponentModelBsonParser(_, maybePdfOptions))
       }
     }
   }
@@ -225,14 +219,14 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
    *
    * @param componentType restricts the type of components returned (one of: Assembly, HCD, Sequencer, etc.)
    */
-  def getComponents(componentType: String): List[ComponentModel] =
-    queryComponents(BSONDocument("componentType" -> componentType))
+  def getComponents(componentType: String, maybePdfOptions: Option[PdfOptions]): List[ComponentModel] =
+    queryComponents(BSONDocument("componentType" -> componentType), maybePdfOptions)
 
   /**
    * Returns a list of all the component names in the DB
    */
   def getComponentNames(maybeSubsystem: Option[String]): List[String] = {
-    getComponents
+    getComponents(None)
       .filter(m => maybeSubsystem.isEmpty || maybeSubsystem.contains(m.subsystem))
       .map(_.component)
       .sorted
@@ -242,7 +236,7 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
    * Returns a list of all the assembly ICDs in the database
    */
   def getAssemblyNames(maybeSubsystem: Option[String]): List[String] = {
-    getComponents("Assembly")
+    getComponents("Assembly", None)
       .filter(m => maybeSubsystem.isEmpty || maybeSubsystem.contains(m.subsystem))
       .map(_.component)
       .sorted
@@ -252,7 +246,7 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
    * Returns a list of all the assembly ICDs in the database
    */
   def getHcdNames(maybeSubsystem: Option[String]): List[String] = {
-    getComponents("HCD")
+    getComponents("HCD", None)
       .filter(m => maybeSubsystem.isEmpty || maybeSubsystem.contains(m.subsystem))
       .map(_.component)
       .sorted
@@ -265,7 +259,7 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
     getEntries.flatMap {
       _.subsystem.flatMap { coll =>
         val doc = coll.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await.get
-        SubsystemModelBsonParser(doc).map(_.subsystem)
+        SubsystemModelBsonParser(doc, None).map(_.subsystem)
       }
     }
   }
@@ -310,33 +304,33 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
   /**
    * Returns the model object for the subsystem with the given name
    */
-  def getSubsystemModel(subsystem: String): Option[SubsystemModel] = {
+  def getSubsystemModel(subsystem: String, maybePdfOptions: Option[PdfOptions]): Option[SubsystemModel] = {
     val collName = getSubsystemCollectionName(subsystem)
     if (collectionExists(collName)) {
       val coll = db.collection[BSONCollection](collName)
-      collectionHead(coll).flatMap(SubsystemModelBsonParser(_))
+      collectionHead(coll).flatMap(SubsystemModelBsonParser(_, maybePdfOptions))
     } else None
   }
 
   /**
    * Returns the model object for the component with the given name
    */
-  def getComponentModel(subsystem: String, componentName: String): Option[ComponentModel] = {
+  def getComponentModel(subsystem: String, componentName: String, maybePdfOptions: Option[PdfOptions]): Option[ComponentModel] = {
     val collName = getComponentCollectionName(subsystem, componentName)
     if (collectionExists(collName)) {
       val coll = db.collection[BSONCollection](collName)
-      collectionHead(coll).flatMap(ComponentModelBsonParser(_))
+      collectionHead(coll).flatMap(ComponentModelBsonParser(_, maybePdfOptions))
     } else None
   }
 
   /**
    * Returns an object describing the items published by the named component
    */
-  def getPublishModel(component: ComponentModel): Option[PublishModel] = {
+  def getPublishModel(component: ComponentModel, maybePdfOptions: Option[PdfOptions]): Option[PublishModel] = {
     val collName = getPublishCollectionName(component.subsystem, component.component)
     if (collectionExists(collName)) {
       val coll = db.collection[BSONCollection](collName)
-      collectionHead(coll).flatMap(PublishModelBsonParser(_))
+      collectionHead(coll).flatMap(PublishModelBsonParser(_, maybePdfOptions))
     } else None
   }
 
@@ -345,33 +339,33 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
    *
    * @param component the model for the component
    */
-  def getSubscribeModel(component: ComponentModel): Option[SubscribeModel] = {
+  def getSubscribeModel(component: ComponentModel, maybePdfOptions: Option[PdfOptions]): Option[SubscribeModel] = {
     val collName = getSubscribeCollectionName(component.subsystem, component.component)
     if (collectionExists(collName)) {
       val coll = db.collection[BSONCollection](collName)
-      collectionHead(coll).flatMap(SubscribeModelBsonParser(_))
+      collectionHead(coll).flatMap(SubscribeModelBsonParser(_, maybePdfOptions))
     } else None
   }
 
   /**
    * Returns an object describing the "commands" defined for the named component in the named subsystem
    */
-  def getCommandModel(component: ComponentModel): Option[CommandModel] =
-    getCommandModel(component.subsystem, component.component)
+  def getCommandModel(component: ComponentModel, maybePdfOptions: Option[PdfOptions]): Option[CommandModel] =
+    getCommandModel(component.subsystem, component.component, maybePdfOptions)
 
-  def getCommandModel(subsystem: String, component: String): Option[CommandModel] = {
+  def getCommandModel(subsystem: String, component: String, maybePdfOptions: Option[PdfOptions]): Option[CommandModel] = {
     val collName = getCommandCollectionName(subsystem, component)
     if (collectionExists(collName)) {
       val coll = db.collection[BSONCollection](collName)
-      collectionHead(coll).flatMap(CommandModelBsonParser(_))
+      collectionHead(coll).flatMap(CommandModelBsonParser(_, maybePdfOptions))
     } else None
   }
 
   /**
    * Returns an object describing the named command, defined for the named component in the named subsystem
    */
-  def getCommand(subsystem: String, component: String, commandName: String): Option[ReceiveCommandModel] = {
-    getCommandModel(subsystem, component).flatMap(_.receive.find(_.name == commandName))
+  def getCommand(subsystem: String, component: String, commandName: String, maybePdfOptions: Option[PdfOptions]): Option[ReceiveCommandModel] = {
+    getCommandModel(subsystem, component, maybePdfOptions: Option[PdfOptions]).flatMap(_.receive.find(_.name == commandName))
   }
 
   /**
@@ -382,10 +376,10 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
    * @param commandName the name of the command being sent
    * @return list containing one item for each component that sends the command
    */
-  def getCommandSenders(subsystem: String, component: String, commandName: String): List[ComponentModel] = {
+  def getCommandSenders(subsystem: String, component: String, commandName: String, maybePdfOptions: Option[PdfOptions]): List[ComponentModel] = {
     for {
-      componentModel <- getComponents
-      commandModel   <- getCommandModel(componentModel)
+      componentModel <- getComponents(maybePdfOptions)
+      commandModel   <- getCommandModel(componentModel, maybePdfOptions)
       _              <- commandModel.send.find(s => s.subsystem == subsystem && s.component == component && s.name == commandName)
     } yield componentModel
   }
@@ -405,20 +399,20 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
    * @param subsystem the name of the subsystem (or component's subsystem)
    * @param component optional name of the component
    */
-  def getModels(subsystem: String, component: Option[String] = None): List[IcdModels] = {
+  def getModels(subsystem: String, component: Option[String] = None, maybePdfOptions: Option[PdfOptions]): List[IcdModels] = {
 
     // Holds all the model classes associated with a single ICD entry.
     case class Models(entry: IcdEntry) extends IcdModels {
       override val subsystemModel: Option[SubsystemModel] =
-        entry.subsystem.flatMap(coll => collectionHead(coll).flatMap(SubsystemModelBsonParser(_)))
+        entry.subsystem.flatMap(coll => collectionHead(coll).flatMap(SubsystemModelBsonParser(_, maybePdfOptions)))
       override val publishModel: Option[PublishModel] =
-        entry.publish.flatMap(coll => collectionHead(coll).flatMap(PublishModelBsonParser(_)))
+        entry.publish.flatMap(coll => collectionHead(coll).flatMap(PublishModelBsonParser(_, maybePdfOptions)))
       override val subscribeModel: Option[SubscribeModel] =
-        entry.subscribe.flatMap(coll => collectionHead(coll).flatMap(SubscribeModelBsonParser(_)))
+        entry.subscribe.flatMap(coll => collectionHead(coll).flatMap(SubscribeModelBsonParser(_, maybePdfOptions)))
       override val commandModel: Option[CommandModel] =
-        entry.command.flatMap(coll => collectionHead(coll).flatMap(CommandModelBsonParser(_)))
+        entry.command.flatMap(coll => collectionHead(coll).flatMap(CommandModelBsonParser(_, maybePdfOptions)))
       override val componentModel: Option[ComponentModel] =
-        entry.component.flatMap(coll => collectionHead(coll).flatMap(ComponentModelBsonParser(_)))
+        entry.component.flatMap(coll => collectionHead(coll).flatMap(ComponentModelBsonParser(_, maybePdfOptions)))
     }
 
     val e =
@@ -517,8 +511,8 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
    *
    * @param component the component's model
    */
-  def getPublished(component: ComponentModel): List[Published] = {
-    getPublishModel(component) match {
+  def getPublished(component: ComponentModel, maybePdfOptions: Option[PdfOptions]): List[Published] = {
+    getPublishModel(component, maybePdfOptions) match {
       case Some(publishModel) =>
         List(
           publishModel.eventList.map(i => Published(Events, i.name, i.description)),
@@ -533,11 +527,11 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
   /**
    * Returns a list describing what each component publishes
    */
-  def getPublishInfo(subsystem: String): List[PublishInfo] = {
+  def getPublishInfo(subsystem: String, maybePdfOptions: Option[PdfOptions]): List[PublishInfo] = {
     def getPublishInfo(c: ComponentModel): PublishInfo =
-      PublishInfo(c.component, c.prefix, getPublished(c))
+      PublishInfo(c.component, c.prefix, getPublished(c, maybePdfOptions))
 
-    getComponents.filter(m => m.subsystem == subsystem).map(c => getPublishInfo(c))
+    getComponents(maybePdfOptions).filter(m => m.subsystem == subsystem).map(c => getPublishInfo(c))
   }
 
   /**
@@ -545,14 +539,14 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
    *
    * @param component the component model
    */
-  private def getSubscribedTo(component: ComponentModel): List[Subscribed] = {
+  private def getSubscribedTo(component: ComponentModel, maybePdfOptions: Option[PdfOptions]): List[Subscribed] = {
     // Gets the full path of the subscribed item
     def getPath(i: SubscribeModelInfo): String = {
       val prefix = s"${i.subsystem}.${i.component}"
       s"$prefix.${i.name}"
     }
 
-    getSubscribeModel(component) match {
+    getSubscribeModel(component, maybePdfOptions) match {
       case Some(subscribeModel) =>
         List(
           subscribeModel.eventList.map(i => Subscribed(component, i, Events, getPath(i))),
@@ -566,13 +560,15 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
   /**
    * Returns an object describing what the given component subscribes to
    */
-  private[db] def getSubscribeInfo(c: ComponentModel): SubscribeInfo = SubscribeInfo(c, getSubscribedTo(c))
+  private[db] def getSubscribeInfo(c: ComponentModel, maybePdfOptions: Option[PdfOptions]): SubscribeInfo = {
+    SubscribeInfo(c, getSubscribedTo(c, maybePdfOptions))
+  }
 
   /**
    * Returns a list describing what each component subscribes to
    */
-  def getSubscribeInfo: List[SubscribeInfo] = {
-    getComponents.map(c => getSubscribeInfo(c))
+  def getSubscribeInfo(maybePdfOptions: Option[PdfOptions]): List[SubscribeInfo] = {
+    getComponents(maybePdfOptions).map(c => getSubscribeInfo(c, maybePdfOptions))
   }
 
   /**
@@ -581,9 +577,9 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
    * @param path          full path name of value (prefix + name)
    * @param subscribeType events, alarm, etc...
    */
-  def subscribes(path: String, subscribeType: PublishType): List[Subscribed] = {
+  def subscribes(path: String, subscribeType: PublishType, maybePdfOptions: Option[PdfOptions]): List[Subscribed] = {
     for {
-      i <- getSubscribeInfo
+      i <- getSubscribeInfo(maybePdfOptions)
       s <- i.subscribesTo.filter(sub => sub.path == path && sub.subscribeType == subscribeType)
     } yield s
   }

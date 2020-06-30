@@ -2,6 +2,7 @@ package csw.services.icd.db.parser
 
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.AttributeModel
+import icd.web.shared.PdfOptions
 import reactivemongo.api.bson._
 /**
  * This model is a value that is based on the json-schema "ref": "resource:/json-schema.json".
@@ -18,12 +19,12 @@ object AttributeModelBsonParser {
     case x              => x.toString // should not happen
   }
 
-  def apply(doc: BSONDocument): AttributeModel = {
+  def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): AttributeModel = {
     val name            = doc.getAsOpt[String]("name").getOrElse("")
-    val description     = doc.getAsOpt[String]("description").map(HtmlMarkup.gfmToHtml).getOrElse("")
+    val description     = doc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse("")
     val maybeType       = doc.getAsOpt[String]("type")
     val maybeEnum       = doc.getAsOpt[Array[String]]("enum").map(_.toList)
-    val units           = doc.getAsOpt[String]("units").map(HtmlMarkup.gfmToHtml).getOrElse("")
+    val units           = doc.getAsOpt[String]("units").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse("")
     val maxItems        = doc.getAsOpt[Int]("maxItems")
     val minItems        = doc.getAsOpt[Int]("minItems")
     val maybeDimensions = doc.getAsOpt[Array[Int]]("dimensions").map(_.toList)
@@ -109,7 +110,7 @@ object AttributeModelBsonParser {
     // If type is "struct", attributeList gives the fields of the struct
     val attributesList = if (typeStr == "struct") {
       for (subDoc <- doc.getAsOpt[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
-        yield AttributeModelBsonParser(subDoc)
+        yield AttributeModelBsonParser(subDoc, maybePdfOptions)
     } else if (typeStr == "array of struct") {
       doc
         .getAsOpt[BSONDocument]("items")
@@ -117,7 +118,7 @@ object AttributeModelBsonParser {
         .flatMap(
           items =>
             for (subDoc <- items.getAsOpt[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
-              yield AttributeModelBsonParser(subDoc)
+              yield AttributeModelBsonParser(subDoc, maybePdfOptions)
         )
     } else Nil
 

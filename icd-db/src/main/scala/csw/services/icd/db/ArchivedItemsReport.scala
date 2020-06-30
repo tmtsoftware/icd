@@ -31,8 +31,8 @@ object ArchivedItemsReport {
  * @param db the icd database
  * @param maybeSv if defined, restrict report to this subsystem, version, component (otherwise: all current subsystems)
  */
-case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion]) {
-  private val query          = new CachedIcdDbQuery(db.db, db.admin, maybeSv.map(sv => List(sv.subsystem)))
+case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion], maybePdfOptions: Option[PdfOptions]) {
+  private val query          = new CachedIcdDbQuery(db.db, db.admin, maybeSv.map(sv => List(sv.subsystem)), maybePdfOptions)
   private val versionManager = new CachedIcdVersionManager(query)
 
   // Returns true if the given subsystem should be included in the report
@@ -60,7 +60,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion])
       // Use given subsystem version and component, if defined
       val sv = maybeSv.get
       for {
-        models         <- versionManager.getModels(sv)
+        models         <- versionManager.getModels(sv, subsystemOnly = false, maybePdfOptions)
         componentModel <- models.componentModel
         if sv.maybeComponent.isEmpty || sv.maybeComponent.get == componentModel.component
         publishModel <- models.publishModel
@@ -70,9 +70,9 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion])
       }
     } else {
       for {
-        componentModel <- query.getComponents
+        componentModel <- query.getComponents(maybePdfOptions)
         if subsystemFilter(componentModel.subsystem)
-        publishModel <- query.getPublishModel(componentModel)
+        publishModel <- query.getPublishModel(componentModel, maybePdfOptions)
       } yield {
         getItems(componentModel, "Events", publishModel.eventList) ++
         getItems(componentModel, "ObserveEvents", publishModel.observeEventList)
@@ -84,7 +84,8 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion])
   private def totalsTable(archivedItems: List[ArchiveInfo]): Text.TypedTag[String] = {
     import scalatags.Text.all._
     val subsystems = archivedItems.map(_.subsystem).distinct
-    table(style := "width:100%;",
+    table(
+      style := "width:100%;",
       thead(
         tr(
           th("Subsystem"),

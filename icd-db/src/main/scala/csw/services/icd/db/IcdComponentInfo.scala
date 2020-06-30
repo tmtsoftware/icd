@@ -23,7 +23,8 @@ object IcdComponentInfo {
   def getComponentInfoList(
       versionManager: IcdVersionManager,
       sv: SubsystemWithVersion,
-      targetSv: SubsystemWithVersion
+      targetSv: SubsystemWithVersion,
+      maybePdfOptions: Option[PdfOptions]
   ): List[ComponentInfo] = {
 
     val compNames = sv.maybeComponent match {
@@ -33,7 +34,12 @@ object IcdComponentInfo {
     compNames
       .flatMap(
         component =>
-          getComponentInfo(versionManager, SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component)), targetSv)
+          getComponentInfo(
+            versionManager,
+            SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component)),
+            targetSv,
+            maybePdfOptions
+          )
       )
       .map(ComponentInfo.applyIcdFilter)
   }
@@ -49,17 +55,18 @@ object IcdComponentInfo {
   private def getComponentInfo(
       versionManager: IcdVersionManager,
       sv: SubsystemWithVersion,
-      targetSv: SubsystemWithVersion
+      targetSv: SubsystemWithVersion,
+      maybePdfOptions: Option[PdfOptions]
   ): Option[ComponentInfo] = {
     // get the models for this component
-    val modelsList       = versionManager.getModels(sv)
-    val targetModelsList = versionManager.getModels(targetSv)
+    val modelsList       = versionManager.getModels(sv, subsystemOnly = false, maybePdfOptions)
+    val targetModelsList = versionManager.getModels(targetSv, subsystemOnly = false, maybePdfOptions)
 
     modelsList.headOption.flatMap { icdModels =>
       val componentModel = icdModels.componentModel
       val publishes      = getPublishes(sv.subsystem, icdModels, targetModelsList)
       val subscribes     = getSubscribes(icdModels, targetModelsList)
-      val commands       = getCommands(versionManager.query, icdModels, targetModelsList)
+      val commands       = getCommands(versionManager.query, icdModels, targetModelsList, maybePdfOptions)
 
       if (publishes.isDefined || subscribes.isDefined || commands.isDefined)
         componentModel.map(ComponentInfo(_, publishes, subscribes, commands))
@@ -268,7 +275,12 @@ object IcdComponentInfo {
    * @param models           the model objects for the component
    * @param targetModelsList the target model objects
    */
-  private def getCommandsSent(query: IcdDbQuery, models: IcdModels, targetModelsList: List[IcdModels]): List[SentCommandInfo] = {
+  private def getCommandsSent(
+      query: IcdDbQuery,
+      models: IcdModels,
+      targetModelsList: List[IcdModels],
+      maybePdfOptions: Option[PdfOptions]
+  ): List[SentCommandInfo] = {
     val result = for {
       cmd  <- models.commandModel.toList
       sent <- cmd.send
@@ -279,7 +291,7 @@ object IcdComponentInfo {
         sent.subsystem,
         sent.component,
         Some(recv),
-        query.getComponentModel(sent.subsystem, sent.component)
+        query.getComponentModel(sent.subsystem, sent.component, maybePdfOptions)
       )
     }
     result
@@ -292,9 +304,14 @@ object IcdComponentInfo {
    * @param models           the model objects for the component
    * @param targetModelsList the target model objects
    */
-  private def getCommands(query: IcdDbQuery, models: IcdModels, targetModelsList: List[IcdModels]): Option[Commands] = {
+  private def getCommands(
+      query: IcdDbQuery,
+      models: IcdModels,
+      targetModelsList: List[IcdModels],
+      maybePdfOptions: Option[PdfOptions]
+  ): Option[Commands] = {
     val received = getCommandsReceived(models, targetModelsList)
-    val sent     = getCommandsSent(query, models, targetModelsList)
+    val sent     = getCommandsSent(query, models, targetModelsList, maybePdfOptions)
     models.commandModel match {
       case None => None
       case Some(m) =>

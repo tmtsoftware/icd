@@ -3,6 +3,7 @@ package csw.services.icd.db.parser
 import com.typesafe.config.Config
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.{BaseModel, SubsystemModel}
+import icd.web.shared.PdfOptions
 
 /**
  * Base model class used to hold only the subsystem and component name
@@ -30,7 +31,7 @@ object SubsystemModelParser {
     SubsystemModel(
       subsystem = config.getString("subsystem"),
       title = config.getString("title"),
-      description = HtmlMarkup.gfmToHtml(config.getString("description")),
+      description = config.getString("description"),
       modelVersion = config.getString("modelVersion")
     )
 }

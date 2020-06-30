@@ -19,6 +19,10 @@ body {
     max-width: 920px;
 }
 
+img {
+    vertical-align:middle;
+}
+
 .md {
     background-color: #eee;
     border-radius: 3px;

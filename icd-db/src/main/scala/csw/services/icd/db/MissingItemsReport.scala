@@ -69,11 +69,11 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfO
     .map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, None))
 
   // Note: Need to search entire database in order to find the missing items
-  private val query          = new CachedIcdDbQuery(db.db, db.admin, None)
+  private val query          = new CachedIcdDbQuery(db.db, db.admin, None, None)
   private val versionManager = new CachedIcdVersionManager(query)
 
   // s"$subsystem.$component" for all components in all subsystems (latest versions)
-  private val allComponents = query.getComponents
+  private val allComponents = query.getComponents(None)
     .map(c => s"${c.subsystem}.${c.component}")
 
   // Make the report only for the selected subsystems (-s and -t options), or all subsystems by default
@@ -98,7 +98,7 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfO
             c.component,
             p.subsystem,
             p.component,
-            query.getComponentModel(p.subsystem, p.component).map(_.prefix).getOrElse(""),
+            query.getComponentModel(p.subsystem, p.component, None).map(_.prefix).getOrElse(""),
             p.name
           )
       )
@@ -107,7 +107,7 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfO
     def getItems: List[Items] = {
       for {
         sv        <- subsystemsWithVersions
-        models    <- versionManager.getModels(sv)
+        models    <- versionManager.getModels(sv, subsystemOnly = false, Some(pdfOptions))
         component <- models.componentModel
       } yield {
         val publishModel           = models.publishModel
