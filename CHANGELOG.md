@@ -8,6 +8,11 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 
 - Added "master" as an API version that is updated automatically from GitHub on startup or refresh of the web app.
 
+- Added support for LaTeX math formulas, delimited by $\`...\`$ for inline or \`\`\`math...\`\`\` for a block.
+  See [examples/2.0/TEST/envCtrl/publish-model.conf](examples/2.0/TEST/envCtrl/publish-model.conf) and
+  [examples/2.0/TEST/envCtrl/command-model.conf](examples/2.0/TEST/envCtrl/command-model.conf) for examples. 
+  The LaTeX string is converted to an image and then inserted in the HTML or PDF.
+
 ### Changed
 
 - Added new option to icd-git command: `--ingestMissing`: Ingests any APIs or ICDs that were published, but are not yet in the local database, plus any master branch versions.
