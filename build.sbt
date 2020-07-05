@@ -39,6 +39,7 @@ lazy val `icd-db` = project
         itext7Core,
         html2pdf,
         jlatexmath,
+        plantuml,
         commonsIo,
         diffson,
         scalaLogging,

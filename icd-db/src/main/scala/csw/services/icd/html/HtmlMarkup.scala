@@ -1,7 +1,7 @@
 package csw.services.icd.html
 
 import java.awt.Color
-import java.io.File
+import java.io.{File, FileOutputStream}
 import java.nio.file.Files
 import java.util.UUID
 import java.util.regex.Pattern
@@ -11,6 +11,7 @@ import com.vladsch.flexmark.parser.{Parser, PegdownExtensions}
 import com.vladsch.flexmark.profile.pegdown.{Extensions, PegdownOptionsAdapter}
 import icd.web.shared.IcdModels.EventModel
 import icd.web.shared.PdfOptions
+import net.sourceforge.plantuml.{FileFormat, FileFormatOption, SourceStringReader}
 import org.jsoup.Jsoup
 import scalatags.Text.all._
 import scalatags.Text.TypedTag
@@ -95,8 +96,8 @@ object HtmlMarkup extends Extensions {
     import org.apache.commons.io.FileUtils
     import java.util.Base64
     try {
-      val formula = new TeXFormula(latex)
-      val tmpFile = Files.createTempFile("icdmath", ".png")
+      val formula  = new TeXFormula(latex)
+      val tmpFile  = Files.createTempFile("icdmath", ".png")
       val fontSize = maybePdfOptions.map(_.fontSize).getOrElse(PdfOptions.defaultFontSize).toFloat
       formula.createPNG(
         TeXConstants.STYLE_DISPLAY,
@@ -105,18 +106,44 @@ object HtmlMarkup extends Extensions {
         Color.white,
         Color.black
       )
-      val fileContent   = FileUtils.readFileToByteArray(tmpFile.toFile)
+      val fileContent = FileUtils.readFileToByteArray(tmpFile.toFile)
       Files.delete(tmpFile)
       val encodedString = Base64.getEncoder.encodeToString(fileContent)
       s"<img src='data:image/png;base64,$encodedString'/>"
     } catch {
       case e: Exception =>
-      e.printStackTrace()
-      latex
+        e.printStackTrace()
+        latex
     }
   }
 
-  // Replaces any math formulas between with the image of the rendered formula.
+  // Returns an inline HTML image for the given UML markup
+  // TODO: Could cache image string, but needs to take pdfOptions into account
+  private def renderUml(uml: String, maybePdfOptions: Option[PdfOptions]): String = {
+    import org.apache.commons.io.FileUtils
+    import java.util.Base64
+    try {
+      val tmpFile = Files.createTempFile("icduml", ".png")
+      val reader  = new SourceStringReader(uml);
+      val f = new FileOutputStream(tmpFile.toFile)
+      Option(reader.outputImage(f, 0, new FileFormatOption(FileFormat.PNG))) match {
+        case Some(desc) =>
+          println(s"XXX PlantUML: $desc")
+          val fileContent = FileUtils.readFileToByteArray(tmpFile.toFile)
+          f.close()
+          Files.delete(tmpFile)
+          val encodedString = Base64.getEncoder.encodeToString(fileContent)
+          s"<img src='data:image/png;base64,$encodedString'/>"
+        case None => uml
+      }
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+        uml
+    }
+  }
+
+  // Replaces any math formulas with the image of the rendered formula.
   // Inline formulas may be between $` and `$.
   // Block formulas are between ```math and ```.
   private def processMath(s: String, maybePdfOptions: Option[PdfOptions]): String = {
@@ -136,6 +163,20 @@ object HtmlMarkup extends Extensions {
     sb.toString
   }
 
+  // Replaces any UML markup (delimited by ```uml...```) with the image of the rendered UML.
+  private def processUml(s: String, maybePdfOptions: Option[PdfOptions]): String = {
+    val p  = Pattern.compile("```uml([^`]*?)```")
+    val m  = p.matcher(s)
+    val sb = new StringBuffer
+    while (m.find) {
+      val g   = m.group()
+      val uml = g.drop(6).dropRight(3)
+      m.appendReplacement(sb, renderUml(uml, maybePdfOptions))
+    }
+    m.appendTail(sb)
+    sb.toString
+  }
+
   /**
    * Returns the HTML snippet for the given markdown (GFM)
    *
@@ -150,7 +191,7 @@ object HtmlMarkup extends Extensions {
       try {
         // Convert markdown to HTML
         // Note: About 1/2 the time for generating the HTML for an ICD is spent parsing MarkDown strings
-        val s    = processMath(stripLeadingWs(gfm), maybePdfOptions)
+        val s    = processUml(processMath(stripLeadingWs(gfm), maybePdfOptions), maybePdfOptions)
         val html = renderer.render(parser.parse(s))
 
 //        // Then clean it up with jsoup to avoid issues with the pdf generator (and for security)

@@ -33,6 +33,7 @@ object Dependencies {
   val html2pdf    = "com.itextpdf"         % "html2pdf"     % "3.0.0"
   val jlatexmath = "org.scilab.forge" % "jlatexmath"  % "1.0.7"
   val commonsIo = "commons-io" % "commons-io" % "2.7"
+  val plantuml = "net.sourceforge.plantuml" % "plantuml" % "1.2020.15"
 
   val reactivemongo               = "org.reactivemongo" %% "reactivemongo"                  % "0.20.3"
   val play2Reactivemongo          = "org.reactivemongo" %% "play2-reactivemongo"            % "0.20.3-play28"
