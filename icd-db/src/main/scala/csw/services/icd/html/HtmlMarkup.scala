@@ -1,7 +1,7 @@
 package csw.services.icd.html
 
 import java.awt.Color
-import java.io.{File, FileOutputStream}
+import java.io.FileOutputStream
 import java.nio.file.Files
 import java.util.UUID
 import java.util.regex.Pattern
@@ -90,7 +90,7 @@ object HtmlMarkup extends Extensions {
 
   // Returns an inline HTML image for the given latex formula
   // TODO: Could cache image string, but needs to take pdfOptions into account
-  private def renderFormula(latex: String, maybePdfOptions: Option[PdfOptions]): String = {
+  private def renderFormula(latex: String, inline: Boolean, maybePdfOptions: Option[PdfOptions]): String = {
     import org.scilab.forge.jlatexmath.TeXConstants
     import org.scilab.forge.jlatexmath.TeXFormula
     import org.apache.commons.io.FileUtils
@@ -109,7 +109,7 @@ object HtmlMarkup extends Extensions {
       val fileContent = FileUtils.readFileToByteArray(tmpFile.toFile)
       Files.delete(tmpFile)
       val encodedString = Base64.getEncoder.encodeToString(fileContent)
-      s"<img src='data:image/png;base64,$encodedString'/>"
+      img(src := s"data:image/png;base64,$encodedString").render
     } catch {
       case e: Exception =>
         e.printStackTrace()
@@ -128,16 +128,16 @@ object HtmlMarkup extends Extensions {
 //      val s = uml.replace("@startuml", s"@startuml\nskinparam defaultFontSize $fontSize")
 //      val reader  = new SourceStringReader(s);
 //      val option = new FileFormatOption(FileFormat.PNG)
-      val reader = new SourceStringReader(uml);
+      val reader = new SourceStringReader(uml)
       val option = new FileFormatOption(FileFormat.PNG).withScale(maybePdfOptions.map(_.fontSize / 16.0).getOrElse(1.0))
       val f      = new FileOutputStream(tmpFile.toFile)
       Option(reader.outputImage(f, 0, option)) match {
-        case Some(desc) =>
+        case Some(_) =>
           val fileContent = FileUtils.readFileToByteArray(tmpFile.toFile)
           f.close()
           Files.delete(tmpFile)
           val encodedString = Base64.getEncoder.encodeToString(fileContent)
-          s"<img src='data:image/png;base64,$encodedString'/>"
+          img(src := s"data:image/png;base64,$encodedString").render
         case None => uml
       }
     } catch {
@@ -156,12 +156,12 @@ object HtmlMarkup extends Extensions {
     val sb = new StringBuffer
     while (m.find) {
       val g = m.group()
-      val formula = if (g.startsWith("$`")) {
-        g.drop(2).dropRight(2)
+      val (inline, formula) = if (g.startsWith("$`")) {
+        (true, g.drop(2).dropRight(2))
       } else {
-        g.drop(7).dropRight(3)
+        (false, g.drop(7).dropRight(3))
       }
-      m.appendReplacement(sb, renderFormula(formula, maybePdfOptions))
+      m.appendReplacement(sb, renderFormula(formula, inline, maybePdfOptions))
     }
     m.appendTail(sb)
     sb.toString
