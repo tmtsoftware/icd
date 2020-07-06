@@ -127,10 +127,10 @@ object HtmlMarkup extends Extensions {
 //      val fontSize = maybePdfOptions.map(_.fontSize).getOrElse(PdfOptions.defaultFontSize).toFloat
 //      val s = uml.replace("@startuml", s"@startuml\nskinparam defaultFontSize $fontSize")
 //      val reader  = new SourceStringReader(s);
-      val reader  = new SourceStringReader(uml);
-      val f = new FileOutputStream(tmpFile.toFile)
-      val option = new FileFormatOption(FileFormat.PNG).withScale(maybePdfOptions.map(_.fontSize/16.0).getOrElse(1.0))
 //      val option = new FileFormatOption(FileFormat.PNG)
+      val reader = new SourceStringReader(uml);
+      val option = new FileFormatOption(FileFormat.PNG).withScale(maybePdfOptions.map(_.fontSize / 16.0).getOrElse(1.0))
+      val f      = new FileOutputStream(tmpFile.toFile)
       Option(reader.outputImage(f, 0, option)) match {
         case Some(desc) =>
           val fileContent = FileUtils.readFileToByteArray(tmpFile.toFile)
