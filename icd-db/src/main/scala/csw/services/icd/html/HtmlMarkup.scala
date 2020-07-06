@@ -98,7 +98,7 @@ object HtmlMarkup extends Extensions {
     try {
       val formula  = new TeXFormula(latex)
       val tmpFile  = Files.createTempFile("icdmath", ".png")
-      val fontSize = maybePdfOptions.map(_.fontSize).getOrElse(PdfOptions.defaultFontSize).toFloat
+      val fontSize = maybePdfOptions.map(_.fontSize).getOrElse(PdfOptions.defaultFontSize).toFloat + 1
       formula.createPNG(
         TeXConstants.STYLE_DISPLAY,
         fontSize,

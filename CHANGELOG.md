@@ -8,10 +8,13 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 
 - Added "master" as an API version that is updated automatically from GitHub on startup or refresh of the web app.
 
-- Added support for LaTeX math formulas, delimited by $\`...\`$ for inline or \`\`\`math...\`\`\` for a block.
+- Added support for LaTeX math formulas in description texts, delimited by $\`...\`$ for inline or \`\`\`math...\`\`\` for a block.
   See [examples/2.0/TEST/envCtrl/publish-model.conf](examples/2.0/TEST/envCtrl/publish-model.conf) and
   [examples/2.0/TEST/envCtrl/command-model.conf](examples/2.0/TEST/envCtrl/command-model.conf) for examples. 
   The LaTeX string is converted to an image and then inserted in the HTML or PDF.
+
+- Added support for UML markup in description texts, based on [PlantUML](https://plantuml.com/), delimited by \`\`\`uml...\`\`\`.
+  See [examples/2.0/TEST/envCtrl/component-model.conf](examples/2.0/TEST/envCtrl/component-model.conf).
 
 ### Changed
 
