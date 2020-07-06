@@ -124,11 +124,15 @@ object HtmlMarkup extends Extensions {
     import java.util.Base64
     try {
       val tmpFile = Files.createTempFile("icduml", ".png")
+//      val fontSize = maybePdfOptions.map(_.fontSize).getOrElse(PdfOptions.defaultFontSize).toFloat
+//      val s = uml.replace("@startuml", s"@startuml\nskinparam defaultFontSize $fontSize")
+//      val reader  = new SourceStringReader(s);
       val reader  = new SourceStringReader(uml);
       val f = new FileOutputStream(tmpFile.toFile)
-      Option(reader.outputImage(f, 0, new FileFormatOption(FileFormat.PNG))) match {
+      val option = new FileFormatOption(FileFormat.PNG).withScale(maybePdfOptions.map(_.fontSize/16.0).getOrElse(1.0))
+//      val option = new FileFormatOption(FileFormat.PNG)
+      Option(reader.outputImage(f, 0, option)) match {
         case Some(desc) =>
-          println(s"XXX PlantUML: $desc")
           val fileContent = FileUtils.readFileToByteArray(tmpFile.toFile)
           f.close()
           Files.delete(tmpFile)
