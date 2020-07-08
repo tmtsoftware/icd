@@ -88,7 +88,7 @@ object HtmlMarkup extends Extensions {
     s.stripMargin.linesIterator.toList.map(_.trim).mkString("\n")
   }
 
-  // Returns an inline HTML image for the given latex formula
+  // Returns an HTML image tag for the given latex formula
   // TODO: Could cache image string, but needs to take pdfOptions into account
   private def renderFormula(latex: String, inline: Boolean, maybePdfOptions: Option[PdfOptions]): String = {
     import org.scilab.forge.jlatexmath.TeXConstants
@@ -117,7 +117,7 @@ object HtmlMarkup extends Extensions {
     }
   }
 
-  // Returns an inline HTML image for the given UML markup
+  // Returns an HTML image tag for the given UML markup
   // TODO: Could cache image string, but needs to take pdfOptions into account
   private def renderUml(uml: String, maybePdfOptions: Option[PdfOptions]): String = {
     import org.apache.commons.io.FileUtils
