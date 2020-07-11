@@ -9,6 +9,29 @@ package icd.web.shared
  */
 case class SubsystemInfo(sv: SubsystemWithVersion, title: String, description: String)
 
+object SubsystemWithVersion {
+
+  /**
+   * Initialize from a string in the form: subsystem.component:version,
+   * where ".component" and ":version" are optional.
+   */
+  def apply(s: String):  SubsystemWithVersion = {
+    val (ss, maybeVersion) = if (s.contains(':')) {
+      val ar = s.split(':')
+      (ar.head, Some(ar.tail.head))
+    } else {
+      (s, None)
+    }
+    val (subsystem, maybeComponent) = if (ss.contains('.')) {
+      val ar = ss.split('.')
+      (ar.head, Some(ar.tail.mkString(".")))
+    } else {
+      (ss, None)
+    }
+    new SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
+  }
+}
+
 /**
  * Holds a subsystem and an optional version and component name
  *

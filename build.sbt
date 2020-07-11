@@ -49,6 +49,16 @@ lazy val `icd-db` = project
         testScope(scalaTest)
   ) dependsOn icdWebSharedJvm
 
+// Command line tool to support visualization of API and ICD relationships
+lazy val `icd-viz` = project
+  .enablePlugins(DeployApp)
+  .settings(defaultSettings: _*)
+  .settings(
+    libraryDependencies ++=
+      compileScope(graphVizJava) ++
+        testScope(scalaTest)
+  ) dependsOn (`icd-db`)
+
 // Adds support for working with ICD model file repositories on GitHub, ICD version management, icd-github tool
 lazy val `icd-git` = project
   .enablePlugins(DeployApp)
