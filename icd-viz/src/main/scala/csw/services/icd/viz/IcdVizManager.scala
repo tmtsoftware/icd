@@ -1,27 +1,20 @@
 package csw.services.icd.viz
 
-import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdDb}
-import icd.web.shared.IcdModels.ComponentModel
-import icd.web.shared.{ComponentInfo, Publishes, ReceivedCommandInfo, SentCommandInfo, Subscribes, SubsystemWithVersion}
+import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, IcdComponentInfo, IcdDb}
+import guru.nidi.graphviz.attribute.Rank.RankDir
+import guru.nidi.graphviz.attribute.{Color, Rank, Style}
+import guru.nidi.graphviz.engine.{Format, Graphviz}
+import icd.web.shared.{ComponentInfo, SubsystemWithVersion}
+import guru.nidi.graphviz.model.Factory._
 
 object IcdVizManager {
-  case class ComponentPair(comp1: ComponentModel, comp2: ComponentModel)
-  case class ComponentRelationships(
-      pair: ComponentPair,
-      publishes: Option[Publishes],
-      subscribes: Option[Subscribes],
-      commandsReceived: List[ReceivedCommandInfo],
-      commandsSent: List[SentCommandInfo]
-  )
+  case class ComponentPairInfo(sv1: SubsystemWithVersion, sv2: SubsystemWithVersion, info: ComponentInfo)
 
   def showRelationships(db: IcdDb, options: IcdVizOptions): Unit = {
-    var infoMap = Map[ComponentPair, ComponentInfo]
 
-    // Gets all required info about selected component's relationships
-    def getComponentInfo: List[ComponentInfo] = {
-      val query               = new CachedIcdDbQuery(db.db, db.admin, None, None)
-      val versionManager      = new CachedIcdVersionManager(query)
-      val componentInfoHelper = new ComponentInfoHelper(displayWarnings = false)
+    def getComponentPairInfo: List[ComponentPairInfo] = {
+      val query          = new CachedIcdDbQuery(db.db, db.admin, None, None)
+      val versionManager = new CachedIcdVersionManager(query)
       // Add components from user-specified subsystems
       val subsystemComponents = options.subsystems.flatMap(
         sv =>
@@ -29,6 +22,7 @@ object IcdVizManager {
             .getComponentNames(sv)
             .map(name => SubsystemWithVersion(sv.subsystem, Some(name), sv.maybeVersion))
       )
+      // Add selected components and remove any omitted component types
       val components = (subsystemComponents ++ options.components)
         .flatMap { sv =>
           val maybeComponentModel = db.versionManager.getComponentModel(sv, None) match {
@@ -40,21 +34,29 @@ object IcdVizManager {
           }
           maybeComponentModel.map(_ => sv)
         }
-      components.flatMap(sv => componentInfoHelper.getComponentInfo(versionManager, sv, None))
+      // Get the relationships between each unique pair of components
+      components.distinct
+        .combinations(2)
+        .map { case Seq(x, y) => (x, y) }
+        .toList
+        .flatMap { p =>
+          IcdComponentInfo
+            .getComponentInfoList(versionManager, p._1, p._2, None)
+            .headOption
+            .map(ComponentPairInfo(p._1, p._2, _))
+        }
     }
 
+    val g = graph("example1").directed.graphAttr
+      .`with`(Rank.dir(RankDir.LEFT_TO_RIGHT))
+      .`with`(node("a").`with`(Color.RED).link(node("b")), node("b").link(to(node("c")).`with`(Style.DASHED)))
+    Graphviz.fromGraph(g).height(100).render(Format.PNG).toFile(new Nothing("example/ex1.png"))
+
     // ---
-    val infoList     = getComponentInfo
-    val primaryNodes = infoList.map(_.componentModel)
-//    val commandsSent = for {
-//      info <- infoList
-//      cmds <- info.commands.toList
-//      sentCmds <- cmds.commandsSent
-//      receiver <- sentCmds.receiver.toList
-//    } yield {
-//      info.componentModel
-////      receiver
-//    }
+    getComponentPairInfo.map { p =>
+//      p.
+
+    }
   }
 
 }

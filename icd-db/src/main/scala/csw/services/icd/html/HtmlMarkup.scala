@@ -3,7 +3,6 @@ package csw.services.icd.html
 import java.awt.Color
 import java.io.FileOutputStream
 import java.nio.file.Files
-import java.util.UUID
 import java.util.regex.Pattern
 
 import com.vladsch.flexmark.html.HtmlRenderer
@@ -16,47 +15,6 @@ import org.jsoup.Jsoup
 import scalatags.Text.all._
 import scalatags.Text.TypedTag
 import org.jsoup.nodes.Document.OutputSettings.Syntax.xml
-
-/**
- * Defines HTML markup
- */
-trait HtmlMarkup {
-  protected val idStr: String = UUID.randomUUID().toString
-
-  /**
-   * Returns an HTML heading with the given depth, text and id
-   */
-  protected def mkHeading(depth: Int, text: String): TypedTag[String] = {
-    val heading = tag(s"h$depth")
-    heading(a(name := idStr)(text))
-  }
-
-  /**
-   * Returns an HTML table of contents entry for the text and id
-   */
-  protected def mkTocEntry(text: String): TypedTag[String] = {
-    import scalatags.Text.all._
-    li(a(href := s"#$idStr")(text.trim))
-  }
-
-  /**
-   * List of HTML tags to display (in order)
-   */
-  val tags: List[TypedTag[String]]
-
-  /**
-   * Optional entry to include in TOC
-   */
-  val tocEntry: Option[TypedTag[String]]
-
-  /**
-   * The HTML markup for a document part
-   */
-  def markup: TypedTag[String] = {
-    import scalatags.Text.all._
-    div(cls := "nopagebreak")(tags)
-  }
-}
 
 /**
  * HTML markup utils
