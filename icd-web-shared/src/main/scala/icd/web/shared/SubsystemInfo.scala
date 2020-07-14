@@ -28,7 +28,7 @@ object SubsystemWithVersion {
     } else {
       (ss, None)
     }
-    new SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
+    new SubsystemWithVersion(subsystem.toUpperCase(), maybeVersion, maybeComponent)
   }
 }
 
@@ -39,9 +39,12 @@ object SubsystemWithVersion {
  * @param maybeVersion optional version of the subsystem (None means the latest unpublished version)
  */
 case class SubsystemWithVersion(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String]) {
-  override def toString: String = {
+  val prefix: String = {
     val compStr = maybeComponent.map(c => s".$c").getOrElse("")
+    s"$subsystem$compStr"
+  }
+  override def toString: String = {
     val versionStr = maybeVersion.map(v => s"-$v").getOrElse("")
-    s"$subsystem$compStr$versionStr"
+    s"$prefix$versionStr"
   }
 }

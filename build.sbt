@@ -55,7 +55,7 @@ lazy val `icd-viz` = project
   .settings(defaultSettings: _*)
   .settings(
     libraryDependencies ++=
-      compileScope(graphVizJava) ++
+      compileScope(graphDot) ++
         testScope(scalaTest)
   ) dependsOn (`icd-db`)
 

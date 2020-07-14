@@ -34,7 +34,7 @@ object Dependencies {
   val jlatexmath = "org.scilab.forge" % "jlatexmath"  % "1.0.7"
   val commonsIo = "commons-io" % "commons-io" % "2.7"
   val plantuml = "net.sourceforge.plantuml" % "plantuml" % "1.2020.15"
-  val graphVizJava = "guru.nidi" % "graphviz-java" % "0.16.3"
+  val graphDot = "org.scala-graph" %% "graph-dot" % "1.13.0"
 
   val reactivemongo               = "org.reactivemongo" %% "reactivemongo"                  % "0.20.3"
   val play2Reactivemongo          = "org.reactivemongo" %% "play2-reactivemongo"            % "0.20.3-play28"

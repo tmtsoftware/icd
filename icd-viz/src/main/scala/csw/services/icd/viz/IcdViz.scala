@@ -105,6 +105,7 @@ object IcdViz extends App {
   private def run(options: IcdVizOptions): Unit = {
     val db = IcdDb(options.dbName, options.host, options.port)
     IcdVizManager.showRelationships(db, options)
+    System.exit(0)
 
 //    def error(msg: String): Unit = {
 //      println(msg)
