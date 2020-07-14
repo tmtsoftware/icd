@@ -1,23 +1,19 @@
 package csw.services.icd.viz
 
-import java.io.{File, PrintWriter}
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths}
+import java.nio.file.Files
 
 import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb}
-import icd.web.shared.{ComponentInfo, DetailedSubscribeInfo, SentCommandInfo, SubsystemWithVersion}
+import icd.web.shared.{ComponentInfo, DetailedSubscribeInfo, EventInfo, SentCommandInfo, SubsystemWithVersion}
 import scalax.collection.Graph
 import scalax.collection.io.dot._
 import scalax.collection.io.dot.implicits._
 import scalax.collection.GraphEdge.DiEdge
-import scalax.collection.edge.LDiEdge
 
 import language.implicitConversions
-import scalax.collection.GraphPredef._
 import scalax.collection.GraphEdge._
 import scalax.collection.edge.LDiEdge
 import scalax.collection.edge.Implicits._
-import Indent._
 import icd.web.shared.IcdModels.ComponentModel
 import scalax.collection.config.CoreConfig
 
@@ -100,11 +96,30 @@ object IcdVizManager {
     }
 
     def getSubscriberInfo(info: ComponentInfo): (List[DetailedSubscribeInfo], List[ComponentModel]) = {
-      val subscribes = info.subscribes.toList.flatMap(_.subscribeInfo).filter(_.publisher.isDefined)
+      val subscribes = info.subscribes.toList
+        .flatMap(_.subscribeInfo)
+        .filter(d => d.publisher.isDefined && omitFilter(d.publisher.get))
       (
         subscribes,
         subscribes
           .map(_.publisher.get)
+          .distinct
+          .filter(omitFilter)
+          .filter(_.prefix != info.componentModel.prefix)
+      )
+    }
+
+    def getPublisherInfo(info: ComponentInfo): (List[EventInfo], List[ComponentModel]) = {
+      val eventInfoList =
+        info.publishes.toList
+          .flatMap(p => p.currentStateList ++ p.eventList ++ p.observeEventList)
+          .filter(_.subscribers.nonEmpty)
+          .map(e => EventInfo(e.eventModel, e.subscribers.filter(s => omitFilter(s.componentModel))))
+      (
+        eventInfoList,
+        eventInfoList
+          .flatMap(_.subscribers)
+          .map(_.componentModel)
           .distinct
           .filter(omitFilter)
           .filter(_.prefix != info.componentModel.prefix)
@@ -128,22 +143,43 @@ object IcdVizManager {
     val allSubsystems = componentInfoList.flatMap { info =>
       // XXX TOFO FIXME: Reuse
       val (_, subscriberComponents) = getSubscriberInfo(info)
+      val (_, publisherComponents)  = getPublisherInfo(info)
       val (_, receivierComponents)  = getReceiverInfo(info)
-      (info.componentModel.subsystem :: (subscriberComponents.map(_.subsystem) ++ receivierComponents.map(_.subsystem))).distinct
+      (info.componentModel :: (subscriberComponents ++ publisherComponents ++ receivierComponents))
+        .map(_.subsystem)
+        .distinct
     }
 
-    val eventEdges = componentInfoList.flatMap { info =>
-      val (subscribes, subscribers) = getSubscriberInfo(info)
-      var eventMap                  = Map[String, List[String]]()
-      subscribes.foreach { d =>
-        val publisher = d.publisher.get.prefix
-        val event     = componentNameFromPrefix(d.path)
-        if (eventMap.contains(publisher))
-          eventMap = eventMap + (publisher -> (event :: eventMap(publisher)))
+    val subscribedEventEdges = componentInfoList.flatMap { info =>
+      val (subscribedEvents, publishers) = getSubscriberInfo(info)
+      // Map of publisher component name to list of published event names that info.component subscribes to
+      var subscribedEventMap = Map[String, List[String]]()
+      subscribedEvents.foreach { e =>
+        val publisher = e.publisher.get.prefix
+        val event     = e.subscribeModelInfo.name
+        if (subscribedEventMap.contains(publisher))
+          subscribedEventMap = subscribedEventMap + (publisher -> (event :: subscribedEventMap(publisher)))
         else
-          eventMap = eventMap + (publisher -> List(event))
+          subscribedEventMap = subscribedEventMap + (publisher -> List(event))
       }
-      subscribers.map(c => (info.componentModel.prefix ~+> c.prefix)(eventMap(c.prefix).mkString("\\n")))
+      publishers.map(c => (c.prefix ~+> info.componentModel.prefix)(subscribedEventMap(c.prefix).mkString("\\n")))
+    }
+
+    val publishedEventEdges = componentInfoList.flatMap { info =>
+      val (publishedEvents, subscribers) = getPublisherInfo(info)
+      // Map of subscriber component name to list of subscribed event names that info.component publishes
+      var publishedEventMap = Map[String, List[String]]()
+      publishedEvents.foreach { e =>
+        val event = e.eventModel.name
+        e.subscribers.foreach { subscribeInfo =>
+          val subscriber = subscribeInfo.componentModel.prefix
+          if (publishedEventMap.contains(subscriber))
+            publishedEventMap = publishedEventMap + (subscriber -> (event :: publishedEventMap(subscriber)))
+          else
+            publishedEventMap = publishedEventMap + (subscriber -> List(event))
+        }
+      }
+      subscribers.map(c => (info.componentModel.prefix ~+> c.prefix)(publishedEventMap(c.prefix).mkString("\\n")))
     }
 
     val commandEdges = componentInfoList.flatMap { info =>
@@ -243,7 +279,7 @@ object IcdVizManager {
       } else None
     }
 
-    val g = Graph.from(eventEdges ++ commandEdges)
+    val g = Graph.from(subscribedEventEdges ++ publishedEventEdges ++ commandEdges)
 
     val dot = g.toDot(
       dotRoot = root,
