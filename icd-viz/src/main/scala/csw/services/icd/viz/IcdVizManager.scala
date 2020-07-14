@@ -262,7 +262,7 @@ object IcdVizManager {
       val component = innerNode.value
       val subsystem = component.split('.').head
       if (options.groupSubsystems && subgraphs.contains(subsystem)) {
-        val style = if (primaryComponents.contains(component)) "bold" else "dashed"
+        val style = if (primaryComponents.map(_.prefix).contains(component)) "bold" else "dashed"
         val color = getSubsystemColor(subsystem)
         Some(
           subgraphs(subsystem),
