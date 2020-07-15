@@ -11,6 +11,7 @@ import icd.web.shared.{
   PdfOptions,
   ReceivedCommandInfo,
   SentCommandInfo,
+  SubscribeInfo,
   SubsystemWithVersion
 }
 import scalax.collection.Graph
@@ -22,7 +23,7 @@ import language.implicitConversions
 import scalax.collection.GraphEdge._
 import scalax.collection.edge.LDiEdge
 import scalax.collection.edge.Implicits._
-import icd.web.shared.IcdModels.ComponentModel
+import icd.web.shared.IcdModels.{ComponentModel, SubscribeModelInfo}
 import scalax.collection.config.CoreConfig
 
 object IcdVizManager {
@@ -41,6 +42,7 @@ object IcdVizManager {
       case "AOESW"   => "springgreen"
       case "TCS"     => "purple"
       case "IRIS"    => "blue"
+      case "?"       => "red"
       case _         => "grey"
     }
   }
@@ -116,7 +118,7 @@ object IcdVizManager {
     def getSubscriberInfo(info: ComponentInfo): (List[DetailedSubscribeInfo], List[ComponentModel]) = {
       val subscribes = info.subscribes.toList
         .flatMap(_.subscribeInfo)
-        .filter(d => d.publisher.isDefined && omitFilter(d.publisher.get))
+        .filter(d => d.eventModel.isDefined && d.publisher.isDefined && omitFilter(d.publisher.get))
       (
         subscribes,
         subscribes
@@ -129,32 +131,34 @@ object IcdVizManager {
 
     // Get info about subscribed events where the publisher doesn't publish the event
     def getMissingPublisherInfo(info: ComponentInfo): (List[DetailedSubscribeInfo], List[ComponentModel]) = {
-      val subscribes = info.subscribes.toList
-        .flatMap(_.subscribeInfo)
-        .filter(d => d.publisher.isEmpty)
-      (
-        subscribes,
-        subscribes
-          .map(
-            d =>
-              db.query
-                .getComponentModel(d.subscribeModelInfo.subsystem, d.subscribeModelInfo.component, noMarkdownOpt)
-                .getOrElse(
-                  ComponentModel(
-                    "?",
-                    d.subscribeModelInfo.subsystem,
-                    d.subscribeModelInfo.component,
-                    d.subscribeModelInfo.component,
-                    d.subscribeModelInfo.component,
-                    "2.0",
-                    ""
+      if (options.missingEvents) {
+        val subscribes = info.subscribes.toList
+          .flatMap(_.subscribeInfo)
+          .filter(d => d.eventModel.isEmpty)
+        (
+          subscribes,
+          subscribes
+            .map(
+              d =>
+                db.query
+                  .getComponentModel(d.subscribeModelInfo.subsystem, d.subscribeModelInfo.component, noMarkdownOpt)
+                  .getOrElse(
+                    ComponentModel(
+                      "?",
+                      d.subscribeModelInfo.subsystem,
+                      d.subscribeModelInfo.component,
+                      d.subscribeModelInfo.component,
+                      d.subscribeModelInfo.component,
+                      "2.0",
+                      ""
+                    )
                   )
-                )
-          )
-          .distinct
-          .filter(omitFilter)
-          .filter(_.prefix != info.componentModel.prefix)
-      )
+            )
+            .distinct
+            .filter(omitFilter)
+            .filter(_.prefix != info.componentModel.prefix)
+        )
+      } else (Nil, Nil)
     }
 
     // Gets info about published events and the components involved
@@ -172,6 +176,40 @@ object IcdVizManager {
           .distinct
           .filter(omitFilter)
           .filter(_.prefix != info.componentModel.prefix)
+      )
+    }
+
+    // Gets info about published events with no subscribers
+    def getMissingSubscriberInfo(info: ComponentInfo): (List[EventInfo], List[ComponentModel]) = {
+      val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
+      val eventInfoList =
+        info.publishes.toList
+          .flatMap(p => p.currentStateList ++ p.eventList ++ p.observeEventList)
+          .filter(_.subscribers.isEmpty)
+          .map(
+            e =>
+              // Create dummy subscriber component
+              EventInfo(
+                e.eventModel,
+                List(
+                  SubscribeInfo(
+                    missingComponentModel,
+                    ComponentInfo.Events,
+                    SubscribeModelInfo(
+                      info.componentModel.subsystem,
+                      info.componentModel.component,
+                      e.eventModel.name,
+                      "",
+                      1.0,
+                      None
+                    )
+                  )
+                )
+              )
+          )
+      (
+        eventInfoList,
+        eventInfoList.map(_ => missingComponentModel)
       )
     }
 
@@ -208,41 +246,63 @@ object IcdVizManager {
     val allSubsystems = componentInfoList.flatMap { info =>
       val (_, subscriberComponents)       = getSubscriberInfo(info)
       val (_, missingPublisherComponents) = getMissingPublisherInfo(info)
-      val (_, publisherComponents)        = getPublisherInfo(info)
-      val (_, receivierComponents)        = getReceiverInfo(info)
-      (info.componentModel :: (subscriberComponents ++ missingPublisherComponents ++ publisherComponents ++ receivierComponents))
+
+      val (_, publisherComponents)         = getPublisherInfo(info)
+      val (_, missingSubscriberComponents) = getMissingSubscriberInfo(info)
+
+      val (_, receivierComponents) = getReceiverInfo(info)
+
+      val (_, senderComponents) = getSenderInfo(info)
+      (info.componentModel :: (subscriberComponents
+        ++ missingPublisherComponents
+        ++ publisherComponents
+        ++ missingSubscriberComponents
+        ++ receivierComponents
+        ++ senderComponents))
         .map(_.subsystem)
         .distinct
     }
 
-    // Edges for events that the primary components subscribe to
-    val subscribedEventEdges = componentInfoList.flatMap { info =>
-      val (subscribedEvents, publishers) = getSubscriberInfo(info)
-      // Map of publisher component name to list of published event names that info.component subscribes to
-      val subscribedEventMap = subscribedEvents
-        .map(e => List(e.publisher.get.prefix, e.subscribeModelInfo.name))
-        .groupMap(_.head)(_.tail.head)
-      publishers.map(
-        c =>
-          (c.prefix ~+> info.componentModel.prefix)(
-            if (options.eventLabels) subscribedEventMap(c.prefix).mkString("\\n") else ""
-          )
-      )
+    // Prefix added to label for edges from missing publishers
+    val missingPrefix = "missing:"
+
+    // Edges for events that the primary components subscribe to.
+    // If missing is true, only those with missing publishers, otherwise only those not missing a publisher.
+    def getSubscribedEventEdges(missing: Boolean) = {
+      componentInfoList.flatMap { info =>
+        val (subscribedEvents, publishers) = if (missing) getMissingPublisherInfo(info) else getSubscriberInfo(info)
+        // Map of publisher component name to list of published event names that info.component subscribes to
+        val subscribedEventMap = subscribedEvents
+//          .map(e => List(e.publisher.get.prefix, e.subscribeModelInfo.name))
+          .map(e => List(s"${e.subscribeModelInfo.subsystem}.${e.subscribeModelInfo.component}", e.subscribeModelInfo.name))
+          .groupMap(_.head)(_.tail.head)
+        val ms = if (missing) missingPrefix else ""
+        publishers.map(
+          c =>
+            (c.prefix ~+> info.componentModel.prefix)(
+              s"$ms${if (options.eventLabels) subscribedEventMap(c.prefix).mkString("\\n") else ""}"
+            )
+        )
+      }
     }
 
     // Edges for events that the primary components publish
-    val publishedEventEdges = componentInfoList.flatMap { info =>
-      val (publishedEvents, subscribers) = getPublisherInfo(info)
-      // Map of subscriber component name to list of subscribed event names that info.component publishes
-      val publishedEventMap = publishedEvents
-        .flatMap(e => e.subscribers.map(subscribeInfo => List(subscribeInfo.componentModel.prefix, e.eventModel.name)))
-        .groupMap(_.head)(_.tail.head)
-      subscribers.map(
-        c =>
-          (info.componentModel.prefix ~+> c.prefix)(
-            if (options.eventLabels) publishedEventMap(c.prefix).mkString("\\n") else ""
-          )
-      )
+    // If missing is true, only those with no subscribers, otherwise only those with subscribers.
+    def getPublishedEventEdges(missing: Boolean) = {
+      componentInfoList.flatMap { info =>
+        val (publishedEvents, subscribers) = if (missing) getMissingSubscriberInfo(info) else getPublisherInfo(info)
+        // Map of subscriber component name to list of subscribed event names that info.component publishes
+        val publishedEventMap = publishedEvents
+          .flatMap(e => e.subscribers.map(subscribeInfo => List(subscribeInfo.componentModel.prefix, e.eventModel.name)))
+          .groupMap(_.head)(_.tail.head)
+        val ms = if (missing) missingPrefix else ""
+        subscribers.map(
+          c =>
+            (info.componentModel.prefix ~+> c.prefix)(
+              s"$ms${if (options.eventLabels) publishedEventMap(c.prefix).mkString("\\n") else ""}"
+            )
+        )
+      }
     }
 
     // Edges for commands that the primary components send
@@ -327,15 +387,29 @@ object IcdVizManager {
 
     // Creates a dot edge
     def edgeTransformer(innerEdge: Graph[String, LDiEdge]#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
-      val edge  = innerEdge.edge
-      val label = edge.label.asInstanceOf[String]
+      val edge = innerEdge.edge
+      val (label, isMissing) = {
+        val s = edge.label.asInstanceOf[String]
+        if (s.startsWith(missingPrefix)) (s.drop(missingPrefix.length), true) else (s, false)
+      }
+      val missingAttr =
+        if (isMissing)
+          List(
+            DotAttr("color", noevcol),
+            DotAttr(Id("fontcolor"), noevcol),
+            DotAttr(Id("style"), "dashed")
+          )
+        else
+          List()
+      val labelAttr = if (label.nonEmpty) List(DotAttr(Id("label"), Id(label))) else Nil
+      val attrList  = missingAttr ++ labelAttr
+
       Some(
         root,
         DotEdgeStmt(
           NodeId(edge.from.toString),
           NodeId(edge.to.toString),
-          if (label.nonEmpty) List(DotAttr(Id("label"), Id(label)))
-          else Nil
+          attrList
         )
       )
     }
@@ -346,7 +420,7 @@ object IcdVizManager {
       val subsystem = component.split('.').head
       if (options.groupSubsystems && subgraphs.contains(subsystem)) {
         val style = if (primaryComponents.map(_.prefix).contains(component)) "bold" else "dashed"
-        val color = getSubsystemColor(subsystem)
+        val color = if (component.endsWith(".?")) "red" else getSubsystemColor(subsystem)
         Some(
           subgraphs(subsystem),
           DotNodeStmt(
@@ -354,7 +428,7 @@ object IcdVizManager {
             attrList = List(
               DotAttr(Id("label"), Id(componentNameFromPrefix(component))),
               DotAttr(Id("color"), color),
-              DotAttr(Id("fontColor"), color),
+              DotAttr(Id("fontcolor"), color),
               DotAttr(Id("style"), style)
             )
           )
@@ -362,8 +436,21 @@ object IcdVizManager {
       } else None
     }
 
+    val subscribedEventEdges       = getSubscribedEventEdges(missing = false)
+    val missingPublisherEventEdges = getSubscribedEventEdges(missing = true)
+
+    val publishedEventEdges         = getPublishedEventEdges(missing = false)
+    val missingSubscriberEventEdges = getPublishedEventEdges(missing = true)
+
     // Create the final graph
-    val g = Graph.from(subscribedEventEdges ++ publishedEventEdges ++ sentCommandEdges ++ receivedCommandEdges)
+    val g = Graph.from(
+      subscribedEventEdges ++
+        missingPublisherEventEdges ++
+        publishedEventEdges ++
+        missingSubscriberEventEdges ++
+        sentCommandEdges ++
+        receivedCommandEdges
+    )
 
     // Convert to dot
     val dot = g.toDot(
