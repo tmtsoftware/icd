@@ -213,9 +213,9 @@ object IcdVizManager {
       )
     }
 
-    // Gets information about commands a component receives and the sender components involved
-    def getReceiverInfo(info: ComponentInfo): (List[SentCommandInfo], List[ComponentModel]) = {
-      val sentCommands = info.commands.toList.flatMap(_.commandsSent).filter(_.receiver.isDefined)
+    // Gets information about commands a component sends and the receiver components involved
+    def getSentCommandInfo(info: ComponentInfo): (List[SentCommandInfo], List[ComponentModel]) = {
+      val sentCommands = info.commands.toList.flatMap(_.commandsSent).filter(_.receiveCommandModel.isDefined)
       (
         sentCommands,
         sentCommands
@@ -226,8 +226,40 @@ object IcdVizManager {
       )
     }
 
-    // Gets information about commands sent and the components receiving the commands
-    def getSenderInfo(info: ComponentInfo): (List[ReceivedCommandInfo], List[ComponentModel]) = {
+    // Gets information about commands a component sends where no receiver was found
+    def getMissingReceiverInfo(info: ComponentInfo): (List[SentCommandInfo], List[ComponentModel]) = {
+      if (options.missingEvents) {
+        val sentCommands = info.commands.toList
+          .flatMap(_.commandsSent)
+          .filter(_.receiveCommandModel.isEmpty)
+        (
+          sentCommands,
+          sentCommands
+            .map(
+              s =>
+                db.query
+                  .getComponentModel(s.subsystem, s.component, noMarkdownOpt)
+                  .getOrElse(
+                    ComponentModel(
+                      "?",
+                      s.subsystem,
+                      s.component,
+                      s.component,
+                      s.component,
+                      "2.0",
+                      ""
+                    )
+                  )
+            )
+            .distinct
+            .filter(omitFilter)
+            .filter(_.prefix != info.componentModel.prefix)
+        )
+      } else (Nil, Nil)
+    }
+
+    // Gets information about commands received and the components sending the commands
+    def getReceivedCommandInfo(info: ComponentInfo): (List[ReceivedCommandInfo], List[ComponentModel]) = {
       val receivedCommands = info.commands.toList.flatMap(_.commandsReceived).filter(_.senders.nonEmpty)
       (
         receivedCommands,
@@ -236,6 +268,19 @@ object IcdVizManager {
           .distinct
           .filter(omitFilter)
           .filter(_.prefix != info.componentModel.prefix)
+      )
+    }
+
+    // Gets information about commands received where there are no senders
+    def getMissingSenderCommandInfo(info: ComponentInfo): (List[ReceivedCommandInfo], List[ComponentModel]) = {
+      val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
+      val receivedCommands = info.commands.toList
+        .flatMap(_.commandsReceived)
+        .filter(_.senders.isEmpty)
+        .map(r => ReceivedCommandInfo(r.receiveCommandModel, List(missingComponentModel)))
+      (
+        receivedCommands,
+        receivedCommands.map(_ => missingComponentModel)
       )
     }
 
@@ -250,15 +295,20 @@ object IcdVizManager {
       val (_, publisherComponents)         = getPublisherInfo(info)
       val (_, missingSubscriberComponents) = getMissingSubscriberInfo(info)
 
-      val (_, receivierComponents) = getReceiverInfo(info)
+      val (_, receivierComponents)        = getSentCommandInfo(info)
+      val (_, missingReceivierComponents) = getMissingReceiverInfo(info)
 
-      val (_, senderComponents) = getSenderInfo(info)
-      (info.componentModel :: (subscriberComponents
-        ++ missingPublisherComponents
-        ++ publisherComponents
-        ++ missingSubscriberComponents
-        ++ receivierComponents
-        ++ senderComponents))
+      val (_, senderComponents)        = getReceivedCommandInfo(info)
+      val (_, missingSenderComponents) = getMissingSenderCommandInfo(info)
+
+      (info.componentModel :: (subscriberComponents ++
+        missingPublisherComponents ++
+        publisherComponents ++
+        missingSubscriberComponents ++
+        receivierComponents ++
+        missingReceivierComponents ++
+        senderComponents ++
+        missingSenderComponents))
         .map(_.subsystem)
         .distinct
     }
@@ -273,7 +323,6 @@ object IcdVizManager {
         val (subscribedEvents, publishers) = if (missing) getMissingPublisherInfo(info) else getSubscriberInfo(info)
         // Map of publisher component name to list of published event names that info.component subscribes to
         val subscribedEventMap = subscribedEvents
-//          .map(e => List(e.publisher.get.prefix, e.subscribeModelInfo.name))
           .map(e => List(s"${e.subscribeModelInfo.subsystem}.${e.subscribeModelInfo.component}", e.subscribeModelInfo.name))
           .groupMap(_.head)(_.tail.head)
         val ms = if (missing) missingPrefix else ""
@@ -305,34 +354,42 @@ object IcdVizManager {
       }
     }
 
-    // Edges for commands that the primary components send
-    val sentCommandEdges = componentInfoList.flatMap { info =>
-      val (sentCommands, receivierComponents) = getReceiverInfo(info)
-      // Map receiving component name to list of commands sent from info.component
-      val sentCmdMap = sentCommands
-        .map(c => List(c.receiver.get.prefix, c.name))
-        .groupMap(_.head)(_.tail.head)
-      receivierComponents.map(
-        c =>
-          (info.componentModel.prefix ~+> c.prefix)(
-            if (options.commandLabels) sentCmdMap(c.prefix).mkString("\\n") else ""
-          )
-      )
+    // Edges for commands that the primary components sends
+    // If missing is true, only those with no receivers, otherwise only those with receivers.
+    def getSentCommandEdges(missing: Boolean) = {
+      componentInfoList.flatMap { info =>
+        val (sentCommands, receivierComponents) = if (missing) getMissingReceiverInfo(info) else getSentCommandInfo(info)
+        // Map receiving component name to list of commands sent from info.component
+        val sentCmdMap = sentCommands
+          .map(c => List(c.receiver.get.prefix, c.name))
+          .groupMap(_.head)(_.tail.head)
+        val ms = if (missing) missingPrefix else ""
+        receivierComponents.map(
+          c =>
+            (c.prefix ~+> info.componentModel.prefix)(
+              s"$ms${if (options.commandLabels) sentCmdMap(c.prefix).mkString("\\n") else ""}"
+            )
+        )
+      }
     }
 
     // Edges for commands that the primary components receive
-    val receivedCommandEdges = componentInfoList.flatMap { info =>
-      val (receivedCommands, senderComponents) = getSenderInfo(info)
-      // Map sending component name to list of commands received by info.component
-      val recvCmdmdMap = receivedCommands
-        .flatMap(c => c.senders.map(senderComponent => List(senderComponent.prefix, c.receiveCommandModel.name)))
-        .groupMap(_.head)(_.tail.head)
-      senderComponents.map(
-        c =>
-          (info.componentModel.prefix ~+> c.prefix)(
-            if (options.commandLabels) recvCmdmdMap(c.prefix).mkString("\\n") else ""
-          )
-      )
+    def getReceivedCommandEdges(missing: Boolean) = {
+      componentInfoList.flatMap { info =>
+        val (receivedCommands, senderComponents) =
+          if (missing) getMissingSenderCommandInfo(info) else getReceivedCommandInfo(info)
+        // Map sending component name to list of commands received by info.component
+        val recvCmdmdMap = receivedCommands
+          .flatMap(c => c.senders.map(senderComponent => List(senderComponent.prefix, c.receiveCommandModel.name)))
+          .groupMap(_.head)(_.tail.head)
+        val ms = if (missing) missingPrefix else ""
+        senderComponents.map(
+          c =>
+            (c.prefix ~+> info.componentModel.prefix)(
+              s"$ms${if (options.commandLabels) recvCmdmdMap(c.prefix).mkString("\\n") else ""}"
+            )
+        )
+      }
     }
 
     // Make the root graph
@@ -442,6 +499,12 @@ object IcdVizManager {
     val publishedEventEdges         = getPublishedEventEdges(missing = false)
     val missingSubscriberEventEdges = getPublishedEventEdges(missing = true)
 
+    val sentCommandEdges            = getSentCommandEdges(missing = false)
+    val missingReceiverCommandEdges = getSentCommandEdges(missing = true)
+
+    val receivedCommandEdges      = getReceivedCommandEdges(missing = false)
+    val missingSenderCommandEdges = getReceivedCommandEdges(missing = true)
+
     // Create the final graph
     val g = Graph.from(
       subscribedEventEdges ++
@@ -449,7 +512,9 @@ object IcdVizManager {
         publishedEventEdges ++
         missingSubscriberEventEdges ++
         sentCommandEdges ++
-        receivedCommandEdges
+        missingReceiverCommandEdges ++
+        receivedCommandEdges ++
+        missingSenderCommandEdges
     )
 
     // Convert to dot
