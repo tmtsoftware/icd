@@ -361,7 +361,7 @@ object IcdVizManager {
         val (sentCommands, receivierComponents) = if (missing) getMissingReceiverInfo(info) else getSentCommandInfo(info)
         // Map receiving component name to list of commands sent from info.component
         val sentCmdMap = sentCommands
-          .map(c => List(c.receiver.get.prefix, c.name))
+          .map(c => List(s"${c.subsystem}.${c.component}", c.name))
           .groupMap(_.head)(_.tail.head)
         val ms = if (missing) missingPrefix else ""
         receivierComponents.map(
