@@ -346,7 +346,7 @@ case class IcdDb(
 ) {
   // Cleanup databases from earlier releases
   IcdDbDefaults.deleteDatabase(host, port, "icds")
-  IcdDbDefaults.deleteDatabase(host, port, "icds2")
+//  IcdDbDefaults.deleteDatabase(host, port, "icds2")
   IcdDbDefaults.deleteDatabase(host, port, "icds3")
 
   val db: DefaultDB    = IcdDbDefaults.connectToDatabase(host, port, dbName)

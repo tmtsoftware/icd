@@ -13,12 +13,13 @@ object PdfOptions {
   val paperSizes   = List("Letter", "Legal", "A4", "A3")
 
   def apply(
-      maybeOrientation: Option[String],
-      maybeFontSize: Option[Int],
-      maybeLineHeight: Option[String],
-      maybePaperSize: Option[String],
-      maybeDetails: Option[Boolean],
-      expandedIds: List[String]
+      maybeOrientation: Option[String] = None,
+      maybeFontSize: Option[Int] = None,
+      maybeLineHeight: Option[String] = None,
+      maybePaperSize: Option[String] = None,
+      maybeDetails: Option[Boolean] = None,
+      expandedIds: List[String] = Nil,
+      processMarkdown: Boolean = true
   ): PdfOptions =
     PdfOptions(
       maybeOrientation.getOrElse(defaultOrientation),
@@ -26,7 +27,8 @@ object PdfOptions {
       maybeLineHeight.getOrElse(defaultLineHeight),
       maybePaperSize.getOrElse(defaultPaperSize),
       maybeDetails.getOrElse(defaultDetails),
-      expandedIds
+      expandedIds,
+      processMarkdown
     )
 }
 
@@ -43,5 +45,7 @@ case class PdfOptions(
     // false: Include only the details that are expanded in the HTML view
     details: Boolean,
     // List of ids for expanded details
-    expandedIds: List[String]
+    expandedIds: List[String],
+    // If true (default), process markdown in text, otherwise don't (set to false if you don't need the descriptions)
+    processMarkdown: Boolean
 )

@@ -64,7 +64,7 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
       .toBoolean
 
     val expandedLinkIds = if (details) Nil else getExpandedIds
-    listener(PdfOptions(orientation, fontSize, lineHeight, paperSize, details, expandedLinkIds))
+    listener(PdfOptions(orientation, fontSize, lineHeight, paperSize, details, expandedLinkIds, processMarkdown = true))
   }
 
   // Finds all button items with aria-expanded=true, then gets the "name" attr of the following "a" element.

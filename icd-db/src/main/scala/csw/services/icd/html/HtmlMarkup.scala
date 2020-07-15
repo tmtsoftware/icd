@@ -148,7 +148,9 @@ object HtmlMarkup extends Extensions {
    * @param gfm the Git formatted markdown
    */
   def gfmToHtml(gfm: String, maybePdfOptions: Option[PdfOptions]): String = {
-    if (isEmpty(gfm)) ""
+    if (!maybePdfOptions.forall(_.processMarkdown))
+      gfm // skip markdown processing if processMarkdown is false
+    else if (isEmpty(gfm)) ""
     else
       try {
         // Convert markdown to HTML
