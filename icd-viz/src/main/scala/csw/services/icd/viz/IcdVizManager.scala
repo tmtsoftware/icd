@@ -5,16 +5,8 @@ import java.nio.file.Files
 
 import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdDb}
 import csw.services.icd.viz.IcdVizManager.EdgeType.EdgeType
-import icd.web.shared.{
-  ComponentInfo,
-  DetailedSubscribeInfo,
-  EventInfo,
-  PdfOptions,
-  ReceivedCommandInfo,
-  SentCommandInfo,
-  SubscribeInfo,
-  SubsystemWithVersion
-}
+import csw.services.icd.viz.IcdVizManager.MissingType.MissingType
+import icd.web.shared.{ComponentInfo, DetailedSubscribeInfo, EventInfo, PdfOptions, ReceivedCommandInfo, SentCommandInfo, SubscribeInfo, SubsystemWithVersion}
 import scalax.collection.Graph
 import scalax.collection.io.dot._
 import scalax.collection.io.dot.implicits._
@@ -27,16 +19,25 @@ import scalax.collection.config.CoreConfig
 
 object IcdVizManager {
   //noinspection TypeAnnotation
+  object MissingType extends Enumeration {
+    type MissingType = Value
+    val noSubscribers   = Value("No Subscribers")
+    val missingPublisher = Value("Missing Publisher")
+    val noSenders = Value("No Senders")
+    val missingReceiver = Value("Missing Receiver")
+  }
+
+  //noinspection TypeAnnotation
   // Event and Command edges have different colors
   object EdgeType extends Enumeration {
     type EdgeType = Value
-    val event   = Value("event")
-    val command = Value("command")
+    val events   = Value("Events")
+    val commands = Value("Commands")
   }
 
   // Type of an edge label
   // XXX TODO FIXME: Replace missing with enum
-  private case class EdgeLabel(label: String, edgeType: EdgeType, missing: Boolean = false)
+  private case class EdgeLabel(label: String, edgeType: EdgeType, missing: Option[MissingType] = None)
 
   implicit val myConfig: CoreConfig = CoreConfig()
 
@@ -323,10 +324,11 @@ object IcdVizManager {
         val subscribedEventMap = subscribedEvents
           .map(e => List(s"${e.subscribeModelInfo.subsystem}.${e.subscribeModelInfo.component}", e.subscribeModelInfo.name))
           .groupMap(_.head)(_.tail.head)
+        val missingType = if (missing) Some(MissingType.missingPublisher) else None
         publishers.map(
           c =>
             (c.prefix ~+#> info.componentModel.prefix)(
-              EdgeLabel(subscribedEventMap(c.prefix).mkString("\\n"), EdgeType.event, missing)
+              EdgeLabel(subscribedEventMap(c.prefix).mkString("\\n"), EdgeType.events, missingType)
             )
         )
       }
@@ -341,10 +343,11 @@ object IcdVizManager {
         val publishedEventMap = publishedEvents
           .flatMap(e => e.subscribers.map(subscribeInfo => List(subscribeInfo.componentModel.prefix, e.eventModel.name)))
           .groupMap(_.head)(_.tail.head)
+        val missingType = if (missing) Some(MissingType.noSubscribers) else None
         subscribers.map(
           c =>
             (info.componentModel.prefix ~+#> c.prefix)(
-              EdgeLabel(publishedEventMap(c.prefix).mkString("\\n"), EdgeType.event, missing)
+              EdgeLabel(publishedEventMap(c.prefix).mkString("\\n"), EdgeType.events, missingType)
             )
         )
       }
@@ -359,10 +362,11 @@ object IcdVizManager {
         val sentCmdMap = sentCommands
           .map(c => List(s"${c.subsystem}.${c.component}", c.name))
           .groupMap(_.head)(_.tail.head)
+        val missingType = if (missing) Some(MissingType.missingReceiver) else None
         receivierComponents.map(
           c =>
             (c.prefix ~+#> info.componentModel.prefix)(
-              EdgeLabel(sentCmdMap(c.prefix).mkString("\\n"), EdgeType.command, missing)
+              EdgeLabel(sentCmdMap(c.prefix).mkString("\\n"), EdgeType.commands, missingType)
             )
         )
       }
@@ -377,10 +381,11 @@ object IcdVizManager {
         val recvCmdmdMap = receivedCommands
           .flatMap(c => c.senders.map(senderComponent => List(senderComponent.prefix, c.receiveCommandModel.name)))
           .groupMap(_.head)(_.tail.head)
+        val missingType = if (missing) Some(MissingType.noSenders) else None
         senderComponents.map(
           c =>
             (c.prefix ~+#> info.componentModel.prefix)(
-              EdgeLabel(recvCmdmdMap(c.prefix).mkString("\\n"), EdgeType.command, missing)
+              EdgeLabel(recvCmdmdMap(c.prefix).mkString("\\n"), EdgeType.commands, missingType)
             )
         )
       }
@@ -436,19 +441,15 @@ object IcdVizManager {
       pairs.toMap
     } else Map.empty[String, DotSubGraph]
 
-    def getEdgeTypeStr(e: EdgeType): String = {
-      if (e == EdgeType.event) "Events" else "Commands"
-    }
-
     // Creates a dot edge
     def edgeTransformer(innerEdge: Graph[String, LkDiEdge]#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
       val edge      = innerEdge.edge
       val edgeLabel = edge.label.asInstanceOf[EdgeLabel]
-      val showLabel = options.eventLabels && edgeLabel.edgeType == EdgeType.event ||
-        options.commandLabels && edgeLabel.edgeType == EdgeType.command
-      val color = if (edgeLabel.edgeType == EdgeType.event) eventColor else commandColor
+      val showLabel = options.eventLabels && edgeLabel.edgeType == EdgeType.events ||
+        options.commandLabels && edgeLabel.edgeType == EdgeType.commands
+      val color = if (edgeLabel.edgeType == EdgeType.events) eventColor else commandColor
       val styleAttr =
-        if (edgeLabel.missing)
+        if (edgeLabel.missing.isDefined)
           List(
             DotAttr("color", missingColor),
             DotAttr(Id("fontcolor"), missingColor),
@@ -460,9 +461,9 @@ object IcdVizManager {
             DotAttr(Id("fontcolor"), color)
           )
       val labelAttr = if (showLabel) {
-        val label = if (edgeLabel.missing) {
-          s"Missing ${getEdgeTypeStr(edgeLabel.edgeType)}!:\\n${edgeLabel.label}"
-        } else edgeLabel.label
+        val label = if (edgeLabel.missing.isDefined) {
+          s"${edgeLabel.missing.get}:\\n${edgeLabel.label}"
+        } else s"${edgeLabel.edgeType}:\\n${edgeLabel.label}"
         if (edgeLabel.label.nonEmpty) List(DotAttr(Id("label"), Id(label))) else Nil
       } else Nil
       Some(
