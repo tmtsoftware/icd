@@ -21,15 +21,15 @@ import scalax.collection.GraphEdge.DiEdge
 
 import language.implicitConversions
 import scalax.collection.GraphEdge._
-import scalax.collection.edge.LDiEdge
+import scalax.collection.edge.LkDiEdge
 import scalax.collection.edge.Implicits._
 import icd.web.shared.IcdModels.{ComponentModel, SubscribeModelInfo}
 import scalax.collection.config.CoreConfig
 
 object IcdVizManager {
-  implicit def toLDiEdge[N](diEdge: DiEdge[N]): LDiEdge[N] with EdgeCopy[LDiEdge] {
+  implicit def toLkDiEdge[N](diEdge: DiEdge[N]): LkDiEdge[N] with EdgeCopy[LkDiEdge] {
     type L1 = String
-  } = LDiEdge(diEdge._1, diEdge._2)("")
+  } = LkDiEdge(diEdge._1, diEdge._2)("")
 
   implicit val myConfig: CoreConfig = CoreConfig()
 
@@ -64,15 +64,6 @@ object IcdVizManager {
   private val suffixNoCmd = ".cmd_no_sender"
   private val suffixNoEv  = ".ev_no_publisher"
 
-  def componentNameFromPrefix(prefix: String): String = {
-    val sv = SubsystemWithVersion(prefix)
-    // Use full prefix for subsystems that don't have a specific color
-    if (getSubsystemColor(sv.subsystem) == "grey")
-      prefix
-    else
-      sv.maybeComponent.getOrElse(prefix)
-  }
-
   /**
    * Returns a string in GraphViz/dot format showing the relationships between
    * the selected subsystems/components according to the given options.
@@ -89,7 +80,7 @@ object IcdVizManager {
       sv =>
         db.versionManager
           .getComponentNames(sv)
-          .map(name => SubsystemWithVersion(sv.subsystem, Some(name), sv.maybeVersion))
+          .map(name => SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(name)))
     )
 
     // Add selected components and remove any omitted component types
@@ -108,6 +99,15 @@ object IcdVizManager {
     val componentInfoHelper = new ComponentInfoHelper(displayWarnings = false)
     val noMarkdownOpt       = Some(PdfOptions(processMarkdown = false))
     val componentInfoList   = components.flatMap(sv => componentInfoHelper.getComponentInfo(versionManager, sv, noMarkdownOpt))
+
+    def componentNameFromPrefix(prefix: String): String = {
+      val sv = SubsystemWithVersion(prefix)
+      // Use full prefix for subsystems that don't have a specific color
+      if (getSubsystemColor(sv.subsystem) == "grey" && !options.groupSubsystems)
+        prefix
+      else
+        sv.maybeComponent.getOrElse(prefix)
+    }
 
     // Returns true if the component should not be omitted
     def omitFilter(componentModel: ComponentModel): Boolean = {
@@ -328,7 +328,7 @@ object IcdVizManager {
         val ms = if (missing) missingPrefix else ""
         publishers.map(
           c =>
-            (c.prefix ~+> info.componentModel.prefix)(
+            (c.prefix  ~+#> info.componentModel.prefix)(
               s"$ms${if (options.eventLabels) subscribedEventMap(c.prefix).mkString("\\n") else ""}"
             )
         )
@@ -347,7 +347,7 @@ object IcdVizManager {
         val ms = if (missing) missingPrefix else ""
         subscribers.map(
           c =>
-            (info.componentModel.prefix ~+> c.prefix)(
+            (info.componentModel.prefix  ~+#> c.prefix)(
               s"$ms${if (options.eventLabels) publishedEventMap(c.prefix).mkString("\\n") else ""}"
             )
         )
@@ -366,7 +366,7 @@ object IcdVizManager {
         val ms = if (missing) missingPrefix else ""
         receivierComponents.map(
           c =>
-            (c.prefix ~+> info.componentModel.prefix)(
+            (c.prefix  ~+#> info.componentModel.prefix)(
               s"$ms${if (options.commandLabels) sentCmdMap(c.prefix).mkString("\\n") else ""}"
             )
         )
@@ -385,7 +385,7 @@ object IcdVizManager {
         val ms = if (missing) missingPrefix else ""
         senderComponents.map(
           c =>
-            (c.prefix ~+> info.componentModel.prefix)(
+            (c.prefix  ~+#> info.componentModel.prefix)(
               s"$ms${if (options.commandLabels) recvCmdmdMap(c.prefix).mkString("\\n") else ""}"
             )
         )
@@ -443,7 +443,7 @@ object IcdVizManager {
     } else Map.empty[String, DotSubGraph]
 
     // Creates a dot edge
-    def edgeTransformer(innerEdge: Graph[String, LDiEdge]#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
+    def edgeTransformer(innerEdge: Graph[String, LkDiEdge]#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
       val edge = innerEdge.edge
       val (label, isMissing) = {
         val s = edge.label.asInstanceOf[String]
@@ -472,7 +472,7 @@ object IcdVizManager {
     }
 
     // Creates a dot node
-    def nodeTransformer(innerNode: Graph[String, LDiEdge]#NodeT): Option[(DotGraph, DotNodeStmt)] = {
+    def nodeTransformer(innerNode: Graph[String, LkDiEdge]#NodeT): Option[(DotGraph, DotNodeStmt)] = {
       val component = innerNode.value
       val subsystem = component.split('.').head
       if (options.groupSubsystems && subgraphs.contains(subsystem)) {
