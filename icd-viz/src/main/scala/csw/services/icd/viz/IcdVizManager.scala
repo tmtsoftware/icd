@@ -6,7 +6,16 @@ import java.nio.file.Files
 import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdDb}
 import csw.services.icd.viz.IcdVizManager.EdgeType.EdgeType
 import csw.services.icd.viz.IcdVizManager.MissingType.MissingType
-import icd.web.shared.{ComponentInfo, DetailedSubscribeInfo, EventInfo, PdfOptions, ReceivedCommandInfo, SentCommandInfo, SubscribeInfo, SubsystemWithVersion}
+import icd.web.shared.{
+  ComponentInfo,
+  DetailedSubscribeInfo,
+  EventInfo,
+  PdfOptions,
+  ReceivedCommandInfo,
+  SentCommandInfo,
+  SubscribeInfo,
+  SubsystemWithVersion
+}
 import scalax.collection.Graph
 import scalax.collection.io.dot._
 import scalax.collection.io.dot.implicits._
@@ -21,10 +30,10 @@ object IcdVizManager {
   //noinspection TypeAnnotation
   object MissingType extends Enumeration {
     type MissingType = Value
-    val noSubscribers   = Value("No Subscribers")
+    val noSubscribers    = Value("No Subscribers")
     val missingPublisher = Value("Missing Publisher")
-    val noSenders = Value("No Senders")
-    val missingReceiver = Value("Missing Receiver")
+    val noSenders        = Value("No Senders")
+    val missingReceiver  = Value("Missing Receiver")
   }
 
   //noinspection TypeAnnotation
@@ -36,8 +45,15 @@ object IcdVizManager {
   }
 
   // Type of an edge label
-  // XXX TODO FIXME: Replace missing with enum
-  private case class EdgeLabel(label: String, edgeType: EdgeType, missing: Option[MissingType] = None)
+  case class EdgeLabel(labels: List[String], edgeType: EdgeType, missing: Option[MissingType] = None) {
+    lazy val label: String = labels.sorted.mkString("\\n")
+  }
+
+  // Holds both components of an edge
+  case class ComponentPair(from: String, to: String)
+
+  // Describes an Edge from one component to another
+  case class EdgeModel(components: ComponentPair, label: EdgeLabel)
 
   implicit val myConfig: CoreConfig = CoreConfig()
 
@@ -56,9 +72,8 @@ object IcdVizManager {
   }
 
   private val commandColor = "chocolate" // command color
-//  private val noCommandColor = "red"       // missing command color
-  private val eventColor   = "dimgrey" // event colors
-  private val missingColor = "red"     // missing command or event color
+  private val eventColor   = "dimgrey"   // event colors
+  private val missingColor = "red"       // missing command or event color
 
 //  private val possibleLayouts   = List("dot", "fdp", "sfdp", "twopi", "neato", "circo", "patchwork")
   private val nodeFontsize      = 20
@@ -183,36 +198,38 @@ object IcdVizManager {
 
     // Gets info about published events with no subscribers
     def getMissingSubscriberInfo(info: ComponentInfo): (List[EventInfo], List[ComponentModel]) = {
-      val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
-      val eventInfoList =
-        info.publishes.toList
-          .flatMap(p => p.currentStateList ++ p.eventList ++ p.observeEventList)
-          .filter(_.subscribers.isEmpty)
-          .map(
-            e =>
-              // Create dummy subscriber component
-              EventInfo(
-                e.eventModel,
-                List(
-                  SubscribeInfo(
-                    missingComponentModel,
-                    ComponentInfo.Events,
-                    SubscribeModelInfo(
-                      info.componentModel.subsystem,
-                      info.componentModel.component,
-                      e.eventModel.name,
-                      "",
-                      1.0,
-                      None
+      if (options.missingEvents) {
+        val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
+        val eventInfoList =
+          info.publishes.toList
+            .flatMap(p => p.currentStateList ++ p.eventList ++ p.observeEventList)
+            .filter(_.subscribers.isEmpty)
+            .map(
+              e =>
+                // Create dummy subscriber component
+                EventInfo(
+                  e.eventModel,
+                  List(
+                    SubscribeInfo(
+                      missingComponentModel,
+                      ComponentInfo.Events,
+                      SubscribeModelInfo(
+                        info.componentModel.subsystem,
+                        info.componentModel.component,
+                        e.eventModel.name,
+                        "",
+                        1.0,
+                        None
+                      )
                     )
                   )
                 )
-              )
-          )
-      (
-        eventInfoList,
-        eventInfoList.map(_ => missingComponentModel)
-      )
+            )
+        (
+          eventInfoList,
+          eventInfoList.map(_ => missingComponentModel)
+        )
+      } else (Nil, Nil)
     }
 
     // Gets information about commands a component sends and the receiver components involved
@@ -230,7 +247,7 @@ object IcdVizManager {
 
     // Gets information about commands a component sends where no receiver was found
     def getMissingReceiverInfo(info: ComponentInfo): (List[SentCommandInfo], List[ComponentModel]) = {
-      if (options.missingEvents) {
+      if (options.missingCommands) {
         val sentCommands = info.commands.toList
           .flatMap(_.commandsSent)
           .filter(_.receiveCommandModel.isEmpty)
@@ -275,15 +292,17 @@ object IcdVizManager {
 
     // Gets information about commands received where there are no senders
     def getMissingSenderCommandInfo(info: ComponentInfo): (List[ReceivedCommandInfo], List[ComponentModel]) = {
-      val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
-      val receivedCommands = info.commands.toList
-        .flatMap(_.commandsReceived)
-        .filter(_.senders.isEmpty)
-        .map(r => ReceivedCommandInfo(r.receiveCommandModel, List(missingComponentModel)))
-      (
-        receivedCommands,
-        receivedCommands.map(_ => missingComponentModel)
-      )
+      if (options.missingCommands) {
+        val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
+        val receivedCommands = info.commands.toList
+          .flatMap(_.commandsReceived)
+          .filter(_.senders.isEmpty)
+          .map(r => ReceivedCommandInfo(r.receiveCommandModel, List(missingComponentModel)))
+        (
+          receivedCommands,
+          receivedCommands.map(_ => missingComponentModel)
+        )
+      } else (Nil, Nil)
     }
 
     // Primary components are the ones specified in the options
@@ -317,7 +336,7 @@ object IcdVizManager {
 
     // Edges for events that the primary components subscribe to.
     // If missing is true, only those with missing publishers, otherwise only those not missing a publisher.
-    def getSubscribedEventEdges(missing: Boolean) = {
+    def getSubscribedEventEdges(missing: Boolean): List[EdgeModel] = {
       componentInfoList.flatMap { info =>
         val (subscribedEvents, publishers) = if (missing) getMissingPublisherInfo(info) else getSubscriberInfo(info)
         // Map of publisher component name to list of published event names that info.component subscribes to
@@ -327,8 +346,9 @@ object IcdVizManager {
         val missingType = if (missing) Some(MissingType.missingPublisher) else None
         publishers.map(
           c =>
-            (c.prefix ~+#> info.componentModel.prefix)(
-              EdgeLabel(subscribedEventMap(c.prefix).mkString("\\n"), EdgeType.events, missingType)
+            EdgeModel(
+              ComponentPair(c.prefix, info.componentModel.prefix),
+              EdgeLabel(subscribedEventMap(c.prefix), EdgeType.events, missingType)
             )
         )
       }
@@ -336,7 +356,7 @@ object IcdVizManager {
 
     // Edges for events that the primary components publish
     // If missing is true, only those with no subscribers, otherwise only those with subscribers.
-    def getPublishedEventEdges(missing: Boolean) = {
+    def getPublishedEventEdges(missing: Boolean): List[EdgeModel] = {
       componentInfoList.flatMap { info =>
         val (publishedEvents, subscribers) = if (missing) getMissingSubscriberInfo(info) else getPublisherInfo(info)
         // Map of subscriber component name to list of subscribed event names that info.component publishes
@@ -346,8 +366,9 @@ object IcdVizManager {
         val missingType = if (missing) Some(MissingType.noSubscribers) else None
         subscribers.map(
           c =>
-            (info.componentModel.prefix ~+#> c.prefix)(
-              EdgeLabel(publishedEventMap(c.prefix).mkString("\\n"), EdgeType.events, missingType)
+            EdgeModel(
+              ComponentPair(info.componentModel.prefix, c.prefix),
+              EdgeLabel(publishedEventMap(c.prefix), EdgeType.events, missingType)
             )
         )
       }
@@ -355,7 +376,7 @@ object IcdVizManager {
 
     // Edges for commands that the primary components sends
     // If missing is true, only those with no receivers, otherwise only those with receivers.
-    def getSentCommandEdges(missing: Boolean) = {
+    def getSentCommandEdges(missing: Boolean): List[EdgeModel] = {
       componentInfoList.flatMap { info =>
         val (sentCommands, receivierComponents) = if (missing) getMissingReceiverInfo(info) else getSentCommandInfo(info)
         // Map receiving component name to list of commands sent from info.component
@@ -365,15 +386,16 @@ object IcdVizManager {
         val missingType = if (missing) Some(MissingType.missingReceiver) else None
         receivierComponents.map(
           c =>
-            (c.prefix ~+#> info.componentModel.prefix)(
-              EdgeLabel(sentCmdMap(c.prefix).mkString("\\n"), EdgeType.commands, missingType)
+            EdgeModel(
+              ComponentPair(info.componentModel.prefix, c.prefix),
+              EdgeLabel(sentCmdMap(c.prefix), EdgeType.commands, missingType)
             )
         )
       }
     }
 
     // Edges for commands that the primary components receive
-    def getReceivedCommandEdges(missing: Boolean) = {
+    def getReceivedCommandEdges(missing: Boolean): List[EdgeModel] = {
       componentInfoList.flatMap { info =>
         val (receivedCommands, senderComponents) =
           if (missing) getMissingSenderCommandInfo(info) else getReceivedCommandInfo(info)
@@ -384,8 +406,9 @@ object IcdVizManager {
         val missingType = if (missing) Some(MissingType.noSenders) else None
         senderComponents.map(
           c =>
-            (c.prefix ~+#> info.componentModel.prefix)(
-              EdgeLabel(recvCmdmdMap(c.prefix).mkString("\\n"), EdgeType.commands, missingType)
+            EdgeModel(
+              ComponentPair(c.prefix, info.componentModel.prefix),
+              EdgeLabel(recvCmdmdMap(c.prefix), EdgeType.commands, missingType)
             )
         )
       }
@@ -498,28 +521,32 @@ object IcdVizManager {
       } else None
     }
 
-    val subscribedEventEdges       = getSubscribedEventEdges(missing = false)
-    val missingPublisherEventEdges = getSubscribedEventEdges(missing = true)
+    // Combine duplicate edges, for example, from the publish section on one component and
+    // the subscribe section on another that describe the same cononection.
+    def combineEdgeModels(l: List[EdgeModel]): List[EdgeModel] = {
+      if (l.isEmpty)
+        l
+      else {
+        val edgeType = l.head.label.edgeType
+        val missing  = l.head.label.missing
+        l.groupBy(_.components)
+          .view
+          .mapValues(l => l.flatMap(_.label.labels).distinct)
+          .toList
+          .map(p => EdgeModel(p._1, EdgeLabel(p._2, edgeType, missing)))
+      }
+    }
 
-    val publishedEventEdges         = getPublishedEventEdges(missing = false)
-    val missingSubscriberEventEdges = getPublishedEventEdges(missing = true)
-
-    val sentCommandEdges            = getSentCommandEdges(missing = false)
-    val missingReceiverCommandEdges = getSentCommandEdges(missing = true)
-
-    val receivedCommandEdges      = getReceivedCommandEdges(missing = false)
-    val missingSenderCommandEdges = getReceivedCommandEdges(missing = true)
+    // Combine edges where publish/subscribe or send/receive could cause duplicates (not needed if the other side is missing)
+    val eventEdgeModels          = combineEdgeModels(getSubscribedEventEdges(missing = false) ++ getPublishedEventEdges(missing = false))
+    val missingEventEdgeModels   = getSubscribedEventEdges(missing = true) ++ getPublishedEventEdges(missing = true)
+    val commandEdgeModels        = combineEdgeModels(getSentCommandEdges(missing = false) ++ getReceivedCommandEdges(missing = false))
+    val missingCommandEdgeModels = getSentCommandEdges(missing = true) ++ getReceivedCommandEdges(missing = true)
+    val allEdgeModels            = eventEdgeModels ++ missingEventEdgeModels ++ commandEdgeModels ++ missingCommandEdgeModels
 
     // Create the final graph
     val g = Graph.from(
-      subscribedEventEdges ++
-        missingPublisherEventEdges ++
-        publishedEventEdges ++
-        missingSubscriberEventEdges ++
-        sentCommandEdges ++
-        missingReceiverCommandEdges ++
-        receivedCommandEdges ++
-        missingSenderCommandEdges
+      allEdgeModels.map(e => (e.components.from ~+#> e.components.to)(e.label))
     )
 
     // Convert to dot
