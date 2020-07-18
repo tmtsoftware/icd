@@ -1,9 +1,8 @@
-package csw.services.icd.viz;
+package csw.services.icd.viz
 
 import java.io.File
 
 import csw.services.icd.db.IcdDbDefaults.{defaultDbName, defaultHost, defaultPort}
-import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import icd.web.shared.SubsystemWithVersion
 
 /**

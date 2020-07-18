@@ -1,5 +1,7 @@
 package csw.services.icd.viz
 
+import java.awt.Desktop
+import java.io.{File, FileOutputStream}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
@@ -24,6 +26,7 @@ import language.implicitConversions
 import scalax.collection.edge.LkDiEdge
 import scalax.collection.edge.Implicits._
 import icd.web.shared.IcdModels.{ComponentModel, SubscribeModelInfo}
+import net.sourceforge.plantuml.{FileFormat, FileFormatOption, SourceStringReader}
 import scalax.collection.config.CoreConfig
 
 object IcdVizManager {
@@ -86,9 +89,8 @@ object IcdVizManager {
    * the selected subsystems/components according to the given options.
    * @param db the icd database
    * @param options the options
-   * @return a string in dot format that can be displayed as a graph
    */
-  def showRelationships(db: IcdDb, options: IcdVizOptions): String = {
+  def showRelationships(db: IcdDb, options: IcdVizOptions): Unit = {
     val query          = new CachedIcdDbQuery(db.db, db.admin, None, None)
     val versionManager = new CachedIcdVersionManager(query)
 
@@ -417,7 +419,7 @@ object IcdVizManager {
     // Make the root graph
     val root = DotRootGraph(
       directed = true,
-      id = None,
+      id = Some("icdviz"),
       attrStmts = List(
         DotAttrStmt(
           Elem.graph,
@@ -537,6 +539,39 @@ object IcdVizManager {
       }
     }
 
+    def getImageFileFormat(file: File): FileFormat = {
+      file.toString.split("\\.").last.toLowerCase() match {
+        case "png" => FileFormat.PNG
+        case "svg" => FileFormat.SVG
+        case "pdf" => FileFormat.PDF
+        case "eps" => FileFormat.EPS
+        case _     => FileFormat.PDF
+      }
+    }
+
+    def saveImageFile(dot: String, file: File): Unit = {
+      val data   = s"@startdot\n$dot\n@enddot"
+      val reader = new SourceStringReader(data)
+      val option = new FileFormatOption(getImageFileFormat(file))
+      val f      = new FileOutputStream(file)
+      val desc   = reader.outputImage(f, 0, option)
+      f.close()
+      Option(desc) match {
+        case Some(d) =>
+          println(s"Generated image file $file: $d")
+          if (options.showPlot)
+            viewImageFile(file)
+        case None =>
+          println(s"Failed to generate image $file")
+      }
+    }
+
+    def viewImageFile(file: File): Unit = {
+      if (Desktop.isDesktopSupported && Desktop.getDesktop.isSupported(Desktop.Action.BROWSE)) {
+        Desktop.getDesktop.browse(file.toURI)
+      }
+    }
+
     // Combine edges where publish/subscribe or send/receive could cause duplicates (not needed if the other side is missing)
     val eventEdgeModels          = combineEdgeModels(getSubscribedEventEdges(missing = false) ++ getPublishedEventEdges(missing = false))
     val missingEventEdgeModels   = getSubscribedEventEdges(missing = true) ++ getPublishedEventEdges(missing = true)
@@ -556,12 +591,12 @@ object IcdVizManager {
       cNodeTransformer = Some(nodeTransformer)
     )
 
-    // XXX
-    println(dot)
-
     // Save dot to file if requested
     options.dotFile.foreach(file => Files.write(file.toPath, dot.getBytes(StandardCharsets.UTF_8)))
-    dot
+    options.imageFile match {
+      case Some(file) => saveImageFile(dot, file)
+      case None       => if (options.showPlot) saveImageFile(dot, new File("icd-viz.png"))
+    }
   }
 
 }
