@@ -424,7 +424,7 @@ object IcdVizManager {
         DotAttrStmt(
           Elem.graph,
           List(
-            DotAttr("layout", "dot"),
+            DotAttr("layout", options.layout),
             DotAttr("splines", options.splines.toString.capitalize),
             DotAttr("overlap", options.overlap),
             DotAttr("ratio", options.ratio)

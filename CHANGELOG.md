@@ -14,7 +14,11 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
   The LaTeX string is converted to an image and then inserted in the HTML or PDF.
 
 - Added support for UML markup in description texts, based on [PlantUML](https://plantuml.com/), delimited by \`\`\`uml...\`\`\`.
-  See [examples/2.0/TEST/envCtrl/component-model.conf](examples/2.0/TEST/envCtrl/component-model.conf).
+  See [examples/2.0/TEST/envCtrl/component-model.conf](examples/2.0/TEST/envCtrl/component-model.conf). 
+  __Note__: The [GraphViz](https://graphviz.org/download/) apps needs to be installed on the server (or local machine, for the command line) in order to use this feature. 
+
+  
+- Added icd-viz command line app, based on GraphViz/Dot and Ed Chapin's `icdRelationships.py`, that generates a graph of component relationships.
 
 ### Changed
 

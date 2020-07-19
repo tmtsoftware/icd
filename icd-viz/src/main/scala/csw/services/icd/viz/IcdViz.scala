@@ -38,7 +38,7 @@ object IcdViz extends App {
 
     opt[File]('o', "imagefile") valueName "<file>" action { (x, c) =>
       c.copy(imageFile = Some(x))
-    } text "Write image to file (default=None)"
+    } text "Write image to file in format based on file suffix (default=None, formats: PDF, PNG, SVG, EPS)"
 
     opt[File]("dotfile") valueName "<file>" action { (x, c) =>
       c.copy(dotFile = Some(x))
