@@ -4,14 +4,13 @@ import scalax.collection.Graph
 import scalax.collection.io.dot._
 import scalax.collection.io.dot.implicits._
 import scalax.collection.GraphEdge.DiEdge
-import scalax.collection.edge.LDiEdge
 import language.implicitConversions
 import scalax.collection.GraphPredef._
-import scalax.collection.GraphEdge._
 import scalax.collection.edge.LDiEdge,
 scalax.collection.edge.Implicits._
 import Indent._
 
+// XXX TODO FIXME: Add icd-viz related tests
 class IcdVizTests extends AnyFunSuite {
   private val multilineCompatibleSpacing = Spacing(
     indent = TwoSpaces,
@@ -33,14 +32,10 @@ class IcdVizTests extends AnyFunSuite {
         case _ =>
           None
       },
-//      cNodeTransformer = Some({ _ =>
-//        Some((cSubGraph, DotNodeStmt("cnode")))
-//      }),
       iNodeTransformer = Some({ _ =>
         Some((iSubGraph, DotNodeStmt("inode")))
       })
     )
-//    assert(dot.contains("inode"))
     println(dot)
   }
 

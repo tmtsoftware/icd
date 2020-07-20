@@ -5,33 +5,11 @@ import java.io.ByteArrayOutputStream
 import controllers.ApplicationData.maybeCache
 import csw.services.icd.IcdToPdf
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
-import csw.services.icd.db.{
-  ArchivedItemsReport,
-  CachedIcdDbQuery,
-  CachedIcdVersionManager,
-  ComponentInfoHelper,
-  IcdComponentInfo,
-  IcdDb,
-  IcdDbPrinter
-}
+import csw.services.icd.db.{ArchivedItemsReport, CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, IcdDbPrinter}
 import csw.services.icd.github.IcdGitManager
+import csw.services.icd.viz.IcdVizManager
 import diffson.playJson.DiffsonProtocol
-import icd.web.shared.{
-  ApiVersionInfo,
-  ComponentInfo,
-  DiffInfo,
-  IcdName,
-  IcdVersion,
-  IcdVersionInfo,
-  PdfOptions,
-  PublishApiInfo,
-  PublishIcdInfo,
-  SubsystemInfo,
-  SubsystemWithVersion,
-  UnpublishApiInfo,
-  UnpublishIcdInfo,
-  VersionInfo
-}
+import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, IcdName, IcdVersion, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, SubsystemWithVersion, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
 import play.api.libs.json.Json
 
 import scala.util.Try
@@ -117,6 +95,38 @@ class ApplicationImpl(db: IcdDb) {
     IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, None)
   }
 
+  // Returns the selected subsystem, target subsystem and optional ICD version
+  private def getSelectedSubsystems(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      target: String,
+      maybeTargetVersion: Option[String],
+      maybeTargetComponent: Option[String],
+      maybeIcdVersion: Option[String]
+  ): (SubsystemWithVersion, SubsystemWithVersion, Option[IcdVersion]) = {
+    // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
+    // if only the subsystem or target versions were given, use those (default to latest versions)
+    val v = maybeIcdVersion.getOrElse("*")
+
+    val versions = db.versionManager.getIcdVersions(subsystem, target)
+    val iv       = versions.find(_.icdVersion.icdVersion == v).map(_.icdVersion)
+    if (iv.isDefined) {
+      val i = iv.get
+      (
+        SubsystemWithVersion(i.subsystem, Some(i.subsystemVersion), maybeComponent),
+        SubsystemWithVersion(i.target, Some(i.targetVersion), maybeTargetComponent),
+        iv
+      )
+    } else {
+      (
+        SubsystemWithVersion(subsystem, maybeVersion, maybeComponent),
+        SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent),
+        iv
+      )
+    }
+  }
+
   /**
    * Returns the PDF for the given ICD
    *
@@ -127,12 +137,7 @@ class ApplicationImpl(db: IcdDb) {
    * @param maybeTargetVersion optional target subsystem's version (default: current)
    * @param maybeTargetComponent optional target component name (default: all in target subsystem)
    * @param maybeIcdVersion    optional ICD version (default: current)
-   * @param maybeOrientation   "portrait" or "landscape" (default)
-   * @param maybeFontSize       base font size
-   * @param maybeLineHeight     line-height for HTML
-   * @param maybePaperSize      Letter, Legal, A4, A3, default: Letter
-   * @param maybeDetails        If true, the PDF lists all detailed info, otherwise only the expanded rows in web app
-   * @param expandedIds         list of HTML ids for which to show the details
+   * @param pdfOptions         options for PDF generation
    */
   def getIcdAsPdf(
       subsystem: String,
@@ -142,34 +147,17 @@ class ApplicationImpl(db: IcdDb) {
       maybeTargetVersion: Option[String],
       maybeTargetComponent: Option[String],
       maybeIcdVersion: Option[String],
-      maybeOrientation: Option[String],
-      maybeFontSize: Option[Int],
-      maybeLineHeight: Option[String],
-      maybePaperSize: Option[String],
-      maybeDetails: Option[Boolean],
-      expandedIds: List[String]
+      pdfOptions: PdfOptions
   ): Option[Array[Byte]] = {
-
-    // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
-    // if only the subsystem or target versions were given, use those (default to latest versions)
-    val v = maybeIcdVersion.getOrElse("*")
-
-    val versions = db.versionManager.getIcdVersions(subsystem, target)
-    val iv       = versions.find(_.icdVersion.icdVersion == v).map(_.icdVersion)
-    val (sv, targetSv) = if (iv.isDefined) {
-      val i = iv.get
-      (
-        SubsystemWithVersion(i.subsystem, Some(i.subsystemVersion), maybeComponent),
-        SubsystemWithVersion(i.target, Some(i.targetVersion), maybeTargetComponent)
-      )
-    } else {
-      (
-        SubsystemWithVersion(subsystem, maybeVersion, maybeComponent),
-        SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
-      )
-    }
-    val pdfOptions = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedIds)
-
+    val (sv, targetSv, iv) = getSelectedSubsystems(
+      subsystem,
+      maybeVersion,
+      maybeComponent,
+      target,
+      maybeTargetVersion,
+      maybeTargetComponent,
+      maybeIcdVersion
+    )
     val icdPrinter = IcdDbPrinter(db, searchAllSubsystems = false, maybeCache, Some(pdfOptions))
     icdPrinter.saveIcdAsPdf(sv, targetSv, iv, pdfOptions)
   }
@@ -181,28 +169,17 @@ class ApplicationImpl(db: IcdDb) {
    * @param maybeVersion   the source subsystem's version (default: current)
    * @param maybeComponent optional component (default: all in subsystem)
    * @param searchAll if true, search all components for API dependencies
-   * @param maybeOrientation   "portrait" or "landscape" (default)
-   * @param maybeFontSize       base font size
-   * @param maybeLineHeight     line-height for HTML
-   * @param maybePaperSize      Letter, Legal, A4, A3, default: Letter
-   * @param maybeDetails        If true, the PDF lists all detailed info, otherwise only the expanded rows in web app
-   * @param expandedIds         list of HTML ids for which to show the details
+   * @param pdfOptions         options for PDF generation
    */
   def getApiAsPdf(
       subsystem: String,
       maybeVersion: Option[String],
       maybeComponent: Option[String],
       searchAll: Option[Boolean],
-      maybeOrientation: Option[String],
-      maybeFontSize: Option[Int],
-      maybeLineHeight: Option[String],
-      maybePaperSize: Option[String],
-      maybeDetails: Option[Boolean],
-      expandedIds: List[String]
+      pdfOptions: PdfOptions
   ): Option[Array[Byte]] = {
     val sv                  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     val searchAllSubsystems = searchAll.getOrElse(false)
-    val pdfOptions          = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedIds)
     val icdPrinter          = IcdDbPrinter(db, searchAllSubsystems, maybeCache, Some(pdfOptions))
     icdPrinter.saveApiAsPdf(sv, pdfOptions)
   }
@@ -213,41 +190,74 @@ class ApplicationImpl(db: IcdDb) {
    * @param subsystem      the source subsystem
    * @param maybeVersion   the source subsystem's version (default: current)
    * @param maybeComponent optional component (default: all in subsystem)
-   * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
-   * @param maybeFontSize base font size for body text (default: 10)
+   * @param pdfOptions         options for PDF generation
    */
   def getArchivedItemsReport(
       subsystem: String,
       maybeVersion: Option[String],
       maybeComponent: Option[String],
-      maybeOrientation: Option[String],
-      maybeFontSize: Option[Int],
-      maybeLineHeight: Option[String],
-      maybePaperSize: Option[String]
+      pdfOptions: PdfOptions
   ): Option[Array[Byte]] = {
-    val out        = new ByteArrayOutputStream()
-    val sv         = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-    val pdfOptions = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, None, Nil)
-    val html       = ArchivedItemsReport(db, Some(sv), Some(pdfOptions)).makeReport(pdfOptions)
+    val out  = new ByteArrayOutputStream()
+    val sv   = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
+    val html = ArchivedItemsReport(db, Some(sv), Some(pdfOptions)).makeReport(pdfOptions)
     IcdToPdf.saveAsPdf(out, html, showLogo = false, pdfOptions)
     Some(out.toByteArray)
   }
 
   /**
    * Returns the archived items report (PDF) for all current subsystems
-   * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
-   * @param maybeFontSize base font size for body text (default: 10)
+   * @param pdfOptions         options for PDF generation
    */
   def getArchivedItemsReportFull(
-      maybeOrientation: Option[String],
-      maybeFontSize: Option[Int],
-      maybeLineHeight: Option[String],
-      maybePaperSize: Option[String]
+      pdfOptions: PdfOptions
   ): Option[Array[Byte]] = {
-    val out        = new ByteArrayOutputStream()
-    val pdfOptions = PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, None, Nil)
-    val html       = ArchivedItemsReport(db, None, Some(pdfOptions)).makeReport(pdfOptions)
+    val out  = new ByteArrayOutputStream()
+    val html = ArchivedItemsReport(db, None, Some(pdfOptions)).makeReport(pdfOptions)
     IcdToPdf.saveAsPdf(out, html, showLogo = false, pdfOptions)
+    Some(out.toByteArray)
+  }
+
+  /**
+   * Returns a generated graph of component relationships for the selected components
+   *
+   * @param subsystem            the source subsystem
+   * @param maybeVersion         the source subsystem's version (default: current)
+   * @param maybeComponent       optional component name (default: all in subsystem)
+   * @param maybeTarget          optional target subsystem
+   * @param maybeTargetVersion   optional target subsystem's version (default: current)
+   * @param maybeTargetComponent optional target component name (default: all in target subsystem)
+   * @param maybeIcdVersion      optional ICD version (default: current)
+   * @param options              options for graph generation
+   */
+  def makeGraph(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      maybeTarget: Option[String],
+      maybeTargetVersion: Option[String],
+      maybeTargetComponent: Option[String],
+      maybeIcdVersion: Option[String],
+      options: IcdVizOptions
+  ): Option[Array[Byte]] = {
+    val components = maybeTarget match {
+      case Some(target) =>
+        val (sv, targetSv, _) = getSelectedSubsystems(
+          subsystem,
+          maybeVersion,
+          maybeComponent,
+          target,
+          maybeTargetVersion,
+          maybeTargetComponent,
+          maybeIcdVersion
+        )
+        List(sv, targetSv)
+      case None =>
+        List(SubsystemWithVersion(subsystem, maybeVersion, maybeComponent))
+    }
+    val newOptions = options.copy(components = components, showPlot = false, imageFile = None, dotFile = None)
+    val out  = new ByteArrayOutputStream()
+    IcdVizManager.showRelationships(db, newOptions, Some(out))
     Some(out.toByteArray)
   }
 

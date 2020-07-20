@@ -25,13 +25,6 @@ import scala.concurrent.duration._
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
-//@ImplementedBy(classOf[MyExecutionContextImpl])
-//trait MyExecutionContext extends ExecutionContext
-//
-//class MyExecutionContextImpl @Inject()(system: akka.actor.ActorSystem)
-//    extends CustomExecutionContext(system, "my.executor")
-//    with MyExecutionContext
-
 /**
  * Provides the interface between the web client and the server
  */
@@ -198,12 +191,7 @@ class Application @Inject()(
         maybeTargetVersion,
         maybeTargetComponent,
         maybeIcdVersion,
-        maybeOrientation,
-        maybeFontSize,
-        maybeLineHeight,
-        maybePaperSize,
-        maybeDetails,
-        expandedIds,
+        PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedIds),
         _
       )
     )
@@ -250,12 +238,7 @@ class Application @Inject()(
           maybeVersion,
           maybeComponent,
           searchAll,
-          maybeOrientation,
-          maybeFontSize,
-          maybeLineHeight,
-          maybePaperSize,
-          maybeDetails,
-          expandedIds,
+          PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedIds),
           _
         )
       )
@@ -291,10 +274,7 @@ class Application @Inject()(
           subsystem,
           maybeVersion,
           maybeComponent,
-          maybeOrientation,
-          maybeFontSize,
-          maybeLineHeight,
-          maybePaperSize,
+          PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize),
           _
         )
       )
@@ -320,10 +300,7 @@ class Application @Inject()(
     authAction.async {
       val resp: Future[Option[Array[Byte]]] = appActor ? (
         GetArchivedItemsReportFull(
-          maybeOrientation,
-          maybeFontSize,
-          maybeLineHeight,
-          maybePaperSize,
+          PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize),
           _
         )
       )
@@ -334,6 +311,81 @@ class Application @Inject()(
           NotFound
       }
     }
+
+  /**
+   * Returns the PDF for the given ICD
+   *
+   * @param subsystem          the source subsystem
+   * @param maybeVersion       the source subsystem's version (default: current)
+   * @param maybeComponent     optional component name (default: all in subsystem)
+   * @param maybeTarget        optional target subsystem
+   * @param maybeTargetVersion optional target subsystem's version (default: current)
+   * @param maybeTargetComponent optional target component name (default: all in target subsystem)
+   * @param maybeIcdVersion    optional ICD version (default: current)
+   * @param maybeRatio Image aspect ratio (y/x)
+   * @param maybeMissingEvents Plot missing events
+   * @param maybeMissingCommands Plot missing commands
+   * @param maybeCommandLabels Plot command labels
+   * @param maybeEventLabels Plot event labels
+   * @param maybeGroupSubsystems Group components from same subsystem together
+   * @param maybeLayout Dot layout engine: One of {dot,fdp,sfdp,twopi,neato,circo,patchwork}
+   * @param maybeOverlap Node overlap handling: {true,false,scale}
+   * @param maybeSplines Use splines for edges?
+   * @param maybeOmitTypes list of component types (HCD,Assembly,Sequencer,Application) to omit as primaries (default={'HCD'})
+   */
+  def makeGraph(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      maybeTarget: Option[String],
+      maybeTargetVersion: Option[String],
+      maybeTargetComponent: Option[String],
+      maybeIcdVersion: Option[String],
+      maybeRatio: Option[Double],
+      maybeMissingEvents: Option[Boolean],
+      maybeMissingCommands: Option[Boolean],
+      maybeCommandLabels: Option[Boolean],
+      maybeEventLabels: Option[Boolean],
+      maybeGroupSubsystems: Option[Boolean],
+      maybeLayout: Option[String],
+      maybeOverlap: Option[String],
+      maybeSplines: Option[Boolean],
+      maybeOmitTypes: Option[String]
+  ): Action[AnyContent] = {
+    import IcdVizOptions._
+    Action.async { implicit request =>
+      val resp: Future[Option[Array[Byte]]] = appActor ? (
+        MakeGraph(
+          subsystem,
+          maybeVersion,
+          maybeComponent,
+          maybeTarget,
+          maybeTargetVersion,
+          maybeTargetComponent,
+          maybeIcdVersion,
+          IcdVizOptions(
+            ratio = maybeRatio.getOrElse(defaultRatio),
+            missingEvents = maybeMissingEvents.getOrElse(defaultMissingEvents),
+            missingCommands = maybeMissingCommands.getOrElse(defaultMissingCommands),
+            commandLabels = maybeCommandLabels.getOrElse(defaultCommandLabels),
+            eventLabels = maybeEventLabels.getOrElse(defaultEventLabels),
+            groupSubsystems = maybeGroupSubsystems.getOrElse(defaultGroupSubsystems),
+            layout = maybeLayout.getOrElse(defaultLayout),
+            overlap = maybeOverlap.getOrElse(defaultOverlap),
+            splines = maybeSplines.getOrElse(defaultUseSplines),
+            omitTypes = maybeOmitTypes.getOrElse(defaultOmit).split(",").toList
+          ),
+          _
+        )
+      )
+      resp.map {
+        case Some(bytes) =>
+          Ok(bytes).as("application/pdf")
+        case None =>
+          NotFound
+      }
+    }
+  }
 
   /**
    * Returns a detailed list of the versions of the given subsystem

@@ -45,6 +45,7 @@ object IcdGit extends App {
 
   // Parser for the command line options
   private val parser = new scopt.OptionParser[Options]("icd-git") {
+    import csw.services.icd.db.IcdDbDefaults.{defaultDbName, defaultHost, defaultPort}
     head("icd-git", BuildInfo.version)
 
     opt[Unit]('l', "list") action { (_, c) =>
@@ -93,15 +94,15 @@ object IcdGit extends App {
 
     opt[String]('d', "db") valueName "<name>" action { (x, c) =>
       c.copy(dbName = x)
-    } text "The name of the database to use (for the --ingest option, default: icds)"
+    } text s"The name of the database to use (for the --ingest option, default: $defaultDbName)"
 
     opt[String]("host") valueName "<hostname>" action { (x, c) =>
       c.copy(host = x)
-    } text "The host name where the database is running (for the --ingest option, default: localhost)"
+    } text s"The host name where the database is running (for the --ingest option, default: $defaultHost)"
 
     opt[Int]("port") valueName "<number>" action { (x, c) =>
       c.copy(port = x)
-    } text "The port number to use for the database (for the --ingest option, default: 27017)"
+    } text s"The port number to use for the database (for the --ingest option, default: $defaultPort)"
 
     opt[Unit]("ingest") action { (_, c) =>
       c.copy(ingest = true)

@@ -89,7 +89,7 @@ lazy val icdWebServer = (project in file("icd-web-server"))
         testScope(specs2)
   )
   .enablePlugins(PlayScala, SbtWeb, DockerPlugin)
-  .dependsOn(`icd-db`, `icd-git`)
+  .dependsOn(`icd-db`, `icd-git`, `icd-viz`)
 
 // ScalaJS client JavaScript dependencies
 val clientJsDeps = Def.setting(

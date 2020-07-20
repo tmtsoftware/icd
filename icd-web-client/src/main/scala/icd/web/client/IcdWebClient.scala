@@ -1,8 +1,8 @@
 package icd.web.client
 
-import icd.web.shared.{BuildInfo, IcdVersion, PdfOptions, SubsystemWithVersion}
+import icd.web.shared.{BuildInfo, IcdVersion, IcdVizOptions, PdfOptions, SubsystemWithVersion}
 import org.scalajs.dom
-import org.scalajs.dom.{MouseEvent, PopStateEvent, Window, document}
+import org.scalajs.dom.{PopStateEvent, document}
 import org.scalajs.dom.raw.HTMLStyleElement
 
 import scala.concurrent.Future
@@ -18,7 +18,6 @@ import icd.web.client.PublishDialog.PublishDialogListener
 import icd.web.client.SelectDialog.SelectDialogListener
 import icd.web.client.StatusDialog.StatusDialogListener
 import org.scalajs.dom.ext.Ajax
-import org.w3c.dom.html.{HTMLAnchorElement, HTMLFormElement}
 import play.api.libs.json.Json
 
 import scala.scalajs.js
@@ -58,6 +57,10 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val pdfItem = NavbarPdfItem("PDF", "Generate and display a PDF for the API or ICD", makePdf)
   pdfItem.setEnabled(false)
 
+  private val graphItem =
+    NavbarGraphItem("Graph", "Generate and display a graph of relationships for the selected components", makeGraph)
+  graphItem.setEnabled(false)
+
   private val archiveItem = NavbarPdfItem(
     "Archive",
     "Generate and display an 'Archived Items' report for the selected subsystem (or all subsystems)",
@@ -73,12 +76,12 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val passwordDialog = PasswordDialog(mainContent, PasswordListener)
 
   private val selectItem   = NavbarItem("Select", "Select the API or ICD to display", selectSubsystems())
-  private val selectDialog = SelectDialog(mainContent, Selector, pdfItem)
+  private val selectDialog = SelectDialog(mainContent, Selector, pdfItem, graphItem)
 
   private val logoutItem = NavbarItem("Logout", "Log out of the icd web app", logout)
 
   private val statusItem   = NavbarItem("Status", "Display the published status of a selected subsystem", showStatus())
-  private val statusDialog = StatusDialog(mainContent, StatusListener, pdfItem)
+  private val statusDialog = StatusDialog(mainContent, StatusListener, pdfItem, graphItem)
 
   private val fileUploadItem   = NavbarItem("Upload", "Select icd model files to ingest into the icd database", showUploadDialog())
   private val fileUploadDialog = FileUploadDialog(subsystemNames, csrfToken, inputDirSupported)
@@ -148,6 +151,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     navbar.addItem(fileUploadItem)
     navbar.addItem(historyItem)
     navbar.addItem(pdfItem)
+    navbar.addItem(graphItem)
     navbar.addItem(archiveItem)
     navbar.addItem(publishItem)
     navbar.addItem(expandToggler)
@@ -566,6 +570,21 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       } else {
         dom.window.open(uri) // opens in new window or tab
       }
+    }
+  }
+
+  // Generates a graph of relationships for the currently selected components
+  private def makeGraph(options: IcdVizOptions): Unit = {
+    val maybeSv =
+      if (currentView == StatusView)
+        statusDialog.getSubsystemWithVersion
+      else selectDialog.subsystem.getSubsystemWithVersion
+
+    maybeSv.foreach { sv =>
+      val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion
+      val maybeIcdVersion = selectDialog.icdChooser.getSelectedIcdVersion.map(_.icdVersion)
+      val uri             = ClientRoutes.makeGraph(sv, maybeTargetSv, maybeIcdVersion, options)
+      dom.window.open(uri) // opens in new window or tab
     }
   }
 

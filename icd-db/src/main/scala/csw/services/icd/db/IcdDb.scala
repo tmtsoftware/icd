@@ -50,6 +50,7 @@ object IcdDbDefaults {
 
 //noinspection DuplicatedCode
 object IcdDb extends App {
+  import IcdDbDefaults._
   // Cache of PDF files for published API and ICD versions
   val maybeCache: Option[PdfCache] =
     if (IcdDbDefaults.conf.getBoolean("icd.pdf.cache.enabled"))
@@ -62,15 +63,15 @@ object IcdDb extends App {
 
     opt[String]('d', "db") valueName "<name>" action { (x, c) =>
       c.copy(dbName = x)
-    } text "The name of the database to use (default: icds)"
+    } text s"The name of the database to use (default: $defaultDbName)"
 
     opt[String]('h', "host") valueName "<hostname>" action { (x, c) =>
       c.copy(host = x)
-    } text "The host name where the database is running (default: localhost)"
+    } text s"The host name where the database is running (default: $defaultHost)"
 
     opt[Int]('p', "port") valueName "<number>" action { (x, c) =>
       c.copy(port = x)
-    } text "The port number to use for the database (default: 27017)"
+    } text s"The port number to use for the database (default: $defaultPort)"
 
     opt[File]('i', "ingest") valueName "<dir>" action { (x, c) =>
       c.copy(ingest = Some(x))

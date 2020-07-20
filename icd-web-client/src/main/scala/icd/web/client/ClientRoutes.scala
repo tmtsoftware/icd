@@ -1,6 +1,6 @@
 package icd.web.client
 
-import icd.web.shared.{IcdName, PdfOptions, SubsystemWithVersion}
+import icd.web.shared.{IcdName, IcdVizOptions, PdfOptions, SubsystemWithVersion}
 
 /**
  * Defines URI routes to access the server API
@@ -21,13 +21,16 @@ object ClientRoutes {
       maybeTargetVersion: Option[String] = None,
       maybeTargetCompName: Option[String] = None,
       maybeIcdVersion: Option[String] = None,
-      maybePdfOptions: Option[PdfOptions] = None
+      maybePdfOptions: Option[PdfOptions] = None,
+      maybeGraphOptions: Option[IcdVizOptions] = None,
+      maybeTarget: Option[String] = None
   ): String = {
     val versionAttr         = maybeVersion.map(v => s"version=$v")
     val componentAttr       = maybeComponent.map(c => s"component=$c")
     val searchAllAttr       = maybeSearchAllSubsystems.map(b => s"searchAll=$b")
     val targetVersionAttr   = maybeTargetVersion.map(v => s"targetVersion=$v")
     val targetComponentAttr = maybeTargetCompName.map(c => s"targetComponent=$c")
+    val targetAttr          = maybeTarget.map(c => s"target=$c")
     val icdVersionAttr      = maybeIcdVersion.map(v => s"icdVersion=$v")
     val pdfAttrs = maybePdfOptions.map(
       o =>
@@ -39,8 +42,23 @@ object ClientRoutes {
           s"details=${o.details}"
         ).mkString("&")
     )
+    val graphAttrs = maybeGraphOptions.map(
+      o =>
+        List(
+          s"ratio=${o.ratio}",
+          s"missingEvents=${o.missingEvents}",
+          s"missingCommands=${o.missingCommands}",
+          s"commandLabels=${o.commandLabels}",
+          s"eventLabels=${o.eventLabels}",
+          s"groupSubsystems=${o.groupSubsystems}",
+          s"layout=${o.layout}",
+          s"overlap=${o.overlap}",
+          s"splines=${o.splines}",
+          s"omitTypes=${o.omitTypes.mkString(",")}"
+        ).mkString("&")
+    )
     val attrs =
-      (versionAttr ++ componentAttr ++ searchAllAttr ++ targetVersionAttr ++ targetComponentAttr ++ icdVersionAttr ++ pdfAttrs)
+      (versionAttr ++ componentAttr ++ searchAllAttr ++ targetAttr ++ targetVersionAttr ++ targetComponentAttr ++ icdVersionAttr ++ pdfAttrs ++ graphAttrs)
         .mkString("&")
     if (attrs.isEmpty) "" else s"?$attrs"
   }
@@ -179,6 +197,42 @@ object ClientRoutes {
       maybePdfOptions = Some(options)
     )
     s"/apiAsPdf/${sv.subsystem}$attrs"
+  }
+
+  /**
+   * Returns the route to use to generate a graph of selected component relationships
+   *
+   * @param sv       the subsystem
+   * @param maybeTargetSv defines the optional target subsystem and version
+   * @param icdVersion optional ICD version
+   * @param options options for graph generation
+   * @return the URL path to use
+   */
+  def makeGraph(
+      sv: SubsystemWithVersion,
+      maybeTargetSv: Option[SubsystemWithVersion],
+      icdVersion: Option[String],
+      options: IcdVizOptions
+  ): String = {
+    val attrs = maybeTargetSv match {
+      case None =>
+        getAttrs(
+          sv.maybeVersion,
+          sv.maybeComponent,
+          maybeGraphOptions = Some(options)
+        )
+      case Some(targetSv) =>
+        getAttrs(
+          sv.maybeVersion,
+          sv.maybeComponent,
+          maybeTargetVersion = targetSv.maybeVersion,
+          maybeTargetCompName = targetSv.maybeComponent,
+          maybeIcdVersion = icdVersion,
+          maybeGraphOptions = Some(options),
+          maybeTarget = maybeTargetSv.map(_.subsystem)
+        )
+    }
+    s"/makeGraph/${sv.subsystem}$attrs"
   }
 
   /**

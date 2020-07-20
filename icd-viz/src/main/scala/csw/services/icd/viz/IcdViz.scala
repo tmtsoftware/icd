@@ -3,26 +3,28 @@ package csw.services.icd.viz
 import java.io.File
 
 import csw.services.icd.db.IcdDb
-import icd.web.shared.{BuildInfo, SubsystemWithVersion}
+import icd.web.shared.{BuildInfo, IcdVizOptions, SubsystemWithVersion}
 
 //noinspection DuplicatedCode
 object IcdViz extends App {
 
   // Parser for the command line options
   private val parser = new scopt.OptionParser[IcdVizOptions]("icd-viz") {
+    import IcdVizOptions._
+    import csw.services.icd.db.IcdDbDefaults.{defaultDbName, defaultHost, defaultPort}
     head("icd-viz", BuildInfo.version)
 
     opt[String]('d', "db") valueName "<name>" action { (x, c) =>
-      c.copy(dbName = x)
-    } text "The name of the database to use (default: icds)"
+      c.copy(dbName = Some(x))
+    } text s"The name of the database to use (default: $defaultDbName)"
 
     opt[String]('h', "host") valueName "<hostname>" action { (x, c) =>
-      c.copy(host = x)
-    } text "The host name where the database is running (default: localhost)"
+      c.copy(host = Some(x))
+    } text s"The host name where the database is running (default: $defaultHost)"
 
     opt[Int]('p', "port") valueName "<number>" action { (x, c) =>
-      c.copy(port = x)
-    } text "The port number to use for the database (default: 27017)"
+      c.copy(port = Some(x))
+    } text s"The port number to use for the database (default: $defaultPort)"
 
     opt[String]("components") valueName "prefix1[:version],prefix2[:version],..." action { (x, c) =>
       c.copy(components = x.split(',').toList.map(SubsystemWithVersion.apply))
@@ -34,11 +36,11 @@ object IcdViz extends App {
 
     opt[Boolean]("showplot") action { (x, c) =>
       c.copy(showPlot = x)
-    } text "Display plot in a window (default=True)"
+    } text s"Display plot in a window (default=$defaultShowPlot)"
 
     opt[File]('o', "imagefile") valueName "<file>" action { (x, c) =>
       c.copy(imageFile = Some(x))
-    } text "Write image to file in format based on file suffix (default=None, formats: PDF, PNG, SVG, EPS)"
+    } text s"Write image to file in format based on file suffix (default=None, formats: ${imageFormats.mkString(", ")})"
 
     opt[File]("dotfile") valueName "<file>" action { (x, c) =>
       c.copy(dotFile = Some(x))
@@ -46,43 +48,43 @@ object IcdViz extends App {
 
     opt[Double]("ratio") valueName "<ratio>" action { (x, c) =>
       c.copy(ratio = x)
-    } text "Image aspect ratio (y/x) (default=0.5)"
+    } text s"Image aspect ratio (y/x) (default=${defaultRatio})"
 
     opt[Boolean]("missingevents") action { (x, c) =>
       c.copy(missingEvents = x)
-    } text "Plot missing events (default=True)"
+    } text s"Plot missing events (default=$defaultMissingEvents)"
 
     opt[Boolean]("missingcommands") action { (x, c) =>
       c.copy(missingCommands = x)
-    } text "Plot missing commands (default=True)"
+    } text s"Plot missing commands (default=${defaultMissingCommands})"
 
     opt[Boolean]("commandlabels") action { (x, c) =>
       c.copy(commandLabels = x)
-    } text "Plot command labels (default=False)"
+    } text s"Plot command labels (default=${defaultCommandLabels})"
 
     opt[Boolean]("eventlabels") action { (x, c) =>
       c.copy(eventLabels = x)
-    } text "Plot event labels (default=True)"
+    } text s"Plot event labels (default=$defaultEventLabels)"
 
     opt[Boolean]("groupsubsystems") action { (x, c) =>
       c.copy(groupSubsystems = x)
-    } text "Group components from same subsystem together (default=True)"
+    } text s"Group components from same subsystem together (default=$defaultGroupSubsystems)"
 
-    opt[String]("layout") valueName "one of {dot,fdp,sfdp,twopi,neato,circo,patchwork}" action { (x, c) =>
+    opt[String]("layout") valueName s"one of: ${graphLayouts.mkString(", ")}" action { (x, c) =>
       c.copy(layout = x)
-    } text "Dot layout engine (default=dot)"
+    } text s"Dot layout engine (default=$defaultLayout)"
 
-    opt[String]("overlap") valueName "one of {true,false,scale}" action { (x, c) =>
+    opt[String]("overlap") valueName s"one of ${overlapValues.mkString(", ")}" action { (x, c) =>
       c.copy(overlap = x)
-    } text "Node overlap handling (default=scale)"
+    } text s"Node overlap handling (default=${defaultOverlap})"
 
     opt[Boolean]("splines") action { (x, c) =>
       c.copy(splines = x)
-    } text "Use splines for edges? (default=True)"
+    } text s"Use splines for edges? (default=${defaultUseSplines})"
 
     opt[String]("omittypes") action { (x, c) =>
       c.copy(omitTypes = x.split(',').toList)
-    } text "Comma-separated list of component types (HCD,Assembly,Sequencer,Application) to omit as primaries (default={'HCD'})"
+    } text s"Comma-separated list of component types (${allowedOmitTypes.mkString(", ")}) to omit as primaries (default={'${defaultOmit}'})"
 
     help("help")
     version("version")
@@ -103,7 +105,11 @@ object IcdViz extends App {
 
   // Run the application
   private def run(options: IcdVizOptions): Unit = {
-    val db = IcdDb(options.dbName, options.host, options.port)
+    import csw.services.icd.db.IcdDbDefaults.{defaultDbName, defaultHost, defaultPort}
+    val db = IcdDb(
+      options.dbName.getOrElse(defaultDbName),
+      options.host.getOrElse(defaultHost),
+      options.port.getOrElse(defaultPort))
     IcdVizManager.showRelationships(db, options)
     System.exit(0)
   }

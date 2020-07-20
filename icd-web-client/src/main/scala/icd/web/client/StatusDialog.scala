@@ -51,7 +51,8 @@ object StatusDialog {
  * Displays the current published status of a selected subsystem.
  * @param mainContent used to display errors
  */
-case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener, pdfItem: NavbarPdfItem) extends Displayable {
+case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener,
+                        pdfItem: NavbarPdfItem, graphItem: NavbarGraphItem) extends Displayable {
   import StatusDialog._
 
   // The subsystem combobox
@@ -75,6 +76,7 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
     detailsDiv.innerHTML = ""
     maybeSubsystem.foreach { subsystem =>
       pdfItem.setEnabled(true)
+      graphItem.setEnabled(true)
       detailsDiv.appendChild(p(em(s"Getting $subsystem related information...")).render)
       val f = IcdUtil.getPublishInfo(maybeSubsystem, mainContent)
       f.onComplete {

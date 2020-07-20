@@ -1,23 +1,14 @@
 package csw.services.icd.viz
 
 import java.awt.Desktop
-import java.io.{File, FileOutputStream}
+import java.io.{File, FileOutputStream, OutputStream}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
 import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdDb}
 import csw.services.icd.viz.IcdVizManager.EdgeType.EdgeType
 import csw.services.icd.viz.IcdVizManager.MissingType.MissingType
-import icd.web.shared.{
-  ComponentInfo,
-  DetailedSubscribeInfo,
-  EventInfo,
-  PdfOptions,
-  ReceivedCommandInfo,
-  SentCommandInfo,
-  SubscribeInfo,
-  SubsystemWithVersion
-}
+import icd.web.shared.{ComponentInfo, DetailedSubscribeInfo, EventInfo, IcdVizOptions, PdfOptions, ReceivedCommandInfo, SentCommandInfo, SubscribeInfo, SubsystemWithVersion}
 import scalax.collection.Graph
 import scalax.collection.io.dot._
 import scalax.collection.io.dot.implicits._
@@ -78,19 +69,18 @@ object IcdVizManager {
   private val eventColor   = "dimgrey"   // event colors
   private val missingColor = "red"       // missing command or event color
 
-//  private val possibleLayouts   = List("dot", "fdp", "sfdp", "twopi", "neato", "circo", "patchwork")
   private val nodeFontsize      = 20
   private val edgeFontsize      = 10
   private val subsystemFontsize = 30
-//  private val possibleTypes     = List("HCD", "Assembly", "Sequencer", "Application")
 
   /**
    * Returns a string in GraphViz/dot format showing the relationships between
    * the selected subsystems/components according to the given options.
    * @param db the icd database
    * @param options the options
+   * @param maybeOut optional output stream to hold the generated image
    */
-  def showRelationships(db: IcdDb, options: IcdVizOptions): Unit = {
+  def showRelationships(db: IcdDb, options: IcdVizOptions, maybeOut: Option[OutputStream] = None): Unit = {
     val query          = new CachedIcdDbQuery(db.db, db.admin, None, None)
     val versionManager = new CachedIcdVersionManager(query)
 
@@ -425,7 +415,7 @@ object IcdVizManager {
           Elem.graph,
           List(
             DotAttr("layout", options.layout),
-            DotAttr("splines", options.splines.toString.capitalize),
+            DotAttr("splines", options.splines.toString),
             DotAttr("overlap", options.overlap),
             DotAttr("ratio", options.ratio)
           )
@@ -566,6 +556,14 @@ object IcdVizManager {
       }
     }
 
+    def saveImageToStream(dot: String, f: OutputStream, format: FileFormat): Unit = {
+      val data   = s"@startdot\n$dot\n@enddot"
+      val reader = new SourceStringReader(data)
+      val option = new FileFormatOption(format)
+      reader.outputImage(f, 0, option)
+      f.close()
+    }
+
     def viewImageFile(file: File): Unit = {
       if (Desktop.isDesktopSupported && Desktop.getDesktop.isSupported(Desktop.Action.BROWSE)) {
         Desktop.getDesktop.browse(file.toURI)
@@ -597,6 +595,6 @@ object IcdVizManager {
       case Some(file) => saveImageFile(dot, file)
       case None       => if (options.showPlot) saveImageFile(dot, new File("icd-viz.png"))
     }
+    maybeOut.foreach(saveImageToStream(dot, _, FileFormat.PDF))
   }
-
 }

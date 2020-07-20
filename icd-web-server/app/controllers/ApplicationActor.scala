@@ -4,7 +4,21 @@ import csw.services.icd.db.IcdDb
 import play.api.libs.concurrent.ActorModule
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
-import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, IcdName, IcdVersionInfo, PublishApiInfo, PublishIcdInfo, SubsystemInfo, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
+import icd.web.shared.{
+  ApiVersionInfo,
+  ComponentInfo,
+  DiffInfo,
+  IcdName,
+  IcdVersionInfo,
+  IcdVizOptions,
+  PdfOptions,
+  PublishApiInfo,
+  PublishIcdInfo,
+  SubsystemInfo,
+  UnpublishApiInfo,
+  UnpublishIcdInfo,
+  VersionInfo
+}
 
 import scala.util.Try
 
@@ -43,12 +57,7 @@ object ApplicationActor extends ActorModule {
       maybeTargetVersion: Option[String],
       maybeTargetComponent: Option[String],
       maybeIcdVersion: Option[String],
-      maybeOrientation: Option[String],
-      maybeFontSize: Option[Int],
-      maybeLineHeight: Option[String],
-      maybePaperSize: Option[String],
-      maybeDetails: Option[Boolean],
-      expandedIds: List[String],
+      pdfOptions: PdfOptions,
       replyTo: ActorRef[Option[Array[Byte]]]
   ) extends Messages
   final case class GetApiAsPdf(
@@ -56,41 +65,43 @@ object ApplicationActor extends ActorModule {
       maybeVersion: Option[String],
       maybeComponent: Option[String],
       searchAll: Option[Boolean],
-      maybeOrientation: Option[String],
-      maybeFontSize: Option[Int],
-      maybeLineHeight: Option[String],
-      maybePaperSize: Option[String],
-      maybeDetails: Option[Boolean],
-      expandedIds: List[String],
+      pdfOptions: PdfOptions,
       replyTo: ActorRef[Option[Array[Byte]]]
   ) extends Messages
   final case class GetArchivedItemsReport(
       subsystem: String,
       maybeVersion: Option[String],
       maybeComponent: Option[String],
-      maybeOrientation: Option[String],
-      maybeFontSize: Option[Int],
-      maybeLineHeight: Option[String],
-      maybePaperSize: Option[String],
+      pdfOptions: PdfOptions,
       replyTo: ActorRef[Option[Array[Byte]]]
   ) extends Messages
   final case class GetArchivedItemsReportFull(
-      maybeOrientation: Option[String],
-      maybeFontSize: Option[Int],
-      maybeLineHeight: Option[String],
-      maybePaperSize: Option[String],
+      pdfOptions: PdfOptions,
+      replyTo: ActorRef[Option[Array[Byte]]]
+  ) extends Messages
+  final case class MakeGraph(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      maybeTarget: Option[String],
+      maybeTargetVersion: Option[String],
+      maybeTargetComponent: Option[String],
+      maybeIcdVersion: Option[String],
+      options: IcdVizOptions,
       replyTo: ActorRef[Option[Array[Byte]]]
   ) extends Messages
   final case class GetVersions(subsystem: String, replyTo: ActorRef[List[VersionInfo]])                       extends Messages
   final case class GetVersionNames(subsystem: String, replyTo: ActorRef[List[String]])                        extends Messages
   final case class GetIcdNames(replyTo: ActorRef[List[IcdName]])                                              extends Messages
   final case class GetIcdVersions(subsystem: String, target: String, replyTo: ActorRef[List[IcdVersionInfo]]) extends Messages
-  final case class GetDiff(subsystem: String, versionsStr: String, replyTo: ActorRef[List[DiffInfo]]) extends Messages
-  final case class PublishApi(publishApiInfo: PublishApiInfo, replyTo: ActorRef[Try[ApiVersionInfo]]) extends Messages
-  final case class PublishIcd(publishIcdInfo: PublishIcdInfo, replyTo: ActorRef[Try[IcdVersionInfo]]) extends Messages
-  final case class UnpublishApi(unpublishApiInfo: UnpublishApiInfo, replyTo: ActorRef[Try[Option[ApiVersionInfo]]]) extends Messages
-  final case class UnpublishIcd(unpublishIcdInfo: UnpublishIcdInfo, replyTo: ActorRef[Try[Option[IcdVersionInfo]]]) extends Messages
-  final case class UpdatePublished( replyTo: ActorRef[Unit]) extends Messages
+  final case class GetDiff(subsystem: String, versionsStr: String, replyTo: ActorRef[List[DiffInfo]])         extends Messages
+  final case class PublishApi(publishApiInfo: PublishApiInfo, replyTo: ActorRef[Try[ApiVersionInfo]])         extends Messages
+  final case class PublishIcd(publishIcdInfo: PublishIcdInfo, replyTo: ActorRef[Try[IcdVersionInfo]])         extends Messages
+  final case class UnpublishApi(unpublishApiInfo: UnpublishApiInfo, replyTo: ActorRef[Try[Option[ApiVersionInfo]]])
+      extends Messages
+  final case class UnpublishIcd(unpublishIcdInfo: UnpublishIcdInfo, replyTo: ActorRef[Try[Option[IcdVersionInfo]]])
+      extends Messages
+  final case class UpdatePublished(replyTo: ActorRef[Unit]) extends Messages
 
   // -------------------------------------------------------------------
 
@@ -136,12 +147,7 @@ object ApplicationActor extends ActorModule {
             maybeTargetVersion,
             maybeTargetComponent,
             maybeIcdVersion,
-            maybeOrientation,
-            maybeFontSize,
-            maybeLineHeight,
-            maybePaperSize,
-            maybeDetails,
-            expandedIds,
+            pdfOptions,
             replyTo: ActorRef[Option[Array[Byte]]]
             ) =>
           replyTo ! app.getIcdAsPdf(
@@ -152,12 +158,7 @@ object ApplicationActor extends ActorModule {
             maybeTargetVersion,
             maybeTargetComponent,
             maybeIcdVersion,
-            maybeOrientation,
-            maybeFontSize,
-            maybeLineHeight,
-            maybePaperSize,
-            maybeDetails,
-            expandedIds
+            pdfOptions
           )
           Behaviors.same
         case GetApiAsPdf(
@@ -165,12 +166,7 @@ object ApplicationActor extends ActorModule {
             maybeVersion,
             maybeComponent,
             searchAll,
-            maybeOrientation,
-            maybeFontSize,
-            maybeLineHeight,
-            maybePaperSize,
-            maybeDetails,
-            expandedIds,
+            pdfOptions,
             replyTo: ActorRef[Option[Array[Byte]]]
             ) =>
           replyTo ! app.getApiAsPdf(
@@ -178,46 +174,46 @@ object ApplicationActor extends ActorModule {
             maybeVersion,
             maybeComponent,
             searchAll,
-            maybeOrientation,
-            maybeFontSize,
-            maybeLineHeight,
-            maybePaperSize,
-            maybeDetails,
-            expandedIds
+            pdfOptions
           )
           Behaviors.same
         case GetArchivedItemsReport(
             subsystem,
             maybeVersion,
             maybeComponent,
-            maybeOrientation,
-            maybeFontSize,
-            maybeLineHeight,
-            maybePaperSize,
+            pdfOptions,
             replyTo
             ) =>
           replyTo ! app.getArchivedItemsReport(
             subsystem,
             maybeVersion,
             maybeComponent,
-            maybeOrientation,
-            maybeFontSize,
-            maybeLineHeight,
-            maybePaperSize
+            pdfOptions
           )
           Behaviors.same
-        case GetArchivedItemsReportFull(
-            maybeOrientation,
-            maybeFontSize,
-            maybeLineHeight,
-            maybePaperSize,
+        case GetArchivedItemsReportFull(pdfOptions, replyTo) =>
+          replyTo ! app.getArchivedItemsReportFull(pdfOptions)
+          Behaviors.same
+        case MakeGraph(
+            subsystem,
+            maybeVersion,
+            maybeComponent,
+            maybeTarget,
+            maybeTargetVersion,
+            maybeTargetComponent,
+            maybeIcdVersion,
+            options,
             replyTo
             ) =>
-          replyTo ! app.getArchivedItemsReportFull(
-            maybeOrientation,
-            maybeFontSize,
-            maybeLineHeight,
-            maybePaperSize
+          replyTo ! app.makeGraph(
+            subsystem,
+            maybeVersion,
+            maybeComponent,
+            maybeTarget,
+            maybeTargetVersion,
+            maybeTargetComponent,
+            maybeIcdVersion,
+            options
           )
           Behaviors.same
         case GetVersions(subsystem, replyTo) =>
