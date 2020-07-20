@@ -5,11 +5,35 @@ import java.io.ByteArrayOutputStream
 import controllers.ApplicationData.maybeCache
 import csw.services.icd.IcdToPdf
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
-import csw.services.icd.db.{ArchivedItemsReport, CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, IcdDbPrinter}
+import csw.services.icd.db.{
+  ArchivedItemsReport,
+  CachedIcdDbQuery,
+  CachedIcdVersionManager,
+  ComponentInfoHelper,
+  IcdComponentInfo,
+  IcdDb,
+  IcdDbPrinter
+}
 import csw.services.icd.github.IcdGitManager
 import csw.services.icd.viz.IcdVizManager
 import diffson.playJson.DiffsonProtocol
-import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, IcdName, IcdVersion, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, SubsystemWithVersion, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
+import icd.web.shared.{
+  ApiVersionInfo,
+  ComponentInfo,
+  DiffInfo,
+  IcdName,
+  IcdVersion,
+  IcdVersionInfo,
+  IcdVizOptions,
+  PdfOptions,
+  PublishApiInfo,
+  PublishIcdInfo,
+  SubsystemInfo,
+  SubsystemWithVersion,
+  UnpublishApiInfo,
+  UnpublishIcdInfo,
+  VersionInfo
+}
 import play.api.libs.json.Json
 
 import scala.util.Try
@@ -240,7 +264,7 @@ class ApplicationImpl(db: IcdDb) {
       maybeIcdVersion: Option[String],
       options: IcdVizOptions
   ): Option[Array[Byte]] = {
-    val components = maybeTarget match {
+    val selectedSv = maybeTarget match {
       case Some(target) =>
         val (sv, targetSv, _) = getSelectedSubsystems(
           subsystem,
@@ -255,8 +279,11 @@ class ApplicationImpl(db: IcdDb) {
       case None =>
         List(SubsystemWithVersion(subsystem, maybeVersion, maybeComponent))
     }
-    val newOptions = options.copy(components = components, showPlot = false, imageFile = None, dotFile = None)
-    val out  = new ByteArrayOutputStream()
+    val subsystems = selectedSv.filter(_.maybeComponent.isEmpty)
+    val components = selectedSv.filter(_.maybeComponent.nonEmpty)
+    val newOptions =
+      options.copy(subsystems = subsystems, components = components, showPlot = false, imageFile = None, dotFile = None)
+    val out = new ByteArrayOutputStream()
     IcdVizManager.showRelationships(db, newOptions, Some(out))
     Some(out.toByteArray)
   }
