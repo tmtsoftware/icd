@@ -3,7 +3,7 @@ package icd.web.client
 import icd.web.shared.{IcdVizOptions, PdfOptions}
 import org.scalajs.dom
 import org.scalajs.dom._
-import org.scalajs.dom.html.Div
+import org.scalajs.dom.html.{Div, Input}
 import org.scalajs.dom.raw.HTMLInputElement
 import scalatags.JsDom
 import NavbarItem._
@@ -42,16 +42,19 @@ object NavbarItem {
     )
   }
 
-  def makeCheckbox(nameStr: String, defaultValue: Boolean): JsDom.TypedTag[Div] = {
+  def makeCheckbox(nameStr: String, isSelected: Boolean): JsDom.TypedTag[Div] = {
     import scalatags.JsDom.all._
     div(cls := "radio-inline")(
-      div(input(`type` := "checkbox", id := nameStr, name := nameStr, value := defaultValue, checked := defaultValue))
+      if (isSelected)
+        div(input(`type` := "checkbox", id := nameStr, name := nameStr, checked))
+      else
+        div(input(`type` := "checkbox", id := nameStr, name := nameStr))
     )
   }
 
-  def makeNumberEntry(nameStr: String, defaultValue: String): JsDom.TypedTag[Div] = {
+  def makeNumberEntry(nameStr: String, defaultValue: String): JsDom.TypedTag[Input] = {
     import scalatags.JsDom.all._
-    div(input(id := nameStr, `type` := "number", min := 0, name := nameStr, value := defaultValue))
+    input(id := nameStr, `type` := "number", min := 0, name := nameStr, value := defaultValue)
   }
 }
 
@@ -240,7 +243,8 @@ case class NavbarDropDownItem(labelStr: String, tip: String, items: List[String]
 case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOptions => Unit) extends Displayable {
   import IcdVizOptions._
   private def graphModalListener(): Unit = {
-    val aspectRatio         = Option(document.getElementById("aspectRatio").asInstanceOf[HTMLInputElement].valueAsNumber).getOrElse(defaultRatio)
+    val aspectRatio =
+      Option(document.getElementById("aspectRatio").asInstanceOf[HTMLInputElement].valueAsNumber).getOrElse(defaultRatio)
     val plotMissingEvents   = document.getElementById("plotMissingEvents").asInstanceOf[HTMLInputElement].checked
     val plotMissingCommands = document.getElementById("plotMissingCommands").asInstanceOf[HTMLInputElement].checked
     val plotEventLabels     = document.getElementById("plotEventLabels").asInstanceOf[HTMLInputElement].checked
@@ -290,26 +294,13 @@ case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOption
           ),
           div(cls := "modal-body")(
             form(
-              h5(s"Aspect ratio (y/x):"),
-              makeNumberEntry("aspectRatio", s"$defaultRatio"),
-              p(),
-              h5(s"Plot missing events:"),
-              makeCheckbox("plotMissingEvents", defaultValue = defaultMissingEvents),
-              p(),
-              h5(s"Plot missing commands:"),
-              makeCheckbox("plotMissingCommands", defaultValue = defaultMissingCommands),
-              p(),
-              h5(s"Plot event labels:"),
-              makeCheckbox("plotEventLabels", defaultValue = defaultEventLabels),
-              p(),
-              h5(s"Plot command labels:"),
-              makeCheckbox("plotCommandLabels", defaultValue = defaultCommandLabels),
-              p(),
-              h5(s"Group components from same subsystem together:"),
-              makeCheckbox("groupSubsystems", defaultValue = defaultGroupSubsystems),
-              p(),
-              h5(s"Use splines for edges?"),
-              makeCheckbox("useSplines", defaultValue = defaultUseSplines),
+              p(s"Aspect ratio (y/x):", makeNumberEntry("aspectRatio", s"$defaultRatio")),
+              p(s"Plot missing events:", makeCheckbox("plotMissingEvents", isSelected = defaultMissingEvents)),
+              p(s"Plot missing commands:", makeCheckbox("plotMissingCommands", isSelected = defaultMissingCommands)),
+              p(s"Plot event labels:", makeCheckbox("plotEventLabels", isSelected = defaultEventLabels)),
+              p(s"Plot command labels:", makeCheckbox("plotCommandLabels", isSelected = defaultCommandLabels)),
+              p(s"Group components from same subsystem together:", makeCheckbox("groupSubsystems", isSelected = defaultGroupSubsystems)),
+              p(s"Use splines for edges?", makeCheckbox("useSplines", isSelected = defaultUseSplines)),
               hr,
               p(),
               h5(s"Dot layout engine"),
