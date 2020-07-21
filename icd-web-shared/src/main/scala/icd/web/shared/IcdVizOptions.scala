@@ -5,8 +5,8 @@ import IcdVizOptions._
 
 object IcdVizOptions {
   // Allowed/default values for options
-  val allowedOmitTypes       = List("HCD", "Assembly", "Sequencer", "Application")
-  val defaultOmit            = "HCD"
+  val allowedOmitTypes       = List("None", "HCD", "Assembly", "Sequencer", "Application")
+  val defaultOmit            = "None"
   val graphLayouts           = List("dot", "fdp", "sfdp", "twopi", "neato", "circo", "patchwork")
   val defaultLayout          = "dot"
   val imageFormats           = List("PDF", "PNG", "SVG", "EPS")

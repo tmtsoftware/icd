@@ -42,13 +42,13 @@ object NavbarItem {
     )
   }
 
-  def makeCheckbox(nameStr: String, isSelected: Boolean): JsDom.TypedTag[Div] = {
+  def makeCheckbox(nameStr: String, valueStr: String, isSelected: Boolean): JsDom.TypedTag[Div] = {
     import scalatags.JsDom.all._
-    div(cls := "radio-inline")(
+    div(cls := "checkbox")(
       if (isSelected)
-        div(input(`type` := "checkbox", id := nameStr, name := nameStr, checked))
+        label(input(`type` := "checkbox", id := nameStr, name := nameStr, checked), valueStr)
       else
-        div(input(`type` := "checkbox", id := nameStr, name := nameStr))
+        label(input(`type` := "checkbox", id := nameStr, name := nameStr), valueStr)
     )
   }
 
@@ -265,6 +265,7 @@ case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOption
       .querySelectorAll(s"input[name='graphOmitType']:checked")
       .map(elem => elem.asInstanceOf[HTMLInputElement].value)
       .toList
+      .filter(_ != "None")
 
     listener(
       IcdVizOptions(
@@ -294,28 +295,32 @@ case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOption
           ),
           div(cls := "modal-body")(
             form(
-              p(s"Aspect ratio (y/x):", makeNumberEntry("aspectRatio", s"$defaultRatio")),
-              p(s"Plot missing events:", makeCheckbox("plotMissingEvents", isSelected = defaultMissingEvents)),
-              p(s"Plot missing commands:", makeCheckbox("plotMissingCommands", isSelected = defaultMissingCommands)),
-              p(s"Plot event labels:", makeCheckbox("plotEventLabels", isSelected = defaultEventLabels)),
-              p(s"Plot command labels:", makeCheckbox("plotCommandLabels", isSelected = defaultCommandLabels)),
-              p(s"Group components from same subsystem together:", makeCheckbox("groupSubsystems", isSelected = defaultGroupSubsystems)),
-              p(s"Use splines for edges?", makeCheckbox("useSplines", isSelected = defaultUseSplines)),
+              p(s"Aspect ratio (y/x): ", makeNumberEntry("aspectRatio", s"$defaultRatio")),
+              makeCheckbox("plotMissingEvents", "Plot missing events", isSelected = defaultMissingEvents),
+              makeCheckbox("plotMissingCommands", "Plot missing commands", isSelected = defaultMissingCommands),
+              makeCheckbox("plotEventLabels", "Plot event labels", isSelected = defaultEventLabels),
+              makeCheckbox("plotCommandLabels", "Plot command labels", isSelected = defaultCommandLabels),
+              makeCheckbox(
+                "groupSubsystems",
+                "Group components from same subsystem together",
+                isSelected = defaultGroupSubsystems
+              ),
+              makeCheckbox("useSplines", "Use splines for edges?", isSelected = defaultUseSplines),
               hr,
               p(),
-              h5(s"Dot layout engine"),
+              h5(s"Dot layout engine:"),
               IcdVizOptions.graphLayouts
-                .map(x => makeRadioButton(s"graphLayout", x, IcdVizOptions.defaultLayout, None)),
+                .map(x => makeRadioButton("graphLayout", x, IcdVizOptions.defaultLayout, None)),
               hr,
               p(),
-              h5(s"Node overlap handling"),
+              h5(s"Node overlap handling:"),
               IcdVizOptions.overlapValues
-                .map(x => makeRadioButton(s"graphOverlap", x, IcdVizOptions.defaultOverlap, None)),
+                .map(x => makeRadioButton("graphOverlap", x, IcdVizOptions.defaultOverlap, None)),
               hr,
               p(),
-              h5(s"Component types to omit as primaries"),
+              h5(s"Component types to omit as primaries:"),
               IcdVizOptions.allowedOmitTypes
-                .map(x => makeRadioButton(s"graphOmitType", x, IcdVizOptions.defaultOmit, None)),
+                .map(x => makeRadioButton("graphOmitType", x, IcdVizOptions.defaultOmit, None)),
               //
               hr,
               p()

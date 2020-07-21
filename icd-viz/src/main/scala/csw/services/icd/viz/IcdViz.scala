@@ -83,7 +83,7 @@ object IcdViz extends App {
     } text s"Use splines for edges? (default=${defaultUseSplines})"
 
     opt[String]("omittypes") action { (x, c) =>
-      c.copy(omitTypes = x.split(',').toList)
+      c.copy(omitTypes = x.split(',').toList .filter(_ != "None"))
     } text s"Comma-separated list of component types (${allowedOmitTypes.mkString(", ")}) to omit as primaries (default={'${defaultOmit}'})"
 
     help("help")
