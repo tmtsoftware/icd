@@ -266,6 +266,11 @@ case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOption
       .map(elem => elem.asInstanceOf[HTMLInputElement].value)
       .toList
       .filter(_ != "None")
+    val imageFormat = document
+      .querySelectorAll(s"input[name='imageFormat']:checked")
+      .map(elem => elem.asInstanceOf[HTMLInputElement].value)
+      .toList
+      .head
 
     listener(
       IcdVizOptions(
@@ -278,7 +283,8 @@ case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOption
         layout = graphLayout,
         overlap = graphOverlap,
         splines = useSplines,
-        omitTypes = graphOmitTypes
+        omitTypes = graphOmitTypes,
+        imageFormat = imageFormat
       )
     )
   }
@@ -321,6 +327,11 @@ case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOption
               h5(s"Component types to omit as primaries:"),
               IcdVizOptions.allowedOmitTypes
                 .map(x => makeRadioButton("graphOmitType", x, IcdVizOptions.defaultOmit, None)),
+              hr,
+              p(),
+              h5(s"Image format:"),
+              IcdVizOptions.imageFormats
+                .map(x => makeRadioButton("imageFormat", x, IcdVizOptions.defaultImageFormat, None)),
               //
               hr,
               p()

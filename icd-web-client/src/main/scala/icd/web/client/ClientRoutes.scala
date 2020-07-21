@@ -54,7 +54,8 @@ object ClientRoutes {
           s"layout=${o.layout}",
           s"overlap=${o.overlap}",
           s"splines=${o.splines}",
-          s"omitTypes=${o.omitTypes.mkString(",")}"
+          s"omitTypes=${o.omitTypes.mkString(",")}",
+          s"imageFormat=${o.imageFormat}"
         ).mkString("&")
     )
     val attrs =

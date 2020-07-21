@@ -25,9 +25,9 @@ object IcdVizManager {
   object MissingType extends Enumeration {
     type MissingType = Value
     val noSubscribers    = Value("No Subscribers")
-    val missingPublisher = Value("Missing Publisher")
+    val missingPublisher = Value("Missing in Publisher")
     val noSenders        = Value("No Senders")
-    val missingReceiver  = Value("Missing Receiver")
+    val missingReceiver  = Value("Missing in Receiver")
   }
 
   //noinspection TypeAnnotation
@@ -529,13 +529,20 @@ object IcdVizManager {
       }
     }
 
+    @scala.annotation.tailrec
     def getImageFileFormat(file: File): FileFormat = {
       file.toString.split("\\.").last.toLowerCase() match {
         case "png" => FileFormat.PNG
         case "svg" => FileFormat.SVG
         case "pdf" => FileFormat.PDF
         case "eps" => FileFormat.EPS
-        case _     => FileFormat.PDF
+        case _     =>
+          val imageFormat = options.imageFormat
+          val s = if (IcdVizOptions.imageFormats.contains(imageFormat.toUpperCase()))
+            imageFormat
+          else
+            IcdVizOptions.defaultImageFormat
+          getImageFileFormat(new File(s"x.$s"))
       }
     }
 
@@ -595,6 +602,9 @@ object IcdVizManager {
       case Some(file) => saveImageFile(dot, file)
       case None       => if (options.showPlot) saveImageFile(dot, new File("icd-viz.png"))
     }
-    maybeOut.foreach(saveImageToStream(dot, _, FileFormat.PDF))
+    maybeOut.foreach{out =>
+      val fileFormat = getImageFileFormat(new File(s"x.x"))
+      saveImageToStream(dot, out, fileFormat)
+    }
   }
 }

@@ -60,5 +60,7 @@ case class IcdVizOptions(
     // Use splines for edges?
     splines: Boolean = defaultUseSplines,
     // list of component types (HCD,Assembly,Sequencer,Application) to omit as primaries (default={'HCD'})
-    omitTypes: List[String] = List(defaultOmit)
+    omitTypes: List[String] = List(defaultOmit),
+    // Image format (one of "PDF", "PNG", "SVG", "EPS"), used only if imageFile is not given or has no valid suffix
+    imageFormat: String = defaultImageFormat
 )

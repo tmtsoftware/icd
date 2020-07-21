@@ -350,7 +350,8 @@ class Application @Inject()(
       maybeLayout: Option[String],
       maybeOverlap: Option[String],
       maybeSplines: Option[Boolean],
-      maybeOmitTypes: Option[String]
+      maybeOmitTypes: Option[String],
+      maybeImageFormat: Option[String]
   ): Action[AnyContent] = {
     import IcdVizOptions._
     Action.async { implicit request =>
@@ -373,14 +374,22 @@ class Application @Inject()(
             layout = maybeLayout.getOrElse(defaultLayout),
             overlap = maybeOverlap.getOrElse(defaultOverlap),
             splines = maybeSplines.getOrElse(defaultUseSplines),
-            omitTypes = maybeOmitTypes.getOrElse(defaultOmit).split(",").toList
+            omitTypes = maybeOmitTypes.getOrElse(defaultOmit).split(",").toList,
+            imageFormat = maybeImageFormat.getOrElse(defaultImageFormat)
           ),
           _
         )
       )
       resp.map {
         case Some(bytes) =>
-          Ok(bytes).as("application/pdf")
+          val contentType = maybeImageFormat.getOrElse(defaultImageFormat).toLowerCase() match {
+            case "png" => "image/png"
+            case "svg" => "image/svg+xml"
+            case "pdf" => "application/pdf"
+            case "eps" => "application/postscript"
+            case _     => "application/pdf"
+          }
+          Ok(bytes).as(contentType)
         case None =>
           NotFound
       }
