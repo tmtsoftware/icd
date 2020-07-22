@@ -5,7 +5,8 @@ import java.io.{File, FileOutputStream, OutputStream}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
-import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdDb}
+import com.typesafe.config.{Config, ConfigFactory}
+import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdDb, Subsystems}
 import csw.services.icd.viz.IcdVizManager.EdgeType.EdgeType
 import csw.services.icd.viz.IcdVizManager.MissingType.MissingType
 import icd.web.shared.{ComponentInfo, DetailedSubscribeInfo, EventInfo, IcdVizOptions, PdfOptions, ReceivedCommandInfo, SentCommandInfo, SubscribeInfo, SubsystemWithVersion}
@@ -49,19 +50,21 @@ object IcdVizManager {
   // Describes an Edge from one component to another
   case class EdgeModel(components: ComponentPair, label: EdgeLabel)
 
+  // Configuration options for Graph
   implicit val myConfig: CoreConfig = CoreConfig()
+
+  // Load settings from reference.conf
+  val conf: Config = ConfigFactory.load
+
+  // Read subsystem color settings from reference.conf
+  val subsystemColorMap: Map[String, String] = Subsystems.allSubsystems.map(s => s -> conf.getString(s"icd.viz.color.$s")).toMap
 
   // --- plotting defaults ---
 
-  // XXX TODO: Allow configuration
   private def getSubsystemColor(subsystem: String): String = {
     subsystem match {
-      case "NFIRAOS" => "green4"
-      case "AOESW"   => "springgreen"
-      case "TCS"     => "purple"
-      case "IRIS"    => "blue"
       case "?"       => "red"
-      case _         => "grey"
+      case _         => subsystemColorMap.getOrElse(subsystem, "grey")
     }
   }
 
@@ -74,7 +77,7 @@ object IcdVizManager {
   private val subsystemFontsize = 30
 
   /**
-   * Returns a string in GraphViz/dot format showing the relationships between
+   * Returns a string in Graphviz/dot format showing the relationships between
    * the selected subsystems/components according to the given options.
    * @param db the icd database
    * @param options the options
@@ -536,12 +539,13 @@ object IcdVizManager {
         case "svg" => FileFormat.SVG
         case "pdf" => FileFormat.PDF
         case "eps" => FileFormat.EPS
-        case _     =>
+        case _ =>
           val imageFormat = options.imageFormat
-          val s = if (IcdVizOptions.imageFormats.contains(imageFormat.toUpperCase()))
-            imageFormat
-          else
-            IcdVizOptions.defaultImageFormat
+          val s =
+            if (IcdVizOptions.imageFormats.contains(imageFormat.toUpperCase()))
+              imageFormat
+            else
+              IcdVizOptions.defaultImageFormat
           getImageFileFormat(new File(s"x.$s"))
       }
     }
@@ -602,7 +606,7 @@ object IcdVizManager {
       case Some(file) => saveImageFile(dot, file)
       case None       => if (options.showPlot) saveImageFile(dot, new File("icd-viz.png"))
     }
-    maybeOut.foreach{out =>
+    maybeOut.foreach { out =>
       val fileFormat = getImageFileFormat(new File(s"x.x"))
       saveImageToStream(dot, out, fileFormat)
     }

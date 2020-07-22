@@ -38,9 +38,9 @@ There are currently these ICD subprojects:
 
 * [icd-db](icd-db) - supports ingesting API model files into a MongoDB database, querying the db and saving an API or ICD as an HTML or PDF document
 * [icd-git](icd-git) - work directly with ICD model files stored on GitHub, publish ICDs, ingest ICD releases into the ICD database
-* [icd-viz](icd-viz) - work directly with ICD model files stored on GitHub, publish ICDs, ingest ICD releases into the ICD database
+* [icd-viz](icd-viz) - uses Graphviz/Dot to produce a graph of relationships of selected subsystems or components
 * [icd-web-server](icd-web-server) - a Play Framework based web server for working with ICDs
-* [icd-web-client](icd-web-client) - a Scala.JS based web client for the Play server
+* [icd-web-client](icd-web-client) - a Scala.js based web client for the Play server
                                      (The main client class is [IcdWebClient](icd-web-client/src/main/scala/icd/web/client/IcdWebClient.scala).
 * [icd-web-shared](icd-web-shared) - contains shared classes that can be used by both web client and server
 
@@ -51,7 +51,7 @@ Note: The build requires that [node.js](https://nodejs.org/en/) be installed on 
 This is checked in the install.sh script, which automatically sets the SBT_OPTS environment variable if node.js is found 
 and gives an error otherwise. 
 
-Note: The [GraphViz](https://graphviz.org/download/) apps needs to be installed in order to use the UML or icd-viz features. 
+Note: The [Graphviz](https://graphviz.org/download/) apps needs to be installed in order to use the UML or icd-viz features. 
 
 An install.sh script is provided that builds and installs all of the subprojects into the __../install_icd__ directory.
 This is basically just the command `sbt stage` in each project followed by copying the products to the

@@ -26,7 +26,7 @@ fi
 # Should not be needed? See https://github.com/sbt/sbt-less/issues/95
 export SBT_OPTS="-Dsbt.jse.engineType=Node -Dsbt.jse.command=$NODEJS"
 
-# GraphViz is required for UML support and icd-viz
+# Graphviz is required for UML support and icd-viz
 if ! hash dot 2>/dev/null ; then
     echo >&2 "Please install graphviz first (See https://graphviz.org/download/).  Aborting."
     exit 1

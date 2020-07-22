@@ -13,12 +13,15 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
   [examples/2.0/TEST/envCtrl/command-model.conf](examples/2.0/TEST/envCtrl/command-model.conf) for examples. 
   The LaTeX string is converted to an image and then inserted in the HTML or PDF.
 
-- Added support for UML markup in description texts, based on [PlantUML](https://plantuml.com/), delimited by \`\`\`uml...\`\`\`.
+- Added support for UML (and Graphviz/Dot) markup in description texts, 
+  based on [PlantUML](https://plantuml.com/), delimited by \`\`\`uml...\`\`\`.
   See [examples/2.0/TEST/envCtrl/component-model.conf](examples/2.0/TEST/envCtrl/component-model.conf). 
-  __Note__: The [GraphViz](https://graphviz.org/download/) apps needs to be installed on the server (or local machine, for the command line) in order to use this feature. 
-
+  __Note__: The [Graphviz](https://graphviz.org/download/) apps needs to be installed on the server (or local machine, for the command line) in order to use this feature. 
   
-- Added icd-viz command line app, based on GraphViz/Dot and Ed Chapin's `icdRelationships.py`, that generates a graph of component relationships.
+- Added icd-viz command line app, based on Graphviz/Dot and Ed Chapin's `icdRelationships.py`, 
+  that generates a graph of component relationships.
+
+- Added a "Graph" toolbar item to the icd web app that displays a graph of relationships of the selected subsystems or components.
 
 ### Changed
 

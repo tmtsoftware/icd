@@ -84,11 +84,11 @@ object IcdViz extends App {
 
     opt[String]("omittypes") action { (x, c) =>
       c.copy(omitTypes = x.split(',').toList .filter(_ != "None"))
-    } text s"Comma-separated list of component types (${allowedOmitTypes.mkString(", ")}) to omit as primaries (default={'${defaultOmit}'})"
+    } text s"Comma-separated list of component types (${allowedOmitTypes.mkString(", ")}) to omit as primaries (default='$defaultOmit')"
 
     opt[String]("imageformat") action { (x, c) =>
       c.copy(imageFormat = x)
-    } text s"Image format (Used only if imageFile not given or has invalid suffix). One of {${imageFormats.mkString(", ")}} (default={'${defaultImageFormat}'})"
+    } text s"Image format (Used only if imageFile not given or has invalid suffix). One of {${imageFormats.mkString(", ")}} (default='$defaultImageFormat')"
 
     help("help")
     version("version")
