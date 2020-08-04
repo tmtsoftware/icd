@@ -71,13 +71,14 @@ class IcdDbTests extends AnyFunSuite {
     val temp_ngsWfs = attrList.head
     assert(temp_ngsWfs.name == "temp_ngsWfs")
     assert(temp_ngsWfs.description == "<p>NGS WFS temperature</p>")
-    assert(temp_ngsWfs.typeStr == "float")
+    assert(temp_ngsWfs.typeStr == "float (-inf < x < inf, or NaN)")
     assert(temp_ngsWfs.units == "<p>degC</p>")
 
     // Test publish queries
     val published = db.query.getPublished(envCtrl, None).filter(p => p.name == "sensors" && p.publishType == CurrentStates)
     assert(published.size == 1)
     assert(published.head.publishType == CurrentStates)
+
 
     //    val sensorList = db.query.publishes("test.ncc.env.ctrl.sensors", "TEST", Events)
     //    assert(sensorList.size == 1)
