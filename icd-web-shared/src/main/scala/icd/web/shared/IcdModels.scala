@@ -169,6 +169,7 @@ object IcdModels {
       maximum: Option[String],
       exclusiveMinimum: Boolean,
       exclusiveMaximum: Boolean,
+      allowNaN: Boolean,
       defaultValue: String,
       typeStr: String,
       attributesList: List[AttributeModel]

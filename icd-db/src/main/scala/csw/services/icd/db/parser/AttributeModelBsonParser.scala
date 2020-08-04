@@ -38,8 +38,9 @@ object AttributeModelBsonParser {
     val exclusiveMaximumStr = doc.get("exclusiveMaximum").map(bsonValueToString)
       .orElse(itemsDoc.flatMap(_.get("exclusiveMaximum").map(bsonValueToString))).getOrElse("false")
     val exclusiveMaximum = exclusiveMaximumStr.toLowerCase() != "false"
+    val allowNaN        = doc.getAsOpt[Boolean]("allowNaN").getOrElse(false)
 
-    def isNumeric(str: String): Boolean        = str.matches("[-+]?\\d+(\\.\\d+)?")
+    def isNumeric(str: String): Boolean        = str.matches("([-+]?\\d+(\\.\\d+)?|[-]?[Ii]nf)")
     def ifNumeric(str: String): Option[String] = Some(str).filter(isNumeric)
 
     // For compatibility, use numeric value of exclusive min/max if found
@@ -101,7 +102,8 @@ object AttributeModelBsonParser {
         val max = maximum.getOrElse("")
         val lt  = if (minimum.isEmpty) "" else if (exclusiveMinimum) " < " else " ≤ "
         val gt  = if (maximum.isEmpty) "" else if (exclusiveMaximum) " < " else " ≤ "
-        s"$t ($min${lt}x$gt$max)"
+        val nan = if (allowNaN) ", or NaN" else ""
+        s"$t ($min${lt}x$gt$max$nan)"
       } else t
     }
 
@@ -136,6 +138,7 @@ object AttributeModelBsonParser {
       maximum,
       exclusiveMinimum,
       exclusiveMaximum,
+      allowNaN,
       defaultValue,
       typeStr,
       attributesList

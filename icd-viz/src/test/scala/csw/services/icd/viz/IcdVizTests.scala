@@ -1,93 +1,46 @@
 package csw.services.icd.viz
+import java.io.File
+import java.nio.file.Files
+
+import csw.services.icd.IcdValidator
+import csw.services.icd.db.IcdDb
+import icd.web.shared.{IcdVizOptions, SubsystemWithVersion}
 import org.scalatest.funsuite.AnyFunSuite
-import scalax.collection.Graph
-import scalax.collection.io.dot._
-import scalax.collection.io.dot.implicits._
-import scalax.collection.GraphEdge.DiEdge
-import language.implicitConversions
-import scalax.collection.GraphPredef._
-import scalax.collection.edge.LDiEdge,
-scalax.collection.edge.Implicits._
-import Indent._
 
-// XXX TODO FIXME: Add icd-viz related tests
+import scala.io.Source
+
 class IcdVizTests extends AnyFunSuite {
-  private val multilineCompatibleSpacing = Spacing(
-    indent = TwoSpaces,
-    graphAttrSeparator = new AttrSeparator("""
-                                             |""".stripMargin) {})
+  val examplesDir = s"examples/${IcdValidator.currentSchemaVersion}"
+  val dbName      = "test"
 
-  test("Test API") {
-    val g = Graph[Int, DiEdge](1)
-    val root = DotRootGraph(
-      directed = true,
-      id = Some("structs")
-    )
-    val branchDOT = DotSubGraph(root, "cluster_branch", attrList = List(DotAttr("label", "branch")))
-    val cSubGraph = DotSubGraph(branchDOT, "cluster_chained", attrList = List(DotAttr("label", "Chained")))
-    val iSubGraph = DotSubGraph(branchDOT, "cluster_unchained", attrList = List(DotAttr("label", "UnChained")))
-    val dot = g.toDot(
-      dotRoot = root,
-      edgeTransformer = _.edge match {
-        case _ =>
-          None
-      },
-      iNodeTransformer = Some({ _ =>
-        Some((iSubGraph, DotNodeStmt("inode")))
-      })
-    )
-    println(dot)
+  // The relative location of the the examples directory can change depending on how the test is run
+  def getTestDir(path: String): File = {
+    val dir = new File(path)
+    if (dir.exists()) dir else new File(s"../$path")
   }
 
-  test("XXX test") {
-    val root = DotRootGraph(
-      directed = true,
-      id = Some("MyDot"),
-      attrStmts = List(DotAttrStmt(Elem.node, List(DotAttr("shape", "record")))),
-      attrList = List(DotAttr("attr_1", """"one""""), DotAttr("attr_2", "<two>"))
-    )
-    val dot = Graph.empty[Int, DiEdge].toDot(root, _ => None)
-    println(dot)
+  test("Text graph generation from examples/2.0/TEST subsystem") {
+    val db = IcdDb(dbName)
+    db.dropDatabase() // start with a clean db for test
+    // ingest examples/TEST into the DB
+    val problems = db.ingestAndCleanup(getTestDir(s"$examplesDir/TEST"))
+    for (p <- problems) println(p)
+    db.query.afterIngestFiles(problems, dbName)
 
+    val subsystems = List(SubsystemWithVersion("TEST"))
+    val dotPath    = Files.createTempFile("icdviz", ".dot")
+    val options = IcdVizOptions(
+      subsystems = subsystems,
+      showPlot = false,
+      dotFile = Some(dotPath.toFile),
+      missingCommands = true,
+      commandLabels = true
+    )
+    IcdVizManager.showRelationships(db, options)
+    val okDotStr  = Source.fromResource("icdviz.dot").getLines().mkString("\n")
+    val dotStr = new String(Files.readAllBytes(dotPath))
+    println(s"Compare $dotPath with test/resources/icdviz.dot")
+    assert(okDotStr == dotStr)
+    dotPath.toFile.delete()
   }
-
-  test("Wikipedia example") {
-    implicit def toLDiEdge[N](diEdge: DiEdge[N]) = LDiEdge(diEdge._1, diEdge._2)("")
-    val g = Graph[String, LDiEdge](
-      ("A1" ~+> "A2")("f\\nf1\\nf2\\nf3"),
-      ("A2" ~+> "A3")("g"),
-      "A1" ~> "B1",
-      "A1" ~> "B1",
-      ("A2" ~+> "B2")("(g o f)'"),
-      "A3" ~> "B3",
-      "B1" ~> "B3",
-      ("B2" ~+> "B3")("g'")
-    )
-    val root = DotRootGraph(directed = true, id = Some(Id("Wikipedia_Example")))
-    val subA = DotSubGraph(ancestor = root, subgraphId = Id("cluster_A"), attrList = List(DotAttr(Id("rank"), Id("same"))))
-    val subB = DotSubGraph(ancestor = root, subgraphId = Id("cluster_B"), attrList = List(DotAttr(Id("rank"), Id("same"))))
-    def edgeTransformer(innerEdge: Graph[String, LDiEdge]#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
-      val edge  = innerEdge.edge
-      val label = edge.label.asInstanceOf[String]
-      Some(
-        root,
-        DotEdgeStmt(
-          NodeId(edge.from.toString),
-          NodeId(edge.to.toString),
-          if (label.nonEmpty) List(DotAttr(Id("label"), Id(label)))
-          else Nil
-        )
-      )
-    }
-    def nodeTransformer(innerNode: Graph[String, LDiEdge]#NodeT): Option[(DotGraph, DotNodeStmt)] =
-      Some((if (innerNode.value.head == 'A') subA else subB, DotNodeStmt(NodeId(innerNode.toString), Seq.empty[DotAttr])))
-    val dot = g.toDot(
-      dotRoot = root,
-      edgeTransformer = edgeTransformer,
-      cNodeTransformer = Some(nodeTransformer),
-      spacing = multilineCompatibleSpacing
-    )
-    println(dot)
-  }
-
 }
