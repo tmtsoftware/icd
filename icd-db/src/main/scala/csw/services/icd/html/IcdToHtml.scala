@@ -30,13 +30,15 @@ object IcdToHtml {
         if (line.stripLeading().startsWith("font-size: ") && line.stripTrailing().endsWith("px;")) {
           val fontSize = line.substring(line.indexOf(": ") + 2).dropRight(3).toInt + fontIncr
           s"    font-size: ${fontSize}px;"
-        } else line
+        }
+        else line
       }
       .map { line =>
         // change line height
         if (line.stripLeading().startsWith("line-height: ")) {
           s"    line-height: $lineHeight;"
-        } else line
+        }
+        else line
       }
     lines.mkString("\n")
   }
@@ -46,12 +48,15 @@ object IcdToHtml {
    *
    * @param maybeSubsystemInfo contains info about the subsystem, if known
    * @param infoList           details about each component and what it publishes, subscribes to, etc.
+   * @param pdfOptions         options for pdf generation
+   * @param clientApi          if true, include subscribed events, sent commands
    * @return the html tags
    */
   def getApiAsHtml(
       maybeSubsystemInfo: Option[SubsystemInfo],
       infoList: List[ComponentInfo],
-      pdfOptions: PdfOptions
+      pdfOptions: PdfOptions,
+      clientApi: Boolean
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
@@ -60,8 +65,9 @@ object IcdToHtml {
       if (maybeSubsystemInfo.isDefined) {
         val si = maybeSubsystemInfo.get
         val ti = TitleInfo(si, None, None)
-        (ti, SummaryTable.displaySummary(si, None, infoList, nh))
-      } else if (infoList.size == 1) {
+        (ti, SummaryTable.displaySummary(si, None, infoList, nh, clientApi))
+      }
+      else if (infoList.size == 1) {
         // XXX TODO FIXME: When is this block called?
         val componentModel = infoList.head.componentModel
         val subsys         = componentModel.subsystem
@@ -70,14 +76,15 @@ object IcdToHtml {
         val ti             = TitleInfo(s"API for $subsys.$comp", None, Some(desc))
         val sv             = SubsystemWithVersion(subsys, None, Some(comp))
         val si             = SubsystemInfo(sv, "", "")
-        (ti, SummaryTable.displaySummary(si, None, infoList, nh))
-      } else {
+        (ti, SummaryTable.displaySummary(si, None, infoList, nh, clientApi))
+      }
+      else {
         (TitleInfo("", None, None), div())
       }
     val mainContent = div(
       style := "width: 100%;",
       summaryTable,
-      displayDetails(infoList, nh, forApi = true, pdfOptions)
+      displayDetails(infoList, nh, forApi = true, pdfOptions, clientApi)
     )
     val toc   = nh.mkToc()
     val intro = makeIntro(titleInfo)
@@ -115,43 +122,46 @@ object IcdToHtml {
    * @param infoList list of component info
    * @param nh       used for numbered headings and TOC
    * @param forApi   true if this is for an API document, false for ICD
+   * @param pdfOptions   options for pdf gen
+   * @param clientApi   if true, display subscribed events, sent commands
    * @return the HTML
    */
   def displayDetails(
       infoList: List[ComponentInfo],
       nh: NumberedHeadings,
       forApi: Boolean,
-      pdfOptions: PdfOptions
+      pdfOptions: PdfOptions,
+      clientApi: Boolean
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
     div(
-      infoList.map(displayComponentInfo(_, nh, forApi, pdfOptions))
+      infoList.map(displayComponentInfo(_, nh, forApi, pdfOptions, clientApi))
     )
   }
 
   /**
    * Displays the information for a component
-   *
-   * @param info   contains the information to display
-   * @param nh     used for numbered headings and TOC
-   * @param forApi true if this is for an API document, false for ICD
    */
   private def displayComponentInfo(
       info: ComponentInfo,
       nh: NumberedHeadings,
       forApi: Boolean,
-      pdfOptions: PdfOptions
+      pdfOptions: PdfOptions,
+      clientApi: Boolean
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
     // For ICDs, only display published items/received commands, for APIs show everything
     // (Note: Need to include even if only subscribed items are defined, to keep summary links from breaking)
-    if (forApi ||
-        (info.publishes.isDefined && info.publishes.get.nonEmpty
-        || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
-        || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
-        || info.commands.get.commandsSent.nonEmpty))) {
-      markupForComponent(info, nh, forApi, pdfOptions)
-    } else div()
+    if (
+      forApi ||
+      (info.publishes.isDefined && info.publishes.get.nonEmpty
+      || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
+      || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
+      || info.commands.get.commandsSent.nonEmpty))
+    ) {
+      markupForComponent(info, nh, forApi, pdfOptions, clientApi)
+    }
+    else div()
   }
 
   // Generates the HTML markup to display the component information
@@ -159,7 +169,8 @@ object IcdToHtml {
       info: ComponentInfo,
       nh: NumberedHeadings,
       forApi: Boolean,
-      pdfOptions: PdfOptions
+      pdfOptions: PdfOptions,
+      clientApi: Boolean
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
@@ -167,9 +178,9 @@ object IcdToHtml {
       nh.H2(info.componentModel.title, info.componentModel.component),
       componentInfoTableMarkup(info),
       raw(info.componentModel.description),
-      publishMarkup(info.componentModel, info.publishes, nh, forApi, pdfOptions),
-      if (forApi) subscribeMarkup(info.componentModel, info.subscribes, nh, pdfOptions) else div(),
-      commandsMarkup(info.componentModel, info.commands, nh, forApi, pdfOptions)
+      publishMarkup(info.componentModel, info.publishes, nh, forApi, pdfOptions, clientApi),
+      if (forApi && clientApi) subscribeMarkup(info.componentModel, info.subscribes, nh, pdfOptions) else div(),
+      commandsMarkup(info.componentModel, info.commands, nh, forApi, pdfOptions, clientApi)
     )
   }
 
@@ -235,7 +246,8 @@ object IcdToHtml {
       maybeCommands: Option[Commands],
       nh: NumberedHeadings,
       forApi: Boolean,
-      pdfOptions: PdfOptions
+      pdfOptions: PdfOptions,
+      clientApi: Boolean
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
     maybeCommands match {
@@ -245,10 +257,11 @@ object IcdToHtml {
           div(
             nh.H3(s"Commands for ${component.component}"),
             raw(commands.description),
-            receivedCommandsMarkup(component, commands.commandsReceived, nh, forApi, pdfOptions),
-            if (forApi) sentCommandsMarkup(component, commands.commandsSent, nh, pdfOptions) else div()
+            receivedCommandsMarkup(component, commands.commandsReceived, nh, forApi, pdfOptions, clientApi),
+            if (forApi && clientApi) sentCommandsMarkup(component, commands.commandsSent, nh, pdfOptions) else div()
           )
-        } else div()
+        }
+        else div()
     }
   }
 
@@ -258,7 +271,8 @@ object IcdToHtml {
       info: List[ReceivedCommandInfo],
       nh: NumberedHeadings,
       forApi: Boolean,
-      pdfOptions: PdfOptions
+      pdfOptions: PdfOptions,
+      clientApi: Boolean
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
@@ -271,14 +285,17 @@ object IcdToHtml {
       div(
         nh.H4(receivedCommandsTitle(compName)),
         for (r <- info) yield {
-          val m           = r.receiveCommandModel
-          val senders     = r.senders.map(s => s"${s.subsystem}.${s.component}").mkString(", ")
-          val senderInfo  = span(strong(s"$senderStr: "), if (senders.isEmpty) "none" else senders)
+          val m = r.receiveCommandModel
+          val senderInfo = if (clientApi) {
+            val senders = r.senders.map(s => s"${s.subsystem}.${s.component}").mkString(", ")
+            span(strong(s"$senderStr: "), if (senders.isEmpty) "none" else senders)
+          }
+          else span
           val linkId      = idFor(compName, "receives", "Commands", component.subsystem, compName, m.name)
           val showDetails = pdfOptions.details || pdfOptions.expandedIds.contains(linkId)
           div(cls := "nopagebreak")(
             nh.H5(m.name, linkId),
-            p(senderInfo, ", ", receiverInfo),
+            if (clientApi) p(senderInfo, ", ", receiverInfo) else p(receiverInfo),
             if (showDetails) {
               div(
                 if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
@@ -295,7 +312,8 @@ object IcdToHtml {
                 if (m.role.isEmpty) div()
                 else div(p(strong("Required User Role: "), m.role.get))
               )
-            } else
+            }
+            else
               div(
                 raw(m.description)
               )
@@ -371,9 +389,10 @@ object IcdToHtml {
     def subscribeListMarkup(pubType: String, subscribeList: List[DetailedSubscribeInfo]): Text.TypedTag[String] = {
 
       // Warn if no publisher found for subscibed item
-      def getWarning(info: DetailedSubscribeInfo) = info.warning.map { msg =>
-        p(em(" Warning: ", msg))
-      }
+      def getWarning(info: DetailedSubscribeInfo) =
+        info.warning.map { msg =>
+          p(em(" Warning: ", msg))
+        }
 
       if (subscribeList.isEmpty) div()
       else
@@ -419,9 +438,10 @@ object IcdToHtml {
                   if (maxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.") else span(),
                   si.eventModel.map(t => attributeListMarkup(t.name, t.attributesList))
                 )
-              } else
+              }
+              else
                 div(
-                  )
+                )
             )
           }
         )
@@ -439,7 +459,8 @@ object IcdToHtml {
             subscribeListMarkup("Current States", subscribes.subscribeInfo.filter(_.itemType == CurrentStates)),
             subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == Alarms))
           )
-        } else div()
+        }
+        else div()
     }
   }
 
@@ -465,7 +486,8 @@ object IcdToHtml {
             structAttributesMarkup(attrModel.attributesList)
           )
         )
-      } else None
+      }
+      else None
     }
   }
 
@@ -493,7 +515,8 @@ object IcdToHtml {
       maybePublishes: Option[Publishes],
       nh: NumberedHeadings,
       forApi: Boolean,
-      pdfOptions: PdfOptions
+      pdfOptions: PdfOptions,
+      clientApi: Boolean
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
@@ -510,7 +533,10 @@ object IcdToHtml {
             val showDetails = pdfOptions.details || pdfOptions.expandedIds.contains(linkId)
             val subscribers =
               eventInfo.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
-            val subscriberInfo = span(strong(s"$subscriberStr: "), if (subscribers.isEmpty) "none" else subscribers)
+            val subscriberInfo =
+              if (clientApi)
+                span(strong(s"$subscriberStr: "), if (subscribers.isEmpty) "none" else subscribers)
+              else span
             val totalArchiveSpacePerYear =
               if (eventModel.totalArchiveSpacePerYear.isEmpty) ""
               else if (eventModel.maybeMaxRate.isEmpty) em(eventModel.totalArchiveSpacePerYear).render
@@ -525,29 +551,28 @@ object IcdToHtml {
                 eventModel.totalSizeInBytes.toString,
                 totalArchiveSpacePerYear,
                 eventInfo.subscribers
-                  .map(
-                    s => // Add required rate for subscribers that set it
-                      HtmlMarkup.formatRate(
-                        s"${s.componentModel.subsystem}.${s.componentModel.component}",
-                        s.subscribeModelInfo.requiredRate
-                      )
+                  .map(s => // Add required rate for subscribers that set it
+                    HtmlMarkup.formatRate(
+                      s"${s.componentModel.subsystem}.${s.componentModel.component}",
+                      s.subscribeModelInfo.requiredRate
+                    )
                   )
                   .mkString(" ")
                   .trim()
               )
             )
             // Include usage text from subscribers that define it
-            val subscriberUsage = div(
-              eventInfo.subscribers.map(
-                s =>
-                  if (s.subscribeModelInfo.usage.isEmpty) div()
-                  else
-                    div(
-                      strong(s"Usage by ${s.componentModel.subsystem}.${s.componentModel.component}: "),
-                      raw(s.subscribeModelInfo.usage)
-                    )
+            val subscriberUsage = if (clientApi)
+              div(
+              eventInfo.subscribers.map(s =>
+                if (s.subscribeModelInfo.usage.isEmpty) div()
+                else
+                  div(
+                    strong(s"Usage by ${s.componentModel.subsystem}.${s.componentModel.component}: "),
+                    raw(s.subscribeModelInfo.usage)
+                  )
               )
-            )
+            ) else span
             div(cls := "nopagebreak")(
               nh.H4(
                 s"${singlePubType(pubType)}: ${eventModel.name}",
@@ -557,16 +582,17 @@ object IcdToHtml {
                 div(
                   if (eventModel.requirements.isEmpty) div()
                   else p(strong("Requirements: "), eventModel.requirements.mkString(", ")),
-                  p(publisherInfo, ", ", subscriberInfo),
+                  if (clientApi) p(publisherInfo, ", ", subscriberInfo) else p(publisherInfo),
                   raw(eventModel.description),
                   subscriberUsage,
                   HtmlMarkup.mkTable(headings, rowList),
                   attributeListMarkup(eventModel.name, eventModel.attributesList),
                   hr
                 )
-              } else
+              }
+              else
                 div(
-                  p(publisherInfo, ", ", subscriberInfo),
+                  if (clientApi) p(publisherInfo, ", ", subscriberInfo) else p(publisherInfo),
                   raw(eventModel.description),
                   subscriberUsage
                 )
@@ -604,10 +630,12 @@ object IcdToHtml {
                   p(strong("Operator Response: "), raw(m.operatorResponse)),
                   HtmlMarkup.mkTable(headings, rowList)
                 )
-              } else div(
-                p(publisherInfo),
-                raw(m.description),
-              ),
+              }
+              else
+                div(
+                  p(publisherInfo),
+                  raw(m.description)
+                ),
               hr
             )
           }
@@ -644,7 +672,8 @@ object IcdToHtml {
             publishEventListMarkup("Current States", publishes.currentStateList),
             publishAlarmListMarkup(publishes.alarmList, pdfOptions)
           )
-        } else div()
+        }
+        else div()
     }
   }
 
@@ -682,7 +711,8 @@ object IcdToHtml {
     import scalatags.Text.all._
     if (titleInfo.maybeDescription.isDefined) {
       div(raw(titleInfo.maybeDescription.get))
-    } else div
+    }
+    else div
   }
 
 }

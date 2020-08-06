@@ -30,7 +30,7 @@ import scala.util.{Failure, Success, Try}
  */
 //noinspection TypeAnnotation,DuplicatedCode
 @Singleton
-class Application @Inject()(
+class Application @Inject() (
     actorSystem: akka.actor.ActorSystem,
 //    myExecutionContext: MyExecutionContext,
     env: Environment,
@@ -48,7 +48,6 @@ class Application @Inject()(
 
   implicit val timeout          = Timeout(120.seconds)
   implicit val typedActorSystem = actorSystem.toTyped
-//  implicit val ec               = myExecutionContext
   import actorSystem._
 
   if (!tryDb.isSuccess) {
@@ -79,29 +78,32 @@ class Application @Inject()(
   /**
    * Gets a list of top level subsystem names
    */
-  def subsystemNames = Action.async {
-    val resp: Future[List[String]] = appActor ? GetSubsystemNames
-    resp.map(names => Ok(Json.toJson(names)))
-  }
+  def subsystemNames =
+    Action.async {
+      val resp: Future[List[String]] = appActor ? GetSubsystemNames
+      resp.map(names => Ok(Json.toJson(names)))
+    }
 
   /**
    * Gets information about a named subsystem
    */
-  def subsystemInfo(subsystem: String, maybeVersion: Option[String]) = authAction.async {
-    val resp: Future[Option[SubsystemInfo]] = appActor ? (GetSubsystemInfo(subsystem, maybeVersion, _))
-    resp.map {
-      case Some(info) => Ok(Json.toJson(info))
-      case None       => NotFound
+  def subsystemInfo(subsystem: String, maybeVersion: Option[String]) =
+    authAction.async {
+      val resp: Future[Option[SubsystemInfo]] = appActor ? (GetSubsystemInfo(subsystem, maybeVersion, _))
+      resp.map {
+        case Some(info) => Ok(Json.toJson(info))
+        case None       => NotFound
+      }
     }
-  }
 
   /**
    * Gets a list of components belonging to the given version of the given subsystem
    */
-  def components(subsystem: String, maybeVersion: Option[String]) = authAction.async {
-    val resp: Future[List[String]] = appActor ? (GetComponents(subsystem, maybeVersion, _))
-    resp.map(names => Ok(Json.toJson(names)))
-  }
+  def components(subsystem: String, maybeVersion: Option[String]) =
+    authAction.async {
+      val resp: Future[List[String]] = appActor ? (GetComponents(subsystem, maybeVersion, _))
+      resp.map(names => Ok(Json.toJson(names)))
+    }
 
   /**
    * Query the database for information about the subsystem's components
@@ -109,11 +111,14 @@ class Application @Inject()(
    * @param subsystem      the subsystem
    * @param maybeVersion   the subsystem's version (default: current)
    * @param maybeComponent component name (default all in subsystem)
-   * @param searchAll if true, search all components for API dependencies
+   * @param searchAll      if true, search all components for API dependencies
+   * @param clientApi      if true, include subscribed events, sent commands
    */
-  def componentInfo(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String], searchAll: Option[Boolean]) =
+  def componentInfo(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String],
+                    searchAll: Option[Boolean], clientApi: Option[Boolean]) =
     authAction.async {
-      val resp: Future[List[ComponentInfo]] = appActor ? (GetComponentInfo(subsystem, maybeVersion, maybeComponent, searchAll, _))
+      val resp: Future[List[ComponentInfo]] =
+        appActor ? (GetComponentInfo(subsystem, maybeVersion, maybeComponent, searchAll, clientApi, _))
       resp.map(info => Ok(Json.toJson(info)))
     }
 
@@ -134,18 +139,19 @@ class Application @Inject()(
       target: String,
       maybeTargetVersion: Option[String],
       maybeTargetComponent: Option[String]
-  ): Action[AnyContent] = authAction.async {
-    val resp: Future[List[ComponentInfo]] = appActor ? (GetIcdComponentInfo(
-      subsystem,
-      maybeVersion,
-      maybeComponent,
-      target,
-      maybeTargetVersion,
-      maybeTargetComponent,
-      _
-    ))
-    resp.map(info => Ok(Json.toJson(info)))
-  }
+  ): Action[AnyContent] =
+    authAction.async {
+      val resp: Future[List[ComponentInfo]] = appActor ? (GetIcdComponentInfo(
+        subsystem,
+        maybeVersion,
+        maybeComponent,
+        target,
+        maybeTargetVersion,
+        maybeTargetComponent,
+        _
+      ))
+      resp.map(info => Ok(Json.toJson(info)))
+    }
 
   /**
    * Returns the PDF for the given ICD
@@ -176,51 +182,54 @@ class Application @Inject()(
       maybeLineHeight: Option[String],
       maybePaperSize: Option[String],
       maybeDetails: Option[Boolean]
-  ): Action[AnyContent] = Action.async { implicit request =>
-    val expandedIds =
-      if (request.method == "POST")
-        request.body.asFormUrlEncoded.get("expandedIds").headOption.getOrElse("").split(',').toList
-      else Nil
+  ): Action[AnyContent] =
+    Action.async { implicit request =>
+      val expandedIds =
+        if (request.method == "POST")
+          request.body.asFormUrlEncoded.get("expandedIds").headOption.getOrElse("").split(',').toList
+        else Nil
 
-    val resp: Future[Option[Array[Byte]]] = appActor ? (
-      GetIcdAsPdf(
-        subsystem,
-        maybeVersion,
-        maybeComponent,
-        target,
-        maybeTargetVersion,
-        maybeTargetComponent,
-        maybeIcdVersion,
-        PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedIds),
-        _
+      val resp: Future[Option[Array[Byte]]] = appActor ? (
+        GetIcdAsPdf(
+          subsystem,
+          maybeVersion,
+          maybeComponent,
+          target,
+          maybeTargetVersion,
+          maybeTargetComponent,
+          maybeIcdVersion,
+          PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedIds),
+          _
+        )
       )
-    )
-    resp.map {
-      case Some(bytes) =>
-        Ok(bytes).as("application/pdf")
-      case None =>
-        NotFound
+      resp.map {
+        case Some(bytes) =>
+          Ok(bytes).as("application/pdf")
+        case None =>
+          NotFound
+      }
     }
-  }
 
   /**
    * Returns the PDF for the given subsystem API
    *
-   * @param subsystem      the source subsystem
-   * @param maybeVersion   the source subsystem's version (default: current)
-   * @param maybeComponent optional component (default: all in subsystem)
-   * @param searchAll if true, search all components for API dependencies
-   * @param maybeOrientation   "portrait" or "landscape" (default)
-   * @param maybeFontSize       base font size
-   * @param maybeLineHeight     line-height for HTML
-   * @param maybePaperSize      Letter, Legal, A4, A3, default: Letter
-   * @param maybeDetails        If true, the PDF lists all detailed info, otherwise only the expanded rows in web app
+   * @param subsystem        the source subsystem
+   * @param maybeVersion     the source subsystem's version (default: current)
+   * @param maybeComponent   optional component (default: all in subsystem)
+   * @param searchAll        if true, search all components for API dependencies
+   * @param clientApi        if true, include subscribed events and sent commands in API
+   * @param maybeOrientation "portrait" or "landscape" (default)
+   * @param maybeFontSize    base font size
+   * @param maybeLineHeight  line-height for HTML
+   * @param maybePaperSize   Letter, Legal, A4, A3, default: Letter
+   * @param maybeDetails     If true, the PDF lists all detailed info, otherwise only the expanded rows in web app
    */
   def apiAsPdf(
       subsystem: String,
       maybeVersion: Option[String],
       maybeComponent: Option[String],
       searchAll: Option[Boolean],
+      clientApi: Option[Boolean],
       maybeOrientation: Option[String],
       maybeFontSize: Option[Int],
       maybeLineHeight: Option[String],
@@ -238,6 +247,7 @@ class Application @Inject()(
           maybeVersion,
           maybeComponent,
           searchAll,
+          clientApi,
           PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedIds),
           _
         )
@@ -399,80 +409,90 @@ class Application @Inject()(
   /**
    * Returns a detailed list of the versions of the given subsystem
    */
-  def getVersions(subsystem: String) = authAction.async {
-    val resp: Future[List[VersionInfo]] = appActor ? (GetVersions(subsystem, _))
-    resp.map(versions => Ok(Json.toJson(versions)))
-  }
+  def getVersions(subsystem: String) =
+    authAction.async {
+      val resp: Future[List[VersionInfo]] = appActor ? (GetVersions(subsystem, _))
+      resp.map(versions => Ok(Json.toJson(versions)))
+    }
 
   /**
    * Returns a list of version names for the given subsystem
    */
-  def getVersionNames(subsystem: String) = authAction.async {
-    val resp: Future[List[String]] = appActor ? (GetVersionNames(subsystem, _))
-    resp.map(names => Ok(Json.toJson(names)))
-  }
+  def getVersionNames(subsystem: String) =
+    authAction.async {
+      val resp: Future[List[String]] = appActor ? (GetVersionNames(subsystem, _))
+      resp.map(names => Ok(Json.toJson(names)))
+    }
 
   /**
    * Gets a list of ICD names as pairs of (subsystem, targetSubsystem)
    */
-  def getIcdNames = Action.async {
-    val resp: Future[List[IcdName]] = appActor ? GetIcdNames
-    resp.map(names => Ok(Json.toJson(names)))
-  }
+  def getIcdNames =
+    Action.async {
+      val resp: Future[List[IcdName]] = appActor ? GetIcdNames
+      resp.map(names => Ok(Json.toJson(names)))
+    }
 
   /**
    * Gets a list of versions for the ICD from subsystem to target subsystem
    */
-  def getIcdVersions(subsystem: String, target: String) = authAction.async {
-    val resp: Future[List[IcdVersionInfo]] = appActor ? (GetIcdVersions(subsystem, target, _))
-    resp.map(list => Ok(Json.toJson(list)))
-  }
+  def getIcdVersions(subsystem: String, target: String) =
+    authAction.async {
+      val resp: Future[List[IcdVersionInfo]] = appActor ? (GetIcdVersions(subsystem, target, _))
+      resp.map(list => Ok(Json.toJson(list)))
+    }
 
   /**
    * Gets the difference between two subsystem versions
    */
-  def diff(subsystem: String, versionsStr: String) = authAction.async {
-    val resp: Future[List[DiffInfo]] = appActor ? (GetDiff(subsystem, versionsStr, _))
-    resp.map(list => Ok(Json.toJson(list)))
-  }
+  def diff(subsystem: String, versionsStr: String) =
+    authAction.async {
+      val resp: Future[List[DiffInfo]] = appActor ? (GetDiff(subsystem, versionsStr, _))
+      resp.map(list => Ok(Json.toJson(list)))
+    }
 
   /**
    * Returns OK(true) if this is a public icd web server (upload not allowed,publish allowed, password protected)
    */
-  def isPublicServer = Action {
-    val publicServer = configuration.get[Boolean]("icd.isPublicServer")
-    Ok(Json.toJson(publicServer))
-  }
+  def isPublicServer =
+    Action {
+      val publicServer = configuration.get[Boolean]("icd.isPublicServer")
+      Ok(Json.toJson(publicServer))
+    }
 
   /**
    * Responds with the JSON for the PublishInfo for every subsystem
    */
-  def getPublishInfo(maybeSubsystem: Option[String]) = authAction {
-    val publishInfo = IcdGitManager.getPublishInfo(maybeSubsystem)
-    Ok(Json.toJson(publishInfo))
-  }
+  def getPublishInfo(maybeSubsystem: Option[String]) =
+    authAction {
+      val publishInfo = IcdGitManager.getPublishInfo(maybeSubsystem)
+      Ok(Json.toJson(publishInfo))
+    }
 
   /**
    * Checks if the given GitHub user and password are valid for publish
    */
-  def checkGitHubCredentials() = authAction { implicit request =>
-    val maybeGitHubCredentials = request.body.asJson.map(json => Json.fromJson[GitHubCredentials](json).get)
-    if (maybeGitHubCredentials.isEmpty) {
-      BadRequest("Missing POST data of type GitHubCredentials")
-    } else {
-      val gitHubCredentials = maybeGitHubCredentials.get
-      try {
-        IcdGitManager.checkGitHubCredentials(gitHubCredentials)
-        Ok.as(JSON)
-      } catch {
-        case ex: TransportException =>
-          Unauthorized(ex.getMessage)
-        case ex: Exception =>
-          ex.printStackTrace()
-          BadRequest(ex.getMessage)
+  def checkGitHubCredentials() =
+    authAction { implicit request =>
+      val maybeGitHubCredentials = request.body.asJson.map(json => Json.fromJson[GitHubCredentials](json).get)
+      if (maybeGitHubCredentials.isEmpty) {
+        BadRequest("Missing POST data of type GitHubCredentials")
+      }
+      else {
+        val gitHubCredentials = maybeGitHubCredentials.get
+        try {
+          IcdGitManager.checkGitHubCredentials(gitHubCredentials)
+          Ok.as(JSON)
+        }
+        catch {
+          case ex: TransportException =>
+            Unauthorized(ex.getMessage)
+          case ex: Exception =>
+            ex.printStackTrace()
+            BadRequest(ex.getMessage)
+        }
       }
     }
-  }
 
   private def convertBytesToHex(bytes: Array[Byte]): String = {
     val sb = new StringBuilder
@@ -485,59 +505,95 @@ class Application @Inject()(
   /**
    * Checks if the given user and password are valid for using the web app
    */
-  def checkCredentials() = Action { implicit request =>
-    val maybeCredentials = request.body.asJson.map(json => Json.fromJson[Credentials](json).get)
-    if (maybeCredentials.isEmpty) {
-      BadRequest("Missing POST data of type Credentials")
-    } else {
-      val credentials = maybeCredentials.get
-      try {
-        val sha = convertBytesToHex(MessageDigest.getInstance("SHA-256").digest(credentials.toString.getBytes))
-        if (sha == expectedSha)
-          Ok.as(JSON).withCookies(Cookie(cookieName, sha, sameSite = Some(Strict)))
-        else
-          Unauthorized("Wrong user name or password")
-      } catch {
-        case ex: Exception =>
-          ex.printStackTrace()
-          BadRequest(ex.getMessage)
+  def checkCredentials() =
+    Action { implicit request =>
+      val maybeCredentials = request.body.asJson.map(json => Json.fromJson[Credentials](json).get)
+      if (maybeCredentials.isEmpty) {
+        BadRequest("Missing POST data of type Credentials")
+      }
+      else {
+        val credentials = maybeCredentials.get
+        try {
+          val sha = convertBytesToHex(MessageDigest.getInstance("SHA-256").digest(credentials.toString.getBytes))
+          if (sha == expectedSha)
+            Ok.as(JSON).withCookies(Cookie(cookieName, sha, sameSite = Some(Strict)))
+          else
+            Unauthorized("Wrong user name or password")
+        }
+        catch {
+          case ex: Exception =>
+            ex.printStackTrace()
+            BadRequest(ex.getMessage)
+        }
       }
     }
-  }
 
   /**
    * Checks if the user is already logged in (returns true if logged in)
    */
-  def checkForCookie() = Action { implicit request =>
-    request.cookies.get(cookieName) match {
-      case Some(cookie) => Ok(Json.toJson(cookie.value == expectedSha))
-      case None         => Ok(Json.toJson(false))
+  def checkForCookie() =
+    Action { implicit request =>
+      request.cookies.get(cookieName) match {
+        case Some(cookie) => Ok(Json.toJson(cookie.value == expectedSha))
+        case None         => Ok(Json.toJson(false))
+      }
     }
-  }
 
   /**
    * Log out of the web app
    */
-  def logout() = authAction {
-    Ok.as(JSON).discardingCookies(DiscardingCookie(cookieName))
-  }
+  def logout() =
+    authAction {
+      Ok.as(JSON).discardingCookies(DiscardingCookie(cookieName))
+    }
 
   /**
    * Publish the selected API (add an entry for the current commit of the master branch on GitHub)
    */
-  def publishApi() = authAction.async { implicit request =>
-    val maybePublishApiInfo = request.body.asJson.map(json => Json.fromJson[PublishApiInfo](json).get)
-    if (maybePublishApiInfo.isEmpty) {
-      Future(BadRequest("Missing POST data of type PublishApiInfo"))
-    } else {
-      val publishApiInfo = maybePublishApiInfo.get
-      val problems       = IcdGitManager.validate(publishApiInfo.subsystem)
-      if (problems.nonEmpty) {
-        val msg =
-          s"The version of ${publishApiInfo.subsystem} on GitHub did not pass validation: ${problems.map(_.toString).mkString(", ")}."
-        Future(NotAcceptable(msg))
-      } else {
-        val resp: Future[Try[ApiVersionInfo]] = appActor ? (PublishApi(publishApiInfo, _))
+  def publishApi() =
+    authAction.async { implicit request =>
+      val maybePublishApiInfo = request.body.asJson.map(json => Json.fromJson[PublishApiInfo](json).get)
+      if (maybePublishApiInfo.isEmpty) {
+        Future(BadRequest("Missing POST data of type PublishApiInfo"))
+      }
+      else {
+        val publishApiInfo = maybePublishApiInfo.get
+        val problems       = IcdGitManager.validate(publishApiInfo.subsystem)
+        if (problems.nonEmpty) {
+          val msg =
+            s"The version of ${publishApiInfo.subsystem} on GitHub did not pass validation: ${problems.map(_.toString).mkString(", ")}."
+          Future(NotAcceptable(msg))
+        }
+        else {
+          val resp: Future[Try[ApiVersionInfo]] = appActor ? (PublishApi(publishApiInfo, _))
+          resp.map {
+            case Success(info) =>
+              Ok(Json.toJson(info))
+            case Failure(ex) =>
+              ex match {
+                case ex: TransportException =>
+                  Unauthorized(ex.getMessage)
+                case ex: Exception =>
+                  ex.printStackTrace()
+                  BadRequest(ex.getMessage)
+              }
+          }
+        }
+      }
+    }
+
+  /**
+   * Publish an ICD (add an entry to the icds file on the master branch of https://github.com/tmt-icd/ICD-Model-Files)
+   */
+  def publishIcd() =
+    authAction.async { implicit request =>
+      val maybePublishIcdInfo = request.body.asJson.map(json => Json.fromJson[PublishIcdInfo](json).get)
+      if (maybePublishIcdInfo.isEmpty) {
+        Future(BadRequest("Missing POST data of type PublishIcdInfo"))
+      }
+      else {
+        val publishIcdInfo                    = maybePublishIcdInfo.get
+        val resp: Future[Try[IcdVersionInfo]] = appActor ? (PublishIcd(publishIcdInfo, _))
         resp.map {
           case Success(info) =>
             Ok(Json.toJson(info))
@@ -552,100 +608,79 @@ class Application @Inject()(
         }
       }
     }
-  }
-
-  /**
-   * Publish an ICD (add an entry to the icds file on the master branch of https://github.com/tmt-icd/ICD-Model-Files)
-   */
-  def publishIcd() = authAction.async { implicit request =>
-    val maybePublishIcdInfo = request.body.asJson.map(json => Json.fromJson[PublishIcdInfo](json).get)
-    if (maybePublishIcdInfo.isEmpty) {
-      Future(BadRequest("Missing POST data of type PublishIcdInfo"))
-    } else {
-      val publishIcdInfo                    = maybePublishIcdInfo.get
-      val resp: Future[Try[IcdVersionInfo]] = appActor ? (PublishIcd(publishIcdInfo, _))
-      resp.map {
-        case Success(info) =>
-          Ok(Json.toJson(info))
-        case Failure(ex) =>
-          ex match {
-            case ex: TransportException =>
-              Unauthorized(ex.getMessage)
-            case ex: Exception =>
-              ex.printStackTrace()
-              BadRequest(ex.getMessage)
-          }
-      }
-    }
-  }
 
   /**
    * Unublish the selected API (removes an entry from the file in the master branch on GitHub)
    */
-  def unpublishApi() = authAction.async { implicit request =>
-    val maybeUnpublishApiInfo = request.body.asJson.map(json => Json.fromJson[UnpublishApiInfo](json).get)
-    if (maybeUnpublishApiInfo.isEmpty) {
-      Future(BadRequest("Missing POST data of type UnpublishApiInfo"))
-    } else {
-      val unpublishApiInfo                          = maybeUnpublishApiInfo.get
-      val resp: Future[Try[Option[ApiVersionInfo]]] = appActor ? (UnpublishApi(unpublishApiInfo, _))
-      resp.map {
-        case Success(info) =>
-          info match {
-            case Some(apiVersionInfo) =>
-              Ok(Json.toJson(apiVersionInfo))
-            case None =>
-              NotFound(s"${unpublishApiInfo.subsystem}-${unpublishApiInfo.subsystemVersion} was not found")
-          }
-          Ok(Json.toJson(info))
-        case Failure(ex) =>
-          ex match {
-            case ex: TransportException =>
-              Unauthorized(ex.getMessage)
-            case ex: Exception =>
-              ex.printStackTrace()
-              BadRequest(ex.getMessage)
-          }
+  def unpublishApi() =
+    authAction.async { implicit request =>
+      val maybeUnpublishApiInfo = request.body.asJson.map(json => Json.fromJson[UnpublishApiInfo](json).get)
+      if (maybeUnpublishApiInfo.isEmpty) {
+        Future(BadRequest("Missing POST data of type UnpublishApiInfo"))
+      }
+      else {
+        val unpublishApiInfo                          = maybeUnpublishApiInfo.get
+        val resp: Future[Try[Option[ApiVersionInfo]]] = appActor ? (UnpublishApi(unpublishApiInfo, _))
+        resp.map {
+          case Success(info) =>
+            info match {
+              case Some(apiVersionInfo) =>
+                Ok(Json.toJson(apiVersionInfo))
+              case None =>
+                NotFound(s"${unpublishApiInfo.subsystem}-${unpublishApiInfo.subsystemVersion} was not found")
+            }
+            Ok(Json.toJson(info))
+          case Failure(ex) =>
+            ex match {
+              case ex: TransportException =>
+                Unauthorized(ex.getMessage)
+              case ex: Exception =>
+                ex.printStackTrace()
+                BadRequest(ex.getMessage)
+            }
+        }
       }
     }
-  }
 
   /**
    * Unpublish an ICD (remove an entry in the icds file on the master branch of https://github.com/tmt-icd/ICD-Model-Files)
    */
-  def unpublishIcd() = authAction.async { implicit request =>
-    val maybeUnpublishIcdInfo = request.body.asJson.map(json => Json.fromJson[UnpublishIcdInfo](json).get)
-    if (maybeUnpublishIcdInfo.isEmpty) {
-      Future(BadRequest("Missing POST data of type UnpublishIcdInfo"))
-    } else {
-      val unpublishIcdInfo                          = maybeUnpublishIcdInfo.get
-      val resp: Future[Try[Option[IcdVersionInfo]]] = appActor ? (UnpublishIcd(unpublishIcdInfo, _))
-      resp.map {
-        case Success(info) =>
-          info match {
-            case Some(icdVersionInfo) =>
-              Ok(Json.toJson(icdVersionInfo))
-            case None =>
-              NotFound(s"ICD version ${unpublishIcdInfo.icdVersion} was not found")
-          }
-          Ok(Json.toJson(info))
-        case Failure(ex) =>
-          ex match {
-            case ex: TransportException =>
-              Unauthorized(ex.getMessage)
-            case ex: Exception =>
-              ex.printStackTrace()
-              BadRequest(ex.getMessage)
-          }
+  def unpublishIcd() =
+    authAction.async { implicit request =>
+      val maybeUnpublishIcdInfo = request.body.asJson.map(json => Json.fromJson[UnpublishIcdInfo](json).get)
+      if (maybeUnpublishIcdInfo.isEmpty) {
+        Future(BadRequest("Missing POST data of type UnpublishIcdInfo"))
+      }
+      else {
+        val unpublishIcdInfo                          = maybeUnpublishIcdInfo.get
+        val resp: Future[Try[Option[IcdVersionInfo]]] = appActor ? (UnpublishIcd(unpublishIcdInfo, _))
+        resp.map {
+          case Success(info) =>
+            info match {
+              case Some(icdVersionInfo) =>
+                Ok(Json.toJson(icdVersionInfo))
+              case None =>
+                NotFound(s"ICD version ${unpublishIcdInfo.icdVersion} was not found")
+            }
+            Ok(Json.toJson(info))
+          case Failure(ex) =>
+            ex match {
+              case ex: TransportException =>
+                Unauthorized(ex.getMessage)
+              case ex: Exception =>
+                ex.printStackTrace()
+                BadRequest(ex.getMessage)
+            }
+        }
       }
     }
-  }
 
   /**
    * Updates the cache of published APIs and ICDs (in case new ones were published)
    */
-  def updatePublished() = authAction {
-    appActor ? UpdatePublished
-    Ok.as(JSON)
-  }
+  def updatePublished() =
+    authAction {
+      appActor ? UpdatePublished
+      Ok.as(JSON)
+    }
 }

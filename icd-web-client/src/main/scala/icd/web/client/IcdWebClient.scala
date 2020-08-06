@@ -388,6 +388,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
             hist.maybeTargetSubsystem,
             hist.maybeIcd,
             selectDialog.searchAllSubsystems(),
+            selectDialog.clientApi(),
             saveHistory = false
           ).foreach { _ =>
             if (hist.maybeUri.isDefined) {
@@ -405,7 +406,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         maybeSv: Option[SubsystemWithVersion],
         maybeTargetSv: Option[SubsystemWithVersion],
         maybeIcd: Option[IcdVersion],
-        searchAllSubsystems: Boolean
+        searchAllSubsystems: Boolean,
+        clientApi: Boolean
     ): Future[Unit] = {
       pushState(
         viewType = SelectView,
@@ -413,7 +415,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         maybeTargetSubsystem = maybeTargetSv,
         maybeIcd = maybeIcd
       )
-      updateComponentDisplay(maybeSv, maybeTargetSv, maybeIcd, searchAllSubsystems)
+      updateComponentDisplay(maybeSv, maybeTargetSv, maybeIcd, searchAllSubsystems, clientApi)
     }
   }
 
@@ -473,6 +475,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       maybeTargetSv: Option[SubsystemWithVersion],
       maybeIcd: Option[IcdVersion],
       searchAllSubsystems: Boolean,
+      clientApi: Boolean,
       saveHistory: Boolean = true
   ): Future[Unit] = {
     sidebar.clearComponents()
@@ -481,7 +484,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     val f = if (maybeSv.isDefined) {
       showBusyCursorWhile {
         components
-          .addComponents(maybeSv.get, maybeTargetSv, maybeIcd, searchAllSubsystems)
+          .addComponents(maybeSv.get, maybeTargetSv, maybeIcd, searchAllSubsystems, clientApi)
           .map { infoList =>
             infoList.foreach(info => sidebar.addComponent(info.componentModel.component))
             setSidebarVisible(true)
@@ -556,7 +559,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion
       val maybeIcdVersion = selectDialog.icdChooser.getSelectedIcdVersion.map(_.icdVersion)
       val searchAll       = selectDialog.searchAllSubsystems()
-      val uri             = ClientRoutes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll, pdfOptions)
+      val clientApi       = selectDialog.clientApi()
+      val uri             = ClientRoutes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll, clientApi, pdfOptions)
 
       if (!pdfOptions.details && pdfOptions.expandedIds.nonEmpty) {
         // We need to do a POST in case expandedIds are passed, which can be very long, so create a temp form

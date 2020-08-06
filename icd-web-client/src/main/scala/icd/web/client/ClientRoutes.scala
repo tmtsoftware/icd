@@ -18,6 +18,7 @@ object ClientRoutes {
       maybeVersion: Option[String],
       maybeComponent: Option[String],
       maybeSearchAllSubsystems: Option[Boolean] = None,
+      maybeClientApi: Option[Boolean] = None,
       maybeTargetVersion: Option[String] = None,
       maybeTargetCompName: Option[String] = None,
       maybeIcdVersion: Option[String] = None,
@@ -28,38 +29,39 @@ object ClientRoutes {
     val versionAttr         = maybeVersion.map(v => s"version=$v")
     val componentAttr       = maybeComponent.map(c => s"component=$c")
     val searchAllAttr       = maybeSearchAllSubsystems.map(b => s"searchAll=$b")
+    val clientApiAttr       = maybeClientApi.map(b => s"clientApi=$b")
     val targetVersionAttr   = maybeTargetVersion.map(v => s"targetVersion=$v")
     val targetComponentAttr = maybeTargetCompName.map(c => s"targetComponent=$c")
     val targetAttr          = maybeTarget.map(c => s"target=$c")
     val icdVersionAttr      = maybeIcdVersion.map(v => s"icdVersion=$v")
-    val pdfAttrs = maybePdfOptions.map(
-      o =>
-        List(
-          s"orientation=${o.orientation}",
-          s"fontSize=${o.fontSize}",
-          s"lineHeight=${o.lineHeight}",
-          s"paperSize=${o.paperSize}",
-          s"details=${o.details}"
-        ).mkString("&")
+    val pdfAttrs = maybePdfOptions.map(o =>
+      List(
+        s"orientation=${o.orientation}",
+        s"fontSize=${o.fontSize}",
+        s"lineHeight=${o.lineHeight}",
+        s"paperSize=${o.paperSize}",
+        s"details=${o.details}"
+      ).mkString("&")
     )
-    val graphAttrs = maybeGraphOptions.map(
-      o =>
-        List(
-          s"ratio=${o.ratio}",
-          s"missingEvents=${o.missingEvents}",
-          s"missingCommands=${o.missingCommands}",
-          s"commandLabels=${o.commandLabels}",
-          s"eventLabels=${o.eventLabels}",
-          s"groupSubsystems=${o.groupSubsystems}",
-          s"layout=${o.layout}",
-          s"overlap=${o.overlap}",
-          s"splines=${o.splines}",
-          s"omitTypes=${o.omitTypes.mkString(",")}",
-          s"imageFormat=${o.imageFormat}"
-        ).mkString("&")
+    val graphAttrs = maybeGraphOptions.map(o =>
+      List(
+        s"ratio=${o.ratio}",
+        s"missingEvents=${o.missingEvents}",
+        s"missingCommands=${o.missingCommands}",
+        s"commandLabels=${o.commandLabels}",
+        s"eventLabels=${o.eventLabels}",
+        s"groupSubsystems=${o.groupSubsystems}",
+        s"layout=${o.layout}",
+        s"overlap=${o.overlap}",
+        s"splines=${o.splines}",
+        s"omitTypes=${o.omitTypes.mkString(",")}",
+        s"imageFormat=${o.imageFormat}"
+      ).mkString("&")
     )
     val attrs =
-      (versionAttr ++ componentAttr ++ searchAllAttr ++ targetAttr ++ targetVersionAttr ++ targetComponentAttr ++ icdVersionAttr ++ pdfAttrs ++ graphAttrs)
+      (versionAttr ++ componentAttr ++ searchAllAttr ++ clientApiAttr ++
+        targetAttr ++ targetVersionAttr ++ targetComponentAttr ++ icdVersionAttr ++
+        pdfAttrs ++ graphAttrs)
         .mkString("&")
     if (attrs.isEmpty) "" else s"?$attrs"
   }
@@ -67,18 +69,20 @@ object ClientRoutes {
   /**
    * Gets top level information about a given version of the given subsystem
    */
-  def subsystemInfo(subsystem: String, maybeVersion: Option[String]): String = maybeVersion match {
-    case Some("*") | None => s"/subsystemInfo/$subsystem"
-    case Some(version)    => s"/subsystemInfo/$subsystem?version=$version"
-  }
+  def subsystemInfo(subsystem: String, maybeVersion: Option[String]): String =
+    maybeVersion match {
+      case Some("*") | None => s"/subsystemInfo/$subsystem"
+      case Some(version)    => s"/subsystemInfo/$subsystem?version=$version"
+    }
 
   /**
    * Gets a list of components belonging to the given version of the given subsystem
    */
-  def components(subsystem: String, maybeVersion: Option[String]): String = maybeVersion match {
-    case Some("*") | None => s"/components/$subsystem"
-    case Some(version)    => s"/components/$subsystem?version=$version"
-  }
+  def components(subsystem: String, maybeVersion: Option[String]): String =
+    maybeVersion match {
+      case Some("*") | None => s"/components/$subsystem"
+      case Some(version)    => s"/components/$subsystem?version=$version"
+    }
 
   /**
    * Returns the route to use to get the information for a component
@@ -86,8 +90,8 @@ object ClientRoutes {
    * @param sv      the subsystem
    * @return the URL path to use
    */
-  def componentInfo(sv: SubsystemWithVersion, searchAllSubsystems: Boolean): String = {
-    val attrs = getAttrs(sv.maybeVersion, sv.maybeComponent, Some(searchAllSubsystems))
+  def componentInfo(sv: SubsystemWithVersion, searchAllSubsystems: Boolean, clientApi: Boolean): String = {
+    val attrs = getAttrs(sv.maybeVersion, sv.maybeComponent, Some(searchAllSubsystems), Some(clientApi))
     s"/componentInfo/${sv.subsystem}$attrs"
   }
 
@@ -99,15 +103,17 @@ object ClientRoutes {
    * @param sv       the subsystem
    * @param maybeTargetSv defines the optional target subsystem and version
    * @param searchAllSubsystems if true, search all subsystems in the database for references, subscribers, etc.
+   * @param clientApi if true, include subscribed events, sent commands in API
    * @return the URL path to use
    */
   def icdComponentInfo(
       sv: SubsystemWithVersion,
       maybeTargetSv: Option[SubsystemWithVersion],
-      searchAllSubsystems: Boolean
+      searchAllSubsystems: Boolean,
+      clientApi: Boolean
   ): String = {
     maybeTargetSv match {
-      case None => componentInfo(sv, searchAllSubsystems)
+      case None => componentInfo(sv, searchAllSubsystems, clientApi)
       case Some(targetSv) =>
         val attrs = getAttrs(
           sv.maybeVersion,
@@ -128,6 +134,7 @@ object ClientRoutes {
    * @param maybeTargetSv defines the optional target subsystem and version
    * @param icdVersion optional ICD version
    * @param searchAllSubsystems if true, search all subsystems in the database for references, subscribers, etc.
+   * @param clientApi if true, include subscribed events and sent commands in the API
    * @param pdfOptions options for PDF generation
    * @return the URL path to use
    */
@@ -136,10 +143,11 @@ object ClientRoutes {
       maybeTargetSv: Option[SubsystemWithVersion],
       icdVersion: Option[String],
       searchAllSubsystems: Boolean,
+      clientApi: Boolean,
       pdfOptions: PdfOptions
   ): String = {
     maybeTargetSv match {
-      case None => apiAsPdf(sv, searchAllSubsystems, pdfOptions)
+      case None => apiAsPdf(sv, searchAllSubsystems, clientApi, pdfOptions)
       case Some(targetSv) =>
         val attrs = getAttrs(
           sv.maybeVersion,
@@ -187,14 +195,16 @@ object ClientRoutes {
    *
    * @param sv     the subsystem
    * @param searchAllSubsystems if true, search all subsystems in the database for references, subscribers, etc.
+   * @param clientApi if true, include subcribed events and sent commands
    * @param options options for PDF generation
    * @return the URL path to use
    */
-  def apiAsPdf(sv: SubsystemWithVersion, searchAllSubsystems: Boolean, options: PdfOptions): String = {
+  def apiAsPdf(sv: SubsystemWithVersion, searchAllSubsystems: Boolean, clientApi: Boolean, options: PdfOptions): String = {
     val attrs = getAttrs(
       sv.maybeVersion,
       sv.maybeComponent,
       maybeSearchAllSubsystems = Some(searchAllSubsystems),
+      maybeClientApi = Some(clientApi),
       maybePdfOptions = Some(options)
     )
     s"/apiAsPdf/${sv.subsystem}$attrs"

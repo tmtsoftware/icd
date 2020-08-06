@@ -9,9 +9,10 @@ import icd.web.shared._
  * (This code can't be shared, since it accesses the database, which is on the server.)
  *
  * @param displayWarnings if true warn when no publishers are found for a subscribed event etc.
+ * @param clientApi if true include subscribed events and sent commands
  */
 //noinspection DuplicatedCode
-class ComponentInfoHelper(displayWarnings: Boolean) {
+class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean) {
 
   /**
    * Query the database for information about the subsystem's components
@@ -29,9 +30,8 @@ class ComponentInfoHelper(displayWarnings: Boolean) {
       case None           => versionManager.getComponentNames(sv)
       case Some(compName) => List(compName)
     }
-    compNames.flatMap(
-      component =>
-        getComponentInfo(versionManager, SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component)), maybePdfOptions)
+    compNames.flatMap(component =>
+      getComponentInfo(versionManager, SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component)), maybePdfOptions)
     )
   }
 
@@ -52,7 +52,7 @@ class ComponentInfoHelper(displayWarnings: Boolean) {
     modelsList.headOption.flatMap { icdModels =>
       val componentModel = icdModels.componentModel
       val publishes      = getPublishes(versionManager.query, icdModels, maybePdfOptions)
-      val subscribes     = getSubscribes(versionManager.query, icdModels, maybePdfOptions)
+      val subscribes     = if (clientApi) getSubscribes(versionManager.query, icdModels, maybePdfOptions) else None
       val commands       = getCommands(versionManager.query, icdModels, maybePdfOptions)
       componentModel.map { model =>
         ComponentInfo(model, publishes, subscribes, commands)
@@ -77,9 +77,11 @@ class ComponentInfoHelper(displayWarnings: Boolean) {
       subscribeType: PublishType,
       maybePdfOptions: Option[PdfOptions]
   ): List[SubscribeInfo] = {
-    query.subscribes(s"$prefix.$name", subscribeType, maybePdfOptions).map { s =>
-      SubscribeInfo(s.component, s.subscribeType, s.subscribeModelInfo)
-    }
+    if (clientApi)
+      query.subscribes(s"$prefix.$name", subscribeType, maybePdfOptions).map { s =>
+        SubscribeInfo(s.component, s.subscribeType, s.subscribeModelInfo)
+      }
+    else Nil
   }
 
   /**
@@ -153,12 +155,18 @@ class ComponentInfoHelper(displayWarnings: Boolean) {
    * @param query  database query handle
    * @param models model objects for component
    */
-  private def getCommandsReceived(query: IcdDbQuery, models: IcdModels, maybePdfOptions: Option[PdfOptions]): List[ReceivedCommandInfo] = {
+  private def getCommandsReceived(
+      query: IcdDbQuery,
+      models: IcdModels,
+      maybePdfOptions: Option[PdfOptions]
+  ): List[ReceivedCommandInfo] = {
     for {
       cmd      <- models.commandModel.toList
       received <- cmd.receive
     } yield {
-      val senders = query.getCommandSenders(cmd.subsystem, cmd.component, received.name, maybePdfOptions)
+      val senders = if (clientApi)
+        query.getCommandSenders(cmd.subsystem, cmd.component, received.name, maybePdfOptions)
+      else Nil
       ReceivedCommandInfo(received, senders)
     }
   }
@@ -170,7 +178,11 @@ class ComponentInfoHelper(displayWarnings: Boolean) {
    * @param query  database query handle
    * @param models model objects for component
    */
-  private def getCommandsSent(query: IcdDbQuery, models: IcdModels, maybePdfOptions: Option[PdfOptions]): List[SentCommandInfo] = {
+  private def getCommandsSent(
+      query: IcdDbQuery,
+      models: IcdModels,
+      maybePdfOptions: Option[PdfOptions]
+  ): List[SentCommandInfo] = {
     val result = for {
       cmd  <- models.commandModel.toList
       sent <- cmd.send
@@ -196,7 +208,7 @@ class ComponentInfoHelper(displayWarnings: Boolean) {
    */
   private def getCommands(query: IcdDbQuery, models: IcdModels, maybePdfOptions: Option[PdfOptions]): Option[Commands] = {
     val received = getCommandsReceived(query, models, maybePdfOptions)
-    val sent     = getCommandsSent(query, models, maybePdfOptions)
+    val sent     = if (clientApi) getCommandsSent(query, models, maybePdfOptions) else Nil
     models.commandModel match {
       case None => None
       case Some(m) =>

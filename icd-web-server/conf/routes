@@ -15,7 +15,7 @@ GET         /subsystemInfo/:subsystem                   controllers.Application.
 GET         /components/:subsystem                      controllers.Application.components(subsystem, version: Option[String])
 
 # Gets information about a given component in a given version of the given subsystem
-GET         /componentInfo/:subsystem                   controllers.Application.componentInfo(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean])
+GET         /componentInfo/:subsystem                   controllers.Application.componentInfo(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], clientApi: Option[Boolean])
 
 # Gets information about a component in a given version of an ICD
 GET         /icdComponentInfo/:subsystem/:target        controllers.Application.icdComponentInfo(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String])
@@ -27,10 +27,10 @@ GET         /icdAsPdf/:subsystem/:target                controllers.Application.
 POST         /icdAsPdf/:subsystem/:target                controllers.Application.icdAsPdf(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
 
 # Gets the PDF for the given subsystem API
-GET         /apiAsPdf/:subsystem                        controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
+GET         /apiAsPdf/:subsystem                        controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], clientApi: Option[Boolean], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
 
 # Gets the PDF for the given subsystem API (using POST to pass list of expanded row ids)
-POST         /apiAsPdf/:subsystem                        controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
+POST         /apiAsPdf/:subsystem                        controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], clientApi: Option[Boolean], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
 
 # Gets an archived items report (PDF) for the given subsystem API (and component)
 GET         /archivedItemsReport/:subsystem             controllers.Application.archivedItemsReport(subsystem, version: Option[String], component: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])

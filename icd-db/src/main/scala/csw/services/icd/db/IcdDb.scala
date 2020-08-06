@@ -138,6 +138,10 @@ object IcdDb extends App {
       c.copy(allSubsystems = Some(()))
     } text "Include all subsystems in searches for publishers, subscribers, etc. while generating API doc (Default: only consider the one subsystem)"
 
+    opt[Unit]("clientApi") action { (_, c) =>
+      c.copy(clientApi = Some(()))
+    } text "Include subscribed events and sent commands in the API dic (Default: only include published events and received commands)"
+
     opt[String]("orientation") valueName "[portrait|landscape]" action { (x, c) =>
       c.copy(orientation = Some(x))
     } text "For PDF output: The page orientation (default: landscape)"
@@ -238,7 +242,8 @@ object IcdDb extends App {
     def output(file: File): Unit = {
       if (options.subsystem.isEmpty) error("Missing required subsystem name: Please specify --subsystem <name>")
       val searchAllSubsystems = options.allSubsystems.isDefined && options.target.isEmpty
-      IcdDbPrinter(db, searchAllSubsystems, maybeCache, Some(pdfOptions)).saveToFile(
+      val clientApi = options.clientApi.isDefined && options.target.isEmpty
+      IcdDbPrinter(db, searchAllSubsystems, clientApi, maybeCache, Some(pdfOptions)).saveToFile(
         options.subsystem.get,
         options.component,
         options.target,

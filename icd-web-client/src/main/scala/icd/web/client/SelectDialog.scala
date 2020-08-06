@@ -30,13 +30,16 @@ object SelectDialog {
      * @param maybeSv optional selected subsystem and version
      * @param maybeTargetSv optional selected target subsystem and version
      * @param maybeIcd optional selected icd and version
+     * @param searchAllSubsystems if true, search all subsystems for dependencies (subscribers, senders)
+     * @param clientApi if true, include subscribed events, sent commands in API
      * @return a future indicating when changes are done
      */
     def subsystemsSelected(
         maybeSv: Option[SubsystemWithVersion],
         maybeTargetSv: Option[SubsystemWithVersion],
         maybeIcd: Option[IcdVersion],
-        searchAllSubsystems: Boolean
+        searchAllSubsystems: Boolean,
+        clientApi: Boolean
     ): Future[Unit]
   }
 
@@ -78,7 +81,18 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   // Displays a checkbox for the "search all subsystems for API dependencies" option
   private val searchAllCheckbox: Input = {
     import scalatags.JsDom.all._
-    input(`type` := "checkbox").render
+    input(`type` := "checkbox", disabled := true).render
+  }
+
+  // Displays a checkbox for the "include client API" option
+  private val clientApiCheckbox: Input = {
+    import scalatags.JsDom.all._
+    input(`type` := "checkbox", disabled := true, onchange := clientApiCheckboxChanged() _).render
+  }
+
+  private def clientApiCheckboxChanged()(e: dom.Event): Unit = {
+    val maybeTargetSv = targetSubsystem.getSubsystemWithVersion
+    searchAllCheckbox.disabled = maybeTargetSv.isDefined || !clientApi()
   }
 
   icdChooser.updateIcdOptions()
@@ -88,6 +102,10 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
 
   def searchAllSubsystems(): Boolean = {
     searchAllCheckbox.checked
+  }
+
+  def clientApi(): Boolean = {
+    clientApiCheckbox.checked
   }
 
   // Update the list of Subsystem options
@@ -106,11 +124,6 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       .map { r =>
         Json.fromJson[Array[String]](Json.parse(r.responseText)).map(_.toList).get
       }
-//      .recover {
-//        case ex =>
-//          mainContent.displayInternalError(ex)
-//          Nil
-//      }
   }
 
   private object SourceSubsystemListener extends SubsystemListener {
@@ -124,6 +137,8 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       val maybeTargetSv = targetSubsystem.getSubsystemWithVersion
       targetSubsystem.setEnabled(maybeSv.isDefined)
       applyButton.disabled = maybeSv.isEmpty
+      clientApiCheckbox.disabled = maybeTargetSv.isDefined || maybeSv.isEmpty
+      searchAllCheckbox.disabled = maybeTargetSv.isDefined || maybeSv.isEmpty || !clientApi()
       maybeSv
         .map { sv =>
           for {
@@ -146,6 +161,8 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
         findMatchingIcd: Boolean
     ): Future[Unit] = {
       val maybeSv = subsystem.getSubsystemWithVersion
+      clientApiCheckbox.disabled = maybeTargetSv.isDefined || maybeSv.isEmpty
+      searchAllCheckbox.disabled = maybeTargetSv.isDefined || maybeSv.isEmpty || !clientApi()
       maybeSv
         .map { sv =>
           for {
@@ -204,7 +221,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
     val maybeSv       = subsystem.getSubsystemWithVersion
     val maybeTargetSv = targetSubsystem.getSubsystemWithVersion
     val maybeIcd      = icdChooser.getSelectedIcdVersion
-    listener.subsystemsSelected(maybeSv, maybeTargetSv, maybeIcd, searchAllSubsystems())
+    listener.subsystemsSelected(maybeSv, maybeTargetSv, maybeIcd, searchAllSubsystems(), clientApi())
   }
 
   // Called when the Apply button is pressed
@@ -221,6 +238,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       div(Styles.selectDialogSubsystemRow, subsystem.markup()),
       div(Styles.subsystemSwapper, subsystemSwapper.markup()),
       div(Styles.selectDialogSubsystemRow, targetSubsystem.markup()),
+      div(cls := "checkbox", label(clientApiCheckbox, "Include client API information (subscribed events, sent commands)")),
       div(cls := "checkbox", label(searchAllCheckbox, "Search all TMT subsystems for API dependencies")),
       div(Styles.selectDialogApplyButton, applyButton)
     ).render

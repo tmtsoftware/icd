@@ -20,36 +20,38 @@ class PdfCache(cacheDir: File) {
   // Gets the file used to store the given API version
   private def getFile(
       sv: SubsystemWithVersion,
-      pdfOptions: PdfOptions
+      pdfOptions: PdfOptions,
+      clientApi: Boolean
   ): File = {
     import pdfOptions._
-    val name = s"${sv.subsystem}-${sv.maybeVersion.get}-$orientation-$fontSize-$lineHeight-$paperSize.pdf"
+    val client = if (clientApi) "-client" else ""
+    val name   = s"${sv.subsystem}-${sv.maybeVersion.get}$client-$orientation-$fontSize-$lineHeight-$paperSize.pdf"
     new File(dir, name)
   }
 
   // Returns true if the PDF cache should be used
   private def useCache(
-                        sv: SubsystemWithVersion,
-                        targetSv: SubsystemWithVersion,
-                        pdfOptions: PdfOptions,
-                        searchAllSubsystems: Boolean
-                      ): Boolean = {
+      sv: SubsystemWithVersion,
+      targetSv: SubsystemWithVersion,
+      pdfOptions: PdfOptions,
+      searchAllSubsystems: Boolean
+  ): Boolean = {
     useCache(sv, pdfOptions, searchAllSubsystems) &&
-      targetSv.maybeVersion.isDefined &&
-      targetSv.maybeComponent.isEmpty
+    targetSv.maybeVersion.isDefined &&
+    targetSv.maybeComponent.isEmpty
   }
 
   // Returns true if the PDF cache should be used
   private def useCache(
-                        sv: SubsystemWithVersion,
-                        pdfOptions: PdfOptions,
-                        searchAllSubsystems: Boolean
-                      ): Boolean = {
+      sv: SubsystemWithVersion,
+      pdfOptions: PdfOptions,
+      searchAllSubsystems: Boolean
+  ): Boolean = {
     softwareVersion != defaultSoftwareVersion &&
-      sv.maybeVersion.isDefined &&
-      sv.maybeComponent.isEmpty &&
-      !searchAllSubsystems &&
-      pdfOptions.details
+    sv.maybeVersion.isDefined &&
+    sv.maybeComponent.isEmpty &&
+    !searchAllSubsystems &&
+    pdfOptions.details
   }
 
   // Gets the file used to store the ICD between the two subsystem versions
@@ -68,20 +70,24 @@ class PdfCache(cacheDir: File) {
   def getApi(
       sv: SubsystemWithVersion,
       pdfOptions: PdfOptions,
-      searchAllSubsystems: Boolean
+      searchAllSubsystems: Boolean,
+      clientApi: Boolean
   ): Option[Array[Byte]] = {
     if (useCache(sv, pdfOptions, searchAllSubsystems)) {
-      val file = getFile(sv, pdfOptions)
+      val file = getFile(sv, pdfOptions, clientApi)
       if (file.exists()) {
         try {
           Some(Files.readAllBytes(file.toPath))
-        } catch {
+        }
+        catch {
           case e: Exception =>
             e.printStackTrace()
             None
         }
-      } else None
-    } else None
+      }
+      else None
+    }
+    else None
   }
 
   // Saves the data for the given API version
@@ -89,11 +95,12 @@ class PdfCache(cacheDir: File) {
       sv: SubsystemWithVersion,
       pdfOptions: PdfOptions,
       searchAllSubsystems: Boolean,
+      clientApi: Boolean,
       data: Array[Byte]
   ): Unit = {
     if (useCache(sv, pdfOptions, searchAllSubsystems)) {
       dir.mkdirs()
-      val file = getFile(sv, pdfOptions)
+      val file = getFile(sv, pdfOptions, clientApi)
       val out  = new FileOutputStream(file)
       out.write(data)
       out.close()
@@ -112,13 +119,16 @@ class PdfCache(cacheDir: File) {
       if (file.exists()) {
         try {
           Some(Files.readAllBytes(file.toPath))
-        } catch {
+        }
+        catch {
           case e: Exception =>
             e.printStackTrace()
             None
         }
-      } else None
-    } else None
+      }
+      else None
+    }
+    else None
   }
 
   // Saves the PDF data for the ICD between the given subsyetem versions
@@ -144,19 +154,21 @@ class PdfCache(cacheDir: File) {
       maybeTargetSv: Option[SubsystemWithVersion],
       pdfOptions: PdfOptions,
       searchAllSubsystems: Boolean,
+      clientApi: Boolean,
       file: File
   ): Unit = {
-    val doIt = if (maybeTargetSv.isDefined)
-      useCache(sv, maybeTargetSv.get, pdfOptions, searchAllSubsystems)
-    else
-      useCache(sv, pdfOptions, searchAllSubsystems)
+    val doIt =
+      if (maybeTargetSv.isDefined)
+        useCache(sv, maybeTargetSv.get, pdfOptions, searchAllSubsystems)
+      else
+        useCache(sv, pdfOptions, searchAllSubsystems)
 
     if (doIt) {
       val data = Files.readAllBytes(file.toPath)
       if (maybeTargetSv.isDefined)
         saveIcd(sv, maybeTargetSv.get, pdfOptions, searchAllSubsystems, data)
       else
-        saveApi(sv, pdfOptions, searchAllSubsystems, data)
+        saveApi(sv, pdfOptions, searchAllSubsystems, clientApi, data)
     }
   }
 
@@ -168,10 +180,12 @@ class PdfCache(cacheDir: File) {
         fontSizes.foreach { fs =>
           lineHeights.foreach { lh =>
             paperSizes.foreach { ps =>
-              val pdfOptions = PdfOptions(orient, fs, lh, ps, details = true, Nil, processMarkdown = false)
-              val file       = getFile(sv, pdfOptions)
-              if (file.exists())
-                file.delete()
+              List(true, false).foreach { clientApi =>
+                val pdfOptions = PdfOptions(orient, fs, lh, ps, details = true, Nil, processMarkdown = false)
+                val file       = getFile(sv, pdfOptions, clientApi)
+                if (file.exists())
+                  file.delete()
+              }
             }
           }
         }
@@ -182,8 +196,10 @@ class PdfCache(cacheDir: File) {
   // Deletes the cached PDF file (or files) for the ICD between the given APIs
   def deleteIcd(sv: SubsystemWithVersion, targetSv: SubsystemWithVersion): Unit = {
     import PdfOptions._
-    if (sv.maybeVersion.isDefined && sv.maybeComponent.isEmpty
-        && targetSv.maybeVersion.isDefined && targetSv.maybeComponent.isEmpty) {
+    if (
+      sv.maybeVersion.isDefined && sv.maybeComponent.isEmpty
+      && targetSv.maybeVersion.isDefined && targetSv.maybeComponent.isEmpty
+    ) {
       orientations.foreach { orient =>
         fontSizes.foreach { fs =>
           lineHeights.foreach { lh =>

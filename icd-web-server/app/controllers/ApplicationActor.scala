@@ -38,6 +38,7 @@ object ApplicationActor extends ActorModule {
       maybeVersion: Option[String],
       maybeComponent: Option[String],
       searchAll: Option[Boolean],
+      clientApi: Option[Boolean],
       replyTo: ActorRef[List[ComponentInfo]]
   ) extends Messages
   final case class GetIcdComponentInfo(
@@ -65,6 +66,7 @@ object ApplicationActor extends ActorModule {
       maybeVersion: Option[String],
       maybeComponent: Option[String],
       searchAll: Option[Boolean],
+      clientApi: Option[Boolean],
       pdfOptions: PdfOptions,
       replyTo: ActorRef[Option[Array[Byte]]]
   ) extends Messages
@@ -118,8 +120,8 @@ object ApplicationActor extends ActorModule {
         case GetComponents(subsystem, maybeVersion, replyTo) =>
           replyTo ! app.getComponents(subsystem, maybeVersion)
           Behaviors.same
-        case GetComponentInfo(subsystem, maybeVersion, maybeComponent, searchAll, replyTo) =>
-          replyTo ! app.getComponentInfo(subsystem, maybeVersion, maybeComponent, searchAll)
+        case GetComponentInfo(subsystem, maybeVersion, maybeComponent, searchAll, clientApi, replyTo) =>
+          replyTo ! app.getComponentInfo(subsystem, maybeVersion, maybeComponent, searchAll, clientApi)
           Behaviors.same
         case GetIcdComponentInfo(
             subsystem,
@@ -166,6 +168,7 @@ object ApplicationActor extends ActorModule {
             maybeVersion,
             maybeComponent,
             searchAll,
+            clientApi,
             pdfOptions,
             replyTo: ActorRef[Option[Array[Byte]]]
             ) =>
@@ -174,6 +177,7 @@ object ApplicationActor extends ActorModule {
             maybeVersion,
             maybeComponent,
             searchAll,
+            clientApi,
             pdfOptions
           )
           Behaviors.same

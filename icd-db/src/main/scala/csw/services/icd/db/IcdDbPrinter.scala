@@ -8,17 +8,24 @@ import icd.web.shared.TitleInfo.unpublished
 import icd.web.shared.{SubsystemWithVersion, _}
 import IcdToHtml._
 
-
 /**
  * Creates an HTML or PDF document for a subsystem, component or ICD based on data from the database
  *
- * @param db used to query the database
+ * @param db                  used to query the database
  * @param searchAllSubsystems Include all subsystems in searches for publishers, subscribers, etc.
  *                            while generating API or ICD doc
  *                            (Default: Search only one subsystem for API, two for ICD)
+ * @param clientApi           Include subscribed events and sent commands in the API dic
+ *                            (Default: only include published events and received commands)
  */
 //noinspection DuplicatedCode
-case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Option[PdfCache], maybePdfOptions: Option[PdfOptions]) {
+case class IcdDbPrinter(
+    db: IcdDb,
+    searchAllSubsystems: Boolean,
+    clientApi: Boolean,
+    maybeCache: Option[PdfCache],
+    maybePdfOptions: Option[PdfOptions]
+) {
 
   /**
    * Gets information about a named subsystem (or component, if sv.maybeComponent is defined)
@@ -51,7 +58,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
   ): List[ComponentInfo] = {
     maybeTargetSv match {
       case Some(targetSv) => IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, maybePdfOptions)
-      case None           => new ComponentInfoHelper(searchAllSubsystems).getComponentInfoList(versionManager, sv, maybePdfOptions)
+      case None           => new ComponentInfoHelper(searchAllSubsystems, clientApi).getComponentInfoList(versionManager, sv, maybePdfOptions)
     }
   }
 
@@ -72,7 +79,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
       subsystemInfo <- getSubsystemInfo(sv)
     } yield {
       val infoList = getComponentInfo(versionManager, sv, None)
-      IcdToHtml.getApiAsHtml(Some(subsystemInfo), infoList, pdfOptions)
+      IcdToHtml.getApiAsHtml(Some(subsystemInfo), infoList, pdfOptions, clientApi)
     }
     markup.map(_.render)
   }
@@ -122,11 +129,11 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
         raw(subsystemInfo.description),
         p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
         raw(targetSubsystemInfo.description),
-        SummaryTable.displaySummary(subsystemInfo, Some(targetSv), infoList, nh),
+        SummaryTable.displaySummary(subsystemInfo, Some(targetSv), infoList, nh, clientApi),
         makeIntro(titleInfo1),
-        displayDetails(infoList, nh, forApi = false, pdfOptions),
+        displayDetails(infoList, nh, forApi = false, pdfOptions, clientApi = clientApi),
         makeIntro(titleInfo2),
-        displayDetails(infoList2, nh, forApi = false, pdfOptions)
+        displayDetails(infoList2, nh, forApi = false, pdfOptions, clientApi = clientApi)
       )
       val toc = nh.mkToc()
 
@@ -214,7 +221,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
       if (maybeTarg.isDefined)
         maybeCache.flatMap(_.getIcd(subsys, maybeTarg.get, pdfOptions, searchAllSubsystems))
       else
-        maybeCache.flatMap(_.getApi(subsys, pdfOptions, searchAllSubsystems))
+        maybeCache.flatMap(_.getApi(subsys, pdfOptions, searchAllSubsystems, clientApi))
     } else None
 
     if (maybeCachedBytes.isDefined) {
@@ -236,7 +243,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
             case Some("pdf") =>
               saveAsPdf(html)
               maybeCache.foreach {
-                _.save(subsys, maybeTarg, pdfOptions, searchAllSubsystems, file)
+                _.save(subsys, maybeTarg, pdfOptions, searchAllSubsystems, clientApi, file)
               }
 
             case _ => println(s"Unsupported output format: Expected *.html or *.pdf")
@@ -255,7 +262,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
    * @return byte array with the PDF data
    */
   def saveApiAsPdf(sv: SubsystemWithVersion, pdfOptions: PdfOptions): Option[Array[Byte]] = {
-    val maybeCachedBytes = maybeCache.flatMap(_.getApi(sv, pdfOptions, searchAllSubsystems))
+    val maybeCachedBytes = maybeCache.flatMap(_.getApi(sv, pdfOptions, searchAllSubsystems, clientApi))
     if (maybeCachedBytes.isDefined)
       maybeCachedBytes
     else
@@ -263,7 +270,7 @@ case class IcdDbPrinter(db: IcdDb, searchAllSubsystems: Boolean, maybeCache: Opt
         val out = new ByteArrayOutputStream()
         IcdToPdf.saveAsPdf(out, html, showLogo = true, pdfOptions)
         val bytes = out.toByteArray
-        maybeCache.foreach(_.saveApi(sv, pdfOptions, searchAllSubsystems, bytes))
+        maybeCache.foreach(_.saveApi(sv, pdfOptions, searchAllSubsystems, clientApi, bytes))
         bytes
       }
   }

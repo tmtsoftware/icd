@@ -32,7 +32,7 @@ class ComponentInfoTest extends AnyFunSuite {
     for (p <- problems2) println(p)
     db.query.afterIngestFiles(problems2, dbName)
 
-    new ComponentInfoHelper(displayWarnings = false)
+    new ComponentInfoHelper(displayWarnings = false, clientApi = true)
       .getComponentInfo(versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None)
       .foreach { info =>
         assert(info.componentModel.component == "lgsWfs")
@@ -51,6 +51,19 @@ class ComponentInfoTest extends AnyFunSuite {
         info.subscribes.get.subscribeInfo.foreach { subInfo =>
           println(s"lgsWfs subscribes to ${subInfo.subscribeModelInfo.name} from ${subInfo.subscribeModelInfo.subsystem}")
         }
+      }
+
+    new ComponentInfoHelper(displayWarnings = false, clientApi = false)
+      .getComponentInfo(versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None)
+      .foreach { info =>
+        assert(info.componentModel.component == "lgsWfs")
+        assert(info.publishes.nonEmpty)
+        assert(info.publishes.get.eventList.nonEmpty)
+        info.publishes.get.eventList.foreach { pubInfo =>
+          println(s"lgsWfs publishes event: ${pubInfo.eventModel.name}")
+          assert(pubInfo.subscribers.isEmpty)
+        }
+        assert(info.subscribes.isEmpty)
       }
   }
 }

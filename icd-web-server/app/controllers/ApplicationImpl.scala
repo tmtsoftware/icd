@@ -78,20 +78,24 @@ class ApplicationImpl(db: IcdDb) {
    * @param subsystem      the subsystem
    * @param maybeVersion   the subsystem's version (default: current)
    * @param maybeComponent component name (default all in subsystem)
-   * @param searchAll if true, search all components for API dependencies
+   * @param searchAll      if true, search all components for API dependencies
+   * @param clientApiOpt      if true, include subscribed events, sent commands
    */
   def getComponentInfo(
       subsystem: String,
       maybeVersion: Option[String],
       maybeComponent: Option[String],
-      searchAll: Option[Boolean]
+      searchAll: Option[Boolean],
+      clientApiOpt: Option[Boolean]
   ): List[ComponentInfo] = {
     val sv                  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     val searchAllSubsystems = searchAll.getOrElse(false)
+    val clientApi           = clientApiOpt.getOrElse(false)
     val subsystems          = if (searchAllSubsystems) None else Some(List(sv.subsystem))
     val query               = new CachedIcdDbQuery(db.db, db.admin, subsystems, None)
     val versionManager      = new CachedIcdVersionManager(query)
-    new ComponentInfoHelper(displayWarnings = searchAllSubsystems).getComponentInfoList(versionManager, sv, None)
+    new ComponentInfoHelper(displayWarnings = searchAllSubsystems, clientApi = clientApi)
+      .getComponentInfoList(versionManager, sv, None)
   }
 
   /**
@@ -142,7 +146,8 @@ class ApplicationImpl(db: IcdDb) {
         SubsystemWithVersion(i.target, Some(i.targetVersion), maybeTargetComponent),
         iv
       )
-    } else {
+    }
+    else {
       (
         SubsystemWithVersion(subsystem, maybeVersion, maybeComponent),
         SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent),
@@ -182,7 +187,7 @@ class ApplicationImpl(db: IcdDb) {
       maybeTargetComponent,
       maybeIcdVersion
     )
-    val icdPrinter = IcdDbPrinter(db, searchAllSubsystems = false, maybeCache, Some(pdfOptions))
+    val icdPrinter = IcdDbPrinter(db, searchAllSubsystems = false, clientApi = false, maybeCache, Some(pdfOptions))
     icdPrinter.saveIcdAsPdf(sv, targetSv, iv, pdfOptions)
   }
 
@@ -192,19 +197,22 @@ class ApplicationImpl(db: IcdDb) {
    * @param subsystem      the source subsystem
    * @param maybeVersion   the source subsystem's version (default: current)
    * @param maybeComponent optional component (default: all in subsystem)
-   * @param searchAll if true, search all components for API dependencies
-   * @param pdfOptions         options for PDF generation
+   * @param searchAll      if true, search all components for API dependencies
+   * @param clientApiOpt      if true, include subscribed events and sent commands in the API
+   * @param pdfOptions     options for PDF generation
    */
   def getApiAsPdf(
       subsystem: String,
       maybeVersion: Option[String],
       maybeComponent: Option[String],
       searchAll: Option[Boolean],
+      clientApiOpt: Option[Boolean],
       pdfOptions: PdfOptions
   ): Option[Array[Byte]] = {
     val sv                  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     val searchAllSubsystems = searchAll.getOrElse(false)
-    val icdPrinter          = IcdDbPrinter(db, searchAllSubsystems, maybeCache, Some(pdfOptions))
+    val clientApi           = clientApiOpt.getOrElse(false)
+    val icdPrinter          = IcdDbPrinter(db, searchAllSubsystems, clientApi, maybeCache, Some(pdfOptions))
     icdPrinter.saveApiAsPdf(sv, pdfOptions)
   }
 

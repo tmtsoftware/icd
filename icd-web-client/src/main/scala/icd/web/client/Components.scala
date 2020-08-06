@@ -133,14 +133,16 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    * @param sv            the subsystem
    * @param maybeTargetSv optional target subsystem and version
    * @param searchAllSubsystems if true search all TMT subsystems for API dependencies
+   * @param clientApi if true include subscribed events, sent commands in API
    * @return future list of objects describing the components
    */
   private def getComponentInfo(
       sv: SubsystemWithVersion,
       maybeTargetSv: Option[SubsystemWithVersion],
-      searchAllSubsystems: Boolean
+      searchAllSubsystems: Boolean,
+      clientApi: Boolean
   ): Future[List[ComponentInfo]] = {
-    Ajax.get(ClientRoutes.icdComponentInfo(sv, maybeTargetSv, searchAllSubsystems)).map { r =>
+    Ajax.get(ClientRoutes.icdComponentInfo(sv, maybeTargetSv, searchAllSubsystems, clientApi)).map { r =>
       val list = Json.fromJson[Array[ComponentInfo]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
       if (maybeTargetSv.isDefined) list.map(ComponentInfo.applyIcdFilter).filter(ComponentInfo.nonEmpty) else list
     }
@@ -148,21 +150,18 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   /**
    * Gets the list of components for the given subsystem and then gets the information for them
-   *
-   * @param maybeSubsystem       optional subsystem
-   * @param maybeTargetSubsystem optional target subsystem
-   * @return future list of component info
    */
   private def getComponentInfo(
       maybeSubsystem: Option[SubsystemWithVersion],
       maybeTargetSubsystem: Option[SubsystemWithVersion],
-      searchAllSubsystems: Boolean
+      searchAllSubsystems: Boolean,
+      clientApi: Boolean
   ): Future[List[ComponentInfo]] = {
     maybeSubsystem match {
       case None =>
         Future.successful(Nil)
       case Some(sv) =>
-        getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems)
+        getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems, clientApi)
     }
   }
 
@@ -181,13 +180,16 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    * @param sv                   the selected subsystem, version and optional single component
    * @param maybeTargetSubsystem optional target subsystem, version, optional component
    * @param maybeIcd             optional icd version
+   * @param searchAllSubsystems  if true, search all subsystems for API dependencies
+   * @param clientApi            if true include subscribed events and sent commands in API
    * @return a future list of ComponentInfo (one entry for each component in the result)
    */
   def addComponents(
       sv: SubsystemWithVersion,
       maybeTargetSubsystem: Option[SubsystemWithVersion],
       maybeIcd: Option[IcdVersion],
-      searchAllSubsystems: Boolean
+      searchAllSubsystems: Boolean,
+      clientApi: Boolean
   ): Future[List[ComponentInfo]] = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
@@ -195,11 +197,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     val isIcd = maybeTargetSubsystem.isDefined
     val f = for {
       subsystemInfo <- getSubsystemInfo(sv)
-      maybeTargetSubsystemInfo <- maybeTargetSubsystem
-                                   .map(getSubsystemInfo(_).map(i => Some(i)))
-                                   .getOrElse(Future.successful(None))
-      infoList       <- getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems)
-      targetInfoList <- getComponentInfo(maybeTargetSubsystem, Some(sv), searchAllSubsystems)
+      maybeTargetSubsystemInfo <-
+        maybeTargetSubsystem
+          .map(getSubsystemInfo(_).map(i => Some(i)))
+          .getOrElse(Future.successful(None))
+      infoList       <- getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems, clientApi)
+      targetInfoList <- getComponentInfo(maybeTargetSubsystem, Some(sv), searchAllSubsystems, clientApi)
     } yield {
       val titleInfo        = TitleInfo(subsystemInfo, maybeTargetSubsystem, maybeIcd)
       val subsystemVersion = sv.maybeVersion.getOrElse(TitleInfo.unpublished)
@@ -221,11 +224,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       }
       // XXX TODO FIXME: Hyperlinks to other subsystems can't be made in the summary table,
       // since the code is shared with non-javascript code on the server side.
-      val summaryTable = SummaryTable.displaySummary(subsystemInfo, maybeTargetSubsystem, infoList).render
+      val summaryTable =
+        SummaryTable.displaySummary(subsystemInfo, maybeTargetSubsystem, infoList, new HtmlHeadings, clientApi).render
 
       mainContent.appendElement(div(Styles.component, id := "Summary")(raw(summaryTable)).render)
-      infoList.foreach(i => displayComponentInfo(i, !isIcd))
-      if (isIcd) targetInfoList.foreach(i => displayComponentInfo(i, forApi = false))
+      infoList.foreach(i => displayComponentInfo(i, !isIcd, clientApi))
+      if (isIcd) targetInfoList.foreach(i => displayComponentInfo(i, forApi = false, clientApi))
       infoList ++ targetInfoList
     }
     f.onComplete {
@@ -249,16 +253,19 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    *
    * @param info contains the information to display
    */
-  private def displayComponentInfo(info: ComponentInfo, forApi: Boolean): Unit = {
-    if (forApi || (info.publishes.isDefined && info.publishes.get.nonEmpty
-        || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
-        || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
-        || info.commands.get.commandsSent.nonEmpty))) {
-      val markup     = markupForComponent(info, forApi).render
+  private def displayComponentInfo(info: ComponentInfo, forApi: Boolean, clientApi: Boolean): Unit = {
+    if (
+      forApi || (info.publishes.isDefined && info.publishes.get.nonEmpty
+      || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
+      || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
+      || info.commands.get.commandsSent.nonEmpty))
+    ) {
+      val markup     = markupForComponent(info, forApi, clientApi).render
       val oldElement = $id(getComponentInfoId(info.componentModel.component))
       if (oldElement == null) {
         mainContent.appendElement(markup)
-      } else {
+      }
+      else {
         // Use existing div, so the component's position stays the same
         mainContent.replaceElement(oldElement, markup)
       }
@@ -285,7 +292,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             structAttributesMarkup(attrModel.attributesList)
           )
         )
-      } else None
+      }
+      else None
     }
   }
 
@@ -407,7 +415,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Generates the HTML markup to display the component's publish information
-  private def publishMarkup(component: ComponentModel, maybePublishes: Option[Publishes], forApi: Boolean) = {
+  private def publishMarkup(component: ComponentModel, maybePublishes: Option[Publishes],
+                            forApi: Boolean, clientApi: Boolean) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
@@ -453,7 +462,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               tr(
                 th("Name"),
                 th("Description"),
-                th("Subscribers")
+                if (clientApi) th("Subscribers") else span
               )
             ),
             tbody(
@@ -471,7 +480,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                       )
                     ),
                     td(raw(t.eventModel.description)),
-                    td(p(t.subscribers.map(subscribeInfo => makeLinkForComponent(subscribeInfo.componentModel))))
+                    if (clientApi)
+                      td(p(t.subscribers.map(subscribeInfo => makeLinkForComponent(subscribeInfo.componentModel))))
+                    else span
                   ),
                   row
                 )
@@ -556,7 +567,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             publishEventListMarkup("Current States", publishes.currentStateList),
             publishAlarmListMarkup(publishes.alarmList)
           )
-        } else div()
+        }
+        else div()
     }
   }
 
@@ -592,12 +604,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     def subscribeListMarkup(pubType: String, subscribeList: List[DetailedSubscribeInfo]) = {
       // Warn if no publisher found for subscibed item
-      def getWarning(info: DetailedSubscribeInfo) = info.warning.map { msg =>
-        div(cls := "alert alert-warning", role := "alert")(
-          span(cls := "glyphicon glyphicon-warning-sign", attr("aria-hidden") := "true"),
-          span(em(s" Warning: $msg"))
-        )
-      }
+      def getWarning(info: DetailedSubscribeInfo) =
+        info.warning.map { msg =>
+          div(cls := "alert alert-warning", role := "alert")(
+            span(cls := "glyphicon glyphicon-warning-sign", attr("aria-hidden") := "true"),
+            span(em(s" Warning: $msg"))
+          )
+        }
 
       if (subscribeList.isEmpty) div()
       else
@@ -667,7 +680,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             subscribeListMarkup("Current States", subscribes.subscribeInfo.filter(_.itemType == CurrentStates)),
             subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == Alarms))
           )
-        } else div()
+        }
+        else div()
     }
   }
 
@@ -689,7 +703,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Generates the HTML markup to display the commands a component receives
-  private def receivedCommandsMarkup(component: ComponentModel, info: List[ReceivedCommandInfo]) = {
+  private def receivedCommandsMarkup(component: ComponentModel, info: List[ReceivedCommandInfo], clientApi: Boolean) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
@@ -707,7 +721,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             tr(
               th("Name"),
               th("Description"),
-              th("Senders")
+              if (clientApi) th("Senders") else span
             )
           ),
           tbody(
@@ -725,7 +739,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                   ),
                   // XXX TODO: Make link to command description page with details
                   td(raw(rc.description)),
-                  td(p(r.senders.map(makeLinkForComponent)))
+                  if (clientApi) td(p(r.senders.map(makeLinkForComponent))) else span
                 ),
                 row
               )
@@ -744,12 +758,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     val compName = component.component
 
     // Warn if no receiver found for sent command
-    def getWarning(m: SentCommandInfo) = m.warning.map { msg =>
-      div(cls := "alert alert-warning", role := "alert")(
-        span(cls := "glyphicon glyphicon-warning-sign", attr("aria-hidden") := "true"),
-        span(em(s" Warning: $msg"))
-      )
-    }
+    def getWarning(m: SentCommandInfo) =
+      m.warning.map { msg =>
+        div(cls := "alert alert-warning", role := "alert")(
+          span(cls := "glyphicon glyphicon-warning-sign", attr("aria-hidden") := "true"),
+          span(em(s" Warning: $msg"))
+        )
+      }
 
     // Returns the layout for an item describing a sent command
     def makeItem(s: SentCommandInfo) = {
@@ -803,7 +818,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Generates the markup for the commands section (description plus received and sent)
-  private def commandsMarkup(component: ComponentModel, maybeCommands: Option[Commands]) = {
+  private def commandsMarkup(component: ComponentModel, maybeCommands: Option[Commands], clientApi: Boolean) = {
     import scalatags.JsDom.all._
     val compName = component.component
     maybeCommands match {
@@ -814,8 +829,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           div(
             h3(s"Commands for $compName"),
             raw(commands.description),
-            receivedCommandsMarkup(component, commands.commandsReceived),
-            sentCommandsMarkup(component, commands.commandsSent)
+            receivedCommandsMarkup(component, commands.commandsReceived, clientApi),
+            if (clientApi) sentCommandsMarkup(component, commands.commandsSent) else span
           )
     }
   }
@@ -851,7 +866,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Generates the HTML markup to display the component information
-  private def markupForComponent(info: ComponentInfo, forApi: Boolean): TypedTag[Div] = {
+  private def markupForComponent(info: ComponentInfo, forApi: Boolean, clientApi: Boolean): TypedTag[Div] = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
@@ -861,9 +876,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       h2(info.componentModel.component),
       componentInfoTableMarkup(info),
       raw(info.componentModel.description),
-      publishMarkup(info.componentModel, info.publishes, forApi),
-      subscribeMarkup(info.componentModel, info.subscribes),
-      commandsMarkup(info.componentModel, info.commands)
+      publishMarkup(info.componentModel, info.publishes, forApi, clientApi),
+      if (clientApi) subscribeMarkup(info.componentModel, info.subscribes) else span,
+      commandsMarkup(info.componentModel, info.commands, clientApi)
     )
   }
 

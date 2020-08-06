@@ -19,13 +19,15 @@ object SummaryTable {
    * @param maybeTargetSv optional target subsystem and version
    * @param infoList      list of component info
    * @param nh            used for numbered headings and TOC, if needed
+   * @param clientApi     if true, include event subscribers, command senders
    * @return the HTML
    */
   def displaySummary(
       subsystemInfo: SubsystemInfo,
       maybeTargetSv: Option[SubsystemWithVersion],
       infoList: List[ComponentInfo],
-      nh: Headings = new HtmlHeadings
+      nh: Headings,
+      clientApi: Boolean
   ): Text.TypedTag[String] = {
     import SummaryInfo._
 
@@ -77,7 +79,7 @@ object SummaryTable {
             thead(
               tr(
                 th(publisher),
-                th(subscribers),
+                if (clientApi) th(subscribers) else span,
                 th("Prefix"),
                 th("Name"),
                 if (showYearlyAccum) th("Yearly", br, "Accum.") else span(),
@@ -90,7 +92,7 @@ object SummaryTable {
               } yield {
                 tr(
                   td(p(a(href := s"#${info.publisher.component}")(wrap(info.publisher.component)))),
-                  td(p(info.subscribers.map(linkToSubscriber))),
+                  if (clientApi) td(p(info.subscribers.map(linkToSubscriber))) else span(),
                   td(p(a(href := s"#${info.publisher.component}")(wrap(info.publisher.prefix)))),
                   td(
                     p(
@@ -338,7 +340,7 @@ object SummaryTable {
     div(
       nh.H2("Summary"),
       publishedSummary(),
-      subscribedSummary()
+      if (clientApi) subscribedSummary() else span()
     )
   }
 

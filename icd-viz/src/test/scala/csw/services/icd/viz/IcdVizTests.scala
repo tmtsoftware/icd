@@ -38,9 +38,11 @@ class IcdVizTests extends AnyFunSuite {
     )
     IcdVizManager.showRelationships(db, options)
     val okDotStr  = Source.fromResource("icdviz.dot").getLines().mkString("\n")
+    // The order of the two subsystems is random, so need to check that...
+    val okDotStr2  = Source.fromResource("icdviz2.dot").getLines().mkString("\n")
     val dotStr = new String(Files.readAllBytes(dotPath))
     println(s"Compare $dotPath with test/resources/icdviz.dot")
-    assert(okDotStr == dotStr)
+    assert(okDotStr == dotStr || okDotStr2 == dotStr)
     dotPath.toFile.delete()
   }
 }
