@@ -221,7 +221,9 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
     val maybeSv       = subsystem.getSubsystemWithVersion
     val maybeTargetSv = targetSubsystem.getSubsystemWithVersion
     val maybeIcd      = icdChooser.getSelectedIcdVersion
-    listener.subsystemsSelected(maybeSv, maybeTargetSv, maybeIcd, searchAllSubsystems(), clientApi())
+    val showClientApi = clientApi() || maybeTargetSv.isDefined
+    val searchAll = searchAllSubsystems() && maybeTargetSv.isEmpty
+    listener.subsystemsSelected(maybeSv, maybeTargetSv, maybeIcd, searchAll, showClientApi)
   }
 
   // Called when the Apply button is pressed

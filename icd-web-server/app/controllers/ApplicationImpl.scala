@@ -187,7 +187,7 @@ class ApplicationImpl(db: IcdDb) {
       maybeTargetComponent,
       maybeIcdVersion
     )
-    val icdPrinter = IcdDbPrinter(db, searchAllSubsystems = false, clientApi = false, maybeCache, Some(pdfOptions))
+    val icdPrinter = IcdDbPrinter(db, searchAllSubsystems = false, clientApi = true, maybeCache, Some(pdfOptions))
     icdPrinter.saveIcdAsPdf(sv, targetSv, iv, pdfOptions)
   }
 

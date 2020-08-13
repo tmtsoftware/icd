@@ -241,8 +241,8 @@ object IcdDb extends App {
     // --output option
     def output(file: File): Unit = {
       if (options.subsystem.isEmpty) error("Missing required subsystem name: Please specify --subsystem <name>")
-      val searchAllSubsystems = options.allSubsystems.isDefined && options.target.isEmpty
-      val clientApi = options.clientApi.isDefined && options.target.isEmpty
+      val clientApi = options.target.isDefined || options.clientApi.isDefined
+      val searchAllSubsystems = clientApi && options.allSubsystems.isDefined && options.target.isEmpty
       IcdDbPrinter(db, searchAllSubsystems, clientApi, maybeCache, Some(pdfOptions)).saveToFile(
         options.subsystem.get,
         options.component,
