@@ -77,15 +77,13 @@ object HtmlMarkup extends Extensions {
 
   // Returns an HTML image tag for the given UML markup
   // TODO: Could cache image string, but needs to take pdfOptions into account
-  private def renderUml(uml: String, maybePdfOptions: Option[PdfOptions]): String = {
+  private def renderUml(umlStr: String, maybePdfOptions: Option[PdfOptions]): String = {
     import org.apache.commons.io.FileUtils
     import java.util.Base64
     try {
+      // For backward compatibility, allow, but don't require the @startuml/@enduml tags
+      val uml = if (umlStr.startsWith("@startuml")) umlStr else s"@startuml\n$umlStr\n@enduml\n"
       val tmpFile = Files.createTempFile("icduml", ".png")
-//      val fontSize = maybePdfOptions.map(_.fontSize).getOrElse(PdfOptions.defaultFontSize).toFloat
-//      val s = uml.replace("@startuml", s"@startuml\nskinparam defaultFontSize $fontSize")
-//      val reader  = new SourceStringReader(s);
-//      val option = new FileFormatOption(FileFormat.PNG)
       val reader = new SourceStringReader(uml)
       val option = new FileFormatOption(FileFormat.PNG).withScale(maybePdfOptions.map(_.fontSize / 16.0).getOrElse(1.0))
       val f      = new FileOutputStream(tmpFile.toFile)
@@ -101,7 +99,7 @@ object HtmlMarkup extends Extensions {
     } catch {
       case e: Exception =>
         e.printStackTrace()
-        uml
+        umlStr
     }
   }
 
