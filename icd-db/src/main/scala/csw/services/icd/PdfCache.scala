@@ -20,12 +20,10 @@ class PdfCache(cacheDir: File) {
   // Gets the file used to store the given API version
   private def getFile(
       sv: SubsystemWithVersion,
-      pdfOptions: PdfOptions,
-      clientApi: Boolean
+      pdfOptions: PdfOptions
   ): File = {
     import pdfOptions._
-    val client = if (clientApi) "-client" else ""
-    val name   = s"${sv.subsystem}-${sv.maybeVersion.get}$client-$orientation-$fontSize-$lineHeight-$paperSize.pdf"
+    val name = s"${sv.subsystem}-${sv.maybeVersion.get}-$orientation-$fontSize-$lineHeight-$paperSize.pdf"
     new File(dir, name)
   }
 
@@ -33,11 +31,11 @@ class PdfCache(cacheDir: File) {
   private def useCache(
       sv: SubsystemWithVersion,
       targetSv: SubsystemWithVersion,
-      pdfOptions: PdfOptions,
-      searchAllSubsystems: Boolean
+      pdfOptions: PdfOptions
   ): Boolean = {
-    useCache(sv, pdfOptions, searchAllSubsystems) &&
+    useCache(sv, pdfOptions, searchAllSubsystems = false, clientApi = false) &&
     targetSv.maybeVersion.isDefined &&
+    targetSv.maybeVersion.get != "master" &&
     targetSv.maybeComponent.isEmpty
   }
 
@@ -45,11 +43,14 @@ class PdfCache(cacheDir: File) {
   private def useCache(
       sv: SubsystemWithVersion,
       pdfOptions: PdfOptions,
-      searchAllSubsystems: Boolean
+      searchAllSubsystems: Boolean,
+      clientApi: Boolean
   ): Boolean = {
     softwareVersion != defaultSoftwareVersion &&
     sv.maybeVersion.isDefined &&
+    sv.maybeVersion.get != "master" &&
     sv.maybeComponent.isEmpty &&
+    !clientApi &&
     !searchAllSubsystems &&
     pdfOptions.details
   }
@@ -73,8 +74,8 @@ class PdfCache(cacheDir: File) {
       searchAllSubsystems: Boolean,
       clientApi: Boolean
   ): Option[Array[Byte]] = {
-    if (useCache(sv, pdfOptions, searchAllSubsystems)) {
-      val file = getFile(sv, pdfOptions, clientApi)
+    if (useCache(sv, pdfOptions, searchAllSubsystems, clientApi)) {
+      val file = getFile(sv, pdfOptions)
       if (file.exists()) {
         try {
           Some(Files.readAllBytes(file.toPath))
@@ -98,9 +99,9 @@ class PdfCache(cacheDir: File) {
       clientApi: Boolean,
       data: Array[Byte]
   ): Unit = {
-    if (useCache(sv, pdfOptions, searchAllSubsystems)) {
+    if (useCache(sv, pdfOptions, searchAllSubsystems, clientApi)) {
       dir.mkdirs()
-      val file = getFile(sv, pdfOptions, clientApi)
+      val file = getFile(sv, pdfOptions)
       val out  = new FileOutputStream(file)
       out.write(data)
       out.close()
@@ -111,10 +112,9 @@ class PdfCache(cacheDir: File) {
   def getIcd(
       sv: SubsystemWithVersion,
       targetSv: SubsystemWithVersion,
-      pdfOptions: PdfOptions,
-      searchAllSubsystems: Boolean
+      pdfOptions: PdfOptions
   ): Option[Array[Byte]] = {
-    if (useCache(sv, targetSv, pdfOptions, searchAllSubsystems)) {
+    if (useCache(sv, targetSv, pdfOptions)) {
       val file = getFile(sv, targetSv, pdfOptions)
       if (file.exists()) {
         try {
@@ -139,7 +139,7 @@ class PdfCache(cacheDir: File) {
       searchAllSubsystems: Boolean,
       data: Array[Byte]
   ): Unit = {
-    if (useCache(sv, targetSv, pdfOptions, searchAllSubsystems)) {
+    if (useCache(sv, targetSv, pdfOptions)) {
       dir.mkdirs()
       val file = getFile(sv, targetSv, pdfOptions)
       val out  = new FileOutputStream(file)
@@ -159,9 +159,9 @@ class PdfCache(cacheDir: File) {
   ): Unit = {
     val doIt =
       if (maybeTargetSv.isDefined)
-        useCache(sv, maybeTargetSv.get, pdfOptions, searchAllSubsystems)
+        useCache(sv, maybeTargetSv.get, pdfOptions)
       else
-        useCache(sv, pdfOptions, searchAllSubsystems)
+        useCache(sv, pdfOptions, searchAllSubsystems, clientApi)
 
     if (doIt) {
       val data = Files.readAllBytes(file.toPath)
@@ -182,7 +182,7 @@ class PdfCache(cacheDir: File) {
             paperSizes.foreach { ps =>
               List(true, false).foreach { clientApi =>
                 val pdfOptions = PdfOptions(orient, fs, lh, ps, details = true, Nil, processMarkdown = false)
-                val file       = getFile(sv, pdfOptions, clientApi)
+                val file       = getFile(sv, pdfOptions)
                 if (file.exists())
                   file.delete()
               }

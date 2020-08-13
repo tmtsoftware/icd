@@ -219,7 +219,7 @@ case class IcdDbPrinter(
 
     val maybeCachedBytes = if (isPdf) {
       if (maybeTarg.isDefined)
-        maybeCache.flatMap(_.getIcd(subsys, maybeTarg.get, pdfOptions, searchAllSubsystems))
+        maybeCache.flatMap(_.getIcd(subsys, maybeTarg.get, pdfOptions))
       else
         maybeCache.flatMap(_.getApi(subsys, pdfOptions, searchAllSubsystems, clientApi))
     } else None
@@ -281,7 +281,7 @@ case class IcdDbPrinter(
       iv: Option[IcdVersion],
       pdfOptions: PdfOptions
   ): Option[Array[Byte]] = {
-    val maybeCachedBytes = maybeCache.flatMap(_.getIcd(sv, targetSv, pdfOptions, searchAllSubsystems))
+    val maybeCachedBytes = maybeCache.flatMap(_.getIcd(sv, targetSv, pdfOptions))
     if (maybeCachedBytes.isDefined)
       maybeCachedBytes
     else
