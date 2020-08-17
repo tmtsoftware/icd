@@ -12,7 +12,7 @@ See also the [Graphviz](https://graphviz.org/doc/info/attrs.html) documentation 
 ## Usage
 
 ```
-icd-viz 1.3.2
+icd-viz 2.0.0
 Usage: icd-viz [options]
 
   -d, --db <name>          The name of the database to use (default: icds4)
@@ -38,8 +38,8 @@ Usage: icd-viz [options]
   --overlap one of true, false, scale
                            Node overlap handling (default=scale)
   --splines <value>        Use splines for edges? (default=true)
-  --omittypes <value>      Comma-separated list of component types (None, HCD, Assembly, Sequencer, Application) to omit as primaries (default={'None'})
-  --imageformat <value>    Image format (Used only if imageFile not given or has invalid suffix). One of {PDF, PNG, SVG, EPS} (default={'PDF'})
+  --omittypes <value>      Comma-separated list of component types (None, HCD, Assembly, Sequencer, Application) to omit as primaries (default='None')
+  --imageformat <value>    Image format (Used only if imageFile not given or has invalid suffix). One of {PDF, PNG, SVG, EPS} (default='PDF')
   --help                   
   --version                
 ```

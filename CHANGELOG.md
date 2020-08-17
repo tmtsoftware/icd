@@ -25,9 +25,9 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 
 - Added icd-db command line option "--clientApi" and a checkbox in the web app to include subscribed events and sent commands in an API document (the default was changed to only include published events or alarms and received commands).
 
-### Changed
-
 - Added new option to icd-git command: `--ingestMissing`: Ingests any APIs or ICDs that were published, but are not yet in the local database, plus any master branch versions.
+
+### Changed
 
 - Changed API layout to include only published events or alarms and received commands by default (with option to include subscribed events and sent commands as well, like before)
 

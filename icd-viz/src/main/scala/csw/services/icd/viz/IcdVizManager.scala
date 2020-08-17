@@ -559,7 +559,7 @@ object IcdVizManager {
       f.close()
       Option(desc) match {
         case Some(d) =>
-          println(s"Generated image file $file: $d")
+          println(s"Generated image file $file")
           if (options.showPlot)
             viewImageFile(file)
         case None =>
