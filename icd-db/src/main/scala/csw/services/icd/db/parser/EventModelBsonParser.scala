@@ -13,6 +13,7 @@ object EventModelBsonParser {
   def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): EventModel =
     EventModel(
       name = doc.getAsOpt[String]("name").get,
+      ref = doc.getAsOpt[String]("ref").getOrElse(""),
       description = doc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
       requirements = doc.getAsOpt[Array[String]]("requirements").map(_.toList).getOrElse(Nil),
       maybeMaxRate = doc.getAsOpt[BSONNumberLike]("maxRate").map(_.toDouble.getOrElse(1.0)),

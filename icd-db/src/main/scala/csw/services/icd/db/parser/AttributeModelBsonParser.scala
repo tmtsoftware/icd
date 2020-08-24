@@ -4,23 +4,26 @@ import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.AttributeModel
 import icd.web.shared.PdfOptions
 import reactivemongo.api.bson._
+
 /**
  * This model is a value that is based on the json-schema "ref": "resource:/json-schema.json".
  * In this case it can define a primitive type, enum, array, or object, for example.
  */
 object AttributeModelBsonParser {
 
-  private def bsonValueToString(b: BSONValue): String = b match {
-    case s: BSONString  => s.value
-    case d: BSONDouble  => d.value.toString
-    case d: BSONInteger => d.value.toString
-    case d: BSONLong    => d.value.toString
-    case d: BSONBoolean => d.value.toString
-    case x              => x.toString // should not happen
-  }
+  private def bsonValueToString(b: BSONValue): String =
+    b match {
+      case s: BSONString  => s.value
+      case d: BSONDouble  => d.value.toString
+      case d: BSONInteger => d.value.toString
+      case d: BSONLong    => d.value.toString
+      case d: BSONBoolean => d.value.toString
+      case x              => x.toString // should not happen
+    }
 
   def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): AttributeModel = {
     val name            = doc.getAsOpt[String]("name").getOrElse("")
+    val ref             = doc.getAsOpt[String]("ref").getOrElse("")
     val description     = doc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse("")
     val maybeType       = doc.getAsOpt[String]("type")
     val maybeEnum       = doc.getAsOpt[Array[String]]("enum").map(_.toList)
@@ -28,28 +31,36 @@ object AttributeModelBsonParser {
     val maxItems        = doc.getAsOpt[Int]("maxItems")
     val minItems        = doc.getAsOpt[Int]("minItems")
     val maybeDimensions = doc.getAsOpt[Array[Int]]("dimensions").map(_.toList)
-    val itemsDoc = doc.get("items").map(_.asInstanceOf[BSONDocument])
+    val itemsDoc        = doc.get("items").map(_.asInstanceOf[BSONDocument])
     val maybeArrayType  = itemsDoc.flatMap(_.get("type").map(bsonValueToString))
 
     // --- Old json-schema uses Boolean for exclusive* keys, new one uses Number! ---
-    val exclusiveMinimumStr = doc.get("exclusiveMinimum").map(bsonValueToString)
-        .orElse(itemsDoc.flatMap(_.get("exclusiveMinimum").map(bsonValueToString))).getOrElse("false")
+    val exclusiveMinimumStr = doc
+      .get("exclusiveMinimum")
+      .map(bsonValueToString)
+      .orElse(itemsDoc.flatMap(_.get("exclusiveMinimum").map(bsonValueToString)))
+      .getOrElse("false")
     val exclusiveMinimum = exclusiveMinimumStr.toLowerCase() != "false"
-    val exclusiveMaximumStr = doc.get("exclusiveMaximum").map(bsonValueToString)
-      .orElse(itemsDoc.flatMap(_.get("exclusiveMaximum").map(bsonValueToString))).getOrElse("false")
+    val exclusiveMaximumStr = doc
+      .get("exclusiveMaximum")
+      .map(bsonValueToString)
+      .orElse(itemsDoc.flatMap(_.get("exclusiveMaximum").map(bsonValueToString)))
+      .getOrElse("false")
     val exclusiveMaximum = exclusiveMaximumStr.toLowerCase() != "false"
-    val allowNaN        = doc.getAsOpt[Boolean]("allowNaN").getOrElse(false)
+    val allowNaN         = doc.getAsOpt[Boolean]("allowNaN").getOrElse(false)
 
     def isNumeric(str: String): Boolean        = str.matches("([-+]?\\d+(\\.\\d+)?|[-]?[Ii]nf)")
     def ifNumeric(str: String): Option[String] = Some(str).filter(isNumeric)
 
     // For compatibility, use numeric value of exclusive min/max if found
     val minimum = doc
-      .get("minimum").map(bsonValueToString)
+      .get("minimum")
+      .map(bsonValueToString)
       .orElse(itemsDoc.flatMap(_.get("minimum").map(bsonValueToString)))
       .orElse(ifNumeric(exclusiveMinimumStr))
     val maximum = doc
-      .get("maximum").map(bsonValueToString)
+      .get("maximum")
+      .map(bsonValueToString)
       .orElse(itemsDoc.flatMap(_.get("maximum").map(bsonValueToString)))
       .orElse(ifNumeric(exclusiveMaximumStr))
 
@@ -64,9 +75,11 @@ object AttributeModelBsonParser {
       val e     = items.flatMap(_.getAsOpt[Array[String]]("enum").map(_.toList))
       val s = if (t.isDefined) {
         parseTypeStr(items.get, t)
-      } else if (e.isDefined) {
+      }
+      else if (e.isDefined) {
         "enum: (" + e.get.mkString(", ") + ")"
-      } else "?"
+      }
+      else "?"
 
       val maybeDimensions = doc.getAsOpt[Array[Int]]("dimensions").map(_.toList)
       if (maybeDimensions.isDefined)
@@ -104,7 +117,8 @@ object AttributeModelBsonParser {
         val gt  = if (maximum.isEmpty) "" else if (exclusiveMaximum) " < " else " ≤ "
         val nan = if (allowNaN) ", or NaN" else ""
         s"$t ($min${lt}x$gt$max$nan)"
-      } else t
+      }
+      else t
     }
 
     val typeStr = parseTypeStr(doc, doc.getAsOpt[String]("type"))
@@ -113,19 +127,21 @@ object AttributeModelBsonParser {
     val attributesList = if (typeStr == "struct") {
       for (subDoc <- doc.getAsOpt[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
         yield AttributeModelBsonParser(subDoc, maybePdfOptions)
-    } else if (typeStr == "array of struct") {
+    }
+    else if (typeStr == "array of struct") {
       doc
         .getAsOpt[BSONDocument]("items")
         .toList
-        .flatMap(
-          items =>
-            for (subDoc <- items.getAsOpt[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
-              yield AttributeModelBsonParser(subDoc, maybePdfOptions)
+        .flatMap(items =>
+          for (subDoc <- items.getAsOpt[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
+            yield AttributeModelBsonParser(subDoc, maybePdfOptions)
         )
-    } else Nil
+    }
+    else Nil
 
     AttributeModel(
       name,
+      ref,
       description,
       maybeType,
       maybeEnum,
