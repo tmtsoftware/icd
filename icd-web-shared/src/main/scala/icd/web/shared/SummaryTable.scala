@@ -248,19 +248,19 @@ object SummaryTable {
         info  <- infoList
         pub   <- info.publishes.toList
         event <- pub.eventList
-      } yield PublishedItem(info.componentModel, event.eventModel, event.subscribers.map(_.componentModel))
+      } yield PublishedItem(info.componentModel, event.eventModel, event.subscribers.map(_.componentModel).distinct)
 
       val publishedObserveEvents = for {
         info  <- infoList
         pub   <- info.publishes.toList
         event <- pub.observeEventList
-      } yield PublishedItem(info.componentModel, event.eventModel, event.subscribers.map(_.componentModel))
+      } yield PublishedItem(info.componentModel, event.eventModel, event.subscribers.map(_.componentModel).distinct)
 
       val publishedCurrentStates = for {
         info  <- infoList
         pub   <- info.publishes.toList
         event <- pub.currentStateList
-      } yield PublishedItem(info.componentModel, event.eventModel, event.subscribers.map(_.componentModel))
+      } yield PublishedItem(info.componentModel, event.eventModel, event.subscribers.map(_.componentModel).distinct)
 
       val publishedAlarms = for {
         info  <- infoList
@@ -272,7 +272,7 @@ object SummaryTable {
         info     <- infoList
         commands <- info.commands.toList
         command  <- commands.commandsReceived
-      } yield PublishedItem(info.componentModel, command.receiveCommandModel, command.senders)
+      } yield PublishedItem(info.componentModel, command.receiveCommandModel, command.senders.distinct)
 
       div(
         publishedSummaryMarkup("Events", publishedEvents, "Published by", "for"),

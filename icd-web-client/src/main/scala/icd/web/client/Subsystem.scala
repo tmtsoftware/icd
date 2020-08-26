@@ -239,9 +239,9 @@ case class Subsystem(
   def setSelectedSubsystemVersion(
       maybeVersion: Option[String]
   ): Future[Unit] = {
-    if (maybeVersion == getSelectedSubsystemVersion)
+    if (maybeVersion == getSelectedSubsystemVersion) {
       Future.successful()
-    else {
+    } else {
       maybeVersion match {
         case Some(s) => versionItem.value = s
         case None    => versionItem.value = unpublishedVersion
@@ -275,9 +275,6 @@ case class Subsystem(
             val version = maybeVersion.getOrElse(unpublishedVersion)
             versionItem.value = version
           }
-//          .recover {
-//            case ex => ex.printStackTrace()
-//          }
       case None =>
         versionItem.value = unpublishedVersion
         Future.successful()
@@ -294,8 +291,6 @@ case class Subsystem(
     for (s <- unpublishedVersion :: versions) {
       versionItem.add(option(value := s)(s).render)
     }
-    setSelectedSubsystemVersion(versions.headOption)
-
   }
 
   // Gets the list of available versions for the given subsystem
@@ -306,11 +301,6 @@ case class Subsystem(
       .map { r =>
         Json.fromJson[Array[String]](Json.parse(r.responseText)).get.toList
       }
-//      .recover {
-//        case ex =>
-//          ex.printStackTrace() // XXX TODO
-//          Nil
-//      }
   }
 
 }
