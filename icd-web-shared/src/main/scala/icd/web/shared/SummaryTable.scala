@@ -127,7 +127,7 @@ object SummaryTable {
       // For ICDs, display subscribed items from the publisher's point of view
       def publisherView(): Text.TypedTag[String] = {
         val (action, publisher, subscriber) = heading.toLowerCase() match {
-          case "published by" => ("publishes", "Publisher", "Subscriber")
+          case "published by" => ("publishes", "Publisher", "Subscribers")
           case "received by"  => ("receives", "Receiver", "Senders")
         }
 

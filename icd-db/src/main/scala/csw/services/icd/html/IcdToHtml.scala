@@ -533,7 +533,7 @@ object IcdToHtml {
               eventInfo.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").distinct.mkString(", ")
             val subscriberInfo =
               if (clientApi)
-                span(strong(s"Subscriber: "), if (subscribers.isEmpty) "none" else subscribers)
+                span(strong(s"Subscribers: "), if (subscribers.isEmpty) "none" else subscribers)
               else span
             val totalArchiveSpacePerYear =
               if (eventModel.totalArchiveSpacePerYear.isEmpty) ""
