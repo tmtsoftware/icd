@@ -481,7 +481,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                     ),
                     td(raw(t.eventModel.description)),
                     if (clientApi)
-                      td(p(t.subscribers.map(subscribeInfo => makeLinkForComponent(subscribeInfo.componentModel))))
+                      td(p(t.subscribers.map(_.componentModel).distinct.map(makeLinkForComponent)))
                     else span
                   ),
                   row
@@ -739,7 +739,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                   ),
                   // XXX TODO: Make link to command description page with details
                   td(raw(rc.description)),
-                  if (clientApi) td(p(r.senders.map(makeLinkForComponent))) else span
+                  if (clientApi) td(p(r.senders.distinct.map(makeLinkForComponent))) else span
                 ),
                 row
               )

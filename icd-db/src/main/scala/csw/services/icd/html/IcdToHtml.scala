@@ -277,7 +277,6 @@ object IcdToHtml {
     import scalatags.Text.all._
 
     val compName     = component.component
-    val senderStr    = if (forApi) "Senders" else "Sender"
     val receiverInfo = span(strong("Receiver: "), s"${component.subsystem}.$compName")
 
     if (info.isEmpty) div()
@@ -287,8 +286,8 @@ object IcdToHtml {
         for (r <- info) yield {
           val m = r.receiveCommandModel
           val senderInfo = if (clientApi) {
-            val senders = r.senders.map(s => s"${s.subsystem}.${s.component}").mkString(", ")
-            span(strong(s"$senderStr: "), if (senders.isEmpty) "none" else senders)
+            val senders = r.senders.distinct.map(s => s"${s.subsystem}.${s.component}").mkString(", ")
+            span(strong(s"Senders: "), if (senders.isEmpty) "none" else senders)
           }
           else span
           val linkId      = idFor(compName, "receives", "Commands", component.subsystem, compName, m.name)
@@ -521,7 +520,6 @@ object IcdToHtml {
     import scalatags.Text.all._
 
     val compName      = component.component
-    val subscriberStr = if (forApi) "Subscribers" else "Subscriber"
     val publisherInfo = span(strong("Publisher: "), s"${component.subsystem}.$compName")
     def publishEventListMarkup(pubType: String, eventList: List[EventInfo]): Text.TypedTag[String] = {
       if (eventList.isEmpty) div()
@@ -532,10 +530,10 @@ object IcdToHtml {
             val linkId      = idFor(compName, "publishes", pubType, component.subsystem, compName, eventModel.name)
             val showDetails = pdfOptions.details || pdfOptions.expandedIds.contains(linkId)
             val subscribers =
-              eventInfo.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").mkString(", ")
+              eventInfo.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").distinct.mkString(", ")
             val subscriberInfo =
               if (clientApi)
-                span(strong(s"$subscriberStr: "), if (subscribers.isEmpty) "none" else subscribers)
+                span(strong(s"Subscribers: "), if (subscribers.isEmpty) "none" else subscribers)
               else span
             val totalArchiveSpacePerYear =
               if (eventModel.totalArchiveSpacePerYear.isEmpty) ""
