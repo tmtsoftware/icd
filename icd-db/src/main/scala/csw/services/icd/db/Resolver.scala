@@ -10,15 +10,15 @@ object Resolver {
 
 /**
  * A utility class used to resolve "ref" entries in events, commands or attributes.
- * @param models list of models for a subsystem (based on the input model files)
+ * @param allModels list of all models for a subsystem (based on the input model files)
  */
-case class Resolver(models: List[IcdModels]) {
+case class Resolver(allModels: List[IcdModels]) {
 
   /**
    * Resolve any event, command or attribute "ref" items and return the resolved definitions.
    * @return the fully resolved list of models
    */
-  def resolve(): List[IcdModels] = {
+  def resolve(models: List[IcdModels]): List[IcdModels] = {
     models.map(resolveIcdModels)
   }
 
@@ -36,8 +36,8 @@ case class Resolver(models: List[IcdModels]) {
 
   private def resolvePublishModel(publishModel: PublishModel): PublishModel = {
     val events        = publishModel.eventList.map(eventModel => resolveEvent(publishModel, "events", eventModel))
-    val observeEvents = publishModel.eventList.map(eventModel => resolveEvent(publishModel, "observeEvents", eventModel))
-    val currentStates = publishModel.eventList.map(eventModel => resolveEvent(publishModel, "currentStates", eventModel))
+    val observeEvents = publishModel.observeEventList.map(eventModel => resolveEvent(publishModel, "observeEvents", eventModel))
+    val currentStates = publishModel.currentStateList.map(eventModel => resolveEvent(publishModel, "currentStates", eventModel))
     PublishModel(
       subsystem = publishModel.subsystem,
       component = publishModel.component,
@@ -125,7 +125,7 @@ case class Resolver(models: List[IcdModels]) {
       if (component == publishModel.component)
         Some(publishModel)
       else
-        models.find(_.componentModel.map(_.component).contains(component)).flatMap(_.publishModel)
+        allModels.find(_.componentModel.map(_.component).contains(component)).flatMap(_.publishModel)
     if (maybeRefPublishModel.isEmpty)
       throw new ResolverException(s"Invalid ref '$ref': component $component not found in subsystem ${publishModel.subsystem}")
     maybeRefPublishModel.get

@@ -512,13 +512,52 @@ case class IcdVersionManager(query: IcdDbQuery) {
         val versionMap = versionInfo.parts.map(v => v.path -> v.version).toMap
         val allEntries = getEntries(versionInfo.parts)
         val entries    = if (subsystemOnly) allEntries.take(1) else allEntries
-        val models     = entries.map(makeModels(versionMap, _))
-        Resolver(models).resolve()
+        entries.map(makeModels(versionMap, _))
       case None =>
         val v = sv.maybeVersion.map("-" + _).getOrElse("")
         println(s"${sv.subsystem}$v not found in the icd database.")
         Nil
     }
+  }
+
+  /**
+   * Returns allModelsList if sv.component is empty, otherwise a list with just the given component models
+   * @param allModelsList a list of all component models in the subsystem
+   * @param sv            the subsystem
+   * @param subsystemOnly if true, return only the model for the subsystem
+   * @param maybePdfOptions
+   * @return a list of IcdModels for the given version of the subsystem or component
+   */
+  private def getModelsForComponents(
+      allModelsList: List[IcdModels],
+      sv: SubsystemWithVersion,
+      subsystemOnly: Boolean = false,
+      maybePdfOptions: Option[PdfOptions]
+  ): List[IcdModels] = {
+    sv.maybeComponent match {
+      case None => allModelsList
+      case Some(compName) =>
+        val compSv = SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(compName))
+        getModels(compSv, subsystemOnly = false, maybePdfOptions)
+    }
+  }
+
+  /**
+   * Query the database for information about all the subsystem's components
+   * and return the icd models, resolving any refs.
+   *
+   * @param sv the subsystem
+   * @return a list of IcdModels for the given version of the subsystem or component
+   */
+  def getResolvedModels(
+      sv: SubsystemWithVersion,
+      maybePdfOptions: Option[PdfOptions]
+  ): List[IcdModels] = {
+    val allComponentNames = getComponentNames(sv)
+    val allComponentSvs   = allComponentNames.map(component => SubsystemWithVersion(sv.subsystem, sv.maybeVersion, None))
+    val allIcdModels      = allComponentSvs.flatMap(compSv => getModels(compSv, subsystemOnly = false, maybePdfOptions))
+    val icdModels         = getModelsForComponents(allIcdModels, sv, subsystemOnly = false, maybePdfOptions)
+    Resolver(allIcdModels).resolve(icdModels)
   }
 
   /**
