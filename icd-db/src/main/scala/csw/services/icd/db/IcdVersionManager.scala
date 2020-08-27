@@ -524,14 +524,12 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * Returns allModelsList if sv.component is empty, otherwise a list with just the given component models
    * @param allModelsList a list of all component models in the subsystem
    * @param sv            the subsystem
-   * @param subsystemOnly if true, return only the model for the subsystem
-   * @param maybePdfOptions
+   * @param maybePdfOptions options for html/pdf gen
    * @return a list of IcdModels for the given version of the subsystem or component
    */
   private def getModelsForComponents(
       allModelsList: List[IcdModels],
       sv: SubsystemWithVersion,
-      subsystemOnly: Boolean = false,
       maybePdfOptions: Option[PdfOptions]
   ): List[IcdModels] = {
     sv.maybeComponent match {
@@ -556,7 +554,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
     val allComponentNames = getComponentNames(sv)
     val allComponentSvs   = allComponentNames.map(component => SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component)))
     val allIcdModels      = allComponentSvs.flatMap(compSv => getModels(compSv, subsystemOnly = false, maybePdfOptions))
-    val icdModels         = getModelsForComponents(allIcdModels, sv, subsystemOnly = false, maybePdfOptions)
+    val icdModels         = getModelsForComponents(allIcdModels, sv, maybePdfOptions)
     Resolver(allIcdModels).resolve(icdModels)
   }
 
