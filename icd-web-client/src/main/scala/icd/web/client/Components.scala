@@ -314,6 +314,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       div(
         strong(titleStr),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
+        attributesList.find(_.ref.startsWith("Error:")).map(a => makeErrorDiv(a.ref)),
         structAttributesMarkup(attributesList)
       )
     }
@@ -414,9 +415,16 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     el.render.outerHTML
   }
 
+  private def makeErrorDiv(msg: String): TypedTag[Div] = {
+    import scalatags.JsDom.all._
+    div(cls := "alert alert-warning", role := "alert")(
+      span(cls := "glyphicon glyphicon-warning-sign", attr("aria-hidden") := "true"),
+      span(em(s" $msg"))
+    )
+  }
+
   // Generates the HTML markup to display the component's publish information
-  private def publishMarkup(component: ComponentModel, maybePublishes: Option[Publishes],
-                            forApi: Boolean, clientApi: Boolean) = {
+  private def publishMarkup(component: ComponentModel, maybePublishes: Option[Publishes], forApi: Boolean, clientApi: Boolean) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
@@ -441,6 +449,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       )
 
       div(
+        if (eventModel.ref.startsWith("Error:")) makeErrorDiv(eventModel.ref) else div(),
         if (eventModel.requirements.isEmpty) div()
         else p(strong("Requirements: "), eventModel.requirements.mkString(", ")),
         mkTable(headings, rowList),
@@ -605,12 +614,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     def subscribeListMarkup(pubType: String, subscribeList: List[DetailedSubscribeInfo]) = {
       // Warn if no publisher found for subscibed item
       def getWarning(info: DetailedSubscribeInfo) =
-        info.warning.map { msg =>
-          div(cls := "alert alert-warning", role := "alert")(
-            span(cls := "glyphicon glyphicon-warning-sign", attr("aria-hidden") := "true"),
-            span(em(s" Warning: $msg"))
-          )
-        }
+        info.warning.map(msg => makeErrorDiv(s" Warning: $msg"))
 
       if (subscribeList.isEmpty) div()
       else
