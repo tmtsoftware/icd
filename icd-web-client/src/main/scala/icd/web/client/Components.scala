@@ -349,6 +349,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       div(
         strong(titleStr),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
+        attributesList.find(_.ref.startsWith("Error:")).map(a => makeErrorDiv(a.ref)),
         structAttributesMarkup(attributesList)
       )
     }
@@ -376,6 +377,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       div(
         strong("Result Type Fields"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
+        attributesList.find(_.ref.startsWith("Error:")).map(a => makeErrorDiv(a.ref)),
         structAttributesMarkup(attributesList)
       )
     }
@@ -693,6 +695,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def makeReceivedCommandDetailsRow(m: ReceiveCommandModel) = {
     import scalatags.JsDom.all._
     div(
+      if (m.ref.startsWith("Error:")) makeErrorDiv(m.ref) else div(),
       if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
       if (m.preconditions.isEmpty) div() else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
       if (m.postconditions.isEmpty) div() else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
