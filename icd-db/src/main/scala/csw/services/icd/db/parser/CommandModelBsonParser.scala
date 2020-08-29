@@ -12,6 +12,7 @@ object ReceiveCommandModelBsonParser {
   def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): ReceiveCommandModel = {
     ReceiveCommandModel(
       name = doc.getAsOpt[String]("name").get,
+      ref = doc.getAsOpt[String]("ref").getOrElse(""),
       description = HtmlMarkup.gfmToHtml(doc.getAsOpt[String]("description").get, maybePdfOptions),
       requirements = doc.getAsOpt[Array[String]]("requirements").map(_.toList).getOrElse(Nil),
       preconditions = doc.getAsOpt[Array[String]]("preconditions").map(_.toList).getOrElse(Nil).map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)),

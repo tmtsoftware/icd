@@ -239,6 +239,8 @@ object IcdModels {
    * Model for a commands configuration that a component receives
    *
    * @param name           command name
+   * @param ref            if not empty, a reference to another command in the
+   *                       form $component/$name or just $name, if in same component
    * @param description    command desc
    * @param requirements   an array of requirement ids
    * @param preconditions  an array of preconditions
@@ -251,6 +253,7 @@ object IcdModels {
    */
   case class ReceiveCommandModel(
       name: String,
+      ref: String,
       description: String,
       requirements: List[String],
       preconditions: List[String],
@@ -381,6 +384,16 @@ object IcdModels {
 
   /**
    * Models the event published by a component
+   *
+   * @param name event name
+   * @param ref if not empty, a reference to another event model in the
+   *            form $comp/events/$name, events/$name (in same component) or just $name, if in same section
+   * @param description event description
+   * @param requirements list of requirements that flow to this item
+   * @param maybeMaxRate optional maximum rate of publishing in Hz
+   * @param archive true if publisher recommends archiving this event
+   * @param archiveDuration lifetime of the archiving (example: '2 years', '6 months'): Required if archive is true.
+   * @param attributesList attributes for the event
    */
   case class EventModel(
       name: String,
