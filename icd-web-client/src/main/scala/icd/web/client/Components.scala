@@ -288,6 +288,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           div()(
             p(strong(a(name := structIdStr(attrModel.name))(s"Attributes for ${attrModel.name} struct"))),
             mkTable(headings, rowList2),
+            attrModel.attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
             // Handle structs embedded in other structs (or arrays of structs, etc.)
             structAttributesMarkup(attrModel.attributesList)
           )
@@ -314,7 +315,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       div(
         strong(titleStr),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
-        attributesList.find(_.ref.startsWith("Error:")).map(a => makeErrorDiv(a.ref)),
+        attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
         structAttributesMarkup(attributesList)
       )
     }
@@ -349,7 +350,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       div(
         strong(titleStr),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
-        attributesList.find(_.ref.startsWith("Error:")).map(a => makeErrorDiv(a.ref)),
+        attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
         structAttributesMarkup(attributesList)
       )
     }
@@ -377,7 +378,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       div(
         strong("Result Type Fields"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
-        attributesList.find(_.ref.startsWith("Error:")).map(a => makeErrorDiv(a.ref)),
+        attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
         structAttributesMarkup(attributesList)
       )
     }
@@ -451,7 +452,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       )
 
       div(
-        if (eventModel.ref.startsWith("Error:")) makeErrorDiv(eventModel.ref) else div(),
+        if (eventModel.refError.startsWith("Error:")) makeErrorDiv(eventModel.refError) else div(),
         if (eventModel.requirements.isEmpty) div()
         else p(strong("Requirements: "), eventModel.requirements.mkString(", ")),
         mkTable(headings, rowList),
@@ -695,7 +696,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def makeReceivedCommandDetailsRow(m: ReceiveCommandModel) = {
     import scalatags.JsDom.all._
     div(
-      if (m.ref.startsWith("Error:")) makeErrorDiv(m.ref) else div(),
+      if (m.refError.startsWith("Error:")) makeErrorDiv(m.refError) else div(),
       if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
       if (m.preconditions.isEmpty) div() else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
       if (m.postconditions.isEmpty) div() else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),

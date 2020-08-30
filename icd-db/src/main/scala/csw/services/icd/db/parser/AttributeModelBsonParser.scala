@@ -142,6 +142,7 @@ object AttributeModelBsonParser {
     AttributeModel(
       name,
       ref,
+      "",
       description,
       maybeType,
       maybeEnum,

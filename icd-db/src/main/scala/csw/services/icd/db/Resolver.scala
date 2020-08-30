@@ -14,7 +14,7 @@ object Resolver {
 
   private def resolverException(msg: String): ResolverException = {
     val ex = new ResolverException(msg)
-    log.error(msg, ex)
+    log.error(msg)
     ex
   }
 
@@ -229,6 +229,7 @@ case class Resolver(allModels: List[IcdModels]) {
         ReceiveCommandModel(
           name = receiveCommandModel.name,
           ref = "",
+          refError = "",
           description =
             if (receiveCommandModel.description.nonEmpty) receiveCommandModel.description else refReceiveCommandModel.description,
           requirements =
@@ -270,7 +271,7 @@ case class Resolver(allModels: List[IcdModels]) {
           role = if (receiveCommandModel.role.nonEmpty) receiveCommandModel.role else refReceiveCommandModel.role
         )
       case Failure(ex) =>
-        receiveCommandModel.copy(ref = s"Error: ${ex.getMessage}")
+        receiveCommandModel.copy(ref = "", refError = s"Error: ${ex.getMessage}")
     }
   }
 
@@ -318,6 +319,7 @@ case class Resolver(allModels: List[IcdModels]) {
         EventModel(
           name = eventModel.name,
           ref = "",
+          refError = "",
           description = if (eventModel.description.nonEmpty) eventModel.description else refEventModel.description,
           requirements = if (eventModel.requirements.nonEmpty) eventModel.requirements else refEventModel.requirements,
           maybeMaxRate = if (eventModel.maybeMaxRate.nonEmpty) eventModel.maybeMaxRate else refEventModel.maybeMaxRate,
@@ -335,13 +337,14 @@ case class Resolver(allModels: List[IcdModels]) {
               )
         )
       case Failure(ex) =>
-        eventModel.copy(ref = s"Error: ${ex.getMessage}")
+        eventModel.copy(ref = "", refError = s"Error: ${ex.getMessage}")
     }
   }
 
   private def resolveRefAttribute(attrRef: AttrRef): AttributeModel = {
     val maybeModel = allModels.find(_.componentModel.exists(_.component == attrRef.ref.component))
-    if (maybeModel.isEmpty) throw resolverException(s"Invalid ref $attrRef: Can't find component ${attrRef.ref.component}")
+    if (maybeModel.isEmpty)
+      throw resolverException(s"Invalid ref ${attrRef.ref.ref}: Can't find component ${attrRef.ref.component}")
     val model = maybeModel.get
     val attrList = attrRef.ref.section match {
       case Ref.events | Ref.observeEvents | Ref.currentStates =>
@@ -381,7 +384,7 @@ case class Resolver(allModels: List[IcdModels]) {
         case Success(refAttribute) =>
           resolveAttributes(attributeModel, refAttribute)
         case Failure(ex) =>
-          attributeModel.copy(ref = s"Error: ${ex.getMessage}")
+          attributeModel.copy(ref = "", refError = s"Error: ${ex.getMessage}")
       }
     }
   }
@@ -403,7 +406,7 @@ case class Resolver(allModels: List[IcdModels]) {
         case Success(refAttribute) =>
           resolveAttributes(attributeModel, refAttribute)
         case Failure(ex) =>
-          attributeModel.copy(ref = s"Error: ${ex.getMessage}")
+          attributeModel.copy(ref = "", refError = s"Error: ${ex.getMessage}")
       }
     }
   }
@@ -416,6 +419,7 @@ case class Resolver(allModels: List[IcdModels]) {
     AttributeModel(
       name = attributeModel.name,
       ref = "",
+      refError = "",
       description = if (attributeModel.description.nonEmpty) attributeModel.description else refAttribute.description,
       maybeType = if (attributeModel.maybeType.nonEmpty) attributeModel.maybeType else refAttribute.maybeType,
       maybeEnum = if (attributeModel.maybeEnum.nonEmpty) attributeModel.maybeEnum else refAttribute.maybeEnum,

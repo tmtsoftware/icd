@@ -129,6 +129,7 @@ object IcdModels {
    *
    * @param name             name of the attribute
    * @param ref              if not empty, a reference to another attribute to copy missing values from
+   * @param refError contains an error message if ref is invalid (not stored in the db)
    * @param description      description of the attribute
    * @param maybeType        an optional string describing the type (either this or maybeEnum should be defined)
    * @param maybeEnum        an optional string describing the enum type (either this or maybeType should be defined)
@@ -148,6 +149,7 @@ object IcdModels {
   case class AttributeModel(
       name: String,
       ref: String,
+      refError: String,
       description: String,
       maybeType: Option[String],
       maybeEnum: Option[List[String]],
@@ -241,6 +243,7 @@ object IcdModels {
    * @param name           command name
    * @param ref            if not empty, a reference to another command in the
    *                       form $component/$name or just $name, if in same component
+   * @param refError       contains an error message if ref is invalid (not stored in db)
    * @param description    command desc
    * @param requirements   an array of requirement ids
    * @param preconditions  an array of preconditions
@@ -254,6 +257,7 @@ object IcdModels {
   case class ReceiveCommandModel(
       name: String,
       ref: String,
+      refError: String,
       description: String,
       requirements: List[String],
       preconditions: List[String],
@@ -388,6 +392,7 @@ object IcdModels {
    * @param name event name
    * @param ref if not empty, a reference to another event model in the
    *            form $comp/events/$name, events/$name (in same component) or just $name, if in same section
+   * @param refError contains an error message if ref is invalid (not stored in the db)
    * @param description event description
    * @param requirements list of requirements that flow to this item
    * @param maybeMaxRate optional maximum rate of publishing in Hz
@@ -398,6 +403,7 @@ object IcdModels {
   case class EventModel(
       name: String,
       ref: String,
+      refError: String,
       description: String,
       requirements: List[String],
       maybeMaxRate: Option[Double],
