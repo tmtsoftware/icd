@@ -154,8 +154,8 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfO
       }
     }
 
-    def pubFilter(p: PublishedItemInfo): Boolean = selectedSubsystemNames.contains(p.publisherSubsystem)
-    def subFilter(p: SubscribedItemInfo): Boolean = selectedSubsystemNames.contains(p.subscriberSubsystem)
+    def pubFilter(p: PublishedItemInfo): Boolean = selectedSubsystemNames.isEmpty || selectedSubsystemNames.contains(p.publisherSubsystem)
+    def subFilter(p: SubscribedItemInfo): Boolean = selectedSubsystemNames.isEmpty || selectedSubsystemNames.contains(p.subscriberSubsystem)
 
     // Return list of published items with no subscribers
     def getPubNoSub(published: List[PublishedItemInfo], subscribed: Map[String, SubscribedItemInfo]): List[PublishedItemInfo] = {
