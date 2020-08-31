@@ -255,7 +255,7 @@ case class Resolver(allModels: List[IcdModels]) {
                 resolveCommandAttribute(commandModel, receiveCommandModel, AttrRef.args, attributeModel)
               ),
           completionType =
-            if (receiveCommandModel.completionType.nonEmpty) receiveCommandModel.completionType
+            if (receiveCommandModel.completionType != "immediate") receiveCommandModel.completionType
             else refReceiveCommandModel.completionType,
           resultType =
             if (receiveCommandModel.resultType.nonEmpty)

@@ -17,9 +17,42 @@ class ComponentInfoTest extends AnyFunSuite {
     if (dir.exists()) dir else new File(s"../$path")
   }
 
+  private def checkRefs(info: ComponentInfo): Unit = {
+    val eventList = info.publishes.get.eventList
+    assert(eventList.exists(_.eventModel.name == "engMode"))
+    assert(eventList.exists(_.eventModel.name == "engMode2"))
+    val engMode = eventList.find(_.eventModel.name == "engMode").get.eventModel
+    val engMode2 = eventList.find(_.eventModel.name == "engMode2").get.eventModel
+    assert(!engMode.archive)
+    assert(engMode2.archive)
+    assert(engMode2.description == engMode.description)
+    assert(engMode2.attributesList == engMode.attributesList)
+    assert(engMode.attributesList.exists(_.name == "mode2Error"))
+    val mode2Error = engMode.attributesList.find(_.name == "mode2Error").get
+    assert(mode2Error.ref == "")
+    assert(mode2Error.refError == "Error: Invalid attribute ref: modeXXX: Attribute modeXXX not found")
+
+    assert(eventList.exists(_.eventModel.name == "engMode2Error"))
+    val engMode2Error = eventList.find(_.eventModel.name == "engMode2Error").get.eventModel
+    assert(engMode2Error.ref == "")
+    assert(engMode2Error.refError == "Error: Invalid ref 'engModeXXX': Event engModeXXX not found in lgsWfs")
+
+    val commands = info.commands.get.commandsReceived.map(_.receiveCommandModel)
+    val cmd = commands.find(_.name == "LGS_WFS_INITIALIZE").get
+    val refCmd = commands.find(_.name == "LGS_WFS_INITIALIZE_REF").get
+    assert(cmd.args == refCmd.args)
+    assert(cmd.completionType == refCmd.completionType)
+    assert(cmd.requirements== refCmd.requirements)
+    assert(cmd.requiredArgs== refCmd.requiredArgs)
+    assert(cmd.description != refCmd.description)
+    assert(cmd.completionConditions != refCmd.completionConditions)
+    assert(refCmd.refError == "")
+  }
+
   private def checkInfo(info: ComponentInfo, clientApi: Boolean): Unit = {
     assert(info.componentModel.component == "lgsWfs")
     assert(info.publishes.nonEmpty)
+    checkRefs(info)
     val eventList = info.publishes.get.eventList
     assert(eventList.nonEmpty)
 //    eventList.foreach { pubInfo =>
