@@ -129,6 +129,7 @@ object IcdModels {
    *
    * @param name             name of the attribute
    * @param ref              if not empty, a reference to another attribute to copy missing values from
+   *                         in the form component/section/name/attrSection/attrName (may be abbreviated, if in same scope)
    * @param refError contains an error message if ref is invalid (not stored in the db)
    * @param description      description of the attribute
    * @param maybeType        an optional string describing the type (either this or maybeEnum should be defined)
@@ -242,7 +243,7 @@ object IcdModels {
    *
    * @param name           command name
    * @param ref            if not empty, a reference to another command in the
-   *                       form $component/$name or just $name, if in same component
+   *                       form component/receive/name
    * @param refError       contains an error message if ref is invalid (not stored in db)
    * @param description    command desc
    * @param requirements   an array of requirement ids
@@ -391,7 +392,7 @@ object IcdModels {
    *
    * @param name event name
    * @param ref if not empty, a reference to another event model in the
-   *            form $comp/events/$name, events/$name (in same component) or just $name, if in same section
+   *            form component/events/name, component/observeEvents/name, etc (may be abbreviated if in same component/section)
    * @param refError contains an error message if ref is invalid (not stored in the db)
    * @param description event description
    * @param requirements list of requirements that flow to this item

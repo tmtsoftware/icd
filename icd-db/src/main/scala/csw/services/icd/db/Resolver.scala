@@ -9,12 +9,13 @@ import Resolver._
 
 object Resolver {
   private lazy val log: Logger = Logger("csw.services.icd.db.Resolver")
+  var loggingEnabled = true
 
   private class ResolverException(msg: String) extends RuntimeException(msg)
 
   private def resolverException(msg: String): ResolverException = {
     val ex = new ResolverException(msg)
-    log.error(msg)
+    if (loggingEnabled) log.error(msg)
     ex
   }
 

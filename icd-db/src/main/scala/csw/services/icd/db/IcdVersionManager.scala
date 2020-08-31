@@ -551,7 +551,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       sv: SubsystemWithVersion,
       maybePdfOptions: Option[PdfOptions]
   ): List[IcdModels] = {
-    val allComponentNames = getComponentNames(sv)
+    val allComponentNames = getComponentNames(SubsystemWithVersion(sv.subsystem, sv.maybeVersion, None))
     val allComponentSvs   = allComponentNames.map(component => SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component)))
     val allIcdModels      = allComponentSvs.flatMap(compSv => getModels(compSv, subsystemOnly = false, maybePdfOptions))
     val icdModels         = getModelsForComponents(allIcdModels, sv, maybePdfOptions)

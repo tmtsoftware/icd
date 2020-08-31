@@ -51,6 +51,7 @@ object IcdDbDefaults {
 //noinspection DuplicatedCode
 object IcdDb extends App {
   import IcdDbDefaults._
+
   // Cache of PDF files for published API and ICD versions
   val maybeCache: Option[PdfCache] =
     if (IcdDbDefaults.conf.getBoolean("icd.pdf.cache.enabled"))

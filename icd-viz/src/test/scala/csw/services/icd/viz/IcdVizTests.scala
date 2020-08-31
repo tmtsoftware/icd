@@ -3,13 +3,14 @@ import java.io.File
 import java.nio.file.Files
 
 import csw.services.icd.IcdValidator
-import csw.services.icd.db.IcdDb
+import csw.services.icd.db.{IcdDb, Resolver}
 import icd.web.shared.{IcdVizOptions, SubsystemWithVersion}
 import org.scalatest.funsuite.AnyFunSuite
 
 import scala.io.Source
 
 class IcdVizTests extends AnyFunSuite {
+  Resolver.loggingEnabled = false
   val examplesDir = s"examples/${IcdValidator.currentSchemaVersion}"
   val dbName      = "test"
 

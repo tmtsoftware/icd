@@ -7,6 +7,7 @@ import icd.web.shared.{ComponentInfo, SubsystemWithVersion}
 import org.scalatest.funsuite.AnyFunSuite
 
 class ComponentInfoTest extends AnyFunSuite {
+  Resolver.loggingEnabled = false
   private val examplesDir = s"examples/${IcdValidator.currentSchemaVersion}"
   private val dbName      = "test"
 

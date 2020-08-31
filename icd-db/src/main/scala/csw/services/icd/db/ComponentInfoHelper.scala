@@ -43,8 +43,8 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean) {
       maybePdfOptions: Option[PdfOptions]
   ): Option[ComponentInfo] = {
     // get the models for this component
-    val modelsList = versionManager.getModels(sv, subsystemOnly = false, maybePdfOptions)
-    getComponentInfoFromModels(versionManager, modelsList.headOption, maybePdfOptions)
+    val resolvedIcdModels = versionManager.getResolvedModels(sv, maybePdfOptions)
+    getComponentInfoFromModels(versionManager, resolvedIcdModels.headOption, maybePdfOptions)
   }
 
   /**
