@@ -71,9 +71,7 @@ class ArchivedItemsTest extends AnyFunSuite {
               assert(!m.archive)
               assert(m.totalArchiveSpacePerYear.isEmpty)
             case x =>
-              fail(s"Unexpected event found: $x: Update test case.")
           }
-        // TODO verify sizes...
         }
       }
   }

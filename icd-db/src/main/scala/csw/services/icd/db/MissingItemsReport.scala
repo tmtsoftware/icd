@@ -68,6 +68,8 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfO
     .map(IcdVersionManager.SubsystemAndVersion(_))
     .map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, None))
 
+  private val selectedSubsystemNames = selectedSubsystemsWithVersions.map(_.subsystem)
+
   // Note: Need to search entire database in order to find the missing items
   private val query          = new CachedIcdDbQuery(db.db, db.admin, None, None)
   private val versionManager = new CachedIcdVersionManager(query)
@@ -76,11 +78,8 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfO
   private val allComponents = query.getComponents(None)
     .map(c => s"${c.subsystem}.${c.component}")
 
-  // Make the report only for the selected subsystems (-s and -t options), or all subsystems by default
+  // Need to search all subsystems for subscribers, etc.
   private val subsystemsWithVersions =
-    if (selectedSubsystemsWithVersions.nonEmpty)
-      selectedSubsystemsWithVersions
-    else
       query.getSubsystemNames.map(SubsystemWithVersion(_, None, None))
 
   // Returns a list of items missing a publisher, subscriber, sender or receiver
@@ -130,14 +129,14 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfO
         def getSubComp(i: SubscribedItemInfo)    = s"${i.subscriberSubsystem}.${i.subscriberComponent}"
 
         val compRefs =
-            publishedEvents.map(getPubComp) ++
-            publishedObserveEvents.map(getPubComp) ++
-            publishedCurrentStates.map(getPubComp) ++
-            subscribedEvents.map(getSubPubComp) ++ subscribedEvents.map(getSubComp) ++
-            subscribedObserveEvents.map(getSubPubComp) ++ subscribedObserveEvents.map(getSubComp) ++
-            subscribedCurrentStates.map(getSubPubComp) ++ subscribedCurrentStates.map(getSubComp) ++
-            receivedCommands.map(getPubComp) ++
-            sentCommands.map(getSubPubComp) ++ sentCommands.map(getSubComp)
+            publishedEvents.filter(pubFilter).map(getPubComp) ++
+            publishedObserveEvents.filter(pubFilter).map(getPubComp) ++
+            publishedCurrentStates.filter(pubFilter).map(getPubComp) ++
+            subscribedEvents.filter(subFilter).map(getSubPubComp) ++ subscribedEvents.map(getSubComp) ++
+            subscribedObserveEvents.filter(subFilter).map(getSubPubComp) ++ subscribedObserveEvents.map(getSubComp) ++
+            subscribedCurrentStates.filter(subFilter).map(getSubPubComp) ++ subscribedCurrentStates.map(getSubComp) ++
+            receivedCommands.filter(pubFilter).map(getPubComp) ++
+            sentCommands.filter(subFilter).map(getSubPubComp) ++ sentCommands.map(getSubComp)
         val compSet           = allComponents.toSet
         val badComponentNames = compRefs.filter(!compSet.contains(_)).toSet
 
@@ -155,14 +154,17 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfO
       }
     }
 
+    def pubFilter(p: PublishedItemInfo): Boolean = selectedSubsystemNames.contains(p.publisherSubsystem)
+    def subFilter(p: SubscribedItemInfo): Boolean = selectedSubsystemNames.contains(p.subscriberSubsystem)
+
     // Return list of published items with no subscribers
     def getPubNoSub(published: List[PublishedItemInfo], subscribed: Map[String, SubscribedItemInfo]): List[PublishedItemInfo] = {
-      published.filter(p => !subscribed.contains(p.key))
+      published.filter(p => pubFilter(p) && !subscribed.contains(p.key))
     }
 
     // Return list of subscribed items with no publisher
     def getSubNoPub(subscribes: List[SubscribedItemInfo], publishes: Map[String, PublishedItemInfo]): List[SubscribedItemInfo] = {
-      subscribes.filter(p => !publishes.contains(p.key))
+      subscribes.filter(p =>  subFilter(p) && !publishes.contains(p.key))
     }
 
     val items = getItems
