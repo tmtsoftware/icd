@@ -2,7 +2,13 @@ package csw.services.icd.db
 
 import csw.services.icd._
 import csw.services.icd.StdName._
-import csw.services.icd.db.parser.{CommandModelBsonParser, ComponentModelBsonParser, PublishModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
+import csw.services.icd.db.parser.{
+  CommandModelBsonParser,
+  ComponentModelBsonParser,
+  PublishModelBsonParser,
+  SubscribeModelBsonParser,
+  SubsystemModelBsonParser
+}
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.{IcdModels, PdfOptions}
 import icd.web.shared.IcdModels._
@@ -309,7 +315,8 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
     if (collectionExists(collName)) {
       val coll = db.collection[BSONCollection](collName)
       collectionHead(coll).flatMap(SubsystemModelBsonParser(_, maybePdfOptions))
-    } else None
+    }
+    else None
   }
 
   /**
@@ -320,7 +327,8 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
     if (collectionExists(collName)) {
       val coll = db.collection[BSONCollection](collName)
       collectionHead(coll).flatMap(ComponentModelBsonParser(_, maybePdfOptions))
-    } else None
+    }
+    else None
   }
 
   /**
@@ -331,7 +339,8 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
     if (collectionExists(collName)) {
       val coll = db.collection[BSONCollection](collName)
       collectionHead(coll).flatMap(PublishModelBsonParser(_, maybePdfOptions))
-    } else None
+    }
+    else None
   }
 
   /**
@@ -344,7 +353,8 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
     if (collectionExists(collName)) {
       val coll = db.collection[BSONCollection](collName)
       collectionHead(coll).flatMap(SubscribeModelBsonParser(_, maybePdfOptions))
-    } else None
+    }
+    else None
   }
 
   /**
@@ -358,13 +368,19 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
     if (collectionExists(collName)) {
       val coll = db.collection[BSONCollection](collName)
       collectionHead(coll).flatMap(CommandModelBsonParser(_, maybePdfOptions))
-    } else None
+    }
+    else None
   }
 
   /**
    * Returns an object describing the named command, defined for the named component in the named subsystem
    */
-  def getCommand(subsystem: String, component: String, commandName: String, maybePdfOptions: Option[PdfOptions]): Option[ReceiveCommandModel] = {
+  def getCommand(
+      subsystem: String,
+      component: String,
+      commandName: String,
+      maybePdfOptions: Option[PdfOptions]
+  ): Option[ReceiveCommandModel] = {
     getCommandModel(subsystem, component, maybePdfOptions: Option[PdfOptions]).flatMap(_.receive.find(_.name == commandName))
   }
 
@@ -376,7 +392,12 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
    * @param commandName the name of the command being sent
    * @return list containing one item for each component that sends the command
    */
-  def getCommandSenders(subsystem: String, component: String, commandName: String, maybePdfOptions: Option[PdfOptions]): List[ComponentModel] = {
+  def getCommandSenders(
+      subsystem: String,
+      component: String,
+      commandName: String,
+      maybePdfOptions: Option[PdfOptions]
+  ): List[ComponentModel] = {
     for {
       componentModel <- getComponents(maybePdfOptions)
       commandModel   <- getCommandModel(componentModel, maybePdfOptions)
@@ -402,17 +423,18 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
   def getModels(subsystem: String, component: Option[String] = None, maybePdfOptions: Option[PdfOptions]): List[IcdModels] = {
 
     // Holds all the model classes associated with a single ICD entry.
-    case class Models(entry: IcdEntry) extends IcdModels {
-      override val subsystemModel: Option[SubsystemModel] =
+    def makeModels(entry: IcdEntry): IcdModels = {
+      val subsystemModel: Option[SubsystemModel] =
         entry.subsystem.flatMap(coll => collectionHead(coll).flatMap(SubsystemModelBsonParser(_, maybePdfOptions)))
-      override val publishModel: Option[PublishModel] =
+      val publishModel: Option[PublishModel] =
         entry.publish.flatMap(coll => collectionHead(coll).flatMap(PublishModelBsonParser(_, maybePdfOptions)))
-      override val subscribeModel: Option[SubscribeModel] =
+      val subscribeModel: Option[SubscribeModel] =
         entry.subscribe.flatMap(coll => collectionHead(coll).flatMap(SubscribeModelBsonParser(_, maybePdfOptions)))
-      override val commandModel: Option[CommandModel] =
+      val commandModel: Option[CommandModel] =
         entry.command.flatMap(coll => collectionHead(coll).flatMap(CommandModelBsonParser(_, maybePdfOptions)))
-      override val componentModel: Option[ComponentModel] =
+      val componentModel: Option[ComponentModel] =
         entry.component.flatMap(coll => collectionHead(coll).flatMap(ComponentModelBsonParser(_, maybePdfOptions)))
+      IcdModels(subsystemModel, componentModel, publishModel, subscribeModel, commandModel)
     }
 
     val e =
@@ -422,8 +444,8 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
 
     // Get the prefix for the related db sub-collections
     val prefix = e.name + "."
-    val list   = for (entry <- getEntries if entry.name.startsWith(prefix)) yield Models(entry)
-    Models(e) :: list
+    val list   = for (entry <- getEntries if entry.name.startsWith(prefix)) yield makeModels(entry)
+    makeModels(e) :: list
   }
 
   /**
@@ -464,8 +486,9 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
     tmpPaths.foreach { tmpCollName =>
       if (fatalErrors.isEmpty) {
         val collName = baseName(tmpCollName, IcdDbDefaults.tmpCollSuffix)
-          admin.renameCollection(dbName, tmpCollName, collName, dropExisting = true).await
-      } else {
+        admin.renameCollection(dbName, tmpCollName, collName, dropExisting = true).await
+      }
+      else {
         val coll = db.collection[BSONCollection](tmpCollName)
         coll.drop(failIfNotFound = false).await
       }
@@ -481,10 +504,9 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
     val tmpPaths = getCollectionNames
       .filter(name => name.startsWith(s"$subsystem.") && name.endsWith(IcdDbDefaults.tmpCollSuffix))
     val paths = getCollectionNames
-      .filter(
-        name =>
-          name.startsWith(s"$subsystem.") && !name.endsWith(IcdVersionManager.versionSuffix) && !name
-            .endsWith(IcdDbDefaults.tmpCollSuffix)
+      .filter(name =>
+        name.startsWith(s"$subsystem.") && !name.endsWith(IcdVersionManager.versionSuffix) && !name
+          .endsWith(IcdDbDefaults.tmpCollSuffix)
       )
     val deleted = paths.diff(tmpPaths.map(path => baseName(path, IcdDbDefaults.tmpCollSuffix)))
     deleted.foreach { collName =>

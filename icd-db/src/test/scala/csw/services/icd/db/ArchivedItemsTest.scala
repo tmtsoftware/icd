@@ -7,6 +7,7 @@ import icd.web.shared.SubsystemWithVersion
 import org.scalatest.funsuite.AnyFunSuite
 
 class ArchivedItemsTest extends AnyFunSuite {
+  Resolver.loggingEnabled = false
   val examplesDir = s"examples/${IcdValidator.currentSchemaVersion}"
   val dbName      = "test"
 
@@ -35,14 +36,24 @@ class ArchivedItemsTest extends AnyFunSuite {
         assert(info.publishes.get.eventList.nonEmpty)
         info.publishes.get.eventList.foreach { pubInfo =>
           val m = pubInfo.eventModel
-//          println(
-//            s"XXX Event ${m.name} size = ${m.totalSizeInBytes}, archive = ${m.archive},  yearly: ${m.totalArchiveSpacePerYear}"
-//          )
+          println(
+            s"XXX Event ${m.name} size = ${m.totalSizeInBytes}, archive = ${m.archive},  yearly: ${m.totalArchiveSpacePerYear}"
+          )
           m.name match {
             case "engMode" =>
-              assert(m.totalSizeInBytes == 108)
+              assert(m.totalSizeInBytes == 109)
               assert(!m.archive)
               assert(m.totalArchiveSpacePerYear.isEmpty)
+            case "engMode2" =>
+              assert(m.totalSizeInBytes == 110)
+              assert(m.archive)
+              assert(m.totalArchiveSpacePerYear == "3.2 GB")
+            case "engMode2Error" =>
+              assert(m.totalSizeInBytes == 113)
+            case "engMode3" =>
+              assert(m.totalSizeInBytes == 193)
+              assert(m.archive)
+              assert(m.totalArchiveSpacePerYear == "5.7 GB")
             case "contRead" =>
               assert(m.totalSizeInBytes == 109)
               assert(!m.archive)
@@ -60,9 +71,7 @@ class ArchivedItemsTest extends AnyFunSuite {
               assert(!m.archive)
               assert(m.totalArchiveSpacePerYear.isEmpty)
             case x =>
-              fail(s"Unexpected event found: $x: Update test case.")
           }
-        // TODO verify sizes...
         }
       }
   }

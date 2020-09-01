@@ -27,44 +27,58 @@ object IcdComponentInfo {
       maybePdfOptions: Option[PdfOptions]
   ): List[ComponentInfo] = {
 
-    val compNames = sv.maybeComponent match {
-      case None           => versionManager.getComponentNames(sv)
-      case Some(compName) => List(compName)
-    }
-    compNames
-      .flatMap(
-        component =>
-          getComponentInfo(
-            versionManager,
-            SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component)),
-            targetSv,
-            maybePdfOptions
-          )
+    val resolvedModelsList = versionManager.getResolvedModels(sv, maybePdfOptions)
+    val resolvedTargetModelsList = versionManager.getResolvedModels(targetSv, maybePdfOptions)
+
+    resolvedModelsList
+      .flatMap(m =>
+        getComponentInfoFromModels(
+          versionManager,
+          Some(m),
+          resolvedTargetModelsList,
+          maybePdfOptions
+        )
       )
       .map(ComponentInfo.applyIcdFilter)
   }
+
+//  /**
+//   * Query the database for information about the given component
+//   *
+//   * @param versionManager used to access versions of components
+//   * @param sv    the subsystem
+//   * @param targetSv    the target subsystem of the ICD
+//   * @return an object containing information about the component
+//   */
+//  private def getComponentInfo(
+//      versionManager: IcdVersionManager,
+//      sv: SubsystemWithVersion,
+//      targetSv: SubsystemWithVersion,
+//      maybePdfOptions: Option[PdfOptions]
+//  ): Option[ComponentInfo] = {
+//    // get the models for this component
+//    val modelsList       = versionManager.getModels(sv, subsystemOnly = false, maybePdfOptions)
+//    val targetModelsList = versionManager.getModels(targetSv, subsystemOnly = false, maybePdfOptions)
+//    getComponentInfoFromModels(versionManager, modelsList.headOption, targetModelsList, maybePdfOptions)
+//  }
 
   /**
    * Query the database for information about the given component
    *
    * @param versionManager used to access versions of components
-   * @param sv    the subsystem
-   * @param targetSv    the target subsystem of the ICD
+   * @param models    the component models for subsystem1
+   * @param targetModelsList    the component models for the target subsystem
    * @return an object containing information about the component
    */
-  private def getComponentInfo(
+  private def getComponentInfoFromModels(
       versionManager: IcdVersionManager,
-      sv: SubsystemWithVersion,
-      targetSv: SubsystemWithVersion,
+      models: Option[IcdModels],
+      targetModelsList: List[IcdModels],
       maybePdfOptions: Option[PdfOptions]
   ): Option[ComponentInfo] = {
-    // get the models for this component
-    val modelsList       = versionManager.getModels(sv, subsystemOnly = false, maybePdfOptions)
-    val targetModelsList = versionManager.getModels(targetSv, subsystemOnly = false, maybePdfOptions)
-
-    modelsList.headOption.flatMap { icdModels =>
+    models.flatMap { icdModels =>
       val componentModel = icdModels.componentModel
-      val publishes      = getPublishes(sv.subsystem, icdModels, targetModelsList)
+      val publishes      = getPublishes(icdModels, targetModelsList)
       val subscribes     = getSubscribes(icdModels, targetModelsList)
       val commands       = getCommands(versionManager.query, icdModels, targetModelsList, maybePdfOptions)
 
@@ -77,24 +91,23 @@ object IcdComponentInfo {
   /**
    * Gets information about the items published by a component
    *
-   * @param subsystem        the source (publisher) subsystem
    * @param models           the model objects for the component
    * @param targetModelsList the target model objects
    */
-  private def getPublishes(subsystem: String, models: IcdModels, targetModelsList: List[IcdModels]): Option[Publishes] = {
+  private def getPublishes(models: IcdModels, targetModelsList: List[IcdModels]): Option[Publishes] = {
     models.publishModel match {
       case None => None
       case Some(m) =>
         val prefix    = s"${m.subsystem}.${m.component}"
         val component = m.component
         val eventList = m.eventList.map { t =>
-          EventInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, Events, targetModelsList))
+          EventInfo(t, getSubscribers(m.subsystem, component, prefix, t.name, t.description, Events, targetModelsList))
         }
         val observeEventList = m.observeEventList.map { t =>
-          EventInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, ObserveEvents, targetModelsList))
+          EventInfo(t, getSubscribers(m.subsystem, component, prefix, t.name, t.description, ObserveEvents, targetModelsList))
         }
         val currentStateList = m.currentStateList.map { t =>
-          EventInfo(t, getSubscribers(subsystem, component, prefix, t.name, t.description, CurrentStates, targetModelsList))
+          EventInfo(t, getSubscribers(m.subsystem, component, prefix, t.name, t.description, CurrentStates, targetModelsList))
         }
         if (eventList.nonEmpty || observeEventList.nonEmpty)
           Some(Publishes(m.description, eventList, observeEventList, currentStateList, Nil))

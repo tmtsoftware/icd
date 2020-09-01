@@ -8,7 +8,12 @@ import diffson.playJson._
 import diffson.lcs._
 import diffson.jsonpatch._
 import diffson.jsonpatch.lcsdiff.remembering._
-import csw.services.icd.db.parser.{ComponentModelBsonParser, PublishModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
+import csw.services.icd.db.parser.{
+  ComponentModelBsonParser,
+  PublishModelBsonParser,
+  SubscribeModelBsonParser,
+  SubsystemModelBsonParser
+}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONString}
 import reactivemongo.api.{Cursor, WriteConcern}
@@ -73,7 +78,14 @@ object IcdVersionManager {
    * @param date         the date of the change
    * @param parts        names and versions of the subsystem or component parts
    */
-  case class VersionInfo(maybeVersion: Option[String], user: String, comment: String, date: DateTime, commit: String, parts: List[PartInfo]) {
+  case class VersionInfo(
+      maybeVersion: Option[String],
+      user: String,
+      comment: String,
+      date: DateTime,
+      commit: String,
+      parts: List[PartInfo]
+  ) {
     // Gets the version of the part with the given path
     def getPartVersion(path: String): Option[Int] = {
       val list = for (part <- parts if part.path == path) yield part.version
@@ -131,10 +143,11 @@ object IcdVersionManager {
 
     maybeVersion.foreach(SubsystemAndVersion.checkVersion)
 
-    override def toString: String = maybeVersion match {
-      case Some(v) => s"$subsystem-$v"
-      case None    => subsystem
-    }
+    override def toString: String =
+      maybeVersion match {
+        case Some(v) => s"$subsystem-$v"
+        case None    => subsystem
+      }
 
     // Used to sort subsystems alphabetically, to avoid duplicates, since A->B should be the same as B->A
     override def compare(that: SubsystemAndVersion): Int = {
@@ -153,7 +166,8 @@ object IcdVersionManager {
       if (s.contains(':')) {
         val ar = s.split(':')
         SubsystemAndVersion(ar(0), Some(ar(1)))
-      } else SubsystemAndVersion(s, None)
+      }
+      else SubsystemAndVersion(s, None)
     }
 
     /**
@@ -263,7 +277,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
       val docs      = sortCollectionById(collName)
       val published = docs.map(doc => VersionInfo(doc))
       current ::: published
-    } else current
+    }
+    else current
   }
 
   /**
@@ -278,7 +293,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
       docs.map { doc =>
         doc.getAsOpt[String](versionStrKey).get
       }
-    } else Nil
+    }
+    else Nil
   }
 
   /**
@@ -298,7 +314,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
           val query    = BSONDocument(versionStrKey -> version)
           val maybeDoc = coll.find(query, Option.empty[JsObject]).one[BSONDocument].await
           maybeDoc.map(VersionInfo(_))
-        } else {
+        }
+        else {
           None // not found
         }
       case None => // current, unpublished version
@@ -314,7 +331,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
         val now     = new DateTime(DateTimeZone.UTC)
         val user    = ""
         val comment = "Working version, unpublished"
-        val commit = ""
+        val commit  = ""
         val parts   = paths.map(p => (p, getPartVersion(p))).flatMap(pair => pair._2.map(version => PartInfo(pair._1, version)))
         Some(VersionInfo(None, user, comment, now, commit, parts))
     }
@@ -345,7 +362,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
         .await
         .map(_.getAsOpt[String](versionStrKey))
         .head
-    } else None
+    }
+    else None
   }
 
   /**
@@ -448,7 +466,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
     }
   }
 
-  // Returns a list of IcdEntry objects for the given parts (one part for each originally ingested file)
+  // Returns a list of IcdEntry objects for the given parts (one part for each component or subsystem)
   // The result is sorted so that the subsystem comes first.
   private def getEntries(parts: List[PartInfo]): List[IcdEntry] = {
     val paths = parts.map(_.path).map(IcdPath)
@@ -467,23 +485,26 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * @param subsystemOnly if true, return only the model for the subsystem
    * @return a list of IcdModels for the given version of the subsystem or component
    */
-  private[db] def getModels(sv: SubsystemWithVersion, subsystemOnly: Boolean = false, maybePdfOptions: Option[PdfOptions]): List[IcdModels] = {
+  private[db] def getModels(
+      sv: SubsystemWithVersion,
+      subsystemOnly: Boolean = false,
+      maybePdfOptions: Option[PdfOptions]
+  ): List[IcdModels] = {
 
-    // Holds all the model classes associated with a single ICD entry.
-    case class Models(versionMap: Map[String, Int], entry: IcdEntry) extends IcdModels {
-
-      private def getDocVersion(coll: BSONCollection): BSONDocument = getVersionOf(coll, versionMap(coll.name))
-
-      override val subsystemModel: Option[SubsystemModel] =
+    // Return an object thIcdDbQueryat holds all the model classes associated with a single ICD entry.
+    def makeModels(versionMap: Map[String, Int], entry: IcdEntry): IcdModels = {
+      def getDocVersion(coll: BSONCollection): BSONDocument = getVersionOf(coll, versionMap(coll.name))
+      val subsystemModel: Option[SubsystemModel] =
         entry.subsystem.flatMap(coll => SubsystemModelBsonParser(getDocVersion(coll), maybePdfOptions))
-      override val publishModel: Option[IcdModels.PublishModel] =
+      val publishModel: Option[IcdModels.PublishModel] =
         entry.publish.flatMap(coll => PublishModelBsonParser(getDocVersion(coll), maybePdfOptions))
-      override val subscribeModel: Option[IcdModels.SubscribeModel] =
+      val subscribeModel: Option[IcdModels.SubscribeModel] =
         entry.subscribe.flatMap(coll => SubscribeModelBsonParser(getDocVersion(coll), maybePdfOptions))
-      override val commandModel: Option[IcdModels.CommandModel] =
+      val commandModel: Option[IcdModels.CommandModel] =
         entry.command.flatMap(coll => parser.CommandModelBsonParser(getDocVersion(coll), maybePdfOptions))
-      override val componentModel: Option[IcdModels.ComponentModel] =
+      val componentModel: Option[IcdModels.ComponentModel] =
         entry.component.flatMap(coll => ComponentModelBsonParser(getDocVersion(coll), maybePdfOptions))
+      IcdModels(subsystemModel, componentModel, publishModel, subscribeModel, commandModel)
     }
 
     getVersion(sv) match {
@@ -491,12 +512,50 @@ case class IcdVersionManager(query: IcdDbQuery) {
         val versionMap = versionInfo.parts.map(v => v.path -> v.version).toMap
         val allEntries = getEntries(versionInfo.parts)
         val entries    = if (subsystemOnly) allEntries.take(1) else allEntries
-        entries.map(Models(versionMap, _))
+        entries.map(makeModels(versionMap, _))
       case None =>
         val v = sv.maybeVersion.map("-" + _).getOrElse("")
         println(s"${sv.subsystem}$v not found in the icd database.")
         Nil
     }
+  }
+
+  /**
+   * Returns allModelsList if sv.component is empty, otherwise a list with just the given component models
+   * @param allModelsList a list of all component models in the subsystem
+   * @param sv            the subsystem
+   * @param maybePdfOptions options for html/pdf gen
+   * @return a list of IcdModels for the given version of the subsystem or component
+   */
+  private def getModelsForComponents(
+      allModelsList: List[IcdModels],
+      sv: SubsystemWithVersion,
+      maybePdfOptions: Option[PdfOptions]
+  ): List[IcdModels] = {
+    sv.maybeComponent match {
+      case None => allModelsList
+      case Some(compName) =>
+        val compSv = SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(compName))
+        getModels(compSv, subsystemOnly = false, maybePdfOptions)
+    }
+  }
+
+  /**
+   * Query the database for information about all the subsystem's components
+   * and return the icd models, resolving any refs.
+   *
+   * @param sv the subsystem
+   * @return a list of IcdModels for the given version of the subsystem or component
+   */
+  def getResolvedModels(
+      sv: SubsystemWithVersion,
+      maybePdfOptions: Option[PdfOptions]
+  ): List[IcdModels] = {
+    val allComponentNames = getComponentNames(SubsystemWithVersion(sv.subsystem, sv.maybeVersion, None))
+    val allComponentSvs   = allComponentNames.map(component => SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component)))
+    val allIcdModels      = allComponentSvs.flatMap(compSv => getModels(compSv, subsystemOnly = false, maybePdfOptions))
+    val icdModels         = getModelsForComponents(allIcdModels, sv, maybePdfOptions)
+    Resolver(allIcdModels).resolve(icdModels)
   }
 
   /**
@@ -566,7 +625,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
         val mod = BSONDocument("$set" -> BSONDocument(versionKey -> (version + 1)))
         coll.update.one(queryAny, mod).await
         version
-      } else
+      }
+      else
         version - 1
       (path, lastVersion)
     }
@@ -620,9 +680,11 @@ case class IcdVersionManager(query: IcdDbQuery) {
     // Only add an ICD version if the referenced subsystem and target versions exist
     val subsystemVersions = getVersions(subsystem)
     val targetVersions    = getVersions(target)
-    if (subsystemVersions.exists(_.maybeVersion.contains(subsystemVersion)) && targetVersions.exists(
-          _.maybeVersion.contains(targetVersion)
-        )) {
+    if (
+      subsystemVersions.exists(_.maybeVersion.contains(subsystemVersion)) && targetVersions.exists(
+        _.maybeVersion.contains(targetVersion)
+      )
+    ) {
       val obj = BSONDocument(
         versionStrKey       -> icdVersion,
         subsystemKey        -> subsystem,
@@ -634,7 +696,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
         dateKey             -> BSONDateTime(date.getMillis)
       )
       db.collection[BSONCollection](icdCollName).insert.one(obj).await
-    } else {
+    }
+    else {
       println(
         s"Warning: Not adding ICD version $icdVersion between $subsystem-$subsystemVersion and $target-$targetVersion, since not all referenced subsystem versions exist"
       )
@@ -674,7 +737,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
         }
         .distinct
         .sorted
-    } else Nil
+    }
+    else Nil
   }
 
   /**
@@ -719,6 +783,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
             date
           )
         }
-    } else Nil
+    }
+    else Nil
   }
 }

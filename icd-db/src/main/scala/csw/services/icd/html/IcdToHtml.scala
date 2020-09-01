@@ -303,6 +303,7 @@ object IcdToHtml {
                 if (m.postconditions.isEmpty) div()
                 else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
                 raw(m.description),
+                if (m.refError.startsWith("Error:")) makeErrorDiv(m.refError) else div(),
                 parameterListMarkup(m.name, m.args, m.requiredArgs),
                 p(strong("Completion Type: "), m.completionType),
                 resultTypeMarkup(m.resultType),
@@ -339,6 +340,7 @@ object IcdToHtml {
       div(cls := "nopagebreak")(
         p(strong(a("Result Type Fields"))),
         HtmlMarkup.mkTable(headings, rowList),
+        attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
         structAttributesMarkup(attributesList)
       )
     }
@@ -366,6 +368,7 @@ object IcdToHtml {
       div(cls := "nopagebreak")(
         p(strong(a(s"Arguments for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList),
+        attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
         structAttributesMarkup(attributesList)
       )
     }
@@ -481,6 +484,7 @@ object IcdToHtml {
           div()(
             p(strong(a(name := structIdStr(attrModel.name))(s"Attributes for ${attrModel.name} struct"))),
             HtmlMarkup.mkTable(headings, rowList2),
+            attrModel.attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
             // Handle structs embedded in other structs (or arrays of structs, etc.)
             structAttributesMarkup(attrModel.attributesList)
           )
@@ -488,6 +492,14 @@ object IcdToHtml {
       }
       else None
     }
+  }
+
+  private def makeErrorDiv(msg: String): Text.TypedTag[String] = {
+    import scalatags.Text.all._
+    div(cls := "alert alert-warning", role := "alert")(
+      span(cls := "glyphicon glyphicon-warning-sign", attr("aria-hidden") := "true"),
+      span(em(s" $msg"))
+    )
   }
 
   private def attributeListMarkup(
@@ -503,6 +515,7 @@ object IcdToHtml {
       div(cls := "nopagebreak")(
         p(strong(a(s"Attributes for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList),
+        attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
         structAttributesMarkup(attributesList)
       )
     }
@@ -582,6 +595,7 @@ object IcdToHtml {
                   else p(strong("Requirements: "), eventModel.requirements.mkString(", ")),
                   if (clientApi) p(publisherInfo, ", ", subscriberInfo) else p(publisherInfo),
                   raw(eventModel.description),
+                  if (eventModel.refError.startsWith("Error:")) makeErrorDiv(eventModel.refError) else div(),
                   subscriberUsage,
                   HtmlMarkup.mkTable(headings, rowList),
                   attributeListMarkup(eventModel.name, eventModel.attributesList),

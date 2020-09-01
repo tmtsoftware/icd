@@ -1,21 +1,6 @@
 package icd.web.shared
 
 /**
- * Holds the set of models associated with the set of standard ICD files
- * (the files found in each directory of an ICD definition. Each file is optional).
- * See icd/resources/ for the related schema files.
- */
-trait IcdModels {
-  import IcdModels._
-
-  val subsystemModel: Option[SubsystemModel]
-  val componentModel: Option[ComponentModel]
-  val publishModel: Option[PublishModel]
-  val subscribeModel: Option[SubscribeModel]
-  val commandModel: Option[CommandModel]
-}
-
-/**
  * Defines the basic model classes matching the icd schema files (in icd/resources).
  */
 object IcdModels {
@@ -68,13 +53,17 @@ object IcdModels {
       val (value, unit) = {
         if (size >= TB) {
           (size.asInstanceOf[Double] / TB, "TB")
-        } else if (size >= GB) {
+        }
+        else if (size >= GB) {
           (size.asInstanceOf[Double] / GB, "GB")
-        } else if (size >= MB) {
+        }
+        else if (size >= MB) {
           (size.asInstanceOf[Double] / MB, "MB")
-        } else if (size >= KB) {
+        }
+        else if (size >= KB) {
           (size.asInstanceOf[Double] / KB, "KB")
-        } else {
+        }
+        else {
           (size.asInstanceOf[Double], "B")
         }
       }
@@ -139,6 +128,9 @@ object IcdModels {
    * Defines the properties of an attribute
    *
    * @param name             name of the attribute
+   * @param ref              if not empty, a reference to another attribute to copy missing values from
+   *                         in the form component/section/name/attrSection/attrName (may be abbreviated, if in same scope)
+   * @param refError contains an error message if ref is invalid (not stored in the db)
    * @param description      description of the attribute
    * @param maybeType        an optional string describing the type (either this or maybeEnum should be defined)
    * @param maybeEnum        an optional string describing the enum type (either this or maybeType should be defined)
@@ -157,6 +149,8 @@ object IcdModels {
    */
   case class AttributeModel(
       name: String,
+      ref: String,
+      refError: String,
       description: String,
       maybeType: Option[String],
       maybeEnum: Option[List[String]],
@@ -248,6 +242,9 @@ object IcdModels {
    * Model for a commands configuration that a component receives
    *
    * @param name           command name
+   * @param ref            if not empty, a reference to another command in the
+   *                       form component/receive/name
+   * @param refError       contains an error message if ref is invalid (not stored in db)
    * @param description    command desc
    * @param requirements   an array of requirement ids
    * @param preconditions  an array of preconditions
@@ -260,6 +257,8 @@ object IcdModels {
    */
   case class ReceiveCommandModel(
       name: String,
+      ref: String,
+      refError: String,
       description: String,
       requirements: List[String],
       preconditions: List[String],
@@ -390,9 +389,22 @@ object IcdModels {
 
   /**
    * Models the event published by a component
+   *
+   * @param name event name
+   * @param ref if not empty, a reference to another event model in the
+   *            form component/events/name, component/observeEvents/name, etc (may be abbreviated if in same component/section)
+   * @param refError contains an error message if ref is invalid (not stored in the db)
+   * @param description event description
+   * @param requirements list of requirements that flow to this item
+   * @param maybeMaxRate optional maximum rate of publishing in Hz
+   * @param archive true if publisher recommends archiving this event
+   * @param archiveDuration lifetime of the archiving (example: '2 years', '6 months'): Required if archive is true.
+   * @param attributesList attributes for the event
    */
   case class EventModel(
       name: String,
+      ref: String,
+      refError: String,
       description: String,
       requirements: List[String],
       maybeMaxRate: Option[Double],
@@ -419,3 +431,18 @@ object IcdModels {
   }
 
 }
+
+import IcdModels._
+
+/**
+ * Holds the set of models associated with the set of standard ICD files
+ * (the files found in each directory of an ICD definition. Each file is optional).
+ * See icd/resources/ for the related schema files.
+ */
+case class IcdModels(
+    subsystemModel: Option[SubsystemModel],
+    componentModel: Option[ComponentModel],
+    publishModel: Option[PublishModel],
+    subscribeModel: Option[SubscribeModel],
+    commandModel: Option[CommandModel]
+)

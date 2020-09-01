@@ -288,6 +288,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           div()(
             p(strong(a(name := structIdStr(attrModel.name))(s"Attributes for ${attrModel.name} struct"))),
             mkTable(headings, rowList2),
+            attrModel.attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
             // Handle structs embedded in other structs (or arrays of structs, etc.)
             structAttributesMarkup(attrModel.attributesList)
           )
@@ -314,6 +315,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       div(
         strong(titleStr),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
+        attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
         structAttributesMarkup(attributesList)
       )
     }
@@ -348,6 +350,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       div(
         strong(titleStr),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
+        attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
         structAttributesMarkup(attributesList)
       )
     }
@@ -375,6 +378,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       div(
         strong("Result Type Fields"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
+        attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
         structAttributesMarkup(attributesList)
       )
     }
@@ -414,9 +418,16 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     el.render.outerHTML
   }
 
+  private def makeErrorDiv(msg: String): TypedTag[Div] = {
+    import scalatags.JsDom.all._
+    div(cls := "alert alert-warning", role := "alert")(
+      span(cls := "glyphicon glyphicon-warning-sign", attr("aria-hidden") := "true"),
+      span(em(s" $msg"))
+    )
+  }
+
   // Generates the HTML markup to display the component's publish information
-  private def publishMarkup(component: ComponentModel, maybePublishes: Option[Publishes],
-                            forApi: Boolean, clientApi: Boolean) = {
+  private def publishMarkup(component: ComponentModel, maybePublishes: Option[Publishes], forApi: Boolean, clientApi: Boolean) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
@@ -441,6 +452,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       )
 
       div(
+        if (eventModel.refError.startsWith("Error:")) makeErrorDiv(eventModel.refError) else div(),
         if (eventModel.requirements.isEmpty) div()
         else p(strong("Requirements: "), eventModel.requirements.mkString(", ")),
         mkTable(headings, rowList),
@@ -605,12 +617,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     def subscribeListMarkup(pubType: String, subscribeList: List[DetailedSubscribeInfo]) = {
       // Warn if no publisher found for subscibed item
       def getWarning(info: DetailedSubscribeInfo) =
-        info.warning.map { msg =>
-          div(cls := "alert alert-warning", role := "alert")(
-            span(cls := "glyphicon glyphicon-warning-sign", attr("aria-hidden") := "true"),
-            span(em(s" Warning: $msg"))
-          )
-        }
+        info.warning.map(msg => makeErrorDiv(s" Warning: $msg"))
 
       if (subscribeList.isEmpty) div()
       else
@@ -689,6 +696,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def makeReceivedCommandDetailsRow(m: ReceiveCommandModel) = {
     import scalatags.JsDom.all._
     div(
+      if (m.refError.startsWith("Error:")) makeErrorDiv(m.refError) else div(),
       if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
       if (m.preconditions.isEmpty) div() else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
       if (m.postconditions.isEmpty) div() else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),

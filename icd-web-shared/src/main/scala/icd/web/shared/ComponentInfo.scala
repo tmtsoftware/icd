@@ -127,7 +127,7 @@ case class SubscribeInfo(componentModel: ComponentModel, itemType: PublishType, 
  * @param subscribeModelInfo data from the input subscribe model
  * @param eventModel         set only if itemType is not Alarms
  * @param publisher          the publisher's component model
- * @param warnings           if true, display a warning if no publisher event or alarm model was specified
+ * @param warnings           if true, display a warning if no publisher event was specified
  */
 case class DetailedSubscribeInfo(
     itemType: PublishType,

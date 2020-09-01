@@ -60,7 +60,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
       // Use given subsystem version and component, if defined
       val sv = maybeSv.get
       for {
-        models         <- versionManager.getModels(sv, subsystemOnly = false, maybePdfOptions)
+        models         <- versionManager.getResolvedModels(sv, maybePdfOptions)
         componentModel <- models.componentModel
         if sv.maybeComponent.isEmpty || sv.maybeComponent.get == componentModel.component
         publishModel <- models.publishModel
