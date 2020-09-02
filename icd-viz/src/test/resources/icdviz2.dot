@@ -2,11 +2,12 @@ digraph icdviz {
 	graph [layout = dot, splines = true, overlap = scale, ratio = 0.5]
 	node [fontsize = 20]
 	edge [fontsize = 10]
+	"TEST.?" -> "TEST.lgsWfs" [color = red, fontcolor = red, style = dashed, label = "No Senders:\nLGS_WFS_DETECTOR\nLGS_WFS_DETECTOR2\nLGS_WFS_INITIALIZE\nLGS_WFS_INITIALIZE_REF\nLGS_WFS_STOP"]
 	"TEST.?" -> "TEST.nacqNhrwfs" [color = red, fontcolor = red, style = dashed, label = "No Senders:\nNACQNHRWFS_INITIALIZE\nNACQNHRWFS_NACQ_DETECTOR\nNACQNHRWFS_NACQ_MAGNIFIER_STATE\nNACQNHRWFS_NACQ_POSITION\nNACQNHRWFS_NACQ_READ_CONTINUOUS\nNACQNHRWFS_NACQ_READ_SINGLE\nNACQNHRWFS_NHRWFS_DETECTOR\nNACQNHRWFS_NHRWFS_READ_CONTINUOUS\nNACQNHRWFS_NHRWFS_READ_SINGLE\nNACQNHRWFS_STOP"]
 	"TEST.?" -> "TEST.ndme" [color = red, fontcolor = red, style = dashed, label = "No Senders:\nNDME_HIGH_VOLTAGE\nNDME_INITIALIZE\nNDME_POWER\nNDME_STOP"]
-	"TEST.lgsWfs" -> "TEST.?" [color = red, fontcolor = red, style = dashed, label = "No Subscribers:\ncontRead\nengMode\nengMode2\nengMode2Error\nengMode3\nheartbeat\nintTime\nstate"]
 	"TEST2.cmTEST" -> "TEST.lgsWfs" [color = red, fontcolor = red, style = dashed, label = "Missing in Publisher:\nvisWfsPos"]
 	"TEST2.test2Pk" -> "TEST.rtc" [color = red, fontcolor = red, style = dashed, label = "Missing in Publisher:\nzenithAngle"]
+	"TEST.lgsWfs" -> "TEST.?" [color = red, fontcolor = red, style = dashed, label = "No Subscribers:\ncontRead\nengMode\nengMode2\nengMode2Error\nengMode3\nheartbeat\nintTime\nlogToFile\nstate"]
 	"TEST2.test2Pk" -> "TEST.lgsWfs" [color = red, fontcolor = red, style = dashed, label = "Missing in Publisher:\nparallacticAngle\nzenithAngle"]
 	"TEST.?" -> "TEST.rtc" [color = red, fontcolor = red, style = dashed, label = "No Senders:\nCONFIGURE\nINITIALIZE\nSHUTDOWN"]
 	"TEST2.test2Pk" -> "TEST.nacqNhrwfs" [color = red, fontcolor = red, style = dashed, label = "Missing in Publisher:\nparallacticAngle\nzenithAngle"]
@@ -15,9 +16,20 @@ digraph icdviz {
 	"TEST.?" -> "TEST.env.ctrl" [color = red, fontcolor = red, style = dashed, label = "No Senders:\nENVIRONMENTAL_CONTROL_INITIALIZE\nENVIRONMENTAL_CONTROL_STOP\nadminCommand\nengineeringCommand"]
 	"TEST2.cmTEST" -> "TEST.rtc" [color = red, fontcolor = red, style = dashed, label = "Missing in Publisher:\nngsAtmDispersion\npupilRotation\nvisWfsPos"]
 	"TEST.env.ctrl" -> "TEST.?" [color = red, fontcolor = red, style = dashed, label = "No Subscribers:\nheartbeat\ninitialized\nlogToFile\nobs1\nobs2\nsensors\nstate\nstructTestEvent"]
-	"TEST.?" -> "TEST.lgsWfs" [color = red, fontcolor = red, style = dashed, label = "No Senders:\nLGS_WFS_DETECTOR\nLGS_WFS_DETECTOR2\nLGS_WFS_INITIALIZE\nLGS_WFS_STOP"]
 	"TEST.rtc" -> "TEST.?" [color = red, fontcolor = red, style = dashed, label = "No Subscribers:\nho.scallop.m1\npwfs.pupilShift.offset\ntel.coma\ntel.focus\ntel.m1\ntel.magnification\ntel.rate\ntel.tilt"]
 	"TEST.ndme" -> "TEST.?" [color = red, fontcolor = red, style = dashed, label = "No Subscribers:\ncrateVoltage\ndiagnosticsEngr\ndiagnosticsOps\nengrMode\nhighVoltage\npower"]
+	subgraph cluster_TEST2 {
+		label = TEST2
+		color = grey
+		fontcolor = grey
+		fontsize = 30
+		style = rounded
+		penwidth = 3
+		labelloc = b
+		"TEST2.Corrections" [label = Corrections, color = grey, fontcolor = grey, style = dashed]
+		"TEST2.cmTEST" [label = cmTEST, color = grey, fontcolor = grey, style = dashed]
+		"TEST2.test2Pk" [label = test2Pk, color = grey, fontcolor = grey, style = dashed]
+	}
 	subgraph cluster_TEST {
 		label = TEST
 		color = grey
@@ -32,17 +44,5 @@ digraph icdviz {
 		"TEST.ndme" [label = ndme, color = grey, fontcolor = grey, style = bold]
 		"TEST.lgsWfs" [label = lgsWfs, color = grey, fontcolor = grey, style = bold]
 		"TEST.?" [label = "?", color = red, fontcolor = red, style = dashed]
-	}
-	subgraph cluster_TEST2 {
-		label = TEST2
-		color = grey
-		fontcolor = grey
-		fontsize = 30
-		style = rounded
-		penwidth = 3
-		labelloc = b
-		"TEST2.Corrections" [label = Corrections, color = grey, fontcolor = grey, style = dashed]
-		"TEST2.cmTEST" [label = cmTEST, color = grey, fontcolor = grey, style = dashed]
-		"TEST2.test2Pk" [label = test2Pk, color = grey, fontcolor = grey, style = dashed]
 	}
 }

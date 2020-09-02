@@ -9,7 +9,7 @@ import Resolver._
 
 object Resolver {
   private lazy val log: Logger = Logger("csw.services.icd.db.Resolver")
-  var loggingEnabled = true
+  var loggingEnabled           = true
 
   private class ResolverException(msg: String) extends RuntimeException(msg)
 
@@ -376,8 +376,15 @@ case class Resolver(allModels: List[IcdModels]) {
       section: Ref.Section,
       attributeModel: AttributeModel
   ): AttributeModel = {
-    if (attributeModel.ref.isEmpty)
-      attributeModel
+    if (attributeModel.ref.isEmpty) {
+      if (attributeModel.attributesList.nonEmpty) {
+        // handle struct type
+        attributeModel.copy(attributesList =
+          attributeModel.attributesList.map(a => resolveEventAttribute(publishModel, eventModel, section, a))
+        )
+      }
+      else attributeModel
+    }
     else {
       Try(
         resolveRefAttribute(AttrRef(attributeModel.ref, publishModel.component, section, eventModel.name, AttrRef.attributes))
@@ -396,9 +403,15 @@ case class Resolver(allModels: List[IcdModels]) {
       section: AttrRef.AttrSection,
       attributeModel: AttributeModel
   ): AttributeModel = {
-    if (attributeModel.ref.isEmpty)
-      attributeModel
-    else {
+    if (attributeModel.ref.isEmpty) {
+      if (attributeModel.attributesList.nonEmpty) {
+        // handle struct type
+        attributeModel.copy(attributesList =
+          attributeModel.attributesList.map(a => resolveCommandAttribute(commandModel, receiveCommandModel, section, a))
+        )
+      }
+      else attributeModel
+    } else {
       Try(
         resolveRefAttribute(
           AttrRef(attributeModel.ref, commandModel.component, Ref.receive, receiveCommandModel.name, section)
@@ -454,7 +467,7 @@ case class Resolver(allModels: List[IcdModels]) {
     maybeRefPublishModel.get
   }
 
-  // Resolve a reference to another event in the form
+  // Resolve a reference to another event
   private def resolveRefEvent(publishModel: PublishModel, ref: Ref, resolveAttributes: Boolean = true): EventModel = {
     val refPublishModel = resolvePublishModel(ref.ref, ref.component, publishModel)
     val eventModelList = ref.section match {
