@@ -1,0 +1,30 @@
+digraph {
+  graph [layout = dot, splines = true, overlap = scale, ratio = 0.5]
+  node [fontsize = 20]
+  edge [fontsize = 10]
+  rankdir=LR
+  node [shape=plaintext]
+  subgraph cluster_01 {
+	style = rounded
+    label = "Legend";
+    fontsize = 20
+    key [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">
+      <tr><td align="right" port="i2">Events </td></tr>
+      <tr><td align="right" port="i3">Commands </td></tr>
+       <tr><td align="right" port="i1">Missing </td></tr>
+     </table>>]
+    key2 [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">
+      <tr><td port="i2">&nbsp;</td></tr>
+      <tr><td port="i3">&nbsp;</td></tr>
+      <tr><td port="i1">&nbsp;</td></tr>
+      </table>>]
+    key:i2:e -> key2:i2:w [color=dimgrey]
+    key:i3:e -> key2:i3:w [color=chocolate]
+    key:i1:e -> key2:i1:w [color=red, style=dashed]
+    node [shape=oval]
+    Primary -> Secondary [style=invis] ;
+    Primary [label = "Primary\nComponent", color = blue, fontcolor = blue, style = bold]
+    Secondary [label = "Secondary\nComponent", style=dashed, color = blue] ;
+    Missing [label = "Missing\nComponent", color=red, style=dashed] ;
+  }
+}

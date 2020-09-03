@@ -72,6 +72,8 @@ label events and commands, and show missing events and commands
 icd-viz --components iris.oiwfs.poa --missingcommands true --missingevents true --commandlabels true --eventlabels true
 ```
 
+![Graph](example.png)
+
 * Plot all interfaces for two components only to a file called graph.pdf
 
 ```
@@ -91,3 +93,4 @@ icd-viz --subsystems iris --layout neato --eventlabels false --overlap false
 
 ```
 
+![Legend](legend.png)
