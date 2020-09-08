@@ -127,11 +127,12 @@ case class Subsystem(
   /**
    * Gets the currently selected component name
    */
-  def getSelectedComponent: Option[String] =
+  def getSelectedComponent: Option[String] = {
     componentItem.value match {
-      case `componentPlaceholder` => None
+      case `componentPlaceholder` | "" => None
       case componentName          => Some(componentName)
     }
+  }
 
   /**
    * Gets the list of subsystems being displayed
