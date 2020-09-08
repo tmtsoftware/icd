@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
-## [ICD v2.0.0] - 
+## [ICD v2.0.0] - 2020-09-09
 
 ### Added
 
@@ -27,11 +27,18 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 
 - Added new option to icd-git command: `--ingestMissing`: Ingests any APIs or ICDs that were published, but are not yet in the local database, plus any master branch versions.
 
+- Added "ref" keyword for events, commands, attributes to enable reuse of all or part of another item in the model files.
+  See "Reusing Event, Command and Attribute Definitions" at the end of [README.md](README.md) for more details.
+
 ### Changed
 
-- Changed API layout to include only published events or alarms and received commands by default (with option to include subscribed events and sent commands as well, like before)
+- Changed API layout to include only published events or alarms and received commands by default (with option to include subscribed events and sent commands as well, like before).
 
 - The checkboxes in the web app select dialog are only enabled when a single subsystem is selected (since they only apply to APIs).
+
+- Changed the JSON schema for attributes to allow "inf" as the value for "maximum" or "exclusiveMaximum" and "-inf" as the value for "minimum" or "exclusiveMinimum".
+
+- Changed the JSON schema for attributes to include the "allowNaN" keyword. Set to true if NaN values are allowed. Default value is false.
 
 ## [ICD v1.3.1] - 2020-06-08
 
