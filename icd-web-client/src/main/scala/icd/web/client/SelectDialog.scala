@@ -91,7 +91,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   }
 
   private def clientApiCheckboxChanged()(e: dom.Event): Unit = {
-    val maybeTargetSv = targetSubsystem.getSubsystemWithVersion
+    val maybeTargetSv = targetSubsystem.getSubsystemWithVersion()
     searchAllCheckbox.disabled = maybeTargetSv.isDefined || !clientApi()
   }
 
@@ -134,7 +134,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
     ): Future[Unit] = {
       pdfItem.setEnabled(true)
       graphItem.setEnabled(true)
-      val maybeTargetSv = targetSubsystem.getSubsystemWithVersion
+      val maybeTargetSv = targetSubsystem.getSubsystemWithVersion()
       targetSubsystem.setEnabled(maybeSv.isDefined)
       applyButton.disabled = maybeSv.isEmpty
       clientApiCheckbox.disabled = maybeTargetSv.isDefined || maybeSv.isEmpty
@@ -160,7 +160,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
         maybeTargetSv: Option[SubsystemWithVersion],
         findMatchingIcd: Boolean
     ): Future[Unit] = {
-      val maybeSv = subsystem.getSubsystemWithVersion
+      val maybeSv = subsystem.getSubsystemWithVersion()
       clientApiCheckbox.disabled = maybeTargetSv.isDefined || maybeSv.isEmpty
       searchAllCheckbox.disabled = maybeTargetSv.isDefined || maybeSv.isEmpty || !clientApi()
       maybeSv
@@ -181,8 +181,8 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   // Swap source and target subsystems
   private def swapSubsystems(): Unit = {
     for {
-      sv2 <- targetSubsystem.getSubsystemWithVersion
-      sv1 <- subsystem.getSubsystemWithVersion
+      sv2 <- targetSubsystem.getSubsystemWithVersion()
+      sv1 <- subsystem.getSubsystemWithVersion()
     } {
       // XXX TODO FIXME: Use of futures...
       icdChooser.selectMatchingIcd(sv2, Some(sv1))
@@ -218,8 +218,8 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
 
   // Display the selected subsystems and components
   def applySettings(): Future[Unit] = {
-    val maybeSv       = subsystem.getSubsystemWithVersion
-    val maybeTargetSv = targetSubsystem.getSubsystemWithVersion
+    val maybeSv       = subsystem.getSubsystemWithVersion()
+    val maybeTargetSv = targetSubsystem.getSubsystemWithVersion()
     val maybeIcd      = icdChooser.getSelectedIcdVersion
     val showClientApi = clientApi() || maybeTargetSv.isDefined
     val searchAll = searchAllSubsystems() && maybeTargetSv.isEmpty

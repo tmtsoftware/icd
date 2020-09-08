@@ -95,12 +95,12 @@ case class Subsystem(
   // called when a subsystem is selected
   private def subsystemSelected(e: dom.Event): Unit = {
     for (_ <- updateSubsystemVersionOptions())
-      listener.subsystemSelected(getSubsystemWithVersion)
+      listener.subsystemSelected(getSubsystemWithVersion(subsystemOnly = true))
   }
 
   // called when a subsystem version is selected
   private def subsystemVersionSelected(e: dom.Event): Unit = {
-    listener.subsystemSelected(getSubsystemWithVersion)
+    listener.subsystemSelected(getSubsystemWithVersion())
   }
 
   // HTML markup displaying the subsystem and version comboboxes
@@ -159,10 +159,14 @@ case class Subsystem(
     }
 
   /**
-   * Gets the selected subsystem with the selected version
+   * Gets the selected subsystem with the selected version and component.
+   * If subsystemOnly is true, gets only the subsystem with no version or component selected.
    */
-  def getSubsystemWithVersion: Option[SubsystemWithVersion] = {
-    getSelectedSubsystem.map(subsystem => SubsystemWithVersion(subsystem, getSelectedSubsystemVersion, getSelectedComponent))
+  def getSubsystemWithVersion(subsystemOnly: Boolean = false): Option[SubsystemWithVersion] = {
+    getSelectedSubsystem.map(subsystem =>
+      SubsystemWithVersion(subsystem,
+        if (subsystemOnly) None else getSelectedSubsystemVersion,
+        if (subsystemOnly) None else getSelectedComponent))
   }
 
   /**
@@ -176,7 +180,7 @@ case class Subsystem(
       maybeSv: Option[SubsystemWithVersion],
       findMatchingIcd: Boolean = true
   ): Future[Unit] = {
-    if (maybeSv == getSubsystemWithVersion)
+    if (maybeSv == getSubsystemWithVersion())
       Future.successful()
     else {
       maybeSv match {
@@ -249,7 +253,7 @@ case class Subsystem(
         case None    =>
           versionItem.value = unpublishedVersion
       }
-      listener.subsystemSelected(getSubsystemWithVersion, findMatchingIcd = false)
+      listener.subsystemSelected(getSubsystemWithVersion(), findMatchingIcd = false)
     }
   }
 

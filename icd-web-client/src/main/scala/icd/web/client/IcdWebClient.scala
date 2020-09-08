@@ -203,8 +203,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     if (saveHistory) {
       pushState(
         viewType = SelectView,
-        maybeSourceSubsystem = selectDialog.subsystem.getSubsystemWithVersion,
-        maybeTargetSubsystem = selectDialog.targetSubsystem.getSubsystemWithVersion,
+        maybeSourceSubsystem = selectDialog.subsystem.getSubsystemWithVersion(),
+        maybeTargetSubsystem = selectDialog.targetSubsystem.getSubsystemWithVersion(),
         maybeIcd = selectDialog.icdChooser.getSelectedIcdVersion
       )
     } else {
@@ -281,8 +281,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
    */
   private object ComponentLinkSelectionHandler extends ComponentListener {
     def componentSelected(link: ComponentLink): Unit = {
-      val maybeSv              = selectDialog.subsystem.getSubsystemWithVersion
-      val maybeTargetSv        = selectDialog.targetSubsystem.getSubsystemWithVersion
+      val maybeSv              = selectDialog.subsystem.getSubsystemWithVersion()
+      val maybeTargetSv        = selectDialog.targetSubsystem.getSubsystemWithVersion()
       val maybeSubsystem       = maybeSv.map(_.subsystem)
       val maybeTargetSubsystem = maybeTargetSv.map(_.subsystem)
 
@@ -495,8 +495,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     if (saveHistory) {
       pushState(
         viewType = SelectView,
-        maybeSourceSubsystem = selectDialog.subsystem.getSubsystemWithVersion,
-        maybeTargetSubsystem = selectDialog.targetSubsystem.getSubsystemWithVersion,
+        maybeSourceSubsystem = selectDialog.subsystem.getSubsystemWithVersion(),
+        maybeTargetSubsystem = selectDialog.targetSubsystem.getSubsystemWithVersion(),
         maybeIcd = selectDialog.icdChooser.getSelectedIcdVersion
       )
     }
@@ -511,8 +511,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       pushState(
         replace = false,
         viewType = ComponentView,
-        maybeSourceSubsystem = selectDialog.subsystem.getSubsystemWithVersion,
-        maybeTargetSubsystem = selectDialog.targetSubsystem.getSubsystemWithVersion,
+        maybeSourceSubsystem = selectDialog.subsystem.getSubsystemWithVersion(),
+        maybeTargetSubsystem = selectDialog.targetSubsystem.getSubsystemWithVersion(),
         maybeIcd = selectDialog.icdChooser.getSelectedIcdVersion,
         maybeUri = Some(uri)
       )
@@ -553,10 +553,10 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     val maybeSv =
       if (currentView == StatusView)
         statusDialog.getSubsystemWithVersion
-      else selectDialog.subsystem.getSubsystemWithVersion
+      else selectDialog.subsystem.getSubsystemWithVersion()
 
     maybeSv.foreach { sv =>
-      val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion
+      val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion()
       val maybeIcdVersion = selectDialog.icdChooser.getSelectedIcdVersion.map(_.icdVersion)
       val searchAll       = selectDialog.searchAllSubsystems()
       val clientApi       = selectDialog.clientApi()
@@ -582,10 +582,10 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     val maybeSv =
       if (currentView == StatusView)
         statusDialog.getSubsystemWithVersion
-      else selectDialog.subsystem.getSubsystemWithVersion
+      else selectDialog.subsystem.getSubsystemWithVersion()
 
     maybeSv.foreach { sv =>
-      val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion
+      val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion()
       val maybeIcdVersion = selectDialog.icdChooser.getSelectedIcdVersion.map(_.icdVersion)
       val uri             = ClientRoutes.makeGraph(sv, maybeTargetSv, maybeIcdVersion, options)
       dom.window.open(uri) // opens in new window or tab
@@ -597,7 +597,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     val maybeSv =
       if (currentView == StatusView)
         statusDialog.getSubsystemWithVersion
-      else selectDialog.subsystem.getSubsystemWithVersion
+      else selectDialog.subsystem.getSubsystemWithVersion()
 
     val uri =
       if (maybeSv.isDefined)
