@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
+
+### Added
+
+### Changed
+
+- Changed the json-schema (v2.0) for attributes to allow an arbitrary string for maximum, minimum, 
+  exclusiveMaximum, exclusiveMinimum (See [DEOPSICDDB-112](https://tmt-project.atlassian.net/secure/RapidBoard.jspa?rapidView=97&projectKey=DEOPSICDDB&modal=detail&selectedIssue=DEOPSICDDB-112)).
+
 ## [ICD v2.0.0] - 2020-09-09
 
 ### Added
