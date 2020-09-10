@@ -10,7 +10,9 @@ import reactivemongo.api.bson._
  */
 object EventModelBsonParser {
 
-  def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): EventModel =
+  def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): EventModel = {
+    // For backward compatibility, allow "attributes" or "parameters"
+    val attrKey = if (doc.contains("parameters")) "parameters" else "attributes"
     EventModel(
       name = doc.getAsOpt[String]("name").get,
       ref = doc.getAsOpt[String]("ref").getOrElse(""),
@@ -21,8 +23,9 @@ object EventModelBsonParser {
       archive = doc.getAsOpt[Boolean]("archive").getOrElse(false),
       archiveDuration = doc.getAsOpt[String]("archiveDuration").getOrElse(""),
       attributesList =
-        for (subDoc <- doc.getAsOpt[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
+        for (subDoc <- doc.getAsOpt[Array[BSONDocument]](attrKey).map(_.toList).getOrElse(Nil))
           yield AttributeModelBsonParser(subDoc, maybePdfOptions),
 
     )
+  }
 }

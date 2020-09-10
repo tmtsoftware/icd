@@ -10,6 +10,8 @@ import reactivemongo.api.bson._
  */
 object ReceiveCommandModelBsonParser {
   def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): ReceiveCommandModel = {
+    // For backward compatibility, allow "args" or "parameters"
+    val argsKey = if (doc.contains("parameters")) "parameters" else "args"
     ReceiveCommandModel(
       name = doc.getAsOpt[String]("name").get,
       ref = doc.getAsOpt[String]("ref").getOrElse(""),
@@ -20,7 +22,7 @@ object ReceiveCommandModelBsonParser {
       postconditions = doc.getAsOpt[Array[String]]("postconditions").map(_.toList).getOrElse(Nil).map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)),
       requiredArgs = doc.getAsOpt[Array[String]]("requiredArgs").map(_.toList).getOrElse(Nil),
       args =
-        for (subDoc <- doc.getAsOpt[Array[BSONDocument]]("args").map(_.toList).getOrElse(Nil))
+        for (subDoc <- doc.getAsOpt[Array[BSONDocument]](argsKey).map(_.toList).getOrElse(Nil))
           yield AttributeModelBsonParser(subDoc, maybePdfOptions),
       completionType = doc.getAsOpt[String]("completionType").getOrElse("immediate"),
       resultType =

@@ -125,7 +125,9 @@ object AttributeModelBsonParser {
 
     // If type is "struct", attributeList gives the fields of the struct
     val attributesList = if (typeStr == "struct") {
-      for (subDoc <- doc.getAsOpt[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
+      // For backward compatibility, allow "attributes" or "parameters"
+      val attrKey = if (doc.contains("parameters")) "parameters" else "attributes"
+      for (subDoc <- doc.getAsOpt[Array[BSONDocument]](attrKey).map(_.toList).getOrElse(Nil))
         yield AttributeModelBsonParser(subDoc, maybePdfOptions)
     }
     else if (typeStr == "array of struct") {
