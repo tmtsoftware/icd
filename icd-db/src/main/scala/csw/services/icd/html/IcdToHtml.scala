@@ -366,7 +366,7 @@ object IcdToHtml {
             yesNo(requiredArgs.contains(a.name))
           )
       div(cls := "nopagebreak")(
-        p(strong(a(s"Arguments for $nameStr"))),
+        p(strong(a(s"Parameters for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList),
         attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
         structAttributesMarkup(attributesList)
@@ -482,7 +482,7 @@ object IcdToHtml {
             yield List(a2.name, a2.description, getTypeStr(a2.name, a2.typeStr), a2.units, a2.defaultValue)
         Some(
           div()(
-            p(strong(a(name := structIdStr(attrModel.name))(s"Attributes for ${attrModel.name} struct"))),
+            p(strong(a(name := structIdStr(attrModel.name))(s"Parameters for ${attrModel.name} struct"))),
             HtmlMarkup.mkTable(headings, rowList2),
             attrModel.attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
             // Handle structs embedded in other structs (or arrays of structs, etc.)
@@ -513,7 +513,7 @@ object IcdToHtml {
       val rowList =
         for (a <- attributesList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units, a.defaultValue)
       div(cls := "nopagebreak")(
-        p(strong(a(s"Attributes for $nameStr"))),
+        p(strong(a(s"Parameters for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList),
         attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
         structAttributesMarkup(attributesList)

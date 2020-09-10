@@ -286,7 +286,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             yield List(a2.name, a2.description, getTypeStr(a2.name, a2.typeStr), a2.units, a2.defaultValue)
         Some(
           div()(
-            p(strong(a(name := structIdStr(attrModel.name))(s"Attributes for ${attrModel.name} struct"))),
+            p(strong(a(name := structIdStr(attrModel.name))(s"Parameters for ${attrModel.name} struct"))),
             mkTable(headings, rowList2),
             attrModel.attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
             // Handle structs embedded in other structs (or arrays of structs, etc.)
@@ -301,11 +301,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   /**
    * Returns a table of attributes
    *
-   * @param titleStr       title to display above the table
    * @param attributesList list of attributes to display
    * @return
    */
-  private def attributeListMarkup(titleStr: String, attributesList: List[AttributeModel]): TypedTag[HTMLDivElement] = {
+  private def attributeListMarkup(attributesList: List[AttributeModel]): TypedTag[HTMLDivElement] = {
     import scalatags.JsDom.all._
     if (attributesList.isEmpty) div()
     else {
@@ -313,7 +312,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       val rowList =
         for (a <- attributesList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units, a.defaultValue)
       div(
-        strong(titleStr),
+        strong("Parameters"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
         attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
         structAttributesMarkup(attributesList)
@@ -324,12 +323,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   /**
    * Returns a table of parameters
    *
-   * @param titleStr       title to display above the table
    * @param attributesList list of attributes to display
    * @param requiredArgs   a list of required arguments
    */
   private def parameterListMarkup(
-      titleStr: String,
       attributesList: List[AttributeModel],
       requiredArgs: List[String]
   ): TypedTag[HTMLDivElement] = {
@@ -348,7 +345,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             yesNo(requiredArgs.contains(a.name))
           )
       div(
-        strong(titleStr),
+        strong("Parameters"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
         attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
         structAttributesMarkup(attributesList)
@@ -458,7 +455,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         mkTable(headings, rowList),
         if (eventModel.maybeMaxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.")
         else span(),
-        attributeListMarkup("Attributes", eventModel.attributesList)
+        attributeListMarkup(eventModel.attributesList)
       )
     }
 
@@ -606,7 +603,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         )
       )
 
-      val attrTable = si.eventModel.map(t => attributeListMarkup("Attributes", t.attributesList)).getOrElse(div())
+      val attrTable = si.eventModel.map(t => attributeListMarkup(t.attributesList)).getOrElse(div())
       div(
         mkTable(headings, rowList),
         if (maxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.") else span(),
@@ -700,7 +697,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
       if (m.preconditions.isEmpty) div() else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
       if (m.postconditions.isEmpty) div() else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
-      parameterListMarkup("Arguments", m.args, m.requiredArgs),
+      parameterListMarkup(m.args, m.requiredArgs),
       p(strong("Completion Type: "), m.completionType),
       resultTypeMarkup(m.resultType),
       if (m.completionConditions.isEmpty) div()
