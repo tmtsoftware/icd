@@ -130,14 +130,15 @@ object AttributeModelBsonParser {
       for (subDoc <- doc.getAsOpt[Array[BSONDocument]](attrKey).map(_.toList).getOrElse(Nil))
         yield AttributeModelBsonParser(subDoc, maybePdfOptions)
     }
-    else if (typeStr == "array of struct") {
+    else if (typeStr.startsWith("array") && typeStr.endsWith(" of struct")) {
       doc
         .getAsOpt[BSONDocument]("items")
         .toList
-        .flatMap(items =>
-          for (subDoc <- items.getAsOpt[Array[BSONDocument]]("attributes").map(_.toList).getOrElse(Nil))
+        .flatMap { items =>
+          val attrKey = if (items.contains("parameters")) "parameters" else "attributes"
+          for (subDoc <- items.getAsOpt[Array[BSONDocument]](attrKey).map(_.toList).getOrElse(Nil))
             yield AttributeModelBsonParser(subDoc, maybePdfOptions)
-        )
+        }
     }
     else Nil
 
