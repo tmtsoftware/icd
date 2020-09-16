@@ -108,14 +108,16 @@ object Resolver {
     object resultType extends AttrSection
 
     object AttrSection {
-      def apply(ref: String, s: String): AttrSection = {
+      def apply(ref: Ref, s: String): AttrSection = {
+        // For backward compatibility, allow "attributes" or "args" in place of "parameters"
         s match {
+          case "parameters" => if (ref.section == Ref.receive) args else attributes
           case "attributes" => attributes
           case "args"       => args
           case "resultType" => resultType
           case x =>
             throw resolverException(
-              s"Invalid ref attribute section $x in $ref, expected one of (attributes, args, resultType)"
+              s"Invalid ref attribute section $x in ${ref.ref}, expected one of (attributes, args, resultType)"
             )
         }
       }
@@ -149,15 +151,20 @@ object Resolver {
       val parts = ref.split('/')
       parts.length match {
         case 1 =>
-          AttrRef(Ref(ref, defaultComponent, defaultSection, defaultName), defaultAttrSection, parts.head)
+          val r = Ref(ref, defaultComponent, defaultSection, defaultName)
+          AttrRef(r, defaultAttrSection, parts.head)
         case 2 =>
-          AttrRef(Ref(ref, defaultComponent, defaultSection, defaultName), AttrSection(ref, parts(0)), parts(1))
+          val r = Ref(ref, defaultComponent, defaultSection, defaultName)
+          AttrRef(r, AttrSection(r, parts(0)), parts(1))
         case 3 =>
-          AttrRef(Ref(ref, defaultComponent, defaultSection, parts(0)), AttrSection(ref, parts(1)), parts(2))
+          val r = Ref(ref, defaultComponent, defaultSection, parts(0))
+          AttrRef(r, AttrSection(r, parts(1)), parts(2))
         case 4 =>
-          AttrRef(Ref(ref, defaultComponent, Ref.Section(ref, parts(0)), parts(1)), AttrSection(ref, parts(2)), parts(3))
+          val r = Ref(ref, defaultComponent, Ref.Section(ref, parts(0)), parts(1))
+          AttrRef(r, AttrSection(r, parts(2)), parts(3))
         case 5 =>
-          AttrRef(Ref(ref, parts(0), Ref.Section(ref, parts(1)), parts(2)), AttrSection(ref, parts(3)), parts(4))
+          val r = Ref(ref, parts(0), Ref.Section(ref, parts(1)), parts(2))
+          AttrRef(r, AttrSection(r, parts(3)), parts(4))
         case _ =>
           throw resolverException(
             s"Invalid attribute ref '$ref': Expected syntax like: componentName/events/eventName/attributes/attrName (or abbreviated if in same scope)"
