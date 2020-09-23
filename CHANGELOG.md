@@ -7,7 +7,12 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 
 ### Changed
 
-- Changed the json-schema (v2.0) for attributes to allow an arbitrary string for maximum, minimum, 
+- Changed the "attributes" keyword for events (in publish-model.conf) and the "args" keyword for commands 
+  (in command-model.conf) to "parameters", to match the CSW convention.
+  Also renamed the json-schema files used internally for validation.
+  See [DEOPSICDDB-113](https://tmt-project.atlassian.net/secure/RapidBoard.jspa?rapidView=97&projectKey=DEOPSICDDB&modal=detail&selectedIssue=DEOPSICDDB-113).
+
+- Changed the json-schema (v2.0) for attributes (parameters) to allow an arbitrary string for maximum, minimum, 
   exclusiveMaximum, exclusiveMinimum (See [DEOPSICDDB-112](https://tmt-project.atlassian.net/secure/RapidBoard.jspa?rapidView=97&projectKey=DEOPSICDDB&modal=detail&selectedIssue=DEOPSICDDB-112)).
 
 ## [ICD v2.0.0] - 2020-09-09
