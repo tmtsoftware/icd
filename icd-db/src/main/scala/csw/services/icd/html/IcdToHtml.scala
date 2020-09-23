@@ -338,7 +338,7 @@ object IcdToHtml {
       val headings = List("Name", "Description", "Type", "Units")
       val rowList  = for (a <- attributesList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units)
       div(cls := "nopagebreak")(
-        p(strong(a("Result Type Fields"))),
+        p(strong(a("Result Type Parameters"))),
         HtmlMarkup.mkTable(headings, rowList),
         attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
         structAttributesMarkup(attributesList)
