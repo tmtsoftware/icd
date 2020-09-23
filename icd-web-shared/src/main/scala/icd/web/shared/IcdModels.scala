@@ -5,7 +5,7 @@ package icd.web.shared
  */
 object IcdModels {
 
-  // --- Size estimates for archiving event attributes --
+  // --- Size estimates for archiving event parameters --
 
   val doubleSize = 8
 
@@ -125,13 +125,13 @@ object IcdModels {
   ) extends NameDesc
 
   /**
-   * Defines the properties of an attribute
+   * Defines the properties of a parameter
    *
-   * @param name             name of the attribute
-   * @param ref              if not empty, a reference to another attribute to copy missing values from
-   *                         in the form component/section/name/attrSection/attrName (may be abbreviated, if in same scope)
+   * @param name             name of the parameter
+   * @param ref              if not empty, a reference to another parameter to copy missing values from
+   *                         in the form component/section/name/paramSection/paramName (may be abbreviated, if in same scope)
    * @param refError contains an error message if ref is invalid (not stored in the db)
-   * @param description      description of the attribute
+   * @param description      description of the parameter
    * @param maybeType        an optional string describing the type (either this or maybeEnum should be defined)
    * @param maybeEnum        an optional string describing the enum type (either this or maybeType should be defined)
    * @param maybeArrayType   if type is array, this should be the type of the array elements
@@ -145,9 +145,9 @@ object IcdModels {
    * @param exclusiveMaximum true if the max value in exclusive
    * @param defaultValue     default value (as a string, which may be empty)
    * @param typeStr          a generated text description of the type
-   * @param attributesList   If type or array type is "struct", this should be a list of attributes in the struct
+   * @param parameterList   If type or array type is "struct", this should be a list of parameters in the struct
    */
-  case class AttributeModel(
+  case class ParameterModel(
       name: String,
       ref: String,
       refError: String,
@@ -166,17 +166,17 @@ object IcdModels {
       allowNaN: Boolean,
       defaultValue: String,
       typeStr: String,
-      attributesList: List[AttributeModel]
+      parameterList: List[ParameterModel]
   ) extends NameDesc {
 
-    // Estimate size required to archive the value(s) for this attribute
+    // Estimate size required to archive the value(s) for this parameter
     private def getTypeSize(typeName: String): Int = {
       typeName match {
         case "array" =>
           // Use the given array dimensions, or guess if none given (may not be known ahead of time?)
           val d = maxItems.map(List(_)).getOrElse(defaultArrayDims)
           maybeDimensions.getOrElse(d).product * maybeArrayType.map(getTypeSize).getOrElse(defaultTypeSize)
-        case "struct" => attributesList.map(_.totalSizeInBytes).sum
+        case "struct" => parameterList.map(_.totalSizeInBytes).sum
         // Assume boolean encoded as 1/0 byte?
         case "boolean" => 1
         case "integer" => 4
@@ -222,7 +222,7 @@ object IcdModels {
     }
 
     /**
-     * Calculated (or estimated, worst case) total size in bytes for this attribute (for archiving)
+     * Calculated (or estimated, worst case) total size in bytes for this parameter (for archiving)
      */
     lazy val totalSizeInBytes: Int = {
       maybeType match {
@@ -264,9 +264,9 @@ object IcdModels {
       preconditions: List[String],
       postconditions: List[String],
       requiredArgs: List[String],
-      args: List[AttributeModel],
+      parameters: List[ParameterModel],
       completionType: String,
-      resultType: List[AttributeModel],
+      resultType: List[ParameterModel],
       completionConditions: List[String],
       role: Option[String]
   ) extends NameDesc
@@ -399,7 +399,7 @@ object IcdModels {
    * @param maybeMaxRate optional maximum rate of publishing in Hz
    * @param archive true if publisher recommends archiving this event
    * @param archiveDuration lifetime of the archiving (example: '2 years', '6 months'): Required if archive is true.
-   * @param attributesList attributes for the event
+   * @param parameterList parameters for the event
    */
   case class EventModel(
       name: String,
@@ -410,7 +410,7 @@ object IcdModels {
       maybeMaxRate: Option[Double],
       archive: Boolean,
       archiveDuration: String,
-      attributesList: List[AttributeModel]
+      parameterList: List[ParameterModel]
   ) extends NameDesc {
     import EventModel._
 
@@ -418,7 +418,7 @@ object IcdModels {
     def eventOverhead: Int = 100 + name.length
 
     // Estimated size in bytes of this event
-    lazy val totalSizeInBytes: Int = eventOverhead + attributesList.map(_.totalSizeInBytes).sum
+    lazy val totalSizeInBytes: Int = eventOverhead + parameterList.map(_.totalSizeInBytes).sum
 
     // Estimated number of bytes to archive this event at the maxRate for a year
     lazy val totalArchiveBytesPerYear: Long = {

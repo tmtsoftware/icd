@@ -21,13 +21,13 @@ object ReceiveCommandModelBsonParser {
       preconditions = doc.getAsOpt[Array[String]]("preconditions").map(_.toList).getOrElse(Nil).map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)),
       postconditions = doc.getAsOpt[Array[String]]("postconditions").map(_.toList).getOrElse(Nil).map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)),
       requiredArgs = doc.getAsOpt[Array[String]]("requiredArgs").map(_.toList).getOrElse(Nil),
-      args =
+      parameters =
         for (subDoc <- doc.getAsOpt[Array[BSONDocument]](argsKey).map(_.toList).getOrElse(Nil))
-          yield AttributeModelBsonParser(subDoc, maybePdfOptions),
+          yield ParameterModelBsonParser(subDoc, maybePdfOptions),
       completionType = doc.getAsOpt[String]("completionType").getOrElse("immediate"),
       resultType =
         for (subDoc <- doc.getAsOpt[Array[BSONDocument]]("resultType").map(_.toList).getOrElse(Nil))
-          yield AttributeModelBsonParser(subDoc, maybePdfOptions),
+          yield ParameterModelBsonParser(subDoc, maybePdfOptions),
       completionConditions = doc.getAsOpt[Array[String]]("completionCondition").map(_.toList).getOrElse(Nil),
       role = doc.getAsOpt[String]("role")
     )

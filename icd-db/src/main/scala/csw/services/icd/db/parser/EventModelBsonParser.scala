@@ -22,9 +22,9 @@ object EventModelBsonParser {
       maybeMaxRate = doc.getAsOpt[BSONNumberLike]("maxRate").map(_.toDouble.getOrElse(1.0)),
       archive = doc.getAsOpt[Boolean]("archive").getOrElse(false),
       archiveDuration = doc.getAsOpt[String]("archiveDuration").getOrElse(""),
-      attributesList =
+      parameterList =
         for (subDoc <- doc.getAsOpt[Array[BSONDocument]](attrKey).map(_.toList).getOrElse(Nil))
-          yield AttributeModelBsonParser(subDoc, maybePdfOptions),
+          yield ParameterModelBsonParser(subDoc, maybePdfOptions),
 
     )
   }

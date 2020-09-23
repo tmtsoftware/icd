@@ -1,7 +1,7 @@
 package csw.services.icd.db
 
 import icd.web.shared.IcdModels
-import icd.web.shared.IcdModels.{AttributeModel, CommandModel, EventModel, PublishModel, ReceiveCommandModel}
+import icd.web.shared.IcdModels.{ParameterModel, CommandModel, EventModel, PublishModel, ReceiveCommandModel}
 
 import scala.util.{Failure, Success, Try}
 import com.typesafe.scalalogging.Logger
@@ -65,14 +65,17 @@ object Resolver {
      * or $componentName/receive/$commandName
      * or just $commandName (in same component)
      *
-     * Attributes for events, as above, but with attr name:
-     * $componentName/events/$eventName/attributes/$attrName
+     * Parameters for events, as above, but with param name:
+     * $componentName/events/$eventName/parameters/$paramName
      * or abbreviated as above.
      *
-     * Attributes for commands: as above, but with additional info:
-     * $componentName/receive/$commandName/args/$attrName
-     * or $componentName/receive/$commandName/resultType/$attrName
+     * Parameters for commands: as above, but with additional info:
+     * $componentName/receive/$commandName/parameters/$paramName
+     * or $componentName/receive/$commandName/resultType/$paramName
      * or abbreviated as above.
+     *
+     * For backward compatibility, "attributes" or "args" are accepted
+     * in place of "parameters" for events, commands, resp.
      *
      * @param ref the ref string
      * @param defaultComponent if component is not specified in the ref string, use this
@@ -96,78 +99,78 @@ object Resolver {
   }
 
   /**
-   * Holds the parts of an attribute reference
+   * Holds the parts of an parameter reference
    */
-  private case class AttrRef(ref: Ref, attrSection: AttrRef.AttrSection, name: String)
+  private case class ParamRef(ref: Ref, paramSection: ParamRef.ParamSection, name: String)
 
-  private object AttrRef {
-    // Tells where to look for an attribute
-    sealed trait AttrSection
-    object attributes extends AttrSection
-    object args       extends AttrSection
-    object resultType extends AttrSection
+  private object ParamRef {
+    // Tells where to look for an parameter
+    sealed trait ParamSection
+    object eventParams   extends ParamSection
+    object commandParams extends ParamSection
+    object resultType    extends ParamSection
 
-    object AttrSection {
-      def apply(ref: Ref, s: String): AttrSection = {
+    object ParamSection {
+      def apply(ref: Ref, s: String): ParamSection = {
         // For backward compatibility, allow "attributes" or "args" in place of "parameters"
         s match {
-          case "parameters" => if (ref.section == Ref.receive) args else attributes
-          case "attributes" => attributes
-          case "args"       => args
+          case "parameters" => if (ref.section == Ref.receive) commandParams else eventParams
+          case "attributes" => eventParams    // deprecated
+          case "  args"       => commandParams  // deprecated
           case "resultType" => resultType
           case x =>
             throw resolverException(
-              s"Invalid ref attribute section $x in ${ref.ref}, expected one of (attributes, args, resultType)"
+              s"Invalid ref parameter section $x in ${ref.ref}, expected one of (parameters [attributes, args], or resultType)"
             )
         }
       }
     }
 
     /**
-     * Returns an AttrRef object for an event or command attribute ref string in the form:
+     * Returns an ParamRef object for an event or command parameter ref string in the form:
      *
      * For events:
-     * $componentName/events/$eventName/attributes/$attrName
+     * $componentName/events/$eventName/parameters/$paramName
      * or abbreviated if in same scope (see parseRef).
      *
      * For commands:
-     * $componentName/receive/$commandName/args/$attrName
-     * or $componentName/receive/$commandName/resultType/$attrName
+     * $componentName/receive/$commandName/parameters/$paramName
+     * or $componentName/receive/$commandName/resultType/$paramName
      * or abbreviated (See parseRef).
      *
      * @param ref the ref string
      * @param defaultComponent if component is not specified in the ref string, use this
      * @param defaultSection if section is not given in the ref, use this
      * @param defaultName if the name of the event or command is not in the ref, use this
-     * @param defaultAttrSection if attribute section is not given, use this
+     * @param defaultParamSection if parameter section is not given, use this
      */
     def apply(
         ref: String,
         defaultComponent: String,
         defaultSection: Ref.Section,
         defaultName: String,
-        defaultAttrSection: AttrSection
-    ): AttrRef = {
+        defaultParamSection: ParamSection
+    ): ParamRef = {
       val parts = ref.split('/')
       parts.length match {
         case 1 =>
           val r = Ref(ref, defaultComponent, defaultSection, defaultName)
-          AttrRef(r, defaultAttrSection, parts.head)
+          ParamRef(r, defaultParamSection, parts.head)
         case 2 =>
           val r = Ref(ref, defaultComponent, defaultSection, defaultName)
-          AttrRef(r, AttrSection(r, parts(0)), parts(1))
+          ParamRef(r, ParamSection(r, parts(0)), parts(1))
         case 3 =>
           val r = Ref(ref, defaultComponent, defaultSection, parts(0))
-          AttrRef(r, AttrSection(r, parts(1)), parts(2))
+          ParamRef(r, ParamSection(r, parts(1)), parts(2))
         case 4 =>
           val r = Ref(ref, defaultComponent, Ref.Section(ref, parts(0)), parts(1))
-          AttrRef(r, AttrSection(r, parts(2)), parts(3))
+          ParamRef(r, ParamSection(r, parts(2)), parts(3))
         case 5 =>
           val r = Ref(ref, parts(0), Ref.Section(ref, parts(1)), parts(2))
-          AttrRef(r, AttrSection(r, parts(3)), parts(4))
+          ParamRef(r, ParamSection(r, parts(3)), parts(4))
         case _ =>
           throw resolverException(
-            s"Invalid attribute ref '$ref': Expected syntax like: componentName/events/eventName/attributes/attrName (or abbreviated if in same scope)"
+            s"Invalid parameter ref '$ref': Expected syntax like: componentName/events/eventName/parameters/paramName (or abbreviated if in same scope)"
           )
       }
     }
@@ -175,13 +178,13 @@ object Resolver {
 }
 
 /**
- * A utility class used to resolve "ref" entries in events, commands or attributes.
+ * A utility class used to resolve "ref" entries in events, commands or parameters.
  * @param allModels list of all models for a subsystem (based on the input model files)
  */
 case class Resolver(allModels: List[IcdModels]) {
 
   /**
-   * Resolve any event, command or attribute "ref" items and return the resolved definitions.
+   * Resolve any event, command or parameter "ref" items and return the resolved definitions.
    * @return the fully resolved list of models
    */
   def resolve(models: List[IcdModels]): List[IcdModels] = {
@@ -252,26 +255,26 @@ case class Resolver(allModels: List[IcdModels]) {
           requiredArgs =
             if (receiveCommandModel.requiredArgs.nonEmpty) receiveCommandModel.requiredArgs
             else refReceiveCommandModel.requiredArgs,
-          args =
-            if (receiveCommandModel.args.nonEmpty)
-              receiveCommandModel.args.map(attributeModel =>
-                resolveCommandAttribute(commandModel, receiveCommandModel, AttrRef.args, attributeModel)
+          parameters =
+            if (receiveCommandModel.parameters.nonEmpty)
+              receiveCommandModel.parameters.map(parameterModel =>
+                resolveCommandParameter(commandModel, receiveCommandModel, ParamRef.commandParams, parameterModel)
               )
             else
-              refReceiveCommandModel.args.map(attributeModel =>
-                resolveCommandAttribute(commandModel, receiveCommandModel, AttrRef.args, attributeModel)
+              refReceiveCommandModel.parameters.map(parameterModel =>
+                resolveCommandParameter(commandModel, receiveCommandModel, ParamRef.commandParams, parameterModel)
               ),
           completionType =
             if (receiveCommandModel.completionType != "immediate") receiveCommandModel.completionType
             else refReceiveCommandModel.completionType,
           resultType =
             if (receiveCommandModel.resultType.nonEmpty)
-              receiveCommandModel.resultType.map(attributeModel =>
-                resolveCommandAttribute(commandModel, receiveCommandModel, AttrRef.resultType, attributeModel)
+              receiveCommandModel.resultType.map(parameterModel =>
+                resolveCommandParameter(commandModel, receiveCommandModel, ParamRef.resultType, parameterModel)
               )
             else
-              refReceiveCommandModel.resultType.map(attributeModel =>
-                resolveCommandAttribute(commandModel, receiveCommandModel, AttrRef.resultType, attributeModel)
+              refReceiveCommandModel.resultType.map(parameterModel =>
+                resolveCommandParameter(commandModel, receiveCommandModel, ParamRef.resultType, parameterModel)
               ),
           completionConditions =
             if (receiveCommandModel.completionConditions.nonEmpty) receiveCommandModel.completionConditions
@@ -286,7 +289,7 @@ case class Resolver(allModels: List[IcdModels]) {
   private def resolveRefReceiveCommandModel(
       commandModel: CommandModel,
       ref: Ref,
-      resolveAttributes: Boolean = true
+      resolveParameters: Boolean = true
   ): ReceiveCommandModel = {
     val refCommandModel          = resolveCommandModel(ref.ref, ref.component, commandModel)
     val maybeReceiveCommandModel = refCommandModel.receive.find(_.name == ref.name)
@@ -294,16 +297,18 @@ case class Resolver(allModels: List[IcdModels]) {
       throw resolverException(s"Invalid ref '${ref.ref}': Command ${ref.name} not found in ${ref.component}")
     val receiveCommandModel = maybeReceiveCommandModel.get
     val args =
-      if (resolveAttributes)
-        receiveCommandModel.args.map(resolveCommandAttribute(refCommandModel, receiveCommandModel, AttrRef.args, _))
+      if (resolveParameters)
+        receiveCommandModel.parameters.map(
+          resolveCommandParameter(refCommandModel, receiveCommandModel, ParamRef.commandParams, _)
+        )
       else
-        receiveCommandModel.args
+        receiveCommandModel.parameters
     val resultType =
-      if (resolveAttributes)
-        receiveCommandModel.resultType.map(resolveCommandAttribute(refCommandModel, receiveCommandModel, AttrRef.resultType, _))
+      if (resolveParameters)
+        receiveCommandModel.resultType.map(resolveCommandParameter(refCommandModel, receiveCommandModel, ParamRef.resultType, _))
       else
         receiveCommandModel.resultType
-    receiveCommandModel.copy(ref = "", args = args, resultType = resultType)
+    receiveCommandModel.copy(ref = "", parameters = args, resultType = resultType)
   }
 
   private def resolvePublishModel(publishModel: PublishModel): PublishModel = {
@@ -334,14 +339,14 @@ case class Resolver(allModels: List[IcdModels]) {
           archive = if (eventModel.archive) eventModel.archive else refEventModel.archive,
           archiveDuration =
             if (eventModel.archiveDuration.nonEmpty) eventModel.archiveDuration else refEventModel.archiveDuration,
-          attributesList =
-            if (eventModel.attributesList.nonEmpty)
-              eventModel.attributesList.map(attributeModel =>
-                resolveEventAttribute(publishModel, eventModel, section, attributeModel)
+          parameterList =
+            if (eventModel.parameterList.nonEmpty)
+              eventModel.parameterList.map(parameterModel =>
+                resolveEventParameter(publishModel, eventModel, section, parameterModel)
               )
             else
-              refEventModel.attributesList.map(attributeModel =>
-                resolveEventAttribute(publishModel, eventModel, section, attributeModel)
+              refEventModel.parameterList.map(parameterModel =>
+                resolveEventParameter(publishModel, eventModel, section, parameterModel)
               )
         )
       case Failure(ex) =>
@@ -349,115 +354,116 @@ case class Resolver(allModels: List[IcdModels]) {
     }
   }
 
-  private def resolveRefAttribute(attrRef: AttrRef): AttributeModel = {
-    val maybeModel = allModels.find(_.componentModel.exists(_.component == attrRef.ref.component))
+  private def resolveRefParameter(paramRef: ParamRef): ParameterModel = {
+    val maybeModel = allModels.find(_.componentModel.exists(_.component == paramRef.ref.component))
     if (maybeModel.isEmpty)
-      throw resolverException(s"Invalid ref ${attrRef.ref.ref}: Can't find component ${attrRef.ref.component}")
+      throw resolverException(s"Invalid ref ${paramRef.ref.ref}: Can't find component ${paramRef.ref.component}")
     val model = maybeModel.get
-    val attrList = attrRef.ref.section match {
+    val paramList = paramRef.ref.section match {
       case Ref.events | Ref.observeEvents | Ref.currentStates =>
         if (model.publishModel.isEmpty)
-          throw resolverException(s"Invalid ref ${attrRef.ref.ref}: No events found for ${attrRef.ref.component}")
+          throw resolverException(s"Invalid ref ${paramRef.ref.ref}: No events found for ${paramRef.ref.component}")
         val publishModel = model.publishModel.get
-        val eventModel   = resolveRefEvent(publishModel, attrRef.ref, resolveAttributes = false)
-        eventModel.attributesList
+        val eventModel   = resolveRefEvent(publishModel, paramRef.ref, resolveParameters = false)
+        eventModel.parameterList
       case Ref.receive =>
         if (model.commandModel.isEmpty)
-          throw resolverException(s"Invalid ref ${attrRef.ref.ref}: No commands found for ${attrRef.ref.component}")
+          throw resolverException(s"Invalid ref ${paramRef.ref.ref}: No commands found for ${paramRef.ref.component}")
         val commandModel        = model.commandModel.get
-        val receiveCommandModel = resolveRefReceiveCommandModel(commandModel, attrRef.ref, resolveAttributes = false)
-        attrRef.attrSection match {
-          case AttrRef.attributes | AttrRef.args => receiveCommandModel.args
-          case AttrRef.resultType                => receiveCommandModel.resultType
+        val receiveCommandModel = resolveRefReceiveCommandModel(commandModel, paramRef.ref, resolveParameters = false)
+        paramRef.paramSection match {
+          case ParamRef.`eventParams` | ParamRef.`commandParams` => receiveCommandModel.parameters
+          case ParamRef.resultType                               => receiveCommandModel.resultType
         }
     }
-    val maybeAttr = attrList.find(_.name == attrRef.name)
-    if (maybeAttr.isEmpty)
-      throw resolverException(s"Invalid attribute ref: ${attrRef.ref.ref}: Attribute ${attrRef.name} not found")
-    maybeAttr.get
+    val maybeParam = paramList.find(_.name == paramRef.name)
+    if (maybeParam.isEmpty)
+      throw resolverException(s"Invalid parameter ref: ${paramRef.ref.ref}: Parameter ${paramRef.name} not found")
+    maybeParam.get
   }
 
-  private def resolveEventAttribute(
+  private def resolveEventParameter(
       publishModel: PublishModel,
       eventModel: EventModel,
       section: Ref.Section,
-      attributeModel: AttributeModel
-  ): AttributeModel = {
-    if (attributeModel.ref.isEmpty) {
-      if (attributeModel.attributesList.nonEmpty) {
+      parameterModel: ParameterModel
+  ): ParameterModel = {
+    if (parameterModel.ref.isEmpty) {
+      if (parameterModel.parameterList.nonEmpty) {
         // handle struct type
-        attributeModel.copy(attributesList =
-          attributeModel.attributesList.map(a => resolveEventAttribute(publishModel, eventModel, section, a))
+        parameterModel.copy(parameterList =
+          parameterModel.parameterList.map(a => resolveEventParameter(publishModel, eventModel, section, a))
         )
       }
-      else attributeModel
+      else parameterModel
     }
     else {
       Try(
-        resolveRefAttribute(AttrRef(attributeModel.ref, publishModel.component, section, eventModel.name, AttrRef.attributes))
+        resolveRefParameter(ParamRef(parameterModel.ref, publishModel.component, section, eventModel.name, ParamRef.eventParams))
       ) match {
-        case Success(refAttribute) =>
-          resolveAttributes(attributeModel, refAttribute)
+        case Success(refParameter) =>
+          resolveParameters(parameterModel, refParameter)
         case Failure(ex) =>
-          attributeModel.copy(ref = "", refError = s"Error: ${ex.getMessage}")
+          parameterModel.copy(ref = "", refError = s"Error: ${ex.getMessage}")
       }
     }
   }
 
-  private def resolveCommandAttribute(
+  private def resolveCommandParameter(
       commandModel: CommandModel,
       receiveCommandModel: ReceiveCommandModel,
-      section: AttrRef.AttrSection,
-      attributeModel: AttributeModel
-  ): AttributeModel = {
-    if (attributeModel.ref.isEmpty) {
-      if (attributeModel.attributesList.nonEmpty) {
+      section: ParamRef.ParamSection,
+      parameterModel: ParameterModel
+  ): ParameterModel = {
+    if (parameterModel.ref.isEmpty) {
+      if (parameterModel.parameterList.nonEmpty) {
         // handle struct type
-        attributeModel.copy(attributesList =
-          attributeModel.attributesList.map(a => resolveCommandAttribute(commandModel, receiveCommandModel, section, a))
+        parameterModel.copy(parameterList =
+          parameterModel.parameterList.map(a => resolveCommandParameter(commandModel, receiveCommandModel, section, a))
         )
       }
-      else attributeModel
-    } else {
+      else parameterModel
+    }
+    else {
       Try(
-        resolveRefAttribute(
-          AttrRef(attributeModel.ref, commandModel.component, Ref.receive, receiveCommandModel.name, section)
+        resolveRefParameter(
+          ParamRef(parameterModel.ref, commandModel.component, Ref.receive, receiveCommandModel.name, section)
         )
       ) match {
-        case Success(refAttribute) =>
-          resolveAttributes(attributeModel, refAttribute)
+        case Success(refParameter) =>
+          resolveParameters(parameterModel, refParameter)
         case Failure(ex) =>
-          attributeModel.copy(ref = "", refError = s"Error: ${ex.getMessage}")
+          parameterModel.copy(ref = "", refError = s"Error: ${ex.getMessage}")
       }
     }
   }
 
-  // If a field is defined in attributeModel, use it, otherwise use the one from refAttribute
-  private def resolveAttributes(
-      attributeModel: AttributeModel,
-      refAttribute: AttributeModel
-  ): AttributeModel = {
-    AttributeModel(
-      name = attributeModel.name,
+  // If a field is defined in parameterModel, use it, otherwise use the one from refParameter
+  private def resolveParameters(
+      parameterModel: ParameterModel,
+      refParameter: ParameterModel
+  ): ParameterModel = {
+    ParameterModel(
+      name = parameterModel.name,
       ref = "",
       refError = "",
-      description = if (attributeModel.description.nonEmpty) attributeModel.description else refAttribute.description,
-      maybeType = if (attributeModel.maybeType.nonEmpty) attributeModel.maybeType else refAttribute.maybeType,
-      maybeEnum = if (attributeModel.maybeEnum.nonEmpty) attributeModel.maybeEnum else refAttribute.maybeEnum,
-      maybeArrayType = if (attributeModel.maybeArrayType.nonEmpty) attributeModel.maybeArrayType else refAttribute.maybeArrayType,
+      description = if (parameterModel.description.nonEmpty) parameterModel.description else refParameter.description,
+      maybeType = if (parameterModel.maybeType.nonEmpty) parameterModel.maybeType else refParameter.maybeType,
+      maybeEnum = if (parameterModel.maybeEnum.nonEmpty) parameterModel.maybeEnum else refParameter.maybeEnum,
+      maybeArrayType = if (parameterModel.maybeArrayType.nonEmpty) parameterModel.maybeArrayType else refParameter.maybeArrayType,
       maybeDimensions =
-        if (attributeModel.maybeDimensions.nonEmpty) attributeModel.maybeDimensions else refAttribute.maybeDimensions,
-      units = if (attributeModel.units.nonEmpty) attributeModel.units else refAttribute.units,
-      maxItems = if (attributeModel.maxItems.nonEmpty) attributeModel.maxItems else refAttribute.maxItems,
-      minItems = if (attributeModel.minItems.nonEmpty) attributeModel.minItems else refAttribute.minItems,
-      minimum = if (attributeModel.minimum.nonEmpty) attributeModel.minimum else refAttribute.minimum,
-      maximum = if (attributeModel.maximum.nonEmpty) attributeModel.maximum else refAttribute.maximum,
-      exclusiveMinimum = if (attributeModel.exclusiveMinimum) attributeModel.exclusiveMinimum else refAttribute.exclusiveMinimum,
-      exclusiveMaximum = if (attributeModel.exclusiveMaximum) attributeModel.exclusiveMaximum else refAttribute.exclusiveMaximum,
-      allowNaN = if (attributeModel.allowNaN) attributeModel.allowNaN else refAttribute.allowNaN,
-      defaultValue = if (attributeModel.defaultValue.nonEmpty) attributeModel.defaultValue else refAttribute.defaultValue,
-      typeStr = if (attributeModel.typeStr.nonEmpty) attributeModel.typeStr else refAttribute.typeStr,
-      attributesList = if (attributeModel.attributesList.nonEmpty) attributeModel.attributesList else refAttribute.attributesList
+        if (parameterModel.maybeDimensions.nonEmpty) parameterModel.maybeDimensions else refParameter.maybeDimensions,
+      units = if (parameterModel.units.nonEmpty) parameterModel.units else refParameter.units,
+      maxItems = if (parameterModel.maxItems.nonEmpty) parameterModel.maxItems else refParameter.maxItems,
+      minItems = if (parameterModel.minItems.nonEmpty) parameterModel.minItems else refParameter.minItems,
+      minimum = if (parameterModel.minimum.nonEmpty) parameterModel.minimum else refParameter.minimum,
+      maximum = if (parameterModel.maximum.nonEmpty) parameterModel.maximum else refParameter.maximum,
+      exclusiveMinimum = if (parameterModel.exclusiveMinimum) parameterModel.exclusiveMinimum else refParameter.exclusiveMinimum,
+      exclusiveMaximum = if (parameterModel.exclusiveMaximum) parameterModel.exclusiveMaximum else refParameter.exclusiveMaximum,
+      allowNaN = if (parameterModel.allowNaN) parameterModel.allowNaN else refParameter.allowNaN,
+      defaultValue = if (parameterModel.defaultValue.nonEmpty) parameterModel.defaultValue else refParameter.defaultValue,
+      typeStr = if (parameterModel.typeStr.nonEmpty) parameterModel.typeStr else refParameter.typeStr,
+      parameterList = if (parameterModel.parameterList.nonEmpty) parameterModel.parameterList else refParameter.parameterList
     )
   }
 
@@ -475,7 +481,7 @@ case class Resolver(allModels: List[IcdModels]) {
   }
 
   // Resolve a reference to another event
-  private def resolveRefEvent(publishModel: PublishModel, ref: Ref, resolveAttributes: Boolean = true): EventModel = {
+  private def resolveRefEvent(publishModel: PublishModel, ref: Ref, resolveParameters: Boolean = true): EventModel = {
     val refPublishModel = resolvePublishModel(ref.ref, ref.component, publishModel)
     val eventModelList = ref.section match {
       case Ref.events        => refPublishModel.eventList
@@ -491,12 +497,12 @@ case class Resolver(allModels: List[IcdModels]) {
       )
     }
     val eventModel = maybeEventModel.get
-    val attributesList =
-      if (resolveAttributes)
-        eventModel.attributesList.map(resolveEventAttribute(refPublishModel, eventModel, ref.section, _))
+    val parameterList =
+      if (resolveParameters)
+        eventModel.parameterList.map(resolveEventParameter(refPublishModel, eventModel, ref.section, _))
       else
-        eventModel.attributesList
-    eventModel.copy(ref = "", attributesList = attributesList)
+        eventModel.parameterList
+    eventModel.copy(ref = "", parameterList = parameterList)
   }
 
 }

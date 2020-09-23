@@ -26,11 +26,11 @@ class ComponentInfoTest extends AnyFunSuite {
     assert(!engMode.archive)
     assert(engMode2.archive)
     assert(engMode2.description == engMode.description)
-    assert(engMode2.attributesList == engMode.attributesList)
-    assert(engMode.attributesList.exists(_.name == "mode2Error"))
-    val mode2Error = engMode.attributesList.find(_.name == "mode2Error").get
+    assert(engMode2.parameterList == engMode.parameterList)
+    assert(engMode.parameterList.exists(_.name == "mode2Error"))
+    val mode2Error = engMode.parameterList.find(_.name == "mode2Error").get
     assert(mode2Error.ref == "")
-    assert(mode2Error.refError == "Error: Invalid attribute ref: modeXXX: Attribute modeXXX not found")
+    assert(mode2Error.refError == "Error: Invalid parameter ref: modeXXX: Parameter modeXXX not found")
 
     assert(eventList.exists(_.eventModel.name == "engMode2Error"))
     val engMode2Error = eventList.find(_.eventModel.name == "engMode2Error").get.eventModel
@@ -40,7 +40,7 @@ class ComponentInfoTest extends AnyFunSuite {
     val commands = info.commands.get.commandsReceived.map(_.receiveCommandModel)
     val cmd = commands.find(_.name == "LGS_WFS_INITIALIZE").get
     val refCmd = commands.find(_.name == "LGS_WFS_INITIALIZE_REF").get
-    assert(cmd.args == refCmd.args)
+    assert(cmd.parameters == refCmd.parameters)
     assert(cmd.completionType == refCmd.completionType)
     assert(cmd.requirements== refCmd.requirements)
     assert(cmd.requiredArgs== refCmd.requiredArgs)

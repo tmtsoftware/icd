@@ -66,7 +66,7 @@ class IcdDbTests extends AnyFunSuite {
     val sensors = currentStateList.find(_.name == "sensors").get
     assert(sensors.name == "sensors")
     assert(!sensors.archive)
-    val attrList = sensors.attributesList
+    val attrList = sensors.parameterList
 
     val temp_ngsWfs = attrList.find(_.name == "temp_ngsWfs").get
     assert(temp_ngsWfs.description == "<p>NGS WFS temperature</p>")

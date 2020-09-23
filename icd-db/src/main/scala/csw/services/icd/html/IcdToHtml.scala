@@ -5,7 +5,7 @@ import icd.web.shared._
 import scalatags.Text
 import Headings.idFor
 import HtmlMarkup.yesNo
-import icd.web.shared.IcdModels.{AlarmModel, AttributeModel, ComponentModel, EventModel}
+import icd.web.shared.IcdModels.{AlarmModel, ParameterModel, ComponentModel, EventModel}
 
 /**
  * Handles converting ICD API from GFM to HTML
@@ -226,7 +226,7 @@ object IcdToHtml {
                   if (m.postconditions.isEmpty) div()
                   else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
                   raw(m.description),
-                  if (m.args.isEmpty) div() else parameterListMarkup(m.name, m.args, m.requiredArgs)
+                  if (m.parameters.isEmpty) div() else parameterListMarkup(m.name, m.parameters, m.requiredArgs)
                 )
               case Some(m) =>
                 div(
@@ -304,7 +304,7 @@ object IcdToHtml {
                 else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
                 raw(m.description),
                 if (m.refError.startsWith("Error:")) makeErrorDiv(m.refError) else div(),
-                parameterListMarkup(m.name, m.args, m.requiredArgs),
+                parameterListMarkup(m.name, m.parameters, m.requiredArgs),
                 p(strong("Completion Type: "), m.completionType),
                 resultTypeMarkup(m.resultType),
                 if (m.completionConditions.isEmpty) div()
@@ -331,7 +331,7 @@ object IcdToHtml {
     else typeStr
   }
 
-  private def resultTypeMarkup(attributesList: List[AttributeModel]): Text.TypedTag[String] = {
+  private def resultTypeMarkup(attributesList: List[ParameterModel]): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (attributesList.isEmpty) div()
     else {
@@ -347,9 +347,9 @@ object IcdToHtml {
   }
 
   private def parameterListMarkup(
-      nameStr: String,
-      attributesList: List[AttributeModel],
-      requiredArgs: List[String]
+                                   nameStr: String,
+                                   attributesList: List[ParameterModel],
+                                   requiredArgs: List[String]
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (attributesList.isEmpty) div()
@@ -438,7 +438,7 @@ object IcdToHtml {
                     )
                   ),
                   if (maxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.") else span(),
-                  si.eventModel.map(t => attributeListMarkup(t.name, t.attributesList))
+                  si.eventModel.map(t => attributeListMarkup(t.name, t.parameterList))
                 )
               }
               else
@@ -472,21 +472,21 @@ object IcdToHtml {
   private def structIdStr(name: String): String = s"$name-struct"
 
   // Add a table for each attribute of type "struct" to show the members of the struct
-  private def structAttributesMarkup(attributesList: List[AttributeModel]): Seq[Text.TypedTag[String]] = {
+  private def structAttributesMarkup(attributesList: List[ParameterModel]): Seq[Text.TypedTag[String]] = {
     import scalatags.Text.all._
     val headings = List("Name", "Description", "Type", "Units", "Default")
     attributesList.flatMap { attrModel =>
       if (attrModel.typeStr == "struct" || attrModel.typeStr == "array of struct") {
         val rowList2 =
-          for (a2 <- attrModel.attributesList)
+          for (a2 <- attrModel.parameterList)
             yield List(a2.name, a2.description, getTypeStr(a2.name, a2.typeStr), a2.units, a2.defaultValue)
         Some(
           div()(
             p(strong(a(name := structIdStr(attrModel.name))(s"Parameters for ${attrModel.name} struct"))),
             HtmlMarkup.mkTable(headings, rowList2),
-            attrModel.attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
+            attrModel.parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
             // Handle structs embedded in other structs (or arrays of structs, etc.)
-            structAttributesMarkup(attrModel.attributesList)
+            structAttributesMarkup(attrModel.parameterList)
           )
         )
       }
@@ -504,7 +504,7 @@ object IcdToHtml {
 
   private def attributeListMarkup(
       nameStr: String,
-      attributesList: List[AttributeModel]
+      attributesList: List[ParameterModel]
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (attributesList.isEmpty) div()
@@ -598,7 +598,7 @@ object IcdToHtml {
                   if (eventModel.refError.startsWith("Error:")) makeErrorDiv(eventModel.refError) else div(),
                   subscriberUsage,
                   HtmlMarkup.mkTable(headings, rowList),
-                  attributeListMarkup(eventModel.name, eventModel.attributesList),
+                  attributeListMarkup(eventModel.name, eventModel.parameterList),
                   hr
                 )
               }

@@ -15,14 +15,14 @@ object ComponentDataReporter {
       publishModel.foreach { model =>
         model.eventList.foreach { item =>
           println(s"----- Item ${item.name}")
-          item.attributesList.foreach { att =>
+          item.parameterList.foreach { att =>
             print(s"-- Attribute ${att.name}: type=${att.typeStr}")
             units = units + att.units
           }
         }
         model.observeEventList.foreach { item =>
           println(s"----- Item ${item.name}")
-          item.attributesList.foreach { att =>
+          item.parameterList.foreach { att =>
             println(s"-- Attribute ${att.name}: type=${att.typeStr}")
             units = units + att.units
           }
@@ -33,7 +33,7 @@ object ComponentDataReporter {
         model =>
           model.receive.foreach { command =>
             println(s"----- Command ${command.name}")
-            command.args.foreach { arg =>
+            command.parameters.foreach { arg =>
               println(s"-- Argument ${arg.name}: type=${arg.typeStr}")
               units = units + arg.units
             }

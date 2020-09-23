@@ -1,7 +1,7 @@
 package csw.services.icd.db.parser
 
 import csw.services.icd.html.HtmlMarkup
-import icd.web.shared.IcdModels.AttributeModel
+import icd.web.shared.IcdModels.ParameterModel
 import icd.web.shared.PdfOptions
 import reactivemongo.api.bson._
 
@@ -9,7 +9,7 @@ import reactivemongo.api.bson._
  * This model is a value that is based on the json-schema "ref": "resource:/json-schema.json".
  * In this case it can define a primitive type, enum, array, or object, for example.
  */
-object AttributeModelBsonParser {
+object ParameterModelBsonParser {
 
   private def bsonValueToString(b: BSONValue): String =
     b match {
@@ -21,7 +21,7 @@ object AttributeModelBsonParser {
       case x              => x.toString // should not happen
     }
 
-  def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): AttributeModel = {
+  def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): ParameterModel = {
     val name            = doc.getAsOpt[String]("name").getOrElse("")
     val ref             = doc.getAsOpt[String]("ref").getOrElse("")
     val description     = doc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse("")
@@ -123,12 +123,12 @@ object AttributeModelBsonParser {
 
     val typeStr = parseTypeStr(doc, doc.getAsOpt[String]("type"))
 
-    // If type is "struct", attributeList gives the fields of the struct
-    val attributesList = if (typeStr == "struct") {
+    // If type is "struct", parameterList gives the fields of the struct
+    val parameterList = if (typeStr == "struct") {
       // For backward compatibility, allow "attributes" or "parameters"
       val attrKey = if (doc.contains("parameters")) "parameters" else "attributes"
       for (subDoc <- doc.getAsOpt[Array[BSONDocument]](attrKey).map(_.toList).getOrElse(Nil))
-        yield AttributeModelBsonParser(subDoc, maybePdfOptions)
+        yield ParameterModelBsonParser(subDoc, maybePdfOptions)
     }
     else if (typeStr.startsWith("array") && typeStr.endsWith(" of struct")) {
       doc
@@ -137,12 +137,12 @@ object AttributeModelBsonParser {
         .flatMap { items =>
           val attrKey = if (items.contains("parameters")) "parameters" else "attributes"
           for (subDoc <- items.getAsOpt[Array[BSONDocument]](attrKey).map(_.toList).getOrElse(Nil))
-            yield AttributeModelBsonParser(subDoc, maybePdfOptions)
+            yield ParameterModelBsonParser(subDoc, maybePdfOptions)
         }
     }
     else Nil
 
-    AttributeModel(
+    ParameterModel(
       name,
       ref,
       "",
@@ -161,7 +161,7 @@ object AttributeModelBsonParser {
       allowNaN,
       defaultValue,
       typeStr,
-      attributesList
+      parameterList
     )
   }
 }

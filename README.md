@@ -64,7 +64,7 @@ You can change the port used by adding an option like this: `-Dhttp.port=9876`.
 
 Note that the build is set up so that the Play subproject is selected on start.
 So to run any commands (like sbt clean or sbt stage) that should apply to the other projects,
-you need to first switch to that project or the root project. For example `sbt clean "project root" clean`. 
+you need to first switch to that project or the root project. For example `sbt root/test`. 
 
 ICD Web App
 ------------
@@ -153,10 +153,10 @@ For example, to link to the description of a published event named heartbeat in 
 
     See: [Example document internal link](#lgsWfs-publishes-Event-TEST.lgsWfs.heartbeat).
  
-Reusing Event, Command and Attribute Definitions
+Reusing Event, Command and Parameter Definitions
 -------------------------------------------------
 
-It is possible to reuse similar parts of event, command and attribute definitions by using the "ref" keyword. For example:
+It is possible to reuse similar parts of event, command and parameter definitions by using the "ref" keyword. For example:
 
 ```
   events = [
@@ -164,7 +164,7 @@ It is possible to reuse similar parts of event, command and attribute definition
       name = engMode
       description = "LGS WFS engineering mode enabled"
       archive = false
-      attributes = [
+      parameters = [
         ...
       ]
     }
@@ -175,23 +175,23 @@ It is possible to reuse similar parts of event, command and attribute definition
       ref = engMode
     }
 ```
-In the above example, the event `engMode2` will have the same settings and attributes as `engMode`, except for `description` and `archive`, which are overridden. Any fields which are not set, are inherited from the referenced event.
+In the above example, the event `engMode2` will have the same settings and parameters as `engMode`, except for `description` and `archive`, which are overridden. Any fields which are not set, are inherited from the referenced event.
 
-This works for events, commands and attributes, as show below:
+This works for events, commands and parameters, as show below:
 
 ```
-      attributes = [
+      parameters = [
         {
           name = mode3
-          ref = engMode/attributes/mode
+          ref = engMode/parameters/mode
         }
 
 ```
-In the above example, the attribute `mode3` will be exactly the same as the `mode` attribute in the engMode event in the same component. You could also specify a different `description` field or any other attribute fields that should override the ones defined for `mode`.
+In the above example, the parameter `mode3` will be exactly the same as the `mode` parameter in the engMode event in the same component. You could also specify a different `description` field or any other parameter fields that should override the ones defined for `mode`.
 
-The syntax of the `ref` value is flexible and allows you to reference any event, command or attribute in any component within the same subsystem. You can use a full path to specify a reference to an item in another component, or an abbreviated path for items in the same scope. The full syntax of a `ref` is something like this:
+The syntax of the `ref` value is flexible and allows you to reference any event, command or parameter in any component within the same subsystem. You can use a full path to specify a reference to an item in another component, or an abbreviated path for items in the same scope. The full syntax of a `ref` is something like this:
 ```
-$componentName/$section/$eventName[/attributesSection/$attrName]
+$componentName/$section/$eventName[/parametersSection/$paramName]
 ``` 
 For example, to reference an event, observe event or current state, use:
 ```
@@ -208,22 +208,27 @@ $componentName/receive/$commandName
 or just $commandName (if in the same component)
 ```
 
-The syntax for references to attributes of events adds the `attributes` keyword and the attribute name:
+The syntax for references to parameters of events adds the `parameters` keyword and the parameter name:
 ```
-$componentName/events/$eventName/attributes/$attrName
+$componentName/events/$eventName/parameters/$paramName
 or abbreviated as above:
-observeEvents/$eventName/attributes/$attrName (in same component)
-or $eventName/attributes/$attrName (in same component and events section)
-or just $attrName (if in the same attributes section)
+observeEvents/$eventName/parameters/$paramName (in same component)
+or $eventName/parameters/$paramName (in same component and events section)
+or just $paramName (if in the same parameters section)
 ```
 
-The syntax for attributes of commands is similar. 
-Here you need to specify if the attributes appear in the `args` section or in the `resultType`.
+The syntax for parameters of commands is similar. 
+Here you need to specify if the parameters appear in the `parameters` section or in the `resultType`.
 ```
-$componentName/receive/$commandName/args/$attrName
-or $componentName/receive/$commandName/resultType/$attrName
+$componentName/receive/$commandName/parameters/$paramName
+or $componentName/receive/$commandName/resultType/$paramName
 or abbreviated as above.
 ```
 
 See the example model files in [src/main/resources/2.0](src/main/resources/2.0) for some examples of the `ref` keyword.
+
 Note that if there is an error in the reference, the error message is displayed in the log output of the icd-db command, if it is used, and also in the generated HTML or PDF document (in the details section).
+
+Note: An earlier version of this software used the terms "attributes" for events parameters and "args" for command parameters. 
+These have been renamed to "parameters" for compatibility with CSW, however for backward compatibility
+the previous names are also allowed in refs.

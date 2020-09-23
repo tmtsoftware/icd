@@ -2,15 +2,16 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
-
-### Added
+## [ICD v2.0.1] - 2020-09-
 
 ### Changed
 
 - Changed the "attributes" keyword for events (in publish-model.conf) and the "args" keyword for commands 
-  (in command-model.conf) to "parameters", to match the CSW convention.
+  (in command-model.conf) to "parameters", to match the CSW terms. 
+  The previous names are still accepted for backward compatibility.
   Also renamed the json-schema files used internally for validation.
   See [DEOPSICDDB-113](https://tmt-project.atlassian.net/secure/RapidBoard.jspa?rapidView=97&projectKey=DEOPSICDDB&modal=detail&selectedIssue=DEOPSICDDB-113).
+  The generated APIs and ICDs now also display "Parameters" instead of "Attributes", etc.
 
 - Changed the json-schema (v2.0) for attributes (parameters) to allow an arbitrary string for maximum, minimum, 
   exclusiveMaximum, exclusiveMinimum (See [DEOPSICDDB-112](https://tmt-project.atlassian.net/secure/RapidBoard.jspa?rapidView=97&projectKey=DEOPSICDDB&modal=detail&selectedIssue=DEOPSICDDB-112)).
