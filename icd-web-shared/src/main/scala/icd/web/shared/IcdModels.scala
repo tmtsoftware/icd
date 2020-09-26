@@ -321,6 +321,16 @@ object IcdModels {
       eventList: List[EventModel],
       observeEventList: List[EventModel],
       currentStateList: List[EventModel],
+      // For backward compatibility: Now the alarms are in a separate model file
+      alarmList: List[AlarmModel]
+  )
+
+  /**
+   * The component's alarm models
+   */
+  case class AlarmsModel(
+      subsystem: String,
+      component: String,
       alarmList: List[AlarmModel]
   )
 
@@ -444,5 +454,6 @@ case class IcdModels(
     componentModel: Option[ComponentModel],
     publishModel: Option[PublishModel],
     subscribeModel: Option[SubscribeModel],
-    commandModel: Option[CommandModel]
+    commandModel: Option[CommandModel],
+    alarmsModel: Option[AlarmsModel]
 )

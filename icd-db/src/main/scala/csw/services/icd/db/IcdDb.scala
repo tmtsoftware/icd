@@ -468,6 +468,7 @@ case class IcdDb(
    * Ingests the given input config into the database.
    *
    * @param name   the name of the collection in which to store this part of the API
+   * @param tmpName temp name of the collection to use during iingest
    * @param config the config to be ingested into the datasbase
    */
   //noinspection SameParameterValue

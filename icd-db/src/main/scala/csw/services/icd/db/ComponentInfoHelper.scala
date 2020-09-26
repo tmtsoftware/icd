@@ -114,8 +114,9 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean) {
         val currentStateList = m.currentStateList.map { t =>
           EventInfo(t, getSubscribers(query, prefix, t.name, t.description, CurrentStates, maybePdfOptions))
         }
-        if (m.description.nonEmpty || eventList.nonEmpty || observeEventList.nonEmpty || m.alarmList.nonEmpty)
-          Some(Publishes(m.description, eventList, observeEventList, currentStateList, m.alarmList))
+        val alarmList = models.alarmsModel.map(_.alarmList).getOrElse(m.alarmList)
+        if (m.description.nonEmpty || eventList.nonEmpty || observeEventList.nonEmpty || alarmList.nonEmpty)
+          Some(Publishes(m.description, eventList, observeEventList, currentStateList, alarmList))
         else None
     }
   }

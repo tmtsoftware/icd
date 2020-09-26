@@ -11,11 +11,12 @@ object StdName {
   val publishFileNames: StdName   = StdName("publish-model.conf", "publish-schema.conf")
   val subscribeFileNames: StdName = StdName("subscribe-model.conf", "subscribe-schema.conf")
   val commandFileNames: StdName   = StdName("command-model.conf", "command-schema.conf")
+  val alarmsFileNames: StdName   = StdName("alarm-model.conf", "alarms-schema.conf")
 
   /**
    * List of standard ICD files and schemas
    */
-  val stdNames = List(subsystemFileNames, componentFileNames, publishFileNames, subscribeFileNames, commandFileNames)
+  val stdNames = List(subsystemFileNames, componentFileNames, publishFileNames, subscribeFileNames, commandFileNames, alarmsFileNames)
 
   /**
    * Set of standard ICD file names

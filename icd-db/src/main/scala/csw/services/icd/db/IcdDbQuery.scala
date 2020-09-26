@@ -2,13 +2,7 @@ package csw.services.icd.db
 
 import csw.services.icd._
 import csw.services.icd.StdName._
-import csw.services.icd.db.parser.{
-  CommandModelBsonParser,
-  ComponentModelBsonParser,
-  PublishModelBsonParser,
-  SubscribeModelBsonParser,
-  SubsystemModelBsonParser
-}
+import csw.services.icd.db.parser.{AlarmsModelBsonParser, CommandModelBsonParser, ComponentModelBsonParser, PublishModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.{IcdModels, PdfOptions}
 import icd.web.shared.IcdModels._
@@ -57,7 +51,8 @@ object IcdDbQuery {
       component: Option[BSONCollection],
       publish: Option[BSONCollection],
       subscribe: Option[BSONCollection],
-      command: Option[BSONCollection]
+      command: Option[BSONCollection],
+      alarms: Option[BSONCollection],
   ) {
 
     // Returns all collections belonging to this entry
@@ -72,7 +67,8 @@ object IcdDbQuery {
       component = paths.find(_.endsWith(".component")).map(db(_)),
       publish = paths.find(_.endsWith(".publish")).map(db(_)),
       subscribe = paths.find(_.endsWith(".subscribe")).map(db(_)),
-      command = paths.find(_.endsWith(".command")).map(db(_))
+      command = paths.find(_.endsWith(".command")).map(db(_)),
+      alarms = paths.find(_.endsWith(".alarms")).map(db(_))
     )
   }
 
@@ -81,6 +77,8 @@ object IcdDbQuery {
   private[db] def getComponentCollectionName(subsystem: String, component: String): String = s"$subsystem.$component.component"
 
   private[db] def getPublishCollectionName(subsystem: String, component: String): String = s"$subsystem.$component.publish"
+
+  private[db] def getAlarmsCollectionName(subsystem: String, component: String): String = s"$subsystem.$component.alarms"
 
   private[db] def getSubscribeCollectionName(subsystem: String, component: String): String = s"$subsystem.$component.subscribe"
 
@@ -197,13 +195,14 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
       component = getComponentCollection(subsystem, component),
       publish = getPublishCollection(subsystem, component),
       subscribe = getSubscribeCollection(subsystem, component),
-      command = getCommandCollection(subsystem, component)
+      command = getCommandCollection(subsystem, component),
+      alarms = getAlarmsCollection(subsystem, component)
     )
   }
 
   // Returns an IcdEntry object for the given subsystem name, if found
   private[db] def entryForSubsystemName(subsystem: String): IcdEntry = {
-    IcdEntry(subsystem, getSubsystemCollection(subsystem), None, None, None, None)
+    IcdEntry(subsystem, getSubsystemCollection(subsystem), None, None, None, None, None)
   }
 
   /**
@@ -293,6 +292,13 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
     else None
   }
 
+  private def getAlarmsCollection(subsystem: String, component: String): Option[BSONCollection] = {
+    val collName = getAlarmsCollectionName(subsystem, component)
+    if (collectionExists(collName))
+      Some(db(collName))
+    else None
+  }
+
   private def getSubscribeCollection(subsystem: String, component: String): Option[BSONCollection] = {
     val collName = getSubscribeCollectionName(subsystem, component)
     if (collectionExists(collName))
@@ -339,6 +345,18 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
     if (collectionExists(collName)) {
       val coll = db.collection[BSONCollection](collName)
       collectionHead(coll).flatMap(PublishModelBsonParser(_, maybePdfOptions))
+    }
+    else None
+  }
+
+  /**
+   * Returns an object describing the alarms published by the named component
+   */
+  def getAlarmsModel(component: ComponentModel, maybePdfOptions: Option[PdfOptions]): Option[AlarmsModel] = {
+    val collName = getAlarmsCollectionName(component.subsystem, component.component)
+    if (collectionExists(collName)) {
+      val coll = db.collection[BSONCollection](collName)
+      collectionHead(coll).flatMap(AlarmsModelBsonParser(_, maybePdfOptions))
     }
     else None
   }
@@ -434,7 +452,9 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
         entry.command.flatMap(coll => collectionHead(coll).flatMap(CommandModelBsonParser(_, maybePdfOptions)))
       val componentModel: Option[ComponentModel] =
         entry.component.flatMap(coll => collectionHead(coll).flatMap(ComponentModelBsonParser(_, maybePdfOptions)))
-      IcdModels(subsystemModel, componentModel, publishModel, subscribeModel, commandModel)
+      val alarmsModel: Option[AlarmsModel] =
+        entry.alarms.flatMap(coll => collectionHead(coll).flatMap(AlarmsModelBsonParser(_, maybePdfOptions)))
+      IcdModels(subsystemModel, componentModel, publishModel, subscribeModel, commandModel, alarmsModel)
     }
 
     val e =
@@ -534,13 +554,16 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
    * @param component the component's model
    */
   def getPublished(component: ComponentModel, maybePdfOptions: Option[PdfOptions]): List[Published] = {
-    getPublishModel(component, maybePdfOptions) match {
+    val maybePublishModel = getPublishModel(component, maybePdfOptions)
+    val maybeAlarmsModel = getAlarmsModel(component, maybePdfOptions)
+    val alarmList = maybeAlarmsModel.map(_.alarmList).getOrElse(maybePublishModel.map(_.alarmList).getOrElse(Nil))
+    maybePublishModel match {
       case Some(publishModel) =>
         List(
           publishModel.eventList.map(i => Published(Events, i.name, i.description)),
           publishModel.observeEventList.map(i => Published(ObserveEvents, i.name, i.description)),
           publishModel.currentStateList.map(i => Published(CurrentStates, i.name, i.description)),
-          publishModel.alarmList.map(i => Published(Alarms, i.name, i.description))
+          alarmList.map(i => Published(Alarms, i.name, i.description))
         ).flatten
       case None => Nil
     }
