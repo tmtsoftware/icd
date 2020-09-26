@@ -56,7 +56,7 @@ object IcdDbQuery {
   ) {
 
     // Returns all collections belonging to this entry
-    def getCollections: List[BSONCollection] = (subsystem ++ component ++ publish ++ subscribe ++ command).toList
+    def getCollections: List[BSONCollection] = (subsystem ++ component ++ publish ++ subscribe ++ command ++ alarms).toList
   }
 
   // Returns an IcdEntry for the given collection path
@@ -68,7 +68,7 @@ object IcdDbQuery {
       publish = paths.find(_.endsWith(".publish")).map(db(_)),
       subscribe = paths.find(_.endsWith(".subscribe")).map(db(_)),
       command = paths.find(_.endsWith(".command")).map(db(_)),
-      alarms = paths.find(_.endsWith(".alarms")).map(db(_))
+      alarms = paths.find(_.endsWith(".alarm")).map(db(_))
     )
   }
 
@@ -78,7 +78,7 @@ object IcdDbQuery {
 
   private[db] def getPublishCollectionName(subsystem: String, component: String): String = s"$subsystem.$component.publish"
 
-  private[db] def getAlarmsCollectionName(subsystem: String, component: String): String = s"$subsystem.$component.alarms"
+  private[db] def getAlarmsCollectionName(subsystem: String, component: String): String = s"$subsystem.$component.alarm"
 
   private[db] def getSubscribeCollectionName(subsystem: String, component: String): String = s"$subsystem.$component.subscribe"
 

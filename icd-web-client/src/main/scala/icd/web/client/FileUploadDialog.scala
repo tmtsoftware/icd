@@ -24,7 +24,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
 
   // standard ICD file names (XXX TODO FIXME: See StdName class in icd-db. Reuse here?)
   private val stdList =
-    List("subsystem-model.conf", "component-model.conf", "publish-model.conf", "subscribe-model.conf", "command-model.conf")
+    List("subsystem-model.conf", "component-model.conf", "publish-model.conf", "subscribe-model.conf", "command-model.conf", "alarm-model.conf")
 
   // Displays upload button
   private val inputItem = {

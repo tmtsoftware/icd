@@ -1,6 +1,6 @@
 package csw.services.icd.db
 
-import icd.web.shared.IcdModels.{CommandModel, ComponentModel, PublishModel, SubscribeModel}
+import icd.web.shared.IcdModels.{AlarmsModel, CommandModel, ComponentModel, PublishModel, SubscribeModel}
 import reactivemongo.api.DefaultDB
 import csw.services.icd._
 import icd.web.shared.PdfOptions
@@ -37,6 +37,7 @@ class CachedIcdDbQuery(
   private val subscribeModelMap = getSubscribeModelMap(components)
   private val publishModelMap   = getPublishModelMap(components)
   private val commandModelMap   = getCommandModelMap(components, maybePdfOptions)
+  private val alarmsModelMap   = getAlarmsModelMap(components, maybePdfOptions)
 
   private val subscribeInfo  = components.map(c => super.getSubscribeInfo(c, maybePdfOptions))
   private val publishInfoMap = getPublishInfoMap
@@ -88,6 +89,19 @@ class CachedIcdDbQuery(
     list.toMap
   }
 
+  /**
+   * Returns a map of component to alarms model, for each component in the list that defines one
+   *
+   * @param components a list of component models
+   */
+  private def getAlarmsModelMap(components: List[ComponentModel], maybePdfOptions: Option[PdfOptions]): Map[Component, AlarmsModel] = {
+    val list = for {
+      componentModel <- components
+      alarmsModel   <- super.getAlarmsModel(componentModel, maybePdfOptions)
+    } yield Component(componentModel.subsystem, componentModel.component) -> alarmsModel
+    list.toMap
+  }
+
   // --- Override these to use the cached values ---
   override def getEntries: List[IcdEntry] = entries
 
@@ -98,6 +112,9 @@ class CachedIcdDbQuery(
 
   override def getPublishModel(component: ComponentModel, maybePdfOptions: Option[PdfOptions]): Option[PublishModel] =
     publishModelMap.get(Component(component.subsystem, component.component))
+
+  override def getAlarmsModel(component: ComponentModel, maybePdfOptions: Option[PdfOptions]): Option[AlarmsModel] =
+    alarmsModelMap.get(Component(component.subsystem, component.component))
 
   override def getSubscribeModel(component: ComponentModel, maybePdfOptions: Option[PdfOptions]): Option[SubscribeModel] =
     subscribeModelMap.get(Component(component.subsystem, component.component))
