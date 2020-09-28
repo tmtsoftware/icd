@@ -4,6 +4,12 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 
 ## [ICD v2.0.1] - 2020-09-
 
+### Added
+
+- Added a new component model file: alarm-model.conf, which replaces the "alarms" section in publish-model.conf
+  (The old version is still supported for backward compatibility).
+  See [DEOPSICDDB-98](https://tmt-project.atlassian.net/secure/RapidBoard.jspa?rapidView=97&projectKey=DEOPSICDDB&modal=detail&selectedIssue=DEOPSICDDB-98).
+
 ### Changed
 
 - Changed the "attributes" keyword for events (in publish-model.conf) and the "args" keyword for commands 
