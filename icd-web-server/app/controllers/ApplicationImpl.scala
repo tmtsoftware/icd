@@ -89,8 +89,8 @@ class ApplicationImpl(db: IcdDb) {
       clientApiOpt: Option[Boolean]
   ): List[ComponentInfo] = {
     val sv                  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-    val searchAllSubsystems = searchAll.getOrElse(false)
     val clientApi           = clientApiOpt.getOrElse(false)
+    val searchAllSubsystems = clientApi && searchAll.getOrElse(false)
     val subsystems          = if (searchAllSubsystems) None else Some(List(sv.subsystem))
     val query               = new CachedIcdDbQuery(db.db, db.admin, subsystems, None)
     val versionManager      = new CachedIcdVersionManager(query)
@@ -210,8 +210,8 @@ class ApplicationImpl(db: IcdDb) {
       pdfOptions: PdfOptions
   ): Option[Array[Byte]] = {
     val sv                  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-    val searchAllSubsystems = searchAll.getOrElse(false)
     val clientApi           = clientApiOpt.getOrElse(false)
+    val searchAllSubsystems = clientApi && searchAll.getOrElse(false)
     val icdPrinter          = IcdDbPrinter(db, searchAllSubsystems, clientApi, maybeCache, Some(pdfOptions))
     icdPrinter.saveApiAsPdf(sv, pdfOptions)
   }
