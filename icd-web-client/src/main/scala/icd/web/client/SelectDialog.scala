@@ -101,7 +101,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   applyButton.disabled = true
 
   def searchAllSubsystems(): Boolean = {
-    searchAllCheckbox.checked
+    searchAllCheckbox.checked && clientApiCheckbox.checked
   }
 
   def clientApi(): Boolean = {
