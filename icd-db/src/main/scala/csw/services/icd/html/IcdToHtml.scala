@@ -331,32 +331,32 @@ object IcdToHtml {
     else typeStr
   }
 
-  private def resultTypeMarkup(attributesList: List[ParameterModel]): Text.TypedTag[String] = {
+  private def resultTypeMarkup(parameterList: List[ParameterModel]): Text.TypedTag[String] = {
     import scalatags.Text.all._
-    if (attributesList.isEmpty) div()
+    if (parameterList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units")
-      val rowList  = for (a <- attributesList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units)
+      val rowList  = for (a <- parameterList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units)
       div(cls := "nopagebreak")(
         p(strong(a("Result Type Parameters"))),
         HtmlMarkup.mkTable(headings, rowList),
-        attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-        structAttributesMarkup(attributesList)
+        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
+        structParametersMarkup(parameterList)
       )
     }
   }
 
   private def parameterListMarkup(
-                                   nameStr: String,
-                                   attributesList: List[ParameterModel],
-                                   requiredArgs: List[String]
+      nameStr: String,
+      parameterList: List[ParameterModel],
+      requiredArgs: List[String]
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
-    if (attributesList.isEmpty) div()
+    if (parameterList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default", "Required")
       val rowList =
-        for (a <- attributesList)
+        for (a <- parameterList)
           yield List(
             a.name,
             a.description,
@@ -368,8 +368,8 @@ object IcdToHtml {
       div(cls := "nopagebreak")(
         p(strong(a(s"Parameters for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList),
-        attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-        structAttributesMarkup(attributesList)
+        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
+        structParametersMarkup(parameterList)
       )
     }
   }
@@ -471,11 +471,11 @@ object IcdToHtml {
   // HTML id for a table displaying the fields of a struct
   private def structIdStr(name: String): String = s"$name-struct"
 
-  // Add a table for each attribute of type "struct" to show the members of the struct
-  private def structAttributesMarkup(attributesList: List[ParameterModel]): Seq[Text.TypedTag[String]] = {
+  // Add a table for each parameter of type "struct" to show the members of the struct
+  private def structParametersMarkup(parameterList: List[ParameterModel]): Seq[Text.TypedTag[String]] = {
     import scalatags.Text.all._
     val headings = List("Name", "Description", "Type", "Units", "Default")
-    attributesList.flatMap { attrModel =>
+    parameterList.flatMap { attrModel =>
       if (attrModel.typeStr == "struct" || attrModel.typeStr == "array of struct") {
         val rowList2 =
           for (a2 <- attrModel.parameterList)
@@ -486,7 +486,7 @@ object IcdToHtml {
             HtmlMarkup.mkTable(headings, rowList2),
             attrModel.parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
             // Handle structs embedded in other structs (or arrays of structs, etc.)
-            structAttributesMarkup(attrModel.parameterList)
+            structParametersMarkup(attrModel.parameterList)
           )
         )
       }
@@ -504,19 +504,19 @@ object IcdToHtml {
 
   private def attributeListMarkup(
       nameStr: String,
-      attributesList: List[ParameterModel]
+      parameterList: List[ParameterModel]
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
-    if (attributesList.isEmpty) div()
+    if (parameterList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default")
       val rowList =
-        for (a <- attributesList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units, a.defaultValue)
+        for (a <- parameterList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units, a.defaultValue)
       div(cls := "nopagebreak")(
         p(strong(a(s"Parameters for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList),
-        attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-        structAttributesMarkup(attributesList)
+        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
+        structParametersMarkup(parameterList)
       )
     }
   }
@@ -543,7 +543,10 @@ object IcdToHtml {
             val linkId      = idFor(compName, "publishes", pubType, component.subsystem, compName, eventModel.name)
             val showDetails = pdfOptions.details || pdfOptions.expandedIds.contains(linkId)
             val subscribers =
-              eventInfo.subscribers.map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}").distinct.mkString(", ")
+              eventInfo.subscribers
+                .map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}")
+                .distinct
+                .mkString(", ")
             val subscriberInfo =
               if (clientApi)
                 span(strong(s"Subscribers: "), if (subscribers.isEmpty) "none" else subscribers)
@@ -573,17 +576,19 @@ object IcdToHtml {
               )
             )
             // Include usage text from subscribers that define it
-            val subscriberUsage = if (clientApi)
-              div(
-              eventInfo.subscribers.map(s =>
-                if (s.subscribeModelInfo.usage.isEmpty) div()
-                else
-                  div(
-                    strong(s"Usage by ${s.componentModel.subsystem}.${s.componentModel.component}: "),
-                    raw(s.subscribeModelInfo.usage)
+            val subscriberUsage =
+              if (clientApi)
+                div(
+                  eventInfo.subscribers.map(s =>
+                    if (s.subscribeModelInfo.usage.isEmpty) div()
+                    else
+                      div(
+                        strong(s"Usage by ${s.componentModel.subsystem}.${s.componentModel.component}: "),
+                        raw(s.subscribeModelInfo.usage)
+                      )
                   )
-              )
-            ) else span
+                )
+              else span
             div(cls := "nopagebreak")(
               nh.H4(
                 s"${singlePubType(pubType)}: ${eventModel.name}",

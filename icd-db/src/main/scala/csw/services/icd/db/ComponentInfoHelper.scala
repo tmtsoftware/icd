@@ -114,7 +114,9 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean) {
         val currentStateList = m.currentStateList.map { t =>
           EventInfo(t, getSubscribers(query, prefix, t.name, t.description, CurrentStates, maybePdfOptions))
         }
-        val alarmList = models.alarmsModel.map(_.alarmList).getOrElse(m.alarmList)
+        // TODO: Ignore alarms in publish-model.conf if alarm-model.conf is present? Or merge any alarms found?
+//        val alarmList = models.alarmsModel.map(_.alarmList).getOrElse(m.alarmList)
+        val alarmList = models.alarmsModel.toList.flatMap(_.alarmList) ++ m.alarmList
         if (m.description.nonEmpty || eventList.nonEmpty || observeEventList.nonEmpty || alarmList.nonEmpty)
           Some(Publishes(m.description, eventList, observeEventList, currentStateList, alarmList))
         else None

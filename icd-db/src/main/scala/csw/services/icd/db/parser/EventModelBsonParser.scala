@@ -25,7 +25,6 @@ object EventModelBsonParser {
       parameterList =
         for (subDoc <- doc.getAsOpt[Array[BSONDocument]](attrKey).map(_.toList).getOrElse(Nil))
           yield ParameterModelBsonParser(subDoc, maybePdfOptions),
-
     )
   }
 }

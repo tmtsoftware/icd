@@ -276,10 +276,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def structIdStr(name: String): String = s"$name-struct"
 
   // Add a table for each attribute of type "struct" to show the members of the struct
-  private def structAttributesMarkup(attributesList: List[ParameterModel]): Seq[TypedTag[Div]] = {
+  private def structParametersMarkup(parameterList: List[ParameterModel]): Seq[TypedTag[Div]] = {
     import scalatags.JsDom.all._
     val headings = List("Name", "Description", "Type", "Units", "Default")
-    attributesList.flatMap { attrModel =>
+    parameterList.flatMap { attrModel =>
       if (attrModel.typeStr == "struct" || attrModel.typeStr == "array of struct") {
         val rowList2 =
           for (a2 <- attrModel.parameterList)
@@ -290,7 +290,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             mkTable(headings, rowList2),
             attrModel.parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
             // Handle structs embedded in other structs (or arrays of structs, etc.)
-            structAttributesMarkup(attrModel.parameterList)
+            structParametersMarkup(attrModel.parameterList)
           )
         )
       }
@@ -301,21 +301,21 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   /**
    * Returns a table of attributes
    *
-   * @param attributesList list of attributes to display
+   * @param parameterList list of attributes to display
    * @return
    */
-  private def attributeListMarkup(attributesList: List[ParameterModel]): TypedTag[HTMLDivElement] = {
+  private def parameterListMarkup(parameterList: List[ParameterModel]): TypedTag[HTMLDivElement] = {
     import scalatags.JsDom.all._
-    if (attributesList.isEmpty) div()
+    if (parameterList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default")
       val rowList =
-        for (a <- attributesList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units, a.defaultValue)
+        for (a <- parameterList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units, a.defaultValue)
       div(
         strong("Parameters"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
-        attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-        structAttributesMarkup(attributesList)
+        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
+        structParametersMarkup(parameterList)
       )
     }
   }
@@ -323,19 +323,19 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   /**
    * Returns a table of parameters
    *
-   * @param attributesList list of attributes to display
+   * @param parameterList list of attributes to display
    * @param requiredArgs   a list of required arguments
    */
   private def parameterListMarkup(
-                                   attributesList: List[ParameterModel],
-                                   requiredArgs: List[String]
+      parameterList: List[ParameterModel],
+      requiredArgs: List[String]
   ): TypedTag[HTMLDivElement] = {
     import scalatags.JsDom.all._
-    if (attributesList.isEmpty) div()
+    if (parameterList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default", "Required")
       val rowList =
-        for (a <- attributesList)
+        for (a <- parameterList)
           yield List(
             a.name,
             a.description,
@@ -347,8 +347,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       div(
         strong("Parameters"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
-        attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-        structAttributesMarkup(attributesList)
+        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
+        structParametersMarkup(parameterList)
       )
     }
   }
@@ -364,19 +364,19 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   /**
    * Returns a table listing the attributes of a command result
    *
-   * @param attributesList list of attributes to display
+   * @param parameterList list of attributes to display
    */
-  private def resultTypeMarkup(attributesList: List[ParameterModel]): TypedTag[HTMLDivElement] = {
+  private def resultTypeMarkup(parameterList: List[ParameterModel]): TypedTag[HTMLDivElement] = {
     import scalatags.JsDom.all._
-    if (attributesList.isEmpty) div()
+    if (parameterList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units")
-      val rowList  = for (a <- attributesList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units)
+      val rowList  = for (a <- parameterList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units)
       div(
         strong("Result Type Parameters"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
-        attributesList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-        structAttributesMarkup(attributesList)
+        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
+        structParametersMarkup(parameterList)
       )
     }
   }
@@ -455,7 +455,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         mkTable(headings, rowList),
         if (eventModel.maybeMaxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.")
         else span(),
-        attributeListMarkup(eventModel.parameterList)
+        parameterListMarkup(eventModel.parameterList)
       )
     }
 
@@ -603,7 +603,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         )
       )
 
-      val attrTable = si.eventModel.map(t => attributeListMarkup(t.parameterList)).getOrElse(div())
+      val attrTable = si.eventModel.map(t => parameterListMarkup(t.parameterList)).getOrElse(div())
       div(
         mkTable(headings, rowList),
         if (maxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.") else span(),

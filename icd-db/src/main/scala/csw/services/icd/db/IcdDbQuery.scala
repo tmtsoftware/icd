@@ -2,7 +2,14 @@ package csw.services.icd.db
 
 import csw.services.icd._
 import csw.services.icd.StdName._
-import csw.services.icd.db.parser.{AlarmsModelBsonParser, CommandModelBsonParser, ComponentModelBsonParser, PublishModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
+import csw.services.icd.db.parser.{
+  AlarmsModelBsonParser,
+  CommandModelBsonParser,
+  ComponentModelBsonParser,
+  PublishModelBsonParser,
+  SubscribeModelBsonParser,
+  SubsystemModelBsonParser
+}
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.{IcdModels, PdfOptions}
 import icd.web.shared.IcdModels._
@@ -52,7 +59,7 @@ object IcdDbQuery {
       publish: Option[BSONCollection],
       subscribe: Option[BSONCollection],
       command: Option[BSONCollection],
-      alarms: Option[BSONCollection],
+      alarms: Option[BSONCollection]
   ) {
 
     // Returns all collections belonging to this entry
@@ -555,8 +562,10 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
    */
   def getPublished(component: ComponentModel, maybePdfOptions: Option[PdfOptions]): List[Published] = {
     val maybePublishModel = getPublishModel(component, maybePdfOptions)
-    val maybeAlarmsModel = getAlarmsModel(component, maybePdfOptions)
-    val alarmList = maybeAlarmsModel.map(_.alarmList).getOrElse(maybePublishModel.map(_.alarmList).getOrElse(Nil))
+    val maybeAlarmsModel  = getAlarmsModel(component, maybePdfOptions)
+    // TODO: Ignore alarms in publish-model.conf if alarm-model.conf is present? Or merge any alarms found?
+//    val alarmList = maybeAlarmsModel.map(_.alarmList).getOrElse(maybePublishModel.map(_.alarmList).getOrElse(Nil))
+    val alarmList = maybeAlarmsModel.toList.flatMap(_.alarmList) ++ maybePublishModel.toList.flatMap(_.alarmList)
     maybePublishModel match {
       case Some(publishModel) =>
         List(
