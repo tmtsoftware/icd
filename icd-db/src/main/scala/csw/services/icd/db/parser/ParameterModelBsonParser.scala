@@ -30,6 +30,8 @@ object ParameterModelBsonParser {
     val units           = doc.getAsOpt[String]("units").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse("")
     val maxItems        = doc.getAsOpt[Int]("maxItems")
     val minItems        = doc.getAsOpt[Int]("minItems")
+    val maxLength        = doc.getAsOpt[Int]("maxLength")
+    val minLength        = doc.getAsOpt[Int]("minLength")
     val maybeDimensions = doc.getAsOpt[Array[Int]]("dimensions").map(_.toList)
     val itemsDoc        = doc.get("items").map(_.asInstanceOf[BSONDocument])
     val maybeArrayType  = itemsDoc.flatMap(_.get("type").map(bsonValueToString))
@@ -68,6 +70,18 @@ object ParameterModelBsonParser {
 
     val defaultValue = doc.getAsOpt[String]("default").getOrElse("")
 
+    // Returns "string" and includes the min/max length, if specified in brackets
+    def makeStringTypeStr(): String = {
+      (minLength, maxLength) match {
+        case (None, None) => "string"
+        case (None, Some(max)) => s"string[?..$max]"
+        case (Some(min), None) => s"string[$min..?]"
+        case (Some(min), Some(max)) =>
+          if (min == max) s"string[$max]"
+          else s"string[$min..$max]"
+      }
+    }
+
     // Returns a string describing an array type
     def parseArrayTypeStr(doc: BSONDocument): String = {
       val items = doc.getAsOpt[BSONDocument]("items")
@@ -99,6 +113,7 @@ object ParameterModelBsonParser {
         case Some("double")  => numberTypeStr("double")
         case Some("byte")    => numberTypeStr("byte")
         case Some("array")   => parseArrayTypeStr(doc)
+        case Some("string")  => makeStringTypeStr()
         case Some(otherType) => otherType
         case None =>
           maybeEnum match {
@@ -154,6 +169,8 @@ object ParameterModelBsonParser {
       units,
       maxItems,
       minItems,
+      maxLength,
+      minLength,
       minimum,
       maximum,
       exclusiveMinimum,

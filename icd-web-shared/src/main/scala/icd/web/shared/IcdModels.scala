@@ -159,6 +159,8 @@ object IcdModels {
       units: String,
       maxItems: Option[Int],
       minItems: Option[Int],
+      maxLength: Option[Int],
+      minLength: Option[Int],
       minimum: Option[String],
       maximum: Option[String],
       exclusiveMinimum: Boolean,
@@ -181,7 +183,9 @@ object IcdModels {
         case "boolean" => 1
         case "integer" => 4
         case "number"  => 8
-        case "string"  => defaultStringSize
+        case "string" =>
+          // Use maxLength if given, or minLength, if greater than the default, otherwise the default length
+          maxLength.getOrElse(minLength.map(math.max(defaultStringSize, _)).getOrElse(defaultStringSize))
         case "byte"    => 1
         case "short"   => 2
         case "long"    => 4

@@ -457,6 +457,8 @@ case class Resolver(allModels: List[IcdModels]) {
       units = if (parameterModel.units.nonEmpty) parameterModel.units else refParameter.units,
       maxItems = if (parameterModel.maxItems.nonEmpty) parameterModel.maxItems else refParameter.maxItems,
       minItems = if (parameterModel.minItems.nonEmpty) parameterModel.minItems else refParameter.minItems,
+      maxLength = if (parameterModel.maxLength.nonEmpty) parameterModel.maxLength else refParameter.maxLength,
+      minLength = if (parameterModel.minLength.nonEmpty) parameterModel.minLength else refParameter.minLength,
       minimum = if (parameterModel.minimum.nonEmpty) parameterModel.minimum else refParameter.minimum,
       maximum = if (parameterModel.maximum.nonEmpty) parameterModel.maximum else refParameter.maximum,
       exclusiveMinimum = if (parameterModel.exclusiveMinimum) parameterModel.exclusiveMinimum else refParameter.exclusiveMinimum,

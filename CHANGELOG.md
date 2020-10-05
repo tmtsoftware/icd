@@ -10,6 +10,8 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
   (The old version is still supported for backward compatibility).
   See [DEOPSICDDB-98](https://tmt-project.atlassian.net/secure/RapidBoard.jspa?rapidView=97&projectKey=DEOPSICDDB&modal=detail&selectedIssue=DEOPSICDDB-98).
 
+- Added support for specifying minLength and maxLength for string parameter types (to help in calculating the archived size for events)
+
 ### Changed
 
 - Changed the "attributes" keyword for events (in publish-model.conf) and the "args" keyword for commands 
