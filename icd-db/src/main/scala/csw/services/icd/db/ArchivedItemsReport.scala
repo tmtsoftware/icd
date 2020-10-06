@@ -68,7 +68,8 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
         getItems(componentModel, "Events", publishModel.eventList) ++
         getItems(componentModel, "ObserveEvents", publishModel.observeEventList)
       }
-    } else {
+    }
+    else {
       for {
         componentModel <- query.getComponents(maybePdfOptions)
         if subsystemFilter(componentModel.subsystem)
@@ -172,6 +173,36 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
     markup.render
   }
 
+  // Generates the text/CSV formatted report
+  private def makeCsvReport(file: File): Unit = {
+    import com.github.tototoshi.csv._
+
+    implicit object MyFormat extends DefaultCSVFormat {
+      override val lineTerminator = "\n"
+    }
+
+    val archivedItems: List[ArchiveInfo] = getArchivedItems
+    val writer                           = CSVWriter.open(file)
+    writer.writeRow(List("Component", "Prefix", "Type", "Name", "Max Rate Hz", "Size Bytes", "Yearly Accum.", "Description"))
+    archivedItems.foreach { i =>
+      val (maxRate, _) = EventModel.getMaxRate(i.maybeMaxRate)
+      writer.writeRow(
+        List(
+          i.component.filter(_ != '\n'),
+          i.prefix.filter(_ != '\n'),
+          i.eventType,
+          i.name,
+          maxRate,
+          i.sizeInBytes,
+          i.yearlyAccumulation,
+          i.description
+        )
+      )
+    }
+    writer.close()
+    println(s"Wrote $file")
+  }
+
   /**
    * Saves the report in HTML or PDF, depending on the file suffix
    */
@@ -186,11 +217,10 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
     def saveAsPdf(html: String): Unit =
       IcdToPdf.saveAsPdf(file, html, showLogo = false, pdfOptions)
 
-    val html = makeReport(pdfOptions)
     file.getName.split('.').drop(1).lastOption match {
-      case Some("html") => saveAsHtml(html)
-      case Some("pdf")  => saveAsPdf(html)
-      case _            => println(s"Unsupported output format: Expected *.html or *.pdf")
+      case Some("html") => saveAsHtml(makeReport(pdfOptions))
+      case Some("pdf")  => saveAsPdf(makeReport(pdfOptions))
+      case _            => makeCsvReport(file)
     }
   }
 }
