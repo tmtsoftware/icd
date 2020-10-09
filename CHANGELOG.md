@@ -10,7 +10,7 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
   (The old version is still supported for backward compatibility).
   See [DEOPSICDDB-98](https://tmt-project.atlassian.net/secure/RapidBoard.jspa?rapidView=97&projectKey=DEOPSICDDB&modal=detail&selectedIssue=DEOPSICDDB-98).
 
-- Added support for specifying minLength and maxLength for string parameter types (to help in calculating the archived size for events)
+- Added support for specifying an optional minLength and maxLength for string parameter types (to help in calculating the archived size for events)
 
 ### Changed
 
@@ -20,9 +20,6 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
   Also renamed the json-schema files used internally for validation.
   See [DEOPSICDDB-113](https://tmt-project.atlassian.net/secure/RapidBoard.jspa?rapidView=97&projectKey=DEOPSICDDB&modal=detail&selectedIssue=DEOPSICDDB-113).
   The generated APIs and ICDs now also display "Parameters" instead of "Attributes", etc.
-
-- Changed the json-schema (v2.0) for attributes (parameters) to allow an arbitrary string for maximum, minimum, 
-  exclusiveMaximum, exclusiveMinimum (See [DEOPSICDDB-112](https://tmt-project.atlassian.net/secure/RapidBoard.jspa?rapidView=97&projectKey=DEOPSICDDB&modal=detail&selectedIssue=DEOPSICDDB-112)).
 
 ## [ICD v2.0.0] - 2020-09-09
 
