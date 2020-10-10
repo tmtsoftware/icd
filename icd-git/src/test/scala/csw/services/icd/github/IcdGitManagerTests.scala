@@ -53,9 +53,9 @@ class IcdGitManagerTests extends AnyFunSuite with BeforeAndAfter {
     assert(maybeApiVersion.isDefined)
     val apiVersion = maybeApiVersion.get
     assert(apiVersion.subsystem == "TEST")
-    assert(apiVersion.apis.size == 2)
-    assert(apiVersion.apis.head.version == "master")
-    val api = apiVersion.apis.tail.head
+    assert(apiVersion.apis.size == 1)
+//    assert(apiVersion.apis.head.version == "master")
+    val api = apiVersion.apis.head
     assert(api.version == "1.0")
     assert(api.user == user)
     assert(api.comment == comment)
@@ -71,9 +71,9 @@ class IcdGitManagerTests extends AnyFunSuite with BeforeAndAfter {
     assert(maybeApiVersion2.isDefined)
     val apiVersion2 = maybeApiVersion2.get
     assert(apiVersion2.subsystem == "TEST2")
-    assert(apiVersion2.apis.size == 2)
-    val api2 = apiVersion2.apis.tail.head
-    assert(apiVersion2.apis.head.version == "master")
+    assert(apiVersion2.apis.size == 1)
+    val api2 = apiVersion2.apis.head
+//    assert(apiVersion2.apis.head.version == "master")
     assert(api2.version == "1.0")
     assert(api2.user == user)
     assert(api2.comment == comment + " 2")

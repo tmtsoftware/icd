@@ -72,28 +72,28 @@ object IcdGitManager {
     }
   }
 
-  // Gets the API entry for the master branch of the given subsystem, if not empty
-  private def getMasterApiVersion(subsystem: String): Option[ApiVersions.ApiEntry] = {
-    /*
-    import org.eclipse.jgit.internal.storage.file.FileRepository
-    import org.eclipse.jgit.lib.Repository
-    import org.eclipse.jgit.revwalk.RevCommit
-    val repository: Repository = new FileRepository("/path/to/repository/.git")
-    val treeName: String = "refs/heads/master"// tag or branch
-    import scala.collection.JavaConversions._
-    for (commit <- git.log.add(repository.resolve(treeName)).call)  { System.out.println(commit.getName) }
-     */
-
-    // Add master branch as pseudo version
-    val info = getSubsystemGitInfo(subsystem)
-    if (!info.isEmpty) {
-      // XXX TODO FIXME: Do a shallow clone and use above code?
-      val date    = DateTime.now().withZone(DateTimeZone.UTC).toString()
-      val user    = ""
-      val comment = ""
-      Some(ApiVersions.ApiEntry("master", info.commitId, user, comment, date))
-    } else None
-  }
+//  // Gets the API entry for the master branch of the given subsystem, if not empty
+//  private def getMasterApiVersion(subsystem: String): Option[ApiVersions.ApiEntry] = {
+//    /*
+//    import org.eclipse.jgit.internal.storage.file.FileRepository
+//    import org.eclipse.jgit.lib.Repository
+//    import org.eclipse.jgit.revwalk.RevCommit
+//    val repository: Repository = new FileRepository("/path/to/repository/.git")
+//    val treeName: String = "refs/heads/master"// tag or branch
+//    import scala.collection.JavaConversions._
+//    for (commit <- git.log.add(repository.resolve(treeName)).call)  { System.out.println(commit.getName) }
+//     */
+//
+//    // Add master branch as pseudo version
+//    val info = getSubsystemGitInfo(subsystem)
+//    if (!info.isEmpty) {
+//      // XXX TODO FIXME: Do a shallow clone and use above code?
+//      val date    = DateTime.now().withZone(DateTimeZone.UTC).toString()
+//      val user    = ""
+//      val comment = ""
+//      Some(ApiVersions.ApiEntry("master", info.commitId, user, comment, date))
+//    } else None
+//  }
 
   /**
    * Gets a list of information about all of the published API and ICD versions by reading any
@@ -108,8 +108,6 @@ object IcdGitManager {
     val icdMatcher = FileSystems.getDefault.getPathMatcher(s"glob:$icdsDir/icd-*.json")
 
     val apiVersions =
-      Future
-        .sequence(
           Option(apisDir.listFiles)
             .getOrElse(Array())
             .toList
@@ -118,15 +116,6 @@ object IcdGitManager {
             .map(path => ApiVersions.fromJson(new String(Files.readAllBytes(path))))
             .filter(_.apis.nonEmpty)
             .sorted
-            .map { apiVersions =>
-              // Add master branch as pseudo version, do in parallel for performance
-              Future(getMasterApiVersion(apiVersions.subsystem)).map(
-                _.toList.map(master => ApiVersions(apiVersions.subsystem, master :: apiVersions.apis))
-              )
-            }
-        )
-        .map(_.flatten)
-        .await
 
     val icdVersions = Option(icdsDir.listFiles)
       .getOrElse(Array())
@@ -870,7 +859,7 @@ object IcdGitManager {
       val subsystemGitInfo = getSubsystemGitInfo(subsystem)
       val maybeApiVersions = allApiVersions.find(_.subsystem == subsystem)
       val maybeApiVersionList = maybeApiVersions.toList
-        .flatMap(_.apis.tail) // skip master version
+        .flatMap(_.apis)
         .map { apiEntry =>
           ApiVersionInfo(subsystem, apiEntry.version, apiEntry.user, apiEntry.comment, apiEntry.date, apiEntry.commit)
         }
@@ -886,7 +875,7 @@ object IcdGitManager {
             IcdVersionInfo(icdVersion, icdEntry.user, icdEntry.comment, icdEntry.date)
           }
         }
-      val publishedCommitId = maybeApiVersions.map(_.apis.tail.head.commit)
+      val publishedCommitId = maybeApiVersions.map(_.apis.head.commit)
       val readyToPublish    = !(subsystemGitInfo.isEmpty || publishedCommitId.contains(subsystemGitInfo.commitId))
       PublishInfo(subsystem, maybeApiVersionList, icdVersions, readyToPublish)
     }
