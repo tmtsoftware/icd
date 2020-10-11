@@ -530,17 +530,19 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
   def afterIngestSubsystem(subsystem: String, problems: List[Problem], dbName: String): Unit = {
     val tmpPaths = getCollectionNames
       .filter(name => name.startsWith(s"$subsystem.") && name.endsWith(IcdDbDefaults.tmpCollSuffix))
-    val paths = getCollectionNames
-      .filter(name =>
-        name.startsWith(s"$subsystem.") && !name.endsWith(IcdVersionManager.versionSuffix) && !name
-          .endsWith(IcdDbDefaults.tmpCollSuffix)
-      )
-    val deleted = paths.diff(tmpPaths.map(path => baseName(path, IcdDbDefaults.tmpCollSuffix)))
-    deleted.foreach { collName =>
-      val coll = db.collection[BSONCollection](collName)
-      coll.drop(failIfNotFound = false).await
+    if (tmpPaths.nonEmpty) {
+      val paths = getCollectionNames
+        .filter(name =>
+          name.startsWith(s"$subsystem.") && !name.endsWith(IcdVersionManager.versionSuffix) && !name
+            .endsWith(IcdDbDefaults.tmpCollSuffix)
+        )
+      val deleted = paths.diff(tmpPaths.map(path => baseName(path, IcdDbDefaults.tmpCollSuffix)))
+      deleted.foreach { collName =>
+        val coll = db.collection[BSONCollection](collName)
+        coll.drop(failIfNotFound = false).await
+      }
+      renameTmpCollections(tmpPaths, problems, dbName)
     }
-    renameTmpCollections(tmpPaths, problems, dbName)
   }
 
   /**
