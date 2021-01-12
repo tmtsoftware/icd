@@ -429,10 +429,10 @@ object IcdModels {
     import EventModel._
 
     // Estimate of overhead size for any csw event (without the paramset)
-    def eventOverhead: Int = 100 + name.length
+    def eventOverhead: Int = 180 + name.length
 
     // Estimated size in bytes of this event
-    lazy val totalSizeInBytes: Int = eventOverhead + parameterList.map(_.totalSizeInBytes).sum
+    lazy val totalSizeInBytes: Int = eventOverhead + parameterList.map(p => 48 + p.name.length + p.totalSizeInBytes).sum
 
     // Estimated number of bytes to archive this event at the maxRate for a year
     lazy val totalArchiveBytesPerYear: Long = {
