@@ -177,7 +177,9 @@ object IcdModels {
         case "array" =>
           // Use the given array dimensions, or guess if none given (may not be known ahead of time?)
           val d = maxItems.map(List(_)).getOrElse(defaultArrayDims)
-          maybeDimensions.getOrElse(d).product * maybeArrayType.map(getTypeSize).getOrElse(defaultTypeSize)
+          val n = maybeDimensions.getOrElse(d).product
+          val size = maybeArrayType.map(getTypeSize).getOrElse(defaultTypeSize)
+          n * size + n - 1 // OSWDMS-32: Add 1 byte per array item
         case "struct" => parameterList.map(_.totalSizeInBytes).sum
         // Assume boolean encoded as 1/0 byte?
         case "boolean" => 1
@@ -429,7 +431,7 @@ object IcdModels {
     import EventModel._
 
     // Estimate of overhead size for any csw event (without the paramset)
-    def eventOverhead: Int = 180 + name.length
+    def eventOverhead: Int = 167 + name.length
 
     // Estimated size in bytes of this event
     lazy val totalSizeInBytes: Int = eventOverhead + parameterList.map(p => 48 + p.name.length + p.totalSizeInBytes).sum
