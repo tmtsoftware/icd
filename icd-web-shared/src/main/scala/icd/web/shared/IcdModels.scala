@@ -36,8 +36,11 @@ object IcdModels {
   // Max length of CSW SolarSystemObject name
   val solarSystemObjectSize = 7
 
+  // Used to calculate archived data sizes
+  val operatingHoursPerNight = 12
+
   // Cycles Per Year for 1 Hz
-  val hzToCpy = 31536000
+  val hzToCpy: Int = 365 * operatingHoursPerNight * 60 * 60
 
   /**
    * Convert a quantity in bytes to a human-readable string such as "4.0 MB".
@@ -176,8 +179,8 @@ object IcdModels {
       typeName match {
         case "array" =>
           // Use the given array dimensions, or guess if none given (may not be known ahead of time?)
-          val d = maxItems.map(List(_)).getOrElse(defaultArrayDims)
-          val n = maybeDimensions.getOrElse(d).product
+          val d    = maxItems.map(List(_)).getOrElse(defaultArrayDims)
+          val n    = maybeDimensions.getOrElse(d).product
           val size = maybeArrayType.map(getTypeSize).getOrElse(defaultTypeSize)
           n * size + n - 1 // OSWDMS-32: Add 1 byte per array item
         case "struct" => parameterList.map(_.totalSizeInBytes).sum
@@ -185,7 +188,7 @@ object IcdModels {
         case "boolean" => 1
         case "integer" => 4
         case "number"  => 8
-        case "string" =>
+        case "string"  =>
           // Use maxLength if given, or minLength, if greater than the default, otherwise the default length
           maxLength.getOrElse(minLength.map(math.max(defaultStringSize, _)).getOrElse(defaultStringSize))
         case "byte"    => 1
@@ -401,6 +404,11 @@ object IcdModels {
     def getTotalArchiveSpace(models: List[EventModel]): String = {
       bytesToString(models.filter(_.archive).map(_.totalArchiveBytesPerYear).sum)
     }
+
+    // Returns a string describing the total archive space for an hour for all of the given event models
+    def getTotalArchiveSpaceHourly(models: List[EventModel]): String = {
+      bytesToString(models.filter(_.archive).map(_.totalArchiveBytesPerYear / (365 * operatingHoursPerNight)).sum)
+    }
   }
 
   /**
@@ -441,6 +449,10 @@ object IcdModels {
       val (maxRate, _) = getMaxRate(maybeMaxRate)
       math.round(totalSizeInBytes * maxRate * hzToCpy)
     }
+
+    // String describing estimated space required per hour to archive this event (if archive is true)
+    lazy val totalArchiveSpacePerHour: String =
+      if (archive) bytesToString(totalArchiveBytesPerYear / (365 * operatingHoursPerNight)) else ""
 
     // String describing estimated space required per year to archive this event (if archive is true)
     lazy val totalArchiveSpacePerYear: String = if (archive) bytesToString(totalArchiveBytesPerYear) else ""

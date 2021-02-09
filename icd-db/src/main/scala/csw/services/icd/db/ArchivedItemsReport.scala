@@ -21,6 +21,7 @@ object ArchivedItemsReport {
     val name: String                 = eventModel.name
     val maybeMaxRate: Option[Double] = eventModel.maybeMaxRate
     val sizeInBytes: Int             = eventModel.totalSizeInBytes
+    val hourlyAccumulation: String   = eventModel.totalArchiveSpacePerHour
     val yearlyAccumulation: String   = eventModel.totalArchiveSpacePerYear
     val description: String          = eventModel.description
   }
@@ -90,6 +91,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
       thead(
         tr(
           th("Subsystem"),
+          th("Hourly", br, "Accum."),
           th("Yearly", br, "Accum.")
         )
       ),
@@ -99,6 +101,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
         } yield {
           tr(
             td(p(subsystem)),
+            td(p(EventModel.getTotalArchiveSpaceHourly(archivedItems.filter(_.subsystem == subsystem).map(_.eventModel)))),
             td(p(EventModel.getTotalArchiveSpace(archivedItems.filter(_.subsystem == subsystem).map(_.eventModel))))
           )
         }
@@ -135,6 +138,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
                 th("Name"),
                 th("Max", br, "Rate Hz"),
                 th("Size", br, "Bytes"),
+                th("Hourly", br, "Accum."),
                 th("Yearly", br, "Accum."),
                 th("Description")
               )
@@ -153,6 +157,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
                     p(if (defaultMaxRateUsed) em(maxRate.toString + "*") else span(maxRate.toString))
                   ),
                   td(p(item.sizeInBytes)),
+                  td(p(if (defaultMaxRateUsed) em(item.hourlyAccumulation + "*") else span(item.hourlyAccumulation))),
                   td(p(if (defaultMaxRateUsed) em(item.yearlyAccumulation + "*") else span(item.yearlyAccumulation))),
                   td(raw(firstParagraph(item.description)))
                 )
