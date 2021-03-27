@@ -21,7 +21,6 @@ object EventModelBsonParser {
       requirements = doc.getAsOpt[Array[String]]("requirements").map(_.toList).getOrElse(Nil),
       maybeMaxRate = doc.getAsOpt[BSONNumberLike]("maxRate").map(_.toDouble.getOrElse(1.0)),
       archive = doc.getAsOpt[Boolean]("archive").getOrElse(false),
-//      archive = true,
       archiveDuration = doc.getAsOpt[String]("archiveDuration").getOrElse(""),
       parameterList =
         for (subDoc <- doc.getAsOpt[Array[BSONDocument]](attrKey).map(_.toList).getOrElse(Nil))
