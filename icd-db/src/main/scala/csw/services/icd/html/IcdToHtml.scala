@@ -152,6 +152,7 @@ object IcdToHtml {
     import scalatags.Text.all._
     // For ICDs, only display published items/received commands, for APIs show everything
     // (Note: Need to include even if only subscribed items are defined, to keep summary links from breaking)
+    // (XXX FIXME: Aug 2020: APIs should only show pub and recv, added clientApi option to show sub/send)
     if (
       forApi ||
       (info.publishes.isDefined && info.publishes.get.nonEmpty
@@ -215,7 +216,7 @@ object IcdToHtml {
           val linkId              = idFor(compName, "sends", "Commands", s.subsystem, s.component, s.name)
           val showDetails         = pdfOptions.details || pdfOptions.expandedIds.contains(linkId)
           div(cls := "nopagebreak")(
-            nh.H5(s.name, linkId),
+            nh.H5(s"Command: ${s.name}", linkId),
             p(senderInfo, ", ", receiverInfo),
             receiveCommandModel match {
               case Some(m) if showDetails =>
@@ -253,7 +254,7 @@ object IcdToHtml {
     maybeCommands match {
       case None => div()
       case Some(commands) =>
-        if (commands.commandsReceived.nonEmpty || commands.commandsSent.nonEmpty) {
+        if (commands.commandsReceived.nonEmpty || (commands.commandsSent.nonEmpty && forApi && clientApi)) {
           div(
             nh.H3(s"Commands for ${component.component}"),
             raw(commands.description),
@@ -293,7 +294,7 @@ object IcdToHtml {
           val linkId      = idFor(compName, "receives", "Commands", component.subsystem, compName, m.name)
           val showDetails = pdfOptions.details || pdfOptions.expandedIds.contains(linkId)
           div(cls := "nopagebreak")(
-            nh.H5(m.name, linkId),
+            nh.H5(s"Command: ${m.name}", linkId),
             if (clientApi) p(senderInfo, ", ", receiverInfo) else p(receiverInfo),
             if (showDetails) {
               div(
