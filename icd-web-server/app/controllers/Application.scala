@@ -123,6 +123,16 @@ class Application @Inject() (
     }
 
   /**
+   * Query the database for all of the published system events, ordered by subsystem/component
+   */
+  def eventList() =
+    authAction.async {
+      val resp: Future[List[AllEventList.EventsForSubsystem]] =
+        appActor ? GetEventList
+      resp.map(info => Ok(Json.toJson(info)))
+    }
+
+  /**
    * Query the database for information about the given components in an ICD
    *
    * @param subsystem           the source subsystem

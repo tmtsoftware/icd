@@ -4,21 +4,7 @@ import csw.services.icd.db.IcdDb
 import play.api.libs.concurrent.ActorModule
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
-import icd.web.shared.{
-  ApiVersionInfo,
-  ComponentInfo,
-  DiffInfo,
-  IcdName,
-  IcdVersionInfo,
-  IcdVizOptions,
-  PdfOptions,
-  PublishApiInfo,
-  PublishIcdInfo,
-  SubsystemInfo,
-  UnpublishApiInfo,
-  UnpublishIcdInfo,
-  VersionInfo
-}
+import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, AllEventList, IcdName, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
 
 import scala.util.Try
 
@@ -41,6 +27,7 @@ object ApplicationActor extends ActorModule {
       clientApi: Option[Boolean],
       replyTo: ActorRef[List[ComponentInfo]]
   ) extends Messages
+  final case class GetEventList(replyTo: ActorRef[List[AllEventList.EventsForSubsystem]]) extends Messages
   final case class GetIcdComponentInfo(
       subsystem: String,
       maybeVersion: Option[String],
@@ -122,6 +109,9 @@ object ApplicationActor extends ActorModule {
           Behaviors.same
         case GetComponentInfo(subsystem, maybeVersion, maybeComponent, searchAll, clientApi, replyTo) =>
           replyTo ! app.getComponentInfo(subsystem, maybeVersion, maybeComponent, searchAll, clientApi)
+          Behaviors.same
+        case GetEventList(replyTo) =>
+          replyTo ! app.getEventList
           Behaviors.same
         case GetIcdComponentInfo(
             subsystem,

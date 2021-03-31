@@ -8,6 +8,9 @@ GET         /                                           controllers.Application.
 # Gets a list of top level subsystem names
 GET         /subsystems                                 controllers.Application.subsystemNames
 
+# Gets a list of all system events by subsystem/component (for latest subsystem versions)
+GET         /eventList                                  controllers.Application.eventList
+
 # Gets top level information about a given version of the given subsystem
 GET         /subsystemInfo/:subsystem                   controllers.Application.subsystemInfo(subsystem, version: Option[String])
 
@@ -24,13 +27,13 @@ GET         /icdComponentInfo/:subsystem/:target        controllers.Application.
 GET         /icdAsPdf/:subsystem/:target                controllers.Application.icdAsPdf(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
 
 # Gets the PDF for the given ICD (using POST to pass list of expanded row ids)
-POST         /icdAsPdf/:subsystem/:target                controllers.Application.icdAsPdf(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
+POST        /icdAsPdf/:subsystem/:target                controllers.Application.icdAsPdf(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
 
 # Gets the PDF for the given subsystem API
 GET         /apiAsPdf/:subsystem                        controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], clientApi: Option[Boolean], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
 
 # Gets the PDF for the given subsystem API (using POST to pass list of expanded row ids)
-POST         /apiAsPdf/:subsystem                        controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], clientApi: Option[Boolean], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
+POST        /apiAsPdf/:subsystem                        controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], clientApi: Option[Boolean], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
 
 # Gets an archived items report (PDF) for the given subsystem API (and component)
 GET         /archivedItemsReport/:subsystem             controllers.Application.archivedItemsReport(subsystem, version: Option[String], component: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])
@@ -39,7 +42,7 @@ GET         /archivedItemsReport/:subsystem             controllers.Application.
 GET         /archivedItemsReportFull                    controllers.Application.archivedItemsReportFull(orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])
 
 # Generates a graph of selected component relationships
-GET         /makeGraph/:subsystem                controllers.Application.makeGraph(subsystem, version: Option[String], component: Option[String], target: Option[String], targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String], ratio: Option[Double], missingEvents: Option[Boolean], missingCommands: Option[Boolean], commandLabels: Option[Boolean], eventLabels: Option[Boolean], groupSubsystems: Option[Boolean], layout: Option[String], overlap: Option[String], splines: Option[Boolean], omitTypes: Option[String], imageFormat: Option[String])
+GET         /makeGraph/:subsystem                       controllers.Application.makeGraph(subsystem, version: Option[String], component: Option[String], target: Option[String], targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String], ratio: Option[Double], missingEvents: Option[Boolean], missingCommands: Option[Boolean], commandLabels: Option[Boolean], eventLabels: Option[Boolean], groupSubsystems: Option[Boolean], layout: Option[String], overlap: Option[String], splines: Option[Boolean], omitTypes: Option[String], imageFormat: Option[String])
 
 # Gets the detailed information about the versions of a component or subsystem
 GET         /versions/:name                             controllers.Application.getVersions(name)

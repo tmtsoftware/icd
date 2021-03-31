@@ -1,7 +1,6 @@
 package controllers
 
 import java.io.ByteArrayOutputStream
-
 import controllers.ApplicationData.maybeCache
 import csw.services.icd.IcdToPdf
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
@@ -17,6 +16,7 @@ import csw.services.icd.db.{
 import csw.services.icd.github.IcdGitManager
 import csw.services.icd.viz.IcdVizManager
 import diffson.playJson.DiffsonProtocol
+import icd.web.shared.AllEventList.EventsForSubsystem
 import icd.web.shared.{
   ApiVersionInfo,
   ComponentInfo,
@@ -96,6 +96,15 @@ class ApplicationImpl(db: IcdDb) {
     val versionManager      = new CachedIcdVersionManager(query)
     new ComponentInfoHelper(displayWarnings = searchAllSubsystems, clientApi = clientApi)
       .getComponentInfoList(versionManager, sv, None)
+  }
+
+  /**
+   * Gets a list of all published events by subsystem/component
+   * (assumes latest versions of all subsystems).
+   */
+  def getEventList: List[EventsForSubsystem] = {
+    val query = new CachedIcdDbQuery(db.db, db.admin, None, None)
+    query.getEventList
   }
 
   /**
