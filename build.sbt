@@ -10,7 +10,7 @@ lazy val clients = Seq(icdWebClient)
 
 // Root of the multi-project build
 lazy val root = (project in file("."))
-  .aggregate(`icd-db`, `icd-git`, `icd-viz`, icdWebServer)
+  .aggregate(icdWebSharedJvm, `icd-db`, `icd-git`, `icd-viz`, icdWebServer)
   .settings(name := "ICD")
 
 // Adds MongoDB database support, ICD versioning, queries, icd-db command line tool
