@@ -33,7 +33,8 @@ object Settings {
     // Don't buffer test log output (since not parallel)
     logBuffered in Test := false,
     fork := true,
-    resolvers += "jitpack" at "https://jitpack.io"
+    resolvers += "jitpack" at "https://jitpack.io",
+    isSnapshot in ThisBuild := true
   )
 
   lazy val defaultSettings = buildSettings ++ Seq(
