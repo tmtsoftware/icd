@@ -11,7 +11,8 @@ import com.typesafe.sbt.packager.docker._
 object Settings {
 
   val commonSettings = Seq(
-    organization := "org.tmt",
+//    organization := "org.tmt",
+    organization := "com.github.tmtsoftware.icd",
     organizationName := "TMT",
     organizationHomepage := Some(url("http://www.tmt.org")),
     version := Dependencies.Version,

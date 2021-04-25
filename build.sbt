@@ -10,7 +10,7 @@ lazy val clients = Seq(icdWebClient)
 
 // Root of the multi-project build
 lazy val root = (project in file("."))
-  .aggregate(`icd-db`, `icd-git`, `icd-viz`, icdWebServer)
+  .aggregate(icdWebSharedJvm, `icd-db`, `icd-git`, `icd-viz`, icdWebServer)
   .settings(name := "ICD")
 
 // Adds MongoDB database support, ICD versioning, queries, icd-db command line tool
@@ -135,7 +135,7 @@ lazy val icdWebShared = (crossProject(JSPlatform, JVMPlatform).crossType(CrossTy
 lazy val icdWebSharedJvm = icdWebShared.jvm
 lazy val icdWebSharedJs  = icdWebShared.js
 
-// loads the server project at sbt startup
-onLoad in Global := (onLoad in Global).value andThen { s: State =>
-  "project icdWebServer" :: s
-}
+//// loads the server project at sbt startup
+//onLoad in Global := (onLoad in Global).value andThen { s: State =>
+//  "project icdWebServer" :: s
+//}

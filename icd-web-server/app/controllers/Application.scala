@@ -2,7 +2,6 @@ package controllers
 
 import javax.inject._
 import java.security.MessageDigest
-
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.ActorRef
 import controllers.ApplicationData.AuthAction
@@ -19,9 +18,9 @@ import play.api.mvc._
 import play.api.{Configuration, Environment, Mode}
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.util.Timeout
+import icd.web.shared.IcdModels.EventModel
 
 import scala.concurrent.duration._
-
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
@@ -114,8 +113,13 @@ class Application @Inject() (
    * @param searchAll      if true, search all components for API dependencies
    * @param clientApi      if true, include subscribed events, sent commands
    */
-  def componentInfo(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String],
-                    searchAll: Option[Boolean], clientApi: Option[Boolean]) =
+  def componentInfo(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      searchAll: Option[Boolean],
+      clientApi: Option[Boolean]
+  ) =
     authAction.async {
       val resp: Future[List[ComponentInfo]] =
         appActor ? (GetComponentInfo(subsystem, maybeVersion, maybeComponent, searchAll, clientApi, _))
@@ -130,6 +134,21 @@ class Application @Inject() (
       val resp: Future[List[AllEventList.EventsForSubsystem]] =
         appActor ? GetEventList
       resp.map(info => Ok(Json.toJson(info)))
+    }
+
+  /**
+   * Query the database for information about the given event in the given subsystem/component
+   */
+  def eventInfo(subsystem: String, component: String, event: String) =
+    authAction.async {
+      val resp: Future[Option[EventModel]] =
+        appActor ? (GetEventInfo(subsystem, component, event, _))
+      resp.map {
+        case Some(eventModel) =>
+          Ok(Json.toJson(eventModel))
+        case None =>
+          NotFound
+      }
     }
 
   /**

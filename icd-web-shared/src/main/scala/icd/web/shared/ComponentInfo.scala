@@ -1,6 +1,6 @@
 package icd.web.shared
 
-import icd.web.shared.ComponentInfo.PublishType
+import icd.web.shared.ComponentInfo.{Alarms, PublishType}
 import icd.web.shared.IcdModels._
 
 object ComponentInfo {

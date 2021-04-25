@@ -4,7 +4,8 @@ import csw.services.icd.db.IcdDb
 import play.api.libs.concurrent.ActorModule
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
-import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, AllEventList, IcdName, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
+import icd.web.shared.IcdModels.EventModel
+import icd.web.shared.{AllEventList, ApiVersionInfo, ComponentInfo, DiffInfo, IcdName, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
 
 import scala.util.Try
 
@@ -28,6 +29,12 @@ object ApplicationActor extends ActorModule {
       replyTo: ActorRef[List[ComponentInfo]]
   ) extends Messages
   final case class GetEventList(replyTo: ActorRef[List[AllEventList.EventsForSubsystem]]) extends Messages
+  final case class GetEventInfo(
+      subsystem: String,
+      component: String,
+      event: String,
+      replyTo: ActorRef[Option[EventModel]]
+  ) extends Messages
   final case class GetIcdComponentInfo(
       subsystem: String,
       maybeVersion: Option[String],
@@ -113,14 +120,17 @@ object ApplicationActor extends ActorModule {
         case GetEventList(replyTo) =>
           replyTo ! app.getEventList
           Behaviors.same
+        case GetEventInfo(subsystem, component, event, replyTo) =>
+          replyTo ! app.getEventInfo(subsystem, component, event)
+          Behaviors.same
         case GetIcdComponentInfo(
-            subsystem,
-            maybeVersion,
-            maybeComponent,
-            target,
-            maybeTargetVersion,
-            maybeTargetComponent,
-            replyTo
+              subsystem,
+              maybeVersion,
+              maybeComponent,
+              target,
+              maybeTargetVersion,
+              maybeTargetComponent,
+              replyTo
             ) =>
           replyTo ! app.getIcdComponentInfo(
             subsystem,
@@ -132,15 +142,15 @@ object ApplicationActor extends ActorModule {
           )
           Behaviors.same
         case GetIcdAsPdf(
-            subsystem,
-            maybeVersion,
-            maybeComponent,
-            target,
-            maybeTargetVersion,
-            maybeTargetComponent,
-            maybeIcdVersion,
-            pdfOptions,
-            replyTo: ActorRef[Option[Array[Byte]]]
+              subsystem,
+              maybeVersion,
+              maybeComponent,
+              target,
+              maybeTargetVersion,
+              maybeTargetComponent,
+              maybeIcdVersion,
+              pdfOptions,
+              replyTo: ActorRef[Option[Array[Byte]]]
             ) =>
           replyTo ! app.getIcdAsPdf(
             subsystem,
@@ -154,13 +164,13 @@ object ApplicationActor extends ActorModule {
           )
           Behaviors.same
         case GetApiAsPdf(
-            subsystem,
-            maybeVersion,
-            maybeComponent,
-            searchAll,
-            clientApi,
-            pdfOptions,
-            replyTo: ActorRef[Option[Array[Byte]]]
+              subsystem,
+              maybeVersion,
+              maybeComponent,
+              searchAll,
+              clientApi,
+              pdfOptions,
+              replyTo: ActorRef[Option[Array[Byte]]]
             ) =>
           replyTo ! app.getApiAsPdf(
             subsystem,
@@ -172,11 +182,11 @@ object ApplicationActor extends ActorModule {
           )
           Behaviors.same
         case GetArchivedItemsReport(
-            subsystem,
-            maybeVersion,
-            maybeComponent,
-            pdfOptions,
-            replyTo
+              subsystem,
+              maybeVersion,
+              maybeComponent,
+              pdfOptions,
+              replyTo
             ) =>
           replyTo ! app.getArchivedItemsReport(
             subsystem,
@@ -189,15 +199,15 @@ object ApplicationActor extends ActorModule {
           replyTo ! app.getArchivedItemsReportFull(pdfOptions)
           Behaviors.same
         case MakeGraph(
-            subsystem,
-            maybeVersion,
-            maybeComponent,
-            maybeTarget,
-            maybeTargetVersion,
-            maybeTargetComponent,
-            maybeIcdVersion,
-            options,
-            replyTo
+              subsystem,
+              maybeVersion,
+              maybeComponent,
+              maybeTarget,
+              maybeTargetVersion,
+              maybeTargetComponent,
+              maybeIcdVersion,
+              options,
+              replyTo
             ) =>
           replyTo ! app.makeGraph(
             subsystem,
