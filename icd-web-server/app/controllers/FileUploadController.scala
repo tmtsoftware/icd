@@ -8,7 +8,7 @@ import play.api.mvc._
 import play.api.libs.json._
 import play.api.libs.Files
 
-class FileUploadController @Inject()(components: ControllerComponents) extends AbstractController(components) {
+class FileUploadController @Inject() (components: ControllerComponents) extends AbstractController(components) {
 
   private val log     = play.Logger.of("application")
   private lazy val db = ApplicationData.tryDb.get
@@ -16,25 +16,27 @@ class FileUploadController @Inject()(components: ControllerComponents) extends A
   // Server side of the upload ICD feature.
   // Supported file types: A directory containing icd config files (chrome)
   // or a .zip file containing directories with icd config files.
-  def uploadFiles(): Action[MultipartFormData[Files.TemporaryFile]] = Action(parse.multipartFormData) { implicit request =>
-    val files = request.body.files.toList
-    try {
-      val list = files.flatMap { filePart =>
-        StdConfig.get(filePart.ref.path.toFile, filePart.filename)
+  def uploadFiles(): Action[MultipartFormData[Files.TemporaryFile]] =
+    Action(parse.multipartFormData) { implicit request =>
+      val files = request.body.files.toList
+      try {
+        val list = files.flatMap { filePart =>
+          StdConfig.get(filePart.ref.path.toFile, filePart.filename)
+        }
+        ingestConfigs(list)
       }
-      ingestConfigs(list)
-    } catch {
-      case e: ConfigException =>
-        e.printStackTrace()
-        val msg = e.getMessage
-        log.error(msg, e)
-        NotAcceptable(Json.toJson(List(Problem("error", msg))))
-      case t: Throwable =>
-        val msg = "Internal error"
-        log.error(msg, t)
-        InternalServerError(Json.toJson(List(Problem("error", msg))))
+      catch {
+        case e: ConfigException =>
+          e.printStackTrace()
+          val msg = e.getMessage
+          log.error(msg, e)
+          NotAcceptable(Json.toJson(List(Problem("error", msg))))
+        case t: Throwable =>
+          val msg = "Internal error"
+          log.error(msg, t)
+          InternalServerError(Json.toJson(List(Problem("error", msg))))
+      }
     }
-  }
 
   /**
    * Uploads/ingests the given API config files
@@ -45,21 +47,37 @@ class FileUploadController @Inject()(components: ControllerComponents) extends A
   private def ingestConfigs(list: List[StdConfig]): Result = {
     import net.ceedubs.ficus.Ficus._
 
-    // Note: The user may have selected a top level dir containing subdirs that use different schema versions,
-    // so this needs to be updated for each subsystem and component in the list of model files received
-    var schemaVersion = IcdValidator.currentSchemaVersion
+    def getSchemaVersion(sc: StdConfig): String = {
+      sc.config.as[Option[String]](IcdValidator.schemaVersionKey).getOrElse(IcdValidator.currentSchemaVersion)
+    }
+
+    def getComponentName(sc: StdConfig): Option[String] = {
+      sc.config.as[Option[String]]("component")
+    }
+
+    // The files might not be in any particular order, so make sure we use the correct schema version for each component
+    val schemaVersionMap = list.flatMap { sc =>
+      if (sc.stdName.isComponentModel) {
+        getComponentName(sc).map(_ -> getSchemaVersion(sc))
+      }
+      else None
+    }.toMap
 
     // Validate everything first
     val validateProblems =
       list.flatMap { sc =>
-        // Update the schema version being used any time we come across a component or subsystem model
-        if (sc.stdName == StdName.subsystemFileNames || sc.stdName == StdName.componentFileNames)
-          schemaVersion = sc.config.as[Option[String]](IcdValidator.schemaVersionKey).getOrElse(IcdValidator.currentSchemaVersion)
+        val schemaVersion =
+          if (sc.stdName.isSubsystemModel)
+            getSchemaVersion(sc)
+          else {
+            getComponentName(sc).flatMap(schemaVersionMap.get).getOrElse(IcdValidator.currentSchemaVersion)
+          }
         IcdValidator.validateStdName(sc.config, sc.stdName, schemaVersion, sc.fileName)
       }
     if (validateProblems.nonEmpty) {
       NotAcceptable(Json.toJson(validateProblems))
-    } else {
+    }
+    else {
       val problems = list.flatMap(db.ingestConfig)
       // Determine the subsystems being ingested, in order to remove previous subsystem if a new one is being ingested.
       // This helps to avoid problems when a component was renamed, so that the old component's mongodb collection is removed.
@@ -70,12 +88,14 @@ class FileUploadController @Inject()(components: ControllerComponents) extends A
       val duplicateComponents = db.checkForDuplicateComponentNames(list)
       if (duplicateSubsystems.nonEmpty) {
         val dupFileList = list.filter(_.stdName == StdName.subsystemFileNames).map(_.fileName).mkString(", ")
-        val p = Problem("error", s"Duplicate subsystem-model.conf found: $dupFileList") :: problems
+        val p           = Problem("error", s"Duplicate subsystem-model.conf found: $dupFileList") :: problems
         NotAcceptable(Json.toJson(p))
-      } else if (duplicateComponents.nonEmpty) {
+      }
+      else if (duplicateComponents.nonEmpty) {
         val p = Problem("error", s"Duplicate component names found: ${duplicateComponents.mkString(", ")}") :: problems
         NotAcceptable(Json.toJson(p))
-      } else {
+      }
+      else {
         if (subsystemList.isEmpty)
           db.query.afterIngestFiles(problems, db.dbName)
         else {
@@ -83,7 +103,8 @@ class FileUploadController @Inject()(components: ControllerComponents) extends A
         }
         if (problems.nonEmpty) {
           NotAcceptable(Json.toJson(problems))
-        } else {
+        }
+        else {
           // XXX TODO: Check if all referenced component names are valid and no duplicate componen-model.conf files were found!
           Ok.as(JSON)
         }

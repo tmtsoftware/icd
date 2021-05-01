@@ -1,39 +1,16 @@
 package controllers
 
 import java.io.ByteArrayOutputStream
-
 import controllers.ApplicationData.maybeCache
 import csw.services.icd.IcdToPdf
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
-import csw.services.icd.db.{
-  ArchivedItemsReport,
-  CachedIcdDbQuery,
-  CachedIcdVersionManager,
-  ComponentInfoHelper,
-  IcdComponentInfo,
-  IcdDb,
-  IcdDbPrinter
-}
+import csw.services.icd.db.{ArchivedItemsReport, CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, IcdDbPrinter}
 import csw.services.icd.github.IcdGitManager
 import csw.services.icd.viz.IcdVizManager
 import diffson.playJson.DiffsonProtocol
-import icd.web.shared.{
-  ApiVersionInfo,
-  ComponentInfo,
-  DiffInfo,
-  IcdName,
-  IcdVersion,
-  IcdVersionInfo,
-  IcdVizOptions,
-  PdfOptions,
-  PublishApiInfo,
-  PublishIcdInfo,
-  SubsystemInfo,
-  SubsystemWithVersion,
-  UnpublishApiInfo,
-  UnpublishIcdInfo,
-  VersionInfo
-}
+import icd.web.shared.AllEventList.EventsForSubsystem
+import icd.web.shared.IcdModels.EventModel
+import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, IcdName, IcdVersion, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, SubsystemWithVersion, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
 import play.api.libs.json.Json
 
 import scala.util.Try
@@ -96,6 +73,25 @@ class ApplicationImpl(db: IcdDb) {
     val versionManager      = new CachedIcdVersionManager(query)
     new ComponentInfoHelper(displayWarnings = searchAllSubsystems, clientApi = clientApi)
       .getComponentInfoList(versionManager, sv, None)
+  }
+
+  /**
+   * Gets a list of all published events by subsystem/component
+   * (assumes latest versions of all subsystems).
+   */
+  def getEventList: List[EventsForSubsystem] = {
+    val query = new CachedIcdDbQuery(db.db, db.admin, None, None)
+    query.getEventList
+  }
+
+  /**
+   * Gets information about the given event in the given subsystem/component
+   * (assumes latest versions of all subsystems).
+   */
+  def getEventInfo(subsystem: String, component: String, event: String): Option[EventModel] = {
+    val componentModel = db.query.getComponentModel(subsystem, component, None)
+    componentModel.flatMap(db.query.getPublishModel(_, None))
+      .flatMap(_.eventList.find(_.name == event))
   }
 
   /**

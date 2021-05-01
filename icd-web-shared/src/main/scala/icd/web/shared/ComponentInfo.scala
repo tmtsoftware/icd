@@ -43,12 +43,11 @@ object ComponentInfo {
     val publishes =
       info.publishes.map(p => p.copy(eventList = newEventList, observeEventList = newObserveEventList))
 
-    val commands = info.commands.map(
-      c =>
-        c.copy(
-          commandsReceived = newCommandsReceived,
-          commandsSent = newCommandsSent
-        )
+    val commands = info.commands.map(c =>
+      c.copy(
+        commandsReceived = newCommandsReceived,
+        commandsSent = newCommandsSent
+      )
     )
 
     ComponentInfo(info.componentModel, publishes, info.subscribes, commands)
@@ -144,7 +143,8 @@ case class DetailedSubscribeInfo(
       Some(
         s"Component ${subscribeModelInfo.subsystem}.${subscribeModelInfo.component} was not found"
       )
-    } else {
+    }
+    else {
       Some(
         s"${subscribeModelInfo.subsystem}.${subscribeModelInfo.component} does not publish $itemType: ${subscribeModelInfo.name}"
       )
@@ -194,7 +194,8 @@ case class SentCommandInfo(
     if (!warnings || receiveCommandModel.nonEmpty) None
     else if (receiver.isEmpty) {
       Some(s"Component $subsystem.$component was not found")
-    } else {
+    }
+    else {
       Some(s"$subsystem.$component does not define configuration: $name")
     }
 }

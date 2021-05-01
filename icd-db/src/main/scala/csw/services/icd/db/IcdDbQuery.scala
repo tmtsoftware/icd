@@ -11,6 +11,7 @@ import csw.services.icd.db.parser.{
   SubsystemModelBsonParser
 }
 import icd.web.shared.ComponentInfo._
+import icd.web.shared.AllEventList.{Event, EventsForComponent, EventsForSubsystem}
 import icd.web.shared.{IcdModels, PdfOptions}
 import icd.web.shared.IcdModels._
 import play.api.libs.json.JsObject
@@ -639,4 +640,23 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
       s <- i.subscribesTo.filter(sub => sub.path == path && sub.subscribeType == subscribeType)
     } yield s
   }
+
+  /**
+   * Gets a list of system events for the given subsystem
+   */
+  def getEventsForSubsystem(subsystem: String): EventsForSubsystem = {
+    val eventsForComponent = getPublishInfo(subsystem, None).map { info =>
+      // XXX TODO: Add p.description?
+      EventsForComponent(info.componentName, info.publishes.filter(_.publishType == Events).map(p => Event(p.name)))
+    }
+    EventsForSubsystem(subsystem, eventsForComponent.filter(_.events.nonEmpty))
+  }
+
+  /**
+   * Gets a list of all published system events by subsystem/component.
+   */
+  def getEventList: List[EventsForSubsystem] = {
+    getSubsystemNames.map(getEventsForSubsystem).filter(_.components.nonEmpty)
+  }
+
 }
