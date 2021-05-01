@@ -2,6 +2,16 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
+## [ICD v2.1.1] - 2021-05-01
+
+### Changed
+
+- Fixed a minor issue that could occur in the web app when the uploaded model file versions in subsystem-model.conf and component-model.conf were different.
+
+- Changed size calculations for archived events: Use 12 hours/day (was 24), list hourly data sizes, changed event overheads to match CSW versions.
+
+- Added "Command: " to command description heading to match event headings.
+
 ## [ICD v2.1.0] - 2020-10-12
 
 ### Added
