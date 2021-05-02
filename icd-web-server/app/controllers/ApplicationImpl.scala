@@ -386,6 +386,7 @@ class ApplicationImpl(db: IcdDb) {
         publishIcdInfo.comment
       )
       updateAfterPublish()
+      IcdGitManager.importIcdFiles(db, subsystems, (s: String) => println(s), allIcdVersions)
       icdVersionInfo
     }
   }

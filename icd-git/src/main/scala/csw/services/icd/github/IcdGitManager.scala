@@ -17,8 +17,7 @@ import play.api.libs.json.Json
 
 import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.DurationLong
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 
 /**
  * Provides methods for managing ICD versions in Git and
@@ -67,7 +66,8 @@ object IcdGitManager {
       val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(gitBaseUri).call
       git.close()
       getAllVersions(gitWorkDir)
-    } finally {
+    }
+    finally {
       deleteDirectoryRecursively(gitWorkDir)
     }
   }
@@ -92,7 +92,8 @@ object IcdGitManager {
       val user    = ""
       val comment = ""
       Some(ApiVersions.ApiEntry("master", info.commitId, user, comment, date))
-    } else None
+    }
+    else None
   }
 
   /**
@@ -304,7 +305,8 @@ object IcdGitManager {
       }
       git.close()
       maybeIcd
-    } finally {
+    }
+    finally {
       deleteDirectoryRecursively(gitWorkDir)
     }
   }
@@ -378,7 +380,8 @@ object IcdGitManager {
           maybeApi
         }
       maybeApiEntry.map(e => ApiVersionInfo(sv.subsystem, e.version, e.user, e.comment, e.date, e.commit))
-    } finally {
+    }
+    finally {
       deleteDirectoryRecursively(gitWorkDir)
     }
   }
@@ -440,7 +443,8 @@ object IcdGitManager {
       if (updateTag)
         tag(ApiVersions(subsystem, List(apiEntry)), user, password, comment, (s: String) => println(s))
       ApiVersionInfo(subsystem, apiEntry.version, user, comment, date, commit)
-    } finally {
+    }
+    finally {
       deleteDirectoryRecursively(gitWorkDir)
     }
   }
@@ -476,14 +480,16 @@ object IcdGitManager {
           feedback(s"Removing tag $subsystem: v${e.version}")
           // TODO: Does not seem to work
           git.tagDelete().setTags(s"v${e.version}").call()
-        } else {
+        }
+        else {
           feedback(s"Tagging $subsystem: v${e.version}")
           git.tag().setForceUpdate(true).setMessage(comment).setName(s"v${e.version}").setObjectId(commit).call()
         }
       }
       git.push().setPushTags().setCredentialsProvider(new UsernamePasswordCredentialsProvider(user, password)).call()
       git.close()
-    } finally {
+    }
+    finally {
       deleteDirectoryRecursively(gitWorkDir)
     }
   }
@@ -634,7 +640,8 @@ object IcdGitManager {
       git.push.setCredentialsProvider(new UsernamePasswordCredentialsProvider(user, password)).call()
       git.close()
       IcdVersionInfo(IcdVersion(newIcdVersion, sv.subsystem, v1, targetSv.subsystem, v2), user, comment, date)
-    } finally {
+    }
+    finally {
       deleteDirectoryRecursively(gitWorkDir)
     }
   }
@@ -653,7 +660,8 @@ object IcdGitManager {
         val file = new File(dir, filePath)
         if (file.isDirectory) {
           deleteDirectoryRecursively(file)
-        } else {
+        }
+        else {
           file.delete()
         }
       }
@@ -682,7 +690,8 @@ object IcdGitManager {
       if (subsystemList.nonEmpty) {
         // sort by convention to avoid duplicate ICDs,
         subsystemList.sorted
-      } else {
+      }
+      else {
         Subsystems.allSubsystems.map(s => SubsystemAndVersion(s, None))
       }
     }
@@ -725,29 +734,31 @@ object IcdGitManager {
    * @param apiEntries the (GitHub version) entries for the published versions to ingest
    * @param feedback   optional feedback function
    */
-  def ingest(db: IcdDb, subsystem: String, apiEntries: List[ApiEntry], feedback: String => Unit): Unit = this.synchronized {
-    // Checkout the subsystem repo in a temp dir
-    val url        = getSubsystemGitHubUrl(subsystem)
-    val gitWorkDir = Files.createTempDirectory("icds").toFile
-    try {
-      val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(url).call()
-      apiEntries.reverse.foreach { e =>
-        feedback(s"Checking out $subsystem-${e.version} (commit: ${e.commit})")
-        git.checkout().setName(e.commit).call
-        feedback(s"Ingesting $subsystem-${e.version}")
-        val (_, problems) = db.ingest(gitWorkDir)
-        problems.foreach(p => feedback(p.errorMessage()))
-        db.query.afterIngestSubsystem(subsystem, problems, db.dbName)
-        if (!problems.exists(_.severity != "warning")) {
-          val date = DateTime.parse(e.date)
-          db.versionManager.publishApi(subsystem, Some(e.version), majorVersion = false, e.comment, e.user, date, e.commit)
+  def ingest(db: IcdDb, subsystem: String, apiEntries: List[ApiEntry], feedback: String => Unit): Unit =
+    this.synchronized {
+      // Checkout the subsystem repo in a temp dir
+      val url        = getSubsystemGitHubUrl(subsystem)
+      val gitWorkDir = Files.createTempDirectory("icds").toFile
+      try {
+        val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(url).call()
+        apiEntries.reverse.foreach { e =>
+          feedback(s"Checking out $subsystem-${e.version} (commit: ${e.commit})")
+          git.checkout().setName(e.commit).call
+          feedback(s"Ingesting $subsystem-${e.version}")
+          val (_, problems) = db.ingest(gitWorkDir)
+          problems.foreach(p => feedback(p.errorMessage()))
+          db.query.afterIngestSubsystem(subsystem, problems, db.dbName)
+          if (!problems.exists(_.severity != "warning")) {
+            val date = DateTime.parse(e.date)
+            db.versionManager.publishApi(subsystem, Some(e.version), majorVersion = false, e.comment, e.user, date, e.commit)
+          }
         }
+        git.close()
       }
-      git.close()
-    } finally {
-      deleteDirectoryRecursively(gitWorkDir)
+      finally {
+        deleteDirectoryRecursively(gitWorkDir)
+      }
     }
-  }
 
   /**
    * Validates the current version of the given subsystem that is checked in on GitHub
@@ -763,13 +774,14 @@ object IcdGitManager {
       val problems = IcdValidator.validateDirRecursive(gitWorkDir)
       git.close()
       problems
-    } finally {
+    }
+    finally {
       deleteDirectoryRecursively(gitWorkDir)
     }
   }
 
   // Imports the ICD release information for the two subsystems, or all subsystems
-  private def importIcdFiles(
+  def importIcdFiles(
       db: IcdDb,
       subsystems: List[SubsystemAndVersion],
       feedback: String => Unit,
@@ -831,7 +843,8 @@ object IcdGitManager {
         .setCredentialsProvider(new UsernamePasswordCredentialsProvider(gitHubCredentials.user, gitHubCredentials.password))
         .call()
       git.close()
-    } finally {
+    }
+    finally {
       deleteDirectoryRecursively(gitWorkDir)
     }
   }
@@ -918,14 +931,30 @@ object IcdGitManager {
       .flatMap { apiVersions =>
         val versions = db.versionManager.getVersions(apiVersions.subsystem).tail.toSet
         apiVersions.apis
-          .filter(
-            apiEntry => !versions.exists(info => info.maybeVersion.contains(apiEntry.version) && info.commit == apiEntry.commit)
+          .filter(apiEntry =>
+            !versions.exists(info => info.maybeVersion.contains(apiEntry.version) && info.commit == apiEntry.commit)
           )
           .map(apiEntry => SubsystemAndVersion(apiVersions.subsystem, Some(apiEntry.version)))
       }
     if (missingSubsystemVersions.nonEmpty) {
       println(s"Updating the ICD database with newly published changes from GitHub")
       IcdGitManager.ingest(db, missingSubsystemVersions, (s: String) => println(s), allApiVersions, allIcdVersions)
+    }
+    else {
+      // There might still be icds that have not yet been ingested in the local database
+      // Ingest any missing published icd versions
+      val missingIcdVersions = allIcdVersions
+        .flatMap { icdVersions =>
+          val s        = icdVersions.subsystems.head
+          val t        = icdVersions.subsystems.tail.head
+          val versions = db.versionManager.getIcdVersions(s, t).toSet
+          if (icdVersions.icds.exists(icdEntry => !versions.exists(_.icdVersion.icdVersion == icdEntry.icdVersion)))
+            Some(List(SubsystemAndVersion(s, None), SubsystemAndVersion(t, None)))
+          else None
+        }
+      missingIcdVersions.foreach { subsystems =>
+        IcdGitManager.importIcdFiles(db, subsystems, (s: String) => println(s), allIcdVersions)
+      }
     }
 
     (allApiVersions, allIcdVersions)

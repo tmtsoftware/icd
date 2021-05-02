@@ -12,6 +12,8 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 
 - Added "Command: " to command description heading to match event headings.
 
+- Fixed an issue that could cause a newly published ICD version to not be automatically ingested into the local icd database in certain circumstances
+
 ## [ICD v2.1.0] - 2020-10-12
 
 ### Added

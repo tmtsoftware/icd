@@ -381,6 +381,6 @@ object IcdGit extends App {
 
   private def ingestMissing(options: Options): Unit = {
     val db = IcdDb(options.dbName, options.host, options.port)
-    IcdGitManager.ingestMissing(db)
+    IcdGitManager.  ingestMissing(db)
   }
 }

@@ -41,33 +41,33 @@ class ArchivedItemsTest extends AnyFunSuite {
           )
           m.name match {
             case "engMode" =>
-              assert(m.totalSizeInBytes == 109)
+              assert(m.totalSizeInBytes == 339)
               assert(!m.archive)
               assert(m.totalArchiveSpacePerYear.isEmpty)
             case "engMode2" =>
-              assert(m.totalSizeInBytes == 110)
+              assert(m.totalSizeInBytes == 340)
               assert(m.archive)
-              assert(m.totalArchiveSpacePerYear == "3.2 GB")
+              assert(m.totalArchiveSpacePerYear == "5.0 GB")
             case "engMode2Error" =>
-              assert(m.totalSizeInBytes == 113)
+              assert(m.totalSizeInBytes == 180)
             case "engMode3" =>
-              assert(m.totalSizeInBytes == 193)
+              assert(m.totalSizeInBytes == 432)
               assert(m.archive)
-              assert(m.totalArchiveSpacePerYear == "5.7 GB")
+              assert(m.totalArchiveSpacePerYear == "6.3 GB")
             case "contRead" =>
-              assert(m.totalSizeInBytes == 109)
+              assert(m.totalSizeInBytes == 229)
               assert(!m.archive)
               assert(m.totalArchiveSpacePerYear.isEmpty)
             case "intTime" =>
-              assert(m.totalSizeInBytes == 111)
+              assert(m.totalSizeInBytes == 231)
               assert(m.archive)
-              assert(m.totalArchiveSpacePerYear == "3.3 GB")
+              assert(m.totalArchiveSpacePerYear == "3.4 GB")
             case "state" =>
-              assert(m.totalSizeInBytes == 113)
+              assert(m.totalSizeInBytes == 233)
               assert(!m.archive)
               assert(m.totalArchiveSpacePerYear.isEmpty)
             case "heartbeat" =>
-              assert(m.totalSizeInBytes == 113)
+              assert(m.totalSizeInBytes == 237)
               assert(!m.archive)
               assert(m.totalArchiveSpacePerYear.isEmpty)
             case x =>
