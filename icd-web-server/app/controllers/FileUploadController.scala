@@ -106,6 +106,7 @@ class FileUploadController @Inject() (components: ControllerComponents) extends 
         }
         else {
           // XXX TODO: Check if all referenced component names are valid and no duplicate componen-model.conf files were found!
+          // TODO: Check if event and param names are valid
           Ok.as(JSON)
         }
       }
