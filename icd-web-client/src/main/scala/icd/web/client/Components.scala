@@ -227,7 +227,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             p(strong(s"${subsystemInfo.sv.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
             raw(subsystemInfo.description),
             p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
-            raw(targetSubsystemInfo.description)
+            raw(targetSubsystemInfo.description),
+            icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description)))
           ).render
         )
       }
