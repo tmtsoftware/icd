@@ -103,7 +103,7 @@ class CachedIcdDbQuery(
   }
 
   // --- Override these to use the cached values ---
-  override def getEntries: List[IcdEntry] = entries
+  override def getEntries: List[ApiCollections] = entries
 
   override def getComponents(maybePdfOptions: Option[PdfOptions]): List[ComponentModel] = components
 

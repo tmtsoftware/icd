@@ -69,6 +69,18 @@ object ClientRoutes {
   /**
    * Gets top level information about a given version of the given subsystem
    */
+  def icdModelList(sv: SubsystemWithVersion, targetSv: SubsystemWithVersion): String = {
+    val attrs = getAttrs(
+      sv.maybeVersion,
+      None,
+      maybeTargetVersion = targetSv.maybeVersion,
+    )
+    s"/icdModelList/${sv.subsystem}/${targetSv.subsystem}$attrs"
+  }
+
+  /**
+   * Gets top level information about a given version of the given subsystem
+   */
   def subsystemInfo(subsystem: String, maybeVersion: Option[String]): String =
     maybeVersion match {
       case Some("*") | None => s"/subsystemInfo/$subsystem"

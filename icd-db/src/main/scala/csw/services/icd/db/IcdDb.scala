@@ -1,10 +1,9 @@
 package csw.services.icd.db
 
 import java.io.File
-
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd._
-import csw.services.icd.db.parser.{BaseModelParser, SubsystemModelParser}
+import csw.services.icd.db.parser.{BaseModelParser, IcdModelParser, SubsystemModelParser}
 import csw.services.icd.db.ComponentDataReporter._
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import diffson.playJson.DiffsonProtocol
@@ -490,6 +489,8 @@ case class IcdDb(
   private def getCollectionName(stdConfig: StdConfig): String = {
     val baseName = if (stdConfig.stdName.isSubsystemModel) {
       SubsystemModelParser(stdConfig.config).subsystem
+    } else if (stdConfig.stdName.isIcdModel) {
+      IcdModelParser(stdConfig.config).subsystem
     } else {
       val model = BaseModelParser(stdConfig.config)
       s"${model.subsystem}.${model.component}"

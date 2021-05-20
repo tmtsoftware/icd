@@ -133,6 +133,7 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean) {
 
     // Gets additional information about the given subscription, including info from the publisher
     def getInfo(publishType: PublishType, si: SubscribeModelInfo): DetailedSubscribeInfo = {
+      // XXX TODO: Would be more efficient to just get the publishModel
       val x = for {
         t            <- query.getModels(si.subsystem, Some(si.component), maybePdfOptions)
         publishModel <- t.publishModel

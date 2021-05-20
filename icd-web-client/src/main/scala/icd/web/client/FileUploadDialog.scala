@@ -40,7 +40,9 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   }
 
   // True if the file is one of the standard ICD files
-  private def isStdFile(file: dom.File): Boolean = stdList.contains(basename(file))
+  private def isStdFile(file: dom.File): Boolean = {
+    stdList.contains(basename(file)) || file.name.endsWith("-icd-model.conf")
+  }
 
   // HTML item displaying error messages
   private val messagesItem = {

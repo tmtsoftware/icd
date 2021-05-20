@@ -1,12 +1,12 @@
 package csw.services.icd.db
 
 import java.io.{ByteArrayOutputStream, File, FileOutputStream}
-
 import csw.services.icd.{IcdToPdf, PdfCache}
 import csw.services.icd.html.{IcdToHtml, NumberedHeadings}
 import icd.web.shared.TitleInfo.unpublished
 import icd.web.shared.{SubsystemWithVersion, _}
 import IcdToHtml._
+import icd.web.shared.IcdModels.IcdModel
 
 /**
  * Creates an HTML or PDF document for a subsystem, component or ICD based on data from the database
@@ -41,6 +41,13 @@ case class IcdDbPrinter(
         .getSubsystemModel(sv, maybePdfOptions)
         .map(m => SubsystemInfo(sv, m.title, m.description))
     }
+  }
+
+  /**
+   * Gets information about the ICD between the two subsystems
+   */
+  private def getIcdModelList(sv: SubsystemWithVersion, tv: SubsystemWithVersion): List[IcdModel] = {
+      db.versionManager.getIcdModels(sv, tv, maybePdfOptions)
   }
 
   /**
@@ -109,7 +116,7 @@ case class IcdDbPrinter(
     // subscribes, who calls commands, etc.
     val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), Some(pdfOptions))
     val versionManager = new CachedIcdVersionManager(query)
-
+    val icdInfoList = getIcdModelList(sv, targetSv)
     val markup = for {
       subsystemInfo       <- getSubsystemInfo(sv)
       targetSubsystemInfo <- getSubsystemInfo(targetSv)
@@ -129,6 +136,7 @@ case class IcdDbPrinter(
         raw(subsystemInfo.description),
         p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
         raw(targetSubsystemInfo.description),
+        icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description))),
         SummaryTable.displaySummary(subsystemInfo, Some(targetSv), infoList, nh, clientApi),
         makeIntro(titleInfo1),
         displayDetails(infoList, nh, forApi = false, pdfOptions, clientApi = clientApi),

@@ -1,9 +1,8 @@
 package csw.services.icd.db
 
-import java.io.{InputStreamReader, File}
+import java.io.{File, InputStreamReader}
 import java.util.zip.{ZipEntry, ZipFile}
-
-import com.typesafe.config.{ConfigResolveOptions, ConfigFactory, Config}
+import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions, ConfigValueFactory}
 import csw.services.icd.StdName
 import csw.services.icd.StdName._
 
@@ -27,8 +26,10 @@ object StdConfig {
   def get(dir: File): List[StdConfig] = {
     stdNames.flatMap { stdName =>
       val inputFile = new File(dir, stdName.name)
-      if (inputFile.exists())
-        Some(StdConfig(stdName, ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem()), inputFile.getPath))
+      if (inputFile.exists()) {
+        val config = ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())
+        Some(StdConfig(stdName, addTargetSubsystem(config, stdName), inputFile.getPath))
+      }
       else None
     }
   }
@@ -42,11 +43,8 @@ object StdConfig {
     if (name.endsWith(".zip"))
       get(new ZipFile(inputFile))
     else {
-      stdNames.flatMap { stdName =>
-        if (name == stdName.name)
-          Some(StdConfig(stdName, ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem()), fileName))
-        else None
-      }
+      val config = ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())
+      StdConfig.get(config, fileName).toList
     }
   }
 
@@ -59,7 +57,7 @@ object StdConfig {
 
     val list = for (e <- zipFile.entries().asScala.filter(isValid)) yield {
       val reader = new InputStreamReader(zipFile.getInputStream(e))
-      val config = ConfigFactory.parseReader(reader)
+      val config = ConfigFactory.parseReader(reader).resolve(ConfigResolveOptions.noSystem())
       StdConfig.get(config, e.getName).get
     }
     list.toList
@@ -72,7 +70,16 @@ object StdConfig {
   def get(config: Config, fileName: String): Option[StdConfig] = {
     val name = new File(fileName).getName
     stdNames.flatMap { stdName =>
-      if (name == stdName.name) Some(StdConfig(stdName, config, fileName)) else None
+      if (name == stdName.name)
+        Some(StdConfig(stdName, addTargetSubsystem(config, stdName), fileName))
+      else None
     }.headOption
+  }
+
+  // Automatically add the target subsystem to $subsystem-icd-model.conf file configs.
+  private def addTargetSubsystem(config: Config, stdName: StdName): Config = {
+    if (stdName.isIcdModel && !config.hasPath(stdName.icdTargetSubsystem.get)) {
+      config.withValue("targetSubsystem", ConfigValueFactory.fromAnyRef(stdName.icdTargetSubsystem.get))
+    } else config
   }
 }

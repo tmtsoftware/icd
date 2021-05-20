@@ -390,6 +390,20 @@ object IcdModels {
       modelVersion: String
   )
 
+  /**
+   * Model for file that contains a description of the ICD between the subsystem and targetSubsystem.
+   */
+  case class IcdModel(
+      subsystem: String,
+      targetSubsystem: String,
+      title: String,
+      description: String
+  ) {
+    val titleStr: String =
+      if (title.nonEmpty) title
+      else s"About the ICD between $subsystem and $targetSubsystem"
+  }
+
   object EventModel {
     // Use 1hz if maxRate is not defined and display the result in italics
     val defaultMaxRate = 1.0
@@ -473,5 +487,6 @@ case class IcdModels(
     publishModel: Option[PublishModel],
     subscribeModel: Option[SubscribeModel],
     commandModel: Option[CommandModel],
-    alarmsModel: Option[AlarmsModel]
+    alarmsModel: Option[AlarmsModel],
+    icdModels: List[IcdModel]
 )

@@ -6,7 +6,7 @@ import icd.web.shared.PdfOptions
 import reactivemongo.api.bson._
 
 /**
- * See resources/subsystem-schema.conf
+ * See resources/<version>/subsystem-schema.conf
  */
 object SubsystemModelBsonParser {
 

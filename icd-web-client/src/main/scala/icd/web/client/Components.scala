@@ -174,6 +174,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
+  // Gets additional information about the ICD between the two subsystems
+  private def getIcdModelList(sv: SubsystemWithVersion, tv: SubsystemWithVersion): Future[List[IcdModel]] = {
+    val path = ClientRoutes.icdModelList(sv, tv)
+    Ajax.get(path).map { r =>
+      Json.fromJson[List[IcdModel]](Json.parse(r.responseText)).get
+    }
+  }
+
   /**
    * Adds (appends) components to the display.
    *
@@ -201,6 +209,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         maybeTargetSubsystem
           .map(getSubsystemInfo(_).map(i => Some(i)))
           .getOrElse(Future.successful(None))
+      icdInfoList <- if (isIcd) getIcdModelList(sv, maybeTargetSubsystem.get) else Future.successful(Nil)
       infoList       <- getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems, clientApi)
       targetInfoList <- getComponentInfo(maybeTargetSubsystem, Some(sv), searchAllSubsystems, clientApi)
     } yield {

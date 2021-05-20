@@ -1,5 +1,7 @@
 package csw.services.icd
 
+import csw.services.icd.db.Subsystems
+
 import java.io.File
 
 /**
@@ -12,11 +14,13 @@ object StdName {
   val subscribeFileNames: StdName = StdName("subscribe-model.conf", "subscribe-schema.conf")
   val commandFileNames: StdName   = StdName("command-model.conf", "command-schema.conf")
   val alarmsFileNames: StdName   = StdName("alarm-model.conf", "alarms-schema.conf")
+  val icdFileNames: List[StdName] = Subsystems.allSubsystems.map(s => StdName(s"$s-icd-model.conf", "icd-schema.conf"))
 
   /**
    * List of standard ICD files and schemas
    */
-  val stdNames = List(subsystemFileNames, componentFileNames, publishFileNames, subscribeFileNames, commandFileNames, alarmsFileNames)
+  val stdNames: List[StdName] =
+    List(subsystemFileNames, componentFileNames, publishFileNames, subscribeFileNames, commandFileNames, alarmsFileNames) ::: icdFileNames
 
   /**
    * Set of standard ICD file names
@@ -34,14 +38,17 @@ object StdName {
 /**
  * Holds name of input file and matching schema
  */
-case class StdName(name: String, schema: String) {
+case class StdName private (name: String, schema: String) {
 
   /**
    * Base name: For example icd, component, publish, etc.
    */
   val modelBaseName: String = name.substring(0, name.length - 11)
 
-  def isSubsystemModel: Boolean = modelBaseName == "subsystem"
+  val isSubsystemModel: Boolean = modelBaseName == "subsystem"
 
-  def isComponentModel: Boolean = modelBaseName == "component"
+  val isIcdModel: Boolean = modelBaseName.endsWith("-icd")
+  val icdTargetSubsystem: Option[String] = if (isIcdModel) Some(name.split('-').head) else None
+
+  val isComponentModel: Boolean = modelBaseName == "component"
 }

@@ -6,7 +6,7 @@ import icd.web.shared.PdfOptions
 import reactivemongo.api.bson._
 
 /**
- * See resources/event-schema.conf
+ * See resources/<version>/event-schema.conf
  */
 object EventModelBsonParser {
 

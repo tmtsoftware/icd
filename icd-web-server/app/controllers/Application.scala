@@ -18,9 +18,9 @@ import play.api.mvc._
 import play.api.{Configuration, Environment, Mode}
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.util.Timeout
-import icd.web.shared.IcdModels.EventModel
+import icd.web.shared.IcdModels.{EventModel, IcdModel}
 
-import java.net.{URLDecoder, URLEncoder}
+import java.net.URLDecoder
 import scala.concurrent.duration._
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -713,4 +713,31 @@ class Application @Inject() (
       appActor ? UpdatePublished
       Ok.as(JSON)
     }
+
+  /**
+   * Gets optional information about the ICD between two subsystems
+   * (from the <subsystem>-icd-model.conf files)
+   *
+   * @param subsystem           the source subsystem
+   * @param maybeVersion        the source subsystem's version (default: current)
+   * @param target              the target subsystem
+   * @param maybeTargetVersion  the target subsystem's version
+   */
+  def icdModelList(
+      subsystem: String,
+      maybeVersion: Option[String],
+      target: String,
+      maybeTargetVersion: Option[String]
+  ): Action[AnyContent] =
+    authAction.async {
+      val resp: Future[List[IcdModel]] = appActor ? (GetIcdModels(
+        subsystem,
+        maybeVersion,
+        target,
+        maybeTargetVersion,
+        _
+      ))
+      resp.map(info => Ok(Json.toJson(info)))
+    }
+
 }

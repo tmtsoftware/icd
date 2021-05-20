@@ -6,7 +6,7 @@ import icd.web.shared.PdfOptions
 import reactivemongo.api.bson._
 
 /**
- * Model for commands received: See resources/command-schema.conf
+ * Model for commands received: See resources/<version>/command-schema.conf
  */
 object ReceiveCommandModelBsonParser {
   def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): ReceiveCommandModel = {

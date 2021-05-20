@@ -4,8 +4,23 @@ import csw.services.icd.db.IcdDb
 import play.api.libs.concurrent.ActorModule
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
-import icd.web.shared.IcdModels.EventModel
-import icd.web.shared.{AllEventList, ApiVersionInfo, ComponentInfo, DiffInfo, IcdName, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
+import icd.web.shared.IcdModels.{EventModel, IcdModel}
+import icd.web.shared.{
+  AllEventList,
+  ApiVersionInfo,
+  ComponentInfo,
+  DiffInfo,
+  IcdName,
+  IcdVersionInfo,
+  IcdVizOptions,
+  PdfOptions,
+  PublishApiInfo,
+  PublishIcdInfo,
+  SubsystemInfo,
+  UnpublishApiInfo,
+  UnpublishIcdInfo,
+  VersionInfo
+}
 
 import scala.util.Try
 
@@ -98,6 +113,13 @@ object ApplicationActor extends ActorModule {
   final case class UnpublishIcd(unpublishIcdInfo: UnpublishIcdInfo, replyTo: ActorRef[Try[Option[IcdVersionInfo]]])
       extends Messages
   final case class UpdatePublished(replyTo: ActorRef[Unit]) extends Messages
+  final case class GetIcdModels(
+      subsystem: String,
+      maybeVersion: Option[String],
+      target: String,
+      maybeTargetVersion: Option[String],
+      replyTo: ActorRef[List[IcdModel]]
+  ) extends Messages
 
   // -------------------------------------------------------------------
 
@@ -249,6 +271,20 @@ object ApplicationActor extends ActorModule {
           Behaviors.same
         case UpdatePublished(replyTo) =>
           replyTo ! app.updatePublished()
+          Behaviors.same
+        case GetIcdModels(
+              subsystem,
+              maybeVersion,
+              target,
+              maybeTargetVersion,
+              replyTo
+            ) =>
+          replyTo ! app.getIcdModels(
+            subsystem,
+            maybeVersion,
+            target,
+            maybeTargetVersion
+          )
           Behaviors.same
       }
     }

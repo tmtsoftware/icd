@@ -7,7 +7,7 @@ import reactivemongo.api.bson.BSONDocument
 import reactivemongo.api.bson._
 
 /**
- * See resources/alarm-schema.conf
+ * See resources/<version>/alarm-schema.conf
  */
 object AlarmModelBsonParser {
 

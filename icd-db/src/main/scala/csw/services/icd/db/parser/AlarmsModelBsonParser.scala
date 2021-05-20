@@ -6,7 +6,7 @@ import icd.web.shared.PdfOptions
 import reactivemongo.api.bson._
 
 /**
- * See resources/alarms-schema.conf
+ * See resources/<version>/alarms-schema.conf
  */
 object AlarmsModelBsonParser {
 

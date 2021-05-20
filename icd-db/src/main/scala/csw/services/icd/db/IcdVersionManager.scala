@@ -1,14 +1,21 @@
 package csw.services.icd.db
 
 import csw.services.icd._
-import icd.web.shared.IcdModels.{ComponentModel, SubsystemModel}
+import icd.web.shared.IcdModels.{ComponentModel, IcdModel, SubsystemModel}
 import icd.web.shared.{IcdModels, IcdVersion, IcdVersionInfo, PdfOptions, SubsystemWithVersion}
 import org.joda.time.{DateTime, DateTimeZone}
 import diffson.playJson._
 import diffson.lcs._
 import diffson.jsonpatch._
 import diffson.jsonpatch.lcsdiff.remembering._
-import csw.services.icd.db.parser.{AlarmsModelBsonParser, ComponentModelBsonParser, PublishModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
+import csw.services.icd.db.parser.{
+  AlarmsModelBsonParser,
+  ComponentModelBsonParser,
+  IcdModelBsonParser,
+  PublishModelBsonParser,
+  SubscribeModelBsonParser,
+  SubsystemModelBsonParser
+}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONString}
 import reactivemongo.api.{Cursor, WriteConcern}
@@ -463,7 +470,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
 
   // Returns a list of IcdEntry objects for the given parts (one part for each component or subsystem)
   // The result is sorted so that the subsystem comes first.
-  private def getEntries(parts: List[PartInfo]): List[IcdEntry] = {
+  private def getEntries(parts: List[PartInfo]): List[ApiCollections] = {
     val paths = parts.map(_.path).map(IcdPath)
     query.getEntries(paths)
   }
@@ -477,7 +484,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * (In this case the definitions are stored in sub-collections in the DB).
    *
    * @param sv            the subsystem
-   * @param subsystemOnly if true, return only the model for the subsystem
+   * @param subsystemOnly if true, return only the models for the top level subsystem
    * @return a list of IcdModels for the given version of the subsystem or component
    */
   private[db] def getModels(
@@ -487,7 +494,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
   ): List[IcdModels] = {
 
     // Return an object that holds all the model classes associated with a single ICD entry.
-    def makeModels(versionMap: Map[String, Int], entry: IcdEntry): IcdModels = {
+    def makeModels(versionMap: Map[String, Int], entry: ApiCollections): IcdModels = {
       def getDocVersion(coll: BSONCollection): BSONDocument = getVersionOf(coll, versionMap(coll.name))
       val subsystemModel: Option[SubsystemModel] =
         entry.subsystem.flatMap(coll => SubsystemModelBsonParser(getDocVersion(coll), maybePdfOptions))
@@ -501,7 +508,9 @@ case class IcdVersionManager(query: IcdDbQuery) {
         entry.component.flatMap(coll => ComponentModelBsonParser(getDocVersion(coll), maybePdfOptions))
       val alarmsModel: Option[IcdModels.AlarmsModel] =
         entry.alarms.flatMap(coll => AlarmsModelBsonParser(getDocVersion(coll), maybePdfOptions))
-      IcdModels(subsystemModel, componentModel, publishModel, subscribeModel, commandModel, alarmsModel)
+      val icdModels: List[IcdModels.IcdModel] =
+        entry.icds.flatMap(coll => IcdModelBsonParser(getDocVersion(coll), maybePdfOptions))
+      IcdModels(subsystemModel, componentModel, publishModel, subscribeModel, commandModel, alarmsModel, icdModels)
     }
 
     getVersion(sv) match {
@@ -542,6 +551,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * and return the icd models, resolving any refs.
    *
    * @param sv the subsystem
+   * @param maybePdfOptions used for formatting
    * @return a list of IcdModels for the given version of the subsystem or component
    */
   def getResolvedModels(
@@ -559,10 +569,29 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * Returns the model for the given (or current) version of the given subsystem
    *
    * @param sv the subsystem and version
+   * @param maybePdfOptions used for formatting
    * @return the subsystem model
    */
   def getSubsystemModel(sv: SubsystemWithVersion, maybePdfOptions: Option[PdfOptions]): Option[SubsystemModel] = {
     getModels(sv, subsystemOnly = true, maybePdfOptions).headOption.flatMap(_.subsystemModel)
+  }
+
+  /**
+   * Gets information about the ICD between the two subsystems
+
+   * @param sv the subsystem and version
+   * @param tv the target subsystem and version
+   * @param maybePdfOptions used for formatting
+   * @return the list of icd models that correspond to the two subsystems
+   */
+  def getIcdModels(sv: SubsystemWithVersion, tv: SubsystemWithVersion, maybePdfOptions: Option[PdfOptions]): List[IcdModel] = {
+    val svIcds = getModels(sv, subsystemOnly = true, maybePdfOptions).headOption.toList
+      .flatMap(_.icdModels)
+      .filter(_.targetSubsystem == tv.subsystem)
+    val tvIcds = getModels(tv, subsystemOnly = true, maybePdfOptions).headOption.toList
+      .flatMap(_.icdModels)
+      .filter(_.targetSubsystem == sv.subsystem)
+    (svIcds ::: tvIcds)
   }
 
   /**

@@ -4,12 +4,12 @@ import java.io.ByteArrayOutputStream
 import controllers.ApplicationData.maybeCache
 import csw.services.icd.IcdToPdf
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
-import csw.services.icd.db.{ArchivedItemsReport, CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, IcdDbPrinter}
+import csw.services.icd.db.{ArchivedItemsReport, CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, IcdDbPrinter, IcdDbQuery, IcdVersionManager}
 import csw.services.icd.github.IcdGitManager
 import csw.services.icd.viz.IcdVizManager
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.AllEventList.EventsForSubsystem
-import icd.web.shared.IcdModels.EventModel
+import icd.web.shared.IcdModels.{EventModel, IcdModel}
 import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, IcdName, IcdVersion, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, SubsystemWithVersion, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
 import play.api.libs.json.Json
 
@@ -90,7 +90,8 @@ class ApplicationImpl(db: IcdDb) {
    */
   def getEventInfo(subsystem: String, component: String, event: String): Option[EventModel] = {
     val componentModel = db.query.getComponentModel(subsystem, component, None)
-    componentModel.flatMap(db.query.getPublishModel(_, None))
+    componentModel
+      .flatMap(db.query.getPublishModel(_, None))
       .flatMap(_.eventList.find(_.name == event))
   }
 
@@ -434,5 +435,28 @@ class ApplicationImpl(db: IcdDb) {
    */
   def updatePublished(): Unit = {
     updateAfterPublish()
+  }
+
+  /**
+   * Gets optional information about the ICD between two subsystems
+   * (from the <subsystem>-icd-model.conf files)
+   *
+   * @param subsystem           the source subsystem
+   * @param maybeVersion        the source subsystem's version
+   * @param target              the target subsystem
+   * @param maybeTargetVersion  the target subsystem's version
+   */
+  def getIcdModels(
+      subsystem: String,
+      maybeVersion: Option[String],
+      target: String,
+      maybeTargetVersion: Option[String],
+  ): List[IcdModel] = {
+    val sv             = SubsystemWithVersion(subsystem, maybeVersion, None)
+    val targetSv       = SubsystemWithVersion(target, maybeTargetVersion, None)
+
+    val query          = new IcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)))
+    val versionManager = new IcdVersionManager(query)
+    versionManager.getIcdModels(sv, targetSv, None)
   }
 }
