@@ -2,8 +2,8 @@ package csw.services.icd
 
 import java.io._
 import java.net.URI
-
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions, ConfigResolveOptions}
+import csw.services.icd.db.StdConfig
 import org.everit.json.schema.loader.SchemaClient
 
 import scala.io.Source
@@ -11,6 +11,7 @@ import scala.util.{Failure, Success, Try}
 import org.everit.json.schema.{Schema, ValidationException}
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
+
 import scala.jdk.CollectionConverters._
 
 /**
@@ -36,7 +37,8 @@ object IcdValidator {
       val json   = source.mkString
       source.close()
       json
-    } else {
+    }
+    else {
       val config =
         ConfigFactory.parseFile(file).resolve(ConfigResolveOptions.noSystem())
       toJson(config)
@@ -89,7 +91,8 @@ object IcdValidator {
   def validateDirRecursive(dir: File = new File(".")): List[Problem] = {
     if (dir.isDirectory) {
       (dir :: subDirs(dir)).flatMap(d => validateOneDir(d))
-    } else List(Problem("error", s"Directory $dir does not exist"))
+    }
+    else List(Problem("error", s"Directory $dir does not exist"))
   }
 
   /**
@@ -101,18 +104,20 @@ object IcdValidator {
     import StdName._
     if (!dir.isDirectory) {
       List(Problem("error", s"$dir does not exist or is not a directory"))
-    } else {
+    }
+    else {
       // Note: first file read contains the schema version (subsystem or component model)
       var schemaVersion = currentSchemaVersion
       val result = for (stdName <- stdNames) yield {
         val inputFile = new File(dir, stdName.name)
         if (!inputFile.exists()) {
           Nil
-        } else {
+        }
+        else {
           Try(ConfigFactory.parseFile(inputFile)) match {
             case Success(parsedConfigFile) =>
               val inputConfig =
-                parsedConfigFile.resolve(ConfigResolveOptions.noSystem())
+                StdConfig.addTargetSubsystem(parsedConfigFile.resolve(ConfigResolveOptions.noSystem()), stdName)
               if (inputConfig.hasPath(schemaVersionKey))
                 schemaVersion = inputConfig.getString(schemaVersionKey)
               validateStdName(inputConfig, stdName, schemaVersion, inputFile.toString)
@@ -194,7 +199,8 @@ object IcdValidator {
     try {
       schema.validate(jsonInput)
       Nil
-    } catch {
+    }
+    catch {
       case e: ValidationException =>
         e.getAllMessages.asScala.toList.map(msg => Problem("error", s"$source: $msg"))
       case e: Exception =>

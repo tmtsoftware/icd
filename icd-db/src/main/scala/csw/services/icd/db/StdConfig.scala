@@ -77,7 +77,7 @@ object StdConfig {
   }
 
   // Automatically add the target subsystem to $subsystem-icd-model.conf file configs.
-  private def addTargetSubsystem(config: Config, stdName: StdName): Config = {
+  def addTargetSubsystem(config: Config, stdName: StdName): Config = {
     if (stdName.isIcdModel && !config.hasPath(stdName.icdTargetSubsystem.get)) {
       config.withValue("targetSubsystem", ConfigValueFactory.fromAnyRef(stdName.icdTargetSubsystem.get))
     } else config

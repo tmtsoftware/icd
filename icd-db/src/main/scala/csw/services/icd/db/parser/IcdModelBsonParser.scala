@@ -12,15 +12,18 @@ object IcdModelBsonParser {
 
   def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): Option[IcdModel] = {
     if (doc.isEmpty) None
-    else
+    else {
+      val subsystem       = doc.getAsOpt[String]("subsystem").get
+      val targetSubsystem = doc.getAsOpt[String]("targetSubsystem").get
+      val title           = doc.getAsOpt[String]("title").getOrElse(s"Interface between $subsystem and $targetSubsystem")
       Some(
         IcdModel(
-          subsystem = doc.getAsOpt[String]("subsystem").get,
-          targetSubsystem = doc.getAsOpt[String]("targetSubsystem").get,
-          title = doc.getAsOpt[String]("title").getOrElse(""),
+          subsystem = subsystem,
+          targetSubsystem = targetSubsystem,
+          title = title,
           description = HtmlMarkup.gfmToHtml(doc.getAsOpt[String]("description").get, maybePdfOptions)
         )
       )
+    }
   }
 }
-

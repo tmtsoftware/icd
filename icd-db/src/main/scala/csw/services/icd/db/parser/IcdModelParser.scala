@@ -5,11 +5,18 @@ import icd.web.shared.IcdModels.IcdModel
 
 object IcdModelParser {
 
-  def apply(config: Config): IcdModel =
+  def apply(config: Config): IcdModel = {
+    val subsystem       = config.getString("subsystem")
+    val targetSubsystem = config.getString("targetSubsystem")
+    val title =
+      if (config.hasPath("title"))
+        config.getString("title")
+      else s"Interface between $subsystem and $targetSubsystem"
     IcdModel(
-      subsystem = config.getString("subsystem"),
-      targetSubsystem = config.getString("targetSubsystem"),
-      title = config.getString("title"),
-      description = config.getString("description"),
+      subsystem = subsystem,
+      targetSubsystem = targetSubsystem,
+      title = title,
+      description = config.getString("description")
     )
+  }
 }
