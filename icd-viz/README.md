@@ -1,7 +1,7 @@
 icd-viz
 =======
 
-A command line app that uses Graphviz/Dot to generate graphs subsystem component relationships based on command line arguments.
+A command line app that uses Graphviz/Dot to generate graphs of subsystem component relationships based on command line arguments.
 
 __Note__: The [Graphviz](https://graphviz.org/download/) apps needs to be installed on the local machine in order to use this application. 
 
