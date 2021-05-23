@@ -61,7 +61,7 @@ object IcdDb extends App {
   private val parser = new scopt.OptionParser[IcdDbOptions]("icd-db") {
     head("icd-db", BuildInfo.version)
 
-    opt[String]('d', "db") valueName "<name>" action { (x, c) =>
+    opt[String]("db") valueName "<name>" action { (x, c) =>
       c.copy(dbName = x)
     } text s"The name of the database to use (default: $defaultDbName)"
 
