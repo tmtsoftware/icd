@@ -91,7 +91,7 @@ This overrides the base URI used for the subsystem Git repositories (The default
 * -Dcsw.services.icd.github.uri=https://github.com/*yourRepo*
 
 This overrides only the base URI containing ICD-Model-Files repository, which contains version information stored in JSON files in 
-the apis and icds subdirectories (The default value is also https://github.com/tmt-icd).
+the apis and icds subdirectories (The default value is valueOf("csw.services.icd.github.parent.uri")/ICD-Model-Files).
 You could override this URI in order to test making releases without actually publishing them on the official Git repository.
 
 Note that these options / system properties will work for both the icd-git and icdwebserver applications.
