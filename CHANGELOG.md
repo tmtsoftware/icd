@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
+## [ICD v2.1.2] - 2021-05-25
+
+- Added support for `${subsystem}-icd-model.conf` files (for example: `IRIS-icd-model.conf`, `TCS-icd-model.conf`) that add information about the ICD between `${subsystem}` and the subsystem being described. 
+  See [TEST2-icd-model.conf](examples/2.0/TEST/TEST2-icd-model.conf) or [TEST-icd-model.conf](examples/2.0/TEST2/TEST-icd-model.conf) for an example.
+
 ## [ICD v2.1.1] - 2021-05-01
 
 ### Changed
