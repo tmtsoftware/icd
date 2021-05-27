@@ -1,9 +1,9 @@
 package csw.services.icd.db
 
 import java.io.File
-
 import csw.services.icd.IcdValidator
 import icd.web.shared.ComponentInfo.CurrentStates
+import icd.web.shared.SubsystemWithVersion
 import org.scalatest.funsuite.AnyFunSuite
 
 /**
@@ -96,6 +96,23 @@ class IcdDbTests extends AnyFunSuite {
     val published = db.query.getPublished(envCtrl, None).filter(p => p.name == "sensors" && p.publishType == CurrentStates)
     assert(published.size == 1)
     assert(published.head.publishType == CurrentStates)
+
+    // Ingest TEST2 subsystem
+    val problems2 = db.ingestAndCleanup(getTestDir(s"$examplesDir/TEST2"))
+    for (p <- problems2) println(p)
+    assert(problems2.isEmpty)
+    db.query.afterIngestFiles(problems2, dbName)
+
+
+    // Test icd-models
+    val icdModels = db.versionManager.getIcdModels(SubsystemWithVersion("TEST"), SubsystemWithVersion("TEST2"), None)
+    assert(icdModels.size == 2)
+    assert(icdModels.head.subsystem == "TEST")
+    assert(icdModels.head.targetSubsystem == "TEST2")
+    assert(icdModels.tail.head.subsystem == "TEST2")
+    assert(icdModels.tail.head.targetSubsystem == "TEST")
+    assert(icdModels.head.description.startsWith("<p>This part contains extra information relevant to the TEST-TEST2 ICD"))
+    assert(icdModels.tail.head.description == ("<p>Here is additional information about the ICD from the TEST2 API.</p>"))
 
     // Test accessing ICD models
     testModels(db)

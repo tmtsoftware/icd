@@ -560,7 +560,6 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
    * Rename any temp collections that were just ingested.
    * If there were fatal errors, delete the temp collections without renaming.
    * Note: Since we don't know if an entire subsystem was ingested here, we can't delete any old, removed collections.
-   * (Need to provide a "drop subsystem" option for icd-db so user can manually do this)
    */
   def afterIngestFiles(problems: List[Problem], dbName: String): Unit = {
     val tmpPaths = getCollectionNames
