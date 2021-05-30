@@ -4,6 +4,8 @@ import java.io._
 import java.net.URI
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions, ConfigResolveOptions}
 import csw.services.icd.db.StdConfig
+import csw.services.icd.db.parser.ServiceModelParser
+import io.swagger.parser.OpenAPIParser
 import org.everit.json.schema.loader.SchemaClient
 
 import scala.io.Source
@@ -131,25 +133,51 @@ object IcdValidator {
     }
   }
 
+//  /**
+//   * Validates the given input file using the given JSON schema file
+//   * JSON files are recognized by the file suffix .json.
+//   *
+//   * @param inputFile  a file in HOCON or JSON format
+//   * @param schemaFile a JSON schema file in HOCON or JSON format
+//   * @return a list of problems, if any were found
+//   */
+//  def validateFile(inputFile: File, schemaFile: File): List[Problem] = {
+//    val jsonSchema = new JSONObject(toJson(schemaFile))
+//    val schemaLoader = SchemaLoader
+//      .builder()
+//      .schemaClient(HoconSchemaClient)
+//      .schemaJson(jsonSchema)
+//      .resolutionScope("classpath:/")
+//      .build()
+//    val schema    = schemaLoader.load().build().asInstanceOf[Schema]
+//    val jsonInput = new JSONObject(toJson(inputFile))
+//    validateJson(schema, jsonInput, inputFile.getPath)
+//  }
+
   /**
-   * Validates the given input file using the given JSON schema file
-   * JSON files are recognized by the file suffix .json.
-   *
-   * @param inputFile  a file in HOCON or JSON format
-   * @param schemaFile a JSON schema file in HOCON or JSON format
-   * @return a list of problems, if any were found
+   * If the config is from a service-model.conf file, validate the OpenApi files referenced.
+   * @param inputConfig config, possibly from service-model.conf
+   * @param stdName type of model file
+   * @param dirName directory containing the model files
+   * @return list of problems found
    */
-  def validateFile(inputFile: File, schemaFile: File): List[Problem] = {
-    val jsonSchema = new JSONObject(toJson(schemaFile))
-    val schemaLoader = SchemaLoader
-      .builder()
-      .schemaClient(HoconSchemaClient)
-      .schemaJson(jsonSchema)
-      .resolutionScope("classpath:/")
-      .build()
-    val schema    = schemaLoader.load().build().asInstanceOf[Schema]
-    val jsonInput = new JSONObject(toJson(inputFile))
-    validateJson(schema, jsonInput, inputFile.getPath)
+  private def validateOpenApis(inputConfig: Config, stdName: StdName, dirName: String): List[Problem] = {
+    // validate a single OpenApi file
+    def validateOpenApi(fileName: String): List[Problem] = {
+      val parseResult = new OpenAPIParser().readLocation(s"$fileName", null, null)
+      parseResult
+        .getMessages
+        .asScala
+        .toList
+        .map(Problem("error", _))
+    }
+
+    if (stdName.isServiceModel) {
+      val serviceModel = ServiceModelParser(inputConfig)
+      serviceModel
+        .provides
+        .flatMap(p => validateOpenApi(p.openApi))
+    } else Nil
   }
 
   /**
@@ -166,7 +194,12 @@ object IcdValidator {
       case Right(version) =>
         val schemaPath   = s"$version/${stdName.schema}"
         val schemaConfig = ConfigFactory.parseResources(schemaPath)
-        validateConfig(inputConfig, schemaConfig, fileName)
+        val problems = validateConfig(inputConfig, schemaConfig, fileName)
+        if (problems.nonEmpty) {
+          problems
+        } else {
+          validateOpenApis(inputConfig, stdName, new File(fileName).getParent)
+        }
       case Left(problem) =>
         List(problem)
     }

@@ -199,6 +199,7 @@ case class Resolver(allModels: List[IcdModels]) {
       subscribeModel = models.subscribeModel,
       commandModel = models.commandModel.map(m => resolveCommandModel(m)),
       alarmsModel = models.alarmsModel,
+      serviceModel = models.serviceModel,
       icdModels = models.icdModels
     )
   }

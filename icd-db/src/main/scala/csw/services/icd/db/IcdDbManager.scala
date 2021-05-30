@@ -21,7 +21,7 @@ case class IcdDbManager(db: DefaultDB, versionManager: IcdVersionManager) {
    * creating a new one if it does not already exist.
    *
    * @param name name of the collection to use
-   * @param tmpName temp name of the collection to use during iingest
+   * @param tmpName temp name of the collection to use during ingest
    * @param obj  the object to insert
    */
   private[db] def ingest(name: String, tmpName: String, obj: JsObject): Unit = {

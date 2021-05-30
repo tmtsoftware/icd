@@ -2,15 +2,7 @@ package csw.services.icd.db
 
 import csw.services.icd._
 import csw.services.icd.StdName._
-import csw.services.icd.db.parser.{
-  AlarmsModelBsonParser,
-  CommandModelBsonParser,
-  ComponentModelBsonParser,
-  IcdModelBsonParser,
-  PublishModelBsonParser,
-  SubscribeModelBsonParser,
-  SubsystemModelBsonParser
-}
+import csw.services.icd.db.parser.{AlarmsModelBsonParser, CommandModelBsonParser, ComponentModelBsonParser, IcdModelBsonParser, PublishModelBsonParser, ServiceModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.AllEventList.{Event, EventsForComponent, EventsForSubsystem}
 import icd.web.shared.{IcdModels, PdfOptions}
@@ -62,6 +54,7 @@ object IcdDbQuery {
       subscribe: Option[BSONCollection],
       command: Option[BSONCollection],
       alarms: Option[BSONCollection],
+      services: Option[BSONCollection],
       icds: List[BSONCollection]
   ) {
 
@@ -470,9 +463,11 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
         entry.component.flatMap(coll => collectionHead(coll).flatMap(ComponentModelBsonParser(_, maybePdfOptions)))
       val alarmsModel: Option[AlarmsModel] =
         entry.alarms.flatMap(coll => collectionHead(coll).flatMap(AlarmsModelBsonParser(_, maybePdfOptions)))
+      val serviceModel: Option[ServiceModel] =
+        entry.services.flatMap(coll => collectionHead(coll).flatMap(ServiceModelBsonParser(_)))
       val icdModels: List[IcdModel] =
         entry.icds.flatMap(coll => collectionHead(coll).flatMap(IcdModelBsonParser(_, maybePdfOptions)))
-      IcdModels(subsystemModel, componentModel, publishModel, subscribeModel, commandModel, alarmsModel, icdModels)
+      IcdModels(subsystemModel, componentModel, publishModel, subscribeModel, commandModel, alarmsModel, serviceModel, icdModels)
     }
 
     val e =

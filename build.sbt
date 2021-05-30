@@ -44,7 +44,8 @@ lazy val `icd-db` = project
         diffson,
         scalaLogging,
         logbackClassic,
-        jsoup
+        jsoup,
+        swaggerParser
       ) ++
         testScope(scalaTest)
   ) dependsOn icdWebSharedJvm

@@ -391,6 +391,43 @@ object IcdModels {
   )
 
   /**
+   * Describes an HTTP service provided by this subsystem
+   * @param name name of the service
+   * @param openApi name of file containing OpenApi description of the service
+   */
+  case class ServiceModelProvider(name: String, openApi: String)
+
+  /**
+   * Describes a path or route in an HTTP service
+   * @param method the HTTP method (POST, GET, etc.)
+   * @param path the path / route
+   */
+  case class ServicePath(method: String, path: String)
+
+  /**
+   * A reference to an HTTP service required by this subsystem
+   * @param subsystem the subsystem providing the HTTP service
+   * @param name the name of the service provided
+   * @param paths list of routes/paths used (empty means; all paths used)
+   */
+  case class ServiceModelClient(subsystem: String, name: String, paths: List[ServicePath])
+
+  /**
+   * Lists the HTTP services provided or required by the subsystem component
+   *
+   * @param subsystem this subsystem
+   * @param component this component
+   * @param provides HTTP services provided
+   * @param requires HTTP services required
+   */
+  case class ServiceModel(
+      subsystem: String,
+      component: String,
+      provides: List[ServiceModelProvider],
+      requires: List[ServiceModelClient]
+  )
+
+  /**
    * Model for file that contains a description of the ICD between the subsystem and targetSubsystem.
    */
   case class IcdModel(
@@ -488,5 +525,6 @@ case class IcdModels(
     subscribeModel: Option[SubscribeModel],
     commandModel: Option[CommandModel],
     alarmsModel: Option[AlarmsModel],
+    serviceModel: Option[ServiceModel],
     icdModels: List[IcdModel]
 )

@@ -47,6 +47,7 @@ object Dependencies {
   val scalatags      = "com.lihaoyi"                %% "scalatags"       % ScalaTagsVersion
   val jsoup          = "org.jsoup"                  % "jsoup"            % "1.12.2"
   val jgit           = "org.eclipse.jgit"           % "org.eclipse.jgit" % "5.6.1.202002131546-r"
+  val swaggerParser  = "io.swagger.parser.v3" % "swagger-parser" % "2.0.25"
 
   // web server dependencies
   val scalajsScripts = "com.vmunier" %% "scalajs-scripts" % "1.1.4"

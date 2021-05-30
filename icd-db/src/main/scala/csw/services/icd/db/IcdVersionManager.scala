@@ -8,14 +8,7 @@ import diffson.playJson._
 import diffson.lcs._
 import diffson.jsonpatch._
 import diffson.jsonpatch.lcsdiff.remembering._
-import csw.services.icd.db.parser.{
-  AlarmsModelBsonParser,
-  ComponentModelBsonParser,
-  IcdModelBsonParser,
-  PublishModelBsonParser,
-  SubscribeModelBsonParser,
-  SubsystemModelBsonParser
-}
+import csw.services.icd.db.parser.{AlarmsModelBsonParser, ComponentModelBsonParser, IcdModelBsonParser, PublishModelBsonParser, ServiceModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONString}
 import reactivemongo.api.{Cursor, WriteConcern}
@@ -506,11 +499,13 @@ case class IcdVersionManager(query: IcdDbQuery) {
         entry.command.flatMap(coll => parser.CommandModelBsonParser(getDocVersion(coll), maybePdfOptions))
       val componentModel: Option[IcdModels.ComponentModel] =
         entry.component.flatMap(coll => ComponentModelBsonParser(getDocVersion(coll), maybePdfOptions))
+      val serviceModel: Option[IcdModels.ServiceModel] =
+        entry.services.flatMap(coll => ServiceModelBsonParser(getDocVersion(coll)))
       val alarmsModel: Option[IcdModels.AlarmsModel] =
         entry.alarms.flatMap(coll => AlarmsModelBsonParser(getDocVersion(coll), maybePdfOptions))
       val icdModels: List[IcdModels.IcdModel] =
         entry.icds.flatMap(coll => IcdModelBsonParser(getDocVersion(coll), maybePdfOptions))
-      IcdModels(subsystemModel, componentModel, publishModel, subscribeModel, commandModel, alarmsModel, icdModels)
+      IcdModels(subsystemModel, componentModel, publishModel, subscribeModel, commandModel, alarmsModel, serviceModel, icdModels)
     }
 
     getVersion(sv) match {

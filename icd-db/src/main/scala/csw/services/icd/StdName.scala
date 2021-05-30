@@ -13,14 +13,23 @@ object StdName {
   val publishFileNames: StdName   = StdName("publish-model.conf", "publish-schema.conf")
   val subscribeFileNames: StdName = StdName("subscribe-model.conf", "subscribe-schema.conf")
   val commandFileNames: StdName   = StdName("command-model.conf", "command-schema.conf")
-  val alarmsFileNames: StdName   = StdName("alarm-model.conf", "alarms-schema.conf")
+  val alarmsFileNames: StdName    = StdName("alarm-model.conf", "alarms-schema.conf")
+  val serviceFileNames: StdName   = StdName("service-model.conf", "service-schema.conf")
   val icdFileNames: List[StdName] = Subsystems.allSubsystems.map(s => StdName(s"$s-icd-model.conf", "icd-schema.conf"))
 
   /**
    * List of standard ICD files and schemas
    */
   val stdNames: List[StdName] =
-    List(subsystemFileNames, componentFileNames, publishFileNames, subscribeFileNames, commandFileNames, alarmsFileNames) ::: icdFileNames
+    List(
+      subsystemFileNames,
+      componentFileNames,
+      publishFileNames,
+      subscribeFileNames,
+      commandFileNames,
+      alarmsFileNames,
+      serviceFileNames
+    ) ::: icdFileNames
 
   /**
    * Set of standard ICD file names
@@ -47,7 +56,8 @@ case class StdName private (name: String, schema: String) {
 
   val isSubsystemModel: Boolean = modelBaseName == "subsystem"
 
-  val isIcdModel: Boolean = modelBaseName.endsWith("-icd")
+  val isIcdModel: Boolean                = modelBaseName.endsWith("-icd")
+  val isServiceModel: Boolean            = modelBaseName == "service"
   val icdTargetSubsystem: Option[String] = if (isIcdModel) Some(name.split('-').head) else None
 
   val isComponentModel: Boolean = modelBaseName == "component"

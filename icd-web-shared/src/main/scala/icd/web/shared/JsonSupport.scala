@@ -82,4 +82,8 @@ object JsonSupport {
   implicit val eventsForComponentFormat    = Json.format[EventsForComponent]
   implicit val eventsForSubsystemFormat    = Json.format[EventsForSubsystem]
   implicit val IcdModelFormat              = Json.format[IcdModel]
+  implicit val ServicePathFormat           = Json.format[ServicePath]
+  implicit val ServiceModelClientFormat    = Json.format[ServiceModelClient]
+  implicit val ServiceModelProviderFormat  = Json.format[ServiceModelProvider]
+  implicit val ServiceModelFormat          = Json.format[ServiceModel]
 }
