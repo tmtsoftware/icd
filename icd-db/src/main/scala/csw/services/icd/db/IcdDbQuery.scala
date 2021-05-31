@@ -72,6 +72,7 @@ object IcdDbQuery {
       subscribe = paths.find(_.endsWith(".subscribe")).map(db(_)),
       command = paths.find(_.endsWith(".command")).map(db(_)),
       alarms = paths.find(_.endsWith(".alarm")).map(db(_)),
+      services = paths.find(_.endsWith(".service")).map(db(_)),
       icds = paths.filter(_.endsWith("-icd")).map(db(_))
     )
   }
@@ -83,6 +84,8 @@ object IcdDbQuery {
   private[db] def getPublishCollectionName(subsystem: String, component: String): String = s"$subsystem.$component.publish"
 
   private[db] def getAlarmsCollectionName(subsystem: String, component: String): String = s"$subsystem.$component.alarm"
+
+  private[db] def getServiceCollectionName(subsystem: String, component: String): String = s"$subsystem.$component.service"
 
   private[db] def getSubscribeCollectionName(subsystem: String, component: String): String = s"$subsystem.$component.subscribe"
 
@@ -204,13 +207,14 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
       subscribe = getSubscribeCollection(subsystem, component),
       command = getCommandCollection(subsystem, component),
       alarms = getAlarmsCollection(subsystem, component),
+      services = getServiceCollection(subsystem, component),
       icds = Nil
     )
   }
 
   // Returns an IcdEntry object for the given subsystem name, if found
   private[db] def entryForSubsystemName(subsystem: String): ApiCollections = {
-    ApiCollections(subsystem, getSubsystemCollection(subsystem), None, None, None, None, None, getIcdCollections(subsystem))
+    ApiCollections(subsystem, getSubsystemCollection(subsystem), None, None, None, None, None, None, getIcdCollections(subsystem))
   }
 
   /**
@@ -302,6 +306,11 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
 
   private def getAlarmsCollection(subsystem: String, component: String): Option[BSONCollection] = {
     val collName = getAlarmsCollectionName(subsystem, component)
+    getCollection(collName)
+  }
+
+  private def getServiceCollection(subsystem: String, component: String): Option[BSONCollection] = {
+    val collName = getServiceCollectionName(subsystem, component)
     getCollection(collName)
   }
 

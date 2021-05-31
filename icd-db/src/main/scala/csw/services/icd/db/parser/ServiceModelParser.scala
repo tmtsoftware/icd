@@ -13,8 +13,8 @@ object ServiceModelParser {
   object ServiceModelProviderParser {
     def apply(configObject: ConfigObject): ServiceModelProvider = {
       ServiceModelProvider(
-        name = configObject.get("name").toString,
-        openApi = configObject.get("openApi").toString
+        name = configObject.get("name").unwrapped().toString,
+        openApi = configObject.get("openApi").unwrapped().toString
       )
     }
   }

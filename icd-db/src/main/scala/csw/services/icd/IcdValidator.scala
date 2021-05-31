@@ -164,7 +164,7 @@ object IcdValidator {
   private def validateOpenApis(inputConfig: Config, stdName: StdName, dirName: String): List[Problem] = {
     // validate a single OpenApi file
     def validateOpenApi(fileName: String): List[Problem] = {
-      val parseResult = new OpenAPIParser().readLocation(s"$fileName", null, null)
+      val parseResult = new OpenAPIParser().readLocation(s"$dirName/$fileName", null, null)
       parseResult
         .getMessages
         .asScala
