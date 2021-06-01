@@ -8,7 +8,7 @@ import csw.services.icd.StdName._
 
 /**
  * Used to determine the subsystem and component name, given a set of model files.
- * The DefaultDB collection name is subsystem.name or subsystem.component.name,
+ * The DB collection name is subsystem.name or subsystem.component.name,
  * where name is the value returned by StdName.modelBaseName.
  *
  * @param stdName indicates which of the ICD model files the config represents

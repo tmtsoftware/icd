@@ -1,9 +1,9 @@
 package csw.services.icd.db
 
 import icd.web.shared.IcdModels.{AlarmsModel, CommandModel, ComponentModel, PublishModel, SubscribeModel}
-import reactivemongo.api.DefaultDB
 import csw.services.icd._
 import icd.web.shared.PdfOptions
+import reactivemongo.api.DB
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -11,12 +11,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * Adds caching to IcdDbQuery for better performance when creating documents or web pages that
  * require access to all subsystems and components.
  *
- * @param db the DefaultDB handle
+ * @param db the DB handle
  * @param maybeSubsystems limit the database searches to the given subsystems
  */
 class CachedIcdDbQuery(
-    db: DefaultDB,
-    admin: DefaultDB,
+    db: DB,
+    admin: DB,
     maybeSubsystems: Option[List[String]],
     maybePdfOptions: Option[PdfOptions]
 ) extends IcdDbQuery(db, admin, maybeSubsystems) {

@@ -8,10 +8,13 @@ import icd.web.shared.AllEventList.{Event, EventsForComponent, EventsForSubsyste
 import icd.web.shared.{IcdModels, PdfOptions}
 import icd.web.shared.IcdModels._
 import play.api.libs.json.JsObject
-import reactivemongo.api.DefaultDB
+import reactivemongo.api.DB
 import reactivemongo.api.bson.BSONDocument
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.play.json.compat._
+import bson2json._
+import lax._
+import json2bson._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
@@ -63,7 +66,7 @@ object IcdDbQuery {
   }
 
   // Returns an IcdEntry for the given collection path
-  private[db] def getEntry(db: DefaultDB, name: String, paths: List[String]): ApiCollections = {
+  private[db] def getEntry(db: DB, name: String, paths: List[String]): ApiCollections = {
     ApiCollections(
       name = name,
       subsystem = paths.find(_.endsWith(".subsystem")).map(db(_)),
@@ -150,7 +153,7 @@ object IcdDbQuery {
  * @param maybeSubsystems if defined, limit the list of subsystems searched
  */
 //noinspection DuplicatedCode
-case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[List[String]]) {
+case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) {
   import IcdDbQuery._
 
   // Search only the given subsystems, or all subsystems, if maybeSubsystems is empty

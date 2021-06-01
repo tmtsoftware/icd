@@ -1,18 +1,23 @@
 package csw.services.icd.db
 
-import play.api.libs.json.{JsNumber, JsObject}
+import play.api.libs.json._
 import csw.services.icd._
-import reactivemongo.api.DefaultDB
+import reactivemongo.api.DB
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.bson._
+
 import reactivemongo.play.json.compat._
+import bson2json._
+import lax._
+import json2bson._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * Manages ingesting objects into the database while keeping track of
  * previous versions.
  */
-case class IcdDbManager(db: DefaultDB, versionManager: IcdVersionManager) {
+case class IcdDbManager(db: DB, versionManager: IcdVersionManager) {
 
   import IcdVersionManager._
 

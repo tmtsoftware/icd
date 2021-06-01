@@ -192,7 +192,7 @@ object IcdGit extends App {
         if (options.user.isDefined) options.user
         else {
           println(s"Enter the user name for Git: [$defaultUser]")
-          val u = Option(readLine)
+          val u = Option(readLine())
           if (u.isDefined) u else Some(defaultUser)
         }
       val password =
@@ -206,7 +206,7 @@ object IcdGit extends App {
 
     def readComment(): Option[String] = {
       println("Enter a comment for the new ICD version:")
-      Option(readLine)
+      Option(readLine())
     }
 
     // XXX TODO: How many subsystems to ask for?
@@ -216,14 +216,14 @@ object IcdGit extends App {
         println(
           "Do you want to ingest all subsystem model files into the ICD database? [no] (Answer no to select the two subsystems): "
         )
-        val ans = Option(readLine)
+        val ans = Option(readLine())
         ans.isDefined && Set("y", "yes").contains(ans.get.toLowerCase())
       }
     }
 
     def askIfPublishingAnIcd(): Boolean = {
       println("Do you want to publish an API for one subsystem or an ICD between two subsystems? [api] (Answer api or icd): ")
-      val ans = Option(readLine)
+      val ans = Option(readLine())
       ans.isDefined && Set("i", "icd").contains(ans.get.toLowerCase())
 
     }
@@ -364,7 +364,7 @@ object IcdGit extends App {
   // Handle the --ingest option
   private def ingest(options: Options): Unit = {
     try {
-      // Get the DefaultDB handle
+      // Get the DB handle
       val db = IcdDb(options.dbName, options.host, options.port)
       if (options.subsystems.isEmpty)
         db.dropDatabase()

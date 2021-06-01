@@ -11,7 +11,7 @@ import icd.web.shared.{BuildInfo, PdfOptions, SubsystemWithVersion}
 import io.swagger.v3.parser.util.DeserializationUtils
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.{JsObject, Json}
-import reactivemongo.api.{AsyncDriver, DefaultDB, MongoConnection}
+import reactivemongo.api.{AsyncDriver, DB, MongoConnection}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -26,7 +26,7 @@ object IcdDbDefaults {
   // Suffix used for temp collections while ingesting model files into the DB
   val tmpCollSuffix = ".tmp"
 
-  def connectToDatabase(host: String, port: Int, dbName: String): DefaultDB = {
+  def connectToDatabase(host: String, port: Int, dbName: String): DB = {
     val mongoUri = s"mongodb://$host:$port/$dbName"
     val driver   = new AsyncDriver
     val database = for {
@@ -361,8 +361,8 @@ case class IcdDb(
 //  IcdDbDefaults.deleteDatabase(host, port, "icds2")
   IcdDbDefaults.deleteDatabase(host, port, "icds3")
 
-  val db: DefaultDB    = IcdDbDefaults.connectToDatabase(host, port, dbName)
-  val admin: DefaultDB = IcdDbDefaults.connectToDatabase(host, port, "admin")
+  val db: DB    = IcdDbDefaults.connectToDatabase(host, port, dbName)
+  val admin: DB = IcdDbDefaults.connectToDatabase(host, port, "admin")
 
   // Clean up on exit
   sys.addShutdownHook(close())
@@ -519,7 +519,7 @@ case class IcdDb(
   }
 
   /**
-   * Returns the DefaultDB collection name to use for the given ICD config.
+   * Returns the DB collection name to use for the given ICD config.
    *
    * @param stdConfig API model file packaged as StdConfig object
    * @return the collection name

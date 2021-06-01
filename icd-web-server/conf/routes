@@ -9,7 +9,7 @@ GET         /                                           controllers.Application.
 GET         /subsystems                                 controllers.Application.subsystemNames
 
 # Gets a list of all system events by subsystem/component (for latest subsystem versions)
-GET         /eventList                                  controllers.Application.eventList
+GET         /eventList                                  controllers.Application.eventList()
 
 # Gets information about the given event
 GET         /eventInfo/:subsystem/:component/:event     controllers.Application.eventInfo(subsystem, component, event)
@@ -60,7 +60,7 @@ GET         /icdNames                                   controllers.Application.
 GET         /icdVersions/:subsystem/:target             controllers.Application.getIcdVersions(subsystem, target)
 
 # Uploads ICD files from a selected directory, all at once as multipart/formdata
-POST        /uploadFiles                                controllers.FileUploadController.uploadFiles
+POST        /uploadFiles                                controllers.FileUploadController.uploadFiles()
 
 # Gets the differences between two versions (version strings separated by a comma)
 GET         /diff/:subsystem/:versions                  controllers.Application.diff(subsystem, versions)

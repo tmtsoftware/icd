@@ -12,8 +12,8 @@ object DeployApp extends AutoPlugin {
   override def requires: Plugins = UniversalPlugin && JavaAppPackaging
 
   override def projectSettings: Seq[Setting[_]] =
-    SettingsHelper.makeDeploymentSettings(Universal, packageBin in Universal, "zip") ++
-      SettingsHelper.makeDeploymentSettings(UniversalDocs, packageBin in UniversalDocs, "zip") ++ Seq(
-      target in Universal := baseDirectory.value.getParentFile / "target" / "universal"
+    SettingsHelper.makeDeploymentSettings(Universal, Universal / packageBin, "zip") ++
+      SettingsHelper.makeDeploymentSettings(UniversalDocs, UniversalDocs / packageBin, "zip") ++ Seq(
+      Universal / target := baseDirectory.value.getParentFile / "target" / "universal"
     )
 }
