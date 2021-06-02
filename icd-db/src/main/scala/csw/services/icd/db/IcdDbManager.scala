@@ -47,7 +47,7 @@ case class IcdDbManager(db: DB, versionManager: IcdVersionManager) {
   // Updates an object in an existing collection, keeping the same _version number
   private def update(coll: BSONCollection, tmpColl: BSONCollection, obj: JsObject): Unit = {
     val doc = coll.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await.get
-    val currentVersion = doc.getAsOpt[BSONNumberLike](versionKey).get.toInt.get
+    val currentVersion = doc.getAsOpt[BSONInteger](versionKey).get.toInt.get
     tmpColl.insert.one(obj + (versionKey -> JsNumber(currentVersion))).await
   }
 }

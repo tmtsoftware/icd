@@ -1,11 +1,12 @@
 import sbt._
 import Dependencies._
 import Settings._
-//import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
-//import org.scalajs.jsdependencies.sbtplugin.JSDependenciesPlugin.autoImport._
 
 def compileScope(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 def testScope(deps: ModuleID*): Seq[ModuleID]    = deps map (_ % "test")
+
+// SCALAJS_PROD is set in install.sh to enable fully optimized JavaScript
+val optStage = if (sys.env.contains("SCALAJS_PROD")) FullOptStage else FastOptStage
 
 // Root of the multi-project build
 lazy val root = (project in file("."))
@@ -17,10 +18,6 @@ lazy val `icd-db` = project
   .enablePlugins(DeployApp)
   .settings(defaultSettings: _*)
   .settings(
-    ThisBuild / scalafixDependencies ++= Seq(
-      "org.reactivemongo" %% "reactivemongo-scalafix" % "1.0.4")
-  )
-  .settings(
     libraryDependencies ++=
       compileScope(
         akkaSlf4j,
@@ -28,6 +25,7 @@ lazy val `icd-db` = project
         akkaActor,
         akkaStream,
         logbackClassic,
+        jacksonModuleScala,
         reactivemongo,
         play2Reactivemongo,
         reactivemongoPlayJsonCompat,
@@ -82,15 +80,13 @@ lazy val icdWebServer = (project in file("icd-web-server"))
   .settings(
     scalaJSProjects := Seq(icdWebClient),
     Assets / pipelineStages := Seq(scalaJSPipeline),
-//    scalaJSPipeline / isDevMode := !sys.env.contains("SCALAJS_PROD"),
     Global / onChangedBuildSource := ReloadOnSourceChanges,
     pipelineStages := Seq(digest, gzip),
     // triggers scalaJSPipeline when using compile or continuous compilation
     Compile / compile := ((Compile / compile) dependsOn scalaJSPipeline).value,
-//    includeFilter in (Assets, LessKeys.less) := "icd.less",
     Assets / LessKeys.less / includeFilter := "icd.less",
     libraryDependencies ++=
-      compileScope(filters, guice, scalajsScripts, playJson, jqueryUi, webjarsPlay, bootstrap, bootstrapTable) ++
+      compileScope(filters, guice, playJson, jqueryUi, webjarsPlay, bootstrap, bootstrapTable) ++
         testScope(specs2)
   )
   .enablePlugins(PlayScala, SbtWeb, DockerPlugin)
@@ -114,6 +110,7 @@ lazy val icdWebClient = (project in file("icd-web-client"))
   .settings(commonSettings)
   .settings(
     scalaJSUseMainModuleInitializer := false,
+    scalaJSStage := optStage,
     Compile / unmanagedSourceDirectories := Seq((Compile / scalaSource).value),
     packageJSDependencies / skip := false,
     jsDependencies ++= clientJsDeps.value,

@@ -133,27 +133,6 @@ object IcdValidator {
     }
   }
 
-//  /**
-//   * Validates the given input file using the given JSON schema file
-//   * JSON files are recognized by the file suffix .json.
-//   *
-//   * @param inputFile  a file in HOCON or JSON format
-//   * @param schemaFile a JSON schema file in HOCON or JSON format
-//   * @return a list of problems, if any were found
-//   */
-//  def validateFile(inputFile: File, schemaFile: File): List[Problem] = {
-//    val jsonSchema = new JSONObject(toJson(schemaFile))
-//    val schemaLoader = SchemaLoader
-//      .builder()
-//      .schemaClient(HoconSchemaClient)
-//      .schemaJson(jsonSchema)
-//      .resolutionScope("classpath:/")
-//      .build()
-//    val schema    = schemaLoader.load().build().asInstanceOf[Schema]
-//    val jsonInput = new JSONObject(toJson(inputFile))
-//    validateJson(schema, jsonInput, inputFile.getPath)
-//  }
-
   /**
    * If the config is from a service-model.conf file, validate the OpenApi files referenced.
    * @param inputConfig config, possibly from service-model.conf
