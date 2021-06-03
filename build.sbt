@@ -106,7 +106,6 @@ val clientJsDeps = Def.setting(
 
 // a Scala.js based web client that talks to the Play server
 lazy val icdWebClient = (project in file("icd-web-client"))
-  .enablePlugins(ScalaJSPlugin, ScalaJSWeb, JSDependenciesPlugin)
   .settings(commonSettings)
   .settings(
     scalaJSUseMainModuleInitializer := false,
@@ -117,13 +116,14 @@ lazy val icdWebClient = (project in file("icd-web-client"))
     libraryDependencies ++= clientDeps.value,
     Global / onChangedBuildSource := ReloadOnSourceChanges
   )
+  .enablePlugins(ScalaJSPlugin, ScalaJSWeb, JSDependenciesPlugin)
   .dependsOn(icdWebSharedJs)
 
 // contains simple case classes used for data transfer that are shared between the client and server
 lazy val icdWebShared = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("icd-web-shared"))
-  .jsConfigure(_.enablePlugins(ScalaJSWeb))
+//  .jsConfigure(_.enablePlugins(ScalaJSWeb))
   .enablePlugins(BuildInfoPlugin)
   .settings(
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
