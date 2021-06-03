@@ -4,6 +4,7 @@ import Settings._
 
 def compileScope(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 def testScope(deps: ModuleID*): Seq[ModuleID]    = deps map (_ % "test")
+def toPathMapping(f: File): (File, String) = f -> f.getName
 
 // SCALAJS_PROD is set in install.sh to enable fully optimized JavaScript
 val optStage = if (sys.env.contains("SCALAJS_PROD")) FullOptStage else FastOptStage
@@ -114,6 +115,8 @@ lazy val icdWebClient = (project in file("icd-web-client"))
     packageJSDependencies / skip := false,
     jsDependencies ++= clientJsDeps.value,
     libraryDependencies ++= clientDeps.value,
+    Compile / fastLinkJS / jsMappings += toPathMapping((Compile / packageJSDependencies).value),
+    Compile / fullLinkJS / jsMappings += toPathMapping((Compile / packageMinifiedJSDependencies).value),
     Global / onChangedBuildSource := ReloadOnSourceChanges
   )
   .enablePlugins(ScalaJSPlugin, ScalaJSWeb, JSDependenciesPlugin)

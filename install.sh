@@ -36,8 +36,6 @@ for i in $dir $dir/bin $dir/lib $dir/conf; do test -d $i || mkdir $i; done
 
 test "$1" == "-nc" || sbt "project root" clean
 
-sbt icdWebClient/packageMinifiedJSDependencies
-sbt icdWebClient/packageJSDependencies
 sbt root/stage
 
 for i in bin lib; do
