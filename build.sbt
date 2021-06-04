@@ -98,7 +98,6 @@ val clientJsDeps = Def.setting(
   Seq(
     "org.webjars" % "jquery"    % JQueryVersion / "jquery.js" minified "jquery.min.js",
     "org.webjars" % "jquery-ui" % JQueryUiVersion / "jquery-ui.min.js" dependsOn "jquery.js",
-    // Note: Updating to bootstrap-4 could be a lot of work...
     "org.webjars"       % "bootstrap"       % BootstrapVersion / "bootstrap.min.js" dependsOn "jquery.js",
     "org.webjars.bower" % "bootstrap-table" % BootstrapTableVersion / "bootstrap-table.min.js",
     ProvidedJS / "resize.js" dependsOn "jquery-ui.min.js"

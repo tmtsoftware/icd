@@ -34,9 +34,9 @@ fi
 
 for i in $dir $dir/bin $dir/lib $dir/conf; do test -d $i || mkdir $i; done
 
-test "$1" == "-nc" || sbt "project root" clean
+test "$1" == "-nc" || sbt clean
 
-sbt root/stage
+sbt stage
 
 for i in bin lib; do
     for j in target/universal/stage/$i/* ; do
