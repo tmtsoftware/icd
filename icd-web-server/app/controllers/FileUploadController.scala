@@ -2,11 +2,35 @@ package controllers
 
 import javax.inject.Inject
 import com.typesafe.config.ConfigException
+import controllers.FileUploadController.UploadResources
 import csw.services.icd.db.StdConfig
+import csw.services.icd.db.StdConfig.Resources
 import csw.services.icd.{IcdValidator, Problem, StdName}
 import play.api.mvc._
 import play.api.libs.json._
 import play.api.libs.Files
+
+import java.io.File
+import scala.io.Source
+
+object FileUploadController {
+  /**
+   * Reads resource files referenced in uploaded model files (service-model.conf OpenApi files)
+   * @param map map of file name to actual file
+   */
+  class UploadResources(map: Map[String, File]) extends Resources {
+    override def getResource(name: String): Option[String] = {
+      map
+        .get(name)
+        .map { file =>
+          val source   = Source.fromFile(file)
+          val contents = source.mkString
+          source.close()
+          contents
+        }
+    }
+  }
+}
 
 class FileUploadController @Inject() (components: ControllerComponents) extends AbstractController(components) {
 
@@ -19,9 +43,15 @@ class FileUploadController @Inject() (components: ControllerComponents) extends 
   def uploadFiles(): Action[MultipartFormData[Files.TemporaryFile]] =
     Action(parse.multipartFormData) { implicit request =>
       val files = request.body.files.toList
+      val resourceMap = files.flatMap { filePart =>
+        if (filePart.filename.endsWith(".json") || filePart.filename.endsWith(".yaml"))
+          Some(filePart.filename -> filePart.ref.path.toFile)
+        else None
+      }
+      val resources = new UploadResources(resourceMap.toMap)
       try {
         val list = files.flatMap { filePart =>
-          StdConfig.get(filePart.ref.path.toFile, filePart.filename)
+          StdConfig.get(filePart.ref.path.toFile, filePart.filename, resources)
         }
         ingestConfigs(list)
       }
@@ -72,7 +102,7 @@ class FileUploadController @Inject() (components: ControllerComponents) extends 
           else {
             getComponentName(sc).flatMap(schemaVersionMap.get).getOrElse(IcdValidator.currentSchemaVersion)
           }
-        IcdValidator.validateStdName(sc.config, sc.stdName, schemaVersion, sc.fileName)
+        IcdValidator.validateStdName(sc, schemaVersion)
       }
     if (validateProblems.nonEmpty) {
       NotAcceptable(Json.toJson(validateProblems))

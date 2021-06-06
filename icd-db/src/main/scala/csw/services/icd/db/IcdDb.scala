@@ -6,6 +6,7 @@ import csw.services.icd._
 import csw.services.icd.db.parser.{BaseModelParser, IcdModelParser, ServiceModelParser, SubsystemModelParser}
 import csw.services.icd.db.ComponentDataReporter._
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
+import csw.services.icd.db.StdConfig.Resources
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.{BuildInfo, PdfOptions, SubsystemWithVersion}
 import io.swagger.v3.parser.util.DeserializationUtils
@@ -15,7 +16,6 @@ import reactivemongo.api.{AsyncDriver, DB, MongoConnection}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.io.Source
 
 object IcdDbDefaults {
   val conf: Config          = ConfigFactory.load
@@ -463,12 +463,11 @@ case class IcdDb(
    */
   def ingestConfig(stdConfig: StdConfig): List[Problem] = {
     // Ingest a single OpenApi file
-    def ingestOpenApiFile(collectionName: String, fileName: String): Unit = {
-      // Get file contents
-      val source   = Source.fromFile(fileName)
-      val contents = source.mkString
-      source.close()
-      val tmpName = s"$collectionName${IcdDbDefaults.tmpCollSuffix}"
+    def ingestOpenApiFile(collectionName: String, fileName: String, resources: Resources): Unit = {
+      val maybeContents = resources.getResource(fileName)
+      if (maybeContents.isEmpty) throw new RuntimeException(s"Missing OpenApi file: $fileName")
+      val contents = maybeContents.get
+      val tmpName  = s"$collectionName${IcdDbDefaults.tmpCollSuffix}"
       // Convert YAML to JSON if needed
       val json =
         if (fileName.endsWith(".yaml"))
@@ -485,7 +484,7 @@ case class IcdDb(
         val serviceModel = ServiceModelParser(stdConfig.config)
         val dirName      = new File(stdConfig.fileName).getParent
         serviceModel.provides
-          .foreach(p => ingestOpenApiFile(s"$collectionName.${p.name}", s"$dirName/${p.openApi}"))
+          .foreach(p => ingestOpenApiFile(s"$collectionName.${p.name}", s"$dirName/${p.openApi}", stdConfig.resources))
       }
     }
 

@@ -24,7 +24,15 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
 
   // standard ICD file names (XXX TODO FIXME: See StdName class in icd-db. Reuse here?)
   private val stdList =
-    List("subsystem-model.conf", "component-model.conf", "publish-model.conf", "subscribe-model.conf", "command-model.conf", "alarm-model.conf")
+    List(
+      "subsystem-model.conf",
+      "component-model.conf",
+      "publish-model.conf",
+      "subscribe-model.conf",
+      "command-model.conf",
+      "alarm-model.conf",
+      "service-model.conf"
+    )
 
   // Displays upload button
   private val inputItem = {
@@ -41,7 +49,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
 
   // True if the file is one of the standard ICD files
   private def isStdFile(file: dom.File): Boolean = {
-    stdList.contains(basename(file)) || file.name.endsWith("-icd-model.conf")
+    stdList.contains(basename(file)) || file.name.endsWith("-icd-model.conf") || file.name.endsWith(".json") || file.name.endsWith(".yaml")
   }
 
   // HTML item displaying error messages
@@ -56,7 +64,8 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     if (problem.message != null && !problemSet.contains(problem)) {
       val msg = if (problem.message.trim.startsWith("<!DOCTYPE html>")) {
         problem.message
-      } else {
+      }
+      else {
         if (errorSet.contains(problem.severity))
           errorDiv(problem.message)
         else
@@ -96,7 +105,8 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
           f.name.endsWith(".md")
         }
         .partition(isValidFile)
-    } else {
+    }
+    else {
       val fileList = for (i <- 0 until files.length) yield files(i).asInstanceOf[WebkitFile]
       fileList.filterNot(_.name.endsWith(".md")).partition(isValidFile)
     }
@@ -123,7 +133,8 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
       val fileType =
         if (inputDirSupported) "directory of .conf files for the ICD" else "a zip file containing .conf files for the ICD"
       displayProblem(Problem("error", s"Expected a $fileType"))
-    } else {
+    }
+    else {
       uploadFiles(validFiles.toList)
     }
 
