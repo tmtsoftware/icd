@@ -70,12 +70,14 @@ object ComponentInfo {
  * @param publishes      describes items published by the component
  * @param subscribes     describes items the component subscribes to
  * @param commands       describes commands the component can send and receive
+ * @param services       describes services the component provides or requires
  */
 case class ComponentInfo(
     componentModel: ComponentModel,
     publishes: Option[Publishes],
     subscribes: Option[Subscribes],
-    commands: Option[Commands]
+    commands: Option[Commands],
+    services: Option[Services]
 )
 
 /**
@@ -223,6 +225,65 @@ case class Commands(description: String, commandsReceived: List[ReceivedCommandI
   def nonEmpty: Boolean = commandsReceived.nonEmpty || commandsSent.nonEmpty
 
 }
+
+//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXxx
+/**
+ * Describes a service required by this component
+ *
+ * @param name                the service name
+ * @param subsystem           the subsystem that provides the service
+ * @param component           the component that provides the service
+ * @param receiveCommandModel the model for the receiving end of the command, if found
+ * @param receiver            the receiving component, if found
+ */
+case class ServicesRequiredInfo(
+    name: String,
+    subsystem: String,
+    component: String,
+    receiveCommandModel: Option[ReceiveCommandModel],
+    receiver: Option[ComponentModel],
+    warnings: Boolean = true
+) {
+
+  val warning: Option[String] =
+    if (!warnings || receiveCommandModel.nonEmpty) None
+    else if (receiver.isEmpty) {
+      Some(s"Component $subsystem.$component was not found")
+    }
+    else {
+      Some(s"$subsystem.$component does not define configuration: $name")
+    }
+}
+
+/**
+ * Describes a service provided by this component
+ *
+ * @param serviceModelProvider the basic model for the service
+ * @param requiredBy           list of components that use/require the service
+ */
+case class ServiceProvidedInfo(serviceModelProvider: ServiceModelProvider, requiredBy: List[ComponentModel])
+
+/**
+ * Describes services the component uses and provides
+ *
+ * @param description      optional top level description of the services (in html format, after markdown processing)
+ * @param servicesProvided a list of services provided by this component
+ * @param servicesRequired a list of services required by this component
+ */
+case class Services(
+    description: String,
+    servicesProvided: List[ServiceProvidedInfo],
+    servicesRequired: List[ServicesRequiredInfo]
+) {
+
+  /**
+   * True if at the component provides or requires a service
+   */
+  def nonEmpty: Boolean = servicesProvidedInfo.nonEmpty || servicesRequired.nonEmpty
+
+}
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 /**
  * Class used when creating summary tables

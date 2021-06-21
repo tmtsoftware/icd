@@ -7,6 +7,7 @@ import csw.services.icd.db.StdConfig.FileResources
 import csw.services.icd.db.StdConfig
 import csw.services.icd.db.parser.ServiceModelParser
 import io.swagger.parser.OpenAPIParser
+import io.swagger.v3.parser.OpenAPIV3Parser
 import org.everit.json.schema.loader.SchemaClient
 
 import scala.io.Source
@@ -150,7 +151,7 @@ object IcdValidator {
         List(Problem("error", s"Can't locate ${fileName}"))
       }
       else {
-        val parseResult = new OpenAPIParser().readContents(maybeContents.get, null, null)
+        val parseResult = new OpenAPIV3Parser().readContents(maybeContents.get, null, null)
         parseResult.getMessages.asScala.toList
           .map(Problem("error", _))
       }

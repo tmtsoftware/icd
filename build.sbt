@@ -47,10 +47,14 @@ lazy val `icd-db` = project
         scalaLogging,
         logbackClassic,
         jsoup,
-        swaggerParser
+        swaggerParser,
+        swaggerCodegen,
+        swaggerCodegenCli,
+        swaggerCore
       ) ++
         testScope(scalaTest)
   ) dependsOn icdWebSharedJvm
+
 
 // Command line tool to support visualization of API and ICD relationships
 lazy val `icd-viz` = project

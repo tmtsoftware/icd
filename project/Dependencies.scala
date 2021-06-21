@@ -37,11 +37,11 @@ object Dependencies {
   val plantuml   = "net.sourceforge.plantuml" % "plantuml"    % "1.2021.7"
   val graphDot   = "org.scala-graph"         %% "graph-dot"   % "1.13.0"
 
-  val reactivemongo               = "org.reactivemongo"            %% "reactivemongo"                  % "1.0.4"
-  val play2Reactivemongo          = "org.reactivemongo"            %% "play2-reactivemongo"            % "1.0.4-play28"
-  val reactivemongoPlayJsonCompat = "org.reactivemongo"            %% "reactivemongo-play-json-compat" % "1.0.4-play28"
+  val reactivemongo               = "org.reactivemongo" %% "reactivemongo"                  % "1.0.4"
+  val play2Reactivemongo          = "org.reactivemongo" %% "play2-reactivemongo"            % "1.0.4-play28"
+  val reactivemongoPlayJsonCompat = "org.reactivemongo" %% "reactivemongo-play-json-compat" % "1.0.4-play28"
   // XXX Need to fix indirect dependency conflict
-  val jacksonModuleScala          = "com.fasterxml.jackson.module" %% "jackson-module-scala"           % "2.12.2"
+  val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.12.2"
 
   val diffson = "org.gnieh" %% "diffson-play-json" % "4.1.1"
 
@@ -50,7 +50,11 @@ object Dependencies {
   val scalatags      = "com.lihaoyi"                %% "scalatags"        % ScalaTagsVersion
   val jsoup          = "org.jsoup"                   % "jsoup"            % "1.13.1"
   val jgit           = "org.eclipse.jgit"            % "org.eclipse.jgit" % "5.11.1.202105131744-r"
-  val swaggerParser  = "io.swagger.parser.v3"        % "swagger-parser"   % "2.0.26"
+
+  val swaggerParser     = "io.swagger.parser.v3"  % "swagger-parser"      % "2.0.26"
+  val swaggerCodegen    = "io.swagger.codegen.v3" % "swagger-codegen"     % "3.0.26"
+  val swaggerCodegenCli = "io.swagger.codegen.v3" % "swagger-codegen-cli" % "3.0.26"
+  val swaggerCore       = "io.swagger.core.v3"    % "swagger-core"        % "2.1.9"
 
   val playJson    = "com.typesafe.play" %% "play-json"    % PlayJsonVersion
   val jqueryUi    = "org.webjars"        % "jquery-ui"    % JQueryUiVersion

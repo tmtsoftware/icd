@@ -64,6 +64,7 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean) {
       val publishes      = getPublishes(versionManager.query, icdModels, maybePdfOptions)
       val subscribes     = if (clientApi) getSubscribes(versionManager.query, icdModels, maybePdfOptions) else None
       val commands       = getCommands(versionManager.query, icdModels, maybePdfOptions)
+      val services       = getServices(versionManager.query, icdModels, maybePdfOptions)
       componentModel.map { model =>
         ComponentInfo(model, publishes, subscribes, commands)
       }
@@ -222,6 +223,76 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean) {
    * @param models model objects for component
    */
   private def getCommands(query: IcdDbQuery, models: IcdModels, maybePdfOptions: Option[PdfOptions]): Option[Commands] = {
+    val received = getCommandsReceived(query, models, maybePdfOptions)
+    val sent     = if (clientApi) getCommandsSent(query, models, maybePdfOptions) else Nil
+    models.commandModel match {
+      case None => None
+      case Some(m) =>
+        val desc = m.description
+        if (desc.nonEmpty || sent.nonEmpty || received.nonEmpty)
+          Some(Commands(desc, received, sent))
+        else None
+    }
+  }
+
+  /**
+   * Gets a list of services provided by the component
+   *
+   * @param query  database query handle
+   * @param models model objects for component
+   */
+  private def getServicesProvided(
+                                   query: IcdDbQuery,
+                                   models: IcdModels,
+                                   maybePdfOptions: Option[PdfOptions]
+                                 ): List[ReceivedCommandInfo] = {
+    for {
+      cmd      <- models.commandModel.toList
+      received <- cmd.receive
+    } yield {
+      val senders =
+        if (clientApi)
+          query.getCommandSenders(cmd.subsystem, cmd.component, received.name, maybePdfOptions)
+        else Nil
+      ReceivedCommandInfo(received, senders)
+    }
+  }
+
+  /**
+   * Gets a list of services used by the component
+   *
+   * @param query  database query handle
+   * @param models model objects for component
+   */
+  private def getServicesUsed(
+                               query: IcdDbQuery,
+                               models: IcdModels,
+                               maybePdfOptions: Option[PdfOptions]
+                             ): List[SentCommandInfo] = {
+    val result = for {
+      cmd  <- models.commandModel.toList
+      sent <- cmd.send
+    } yield {
+      val recv = query.getCommand(sent.subsystem, sent.component, sent.name, maybePdfOptions)
+      SentCommandInfo(
+        sent.name,
+        sent.subsystem,
+        sent.component,
+        recv,
+        query.getComponentModel(sent.subsystem, sent.component, maybePdfOptions),
+        displayWarnings
+      )
+    }
+    result
+  }
+
+  /**
+   * Gets a list of services used or provided by the component
+   *
+   * @param query  database query handle
+   * @param models model objects for component
+   */
+  private def getServices(query: IcdDbQuery, models: IcdModels, maybePdfOptions: Option[PdfOptions]): Option[ServiceModel] = {
     val received = getCommandsReceived(query, models, maybePdfOptions)
     val sent     = if (clientApi) getCommandsSent(query, models, maybePdfOptions) else Nil
     models.commandModel match {
