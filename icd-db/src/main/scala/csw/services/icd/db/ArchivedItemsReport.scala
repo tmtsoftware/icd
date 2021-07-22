@@ -121,6 +121,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
     val titleExt                         = maybeSv.map(sv => s" for $sv").getOrElse("")
     val title                            = s"Archived Items Report$titleExt"
     val archivedItems: List[ArchiveInfo] = getArchivedItems
+    val averageEventSize                 = archivedItems.map(_.sizeInBytes).sum / archivedItems.size
     val markup = html(
       head(
         scalatags.Text.tags2.title(title),
@@ -169,7 +170,11 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
           totalsTable(archivedItems),
           if (maybeSv.isEmpty)
             strong(
-              p(s"Total archive space required for one year: ${EventModel.getTotalArchiveSpace(archivedItems.map(_.eventModel))}")
+              p(
+                "Total archive space required for one year: "
+                  + EventModel.getTotalArchiveSpace(archivedItems.map(_.eventModel))
+                  + s". Average event size: $averageEventSize bytes"
+              )
             )
           else span()
         )
