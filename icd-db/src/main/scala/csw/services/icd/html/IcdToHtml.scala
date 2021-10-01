@@ -158,7 +158,9 @@ object IcdToHtml {
       (info.publishes.isDefined && info.publishes.get.nonEmpty
       || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
       || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
-      || info.commands.get.commandsSent.nonEmpty))
+      || info.commands.get.commandsSent.nonEmpty)
+      || info.services.isDefined && (info.services.get.servicesProvided.nonEmpty
+      || info.services.get.servicesRequired.nonEmpty))
     ) {
       markupForComponent(info, nh, forApi, pdfOptions, clientApi)
     }

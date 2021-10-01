@@ -494,7 +494,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       val componentModel: Option[IcdModels.ComponentModel] =
         entry.component.flatMap(coll => ComponentModelBsonParser(getDocVersion(coll), maybePdfOptions))
       val serviceModel: Option[IcdModels.ServiceModel] =
-        entry.services.flatMap(coll => ServiceModelBsonParser(getDocVersion(coll)))
+        entry.services.flatMap(coll => ServiceModelBsonParser(getDocVersion(coll), maybePdfOptions))
       val alarmsModel: Option[IcdModels.AlarmsModel] =
         entry.alarms.flatMap(coll => AlarmsModelBsonParser(getDocVersion(coll), maybePdfOptions))
       val icdModels: List[IcdModels.IcdModel] =

@@ -1,6 +1,6 @@
 package icd.web.shared
 
-import icd.web.shared.ComponentInfo.{Alarms, PublishType}
+import icd.web.shared.ComponentInfo.PublishType
 import icd.web.shared.IcdModels._
 
 object ComponentInfo {
@@ -50,7 +50,7 @@ object ComponentInfo {
       )
     )
 
-    ComponentInfo(info.componentModel, publishes, info.subscribes, commands)
+    ComponentInfo(info.componentModel, publishes, info.subscribes, commands, info.services)
   }
 
   /**
@@ -226,32 +226,30 @@ case class Commands(description: String, commandsReceived: List[ReceivedCommandI
 
 }
 
-//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXxx
 /**
  * Describes a service required by this component
  *
- * @param name                the service name
- * @param subsystem           the subsystem that provides the service
- * @param component           the component that provides the service
- * @param receiveCommandModel the model for the receiving end of the command, if found
- * @param receiver            the receiving component, if found
+ * @param serviceModelClient  describes the client's use of the service
+ * @param maybeServiceModelProvider  describes the service provided, if known
+ * @param provider  the component that should define the service, if known
+ * @param warnings  true if service providergetServicesProvided not found
  */
 case class ServicesRequiredInfo(
-    name: String,
-    subsystem: String,
-    component: String,
-    receiveCommandModel: Option[ReceiveCommandModel],
-    receiver: Option[ComponentModel],
+    serviceModelClient: ServiceModelClient,
+    maybeServiceModelProvider: Option[ServiceModelProvider],
+    provider: Option[ComponentModel],
     warnings: Boolean = true
 ) {
 
   val warning: Option[String] =
-    if (!warnings || receiveCommandModel.nonEmpty) None
-    else if (receiver.isEmpty) {
-      Some(s"Component $subsystem.$component was not found")
+    if (!warnings || maybeServiceModelProvider.nonEmpty) None
+    else if (provider.isEmpty) {
+      Some(s"Component ${serviceModelClient.subsystem}.${serviceModelClient.component} was not found")
     }
     else {
-      Some(s"$subsystem.$component does not define configuration: $name")
+      Some(
+        s"${serviceModelClient.subsystem}.${serviceModelClient.component} does not define configuration: ${serviceModelClient.name}"
+      )
     }
 }
 
@@ -279,11 +277,9 @@ case class Services(
   /**
    * True if at the component provides or requires a service
    */
-  def nonEmpty: Boolean = servicesProvidedInfo.nonEmpty || servicesRequired.nonEmpty
+  def nonEmpty: Boolean = servicesProvided.nonEmpty || servicesRequired.nonEmpty
 
 }
-
-// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 /**
  * Class used when creating summary tables

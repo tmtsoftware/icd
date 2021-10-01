@@ -406,23 +406,26 @@ object IcdModels {
 
   /**
    * A reference to an HTTP service required by this subsystem
-   * @param subsystem the subsystem providing the HTTP service
+   * @param subsystem the subsystem for the component providing the HTTP service
+   * @param component the component providing the HTTP service
    * @param name the name of the service provided
    * @param paths list of routes/paths used (empty means; all paths used)
    */
-  case class ServiceModelClient(subsystem: String, name: String, paths: List[ServicePath])
+  case class ServiceModelClient(subsystem: String, component: String, name: String, paths: List[ServicePath])
 
   /**
    * Lists the HTTP services provided or required by the subsystem component
    *
    * @param subsystem this subsystem
    * @param component this component
+   * @param description an optional description for the services used or provided
    * @param provides HTTP services provided
    * @param requires HTTP services required
    */
   case class ServiceModel(
       subsystem: String,
       component: String,
+      description: String,
       provides: List[ServiceModelProvider],
       requires: List[ServiceModelClient]
   )

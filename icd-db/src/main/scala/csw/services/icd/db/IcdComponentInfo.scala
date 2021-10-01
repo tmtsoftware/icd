@@ -27,7 +27,7 @@ object IcdComponentInfo {
       maybePdfOptions: Option[PdfOptions]
   ): List[ComponentInfo] = {
 
-    val resolvedModelsList = versionManager.getResolvedModels(sv, maybePdfOptions)
+    val resolvedModelsList       = versionManager.getResolvedModels(sv, maybePdfOptions)
     val resolvedTargetModelsList = versionManager.getResolvedModels(targetSv, maybePdfOptions)
 
     resolvedModelsList
@@ -81,9 +81,10 @@ object IcdComponentInfo {
       val publishes      = getPublishes(icdModels, targetModelsList)
       val subscribes     = getSubscribes(icdModels, targetModelsList)
       val commands       = getCommands(versionManager.query, icdModels, targetModelsList, maybePdfOptions)
+      val services       = getServices(versionManager.query, icdModels, targetModelsList, maybePdfOptions)
 
-      if (publishes.isDefined || subscribes.isDefined || commands.isDefined)
-        componentModel.map(ComponentInfo(_, publishes, subscribes, commands))
+      if (publishes.isDefined || subscribes.isDefined || commands.isDefined || services.isDefined)
+        componentModel.map(ComponentInfo(_, publishes, subscribes, commands, services))
       else None
     }
   }
@@ -297,13 +298,13 @@ object IcdComponentInfo {
     val result = for {
       cmd  <- models.commandModel.toList
       sent <- cmd.send
-      recv <- getCommand(sent.subsystem, sent.component, sent.name, targetModelsList)
     } yield {
+      val maybeReceiver = getCommand(sent.subsystem, sent.component, sent.name, targetModelsList)
       SentCommandInfo(
         sent.name,
         sent.subsystem,
         sent.component,
-        Some(recv),
+        maybeReceiver,
         query.getComponentModel(sent.subsystem, sent.component, maybePdfOptions)
       )
     }
@@ -330,6 +331,131 @@ object IcdComponentInfo {
       case Some(m) =>
         if (sent.nonEmpty || received.nonEmpty)
           Some(Commands(m.description, received, sent))
+        else None
+    }
+  }
+
+  /**
+   * Returns the service model provider for the given service, if found.
+   *
+   * @param subsystem        the subsystem that contains the component that provides the service
+   * @param component        the component that provides the service
+   * @param serviceName      the service name
+   * @param targetModelsList the target model objects (from other subsystem in icd)
+   */
+  private def getServiceModelProvider(
+      subsystem: String,
+      component: String,
+      serviceName: String,
+      targetModelsList: List[IcdModels]
+  ): Option[ServiceModelProvider] = {
+    val result = for {
+      icdModels    <- targetModelsList
+      serviceModel <- icdModels.serviceModel
+      if serviceModel.subsystem == subsystem && serviceModel.component == component
+      serviceModelProvider <- serviceModel.provides.find(_.name == serviceName)
+    } yield serviceModelProvider
+
+    result.headOption
+  }
+
+  /**
+   * Returns a list of components that require the given service from the given component/subsystem
+   *
+   * @param subsystem   the service provider subsystem
+   * @param component   the service provider component
+   * @param serviceName the name of the service
+   * @return list containing one item for each component that requires the service
+   */
+  private def getServiceClients(
+      subsystem: String,
+      component: String,
+      serviceName: String,
+      targetModelsList: List[IcdModels]
+  ): List[ComponentModel] = {
+    for {
+      icdModels      <- targetModelsList
+      componentModel <- icdModels.componentModel
+      serviceModel   <- icdModels.serviceModel
+      if serviceModel.requires.exists(s => s.subsystem == subsystem && s.component == component && s.name == serviceName)
+    } yield {
+      componentModel
+    }
+  }
+
+  /**
+   * Gets a list of services provided by the component
+   *
+   * @param models model objects for component
+   * @param targetModelsList model objects for the other component in the ICD
+   */
+  private def getServicesProvided(
+      models: IcdModels,
+      targetModelsList: List[IcdModels]
+  ): List[ServiceProvidedInfo] = {
+    for {
+      serviceModel <- models.serviceModel.toList
+      provides     <- serviceModel.provides
+    } yield {
+      val clientComponents = getServiceClients(serviceModel.subsystem, serviceModel.component, provides.name, targetModelsList)
+      ServiceProvidedInfo(provides, clientComponents)
+    }
+  }
+
+  /**
+   * Gets a list of services required by the component, including information about the components
+   * that provide each service.
+   *
+   * @param query            used to query the db
+   * @param models           the model objects for the component
+   * @param targetModelsList the target model objects
+   */
+  private def getServicesRequired(
+      query: IcdDbQuery,
+      models: IcdModels,
+      targetModelsList: List[IcdModels],
+      maybePdfOptions: Option[PdfOptions]
+  ): List[ServicesRequiredInfo] = {
+    val result = for {
+      serviceModel       <- models.serviceModel.toList
+      serviceModelClient <- serviceModel.requires
+    } yield {
+      val maybeProvider = getServiceModelProvider(
+        serviceModelClient.subsystem,
+        serviceModelClient.component,
+        serviceModelClient.name,
+        targetModelsList
+      )
+      ServicesRequiredInfo(
+        serviceModelClient,
+        maybeProvider,
+        query.getComponentModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions)
+      )
+    }
+    result
+  }
+
+  /**
+   * Gets a list of HTTP services required or provided by the component.
+   *
+   * @param query            used to query the db
+   * @param models           the model objects for the component
+   * @param targetModelsList the target model objects
+   */
+  private def getServices(
+      query: IcdDbQuery,
+      models: IcdModels,
+      targetModelsList: List[IcdModels],
+      maybePdfOptions: Option[PdfOptions]
+  ): Option[Services] = {
+    val provided = getServicesProvided(models, targetModelsList)
+    val required = getServicesRequired(query, models, targetModelsList, maybePdfOptions)
+    models.serviceModel match {
+      case None => None
+      case Some(m) =>
+        val desc = m.description
+        if (desc.nonEmpty || provided.nonEmpty || required.nonEmpty)
+          Some(Services(m.description, provided, required))
         else None
     }
   }

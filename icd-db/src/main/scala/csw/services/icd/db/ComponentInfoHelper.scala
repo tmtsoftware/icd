@@ -66,7 +66,7 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean) {
       val commands       = getCommands(versionManager.query, icdModels, maybePdfOptions)
       val services       = getServices(versionManager.query, icdModels, maybePdfOptions)
       componentModel.map { model =>
-        ComponentInfo(model, publishes, subscribes, commands)
+        ComponentInfo(model, publishes, subscribes, commands, services)
       }
     }
   }
@@ -242,44 +242,43 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean) {
    * @param models model objects for component
    */
   private def getServicesProvided(
-                                   query: IcdDbQuery,
-                                   models: IcdModels,
-                                   maybePdfOptions: Option[PdfOptions]
-                                 ): List[ReceivedCommandInfo] = {
+      query: IcdDbQuery,
+      models: IcdModels,
+      maybePdfOptions: Option[PdfOptions]
+  ): List[ServiceProvidedInfo] = {
     for {
-      cmd      <- models.commandModel.toList
-      received <- cmd.receive
+      serviceModel <- models.serviceModel.toList
+      provides     <- serviceModel.provides
     } yield {
-      val senders =
+      val clientComponents =
         if (clientApi)
-          query.getCommandSenders(cmd.subsystem, cmd.component, received.name, maybePdfOptions)
+          query.getServiceClients(serviceModel.subsystem, serviceModel.component, provides.name, maybePdfOptions)
         else Nil
-      ReceivedCommandInfo(received, senders)
+      ServiceProvidedInfo(provides, clientComponents)
     }
   }
 
   /**
-   * Gets a list of services used by the component
+   * Gets a list of services required by the component
    *
    * @param query  database query handle
    * @param models model objects for component
    */
-  private def getServicesUsed(
-                               query: IcdDbQuery,
-                               models: IcdModels,
-                               maybePdfOptions: Option[PdfOptions]
-                             ): List[SentCommandInfo] = {
+  private def getServicesRequired(
+      query: IcdDbQuery,
+      models: IcdModels,
+      maybePdfOptions: Option[PdfOptions]
+  ): List[ServicesRequiredInfo] = {
     val result = for {
-      cmd  <- models.commandModel.toList
-      sent <- cmd.send
+      serviceModel  <- models.serviceModel.toList
+      serviceModelClient <- serviceModel.requires
     } yield {
-      val recv = query.getCommand(sent.subsystem, sent.component, sent.name, maybePdfOptions)
-      SentCommandInfo(
-        sent.name,
-        sent.subsystem,
-        sent.component,
-        recv,
-        query.getComponentModel(sent.subsystem, sent.component, maybePdfOptions),
+      val maybeServiceModel = query.getServiceModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions)
+      val maybeServiceModelProvider = maybeServiceModel.map(_.provides).flatMap(_.find(_.name == serviceModelClient.name))
+      ServicesRequiredInfo(
+        serviceModelClient,
+        maybeServiceModelProvider,
+        query.getComponentModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions),
         displayWarnings
       )
     }
@@ -292,15 +291,15 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean) {
    * @param query  database query handle
    * @param models model objects for component
    */
-  private def getServices(query: IcdDbQuery, models: IcdModels, maybePdfOptions: Option[PdfOptions]): Option[ServiceModel] = {
-    val received = getCommandsReceived(query, models, maybePdfOptions)
-    val sent     = if (clientApi) getCommandsSent(query, models, maybePdfOptions) else Nil
-    models.commandModel match {
+  private def getServices(query: IcdDbQuery, models: IcdModels, maybePdfOptions: Option[PdfOptions]): Option[Services] = {
+    val provided = getServicesProvided(query, models, maybePdfOptions)
+    val required = if (clientApi) getServicesRequired(query, models, maybePdfOptions) else Nil
+    models.serviceModel match {
       case None => None
       case Some(m) =>
         val desc = m.description
-        if (desc.nonEmpty || sent.nonEmpty || received.nonEmpty)
-          Some(Commands(desc, received, sent))
+        if (desc.nonEmpty || provided.nonEmpty || required.nonEmpty)
+          Some(Services(desc, provided, required))
         else None
     }
   }

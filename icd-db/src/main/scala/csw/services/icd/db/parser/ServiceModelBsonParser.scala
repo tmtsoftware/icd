@@ -1,6 +1,8 @@
 package csw.services.icd.db.parser
 
+import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.{ServiceModel, ServiceModelClient, ServiceModelProvider, ServicePath}
+import icd.web.shared.PdfOptions
 import reactivemongo.api.bson._
 
 /*
@@ -32,6 +34,7 @@ object ServiceModelBsonParser {
 
           ServiceModelClient(
             subsystem = doc.getAsOpt[String](BaseModelBsonParser.subsystemKey).get,
+            component = doc.getAsOpt[String](BaseModelBsonParser.componentKey).get,
             name = doc.getAsOpt[String]("name").get,
             paths = getItems("paths", ServicePathBsonParser(_)).flatten
           )
@@ -52,7 +55,7 @@ object ServiceModelBsonParser {
     }
   }
 
-  def apply(doc: BSONDocument): Option[ServiceModel] = {
+  def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): Option[ServiceModel] = {
     if (doc.isEmpty) None
     else
       Some {
@@ -62,6 +65,7 @@ object ServiceModelBsonParser {
         ServiceModel(
           subsystem = doc.getAsOpt[String](BaseModelBsonParser.subsystemKey).get,
           component = doc.getAsOpt[String](BaseModelBsonParser.componentKey).get,
+          description = doc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
           provides = getItems("provides", ServiceModelProviderBsonParser(_)).flatten,
           requires = getItems("requires", ServiceModelClientBsonParser(_)).flatten
         )

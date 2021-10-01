@@ -412,6 +412,21 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
   }
 
   /**
+   * Returns an object describing the "services" provided or required by the named component in the named subsystem
+   */
+  def getServiceModel(component: ComponentModel, maybePdfOptions: Option[PdfOptions]): Option[ServiceModel] =
+    getServiceModel(component.subsystem, component.component, maybePdfOptions)
+
+  def getServiceModel(subsystem: String, component: String, maybePdfOptions: Option[PdfOptions]): Option[ServiceModel] = {
+    val collName = getServiceCollectionName(subsystem, component)
+    if (collectionExists(collName)) {
+      val coll = db.collection[BSONCollection](collName)
+      collectionHead(coll).flatMap(ServiceModelBsonParser(_, maybePdfOptions))
+    }
+    else None
+  }
+
+  /**
    * Returns an object describing the named command, defined for the named component in the named subsystem
    */
   def getCommand(
@@ -441,6 +456,27 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
       componentModel <- getComponents(maybePdfOptions)
       commandModel   <- getCommandModel(componentModel, maybePdfOptions)
       _              <- commandModel.send.find(s => s.subsystem == subsystem && s.component == component && s.name == commandName)
+    } yield componentModel
+  }
+
+  /**
+   * Returns a list of components that require the given service from the given component/subsystem
+   *
+   * @param subsystem   the service provider subsystem
+   * @param component   the service provider component
+   * @param serviceName the name of the service
+   * @return list containing one item for each component that requires the service
+   */
+  def getServiceClients(
+                         subsystem: String,
+                         component: String,
+                         serviceName: String,
+                         maybePdfOptions: Option[PdfOptions]
+  ): List[ComponentModel] = {
+    for {
+      componentModel <- getComponents(maybePdfOptions)
+      serviceModel   <- getServiceModel(componentModel, maybePdfOptions)
+      _              <- serviceModel.requires.find(s => s.subsystem == subsystem && s.component == component && s.name == serviceName)
     } yield componentModel
   }
 
@@ -476,7 +512,7 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
       val alarmsModel: Option[AlarmsModel] =
         entry.alarms.flatMap(coll => collectionHead(coll).flatMap(AlarmsModelBsonParser(_, maybePdfOptions)))
       val serviceModel: Option[ServiceModel] =
-        entry.services.flatMap(coll => collectionHead(coll).flatMap(ServiceModelBsonParser(_)))
+        entry.services.flatMap(coll => collectionHead(coll).flatMap(ServiceModelBsonParser(_, maybePdfOptions)))
       val icdModels: List[IcdModel] =
         entry.icds.flatMap(coll => collectionHead(coll).flatMap(IcdModelBsonParser(_, maybePdfOptions)))
       IcdModels(subsystemModel, componentModel, publishModel, subscribeModel, commandModel, alarmsModel, serviceModel, icdModels)
