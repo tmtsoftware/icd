@@ -47,10 +47,7 @@ lazy val `icd-db` = project
         scalaLogging,
         logbackClassic,
         jsoup,
-        swaggerParser,
-        swaggerCodegen,
-        swaggerCodegenCli,
-        swaggerCore
+        swaggerParser
       ) ++
         testScope(scalaTest)
   ) dependsOn icdWebSharedJvm

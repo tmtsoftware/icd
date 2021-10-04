@@ -50,15 +50,10 @@ object Dependencies {
   val scalatags      = "com.lihaoyi"                %% "scalatags"        % ScalaTagsVersion
   val jsoup          = "org.jsoup"                   % "jsoup"            % "1.14.3"
   val jgit           = "org.eclipse.jgit"            % "org.eclipse.jgit" % "5.13.0.202109080827-r"
-
-  val swaggerParser     = "io.swagger.parser.v3"  % "swagger-parser"      % "2.0.28"
-  val swaggerCodegen    = "io.swagger.codegen.v3" % "swagger-codegen"     % "3.0.27"
-  val swaggerCodegenCli = "io.swagger.codegen.v3" % "swagger-codegen-cli" % "3.0.27"
-  val swaggerCore       = "io.swagger.core.v3"    % "swagger-core"        % "2.1.11"
-
-  val playJson    = "com.typesafe.play" %% "play-json"    % PlayJsonVersion
-  val jqueryUi    = "org.webjars"        % "jquery-ui"    % JQueryUiVersion
-  val webjarsPlay = "org.webjars"       %% "webjars-play" % "2.8.8"
+  val swaggerParser  = "io.swagger.parser.v3"        % "swagger-parser"   % "2.0.28"
+  val playJson       = "com.typesafe.play"          %% "play-json"        % PlayJsonVersion
+  val jqueryUi       = "org.webjars"                 % "jquery-ui"        % JQueryUiVersion
+  val webjarsPlay    = "org.webjars"                %% "webjars-play"     % "2.8.8"
   // Note: Updating to bootstrap-4 could be a lot of work...
   val bootstrap      = "org.webjars"       % "bootstrap"       % BootstrapVersion
   val bootstrapTable = "org.webjars.bower" % "bootstrap-table" % BootstrapTableVersion

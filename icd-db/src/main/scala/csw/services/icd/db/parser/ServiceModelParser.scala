@@ -21,7 +21,7 @@ object ServiceModelParser {
 
   def apply(config: Config): ServiceModel =
     ServiceModel(
-      description = config.getString("description"),
+      description = if (config.hasPath("description")) config.getString("description") else "",
       subsystem = config.getString("subsystem"),
       component = config.getString("component"),
       provides = if (config.hasPath("provides")) {

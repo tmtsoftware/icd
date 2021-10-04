@@ -183,7 +183,8 @@ object IcdToHtml {
       raw(info.componentModel.description),
       publishMarkup(info.componentModel, info.publishes, nh, forApi, pdfOptions, clientApi),
       if (forApi && clientApi) subscribeMarkup(info.componentModel, info.subscribes, nh, pdfOptions) else div(),
-      commandsMarkup(info.componentModel, info.commands, nh, forApi, pdfOptions, clientApi)
+      commandsMarkup(info.componentModel, info.commands, nh, forApi, pdfOptions, clientApi),
+      servicesMarkup(info.componentModel, info.services, nh, forApi, pdfOptions, clientApi)
     )
   }
 
@@ -326,6 +327,130 @@ object IcdToHtml {
     }
   }
 
+
+  // Generates the markup for the services section (description plus provides and requires)
+  private def servicesMarkup(
+                              component: ComponentModel,
+                              maybeServices: Option[Services],
+                              nh: NumberedHeadings,
+                              forApi: Boolean,
+                              pdfOptions: PdfOptions,
+                              clientApi: Boolean
+                            ): Text.TypedTag[String] = {
+    import scalatags.Text.all._
+    maybeServices match {
+      case None => div()
+      case Some(services) =>
+        if (services.servicesProvided.nonEmpty || (services.servicesRequired.nonEmpty && forApi && clientApi)) {
+          div(
+            nh.H3(s"Services for ${component.component}"),
+            raw(services.description),
+            servicesProvidedMarkup(component, services.servicesProvided, nh, forApi, pdfOptions, clientApi),
+            if (forApi && clientApi) servicesRequiredMarkup(component, services.servicesRequired, nh, pdfOptions) else div()
+          )
+        }
+        else div()
+    }
+  }
+
+  // Generates the HTML markup to display the HTTP services a component requires
+  private def servicesRequiredMarkup(
+                                  component: ComponentModel,
+                                  info: List[ServicesRequiredInfo],
+                                  nh: NumberedHeadings,
+                                  pdfOptions: PdfOptions
+                                ): Text.TypedTag[String] = {
+    import scalatags.Text.all._
+
+    // XXX TODO FIXME
+    div()
+
+//    val compName   = component.component
+//    val senderInfo = span(strong("Sender: "), s"${component.subsystem}.$compName")
+//
+//    if (info.isEmpty) div()
+//    else {
+//      div(
+//        nh.H4(sentCommandsTitle(compName)),
+//        for (s <- info) yield {
+//          val receiveCommandModel = s.receiveCommandModel
+//          val receiverStr         = s.receiver.map(r => s"${r.subsystem}.${r.component}").getOrElse("none")
+//          val receiverInfo        = span(strong("Receiver: "), receiverStr)
+//          val linkId              = idFor(compName, "sends", "Commands", s.subsystem, s.component, s.name)
+//          val showDetails         = pdfOptions.details || pdfOptions.expandedIds.contains(linkId)
+//          div(cls := "nopagebreak")(
+//            nh.H5(s"Command: ${s.name}", linkId),
+//            p(senderInfo, ", ", receiverInfo),
+//            receiveCommandModel match {
+//              case Some(m) if showDetails =>
+//                div(
+//                  if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
+//                  if (m.preconditions.isEmpty) div()
+//                  else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
+//                  if (m.postconditions.isEmpty) div()
+//                  else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
+//                  raw(m.description),
+//                  if (m.parameters.isEmpty) div() else parameterListMarkup(m.name, m.parameters, m.requiredArgs)
+//                )
+//              case Some(m) =>
+//                div(
+//                  raw(m.description)
+//                )
+//              case None => s.warning.map(msg => p(em(" Warning: ", msg)))
+//            }
+//          )
+//        }
+//      )
+//    }
+  }
+
+  // Generates the HTML markup to display the HTTP services a component provides
+  private def servicesProvidedMarkup(
+                                      component: ComponentModel,
+                                      info: List[ServiceProvidedInfo],
+                                      nh: NumberedHeadings,
+                                      forApi: Boolean,
+                                      pdfOptions: PdfOptions,
+                                      clientApi: Boolean
+                                    ): Text.TypedTag[String] = {
+    import scalatags.Text.all._
+
+    val compName     = component.component
+    val providerInfo = span(strong("Service Provider: "), s"${component.subsystem}.$compName")
+
+    if (info.isEmpty) div()
+    else {
+      div(
+        nh.H4(servicesProvidedTitle(compName)),
+        for (s <- info) yield {
+          val m = s.serviceModelProvider
+          val consumerInfo = if (clientApi) {
+            val senders = s.requiredBy.distinct.map(s => s"${s.subsystem}.${s.component}").mkString(", ")
+            span(strong(s"Consumers: "), if (senders.isEmpty) "none" else senders)
+          }
+          else span
+          val linkId      = idFor(compName, "provides", "Services", component.subsystem, compName, m.name)
+          val showDetails = pdfOptions.details || pdfOptions.expandedIds.contains(linkId)
+          div(cls := "nopagebreak")(
+            nh.H5(s"HTTP Service: ${m.name}", linkId),
+            if (clientApi) p(consumerInfo, ", ", providerInfo) else p(providerInfo),
+            if (showDetails) {
+              div(
+//                XXX put open API HTML here!
+              )
+            }
+            else
+              div(
+                // XXX TODO: Need an extra description field?
+                p(s"Details of the ${m.name} HTTP service are not included.")
+              )
+          )
+        }
+      )
+    }
+  }
+
+
   // Insert a hyperlink from "struct" to the table listing the fields in the struct
   private def getTypeStr(fieldName: String, typeStr: String): String = {
     import scalatags.Text.all._
@@ -378,6 +503,8 @@ object IcdToHtml {
   }
 
   private def receivedCommandsTitle(compName: String): String = s"Command Configurations Received by $compName"
+
+  private def servicesProvidedTitle(compName: String): String = s"HTTP Services provided by $compName"
 
   // Generates the HTML markup to display the component's subscribe information
   private def subscribeMarkup(

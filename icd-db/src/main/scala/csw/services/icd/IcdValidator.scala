@@ -6,7 +6,6 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions, ConfigRe
 import csw.services.icd.db.StdConfig.FileResources
 import csw.services.icd.db.StdConfig
 import csw.services.icd.db.parser.ServiceModelParser
-import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.parser.OpenAPIV3Parser
 import org.everit.json.schema.loader.SchemaClient
 

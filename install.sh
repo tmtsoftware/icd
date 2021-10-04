@@ -10,8 +10,15 @@ export SCALAJS_PROD=true
 dir=../install_icd
 rm -rf $dir
 
-# Make sure we can find sbt
+# Make sure we can find sbt for the build
 hash sbt 2>/dev/null || { echo >&2 "Please install sbt first.  Aborting."; exit 1; }
+
+# swagger-codegen is required for generating HTML from OpenApi JSON files for HTTP service APIs
+hash cs 2>/dev/null || { echo >&2 "Please install cs (https://get-coursier.io/) first.  Aborting."; exit 1; }
+hash swagger-codegen 2>/dev/null || { echo >&2 "Please install swagger-codegen first (use: cs install --contrib swagger-codegen).  Aborting."; exit 1; }
+
+# Graphviz is required for UML support and icd-viz
+hash dot 2>/dev/null || { echo >&2 "Please install graphviz first (See https://graphviz.org/download/).  Aborting."; exit 1; }
 
 # Some scalajs related sbt plugins depend on node.js,
 # but the executable has different names on different systems
@@ -26,21 +33,15 @@ fi
 # Should not be needed? See https://github.com/sbt/sbt-less/issues/95
 export SBT_OPTS="-Dsbt.jse.engineType=Node -Dsbt.jse.command=$NODEJS"
 
-# Graphviz is required for UML support and icd-viz
-if ! hash dot 2>/dev/null ; then
-    echo >&2 "Please install graphviz first (See https://graphviz.org/download/).  Aborting."
-    exit 1
-fi
-
 for i in $dir $dir/bin $dir/lib $dir/conf; do test -d $i || mkdir $i; done
 
 test "$1" == "-nc" || sbt clean
 
 sbt stage
 
-for i in bin lib; do
+for i in bin lib conf; do
     for j in target/universal/stage/$i/* ; do
-        cp -f $j $dir/$i
+        cp -rf $j $dir/$i
     done
 done
 
