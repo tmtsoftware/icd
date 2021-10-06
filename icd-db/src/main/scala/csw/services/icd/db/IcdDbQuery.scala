@@ -421,7 +421,7 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
     val collName = getServiceCollectionName(subsystem, component)
     if (collectionExists(collName)) {
       val coll = db.collection[BSONCollection](collName)
-      collectionHead(coll).flatMap(ServiceModelBsonParser(_, maybePdfOptions))
+      collectionHead(coll).flatMap(ServiceModelBsonParser(db, _, maybePdfOptions))
     }
     else None
   }
@@ -512,7 +512,7 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
       val alarmsModel: Option[AlarmsModel] =
         entry.alarms.flatMap(coll => collectionHead(coll).flatMap(AlarmsModelBsonParser(_, maybePdfOptions)))
       val serviceModel: Option[ServiceModel] =
-        entry.services.flatMap(coll => collectionHead(coll).flatMap(ServiceModelBsonParser(_, maybePdfOptions)))
+        entry.services.flatMap(coll => collectionHead(coll).flatMap(ServiceModelBsonParser(db, _, maybePdfOptions)))
       val icdModels: List[IcdModel] =
         entry.icds.flatMap(coll => collectionHead(coll).flatMap(IcdModelBsonParser(_, maybePdfOptions)))
       IcdModels(subsystemModel, componentModel, publishModel, subscribeModel, commandModel, alarmsModel, serviceModel, icdModels)

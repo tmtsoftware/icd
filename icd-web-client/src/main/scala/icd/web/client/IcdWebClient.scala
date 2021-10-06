@@ -466,7 +466,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   /**
-   * Updates the main display to match the selected subsystem and component(s)
+   * Updates the main display to match the selected subsystem(s) and component(s)
    *
    * @return a future indicating when the changes are done
    */

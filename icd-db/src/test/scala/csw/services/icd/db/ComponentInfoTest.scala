@@ -98,11 +98,11 @@ class ComponentInfoTest extends AnyFunSuite {
     assert(problems2.isEmpty)
     db.query.afterIngestFiles(problems2, dbName)
 
-    new ComponentInfoHelper(displayWarnings = false, clientApi = true)
+    new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = None)
       .getComponentInfo(versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None)
       .foreach(checkInfo(_, clientApi = true))
 
-    new ComponentInfoHelper(displayWarnings = false, clientApi = false)
+    new ComponentInfoHelper(displayWarnings = false, clientApi = false, maybeStaticHtml = None)
       .getComponentInfo(versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None)
       .foreach(checkInfo(_, clientApi = false))
   }

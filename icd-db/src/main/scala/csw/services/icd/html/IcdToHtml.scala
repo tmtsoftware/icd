@@ -327,16 +327,15 @@ object IcdToHtml {
     }
   }
 
-
   // Generates the markup for the services section (description plus provides and requires)
   private def servicesMarkup(
-                              component: ComponentModel,
-                              maybeServices: Option[Services],
-                              nh: NumberedHeadings,
-                              forApi: Boolean,
-                              pdfOptions: PdfOptions,
-                              clientApi: Boolean
-                            ): Text.TypedTag[String] = {
+      component: ComponentModel,
+      maybeServices: Option[Services],
+      nh: NumberedHeadings,
+      forApi: Boolean,
+      pdfOptions: PdfOptions,
+      clientApi: Boolean
+  ): Text.TypedTag[String] = {
     import scalatags.Text.all._
     maybeServices match {
       case None => div()
@@ -355,11 +354,11 @@ object IcdToHtml {
 
   // Generates the HTML markup to display the HTTP services a component requires
   private def servicesRequiredMarkup(
-                                  component: ComponentModel,
-                                  info: List[ServicesRequiredInfo],
-                                  nh: NumberedHeadings,
-                                  pdfOptions: PdfOptions
-                                ): Text.TypedTag[String] = {
+      component: ComponentModel,
+      info: List[ServicesRequiredInfo],
+      nh: NumberedHeadings,
+      pdfOptions: PdfOptions
+  ): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
     // XXX TODO FIXME
@@ -406,13 +405,13 @@ object IcdToHtml {
 
   // Generates the HTML markup to display the HTTP services a component provides
   private def servicesProvidedMarkup(
-                                      component: ComponentModel,
-                                      info: List[ServiceProvidedInfo],
-                                      nh: NumberedHeadings,
-                                      forApi: Boolean,
-                                      pdfOptions: PdfOptions,
-                                      clientApi: Boolean
-                                    ): Text.TypedTag[String] = {
+      component: ComponentModel,
+      info: List[ServiceProvidedInfo],
+      nh: NumberedHeadings,
+      forApi: Boolean,
+      pdfOptions: PdfOptions,
+      clientApi: Boolean
+  ): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
     val compName     = component.component
@@ -436,7 +435,7 @@ object IcdToHtml {
             if (clientApi) p(consumerInfo, ", ", providerInfo) else p(providerInfo),
             if (showDetails) {
               div(
-//                XXX put open API HTML here!
+                raw(s.html)
               )
             }
             else
@@ -449,7 +448,6 @@ object IcdToHtml {
       )
     }
   }
-
 
   // Insert a hyperlink from "struct" to the table listing the fields in the struct
   private def getTypeStr(fieldName: String, typeStr: String): String = {

@@ -258,8 +258,9 @@ case class ServicesRequiredInfo(
  *
  * @param serviceModelProvider the basic model for the service
  * @param requiredBy           list of components that use/require the service
+ * @param html                 holds the HTML generated from serviceModelProvider.openApi
  */
-case class ServiceProvidedInfo(serviceModelProvider: ServiceModelProvider, requiredBy: List[ComponentModel])
+case class ServiceProvidedInfo(serviceModelProvider: ServiceModelProvider, requiredBy: List[ComponentModel], html: String)
 
 /**
  * Describes services the component uses and provides

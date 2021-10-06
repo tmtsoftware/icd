@@ -1,6 +1,7 @@
 package csw.services.icd.db
 
 import csw.services.icd.db.IcdDbQuery.Subscribed
+import csw.services.icd.html.OpenApiToHtml
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels._
 import icd.web.shared._
@@ -18,13 +19,17 @@ object IcdComponentInfo {
    * @param versionManager used to access the database
    * @param sv the subsystem
    * @param targetSv the target subsystem of the ICD
+   * @param maybePdfOptions optional settings used when converting Markdown to HTML for use in PDF output
+   * @param staticHtml for services documented by OpenApi JSON, determines the type of HTML generated
+   *                   (static is plain HTML, non-static includes JavaScript)
    * @return an object containing information about the component
    */
   def getComponentInfoList(
       versionManager: IcdVersionManager,
       sv: SubsystemWithVersion,
       targetSv: SubsystemWithVersion,
-      maybePdfOptions: Option[PdfOptions]
+      maybePdfOptions: Option[PdfOptions],
+      staticHtml: Boolean
   ): List[ComponentInfo] = {
 
     val resolvedModelsList       = versionManager.getResolvedModels(sv, maybePdfOptions)
@@ -36,7 +41,8 @@ object IcdComponentInfo {
           versionManager,
           Some(m),
           resolvedTargetModelsList,
-          maybePdfOptions
+          maybePdfOptions,
+          staticHtml
         )
       )
       .map(ComponentInfo.applyIcdFilter)
@@ -68,20 +74,24 @@ object IcdComponentInfo {
    * @param versionManager used to access versions of components
    * @param models    the component models for subsystem1
    * @param targetModelsList    the component models for the target subsystem
+   * @param maybePdfOptions optional settings used when converting Markdown to HTML for use in PDF output
+   * @param staticHtml for services documented by OpenApi JSON, determines the type of HTML generated
+   *                   (static is plain HTML, non-static includes JavaScript)
    * @return an object containing information about the component
    */
   private def getComponentInfoFromModels(
       versionManager: IcdVersionManager,
       models: Option[IcdModels],
       targetModelsList: List[IcdModels],
-      maybePdfOptions: Option[PdfOptions]
+      maybePdfOptions: Option[PdfOptions],
+      staticHtml: Boolean
   ): Option[ComponentInfo] = {
     models.flatMap { icdModels =>
       val componentModel = icdModels.componentModel
       val publishes      = getPublishes(icdModels, targetModelsList)
       val subscribes     = getSubscribes(icdModels, targetModelsList)
       val commands       = getCommands(versionManager.query, icdModels, targetModelsList, maybePdfOptions)
-      val services       = getServices(versionManager.query, icdModels, targetModelsList, maybePdfOptions)
+      val services       = getServices(versionManager.query, icdModels, targetModelsList, maybePdfOptions, staticHtml)
 
       if (publishes.isDefined || subscribes.isDefined || commands.isDefined || services.isDefined)
         componentModel.map(ComponentInfo(_, publishes, subscribes, commands, services))
@@ -388,17 +398,21 @@ object IcdComponentInfo {
    *
    * @param models model objects for component
    * @param targetModelsList model objects for the other component in the ICD
+   * @param staticHtml for services documented by OpenApi JSON, determines the type of HTML generated
+   *                   (static is plain HTML, non-static includes JavaScript)
    */
   private def getServicesProvided(
       models: IcdModels,
-      targetModelsList: List[IcdModels]
+      targetModelsList: List[IcdModels],
+      staticHtml: Boolean
   ): List[ServiceProvidedInfo] = {
     for {
       serviceModel <- models.serviceModel.toList
       provides     <- serviceModel.provides
     } yield {
       val clientComponents = getServiceClients(serviceModel.subsystem, serviceModel.component, provides.name, targetModelsList)
-      ServiceProvidedInfo(provides, clientComponents)
+      val html = OpenApiToHtml.getHtml(provides.openApi, staticHtml)
+      ServiceProvidedInfo(provides, clientComponents, html)
     }
   }
 
@@ -441,14 +455,18 @@ object IcdComponentInfo {
    * @param query            used to query the db
    * @param models           the model objects for the component
    * @param targetModelsList the target model objects
+   * @param maybePdfOptions optional settings used when converting Markdown to HTML for use in PDF output
+   * @param staticHtml for services documented by OpenApi JSON, determines the type of HTML generated
+   *                   (static is plain HTML, non-static includes JavaScript)
    */
   private def getServices(
       query: IcdDbQuery,
       models: IcdModels,
       targetModelsList: List[IcdModels],
-      maybePdfOptions: Option[PdfOptions]
+      maybePdfOptions: Option[PdfOptions],
+      staticHtml: Boolean
   ): Option[Services] = {
-    val provided = getServicesProvided(models, targetModelsList)
+    val provided = getServicesProvided(models, targetModelsList, staticHtml)
     val required = getServicesRequired(query, models, targetModelsList, maybePdfOptions)
     models.serviceModel match {
       case None => None

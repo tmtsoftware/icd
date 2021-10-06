@@ -28,7 +28,7 @@ class ArchivedItemsTest extends AnyFunSuite {
     for (p <- problems) println(p)
     db.query.afterIngestFiles(problems, dbName)
 
-    new ComponentInfoHelper(displayWarnings = false, clientApi = false)
+    new ComponentInfoHelper(displayWarnings = false, clientApi = false, maybeStaticHtml = None)
       .getComponentInfo(versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None)
       .foreach { info =>
         assert(info.componentModel.component == "lgsWfs")

@@ -98,6 +98,9 @@ POST        /unpublishIcd                               controllers.Application.
 # Updates the cache of published APIs and ICDs (in case new ones were published)
 POST        /updatePublished                            controllers.Application.updatePublished()
 
+# Gets the dynamic HTML for a given OpenApi JSON
+POST        /openApiToHtml                              controllers.Application.openApiToDynamicHtml()
+
 # Gets information about the ICD between two subsystems
 GET         /icdModelList/:subsystem/:target             controllers.Application.icdModelList(subsystem, version: Option[String], target, targetVersion: Option[String])
 

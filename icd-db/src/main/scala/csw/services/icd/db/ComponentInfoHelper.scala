@@ -1,5 +1,6 @@
 package csw.services.icd.db
 
+import csw.services.icd.html.OpenApiToHtml
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels._
 import icd.web.shared._
@@ -10,9 +11,12 @@ import icd.web.shared._
  *
  * @param displayWarnings if true warn when no publishers are found for a subscribed event etc.
  * @param clientApi if true include subscribed events and sent commands
+ * @param maybeStaticHtml  for services documented by OpenApi JSON, determines the type of HTML generated
+ *                       (static (true) is plain HTML, non-static (false) includes JavaScript)
+ *                       A value of None means don't generate the HTML at all.
  */
 //noinspection DuplicatedCode
-class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean) {
+class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeStaticHtml: Option[Boolean]) {
 
   /**
    * Query the database for information about all the subsystem's components
@@ -254,7 +258,8 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean) {
         if (clientApi)
           query.getServiceClients(serviceModel.subsystem, serviceModel.component, provides.name, maybePdfOptions)
         else Nil
-      ServiceProvidedInfo(provides, clientComponents)
+      val html = maybeStaticHtml.map(staticHtml => OpenApiToHtml.getHtml(provides.openApi, staticHtml)).getOrElse("<div/>")
+      ServiceProvidedInfo(provides, clientComponents, html)
     }
   }
 
@@ -270,10 +275,10 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean) {
       maybePdfOptions: Option[PdfOptions]
   ): List[ServicesRequiredInfo] = {
     val result = for {
-      serviceModel  <- models.serviceModel.toList
+      serviceModel       <- models.serviceModel.toList
       serviceModelClient <- serviceModel.requires
     } yield {
-      val maybeServiceModel = query.getServiceModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions)
+      val maybeServiceModel         = query.getServiceModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions)
       val maybeServiceModelProvider = maybeServiceModel.map(_.provides).flatMap(_.find(_.name == serviceModelClient.name))
       ServicesRequiredInfo(
         serviceModelClient,

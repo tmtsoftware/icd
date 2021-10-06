@@ -393,7 +393,8 @@ object IcdModels {
   /**
    * Describes an HTTP service provided by this subsystem
    * @param name name of the service
-   * @param openApi name of file containing OpenApi description of the service
+   * @param openApi originally holds the name of file containing OpenApi description of the service
+   *                (When read from the icd database this field then holds the contents of the OpenApi JSON file.)
    */
   case class ServiceModelProvider(name: String, openApi: String)
 

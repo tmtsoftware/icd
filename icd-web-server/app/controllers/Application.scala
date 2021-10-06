@@ -18,6 +18,7 @@ import play.api.mvc._
 import play.api.{Configuration, Environment, Mode}
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.util.Timeout
+import csw.services.icd.html.OpenApiToHtml
 import icd.web.shared.IcdModels.{EventModel, IcdModel}
 
 import java.net.URLDecoder
@@ -712,6 +713,30 @@ class Application @Inject() (
     authAction {
       appActor ? UpdatePublished
       Ok.as(JSON)
+    }
+
+  /**
+   * Gets the dynamic HTML for a given OpenApi JSON
+   */
+  def openApiToDynamicHtml() =
+    authAction.async { implicit request =>
+      val maybeOpenApiJson = request.body.asJson.map(_.toString())
+      if (maybeOpenApiJson.isEmpty) {
+        Future(BadRequest("Missing POST data (Open API JSON)"))
+      }
+      else {
+        val resp: Future[Try[String]] = appActor ? (ref => OpenApiToDynamicHtml(maybeOpenApiJson.get, ref))
+        resp.map {
+          case Success(html) =>
+            Ok(Json.toJson(html))
+          case Failure(ex) =>
+            ex match {
+              case ex: Exception =>
+                ex.printStackTrace()
+                BadRequest(ex.getMessage)
+            }
+        }
+      }
     }
 
   /**

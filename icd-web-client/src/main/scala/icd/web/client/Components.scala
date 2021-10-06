@@ -183,7 +183,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
-   * Adds (appends) components to the display.
+   * Adds components to the display.
    *
    * @param sv                   the selected subsystem, version and optional single component
    * @param maybeTargetSubsystem optional target subsystem, version, optional component
@@ -209,7 +209,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         maybeTargetSubsystem
           .map(getSubsystemInfo(_).map(i => Some(i)))
           .getOrElse(Future.successful(None))
-      icdInfoList <- if (isIcd) getIcdModelList(sv, maybeTargetSubsystem.get) else Future.successful(Nil)
+      icdInfoList    <- if (isIcd) getIcdModelList(sv, maybeTargetSubsystem.get) else Future.successful(Nil)
       infoList       <- getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems, clientApi)
       targetInfoList <- getComponentInfo(maybeTargetSubsystem, Some(sv), searchAllSubsystems, clientApi)
     } yield {
@@ -852,6 +852,116 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
+  private def servicesProvidedTitle(compName: String): String = s"HTTP Services provided by $compName"
+
+  // Generates the markup for the services section (description plus provides and requires)
+  private def servicesMarkup(
+      component: ComponentModel,
+      maybeServices: Option[Services],
+      forApi: Boolean,
+      clientApi: Boolean
+  ) = {
+    import scalatags.JsDom.all._
+    maybeServices match {
+      case None => div()
+      case Some(services) =>
+        if (services.servicesProvided.nonEmpty || (services.servicesRequired.nonEmpty && forApi && clientApi)) {
+          div(
+            h3(s"Services for ${component.component}"),
+            raw(services.description),
+            servicesProvidedMarkup(component, services.servicesProvided, forApi, clientApi),
+            if (forApi && clientApi) servicesRequiredMarkup(component, services.servicesRequired) else div()
+          )
+        }
+        else div()
+    }
+  }
+
+  // Generates the HTML markup to display the HTTP services a component requires
+  private def servicesRequiredMarkup(
+      component: ComponentModel,
+      info: List[ServicesRequiredInfo]
+  ) = {
+    import scalatags.JsDom.all._
+
+    // XXX TODO FIXME
+    div()
+
+    //    val compName   = component.component
+    //    val senderInfo = span(strong("Sender: "), s"${component.subsystem}.$compName")
+    //
+    //    if (info.isEmpty) div()
+    //    else {
+    //      div(
+    //        nh.H4(sentCommandsTitle(compName)),
+    //        for (s <- info) yield {
+    //          val receiveCommandModel = s.receiveCommandModel
+    //          val receiverStr         = s.receiver.map(r => s"${r.subsystem}.${r.component}").getOrElse("none")
+    //          val receiverInfo        = span(strong("Receiver: "), receiverStr)
+    //          val linkId              = idFor(compName, "sends", "Commands", s.subsystem, s.component, s.name)
+    //          val showDetails         = pdfOptions.details || pdfOptions.expandedIds.contains(linkId)
+    //          div(cls := "nopagebreak")(
+    //            nh.H5(s"Command: ${s.name}", linkId),
+    //            p(senderInfo, ", ", receiverInfo),
+    //            receiveCommandModel match {
+    //              case Some(m) if showDetails =>
+    //                div(
+    //                  if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
+    //                  if (m.preconditions.isEmpty) div()
+    //                  else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
+    //                  if (m.postconditions.isEmpty) div()
+    //                  else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
+    //                  raw(m.description),
+    //                  if (m.parameters.isEmpty) div() else parameterListMarkup(m.name, m.parameters, m.requiredArgs)
+    //                )
+    //              case Some(m) =>
+    //                div(
+    //                  raw(m.description)
+    //                )
+    //              case None => s.warning.map(msg => p(em(" Warning: ", msg)))
+    //            }
+    //          )
+    //        }
+    //      )
+    //    }
+  }
+
+  // Generates the HTML markup to display the HTTP services a component provides
+  private def servicesProvidedMarkup(
+      component: ComponentModel,
+      info: List[ServiceProvidedInfo],
+      forApi: Boolean,
+      clientApi: Boolean
+  ) = {
+    import scalatags.JsDom.all._
+
+    val compName     = component.component
+    val providerInfo = span(strong("Service Provider: "), s"${component.subsystem}.$compName")
+
+    if (info.isEmpty) div()
+    else {
+      div(
+        h4(servicesProvidedTitle(compName)),
+        for (s <- info) yield {
+          val m = s.serviceModelProvider
+          val consumerInfo = if (clientApi) {
+            val senders = s.requiredBy.distinct.map(s => s"${s.subsystem}.${s.component}").mkString(", ")
+            span(strong(s"Consumers: "), if (senders.isEmpty) "none" else senders)
+          }
+          else span
+          val linkId = idFor(compName, "provides", "Services", component.subsystem, compName, m.name)
+          div(cls := "nopagebreak")(
+            h5(s"HTTP Service: ${m.name}", linkId),
+            if (clientApi) p(consumerInfo, ", ", providerInfo) else p(providerInfo),
+            div(
+              raw(s.html)
+            )
+          )
+        }
+      )
+    }
+  }
+
   // Generates a one line table with basic component information
   private def componentInfoTableMarkup(info: ComponentInfo) = {
     import scalatags.JsDom.all._
@@ -895,7 +1005,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       raw(info.componentModel.description),
       publishMarkup(info.componentModel, info.publishes, forApi, clientApi),
       if (clientApi) subscribeMarkup(info.componentModel, info.subscribes) else span,
-      commandsMarkup(info.componentModel, info.commands, clientApi)
+      commandsMarkup(info.componentModel, info.commands, clientApi),
+      servicesMarkup(info.componentModel, info.services, forApi, clientApi)
     )
   }
 
