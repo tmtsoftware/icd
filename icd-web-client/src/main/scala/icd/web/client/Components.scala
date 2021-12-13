@@ -936,8 +936,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalatags.JsDom.all._
 
     val compName     = component.component
-    val providerInfo = span(strong("Service Provider: "), s"${component.subsystem}.$compName")
-
     if (info.isEmpty) div()
     else {
       div(
@@ -945,16 +943,20 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         for (s <- info) yield {
           val m = s.serviceModelProvider
           val consumerInfo = if (clientApi) {
-            val senders = s.requiredBy.distinct.map(s => s"${s.subsystem}.${s.component}").mkString(", ")
-            span(strong(s"Consumers: "), if (senders.isEmpty) "none" else senders)
+            val consumers = s.requiredBy.distinct.map(s => s"${s.subsystem}.${s.component}").mkString(", ")
+            span(strong(s"Consumers: "), if (consumers.isEmpty) "none" else consumers)
           }
           else span
-          val linkId = idFor(compName, "provides", "Services", component.subsystem, compName, m.name)
+          val openInNewTab = () => {
+//            val newTab = dom.window.open("url", "_blank")
+            val newTab = dom.window.open("url", "XXX")
+            newTab.document.write(s.html)
+          }
           div(cls := "nopagebreak")(
-            h5(s"HTTP Service: ${m.name}", linkId),
-            if (clientApi) p(consumerInfo, ", ", providerInfo) else p(providerInfo),
+            h5(s"HTTP Service: ${m.name}"),
+            if (clientApi) p(consumerInfo) else div(),
             div(
-              raw(s.html)
+              a(onclick := openInNewTab, title := s"Open ${m.name} API in new tab.")(s"Open ${m.name} API in new tab.")
             )
           )
         }
