@@ -4,7 +4,6 @@ import icd.web.client.PasswordDialog.PasswordDialogListener
 import icd.web.shared.SharedUtils.Credentials
 import org.scalajs.dom
 import org.scalajs.dom.Element
-import org.scalajs.dom.ext.{Ajax, AjaxException}
 import play.api.libs.json.Json
 
 import scala.util.Failure
@@ -12,7 +11,7 @@ import scalatags.JsDom.all._
 import scalacss.ScalatagsCss._
 
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 
 object PasswordDialog {
 
@@ -77,7 +76,11 @@ case class PasswordDialog(mainContent: MainContent, listener: PasswordDialogList
 
   // Message about incorrect password
   private val passwordIncorrect = {
-    div(id := "passwordIncorrect", cls := "has-error hide", label(cls := "control-label", "Password or username is incorrect!")).render
+    div(
+      id := "passwordIncorrect",
+      cls := "has-error hide",
+      label(cls := "control-label", "Password or username is incorrect!")
+    ).render
   }
 
   private def passwordChanged(): Unit = {
@@ -92,29 +95,29 @@ case class PasswordDialog(mainContent: MainContent, listener: PasswordDialogList
   //noinspection ScalaUnusedSymbol
   private def checkCredentials(e: dom.Event): Unit = {
     val credentials = Credentials(usernameBox.value, passwordBox.value)
-    val headers     = Map("Content-Type" -> "application/json")
     // TODO: encypt before sending
     val data = Json.toJson(credentials).toString()
     val f =
-      Ajax
-        .post(url = ClientRoutes.checkCredentials, data = data, headers = headers)
-        .map { r =>
-          if (r.status == 200) {
+      Fetch
+        .post(url = ClientRoutes.checkCredentials, data = data)
+        .map { p =>
+          if (p._1 == 200) {
             listener.authenticated(data)
           }
           ()
         }
-    displayAjaxErrors(f)
+    displayFetchErrors(f)
     showBusyCursorWhile(f)
   }
 
-  private def displayAjaxErrors(f: Future[Unit]): Unit = {
+  private def displayFetchErrors(f: Future[Unit]): Unit = {
     f.onComplete {
-      case Failure(ex: AjaxException) =>
-        ex.xhr.status match {
-          case 401 => // Unauthorized
-            passwordIncorrect.classList.remove("hide")
-        }
+      case Failure(ex: Exception) =>
+        ex.printStackTrace()
+//        ex.xhr.status match {
+//          case 401 => // Unauthorized
+        passwordIncorrect.classList.remove("hide")
+//        }
       case _ =>
     }
   }

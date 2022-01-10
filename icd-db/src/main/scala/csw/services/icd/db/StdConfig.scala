@@ -26,7 +26,7 @@ object StdConfig {
   class FileResources(dirName: String) extends Resources {
     override def getResource(name: String): Option[String] = {
       try {
-        val source   = Source.fromFile(new File(dirName, name))
+        val source   = Source.fromFile(new File(dirName, new File(name).getName))
         val contents = source.mkString
         source.close()
         Some(contents)

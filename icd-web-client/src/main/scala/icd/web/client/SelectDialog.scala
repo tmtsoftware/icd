@@ -4,13 +4,12 @@ import icd.web.client.IcdChooser.IcdListener
 import icd.web.client.Subsystem.SubsystemListener
 import icd.web.shared.{IcdVersion, SubsystemWithVersion}
 import org.scalajs.dom
-import org.scalajs.dom._
 import play.api.libs.json._
-import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.html.{Button, Input}
 import SelectDialog._
+import org.scalajs.dom.Element
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.implicitConversions
 
@@ -119,10 +118,10 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   // Gets the list of subcomponents for the selected subsystem
   private def getComponentNames(sv: SubsystemWithVersion): Future[List[String]] = {
     val path = ClientRoutes.components(sv.subsystem, sv.maybeVersion)
-    Ajax
+    Fetch
       .get(path)
-      .map { r =>
-        Json.fromJson[Array[String]](Json.parse(r.responseText)).map(_.toList).get
+      .map { text =>
+        Json.fromJson[Array[String]](Json.parse(text)).map(_.toList).get
       }
   }
 
@@ -142,7 +141,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       maybeSv
         .map { sv =>
           for {
-            _     <- if (findMatchingIcd) icdChooser.selectMatchingIcd(sv, maybeTargetSv) else Future.successful()
+            _     <- if (findMatchingIcd) icdChooser.selectMatchingIcd(sv, maybeTargetSv) else Future.successful(())
             names <- getComponentNames(sv)
           } yield {
             subsystem.updateComponentOptions(names)
@@ -150,7 +149,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
             subsystemSwapper.setEnabled(maybeSv.isDefined && maybeTargetSv.isDefined)
           }
         }
-        .getOrElse(Future.successful())
+        .getOrElse(Future.successful(()))
     }
   }
 
@@ -166,7 +165,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       maybeSv
         .map { sv =>
           for {
-            _     <- if (findMatchingIcd) icdChooser.selectMatchingIcd(sv, maybeTargetSv) else Future.successful()
+            _     <- if (findMatchingIcd) icdChooser.selectMatchingIcd(sv, maybeTargetSv) else Future.successful(())
             names <- maybeTargetSv.map(getComponentNames).getOrElse(Future.successful(Nil))
           } yield {
             targetSubsystem.updateComponentOptions(names)
@@ -174,7 +173,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
             subsystemSwapper.setEnabled(maybeTargetSv.isDefined)
           }
         }
-        .getOrElse(Future.successful())
+        .getOrElse(Future.successful(()))
     }
   }
 
@@ -211,7 +210,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
             subsystemSwapper.setEnabled(enabled && targetSubsystem.getSelectedSubsystem.isDefined)
             applyButton.disabled = !enabled
           }
-        case None => Future.successful()
+        case None => Future.successful(())
       }
     }
   }

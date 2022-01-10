@@ -6,10 +6,9 @@ import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels._
 import icd.web.shared._
 import org.scalajs.dom
-import org.scalajs.dom.ext.Ajax
-import org.scalajs.dom.raw.{HTMLButtonElement, HTMLDivElement, HTMLElement, HTMLTableRowElement}
+import org.scalajs.dom.{HTMLButtonElement, HTMLDivElement, HTMLElement, HTMLTableRowElement}
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 import scala.concurrent.Future
 import Components._
 import org.scalajs.dom.html.{Anchor, Div, Element}
@@ -142,10 +141,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       searchAllSubsystems: Boolean,
       clientApi: Boolean
   ): Future[List[ComponentInfo]] = {
-    Ajax.get(ClientRoutes.icdComponentInfo(sv, maybeTargetSv, searchAllSubsystems, clientApi)).map { r =>
-      val list = Json.fromJson[Array[ComponentInfo]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
-      if (maybeTargetSv.isDefined) list.map(ComponentInfo.applyIcdFilter).filter(ComponentInfo.nonEmpty) else list
-    }
+    Fetch
+      .get(ClientRoutes.icdComponentInfo(sv, maybeTargetSv, searchAllSubsystems, clientApi))
+      .map { text =>
+        val list = Json.fromJson[Array[ComponentInfo]](Json.parse(text)).map(_.toList).getOrElse(Nil)
+        if (maybeTargetSv.isDefined) list.map(ComponentInfo.applyIcdFilter).filter(ComponentInfo.nonEmpty) else list
+      }
   }
 
   /**
@@ -168,8 +169,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   // Gets top level subsystem info from the server
   private def getSubsystemInfo(sv: SubsystemWithVersion): Future[SubsystemInfo] = {
     val path = ClientRoutes.subsystemInfo(sv.subsystem, sv.maybeVersion)
-    Ajax.get(path).map { r =>
-      val subsystemInfo = Json.fromJson[SubsystemInfo](Json.parse(r.responseText)).get
+    Fetch.get(path).map { text =>
+      val subsystemInfo = Json.fromJson[SubsystemInfo](Json.parse(text)).get
       subsystemInfo.copy(sv = sv) // include the component, if specified
     }
   }
@@ -177,8 +178,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   // Gets additional information about the ICD between the two subsystems
   private def getIcdModelList(sv: SubsystemWithVersion, tv: SubsystemWithVersion): Future[List[IcdModel]] = {
     val path = ClientRoutes.icdModelList(sv, tv)
-    Ajax.get(path).map { r =>
-      Json.fromJson[List[IcdModel]](Json.parse(r.responseText)).get
+    Fetch.get(path).map { text =>
+      Json.fromJson[List[IcdModel]](Json.parse(text)).get
     }
   }
 
@@ -935,7 +936,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   ) = {
     import scalatags.JsDom.all._
 
-    val compName     = component.component
+    val compName = component.component
     if (info.isEmpty) div()
     else {
       div(

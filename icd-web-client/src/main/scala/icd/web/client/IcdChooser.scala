@@ -1,13 +1,12 @@
 package icd.web.client
 
-import icd.web.shared.{SubsystemWithVersion, IcdVersionInfo, IcdVersion, IcdName}
+import icd.web.shared.{IcdName, IcdVersion, IcdVersionInfo, SubsystemWithVersion}
 import org.scalajs.dom
-import org.scalajs.dom._
-import org.scalajs.dom.ext.Ajax
 
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 import IcdChooser._
+import org.scalajs.dom.Element
 import play.api.libs.json._
 
 /**
@@ -61,7 +60,8 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
     if (enabled) {
       icdItem.removeAttribute("disabled")
       versionItem.removeAttribute("disabled")
-    } else {
+    }
+    else {
       icdItem.setAttribute("disabled", "true")
       versionItem.setAttribute("disabled", "true")
     }
@@ -106,7 +106,8 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
             case JsSuccess(icdName: IcdName, _: JsPath) => Some(icdName)
             case _: JsError                             => None
           }
-        } catch {
+        }
+        catch {
           case ex: Exception =>
             None
         }
@@ -143,7 +144,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
       saveHistory: Boolean = true
   ): Future[Unit] = {
     if (maybeIcdVersion == getSelectedIcdVersion)
-      Future.successful()
+      Future.successful(())
     else {
       maybeIcdVersion match {
         case Some(icdVersion) =>
@@ -186,7 +187,8 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
           _ <- updateIcdVersionOptions(icdVersionList)
           _ <- setIcdWithVersion(maybeIcdVersion, notifyListener = false, saveHistory = false)
         } yield maybeIcdVersion
-      } else Future.successful(None)
+      }
+      else Future.successful(None)
     }
     f.flatten
   }
@@ -220,24 +222,20 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
           _ <- setIcdWithVersion(None, notifyListener = false, saveHistory = false)
           _ <- updateIcdVersionOptions(Nil)
         } yield {}
-      } else Future.successful()
+      }
+      else Future.successful(())
     }
     f.flatten
   }
 
   // Update the ICD combobox options
   def updateIcdOptions(): Future[Unit] = {
-    Ajax
+    Fetch
       .get(ClientRoutes.icdNames)
-      .flatMap { r =>
-        val icdNames = Json.fromJson[Array[IcdName]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
+      .flatMap { text =>
+        val icdNames = Json.fromJson[Array[IcdName]](Json.parse(text)).map(_.toList).getOrElse(Nil)
         updateIcdOptions(icdNames)
       }
-//      .recover {
-//        case ex =>
-//          ex.printStackTrace() // XXX TODO
-//          Nil
-//      }
   }
 
   // Update the ICD combobox options
@@ -278,7 +276,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   ): Future[Unit] = {
     val maybeSelectedVersion = getSelectedIcdVersion
     if (maybeVersion == maybeSelectedVersion)
-      Future.successful()
+      Future.successful(())
     else {
       maybeVersion match {
         case Some(s) =>
@@ -288,7 +286,8 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
       }
       if (notifyListener) {
         listener.icdSelected(maybeSelectedVersion)
-      } else Future.successful()
+      }
+      else Future.successful(())
     }
   }
 
@@ -327,16 +326,16 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
 
   // Gets the list of available versions for the given ICD
   private def getIcdVersionOptions(icdName: IcdName): Future[List[IcdVersion]] = {
-    Ajax
+    Fetch
       .get(ClientRoutes.icdVersions(icdName))
-      .map { r =>
-        Json.fromJson[Array[IcdVersionInfo]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
+      .map { text =>
+        Json.fromJson[Array[IcdVersionInfo]](Json.parse(text)).map(_.toList).getOrElse(Nil)
       }
-//      .recover {
-//        case ex =>
-//          ex.printStackTrace() // XXX TODO
-//          Nil
-//      }
+      //      .recover {
+      //        case ex =>
+      //          ex.printStackTrace() // XXX TODO
+      //          Nil
+      //      }
       .map(list => list.map(_.icdVersion))
   }
 

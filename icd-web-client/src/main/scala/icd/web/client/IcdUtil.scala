@@ -1,11 +1,10 @@
 package icd.web.client
 
 import icd.web.shared.PublishInfo
-import org.scalajs.dom.ext.Ajax
 import play.api.libs.json._
 
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 
 object IcdUtil {
   import icd.web.shared.JsonSupport._
@@ -17,10 +16,10 @@ object IcdUtil {
    * @return list of publish info for the given (or all) subsystem
    */
   def getPublishInfo(maybeSubsystem: Option[String], mainContent: MainContent): Future[List[PublishInfo]] = {
-    Ajax
+    Fetch
       .get(ClientRoutes.getPublishInfo(maybeSubsystem))
-      .map { r =>
-        Json.fromJson[Array[PublishInfo]](Json.parse(r.responseText)) match {
+      .map { text =>
+        Json.fromJson[Array[PublishInfo]](Json.parse(text)) match {
           case JsSuccess(ar: Array[PublishInfo], _: JsPath) =>
             ar.toList
           case e: JsError =>

@@ -17,6 +17,7 @@ object Settings {
     organizationName := "TMT",
     organizationHomepage := Some(url("http://www.tmt.org")),
     version := Dependencies.Version,
+    scalacOptions ++= Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-unchecked"),
     scalaVersion := Dependencies.ScalaVersion
   )
 
@@ -33,7 +34,6 @@ object Settings {
   )
 
   lazy val defaultSettings = buildSettings ++ Seq(
-    scalacOptions ++= Seq("-encoding", "UTF-8", "-feature", "-deprecation", "-unchecked"),
     Compile / javacOptions ++= Seq("-Xlint:unchecked", "-Xlint:deprecation")
   )
 

@@ -2,12 +2,11 @@ package icd.web.client
 
 import icd.web.shared.SubsystemWithVersion
 import org.scalajs.dom
-import org.scalajs.dom._
-import org.scalajs.dom.ext.Ajax
 
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 import Subsystem._
+import org.scalajs.dom.Element
 
 /**
  * Manages the subsystem and related subsystem version comboboxes
@@ -181,7 +180,7 @@ case class Subsystem(
       findMatchingIcd: Boolean = true
   ): Future[Unit] = {
     if (maybeSv == getSubsystemWithVersion())
-      Future.successful()
+      Future.successful(())
     else {
       maybeSv match {
         case Some(sv) =>
@@ -245,7 +244,7 @@ case class Subsystem(
       maybeVersion: Option[String]
   ): Future[Unit] = {
     if (maybeVersion == getSelectedSubsystemVersion) {
-      Future.successful()
+      Future.successful(())
     } else {
       maybeVersion match {
         case Some(s) =>
@@ -284,7 +283,7 @@ case class Subsystem(
           }
       case None =>
         versionItem.value = unpublishedVersion
-        Future.successful()
+        Future.successful(())
     }
   }
 
@@ -303,10 +302,10 @@ case class Subsystem(
   // Gets the list of available versions for the given subsystem
   private def getSubsystemVersionOptions(subsystem: String): Future[List[String]] = {
     import play.api.libs.json._
-    Ajax
+    Fetch
       .get(ClientRoutes.versionNames(subsystem))
-      .map { r =>
-        Json.fromJson[Array[String]](Json.parse(r.responseText)).get.toList
+      .map { text =>
+        Json.fromJson[Array[String]](Json.parse(text)).get.toList
       }
   }
 

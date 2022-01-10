@@ -26,5 +26,6 @@
   <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
   <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
   <logger name="com.itextpdf" level="OFF" />
+  <logger name="reactivemongo.core" level="OFF" />
 
 </configuration>

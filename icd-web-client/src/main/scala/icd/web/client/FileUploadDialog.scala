@@ -3,7 +3,7 @@ package icd.web.client
 import icd.web.client.FileUtils._
 import org.scalajs.dom
 import org.scalajs.dom._
-import org.scalajs.dom.raw.HTMLDivElement
+import org.scalajs.dom.HTMLDivElement
 import play.api.libs.json._
 
 import scala.language.implicitConversions
@@ -160,7 +160,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     def progressListener(e: dom.Event): Unit = {
       val pc          = e.loaded / e.total * 100
       val progressDiv = document.querySelector("#progress").asInstanceOf[HTMLDivElement]
-      progressDiv.style.width = pc + "%"
+      progressDiv.style.width = s"$pc %"
       progressDiv.setAttribute("aria-valuenow", pc.toString)
       progressDiv.innerHTML = s"$pc %"
     }

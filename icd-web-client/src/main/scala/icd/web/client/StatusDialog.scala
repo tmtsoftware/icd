@@ -6,7 +6,7 @@ import org.scalajs.dom
 import org.scalajs.dom.Element
 import org.scalajs.dom.html.{Div, Table}
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 import scala.util.{Failure, Success}
 import scalatags.JsDom.all._
 import scalacss.ScalatagsCss._

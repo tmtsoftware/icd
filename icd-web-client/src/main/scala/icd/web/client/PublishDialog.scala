@@ -3,13 +3,12 @@ package icd.web.client
 import icd.web.client.PublishDialog.PublishDialogListener
 import icd.web.shared._
 import org.scalajs.dom
-import org.scalajs.dom.ext.{Ajax, AjaxException}
 import play.api.libs.json._
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 import org.scalajs.dom.{Element, document}
 import org.scalajs.dom.html.{Button, Div, Input}
-import org.scalajs.dom.raw.HTMLInputElement
+import org.scalajs.dom.HTMLInputElement
 import scalatags.JsDom
 import scalatags.JsDom.all._
 
@@ -121,7 +120,8 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
         $id("confirmPublishButton").innerHTML = "Unpublish"
         $id("confirmPublishButton").asInstanceOf[Button].onclick = publishHandler(unpublish = true) _
       }
-    } else {
+    }
+    else {
       val v = if (maybeVersion.isEmpty) "1.0" else nextVersion(maybeVersion.get)
       $id("confirmPublishMessage").innerHTML =
         span("Are you sure you want to publish the API ")(strong(s"$subsystem-$v?")).render.innerHTML
@@ -241,7 +241,11 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
 
   // Message about incorrect password
   private val passwordIncorrect = {
-    div(id := "passwordIncorrect", cls := "has-error hide", label(cls := "control-label", "Password or username is incorrect!")).render
+    div(
+      id := "passwordIncorrect",
+      cls := "has-error hide",
+      label(cls := "control-label", "Password or username is incorrect!")
+    ).render
   }
 
   private def passwordChanged(): Unit = {
@@ -290,17 +294,21 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
     }
   }
 
-  private def displayAjaxErrors(f: Future[Unit]): Unit = {
+  private def displayFetchErrors(f: Future[Unit]): Unit = {
     f.onComplete {
-      case Failure(ex: AjaxException) =>
-        ex.xhr.status match {
-          case 400 => // BadRequest
-            setPublishStatus(ex.xhr.responseText)
-          case 401 => // Unauthorized
-            passwordIncorrect.classList.remove("hide")
-          case 406 => // NotAcceptable
-            setPublishStatus(ex.xhr.responseText)
-        }
+      //      case Failure(ex: AjaxException) =>
+      //        ex.xhr.status match {
+      //          case 400 => // BadRequest
+      //            setPublishStatus(ex.xhr.responseText)
+      //          case 401 => // Unauthorized
+      //            passwordIncorrect.classList.remove("hide")
+      //          case 406 => // NotAcceptable
+      //            setPublishStatus(ex.xhr.responseText)
+      //        }
+      case Failure(ex: Exception) =>
+        ex.printStackTrace()
+        setPublishStatus(ex.getMessage)
+        passwordIncorrect.classList.remove("hide")
       case _ =>
     }
   }
@@ -311,34 +319,33 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
     val user         = usernameBox.value
     val password     = passwordBox.value
     val comment      = commentBox.value
-    val headers      = Map("Content-Type" -> "application/json")
 
     setPublishButtonDisabled(true)
     setUnpublishButtonDisabled(true)
     val f = if (unpublish) {
       val version          = publishInfo.apiVersions.head.version
       val unpublishApiInfo = UnpublishApiInfo(publishInfo.subsystem, version, user, password, comment)
-      Ajax.post(url = ClientRoutes.unpublishApi, data = Json.toJson(unpublishApiInfo).toString(), headers = headers).flatMap {
-        r =>
-          r.status match {
-            case 200 => // OK
-              val apiVersionInfo      = Json.fromJson[ApiVersionInfo](Json.parse(r.responseText)).get
-              val maybeApiVersionInfo = publishInfo.apiVersions.tail.headOption
-              for {
-                _ <- publishChangeListener.publishChange()
-                _ <- updateTableRow(unpublish, api = true, publishInfo.subsystem, maybeApiVersionInfo).map(_ => ())
-              } yield {
-                updateEnabledStates()
-                setPublishStatus(s"Unpublished ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
-              }
-          }
-      }
-    } else {
-      val publishApiInfo = PublishApiInfo(publishInfo.subsystem, majorVersion, user, password, comment)
-      Ajax.post(url = ClientRoutes.publishApi, data = Json.toJson(publishApiInfo).toString(), headers = headers).flatMap { r =>
-        r.status match {
+      Fetch.post(url = ClientRoutes.unpublishApi, data = Json.toJson(unpublishApiInfo).toString()).flatMap { p =>
+        p._1 match {
           case 200 => // OK
-            val apiVersionInfo = Json.fromJson[ApiVersionInfo](Json.parse(r.responseText)).get
+            val apiVersionInfo      = Json.fromJson[ApiVersionInfo](Json.parse(p._2)).get
+            val maybeApiVersionInfo = publishInfo.apiVersions.tail.headOption
+            for {
+              _ <- publishChangeListener.publishChange()
+              _ <- updateTableRow(unpublish, api = true, publishInfo.subsystem, maybeApiVersionInfo).map(_ => ())
+            } yield {
+              updateEnabledStates()
+              setPublishStatus(s"Unpublished ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
+            }
+        }
+      }
+    }
+    else {
+      val publishApiInfo = PublishApiInfo(publishInfo.subsystem, majorVersion, user, password, comment)
+      Fetch.post(url = ClientRoutes.publishApi, data = Json.toJson(publishApiInfo).toString()).flatMap { p =>
+        p._1 match {
+          case 200 => // OK
+            val apiVersionInfo = Json.fromJson[ApiVersionInfo](Json.parse(p._2)).get
             for {
               _ <- publishChangeListener.publishChange()
               _ <- updateTableRow(unpublish, api = true, publishInfo.subsystem, Some(apiVersionInfo)).map(_ => ())
@@ -349,7 +356,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
         }
       }
     }
-    displayAjaxErrors(f)
+    displayFetchErrors(f)
     showBusyCursorWhile(f.map(_ => ()))
   }
 
@@ -359,7 +366,6 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
     val user         = usernameBox.value
     val password     = passwordBox.value
     val comment      = commentBox.value
-    val headers      = Map("Content-Type" -> "application/json")
     val icdVersion = publishInfo1.icdVersions.find { icdVersionInfo =>
       val i = icdVersionInfo.icdVersion
       i.subsystem == publishInfo1.subsystem && i.target == publishInfo2.subsystem
@@ -375,27 +381,27 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
         password,
         comment
       )
-      Ajax.post(url = ClientRoutes.unpublishIcd, data = Json.toJson(unpublishIcdInfo).toString(), headers = headers).flatMap {
-        r =>
-          r.status match {
-            case 200 => // OK
-              val icdVersionInfo = Json.fromJson[IcdVersionInfo](Json.parse(r.responseText)).get
-              val v              = icdVersionInfo.icdVersion
-              for {
-                _ <- publishChangeListener.publishChange()
-                _ <- updateTableRow(unpublish, api = false, publishInfo1.subsystem, publishInfo1.apiVersions.headOption)
-                      .map(_ => ())
-                _ <- updateTableRow(unpublish, api = false, publishInfo2.subsystem, publishInfo2.apiVersions.headOption)
-                      .map(_ => ())
-              } yield {
-                updateEnabledStates()
-                setPublishStatus(
-                  s"Unpublished ICD-${v.subsystem}-${v.target}-${v.icdVersion} between ${v.subsystem}-${v.subsystemVersion} and ${v.target}-${v.targetVersion}"
-                )
-              }
-          }
+      Fetch.post(url = ClientRoutes.unpublishIcd, data = Json.toJson(unpublishIcdInfo).toString()).flatMap { p =>
+        p._1 match {
+          case 200 => // OK
+            val icdVersionInfo = Json.fromJson[IcdVersionInfo](Json.parse(p._2)).get
+            val v              = icdVersionInfo.icdVersion
+            for {
+              _ <- publishChangeListener.publishChange()
+              _ <- updateTableRow(unpublish, api = false, publishInfo1.subsystem, publishInfo1.apiVersions.headOption)
+                .map(_ => ())
+              _ <- updateTableRow(unpublish, api = false, publishInfo2.subsystem, publishInfo2.apiVersions.headOption)
+                .map(_ => ())
+            } yield {
+              updateEnabledStates()
+              setPublishStatus(
+                s"Unpublished ICD-${v.subsystem}-${v.target}-${v.icdVersion} between ${v.subsystem}-${v.subsystemVersion} and ${v.target}-${v.targetVersion}"
+              )
+            }
+        }
       }
-    } else {
+    }
+    else {
       val publishIcdInfo = PublishIcdInfo(
         publishInfo1.subsystem,
         publishInfo1.apiVersions.head.version,
@@ -406,17 +412,17 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
         password,
         comment
       )
-      Ajax.post(url = ClientRoutes.publishIcd, data = Json.toJson(publishIcdInfo).toString(), headers = headers).flatMap { r =>
-        r.status match {
+      Fetch.post(url = ClientRoutes.publishIcd, data = Json.toJson(publishIcdInfo).toString()).flatMap { p =>
+        p._1 match {
           case 200 => // OK
-            val icdVersionInfo = Json.fromJson[IcdVersionInfo](Json.parse(r.responseText)).get
+            val icdVersionInfo = Json.fromJson[IcdVersionInfo](Json.parse(p._2)).get
             val v              = icdVersionInfo.icdVersion
             for {
               _ <- publishChangeListener.publishChange()
               _ <- updateTableRow(unpublish, api = false, publishInfo1.subsystem, publishInfo1.apiVersions.headOption)
-                    .map(_ => ())
+                .map(_ => ())
               _ <- updateTableRow(unpublish, api = false, publishInfo2.subsystem, publishInfo2.apiVersions.headOption)
-                    .map(_ => ())
+                .map(_ => ())
             } yield {
               updateEnabledStates()
               setPublishStatus(
@@ -426,7 +432,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
         }
       }
     }
-    displayAjaxErrors(f)
+    displayFetchErrors(f)
     showBusyCursorWhile(f.map(_ => ()))
   }
 
@@ -444,7 +450,8 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
         // API
         val publishInfo = publishInfoList.head
         setConfirmPublishApi(unpublish, publishInfo)
-      } else {
+      }
+      else {
         // ICD
         val subsystems = publishInfoList.map(getSubsystemVersionStr)
         val subsysStr  = s"${subsystems.mkString(" and ")}"
@@ -468,7 +475,8 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
         if (unpublish || publishInfo.readyToPublish) {
           publishApi(unpublish, publishInfo)
         }
-      } else {
+      }
+      else {
         // ICD
         if (unpublish || !icdExists(publishInfoList)) {
           publishIcd(unpublish, publishInfoList.head, publishInfoList.tail.head)
@@ -501,7 +509,8 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
         i.target == target.subsystem &&
         i.targetVersion == target.maybeVersion.get
       }
-    } else false
+    }
+    else false
   }
 
   // Returns "$subsystem-$version", or just "$subsystem", if no version exists
@@ -545,11 +554,13 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
         e.innerHTML = if (publishInfo.readyToPublish) {
           setUnpublishButtonDisabled(true)
           s"Click below to publish the API for ${publishInfo.subsystem}:"
-        } else {
+        }
+        else {
           setPublishButtonDisabled(true)
           s"${publishInfo.subsystem} has no new changes to publish"
         }
-      } else {
+      }
+      else {
         // ICD
         val subsystems     = publishInfoList.map(getSubsystemVersionStr)
         val subsysStr      = s"${subsystems.mkString(" and ")}"
@@ -566,17 +577,20 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
             setPublishButtonDisabled(true)
             setUnpublishButtonDisabled(unpublishedChanges)
             s"The ICD between $subsysStr already exists"
-          } else {
+          }
+          else {
             setUnpublishButtonDisabled(true)
             if (unpublishedChanges) {
               setPublishButtonDisabled(true)
               "Both APIs must be published and up to date before publishing an ICD."
-            } else {
+            }
+            else {
               s"Click below to publish the ICD between $subsysStr:"
             }
           }
       }
-    } else {
+    }
+    else {
       e.innerHTML = publishLabelMsg
     }
   }
@@ -600,19 +614,18 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
 
   private def checkGitHubCredentials(e: dom.Event): Unit = {
     val gitHubCredentials = GitHubCredentials(usernameBox.value, passwordBox.value)
-    val headers           = Map("Content-Type" -> "application/json")
     val f =
-      Ajax
-        .post(url = ClientRoutes.checkGitHubCredentials, data = Json.toJson(gitHubCredentials).toString(), headers = headers)
-        .map { r =>
-          if (r.status == 200) {
+      Fetch
+        .post(url = ClientRoutes.checkGitHubCredentials, data = Json.toJson(gitHubCredentials).toString())
+        .map { p =>
+          if (p._1 == 200) {
             $id("gitHubCredentials").classList.add("hide")
             $id("contentDivPlaceholder").innerHTML = ""
             $id("contentDivPlaceholder").appendChild(contentDiv)
           }
           ()
         }
-    displayAjaxErrors(f)
+    displayFetchErrors(f)
     showBusyCursorWhile(f)
   }
 
