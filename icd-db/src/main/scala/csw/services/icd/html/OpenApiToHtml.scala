@@ -21,6 +21,7 @@ object OpenApiToHtml {
     val classDir    = new File(getClass.getProtectionDomain.getCodeSource.getLocation.getPath).getParentFile.getParentFile
     val templateDir = new File(classDir, s"conf/handlebars/$name")
     val devDir      = new File(classDir.getParentFile, s"src/universal/conf/handlebars/$name")
+    // Note that this directory comes from src/universal (dev mode) and ends up later in $installDir/conf.
     if (templateDir.exists()) Some(templateDir) else if (devDir.exists()) Some(devDir) else None
   }
 
@@ -34,10 +35,10 @@ object OpenApiToHtml {
   def getHtml(openApi: String, staticHtml: Boolean): String = {
     val maybeDir = getTemplateDir(staticHtml)
     val format   = if (staticHtml) "html" else "html2"
-    val maybeHtml = maybeDir.map { dir =>
+    val maybeHtml = maybeDir.map { templateDir =>
       val openApiFile = saveOpenApiJson(openApi)
       val tempDir     = Files.createTempDirectory("openApi").toFile
-      val cmd         = s"sh -c 'swagger-codegen generate -i $openApiFile -l $format -o $tempDir'"
+      val cmd         = s"sh -c 'swagger-codegen generate -i $openApiFile -l $format -o $tempDir -t $templateDir'"
       val x           = Try(cmd.!)
       openApiFile.delete()
       x match {
