@@ -152,7 +152,7 @@ object IcdValidator {
       else {
         val parseResult = new OpenAPIV3Parser().readContents(maybeContents.get, null, null)
         parseResult.getMessages.asScala.toList
-          .map(Problem("error", _))
+          .map(msg => Problem("error", s"OpenApi file $fileName: $msg"))
       }
     }
 

@@ -103,6 +103,7 @@ object OpenApiToHtml {
       val openApiFile = saveOpenApiJson(openApi)
       val tempDir     = Files.createTempDirectory("openApi").toFile
       val cmd         = s"sh -c 'swagger-codegen generate -i $openApiFile -l $format -o $tempDir -t $templateDir'"
+//      val cmd         = s"sh -c 'openapi-generator generate -i $openApiFile -l $format -o $tempDir -t $templateDir'"
       val x           = Try(cmd.!)
       openApiFile.delete()
       x match {

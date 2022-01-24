@@ -897,7 +897,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             span(strong(s"Provider: "), provider)
           }
           val openInNewTab = () => {
-            val newTab = dom.window.open("url", "XXX")
+            val newTab = dom.window.open()
             newTab.document.write(s.maybeHtml.get)
           }
           div(cls := "nopagebreak")(
@@ -935,7 +935,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           }
           else span
           val openInNewTab = () => {
-            val newTab = dom.window.open("url", "XXX")
+            val newTab = dom.window.open()
             newTab.document.write(s.html)
           }
           div(cls := "nopagebreak")(
