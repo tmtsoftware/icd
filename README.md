@@ -8,6 +8,8 @@ Subsystem APIs are described in model files. The model files are validated using
 however the schema descriptions as well as the model files may also be written in
 the simpler [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md) format.
 (See [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of recent changes in the JSON Schema for API model files.)
+In addition, HTTP services can be described using [OpenAPI](https://swagger.io/specification/) files
+(See [example Segment Service](examples/2.0/TEST2/segmentService)).
 
 Versions of APIs and ICDs are managed in [GitHub repositories](https://github.com/tmt-icd/ICD-Model-Files.git) and 
 the subsystem model files can be imported from GitHub (with version history) into a local MongoDB database, which is used

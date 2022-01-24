@@ -113,7 +113,7 @@ AOESW.psfr.command.v
 ...
 ```
 
-The code then looks for collections with names ending in .subsystem, .component, .publish, .subscribe, or .command.
+The code then looks for collections with names ending in .subsystem, .component, .publish, .subscribe, .command, or .service.
 Queries can be run on all collections.
 When detailed information is needed, the JSON in a collection is parsed into the same model classes used to
 create the PDF document. Creating documents from the database works in the same way as creating them from files.
