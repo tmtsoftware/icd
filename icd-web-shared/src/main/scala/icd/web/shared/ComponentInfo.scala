@@ -17,7 +17,8 @@ object ComponentInfo {
   case object Alarms extends PublishType
 
   /**
-   * Filters out any published commands with no subscribers, and any commands received, with no senders
+   * Filters out any published commands with no subscribers, and any commands received, with no senders,
+   * etc. As a result, only the interface between the two subsystems should remain.
    *
    * @param info all the information for a component
    * @return a new ComponentInfo with empty items removed
@@ -59,7 +60,8 @@ object ComponentInfo {
   def nonEmpty(info: ComponentInfo): Boolean = {
     info.publishes.exists(_.nonEmpty) ||
     info.subscribes.exists(_.subscribeInfo.nonEmpty) ||
-    info.commands.exists(_.nonEmpty)
+    info.commands.exists(_.nonEmpty) ||
+    info.services.nonEmpty
   }
 }
 
@@ -106,7 +108,7 @@ case class Publishes(
 ) {
 
   /**
-   * True if at the component publishes something
+   * True if the component publishes something
    */
   def nonEmpty: Boolean =
     eventList.nonEmpty || observeEventList.nonEmpty || alarmList.nonEmpty
@@ -232,12 +234,14 @@ case class Commands(description: String, commandsReceived: List[ReceivedCommandI
  * @param serviceModelClient  describes the client's use of the service
  * @param maybeServiceModelProvider  describes the service provided, if known
  * @param provider  the component that should define the service, if known
+ * @param maybeHtml  the generated HTML for the service, if known
  * @param warnings  true if service providergetServicesProvided not found
  */
 case class ServicesRequiredInfo(
     serviceModelClient: ServiceModelClient,
     maybeServiceModelProvider: Option[ServiceModelProvider],
     provider: Option[ComponentModel],
+    maybeHtml: Option[String],
     warnings: Boolean = true
 ) {
 

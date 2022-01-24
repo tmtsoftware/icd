@@ -270,8 +270,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
       || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
       || info.commands.get.commandsSent.nonEmpty)
-      || info.services.isDefined && (info.services.get.servicesProvided.nonEmpty
-      || info.services.get.servicesRequired.nonEmpty))
+      || info.services.isDefined && (info.services.get.servicesProvided.nonEmpty || info.services.get.servicesRequired.nonEmpty))
     ) {
       val markup     = markupForComponent(info, forApi, clientApi).render
       val oldElement = $id(getComponentInfoId(info.componentModel.component))
@@ -854,6 +853,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   private def servicesProvidedTitle(compName: String): String = s"HTTP Services provided by $compName"
+  private def servicesRequiredTitle(compName: String): String = s"HTTP Services required by $compName"
 
   // Generates the markup for the services section (description plus provides and requires)
   private def servicesMarkup(
@@ -870,7 +870,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           div(
             h3(s"Services for ${component.component}"),
             raw(services.description),
-            servicesProvidedMarkup(component, services.servicesProvided, forApi, clientApi),
+            servicesProvidedMarkup(component, services.servicesProvided, clientApi),
             if (forApi && clientApi) servicesRequiredMarkup(component, services.servicesRequired) else div()
           )
         }
@@ -885,53 +885,39 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   ) = {
     import scalatags.JsDom.all._
 
-    // XXX TODO FIXME
-    div()
-
-    //    val compName   = component.component
-    //    val senderInfo = span(strong("Sender: "), s"${component.subsystem}.$compName")
-    //
-    //    if (info.isEmpty) div()
-    //    else {
-    //      div(
-    //        nh.H4(sentCommandsTitle(compName)),
-    //        for (s <- info) yield {
-    //          val receiveCommandModel = s.receiveCommandModel
-    //          val receiverStr         = s.receiver.map(r => s"${r.subsystem}.${r.component}").getOrElse("none")
-    //          val receiverInfo        = span(strong("Receiver: "), receiverStr)
-    //          val linkId              = idFor(compName, "sends", "Commands", s.subsystem, s.component, s.name)
-    //          val showDetails         = pdfOptions.details || pdfOptions.expandedIds.contains(linkId)
-    //          div(cls := "nopagebreak")(
-    //            nh.H5(s"Command: ${s.name}", linkId),
-    //            p(senderInfo, ", ", receiverInfo),
-    //            receiveCommandModel match {
-    //              case Some(m) if showDetails =>
-    //                div(
-    //                  if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
-    //                  if (m.preconditions.isEmpty) div()
-    //                  else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
-    //                  if (m.postconditions.isEmpty) div()
-    //                  else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
-    //                  raw(m.description),
-    //                  if (m.parameters.isEmpty) div() else parameterListMarkup(m.name, m.parameters, m.requiredArgs)
-    //                )
-    //              case Some(m) =>
-    //                div(
-    //                  raw(m.description)
-    //                )
-    //              case None => s.warning.map(msg => p(em(" Warning: ", msg)))
-    //            }
-    //          )
-    //        }
-    //      )
-    //    }
+    val compName = component.component
+    if (info.isEmpty) div()
+    else {
+      div(
+        h4(servicesRequiredTitle(compName)),
+        for (s <- info) yield {
+          val m = s.serviceModelClient
+          val providerInfo = {
+            val provider = s"${s.serviceModelClient.subsystem}.${s.serviceModelClient.component}"
+            span(strong(s"Provider: "), provider)
+          }
+          val openInNewTab = () => {
+            val newTab = dom.window.open("url", "XXX")
+            newTab.document.write(s.maybeHtml.get)
+          }
+          div(cls := "nopagebreak")(
+            h5(s"HTTP Service: ${m.name}"),
+            p(providerInfo),
+            if (s.maybeHtml.nonEmpty)
+              div(
+                a(onclick := openInNewTab, title := s"Open ${m.name} API in new tab.")(s"Open ${m.name} API in new tab.")
+              )
+            else div()
+          )
+        }
+      )
+    }
   }
 
   // Generates the HTML markup to display the HTTP services a component provides
   private def servicesProvidedMarkup(
       component: ComponentModel,
       info: List[ServiceProvidedInfo],
-      forApi: Boolean,
       clientApi: Boolean
   ) = {
     import scalatags.JsDom.all._
@@ -949,7 +935,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           }
           else span
           val openInNewTab = () => {
-//            val newTab = dom.window.open("url", "_blank")
             val newTab = dom.window.open("url", "XXX")
             newTab.document.write(s.html)
           }

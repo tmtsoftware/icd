@@ -12,7 +12,7 @@ import org.scalatest.funsuite.AnyFunSuite
 //@DoNotDiscover
 class IcdDbTests extends AnyFunSuite {
   val examplesDir = s"examples/${IcdValidator.currentSchemaVersion}"
-  val dbName = "test"
+  val dbName      = "test"
 
   // The relative location of the the examples directory can change depending on how the test is run
   def getTestDir(path: String): File = {
@@ -63,7 +63,7 @@ class IcdDbTests extends AnyFunSuite {
     assert(logging.archive)
 
     val currentStateList = publish.currentStateList
-    val sensors = currentStateList.find(_.name == "sensors").get
+    val sensors          = currentStateList.find(_.name == "sensors").get
     assert(sensors.name == "sensors")
     assert(!sensors.archive)
     val attrList = sensors.parameterList
@@ -103,7 +103,6 @@ class IcdDbTests extends AnyFunSuite {
     assert(problems2.isEmpty)
     db.query.afterIngestFiles(problems2, dbName)
 
-
     // Test icd-models
     val icdModels = db.versionManager.getIcdModels(SubsystemWithVersion("TEST"), SubsystemWithVersion("TEST2"), None)
     assert(icdModels.size == 2)
@@ -119,7 +118,6 @@ class IcdDbTests extends AnyFunSuite {
 
     db.dropDatabase()
   }
-
 
   // XXX TODO: Turn this into a test
   def testModels(db: IcdDb): Unit = {
@@ -149,5 +147,4 @@ class IcdDbTests extends AnyFunSuite {
       }
     }
   }
-
 }

@@ -274,20 +274,24 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
       models: IcdModels,
       maybePdfOptions: Option[PdfOptions]
   ): List[ServicesRequiredInfo] = {
-    val result = for {
+    for {
       serviceModel       <- models.serviceModel.toList
       serviceModelClient <- serviceModel.requires
     } yield {
       val maybeServiceModel         = query.getServiceModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions)
-      val maybeServiceModelProvider = maybeServiceModel.map(_.provides).flatMap(_.find(_.name == serviceModelClient.name))
+      val maybeServiceModelProvider = maybeServiceModel.flatMap(_.provides.find(_.name == serviceModelClient.name))
+      val maybeHtml = for {
+        p          <- maybeServiceModelProvider
+        staticHtml <- maybeStaticHtml
+      } yield OpenApiToHtml.getHtml(OpenApiToHtml.filterOpenApiJson(p.openApi, serviceModelClient.paths), staticHtml)
       ServicesRequiredInfo(
         serviceModelClient,
         maybeServiceModelProvider,
         query.getComponentModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions),
+        maybeHtml,
         displayWarnings
       )
     }
-    result
   }
 
   /**

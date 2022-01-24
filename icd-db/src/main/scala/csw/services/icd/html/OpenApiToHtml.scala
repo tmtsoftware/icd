@@ -1,5 +1,8 @@
 package csw.services.icd.html
 
+import icd.web.shared.IcdModels.ServicePath
+import play.api.libs.json.{Json, Reads}
+
 import java.io.File
 import java.nio.file.Files
 import scala.io.Source
@@ -30,6 +33,67 @@ object OpenApiToHtml {
     val tmpFile = Files.createTempFile("openApi", ".json")
     Files.write(tmpFile, openApi.getBytes)
     tmpFile.toFile
+  }
+
+  case class Attribute(key: Option[String], value: Option[String])
+  object Attribute {
+    implicit val reads: Reads[Attribute] = Json.reads[Attribute]
+  }
+
+  /**
+   * Returns the given OpenApi JSON string, modified to include only the given route paths.
+   * If paths is empty, the input json is returned.
+   */
+  def filterOpenApiJson(jsonStr: String, paths: List[ServicePath]): String = {
+    if (paths.isEmpty)
+      jsonStr
+    else {
+      import play.api.libs.json._
+      val allPaths  = paths.map(_.path)
+      val methodMap = paths.map(p => p.path -> p.method).toMap
+
+      // Filter out all but the HTTP method required by the client
+      def filterMethod(js: JsValue, method: String): JsValue = {
+        js match {
+          case JsObject(vs) =>
+            JsObject(vs.flatMap {
+              case (key, value) =>
+                if (key == method) Some(key -> value)
+                else None
+            })
+          case x => x
+        }
+      }
+
+      // Filter out all but the HTTP paths declared as required by the client
+      def filterPaths(js: JsValue): JsValue = {
+        js match {
+          case JsObject(vs) =>
+            JsObject(vs.flatMap {
+              case (key, value) =>
+                if (allPaths.contains(key)) Some(key -> filterMethod(value, methodMap(key)))
+                else None
+            })
+          case x => x
+        }
+      }
+
+      // Filter out any HTTP paths not used by the client
+      def filter(js: JsValue): JsValue = {
+        js match {
+          case JsObject(vs) =>
+            JsObject(vs.flatMap {
+              case (key, value) =>
+                if (key == "paths") Some(key -> filterPaths(value))
+                else Some(key                -> filter(value))
+            })
+          case x => x
+        }
+      }
+
+      val js = filter(Json.parse(jsonStr))
+      js.toString()
+    }
   }
 
   def getHtml(openApi: String, staticHtml: Boolean): String = {

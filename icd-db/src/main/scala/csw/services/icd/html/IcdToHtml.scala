@@ -157,10 +157,8 @@ object IcdToHtml {
       forApi ||
       (info.publishes.isDefined && info.publishes.get.nonEmpty
       || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
-      || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
-      || info.commands.get.commandsSent.nonEmpty)
-      || info.services.isDefined && (info.services.get.servicesProvided.nonEmpty
-      || info.services.get.servicesRequired.nonEmpty))
+      || info.commands.isDefined && info.commands.get.nonEmpty
+      || info.services.isDefined && info.services.get.nonEmpty)
     ) {
       markupForComponent(info, nh, forApi, pdfOptions, clientApi)
     }
@@ -424,8 +422,8 @@ object IcdToHtml {
         for (s <- info) yield {
           val m = s.serviceModelProvider
           val consumerInfo = if (clientApi) {
-            val senders = s.requiredBy.distinct.map(s => s"${s.subsystem}.${s.component}").mkString(", ")
-            span(strong(s"Consumers: "), if (senders.isEmpty) "none" else senders)
+            val consumers = s.requiredBy.distinct.map(s => s"${s.subsystem}.${s.component}").mkString(", ")
+            span(strong(s"Consumers: "), if (consumers.isEmpty) "none" else consumers)
           }
           else span
           val linkId      = idFor(compName, "provides", "Services", component.subsystem, compName, m.name)

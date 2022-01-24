@@ -716,30 +716,6 @@ class Application @Inject() (
     }
 
   /**
-   * Gets the dynamic HTML for a given OpenApi JSON
-   */
-  def openApiToDynamicHtml() =
-    authAction.async { implicit request =>
-      val maybeOpenApiJson = request.body.asJson.map(_.toString())
-      if (maybeOpenApiJson.isEmpty) {
-        Future(BadRequest("Missing POST data (Open API JSON)"))
-      }
-      else {
-        val resp: Future[Try[String]] = appActor ? (ref => OpenApiToDynamicHtml(maybeOpenApiJson.get, ref))
-        resp.map {
-          case Success(html) =>
-            Ok(Json.toJson(html))
-          case Failure(ex) =>
-            ex match {
-              case ex: Exception =>
-                ex.printStackTrace()
-                BadRequest(ex.getMessage)
-            }
-        }
-      }
-    }
-
-  /**
    * Gets optional information about the ICD between two subsystems
    * (from the <subsystem>-icd-model.conf files)
    *

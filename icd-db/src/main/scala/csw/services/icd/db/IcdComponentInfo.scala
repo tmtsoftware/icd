@@ -411,7 +411,19 @@ object IcdComponentInfo {
       provides     <- serviceModel.provides
     } yield {
       val clientComponents = getServiceClients(serviceModel.subsystem, serviceModel.component, provides.name, targetModelsList)
-      val html = OpenApiToHtml.getHtml(provides.openApi, staticHtml)
+      val html = if (clientComponents.size == 1 && clientComponents.head.subsystem != serviceModel.subsystem) {
+        // If there is only one client in another subsystem (might be an ICD), only document the used routes.
+        // Note that the getServiceClients() call above tells us that the following service client exists
+        val paths = targetModelsList.head.serviceModel.head.requires
+          .find(s => s.subsystem == serviceModel.subsystem && s.component == serviceModel.component && s.name == provides.name)
+          .get
+          .paths
+        OpenApiToHtml.getHtml(OpenApiToHtml.filterOpenApiJson(provides.openApi, paths), staticHtml)
+      } else {
+        // Display the full API
+        OpenApiToHtml.getHtml(provides.openApi, staticHtml)
+      }
+
       ServiceProvidedInfo(provides, clientComponents, html)
     }
   }
@@ -423,27 +435,34 @@ object IcdComponentInfo {
    * @param query            used to query the db
    * @param models           the model objects for the component
    * @param targetModelsList the target model objects
+   * @param staticHtml       for services documented by OpenApi JSON, determines the type of HTML generated
+   *                        (static is plain HTML, non-static includes JavaScript)
    */
   private def getServicesRequired(
       query: IcdDbQuery,
       models: IcdModels,
       targetModelsList: List[IcdModels],
-      maybePdfOptions: Option[PdfOptions]
+      maybePdfOptions: Option[PdfOptions],
+      staticHtml: Boolean
   ): List[ServicesRequiredInfo] = {
     val result = for {
       serviceModel       <- models.serviceModel.toList
       serviceModelClient <- serviceModel.requires
     } yield {
-      val maybeProvider = getServiceModelProvider(
+      val maybeServiceModelProvider = getServiceModelProvider(
         serviceModelClient.subsystem,
         serviceModelClient.component,
         serviceModelClient.name,
         targetModelsList
       )
+      val maybeHtml = maybeServiceModelProvider.map { p =>
+        OpenApiToHtml.getHtml(OpenApiToHtml.filterOpenApiJson(p.openApi, serviceModelClient.paths), staticHtml)
+      }
       ServicesRequiredInfo(
         serviceModelClient,
-        maybeProvider,
-        query.getComponentModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions)
+        maybeServiceModelProvider,
+        query.getComponentModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions),
+        maybeHtml
       )
     }
     result
@@ -467,7 +486,7 @@ object IcdComponentInfo {
       staticHtml: Boolean
   ): Option[Services] = {
     val provided = getServicesProvided(models, targetModelsList, staticHtml)
-    val required = getServicesRequired(query, models, targetModelsList, maybePdfOptions)
+    val required = getServicesRequired(query, models, targetModelsList, maybePdfOptions, staticHtml)
     models.serviceModel match {
       case None => None
       case Some(m) =>
