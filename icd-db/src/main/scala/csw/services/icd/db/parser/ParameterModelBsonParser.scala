@@ -68,7 +68,7 @@ object ParameterModelBsonParser {
 
     // ---
 
-    val defaultValue = doc.getAsOpt[String]("default").getOrElse("")
+    val defaultValue = doc.get("default").map(bsonValueToString).getOrElse("")
 
     // Returns "string" and includes the min/max length, if specified in brackets
     def makeStringTypeStr(): String = {
