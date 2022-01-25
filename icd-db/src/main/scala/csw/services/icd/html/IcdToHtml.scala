@@ -385,47 +385,6 @@ object IcdToHtml {
         }
       )
     }
-
-    //    // XXX TODO FIXME
-//    div()
-//
-//    val compName   = component.component
-//    val providerInfo = span(strong("Provider: "), s"${component.subsystem}.$compName")
-//
-//    if (info.isEmpty) div()
-//    else {
-//      div(
-//        nh.H4(servicesRequiredTitle(compName)),
-//        for (s <- info) yield {
-//          val receiveCommandModel = s.receiveCommandModel
-//          val receiverStr         = s.receiver.map(r => s"${r.subsystem}.${r.component}").getOrElse("none")
-//          val receiverInfo        = span(strong("Receiver: "), receiverStr)
-//          val linkId              = idFor(compName, "sends", "Commands", s.subsystem, s.component, s.name)
-//          val showDetails         = pdfOptions.details || pdfOptions.expandedIds.contains(linkId)
-//          div(cls := "nopagebreak")(
-//            nh.H5(s"Command: ${s.name}", linkId),
-//            p(providerInfo, ", ", receiverInfo),
-//            receiveCommandModel match {
-//              case Some(m) if showDetails =>
-//                div(
-//                  if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
-//                  if (m.preconditions.isEmpty) div()
-//                  else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
-//                  if (m.postconditions.isEmpty) div()
-//                  else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
-//                  raw(m.description),
-//                  if (m.parameters.isEmpty) div() else parameterListMarkup(m.name, m.parameters, m.requiredArgs)
-//                )
-//              case Some(m) =>
-//                div(
-//                  raw(m.description)
-//                )
-//              case None => s.warning.map(msg => p(em(" Warning: ", msg)))
-//            }
-//          )
-//        }
-//      )
-//    }
   }
 
   // Generates the HTML markup to display the HTTP services a component provides
