@@ -866,6 +866,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           div(cls := "nopagebreak")(
             h5(s"HTTP Service: ${m.name}"),
             p(providerInfo),
+            p("Note: Only the routes required by the client are listed here."),
             if (s.maybeHtml.nonEmpty)
               div(
                 a(onclick := openInNewTab, title := s"Open ${m.name} API in new tab.")(s"Open ${m.name} API in new tab.")

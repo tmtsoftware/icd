@@ -349,6 +349,8 @@ object IcdToHtml {
     }
   }
 
+  private def servicesRequiredTitle(compName: String): String = s"Services Required by $compName"
+
   // Generates the HTML markup to display the HTTP services a component requires
   private def servicesRequiredMarkup(
       component: ComponentModel,
@@ -358,16 +360,42 @@ object IcdToHtml {
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
-    // XXX TODO FIXME
-    div()
+    val compName = component.component
+    if (info.isEmpty) div()
+    else {
+      div(
+        nh.H4(servicesRequiredTitle(compName)),
+        for (s <- info) yield {
+          val m = s.serviceModelClient
+          val providerInfo = {
+            val provider = s"${s.serviceModelClient.subsystem}.${s.serviceModelClient.component}"
+            span(strong(s"Provider: "), provider)
+          }
+          div(cls := "nopagebreak")(
+            nh.H5(s"HTTP Service: ${m.name}"),
+            p(providerInfo),
+            p("Note: Only the routes required by the client are listed here."),
+            if (s.maybeHtml.nonEmpty) {
+              div(
+                raw(s.maybeHtml.get)
+              )
+            }
+            else div()
+          )
+        }
+      )
+    }
 
+    //    // XXX TODO FIXME
+//    div()
+//
 //    val compName   = component.component
-//    val senderInfo = span(strong("Sender: "), s"${component.subsystem}.$compName")
+//    val providerInfo = span(strong("Provider: "), s"${component.subsystem}.$compName")
 //
 //    if (info.isEmpty) div()
 //    else {
 //      div(
-//        nh.H4(sentCommandsTitle(compName)),
+//        nh.H4(servicesRequiredTitle(compName)),
 //        for (s <- info) yield {
 //          val receiveCommandModel = s.receiveCommandModel
 //          val receiverStr         = s.receiver.map(r => s"${r.subsystem}.${r.component}").getOrElse("none")
@@ -376,7 +404,7 @@ object IcdToHtml {
 //          val showDetails         = pdfOptions.details || pdfOptions.expandedIds.contains(linkId)
 //          div(cls := "nopagebreak")(
 //            nh.H5(s"Command: ${s.name}", linkId),
-//            p(senderInfo, ", ", receiverInfo),
+//            p(providerInfo, ", ", receiverInfo),
 //            receiveCommandModel match {
 //              case Some(m) if showDetails =>
 //                div(
