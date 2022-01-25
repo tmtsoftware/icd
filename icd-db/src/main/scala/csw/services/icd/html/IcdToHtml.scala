@@ -259,7 +259,7 @@ object IcdToHtml {
           div(
             nh.H3(s"Commands for ${component.component}"),
             raw(commands.description),
-            receivedCommandsMarkup(component, commands.commandsReceived, nh, forApi, pdfOptions, clientApi),
+            receivedCommandsMarkup(component, commands.commandsReceived, nh, pdfOptions, clientApi),
             if (forApi && clientApi) sentCommandsMarkup(component, commands.commandsSent, nh, pdfOptions) else div()
           )
         }
@@ -272,7 +272,6 @@ object IcdToHtml {
       component: ComponentModel,
       info: List[ReceivedCommandInfo],
       nh: NumberedHeadings,
-      forApi: Boolean,
       pdfOptions: PdfOptions,
       clientApi: Boolean
   ): Text.TypedTag[String] = {
@@ -342,7 +341,7 @@ object IcdToHtml {
           div(
             nh.H3(s"Services for ${component.component}"),
             raw(services.description),
-            servicesProvidedMarkup(component, services.servicesProvided, nh, forApi, pdfOptions, clientApi),
+            servicesProvidedMarkup(component, services.servicesProvided, nh, pdfOptions, clientApi),
             if (forApi && clientApi) servicesRequiredMarkup(component, services.servicesRequired, nh, pdfOptions) else div()
           )
         }
@@ -406,7 +405,6 @@ object IcdToHtml {
       component: ComponentModel,
       info: List[ServiceProvidedInfo],
       nh: NumberedHeadings,
-      forApi: Boolean,
       pdfOptions: PdfOptions,
       clientApi: Boolean
   ): Text.TypedTag[String] = {
@@ -447,25 +445,16 @@ object IcdToHtml {
     }
   }
 
-  // Insert a hyperlink from "struct" to the table listing the fields in the struct
-  private def getTypeStr(fieldName: String, typeStr: String): String = {
-    import scalatags.Text.all._
-    if (typeStr == "struct" || typeStr == "array of struct")
-      a(href := s"#${structIdStr(fieldName)}")(typeStr).render
-    else typeStr
-  }
-
   private def resultTypeMarkup(parameterList: List[ParameterModel]): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (parameterList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units")
-      val rowList  = for (a <- parameterList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units)
+      val rowList  = for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units)
       div(cls := "nopagebreak")(
         p(strong(a("Result Type Parameters"))),
         HtmlMarkup.mkTable(headings, rowList),
-        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-        structParametersMarkup(parameterList)
+        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError))
       )
     }
   }
@@ -484,7 +473,7 @@ object IcdToHtml {
           yield List(
             a.name,
             a.description,
-            getTypeStr(a.name, a.typeStr),
+            a.typeStr,
             a.units,
             a.defaultValue,
             yesNo(requiredArgs.contains(a.name))
@@ -492,8 +481,7 @@ object IcdToHtml {
       div(cls := "nopagebreak")(
         p(strong(a(s"Parameters for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList),
-        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-        structParametersMarkup(parameterList)
+        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError))
       )
     }
   }
@@ -594,32 +582,6 @@ object IcdToHtml {
 
   private def subscribeTitle(compName: String): String = s"Items subscribed to by $compName"
 
-  // HTML id for a table displaying the fields of a struct
-  private def structIdStr(name: String): String = s"$name-struct"
-
-  // Add a table for each parameter of type "struct" to show the members of the struct
-  private def structParametersMarkup(parameterList: List[ParameterModel]): Seq[Text.TypedTag[String]] = {
-    import scalatags.Text.all._
-    val headings = List("Name", "Description", "Type", "Units", "Default")
-    parameterList.flatMap { attrModel =>
-      if (attrModel.typeStr == "struct" || attrModel.typeStr == "array of struct") {
-        val rowList2 =
-          for (a2 <- attrModel.parameterList)
-            yield List(a2.name, a2.description, getTypeStr(a2.name, a2.typeStr), a2.units, a2.defaultValue)
-        Some(
-          div()(
-            p(strong(a(name := structIdStr(attrModel.name))(s"Parameters for ${attrModel.name} struct"))),
-            HtmlMarkup.mkTable(headings, rowList2),
-            attrModel.parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-            // Handle structs embedded in other structs (or arrays of structs, etc.)
-            structParametersMarkup(attrModel.parameterList)
-          )
-        )
-      }
-      else None
-    }
-  }
-
   private def makeErrorDiv(msg: String): Text.TypedTag[String] = {
     import scalatags.Text.all._
     div(cls := "alert alert-warning", role := "alert")(
@@ -637,12 +599,11 @@ object IcdToHtml {
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default")
       val rowList =
-        for (a <- parameterList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units, a.defaultValue)
+        for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
       div(cls := "nopagebreak")(
         p(strong(a(s"Parameters for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList),
-        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-        structParametersMarkup(parameterList)
+        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError))
       )
     }
   }

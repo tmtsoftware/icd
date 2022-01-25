@@ -57,7 +57,7 @@ class IcdDbTests extends AnyFunSuite {
 
     val publish   = db.query.getPublishModel(envCtrl, None).get
     val eventList = publish.eventList
-    assert(eventList.size == 3)
+    assert(eventList.size == 2)
     val logging = eventList.head
     assert(logging.name == "logToFile")
     assert(logging.archive)

@@ -148,7 +148,6 @@ object IcdModels {
    * @param exclusiveMaximum true if the max value in exclusive
    * @param defaultValue     default value (as a string, which may be empty)
    * @param typeStr          a generated text description of the type
-   * @param parameterList   If type or array type is "struct", this should be a list of parameters in the struct
    */
   case class ParameterModel(
       name: String,
@@ -170,8 +169,7 @@ object IcdModels {
       exclusiveMaximum: Boolean,
       allowNaN: Boolean,
       defaultValue: String,
-      typeStr: String,
-      parameterList: List[ParameterModel]
+      typeStr: String
   ) extends NameDesc {
 
     // Estimate size required to archive the value(s) for this parameter
@@ -183,7 +181,6 @@ object IcdModels {
           val n    = maybeDimensions.getOrElse(d).product
           val size = maybeArrayType.map(getTypeSize).getOrElse(defaultTypeSize)
           n * size + n - 1 // OSWDMS-32: Add 1 byte per array item
-        case "struct" => parameterList.map(_.totalSizeInBytes).sum
         // Assume boolean encoded as 1/0 byte?
         case "boolean" => 1
         case "integer" => 4

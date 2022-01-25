@@ -284,32 +284,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
-  // HTML id for a table displaying the fields of a struct
-  private def structIdStr(name: String): String = s"$name-struct"
-
-  // Add a table for each attribute of type "struct" to show the members of the struct
-  private def structParametersMarkup(parameterList: List[ParameterModel]): Seq[TypedTag[Div]] = {
-    import scalatags.JsDom.all._
-    val headings = List("Name", "Description", "Type", "Units", "Default")
-    parameterList.flatMap { attrModel =>
-      if (attrModel.typeStr == "struct" || attrModel.typeStr == "array of struct") {
-        val rowList2 =
-          for (a2 <- attrModel.parameterList)
-            yield List(a2.name, a2.description, getTypeStr(a2.name, a2.typeStr), a2.units, a2.defaultValue)
-        Some(
-          div()(
-            p(strong(a(name := structIdStr(attrModel.name))(s"Parameters for ${attrModel.name} struct"))),
-            mkTable(headings, rowList2),
-            attrModel.parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-            // Handle structs embedded in other structs (or arrays of structs, etc.)
-            structParametersMarkup(attrModel.parameterList)
-          )
-        )
-      }
-      else None
-    }
-  }
-
   /**
    * Returns a table of attributes
    *
@@ -322,12 +296,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default")
       val rowList =
-        for (a <- parameterList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units, a.defaultValue)
+        for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
       div(
         strong("Parameters"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
-        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-        structParametersMarkup(parameterList)
+        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError))
       )
     }
   }
@@ -351,7 +324,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           yield List(
             a.name,
             a.description,
-            getTypeStr(a.name, a.typeStr),
+            a.typeStr,
             a.units,
             a.defaultValue,
             yesNo(requiredArgs.contains(a.name))
@@ -359,18 +332,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       div(
         strong("Parameters"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
-        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-        structParametersMarkup(parameterList)
+        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError))
       )
     }
-  }
-
-  // Insert a hyperlink from "struct" to the table listing the fields in the struct
-  private def getTypeStr(fieldName: String, typeStr: String): String = {
-    import scalatags.Text.all._
-    if (typeStr == "struct" || typeStr == "array of struct")
-      a(href := s"#${structIdStr(fieldName)}")(typeStr).render
-    else typeStr
   }
 
   /**
@@ -383,12 +347,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     if (parameterList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units")
-      val rowList  = for (a <- parameterList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units)
+      val rowList  = for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units)
       div(
         strong("Result Type Parameters"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
-        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-        structParametersMarkup(parameterList)
+        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError))
       )
     }
   }
