@@ -68,7 +68,7 @@ object ParameterModelBsonParser {
 
     // ---
 
-    val defaultValue = doc.getAsOpt[String]("default").getOrElse("")
+    val defaultValue = doc.get("default").map(bsonValueToString).getOrElse("")
 
     // Returns "string" and includes the min/max length, if specified in brackets
     def makeStringTypeStr(): String = {
@@ -138,25 +138,6 @@ object ParameterModelBsonParser {
 
     val typeStr = parseTypeStr(doc, doc.getAsOpt[String]("type"))
 
-    // If type is "struct", parameterList gives the fields of the struct
-    val parameterList = if (typeStr == "struct") {
-      // For backward compatibility, allow "attributes" or "parameters"
-      val attrKey = if (doc.contains("parameters")) "parameters" else "attributes"
-      for (subDoc <- doc.getAsOpt[Array[BSONDocument]](attrKey).map(_.toList).getOrElse(Nil))
-        yield ParameterModelBsonParser(subDoc, maybePdfOptions)
-    }
-    else if (typeStr.startsWith("array") && typeStr.endsWith(" of struct")) {
-      doc
-        .getAsOpt[BSONDocument]("items")
-        .toList
-        .flatMap { items =>
-          val attrKey = if (items.contains("parameters")) "parameters" else "attributes"
-          for (subDoc <- items.getAsOpt[Array[BSONDocument]](attrKey).map(_.toList).getOrElse(Nil))
-            yield ParameterModelBsonParser(subDoc, maybePdfOptions)
-        }
-    }
-    else Nil
-
     ParameterModel(
       name,
       ref,
@@ -177,8 +158,7 @@ object ParameterModelBsonParser {
       exclusiveMaximum,
       allowNaN,
       defaultValue,
-      typeStr,
-      parameterList
+      typeStr
     )
   }
 }

@@ -1,10 +1,9 @@
 package icd.web.client
 
-import org.scalajs.dom.ext.Ajax
 import play.api.libs.json._
 
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 import SubsystemNames._
 
 object SubsystemNames {
@@ -22,10 +21,10 @@ case class SubsystemNames(mainContent: MainContent, listener: Listener) {
 
   // Gets the list of subsystems from the server
   private def getSubsystemNames: Future[List[String]] = {
-    Ajax
+    Fetch
       .get(ClientRoutes.subsystems)
-      .map { r =>
-        Json.fromJson[List[String]](Json.parse(r.responseText)).get
+      .map { text =>
+        Json.fromJson[List[String]](Json.parse(text)).get
       }
   }
 

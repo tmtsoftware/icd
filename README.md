@@ -8,6 +8,8 @@ Subsystem APIs are described in model files. The model files are validated using
 however the schema descriptions as well as the model files may also be written in
 the simpler [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md) format.
 (See [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of recent changes in the JSON Schema for API model files.)
+In addition, HTTP services can be described using [OpenAPI](https://swagger.io/specification/) files
+(See [example Segment Service](examples/2.0/TEST2/segmentService)).
 
 Versions of APIs and ICDs are managed in [GitHub repositories](https://github.com/tmt-icd/ICD-Model-Files.git) and 
 the subsystem model files can be imported from GitHub (with version history) into a local MongoDB database, which is used
@@ -51,7 +53,9 @@ Note: The build requires that [node.js](https://nodejs.org/en/) be installed on 
 This is checked in the install.sh script, which automatically sets the SBT_OPTS environment variable if node.js is found 
 and gives an error otherwise. 
 
-Note: The [Graphviz](https://graphviz.org/download/) apps needs to be installed in order to use the UML or icd-viz features. 
+Note: 
+- The [Graphviz](https://graphviz.org/download/) apps needs to be installed in order to use the UML or icd-viz features.
+- The [swagger-codegen](https://swagger.io/tools/swagger-codegen/) command line app needs to be installed in order to generate the documentation for components that provide or use HTTP services and declare them in the `service-model.conf` model file. You can install `swagger-codegen` with this command: `cs install --contrib swagger-codegen`.
 
 An install.sh script is provided that builds and installs all of the subprojects into the __../install_icd__ directory.
 This is basically just the command `sbt stage` in each project followed by copying the products to the

@@ -1,18 +1,23 @@
 package csw.services.icd.db
 
-import play.api.libs.json.{JsNumber, JsObject}
+import play.api.libs.json._
 import csw.services.icd._
-import reactivemongo.api.DefaultDB
+import reactivemongo.api.DB
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.bson._
+
 import reactivemongo.play.json.compat._
+import bson2json._
+import lax._
+import json2bson._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * Manages ingesting objects into the database while keeping track of
  * previous versions.
  */
-case class IcdDbManager(db: DefaultDB, versionManager: IcdVersionManager) {
+case class IcdDbManager(db: DB, versionManager: IcdVersionManager) {
 
   import IcdVersionManager._
 
@@ -21,7 +26,7 @@ case class IcdDbManager(db: DefaultDB, versionManager: IcdVersionManager) {
    * creating a new one if it does not already exist.
    *
    * @param name name of the collection to use
-   * @param tmpName temp name of the collection to use during iingest
+   * @param tmpName temp name of the collection to use during ingest
    * @param obj  the object to insert
    */
   private[db] def ingest(name: String, tmpName: String, obj: JsObject): Unit = {
@@ -42,7 +47,7 @@ case class IcdDbManager(db: DefaultDB, versionManager: IcdVersionManager) {
   // Updates an object in an existing collection, keeping the same _version number
   private def update(coll: BSONCollection, tmpColl: BSONCollection, obj: JsObject): Unit = {
     val doc = coll.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await.get
-    val currentVersion = doc.getAsOpt[BSONNumberLike](versionKey).get.toInt.get
+    val currentVersion = doc.getAsOpt[BSONInteger](versionKey).get.toInt.get
     tmpColl.insert.one(obj + (versionKey -> JsNumber(currentVersion))).await
   }
 }

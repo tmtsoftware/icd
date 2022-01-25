@@ -2,24 +2,19 @@ package csw.services.icd.db
 
 import csw.services.icd._
 import csw.services.icd.StdName._
-import csw.services.icd.db.parser.{
-  AlarmsModelBsonParser,
-  CommandModelBsonParser,
-  ComponentModelBsonParser,
-  IcdModelBsonParser,
-  PublishModelBsonParser,
-  SubscribeModelBsonParser,
-  SubsystemModelBsonParser
-}
+import csw.services.icd.db.parser.{AlarmsModelBsonParser, CommandModelBsonParser, ComponentModelBsonParser, IcdModelBsonParser, PublishModelBsonParser, ServiceModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.AllEventList.{Event, EventsForComponent, EventsForSubsystem}
 import icd.web.shared.{IcdModels, PdfOptions}
 import icd.web.shared.IcdModels._
 import play.api.libs.json.JsObject
-import reactivemongo.api.DefaultDB
+import reactivemongo.api.DB
 import reactivemongo.api.bson.BSONDocument
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.play.json.compat._
+import bson2json._
+import lax._
+import json2bson._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
@@ -62,6 +57,7 @@ object IcdDbQuery {
       subscribe: Option[BSONCollection],
       command: Option[BSONCollection],
       alarms: Option[BSONCollection],
+      services: Option[BSONCollection],
       icds: List[BSONCollection]
   ) {
 
@@ -70,7 +66,7 @@ object IcdDbQuery {
   }
 
   // Returns an IcdEntry for the given collection path
-  private[db] def getEntry(db: DefaultDB, name: String, paths: List[String]): ApiCollections = {
+  private[db] def getEntry(db: DB, name: String, paths: List[String]): ApiCollections = {
     ApiCollections(
       name = name,
       subsystem = paths.find(_.endsWith(".subsystem")).map(db(_)),
@@ -79,6 +75,7 @@ object IcdDbQuery {
       subscribe = paths.find(_.endsWith(".subscribe")).map(db(_)),
       command = paths.find(_.endsWith(".command")).map(db(_)),
       alarms = paths.find(_.endsWith(".alarm")).map(db(_)),
+      services = paths.find(_.endsWith(".service")).map(db(_)),
       icds = paths.filter(_.endsWith("-icd")).map(db(_))
     )
   }
@@ -90,6 +87,8 @@ object IcdDbQuery {
   private[db] def getPublishCollectionName(subsystem: String, component: String): String = s"$subsystem.$component.publish"
 
   private[db] def getAlarmsCollectionName(subsystem: String, component: String): String = s"$subsystem.$component.alarm"
+
+  private[db] def getServiceCollectionName(subsystem: String, component: String): String = s"$subsystem.$component.service"
 
   private[db] def getSubscribeCollectionName(subsystem: String, component: String): String = s"$subsystem.$component.subscribe"
 
@@ -154,7 +153,7 @@ object IcdDbQuery {
  * @param maybeSubsystems if defined, limit the list of subsystems searched
  */
 //noinspection DuplicatedCode
-case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[List[String]]) {
+case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) {
   import IcdDbQuery._
 
   // Search only the given subsystems, or all subsystems, if maybeSubsystems is empty
@@ -211,13 +210,14 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
       subscribe = getSubscribeCollection(subsystem, component),
       command = getCommandCollection(subsystem, component),
       alarms = getAlarmsCollection(subsystem, component),
+      services = getServiceCollection(subsystem, component),
       icds = Nil
     )
   }
 
   // Returns an IcdEntry object for the given subsystem name, if found
   private[db] def entryForSubsystemName(subsystem: String): ApiCollections = {
-    ApiCollections(subsystem, getSubsystemCollection(subsystem), None, None, None, None, None, getIcdCollections(subsystem))
+    ApiCollections(subsystem, getSubsystemCollection(subsystem), None, None, None, None, None, None, getIcdCollections(subsystem))
   }
 
   /**
@@ -309,6 +309,11 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
 
   private def getAlarmsCollection(subsystem: String, component: String): Option[BSONCollection] = {
     val collName = getAlarmsCollectionName(subsystem, component)
+    getCollection(collName)
+  }
+
+  private def getServiceCollection(subsystem: String, component: String): Option[BSONCollection] = {
+    val collName = getServiceCollectionName(subsystem, component)
     getCollection(collName)
   }
 
@@ -407,6 +412,21 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
   }
 
   /**
+   * Returns an object describing the "services" provided or required by the named component in the named subsystem
+   */
+  def getServiceModel(component: ComponentModel, maybePdfOptions: Option[PdfOptions]): Option[ServiceModel] =
+    getServiceModel(component.subsystem, component.component, maybePdfOptions)
+
+  def getServiceModel(subsystem: String, component: String, maybePdfOptions: Option[PdfOptions]): Option[ServiceModel] = {
+    val collName = getServiceCollectionName(subsystem, component)
+    if (collectionExists(collName)) {
+      val coll = db.collection[BSONCollection](collName)
+      collectionHead(coll).flatMap(ServiceModelBsonParser(db, _, maybePdfOptions))
+    }
+    else None
+  }
+
+  /**
    * Returns an object describing the named command, defined for the named component in the named subsystem
    */
   def getCommand(
@@ -436,6 +456,27 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
       componentModel <- getComponents(maybePdfOptions)
       commandModel   <- getCommandModel(componentModel, maybePdfOptions)
       _              <- commandModel.send.find(s => s.subsystem == subsystem && s.component == component && s.name == commandName)
+    } yield componentModel
+  }
+
+  /**
+   * Returns a list of components that require the given service from the given component/subsystem
+   *
+   * @param subsystem   the service provider subsystem
+   * @param component   the service provider component
+   * @param serviceName the name of the service
+   * @return list containing one item for each component that requires the service
+   */
+  def getServiceClients(
+                         subsystem: String,
+                         component: String,
+                         serviceName: String,
+                         maybePdfOptions: Option[PdfOptions]
+  ): List[ComponentModel] = {
+    for {
+      componentModel <- getComponents(maybePdfOptions)
+      serviceModel   <- getServiceModel(componentModel, maybePdfOptions)
+      _              <- serviceModel.requires.find(s => s.subsystem == subsystem && s.component == component && s.name == serviceName)
     } yield componentModel
   }
 
@@ -470,9 +511,11 @@ case class IcdDbQuery(db: DefaultDB, admin: DefaultDB, maybeSubsystems: Option[L
         entry.component.flatMap(coll => collectionHead(coll).flatMap(ComponentModelBsonParser(_, maybePdfOptions)))
       val alarmsModel: Option[AlarmsModel] =
         entry.alarms.flatMap(coll => collectionHead(coll).flatMap(AlarmsModelBsonParser(_, maybePdfOptions)))
+      val serviceModel: Option[ServiceModel] =
+        entry.services.flatMap(coll => collectionHead(coll).flatMap(ServiceModelBsonParser(db, _, maybePdfOptions)))
       val icdModels: List[IcdModel] =
         entry.icds.flatMap(coll => collectionHead(coll).flatMap(IcdModelBsonParser(_, maybePdfOptions)))
-      IcdModels(subsystemModel, componentModel, publishModel, subscribeModel, commandModel, alarmsModel, icdModels)
+      IcdModels(subsystemModel, componentModel, publishModel, subscribeModel, commandModel, alarmsModel, serviceModel, icdModels)
     }
 
     val e =

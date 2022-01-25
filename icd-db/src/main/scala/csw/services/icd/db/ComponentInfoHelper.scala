@@ -1,5 +1,6 @@
 package csw.services.icd.db
 
+import csw.services.icd.html.OpenApiToHtml
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels._
 import icd.web.shared._
@@ -10,9 +11,12 @@ import icd.web.shared._
  *
  * @param displayWarnings if true warn when no publishers are found for a subscribed event etc.
  * @param clientApi if true include subscribed events and sent commands
+ * @param maybeStaticHtml  for services documented by OpenApi JSON, determines the type of HTML generated
+ *                       (static (true) is plain HTML, non-static (false) includes JavaScript)
+ *                       A value of None means don't generate the HTML at all.
  */
 //noinspection DuplicatedCode
-class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean) {
+class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeStaticHtml: Option[Boolean]) {
 
   /**
    * Query the database for information about all the subsystem's components
@@ -64,8 +68,9 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean) {
       val publishes      = getPublishes(versionManager.query, icdModels, maybePdfOptions)
       val subscribes     = if (clientApi) getSubscribes(versionManager.query, icdModels, maybePdfOptions) else None
       val commands       = getCommands(versionManager.query, icdModels, maybePdfOptions)
+      val services       = getServices(versionManager.query, icdModels, maybePdfOptions)
       componentModel.map { model =>
-        ComponentInfo(model, publishes, subscribes, commands)
+        ComponentInfo(model, publishes, subscribes, commands, services)
       }
     }
   }
@@ -230,6 +235,80 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean) {
         val desc = m.description
         if (desc.nonEmpty || sent.nonEmpty || received.nonEmpty)
           Some(Commands(desc, received, sent))
+        else None
+    }
+  }
+
+  /**
+   * Gets a list of services provided by the component
+   *
+   * @param query  database query handle
+   * @param models model objects for component
+   */
+  private def getServicesProvided(
+      query: IcdDbQuery,
+      models: IcdModels,
+      maybePdfOptions: Option[PdfOptions]
+  ): List[ServiceProvidedInfo] = {
+    for {
+      serviceModel <- models.serviceModel.toList
+      provides     <- serviceModel.provides
+    } yield {
+      val clientComponents =
+        if (clientApi)
+          query.getServiceClients(serviceModel.subsystem, serviceModel.component, provides.name, maybePdfOptions)
+        else Nil
+      val html = maybeStaticHtml.map(staticHtml => OpenApiToHtml.getHtml(provides.openApi, staticHtml)).getOrElse("<div/>")
+      ServiceProvidedInfo(provides, clientComponents, html)
+    }
+  }
+
+  /**
+   * Gets a list of services required by the component
+   *
+   * @param query  database query handle
+   * @param models model objects for component
+   */
+  private def getServicesRequired(
+      query: IcdDbQuery,
+      models: IcdModels,
+      maybePdfOptions: Option[PdfOptions]
+  ): List[ServicesRequiredInfo] = {
+    for {
+      serviceModel       <- models.serviceModel.toList
+      serviceModelClient <- serviceModel.requires
+    } yield {
+      val maybeServiceModel         = query.getServiceModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions)
+      val maybeServiceModelProvider = maybeServiceModel.flatMap(_.provides.find(_.name == serviceModelClient.name))
+      val maybeHtml = for {
+        p          <- maybeServiceModelProvider
+        staticHtml <- maybeStaticHtml
+      } yield OpenApiToHtml.getHtml(OpenApiToHtml.filterOpenApiJson(p.openApi, serviceModelClient.paths), staticHtml)
+      ServicesRequiredInfo(
+        serviceModelClient,
+        maybeServiceModelProvider,
+        query.getComponentModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions),
+        maybeHtml,
+        displayWarnings
+      )
+    }
+  }
+
+  /**
+   * Gets a list of services used or provided by the component
+   *
+   * @param query  database query handle
+   * @param models model objects for component
+   */
+  private def getServices(query: IcdDbQuery, models: IcdModels, maybePdfOptions: Option[PdfOptions]): Option[Services] = {
+    val provided = getServicesProvided(query, models, maybePdfOptions)
+    val required = if (clientApi) getServicesRequired(query, models, maybePdfOptions) else Nil
+    models.serviceModel match {
+      case None => None
+      case Some(m) =>
+        val desc = m.description
+        if (desc.nonEmpty || provided.nonEmpty || required.nonEmpty)
+          Some(Services(desc, provided, required))
         else None
     }
   }

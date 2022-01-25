@@ -4,7 +4,7 @@ import icd.web.shared.{IcdVizOptions, PdfOptions}
 import org.scalajs.dom
 import org.scalajs.dom._
 import org.scalajs.dom.html.{Div, Input}
-import org.scalajs.dom.raw.HTMLInputElement
+import org.scalajs.dom.HTMLInputElement
 import scalatags.JsDom
 import NavbarItem._
 

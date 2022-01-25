@@ -1,7 +1,7 @@
 package icd.web.client
 
 import org.scalajs.dom
-import org.scalajs.dom.raw.Node
+import org.scalajs.dom.Node
 import org.scalajs.dom.Element
 import org.scalajs.dom.html.UList
 import scalatags.JsDom.all._

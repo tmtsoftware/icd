@@ -14,5 +14,6 @@
     </root>
 
     <logger name="com.itextpdf" level="OFF" />
+    <logger name="reactivemongo.core" level="OFF" />
 
 </configuration>

@@ -2,6 +2,18 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
+## [ICD v2.2.0] - 
+
+- Added support for documenting TMT CSW components that are HTTP web services using [OpenAPI](https://swagger.io/specification/).
+
+- Added a new, optional icd model file: service-model.conf, that contains information about the HTTP services that a component provides or requires. For each service provided, the model file also contains the name of the OpenAPI JSON file that describes the service.
+
+- Updated dependencies
+
+- Replaced deprecated ScalaJS Ajax usage with recommended dom.fetch API
+
+- Removed RaDec type from JSON schema for parameters in v2.0 model files
+
 ## [ICD v2.1.2] - 2021-05-25
 
 - Added support for optional `${subsystem}-icd-model.conf` files (for example: `IRIS-icd-model.conf`, `TCS-icd-model.conf`) that add information about the ICD between `${subsystem}` and the subsystem being described. 

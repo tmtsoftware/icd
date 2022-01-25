@@ -18,6 +18,7 @@ import play.api.mvc._
 import play.api.{Configuration, Environment, Mode}
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.util.Timeout
+import csw.services.icd.html.OpenApiToHtml
 import icd.web.shared.IcdModels.{EventModel, IcdModel}
 
 import java.net.URLDecoder

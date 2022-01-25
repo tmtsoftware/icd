@@ -157,8 +157,8 @@ object IcdToHtml {
       forApi ||
       (info.publishes.isDefined && info.publishes.get.nonEmpty
       || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
-      || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
-      || info.commands.get.commandsSent.nonEmpty))
+      || info.commands.isDefined && info.commands.get.nonEmpty
+      || info.services.isDefined && info.services.get.nonEmpty)
     ) {
       markupForComponent(info, nh, forApi, pdfOptions, clientApi)
     }
@@ -181,7 +181,8 @@ object IcdToHtml {
       raw(info.componentModel.description),
       publishMarkup(info.componentModel, info.publishes, nh, forApi, pdfOptions, clientApi),
       if (forApi && clientApi) subscribeMarkup(info.componentModel, info.subscribes, nh, pdfOptions) else div(),
-      commandsMarkup(info.componentModel, info.commands, nh, forApi, pdfOptions, clientApi)
+      commandsMarkup(info.componentModel, info.commands, nh, forApi, pdfOptions, clientApi),
+      servicesMarkup(info.componentModel, info.services, nh, forApi, pdfOptions, clientApi)
     )
   }
 
@@ -258,7 +259,7 @@ object IcdToHtml {
           div(
             nh.H3(s"Commands for ${component.component}"),
             raw(commands.description),
-            receivedCommandsMarkup(component, commands.commandsReceived, nh, forApi, pdfOptions, clientApi),
+            receivedCommandsMarkup(component, commands.commandsReceived, nh, pdfOptions, clientApi),
             if (forApi && clientApi) sentCommandsMarkup(component, commands.commandsSent, nh, pdfOptions) else div()
           )
         }
@@ -271,7 +272,6 @@ object IcdToHtml {
       component: ComponentModel,
       info: List[ReceivedCommandInfo],
       nh: NumberedHeadings,
-      forApi: Boolean,
       pdfOptions: PdfOptions,
       clientApi: Boolean
   ): Text.TypedTag[String] = {
@@ -324,12 +324,125 @@ object IcdToHtml {
     }
   }
 
-  // Insert a hyperlink from "struct" to the table listing the fields in the struct
-  private def getTypeStr(fieldName: String, typeStr: String): String = {
+  // Generates the markup for the services section (description plus provides and requires)
+  private def servicesMarkup(
+      component: ComponentModel,
+      maybeServices: Option[Services],
+      nh: NumberedHeadings,
+      forApi: Boolean,
+      pdfOptions: PdfOptions,
+      clientApi: Boolean
+  ): Text.TypedTag[String] = {
     import scalatags.Text.all._
-    if (typeStr == "struct" || typeStr == "array of struct")
-      a(href := s"#${structIdStr(fieldName)}")(typeStr).render
-    else typeStr
+    maybeServices match {
+      case None => div()
+      case Some(services) =>
+        if (services.servicesProvided.nonEmpty || (services.servicesRequired.nonEmpty && forApi && clientApi)) {
+          div(
+            nh.H3(s"Services for ${component.component}"),
+            raw(services.description),
+            servicesProvidedMarkup(component, services.servicesProvided, nh, pdfOptions, clientApi),
+            if (forApi && clientApi) servicesRequiredMarkup(component, services.servicesRequired, nh, pdfOptions) else div()
+          )
+        }
+        else div()
+    }
+  }
+
+  // Generates the HTML markup to display the HTTP services a component requires
+  private def servicesRequiredMarkup(
+      component: ComponentModel,
+      info: List[ServicesRequiredInfo],
+      nh: NumberedHeadings,
+      pdfOptions: PdfOptions
+  ): Text.TypedTag[String] = {
+    import scalatags.Text.all._
+
+    // XXX TODO FIXME
+    div()
+
+//    val compName   = component.component
+//    val senderInfo = span(strong("Sender: "), s"${component.subsystem}.$compName")
+//
+//    if (info.isEmpty) div()
+//    else {
+//      div(
+//        nh.H4(sentCommandsTitle(compName)),
+//        for (s <- info) yield {
+//          val receiveCommandModel = s.receiveCommandModel
+//          val receiverStr         = s.receiver.map(r => s"${r.subsystem}.${r.component}").getOrElse("none")
+//          val receiverInfo        = span(strong("Receiver: "), receiverStr)
+//          val linkId              = idFor(compName, "sends", "Commands", s.subsystem, s.component, s.name)
+//          val showDetails         = pdfOptions.details || pdfOptions.expandedIds.contains(linkId)
+//          div(cls := "nopagebreak")(
+//            nh.H5(s"Command: ${s.name}", linkId),
+//            p(senderInfo, ", ", receiverInfo),
+//            receiveCommandModel match {
+//              case Some(m) if showDetails =>
+//                div(
+//                  if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
+//                  if (m.preconditions.isEmpty) div()
+//                  else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
+//                  if (m.postconditions.isEmpty) div()
+//                  else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
+//                  raw(m.description),
+//                  if (m.parameters.isEmpty) div() else parameterListMarkup(m.name, m.parameters, m.requiredArgs)
+//                )
+//              case Some(m) =>
+//                div(
+//                  raw(m.description)
+//                )
+//              case None => s.warning.map(msg => p(em(" Warning: ", msg)))
+//            }
+//          )
+//        }
+//      )
+//    }
+  }
+
+  // Generates the HTML markup to display the HTTP services a component provides
+  private def servicesProvidedMarkup(
+      component: ComponentModel,
+      info: List[ServiceProvidedInfo],
+      nh: NumberedHeadings,
+      pdfOptions: PdfOptions,
+      clientApi: Boolean
+  ): Text.TypedTag[String] = {
+    import scalatags.Text.all._
+
+    val compName     = component.component
+    val providerInfo = span(strong("Service Provider: "), s"${component.subsystem}.$compName")
+
+    if (info.isEmpty) div()
+    else {
+      div(
+        nh.H4(servicesProvidedTitle(compName)),
+        for (s <- info) yield {
+          val m = s.serviceModelProvider
+          val consumerInfo = if (clientApi) {
+            val consumers = s.requiredBy.distinct.map(s => s"${s.subsystem}.${s.component}").mkString(", ")
+            span(strong(s"Consumers: "), if (consumers.isEmpty) "none" else consumers)
+          }
+          else span
+          val linkId      = idFor(compName, "provides", "Services", component.subsystem, compName, m.name)
+          val showDetails = pdfOptions.details || pdfOptions.expandedIds.contains(linkId)
+          div(cls := "nopagebreak")(
+            nh.H5(s"HTTP Service: ${m.name}", linkId),
+            if (clientApi) p(consumerInfo, ", ", providerInfo) else p(providerInfo),
+            if (showDetails) {
+              div(
+                raw(s.html)
+              )
+            }
+            else
+              div(
+                // XXX TODO: Need an extra description field?
+                p(s"Details of the ${m.name} HTTP service are not included.")
+              )
+          )
+        }
+      )
+    }
   }
 
   private def resultTypeMarkup(parameterList: List[ParameterModel]): Text.TypedTag[String] = {
@@ -337,12 +450,11 @@ object IcdToHtml {
     if (parameterList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units")
-      val rowList  = for (a <- parameterList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units)
+      val rowList  = for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units)
       div(cls := "nopagebreak")(
         p(strong(a("Result Type Parameters"))),
         HtmlMarkup.mkTable(headings, rowList),
-        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-        structParametersMarkup(parameterList)
+        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError))
       )
     }
   }
@@ -361,7 +473,7 @@ object IcdToHtml {
           yield List(
             a.name,
             a.description,
-            getTypeStr(a.name, a.typeStr),
+            a.typeStr,
             a.units,
             a.defaultValue,
             yesNo(requiredArgs.contains(a.name))
@@ -369,13 +481,14 @@ object IcdToHtml {
       div(cls := "nopagebreak")(
         p(strong(a(s"Parameters for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList),
-        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-        structParametersMarkup(parameterList)
+        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError))
       )
     }
   }
 
   private def receivedCommandsTitle(compName: String): String = s"Command Configurations Received by $compName"
+
+  private def servicesProvidedTitle(compName: String): String = s"HTTP Services provided by $compName"
 
   // Generates the HTML markup to display the component's subscribe information
   private def subscribeMarkup(
@@ -469,32 +582,6 @@ object IcdToHtml {
 
   private def subscribeTitle(compName: String): String = s"Items subscribed to by $compName"
 
-  // HTML id for a table displaying the fields of a struct
-  private def structIdStr(name: String): String = s"$name-struct"
-
-  // Add a table for each parameter of type "struct" to show the members of the struct
-  private def structParametersMarkup(parameterList: List[ParameterModel]): Seq[Text.TypedTag[String]] = {
-    import scalatags.Text.all._
-    val headings = List("Name", "Description", "Type", "Units", "Default")
-    parameterList.flatMap { attrModel =>
-      if (attrModel.typeStr == "struct" || attrModel.typeStr == "array of struct") {
-        val rowList2 =
-          for (a2 <- attrModel.parameterList)
-            yield List(a2.name, a2.description, getTypeStr(a2.name, a2.typeStr), a2.units, a2.defaultValue)
-        Some(
-          div()(
-            p(strong(a(name := structIdStr(attrModel.name))(s"Parameters for ${attrModel.name} struct"))),
-            HtmlMarkup.mkTable(headings, rowList2),
-            attrModel.parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-            // Handle structs embedded in other structs (or arrays of structs, etc.)
-            structParametersMarkup(attrModel.parameterList)
-          )
-        )
-      }
-      else None
-    }
-  }
-
   private def makeErrorDiv(msg: String): Text.TypedTag[String] = {
     import scalatags.Text.all._
     div(cls := "alert alert-warning", role := "alert")(
@@ -512,12 +599,11 @@ object IcdToHtml {
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default")
       val rowList =
-        for (a <- parameterList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units, a.defaultValue)
+        for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
       div(cls := "nopagebreak")(
         p(strong(a(s"Parameters for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList),
-        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-        structParametersMarkup(parameterList)
+        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError))
       )
     }
   }

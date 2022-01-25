@@ -28,7 +28,7 @@ class ArchivedItemsTest extends AnyFunSuite {
     for (p <- problems) println(p)
     db.query.afterIngestFiles(problems, dbName)
 
-    new ComponentInfoHelper(displayWarnings = false, clientApi = false)
+    new ComponentInfoHelper(displayWarnings = false, clientApi = false, maybeStaticHtml = None)
       .getComponentInfo(versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None)
       .foreach { info =>
         assert(info.componentModel.component == "lgsWfs")
@@ -51,9 +51,9 @@ class ArchivedItemsTest extends AnyFunSuite {
             case "engMode2Error" =>
               assert(m.totalSizeInBytes == 180)
             case "engMode3" =>
-              assert(m.totalSizeInBytes == 432)
+              assert(m.totalSizeInBytes == 348)
               assert(m.archive)
-              assert(m.totalArchiveSpacePerYear == "6.3 GB")
+              assert(m.totalArchiveSpacePerYear == "5.1 GB")
             case "contRead" =>
               assert(m.totalSizeInBytes == 229)
               assert(!m.archive)

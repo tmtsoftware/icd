@@ -3,14 +3,16 @@ package csw.services.icd.db
 import java.io.File
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd._
-import csw.services.icd.db.parser.{BaseModelParser, IcdModelParser, SubsystemModelParser}
+import csw.services.icd.db.parser.{BaseModelParser, IcdModelParser, ServiceModelParser, SubsystemModelParser}
 import csw.services.icd.db.ComponentDataReporter._
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
+import csw.services.icd.db.StdConfig.Resources
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.{BuildInfo, PdfOptions, SubsystemWithVersion}
+import io.swagger.v3.parser.util.DeserializationUtils
 import org.joda.time.{DateTime, DateTimeZone}
-import play.api.libs.json.Json
-import reactivemongo.api.{AsyncDriver, DefaultDB, MongoConnection}
+import play.api.libs.json.{JsObject, Json}
+import reactivemongo.api.{AsyncDriver, DB, MongoConnection}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -24,7 +26,7 @@ object IcdDbDefaults {
   // Suffix used for temp collections while ingesting model files into the DB
   val tmpCollSuffix = ".tmp"
 
-  def connectToDatabase(host: String, port: Int, dbName: String): DefaultDB = {
+  def connectToDatabase(host: String, port: Int, dbName: String): DB = {
     val mongoUri = s"mongodb://$host:$port/$dbName"
     val driver   = new AsyncDriver
     val database = for {
@@ -40,7 +42,8 @@ object IcdDbDefaults {
   def deleteDatabase(host: String, port: Int, dbName: String): Unit = {
     try {
       connectToDatabase(host, port, dbName).drop().await
-    } catch {
+    }
+    catch {
       case _: Exception =>
     }
   }
@@ -167,7 +170,8 @@ object IcdDb extends App {
     case Some(options) =>
       try {
         run(options)
-      } catch {
+      }
+      catch {
         case _: IcdDbException =>
           println("Error: Failed to connect to mongodb. Make sure mongod server is running.")
           System.exit(1)
@@ -189,8 +193,9 @@ object IcdDb extends App {
 
     try {
       options.lineHeight.map(_.toFloat)
-    } catch {
-      case e: Exception =>
+    }
+    catch {
+      case _: Exception =>
         error("Expected a floating point value for line height")
     }
     val pdfOptions = PdfOptions(
@@ -241,7 +246,7 @@ object IcdDb extends App {
     // --output option
     def output(file: File): Unit = {
       if (options.subsystem.isEmpty) error("Missing required subsystem name: Please specify --subsystem <name>")
-      val clientApi = options.target.isDefined || options.clientApi.isDefined
+      val clientApi           = options.target.isDefined || options.clientApi.isDefined
       val searchAllSubsystems = clientApi && options.allSubsystems.isDefined && options.target.isEmpty
       IcdDbPrinter(db, searchAllSubsystems, clientApi, maybeCache, Some(pdfOptions)).saveToFile(
         options.subsystem.get,
@@ -310,7 +315,8 @@ object IcdDb extends App {
       val Array(v1, v2) =
         if (vStr.contains(",")) {
           vStr.split(",").map(Option(_))
-        } else {
+        }
+        else {
           Array(Option(vStr), Option.empty)
         }
       checkVersion(v1)
@@ -355,8 +361,8 @@ case class IcdDb(
 //  IcdDbDefaults.deleteDatabase(host, port, "icds2")
   IcdDbDefaults.deleteDatabase(host, port, "icds3")
 
-  val db: DefaultDB    = IcdDbDefaults.connectToDatabase(host, port, dbName)
-  val admin: DefaultDB = IcdDbDefaults.connectToDatabase(host, port, "admin")
+  val db: DB    = IcdDbDefaults.connectToDatabase(host, port, dbName)
+  val admin: DB = IcdDbDefaults.connectToDatabase(host, port, "admin")
 
   // Clean up on exit
   sys.addShutdownHook(close())
@@ -397,9 +403,11 @@ case class IcdDb(
     if (duplicateSubsystems.nonEmpty) {
       val dupFileList = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.fileName).mkString(", ")
       Problem("error", s"Duplicate subsystem-model.conf found: $dupFileList") :: problems
-    } else if (duplicateComponents.nonEmpty) {
+    }
+    else if (duplicateComponents.nonEmpty) {
       Problem("error", s"Duplicate component names found: ${duplicateComponents.mkString(", ")}") :: problems
-    } else {
+    }
+    else {
       if (subsystemList.isEmpty)
         query.afterIngestFiles(problems, dbName)
       else subsystemList.foreach(query.afterIngestSubsystem(_, problems, dbName))
@@ -454,11 +462,40 @@ case class IcdDb(
    * @return a list describing the problems, if any
    */
   def ingestConfig(stdConfig: StdConfig): List[Problem] = {
+    // Ingest a single OpenApi file
+    def ingestOpenApiFile(collectionName: String, fileName: String, resources: Resources): Unit = {
+      val maybeContents = resources.getResource(fileName)
+      if (maybeContents.isEmpty) throw new RuntimeException(s"Missing OpenApi file: $fileName")
+      val contents = maybeContents.get
+      val tmpName  = s"$collectionName${IcdDbDefaults.tmpCollSuffix}"
+      // Convert YAML to JSON if needed
+      val json =
+        if (fileName.endsWith(".yaml"))
+          DeserializationUtils.deserializeIntoTree(contents, fileName).toPrettyString
+        else contents
+      // Ingest into db
+      val jsObj = Json.parse(json).as[JsObject]
+      manager.ingest(collectionName, tmpName, jsObj)
+    }
+
+    // If this is for a service-model.conf file, also ingest the OpenApi files into the database
+    def ingestOpenApiFiles(collectionName: String): Unit = {
+      if (stdConfig.stdName.isServiceModel) {
+        val serviceModel = ServiceModelParser(stdConfig.config)
+        val dirName      = new File(stdConfig.fileName).getParent
+        serviceModel.provides
+          .foreach(p => ingestOpenApiFile(s"$collectionName.${p.name}", s"$dirName/${p.openApi}", stdConfig.resources))
+      }
+    }
+
     try {
-      val coll = getCollectionName(stdConfig)
-      ingestConfig(coll, s"$coll${IcdDbDefaults.tmpCollSuffix}", stdConfig.config)
+      val coll    = getCollectionName(stdConfig)
+      val tmpName = s"$coll${IcdDbDefaults.tmpCollSuffix}"
+      ingestConfig(coll, tmpName, stdConfig.config)
+      ingestOpenApiFiles(coll)
       Nil
-    } catch {
+    }
+    catch {
       case t: Throwable => List(Problem("error", s"Internal error: $t"))
     }
   }
@@ -467,12 +504,12 @@ case class IcdDb(
    * Ingests the given input config into the database.
    *
    * @param name   the name of the collection in which to store this part of the API
-   * @param tmpName temp name of the collection to use during iingest
-   * @param config the config to be ingested into the datasbase
+   * @param tmpName temp name of the collection to use during ingest
+   * @param config the config to be ingested into the database
    */
   //noinspection SameParameterValue
   private def ingestConfig(name: String, tmpName: String, config: Config): Unit = {
-    import play.api.libs.json._
+//    import play.api.libs.json._
     import play.api.libs.json.Reads._
 
     val jsObj = Json.parse(IcdValidator.toJson(config)).as[JsObject]
@@ -481,7 +518,7 @@ case class IcdDb(
   }
 
   /**
-   * Returns the DefaultDB collection name to use for the given ICD config.
+   * Returns the DB collection name to use for the given ICD config.
    *
    * @param stdConfig API model file packaged as StdConfig object
    * @return the collection name
@@ -489,9 +526,11 @@ case class IcdDb(
   private def getCollectionName(stdConfig: StdConfig): String = {
     val baseName = if (stdConfig.stdName.isSubsystemModel) {
       SubsystemModelParser(stdConfig.config).subsystem
-    } else if (stdConfig.stdName.isIcdModel) {
+    }
+    else if (stdConfig.stdName.isIcdModel) {
       IcdModelParser(stdConfig.config).subsystem
-    } else {
+    }
+    else {
       val model = BaseModelParser(stdConfig.config)
       s"${model.subsystem}.${model.component}"
     }
@@ -531,6 +570,7 @@ case class IcdDb(
   /**
    * Drops this database. Use with caution!
    */
+
   def dropDatabase(): Unit = {
     db.drop().await
   }

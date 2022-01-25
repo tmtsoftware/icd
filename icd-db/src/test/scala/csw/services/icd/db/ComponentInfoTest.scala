@@ -1,8 +1,8 @@
 package csw.services.icd.db
 
 import java.io.File
-
 import csw.services.icd.IcdValidator
+import csw.services.icd.html.OpenApiToHtml
 import icd.web.shared.{ComponentInfo, SubsystemWithVersion}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -21,7 +21,7 @@ class ComponentInfoTest extends AnyFunSuite {
     val eventList = info.publishes.get.eventList
     assert(eventList.exists(_.eventModel.name == "engMode"))
     assert(eventList.exists(_.eventModel.name == "engMode2"))
-    val engMode = eventList.find(_.eventModel.name == "engMode").get.eventModel
+    val engMode  = eventList.find(_.eventModel.name == "engMode").get.eventModel
     val engMode2 = eventList.find(_.eventModel.name == "engMode2").get.eventModel
     assert(!engMode.archive)
     assert(engMode2.archive)
@@ -38,12 +38,12 @@ class ComponentInfoTest extends AnyFunSuite {
     assert(engMode2Error.refError == "Error: Invalid ref 'engModeXXX': Event engModeXXX not found in lgsWfs")
 
     val commands = info.commands.get.commandsReceived.map(_.receiveCommandModel)
-    val cmd = commands.find(_.name == "LGS_WFS_INITIALIZE").get
-    val refCmd = commands.find(_.name == "LGS_WFS_INITIALIZE_REF").get
+    val cmd      = commands.find(_.name == "LGS_WFS_INITIALIZE").get
+    val refCmd   = commands.find(_.name == "LGS_WFS_INITIALIZE_REF").get
     assert(cmd.parameters == refCmd.parameters)
     assert(cmd.completionType == refCmd.completionType)
-    assert(cmd.requirements== refCmd.requirements)
-    assert(cmd.requiredArgs== refCmd.requiredArgs)
+    assert(cmd.requirements == refCmd.requirements)
+    assert(cmd.requiredArgs == refCmd.requiredArgs)
     assert(cmd.description != refCmd.description)
     assert(cmd.completionConditions != refCmd.completionConditions)
     assert(refCmd.refError == "")
@@ -55,14 +55,14 @@ class ComponentInfoTest extends AnyFunSuite {
     checkRefs(info)
     val eventList = info.publishes.get.eventList
     assert(eventList.nonEmpty)
-//    eventList.foreach { pubInfo =>
-//      println(s"lgsWfs publishes event: ${pubInfo.eventModel.name}")
-//      pubInfo.subscribers.foreach { subInfo =>
-//        println(
-//          s"${subInfo.subscribeModelInfo.component} from ${subInfo.subscribeModelInfo.subsystem} subscribes to ${subInfo.subscribeModelInfo.name}"
-//        )
-//      }
-//    }
+    //    eventList.foreach { pubInfo =>
+    //      println(s"lgsWfs publishes event: ${pubInfo.eventModel.name}")
+    //      pubInfo.subscribers.foreach { subInfo =>
+    //        println(
+    //          s"${subInfo.subscribeModelInfo.component} from ${subInfo.subscribeModelInfo.subsystem} subscribes to ${subInfo.subscribeModelInfo.name}"
+    //        )
+    //      }
+    //    }
     assert(eventList.exists(_.eventModel.name == "engMode"))
     assert(eventList.exists(_.eventModel.name == "contRead"))
     assert(eventList.exists(_.eventModel.name == "intTime"))
@@ -72,12 +72,26 @@ class ComponentInfoTest extends AnyFunSuite {
     if (clientApi) {
       val subscribeInfo = info.subscribes.get.subscribeInfo
       assert(subscribeInfo.nonEmpty)
-//      subscribeInfo.foreach { subInfo =>
-//        println(s"lgsWfs subscribes to ${subInfo.subscribeModelInfo.name} from ${subInfo.subscribeModelInfo.subsystem}")
-//      }
+      //      subscribeInfo.foreach { subInfo =>
+      //        println(s"lgsWfs subscribes to ${subInfo.subscribeModelInfo.name} from ${subInfo.subscribeModelInfo.subsystem}")
+      //      }
       assert(subscribeInfo.exists(d => d.eventModel.get.name == "zenithAngle" && d.subscribeModelInfo.subsystem == "TEST2"))
       assert(subscribeInfo.exists(d => d.eventModel.get.name == "parallacticAngle" && d.subscribeModelInfo.subsystem == "TEST2"))
       assert(subscribeInfo.exists(d => d.eventModel.get.name == "visWfsPos" && d.subscribeModelInfo.subsystem == "TEST2"))
+    }
+  }
+
+  private def checkInfo2(info: ComponentInfo, clientApi: Boolean): Unit = {
+    // XXX Service client JSON filtering (temp)
+    info.services.foreach { service =>
+      service.servicesRequired.foreach { serviceRequiredInfo =>
+        serviceRequiredInfo.maybeServiceModelProvider.map(_.openApi).foreach { openApiJson =>
+          val paths = serviceRequiredInfo.serviceModelClient.paths
+          val json  = OpenApiToHtml.filterOpenApiJson(openApiJson, paths)
+          println(s"XXX filtered OpenApiJson = \n$json")
+        // XXX TODO
+        }
+      }
     }
   }
 
@@ -98,12 +112,16 @@ class ComponentInfoTest extends AnyFunSuite {
     assert(problems2.isEmpty)
     db.query.afterIngestFiles(problems2, dbName)
 
-    new ComponentInfoHelper(displayWarnings = false, clientApi = true)
+    new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = None)
       .getComponentInfo(versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None)
       .foreach(checkInfo(_, clientApi = true))
 
-    new ComponentInfoHelper(displayWarnings = false, clientApi = false)
+    new ComponentInfoHelper(displayWarnings = false, clientApi = false, maybeStaticHtml = None)
       .getComponentInfo(versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None)
       .foreach(checkInfo(_, clientApi = false))
+
+    new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = Some(true))
+      .getComponentInfo(versionManager, SubsystemWithVersion("TEST", None, None), None)
+      .foreach(checkInfo2(_, clientApi = true))
   }
 }

@@ -3,7 +3,10 @@ package csw.services.icd
 import java.io._
 import java.net.URI
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions, ConfigResolveOptions}
+import csw.services.icd.db.StdConfig.FileResources
 import csw.services.icd.db.StdConfig
+import csw.services.icd.db.parser.ServiceModelParser
+import io.swagger.v3.parser.OpenAPIV3Parser
 import org.everit.json.schema.loader.SchemaClient
 
 import scala.io.Source
@@ -120,7 +123,9 @@ object IcdValidator {
                 StdConfig.addTargetSubsystem(parsedConfigFile.resolve(ConfigResolveOptions.noSystem()), stdName)
               if (inputConfig.hasPath(schemaVersionKey))
                 schemaVersion = inputConfig.getString(schemaVersionKey)
-              validateStdName(inputConfig, stdName, schemaVersion, inputFile.toString)
+              val resources = new FileResources(dir.getPath)
+              val sc        = StdConfig(stdName, inputConfig, inputFile.getPath, resources)
+              validateStdName(sc, schemaVersion)
             case Failure(ex) =>
               ex.printStackTrace()
               List(Problem("error", s"Fatal config parsing error in $inputFile: $ex"))
@@ -132,41 +137,52 @@ object IcdValidator {
   }
 
   /**
-   * Validates the given input file using the given JSON schema file
-   * JSON files are recognized by the file suffix .json.
-   *
-   * @param inputFile  a file in HOCON or JSON format
-   * @param schemaFile a JSON schema file in HOCON or JSON format
-   * @return a list of problems, if any were found
+   * If the config is from a service-model.conf file, validate the OpenApi files referenced.
+   * @param sc config, possibly from service-model.conf
+   * @param dirName directory containing the model files
+   * @return list of problems found
    */
-  def validateFile(inputFile: File, schemaFile: File): List[Problem] = {
-    val jsonSchema = new JSONObject(toJson(schemaFile))
-    val schemaLoader = SchemaLoader
-      .builder()
-      .schemaClient(HoconSchemaClient)
-      .schemaJson(jsonSchema)
-      .resolutionScope("classpath:/")
-      .build()
-    val schema    = schemaLoader.load().build().asInstanceOf[Schema]
-    val jsonInput = new JSONObject(toJson(inputFile))
-    validateJson(schema, jsonInput, inputFile.getPath)
+  private def validateOpenApis(sc: StdConfig, dirName: String): List[Problem] = {
+    // validate a single OpenApi file
+    def validateOpenApi(fileName: String): List[Problem] = {
+      val maybeContents = sc.resources.getResource(fileName)
+      if (maybeContents.isEmpty) {
+        List(Problem("error", s"Can't locate ${fileName}"))
+      }
+      else {
+        val parseResult = new OpenAPIV3Parser().readContents(maybeContents.get, null, null)
+        parseResult.getMessages.asScala.toList
+          .map(msg => Problem("error", s"OpenApi file $fileName: $msg"))
+      }
+    }
+
+    if (sc.stdName.isServiceModel) {
+      val serviceModel = ServiceModelParser(sc.config)
+      val dir = new File(sc.fileName).getParent
+      serviceModel.provides
+        .flatMap(p => validateOpenApi(new File(dir, p.openApi).getPath))
+    }
+    else Nil
   }
 
   /**
    * Validates the given input config using the standard schema.
    *
-   * @param inputConfig the config to be validated against the schema
-   * @param stdName     holds the file and schema name
    * @param schemaVersion value of the component or subsystem model's modelVersion field: Should be 1.0 or 2.0
-   * @param fileName    holds the path to the source file
    * @return a list of problems, if any were found
    */
-  def validateStdName(inputConfig: Config, stdName: StdName, schemaVersion: String, fileName: String): List[Problem] = {
-    checkSchemaVersion(schemaVersion, fileName) match {
+  def validateStdName(sc: StdConfig, schemaVersion: String): List[Problem] = {
+    checkSchemaVersion(schemaVersion, sc.fileName) match {
       case Right(version) =>
-        val schemaPath   = s"$version/${stdName.schema}"
+        val schemaPath   = s"$version/${sc.stdName.schema}"
         val schemaConfig = ConfigFactory.parseResources(schemaPath)
-        validateConfig(inputConfig, schemaConfig, fileName)
+        val problems     = validateConfig(sc.config, schemaConfig, sc.fileName)
+        if (problems.nonEmpty) {
+          problems
+        }
+        else {
+          validateOpenApis(sc, new File(sc.fileName).getParent)
+        }
       case Left(problem) =>
         List(problem)
     }

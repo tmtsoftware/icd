@@ -347,4 +347,9 @@ object ClientRoutes {
    * Post: Log out of the web app
    */
   val logout = "/logout"
+
+  /**
+   * Post the OpenApi JSON and get the HTML to display
+   */
+  val openApiToDynamicHtml = "/openApiToHtml"
 }

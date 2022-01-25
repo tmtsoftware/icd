@@ -1,6 +1,6 @@
 package icd.web.shared
 
-import icd.web.shared.ComponentInfo.{Alarms, PublishType}
+import icd.web.shared.ComponentInfo.PublishType
 import icd.web.shared.IcdModels._
 
 object ComponentInfo {
@@ -17,7 +17,8 @@ object ComponentInfo {
   case object Alarms extends PublishType
 
   /**
-   * Filters out any published commands with no subscribers, and any commands received, with no senders
+   * Filters out any published commands with no subscribers, and any commands received, with no senders,
+   * etc. As a result, only the interface between the two subsystems should remain.
    *
    * @param info all the information for a component
    * @return a new ComponentInfo with empty items removed
@@ -50,7 +51,7 @@ object ComponentInfo {
       )
     )
 
-    ComponentInfo(info.componentModel, publishes, info.subscribes, commands)
+    ComponentInfo(info.componentModel, publishes, info.subscribes, commands, info.services)
   }
 
   /**
@@ -59,7 +60,8 @@ object ComponentInfo {
   def nonEmpty(info: ComponentInfo): Boolean = {
     info.publishes.exists(_.nonEmpty) ||
     info.subscribes.exists(_.subscribeInfo.nonEmpty) ||
-    info.commands.exists(_.nonEmpty)
+    info.commands.exists(_.nonEmpty) ||
+    info.services.nonEmpty
   }
 }
 
@@ -70,12 +72,14 @@ object ComponentInfo {
  * @param publishes      describes items published by the component
  * @param subscribes     describes items the component subscribes to
  * @param commands       describes commands the component can send and receive
+ * @param services       describes services the component provides or requires
  */
 case class ComponentInfo(
     componentModel: ComponentModel,
     publishes: Option[Publishes],
     subscribes: Option[Subscribes],
-    commands: Option[Commands]
+    commands: Option[Commands],
+    services: Option[Services]
 )
 
 /**
@@ -104,7 +108,7 @@ case class Publishes(
 ) {
 
   /**
-   * True if at the component publishes something
+   * True if the component publishes something
    */
   def nonEmpty: Boolean =
     eventList.nonEmpty || observeEventList.nonEmpty || alarmList.nonEmpty
@@ -221,6 +225,64 @@ case class Commands(description: String, commandsReceived: List[ReceivedCommandI
    * True if at the component sends or receives commands
    */
   def nonEmpty: Boolean = commandsReceived.nonEmpty || commandsSent.nonEmpty
+
+}
+
+/**
+ * Describes a service required by this component
+ *
+ * @param serviceModelClient  describes the client's use of the service
+ * @param maybeServiceModelProvider  describes the service provided, if known
+ * @param provider  the component that should define the service, if known
+ * @param maybeHtml  the generated HTML for the service, if known
+ * @param warnings  true if service providergetServicesProvided not found
+ */
+case class ServicesRequiredInfo(
+    serviceModelClient: ServiceModelClient,
+    maybeServiceModelProvider: Option[ServiceModelProvider],
+    provider: Option[ComponentModel],
+    maybeHtml: Option[String],
+    warnings: Boolean = true
+) {
+
+  val warning: Option[String] =
+    if (!warnings || maybeServiceModelProvider.nonEmpty) None
+    else if (provider.isEmpty) {
+      Some(s"Component ${serviceModelClient.subsystem}.${serviceModelClient.component} was not found")
+    }
+    else {
+      Some(
+        s"${serviceModelClient.subsystem}.${serviceModelClient.component} does not define configuration: ${serviceModelClient.name}"
+      )
+    }
+}
+
+/**
+ * Describes a service provided by this component
+ *
+ * @param serviceModelProvider the basic model for the service
+ * @param requiredBy           list of components that use/require the service
+ * @param html                 holds the HTML generated from serviceModelProvider.openApi
+ */
+case class ServiceProvidedInfo(serviceModelProvider: ServiceModelProvider, requiredBy: List[ComponentModel], html: String)
+
+/**
+ * Describes services the component uses and provides
+ *
+ * @param description      optional top level description of the services (in html format, after markdown processing)
+ * @param servicesProvided a list of services provided by this component
+ * @param servicesRequired a list of services required by this component
+ */
+case class Services(
+    description: String,
+    servicesProvided: List[ServiceProvidedInfo],
+    servicesRequired: List[ServicesRequiredInfo]
+) {
+
+  /**
+   * True if at the component provides or requires a service
+   */
+  def nonEmpty: Boolean = servicesProvided.nonEmpty || servicesRequired.nonEmpty
 
 }
 

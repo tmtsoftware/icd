@@ -16,6 +16,8 @@
         <link rel="stylesheet" href="@assets.path("stylesheets/icd.css")">
     </head>
     <body>
+        @findScript(assets, "icdwebclient-jsdeps.js", "icdwebclient-jsdeps.min.js")
+        @findScript(assets, "icdwebclient-opt/main.js", "icdwebclient-fastopt/main.js")
         @content
     </body>
 </html>

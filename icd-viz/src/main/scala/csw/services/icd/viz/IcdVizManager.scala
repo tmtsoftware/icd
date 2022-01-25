@@ -108,7 +108,7 @@ object IcdVizManager {
         maybeComponentModel.map(_ => sv)
       }
 
-    val componentInfoHelper = new ComponentInfoHelper(displayWarnings = false, clientApi = true)
+    val componentInfoHelper = new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = None)
     val noMarkdownOpt       = Some(PdfOptions(processMarkdown = false))
     val componentInfoList   = components.flatMap(sv => componentInfoHelper.getComponentInfo(versionManager, sv, noMarkdownOpt))
 

@@ -199,6 +199,7 @@ case class Resolver(allModels: List[IcdModels]) {
       subscribeModel = models.subscribeModel,
       commandModel = models.commandModel.map(m => resolveCommandModel(m)),
       alarmsModel = models.alarmsModel,
+      serviceModel = models.serviceModel,
       icdModels = models.icdModels
     )
   }
@@ -391,13 +392,7 @@ case class Resolver(allModels: List[IcdModels]) {
       parameterModel: ParameterModel
   ): ParameterModel = {
     if (parameterModel.ref.isEmpty) {
-      if (parameterModel.parameterList.nonEmpty) {
-        // handle struct type
-        parameterModel.copy(parameterList =
-          parameterModel.parameterList.map(a => resolveEventParameter(publishModel, eventModel, section, a))
-        )
-      }
-      else parameterModel
+      parameterModel
     }
     else {
       Try(
@@ -418,13 +413,7 @@ case class Resolver(allModels: List[IcdModels]) {
       parameterModel: ParameterModel
   ): ParameterModel = {
     if (parameterModel.ref.isEmpty) {
-      if (parameterModel.parameterList.nonEmpty) {
-        // handle struct type
-        parameterModel.copy(parameterList =
-          parameterModel.parameterList.map(a => resolveCommandParameter(commandModel, receiveCommandModel, section, a))
-        )
-      }
-      else parameterModel
+      parameterModel
     }
     else {
       Try(
@@ -467,7 +456,6 @@ case class Resolver(allModels: List[IcdModels]) {
       allowNaN = if (parameterModel.allowNaN) parameterModel.allowNaN else refParameter.allowNaN,
       defaultValue = if (parameterModel.defaultValue.nonEmpty) parameterModel.defaultValue else refParameter.defaultValue,
       typeStr = if (parameterModel.typeStr.nonEmpty) parameterModel.typeStr else refParameter.typeStr,
-      parameterList = if (parameterModel.parameterList.nonEmpty) parameterModel.parameterList else refParameter.parameterList
     )
   }
 

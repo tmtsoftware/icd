@@ -2,12 +2,11 @@ package icd.web.client
 
 import icd.web.shared._
 import org.scalajs.dom
-import org.scalajs.dom.ext.Ajax
-import org.scalajs.dom.raw.HTMLInputElement
+import org.scalajs.dom.HTMLInputElement
 import play.api.libs.json._
 
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 import org.scalajs.dom.{Element, document}
 import org.scalajs.dom.html.Button
 import scalatags.JsDom.all._
@@ -66,8 +65,8 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
     if (checked.size == 2) {
       val versions = checked.map(elem => elem.asInstanceOf[HTMLInputElement].value).sortWith(compareVersions)
       val route    = ClientRoutes.diff(subsystem, versions)
-      Ajax.get(route).map { r =>
-        val list = Json.fromJson[Array[DiffInfo]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
+      Fetch.get(route).map { text =>
+        val list = Json.fromJson[Array[DiffInfo]](Json.parse(text)).map(_.toList).getOrElse(Nil)
         diffDiv.innerHTML = ""
         diffDiv.appendChild(markupDiff(subsystem, list))
       }
@@ -243,10 +242,10 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
 
   // Gets the subsystem version info from the server
   private def getSubsystemVersionInfo(subsystem: String): Future[List[VersionInfo]] =
-    Ajax
+    Fetch
       .get(ClientRoutes.versions(subsystem))
-      .map { r =>
-        Json.fromJson[Array[VersionInfo]](Json.parse(r.responseText)) match {
+      .map { text =>
+        Json.fromJson[Array[VersionInfo]](Json.parse(text)) match {
           case JsSuccess(ar: Array[VersionInfo], _: JsPath) =>
             ar.toList
           case e: JsError =>
@@ -263,10 +262,10 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
   // Gets the ICD version info from the server
   private def getIcdVersionInfo(icdName: IcdName): Future[List[IcdVersionInfo]] = {
     import play.api.libs.json._
-    Ajax
+    Fetch
       .get(ClientRoutes.icdVersions(icdName))
-      .map { r =>
-        Json.fromJson[Array[IcdVersionInfo]](Json.parse(r.responseText)) match {
+      .map { text =>
+        Json.fromJson[Array[IcdVersionInfo]](Json.parse(text)) match {
           case JsSuccess(ar: Array[IcdVersionInfo], _: JsPath) =>
             ar.toList
           case e: JsError =>

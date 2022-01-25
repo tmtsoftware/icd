@@ -6,10 +6,9 @@ import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels._
 import icd.web.shared._
 import org.scalajs.dom
-import org.scalajs.dom.ext.Ajax
-import org.scalajs.dom.raw.{HTMLButtonElement, HTMLDivElement, HTMLElement, HTMLTableRowElement}
+import org.scalajs.dom.{HTMLButtonElement, HTMLDivElement, HTMLElement, HTMLTableRowElement}
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 import scala.concurrent.Future
 import Components._
 import org.scalajs.dom.html.{Anchor, Div, Element}
@@ -142,10 +141,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       searchAllSubsystems: Boolean,
       clientApi: Boolean
   ): Future[List[ComponentInfo]] = {
-    Ajax.get(ClientRoutes.icdComponentInfo(sv, maybeTargetSv, searchAllSubsystems, clientApi)).map { r =>
-      val list = Json.fromJson[Array[ComponentInfo]](Json.parse(r.responseText)).map(_.toList).getOrElse(Nil)
-      if (maybeTargetSv.isDefined) list.map(ComponentInfo.applyIcdFilter).filter(ComponentInfo.nonEmpty) else list
-    }
+    Fetch
+      .get(ClientRoutes.icdComponentInfo(sv, maybeTargetSv, searchAllSubsystems, clientApi))
+      .map { text =>
+        val list = Json.fromJson[Array[ComponentInfo]](Json.parse(text)).map(_.toList).getOrElse(Nil)
+        if (maybeTargetSv.isDefined) list.map(ComponentInfo.applyIcdFilter).filter(ComponentInfo.nonEmpty) else list
+      }
   }
 
   /**
@@ -168,8 +169,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   // Gets top level subsystem info from the server
   private def getSubsystemInfo(sv: SubsystemWithVersion): Future[SubsystemInfo] = {
     val path = ClientRoutes.subsystemInfo(sv.subsystem, sv.maybeVersion)
-    Ajax.get(path).map { r =>
-      val subsystemInfo = Json.fromJson[SubsystemInfo](Json.parse(r.responseText)).get
+    Fetch.get(path).map { text =>
+      val subsystemInfo = Json.fromJson[SubsystemInfo](Json.parse(text)).get
       subsystemInfo.copy(sv = sv) // include the component, if specified
     }
   }
@@ -177,13 +178,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   // Gets additional information about the ICD between the two subsystems
   private def getIcdModelList(sv: SubsystemWithVersion, tv: SubsystemWithVersion): Future[List[IcdModel]] = {
     val path = ClientRoutes.icdModelList(sv, tv)
-    Ajax.get(path).map { r =>
-      Json.fromJson[List[IcdModel]](Json.parse(r.responseText)).get
+    Fetch.get(path).map { text =>
+      Json.fromJson[List[IcdModel]](Json.parse(text)).get
     }
   }
 
   /**
-   * Adds (appends) components to the display.
+   * Adds components to the display.
    *
    * @param sv                   the selected subsystem, version and optional single component
    * @param maybeTargetSubsystem optional target subsystem, version, optional component
@@ -209,7 +210,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         maybeTargetSubsystem
           .map(getSubsystemInfo(_).map(i => Some(i)))
           .getOrElse(Future.successful(None))
-      icdInfoList <- if (isIcd) getIcdModelList(sv, maybeTargetSubsystem.get) else Future.successful(Nil)
+      icdInfoList    <- if (isIcd) getIcdModelList(sv, maybeTargetSubsystem.get) else Future.successful(Nil)
       infoList       <- getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems, clientApi)
       targetInfoList <- getComponentInfo(maybeTargetSubsystem, Some(sv), searchAllSubsystems, clientApi)
     } yield {
@@ -268,7 +269,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       forApi || (info.publishes.isDefined && info.publishes.get.nonEmpty
       || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
       || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
-      || info.commands.get.commandsSent.nonEmpty))
+      || info.commands.get.commandsSent.nonEmpty)
+      || info.services.isDefined && (info.services.get.servicesProvided.nonEmpty || info.services.get.servicesRequired.nonEmpty))
     ) {
       val markup     = markupForComponent(info, forApi, clientApi).render
       val oldElement = $id(getComponentInfoId(info.componentModel.component))
@@ -279,32 +281,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         // Use existing div, so the component's position stays the same
         mainContent.replaceElement(oldElement, markup)
       }
-    }
-  }
-
-  // HTML id for a table displaying the fields of a struct
-  private def structIdStr(name: String): String = s"$name-struct"
-
-  // Add a table for each attribute of type "struct" to show the members of the struct
-  private def structParametersMarkup(parameterList: List[ParameterModel]): Seq[TypedTag[Div]] = {
-    import scalatags.JsDom.all._
-    val headings = List("Name", "Description", "Type", "Units", "Default")
-    parameterList.flatMap { attrModel =>
-      if (attrModel.typeStr == "struct" || attrModel.typeStr == "array of struct") {
-        val rowList2 =
-          for (a2 <- attrModel.parameterList)
-            yield List(a2.name, a2.description, getTypeStr(a2.name, a2.typeStr), a2.units, a2.defaultValue)
-        Some(
-          div()(
-            p(strong(a(name := structIdStr(attrModel.name))(s"Parameters for ${attrModel.name} struct"))),
-            mkTable(headings, rowList2),
-            attrModel.parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-            // Handle structs embedded in other structs (or arrays of structs, etc.)
-            structParametersMarkup(attrModel.parameterList)
-          )
-        )
-      }
-      else None
     }
   }
 
@@ -320,12 +296,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default")
       val rowList =
-        for (a <- parameterList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units, a.defaultValue)
+        for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
       div(
         strong("Parameters"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
-        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-        structParametersMarkup(parameterList)
+        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError))
       )
     }
   }
@@ -349,7 +324,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           yield List(
             a.name,
             a.description,
-            getTypeStr(a.name, a.typeStr),
+            a.typeStr,
             a.units,
             a.defaultValue,
             yesNo(requiredArgs.contains(a.name))
@@ -357,18 +332,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       div(
         strong("Parameters"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
-        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-        structParametersMarkup(parameterList)
+        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError))
       )
     }
-  }
-
-  // Insert a hyperlink from "struct" to the table listing the fields in the struct
-  private def getTypeStr(fieldName: String, typeStr: String): String = {
-    import scalatags.Text.all._
-    if (typeStr == "struct" || typeStr == "array of struct")
-      a(href := s"#${structIdStr(fieldName)}")(typeStr).render
-    else typeStr
   }
 
   /**
@@ -381,12 +347,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     if (parameterList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units")
-      val rowList  = for (a <- parameterList) yield List(a.name, a.description, getTypeStr(a.name, a.typeStr), a.units)
+      val rowList  = for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units)
       div(
         strong("Result Type Parameters"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
-        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError)),
-        structParametersMarkup(parameterList)
+        parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError))
       )
     }
   }
@@ -850,6 +815,104 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
+  private def servicesProvidedTitle(compName: String): String = s"HTTP Services provided by $compName"
+  private def servicesRequiredTitle(compName: String): String = s"HTTP Services required by $compName"
+
+  // Generates the markup for the services section (description plus provides and requires)
+  private def servicesMarkup(
+      component: ComponentModel,
+      maybeServices: Option[Services],
+      forApi: Boolean,
+      clientApi: Boolean
+  ) = {
+    import scalatags.JsDom.all._
+    maybeServices match {
+      case None => div()
+      case Some(services) =>
+        if (services.servicesProvided.nonEmpty || (services.servicesRequired.nonEmpty && forApi && clientApi)) {
+          div(
+            h3(s"Services for ${component.component}"),
+            raw(services.description),
+            servicesProvidedMarkup(component, services.servicesProvided, clientApi),
+            if (forApi && clientApi) servicesRequiredMarkup(component, services.servicesRequired) else div()
+          )
+        }
+        else div()
+    }
+  }
+
+  // Generates the HTML markup to display the HTTP services a component requires
+  private def servicesRequiredMarkup(
+      component: ComponentModel,
+      info: List[ServicesRequiredInfo]
+  ) = {
+    import scalatags.JsDom.all._
+
+    val compName = component.component
+    if (info.isEmpty) div()
+    else {
+      div(
+        h4(servicesRequiredTitle(compName)),
+        for (s <- info) yield {
+          val m = s.serviceModelClient
+          val providerInfo = {
+            val provider = s"${s.serviceModelClient.subsystem}.${s.serviceModelClient.component}"
+            span(strong(s"Provider: "), provider)
+          }
+          val openInNewTab = () => {
+            val newTab = dom.window.open()
+            newTab.document.write(s.maybeHtml.get)
+          }
+          div(cls := "nopagebreak")(
+            h5(s"HTTP Service: ${m.name}"),
+            p(providerInfo),
+            if (s.maybeHtml.nonEmpty)
+              div(
+                a(onclick := openInNewTab, title := s"Open ${m.name} API in new tab.")(s"Open ${m.name} API in new tab.")
+              )
+            else div()
+          )
+        }
+      )
+    }
+  }
+
+  // Generates the HTML markup to display the HTTP services a component provides
+  private def servicesProvidedMarkup(
+      component: ComponentModel,
+      info: List[ServiceProvidedInfo],
+      clientApi: Boolean
+  ) = {
+    import scalatags.JsDom.all._
+
+    val compName = component.component
+    if (info.isEmpty) div()
+    else {
+      div(
+        h4(servicesProvidedTitle(compName)),
+        for (s <- info) yield {
+          val m = s.serviceModelProvider
+          val consumerInfo = if (clientApi) {
+            val consumers = s.requiredBy.distinct.map(s => s"${s.subsystem}.${s.component}").mkString(", ")
+            span(strong(s"Consumers: "), if (consumers.isEmpty) "none" else consumers)
+          }
+          else span
+          val openInNewTab = () => {
+            val newTab = dom.window.open()
+            newTab.document.write(s.html)
+          }
+          div(cls := "nopagebreak")(
+            h5(s"HTTP Service: ${m.name}"),
+            if (clientApi) p(consumerInfo) else div(),
+            div(
+              a(onclick := openInNewTab, title := s"Open ${m.name} API in new tab.")(s"Open ${m.name} API in new tab.")
+            )
+          )
+        }
+      )
+    }
+  }
+
   // Generates a one line table with basic component information
   private def componentInfoTableMarkup(info: ComponentInfo) = {
     import scalatags.JsDom.all._
@@ -893,7 +956,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       raw(info.componentModel.description),
       publishMarkup(info.componentModel, info.publishes, forApi, clientApi),
       if (clientApi) subscribeMarkup(info.componentModel, info.subscribes) else span,
-      commandsMarkup(info.componentModel, info.commands, clientApi)
+      commandsMarkup(info.componentModel, info.commands, clientApi),
+      servicesMarkup(info.componentModel, info.services, forApi, clientApi)
     )
   }
 

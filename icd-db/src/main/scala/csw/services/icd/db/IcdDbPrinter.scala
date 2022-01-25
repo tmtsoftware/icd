@@ -36,7 +36,8 @@ case class IcdDbPrinter(
         .getComponentModel(sv, maybePdfOptions)
         .map(m => SubsystemInfo(sv, m.title, m.description))
 
-    } else {
+    }
+    else {
       db.versionManager
         .getSubsystemModel(sv, maybePdfOptions)
         .map(m => SubsystemInfo(sv, m.title, m.description))
@@ -47,7 +48,7 @@ case class IcdDbPrinter(
    * Gets information about the ICD between the two subsystems
    */
   private def getIcdModelList(sv: SubsystemWithVersion, tv: SubsystemWithVersion): List[IcdModel] = {
-      db.versionManager.getIcdModels(sv, tv, maybePdfOptions)
+    db.versionManager.getIcdModels(sv, tv, maybePdfOptions)
   }
 
   /**
@@ -64,8 +65,11 @@ case class IcdDbPrinter(
       maybeTargetSv: Option[SubsystemWithVersion]
   ): List[ComponentInfo] = {
     maybeTargetSv match {
-      case Some(targetSv) => IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, maybePdfOptions)
-      case None           => new ComponentInfoHelper(searchAllSubsystems, clientApi).getComponentInfoList(versionManager, sv, maybePdfOptions)
+      case Some(targetSv) =>
+        IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, maybePdfOptions, staticHtml = true)
+      case None =>
+        new ComponentInfoHelper(searchAllSubsystems, clientApi, maybeStaticHtml = Some(true))
+          .getComponentInfoList(versionManager, sv, maybePdfOptions)
     }
   }
 
@@ -116,7 +120,7 @@ case class IcdDbPrinter(
     // subscribes, who calls commands, etc.
     val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), Some(pdfOptions))
     val versionManager = new CachedIcdVersionManager(query)
-    val icdInfoList = getIcdModelList(sv, targetSv)
+    val icdInfoList    = getIcdModelList(sv, targetSv)
     val markup = for {
       subsystemInfo       <- getSubsystemInfo(sv)
       targetSubsystemInfo <- getSubsystemInfo(targetSv)
@@ -212,7 +216,8 @@ case class IcdDbPrinter(
             SubsystemWithVersion(i.subsystem, Some(i.subsystemVersion), maybeComponent),
             Some(SubsystemWithVersion(i.target, Some(i.targetVersion), maybeTargetComponent))
           )
-        } else {
+        }
+        else {
           (
             SubsystemWithVersion(s1.subsystem, s1.maybeVersion, maybeComponent),
             Some(SubsystemWithVersion(s2.subsystem, s2.maybeVersion, maybeTargetComponent))
@@ -230,16 +235,19 @@ case class IcdDbPrinter(
         maybeCache.flatMap(_.getIcd(subsys, maybeTarg.get, pdfOptions))
       else
         maybeCache.flatMap(_.getApi(subsys, pdfOptions, searchAllSubsystems, clientApi))
-    } else None
+    }
+    else None
 
     if (maybeCachedBytes.isDefined) {
       val out = new FileOutputStream(file)
       out.write(maybeCachedBytes.get)
       out.close()
-    } else {
+    }
+    else {
       val maybeHtml = if (maybeTarg.isDefined) {
         getIcdAsHtml(subsys, maybeTarg.get, maybeIcdV, pdfOptions)
-      } else {
+      }
+      else {
         getApiAsHtml(subsys, pdfOptions)
       }
 

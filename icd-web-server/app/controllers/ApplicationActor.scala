@@ -112,7 +112,7 @@ object ApplicationActor extends ActorModule {
       extends Messages
   final case class UnpublishIcd(unpublishIcdInfo: UnpublishIcdInfo, replyTo: ActorRef[Try[Option[IcdVersionInfo]]])
       extends Messages
-  final case class UpdatePublished(replyTo: ActorRef[Unit]) extends Messages
+  final case class UpdatePublished(replyTo: ActorRef[Unit])                                  extends Messages
   final case class GetIcdModels(
       subsystem: String,
       maybeVersion: Option[String],

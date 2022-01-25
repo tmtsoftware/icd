@@ -1,11 +1,11 @@
 package icd.web
 
 import org.scalajs.dom
-import org.scalajs.dom.raw.Element
+import org.scalajs.dom.Element
 import org.scalajs.dom.{DOMList, Node, document}
 
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 
 /**
  * Common definitions

@@ -8,24 +8,21 @@ import diffson.playJson._
 import diffson.lcs._
 import diffson.jsonpatch._
 import diffson.jsonpatch.lcsdiff.remembering._
-import csw.services.icd.db.parser.{
-  AlarmsModelBsonParser,
-  ComponentModelBsonParser,
-  IcdModelBsonParser,
-  PublishModelBsonParser,
-  SubscribeModelBsonParser,
-  SubsystemModelBsonParser
-}
+import csw.services.icd.db.parser.{AlarmsModelBsonParser, ComponentModelBsonParser, IcdModelBsonParser, PublishModelBsonParser, ServiceModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
 import play.api.libs.json.{JsObject, JsValue, Json}
-import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONString}
+import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONString, BSONInteger, BSONObjectID}
 import reactivemongo.api.{Cursor, WriteConcern}
 import reactivemongo.api.bson.collection.BSONCollection
+import reactivemongo.play.json.compat._
+import bson2json._
+import lax._
+import json2bson._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * Manages Subsystem and component versioning in the database.
- * Previous versions of a DefaultDB collection coll are stored in coll.v.
+ * Previous versions of a DB collection coll are stored in coll.v.
  * In addition, a top level collection keeps track of which versions of each collection belong
  * to a given "top level" version for the subsystem (or component).
  */
@@ -256,7 +253,6 @@ case class IcdVersionManager(query: IcdDbQuery) {
   }
 
   private def sortCollectionById(collName: String): List[BSONDocument] = {
-    import reactivemongo.play.json.compat._
     val coll = db.collection[BSONCollection](collName)
     coll
       .find(queryAny, Option.empty[JsObject])
@@ -305,8 +301,6 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * @param sv the subsystem
    */
   def getVersion(sv: SubsystemWithVersion): Option[VersionInfo] = {
-    import reactivemongo.api.bson._
-    import reactivemongo.play.json.compat._
     val path = sv.maybeComponent.fold(sv.subsystem)(compName => s"${sv.subsystem}.$compName")
     sv.maybeVersion match {
       case Some(version) => // published version
@@ -351,7 +345,6 @@ case class IcdVersionManager(query: IcdDbQuery) {
       subsystem: String,
       maybeComponent: Option[String]
   ): Option[String] = {
-    import reactivemongo.play.json.compat._
     val path     = maybeComponent.fold(subsystem)(compName => s"$subsystem.$compName")
     val collName = versionCollectionName(path)
     if (collectionNames.contains(collName)) {
@@ -399,8 +392,6 @@ case class IcdVersionManager(query: IcdDbQuery) {
 
   // Returns the contents of the given version of the given collection
   private def getVersionOf(coll: BSONCollection, version: Int): BSONDocument = {
-    import reactivemongo.api.bson._
-    import reactivemongo.play.json.compat._
     // Get a previously published version from $coll.v
     def getPublishedDoc: BSONDocument = {
       val v     = db.collection[BSONCollection](versionCollectionName(coll.name))
@@ -420,8 +411,6 @@ case class IcdVersionManager(query: IcdDbQuery) {
 
   // Returns the JSON for the given version of the collection path
   private def getJsonWithoutVersionOrId(path: String, version: Int): JsValue = {
-    import reactivemongo.api.bson._
-    import reactivemongo.play.json.compat._
     val jsValue = Json.toJson(getVersionOf(db(path), version))
     withoutVersionOrId(jsValue)
   }
@@ -443,8 +432,6 @@ case class IcdVersionManager(query: IcdDbQuery) {
   // Compares the given object with the current (head) version in the collection
   // (ignoring version and id values)
   def diff(coll: BSONCollection, obj: BSONDocument): Option[VersionDiff] = {
-    import reactivemongo.api.bson._
-    import reactivemongo.play.json.compat._
     val headDoc = coll.find(queryAny, Option.empty[JsObject]).one[BSONDocument].await.get
     val json1   = withoutVersionOrId(Json.toJson(headDoc))
     val json2   = withoutVersionOrId(Json.toJson(obj))
@@ -506,11 +493,13 @@ case class IcdVersionManager(query: IcdDbQuery) {
         entry.command.flatMap(coll => parser.CommandModelBsonParser(getDocVersion(coll), maybePdfOptions))
       val componentModel: Option[IcdModels.ComponentModel] =
         entry.component.flatMap(coll => ComponentModelBsonParser(getDocVersion(coll), maybePdfOptions))
+      val serviceModel: Option[IcdModels.ServiceModel] =
+        entry.services.flatMap(coll => ServiceModelBsonParser(db, getDocVersion(coll), maybePdfOptions))
       val alarmsModel: Option[IcdModels.AlarmsModel] =
         entry.alarms.flatMap(coll => AlarmsModelBsonParser(getDocVersion(coll), maybePdfOptions))
       val icdModels: List[IcdModels.IcdModel] =
         entry.icds.flatMap(coll => IcdModelBsonParser(getDocVersion(coll), maybePdfOptions))
-      IcdModels(subsystemModel, componentModel, publishModel, subscribeModel, commandModel, alarmsModel, icdModels)
+      IcdModels(subsystemModel, componentModel, publishModel, subscribeModel, commandModel, alarmsModel, serviceModel, icdModels)
     }
 
     getVersion(sv) match {
@@ -625,8 +614,6 @@ case class IcdVersionManager(query: IcdDbQuery) {
       date: DateTime,
       commit: String
   ): Unit = {
-    import reactivemongo.api.bson._
-    import reactivemongo.play.json.compat._
     val collectionNames = getCollectionNames
 
     // Save any of the subsystem's collections that changed
@@ -745,7 +732,6 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * Returns a list of published ICDs
    */
   def getIcdNames: List[IcdName] = {
-    import reactivemongo.play.json.compat._
     if (collectionExists(icdCollName)) {
       val coll = db.collection[BSONCollection](icdCollName)
       val docs =
@@ -782,7 +768,6 @@ case class IcdVersionManager(query: IcdDbQuery) {
     if (collectionExists(icdCollName)) {
       val coll = db.collection[BSONCollection](icdCollName)
       val docs = {
-        import reactivemongo.play.json.compat._
         coll
           .find(BSONDocument(subsystemKey -> s, targetKey -> t), Option.empty[JsObject])
           .sort(BSONDocument(idKey -> -1))

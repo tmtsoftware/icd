@@ -1,16 +1,17 @@
 import sbt._
 import Dependencies._
 import Settings._
-import sbtcrossproject.{crossProject, CrossType}
 
 def compileScope(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 def testScope(deps: ModuleID*): Seq[ModuleID]    = deps map (_ % "test")
+def toPathMapping(f: File): (File, String) = f -> f.getName
 
-lazy val clients = Seq(icdWebClient)
+// SCALAJS_PROD is set in install.sh to enable fully optimized JavaScript
+val optStage = if (sys.env.contains("SCALAJS_PROD")) FullOptStage else FastOptStage
 
 // Root of the multi-project build
 lazy val root = (project in file("."))
-  .aggregate(icdWebSharedJvm, `icd-db`, `icd-git`, `icd-viz`, icdWebServer)
+  .aggregate(icdWebSharedJvm, `icd-db`, `icd-git`, `icd-viz`, icdWebServer, icdWebClient, icdWebSharedJvm)
   .settings(name := "ICD")
 
 // Adds MongoDB database support, ICD versioning, queries, icd-db command line tool
@@ -20,11 +21,12 @@ lazy val `icd-db` = project
   .settings(
     libraryDependencies ++=
       compileScope(
-        akkaSlf4j,
+//        akkaSlf4j,
         akkaActorTyped,
         akkaActor,
         akkaStream,
-        logbackClassic,
+//        logbackClassic,
+        jacksonModuleScala,
         reactivemongo,
         play2Reactivemongo,
         reactivemongoPlayJsonCompat,
@@ -43,11 +45,13 @@ lazy val `icd-db` = project
         commonsIo,
         diffson,
         scalaLogging,
-        logbackClassic,
-        jsoup
+//        logbackClassic,
+        jsoup,
+        swaggerParser
       ) ++
         testScope(scalaTest)
   ) dependsOn icdWebSharedJvm
+
 
 // Command line tool to support visualization of API and ICD relationships
 lazy val `icd-viz` = project
@@ -57,7 +61,7 @@ lazy val `icd-viz` = project
     libraryDependencies ++=
       compileScope(graphDot) ++
         testScope(scalaTest)
-  ) dependsOn (`icd-db`)
+  ) dependsOn `icd-db`
 
 // Adds support for working with ICD model file repositories on GitHub, ICD version management, icd-github tool
 lazy val `icd-git` = project
@@ -67,7 +71,7 @@ lazy val `icd-git` = project
     libraryDependencies ++=
       compileScope(jgit) ++
         testScope(scalaTest)
-  ) dependsOn (`icd-db`)
+  ) dependsOn `icd-db`
 
 // -- Play/ScalaJS parts below --
 
@@ -76,16 +80,15 @@ lazy val icdWebServer = (project in file("icd-web-server"))
   .settings(defaultSettings: _*)
   .settings(dockerSettings: _*)
   .settings(
-    isDevMode in scalaJSPipeline := sys.env.get("SCALAJS_PROD").isEmpty,
+    scalaJSProjects := Seq(icdWebClient),
+    Assets / pipelineStages := Seq(scalaJSPipeline),
     Global / onChangedBuildSource := ReloadOnSourceChanges,
-    scalaJSProjects := clients,
-    pipelineStages in Assets := Seq(scalaJSPipeline),
     pipelineStages := Seq(digest, gzip),
     // triggers scalaJSPipeline when using compile or continuous compilation
-    compile in Compile := ((compile in Compile) dependsOn scalaJSPipeline).value,
-    includeFilter in (Assets, LessKeys.less) := "icd.less",
+    Compile / compile := ((Compile / compile) dependsOn scalaJSPipeline).value,
+    Assets / LessKeys.less / includeFilter := "icd.less",
     libraryDependencies ++=
-      compileScope(filters, guice, scalajsScripts, playJson, jqueryUi, webjarsPlay, bootstrap, bootstrapTable) ++
+      compileScope(filters, guice, playJson, jqueryUi, webjarsPlay, bootstrap, bootstrapTable) ++
         testScope(specs2)
   )
   .enablePlugins(PlayScala, SbtWeb, DockerPlugin)
@@ -96,7 +99,6 @@ val clientJsDeps = Def.setting(
   Seq(
     "org.webjars" % "jquery"    % JQueryVersion / "jquery.js" minified "jquery.min.js",
     "org.webjars" % "jquery-ui" % JQueryUiVersion / "jquery-ui.min.js" dependsOn "jquery.js",
-    // Note: Updating to bootstrap-4 could be a lot of work...
     "org.webjars"       % "bootstrap"       % BootstrapVersion / "bootstrap.min.js" dependsOn "jquery.js",
     "org.webjars.bower" % "bootstrap-table" % BootstrapTableVersion / "bootstrap-table.min.js",
     ProvidedJS / "resize.js" dependsOn "jquery-ui.min.js"
@@ -108,17 +110,23 @@ lazy val icdWebClient = (project in file("icd-web-client"))
   .settings(commonSettings)
   .settings(
     scalaJSUseMainModuleInitializer := false,
-    unmanagedSourceDirectories in Compile := Seq((scalaSource in Compile).value),
-    skip in packageJSDependencies := false,
+    scalaJSStage := optStage,
+    Compile / unmanagedSourceDirectories := Seq((Compile / scalaSource).value),
+    packageJSDependencies / skip := false,
     jsDependencies ++= clientJsDeps.value,
     libraryDependencies ++= clientDeps.value,
+    Compile / fastLinkJS / jsMappings += toPathMapping((Compile / packageJSDependencies).value),
+    Compile / fullLinkJS / jsMappings += toPathMapping((Compile / packageMinifiedJSDependencies).value),
     Global / onChangedBuildSource := ReloadOnSourceChanges
   )
-  .enablePlugins(ScalaJSPlugin, ScalaJSWeb)
+  .enablePlugins(ScalaJSPlugin, ScalaJSWeb, JSDependenciesPlugin)
   .dependsOn(icdWebSharedJs)
 
 // contains simple case classes used for data transfer that are shared between the client and server
-lazy val icdWebShared = (crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Pure) in file("icd-web-shared"))
+lazy val icdWebShared = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("icd-web-shared"))
+//  .jsConfigure(_.enablePlugins(ScalaJSWeb))
   .enablePlugins(BuildInfoPlugin)
   .settings(
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
@@ -136,6 +144,6 @@ lazy val icdWebSharedJvm = icdWebShared.jvm
 lazy val icdWebSharedJs  = icdWebShared.js
 
 //// loads the server project at sbt startup
-//onLoad in Global := (onLoad in Global).value andThen { s: State =>
+//Global / onLoad := (onLoad in Global).value andThen { s: State =>
 //  "project icdWebServer" :: s
 //}

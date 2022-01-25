@@ -6,6 +6,10 @@ for validation. The new vesion "2.0" contains some changes. Existing APIs that u
 backward compatible. To upgrade to the new version, set modelVersion to "2.0" and mkae the necessary changes
 to the model files (See the "schema-2.0" branch in each API repo, where that has already been done).
 
+## Changes to model version 2.0
+
+* Removed "struct" type (Schema version was not changed, since no known uses of "struct" were found)
+
 ## Changes between modelVersion 1.0 and 2.0
 
 ### Alarms (publish-model.conf)

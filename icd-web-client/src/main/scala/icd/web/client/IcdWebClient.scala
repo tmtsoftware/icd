@@ -3,21 +3,20 @@ package icd.web.client
 import icd.web.shared.{BuildInfo, IcdVersion, IcdVizOptions, PdfOptions, SubsystemWithVersion}
 import org.scalajs.dom
 import org.scalajs.dom.{PopStateEvent, document}
-import org.scalajs.dom.raw.HTMLStyleElement
+import org.scalajs.dom.HTMLStyleElement
 
 import scala.concurrent.Future
 import scala.scalajs.js.annotation.{JSExportTopLevel, JSGlobalScope}
 import scalatags.JsDom.TypedTag
 import scalacss.ScalatagsCss._
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 import BrowserHistory._
 import Components._
 import icd.web.client.PasswordDialog.PasswordDialogListener
 import icd.web.client.PublishDialog.PublishDialogListener
 import icd.web.client.SelectDialog.SelectDialogListener
 import icd.web.client.StatusDialog.StatusDialogListener
-import org.scalajs.dom.ext.Ajax
 import play.api.libs.json.Json
 
 import scala.scalajs.js
@@ -106,13 +105,13 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       checkForCookie().foreach { loggedIn =>
         // Refresh the list of published APIs and ICDs when the user refreshes the web app
         if (loggedIn)
-          updatePublished().onComplete(_ => showStatus())
+          updatePublished().onComplete(_ => showStatus()())
         else
-          showPasswordDialog()
+          showPasswordDialog()()
       }
       fileUploadItem.hide()
     } else {
-      updatePublished().onComplete(_ => showStatus())
+      updatePublished().onComplete(_ => showStatus()())
       publishItem.hide()
       logoutItem.hide()
     }
@@ -121,16 +120,16 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Returns future(true) if user is logged in
   private def checkForCookie(): Future[Boolean] = {
     val path = ClientRoutes.checkForCookie
-    Ajax.get(path).map { r =>
-      Json.fromJson[Boolean](Json.parse(r.responseText)).get
+    Fetch.get(path).map { text =>
+      Json.fromJson[Boolean](Json.parse(text)).get
     }
   }
 
   // See if this is a public server
   private def isPublicServer: Future[Boolean] = {
     val path = ClientRoutes.isPublicServer
-    Ajax.get(path).map { r =>
-      Json.fromJson[Boolean](Json.parse(r.responseText)).get
+    Fetch.get(path).map { text =>
+      Json.fromJson[Boolean](Json.parse(text)).get
     }
   }
 
@@ -138,7 +137,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private def updatePublished(): Future[Unit] = {
     val path = ClientRoutes.updatePublished
     // XXX TODO: Check response
-    Ajax.post(path).map(_ => ())
+    Fetch.post(path).map(_ => ())
   }
 
   // Layout the components on the page
@@ -244,8 +243,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   private def logout(): Future[Unit] = {
     val path = ClientRoutes.logout
-    Ajax.post(path).map { _ =>
-      showPasswordDialog()
+    Fetch.post(path).map { _ =>
+      showPasswordDialog()()
       ()
     }
   }
@@ -366,7 +365,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
           showStatus(
             hist.maybeSourceSubsystem.map(_.subsystem),
             saveHistory = false
-          )
+          )()
         case SelectView =>
           for {
             _ <- selectDialog.subsystem
@@ -423,7 +422,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     override def apiSelected(sv: SubsystemWithVersion): Unit = {
       val maybeSv = Some(sv)
       pushState(viewType = SelectView, maybeSourceSubsystem = maybeSv)
-      selectSubsystems(maybeSv = maybeSv, saveHistory = false)
+      selectSubsystems(maybeSv = maybeSv, saveHistory = false)()
     }
 
     override def icdSelected(icdVersion: IcdVersion): Unit = {
@@ -441,7 +440,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         maybeTargetSv = maybeTargetSubsystem,
         maybeIcd = maybeIcd,
         saveHistory = false
-      )
+      )()
     }
   }
 
@@ -450,7 +449,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     override def authenticated(token: String): Unit = {
       setNavbarVisible(true)
       // Show the status dialog
-      updatePublished().foreach(_ => showStatus())
+      updatePublished().foreach(_ => showStatus()())
     }
   }
 
@@ -466,7 +465,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   /**
-   * Updates the main display to match the selected subsystem and component(s)
+   * Updates the main display to match the selected subsystem(s) and component(s)
    *
    * @return a future indicating when the changes are done
    */
