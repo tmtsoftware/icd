@@ -15,9 +15,9 @@ package object client {
   // Show/hide the busy cursor while the future is running
   def showBusyCursorWhile(f: Future[Unit]): Future[Unit] = {
     // Note: See implicit NodeList to List support in package object in this dir
-    document.querySelector("body").classList.add("change-cursor");
+    document.querySelectorAll("*").foreach(_.classList.add("change-cursor"))
     f.onComplete { _ =>
-      document.querySelector("body").classList.remove("change-cursor");
+      document.querySelectorAll("*").foreach(_.classList.remove("change-cursor"))
     }
     f
   }
