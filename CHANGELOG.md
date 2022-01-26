@@ -9,10 +9,11 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Added a new, optional icd model file: service-model.conf, that contains information about the HTTP services that a component provides or requires. For each service provided, the model file also contains the name of the OpenAPI JSON file that describes the service.
 
 - Updated dependencies
-
 - Replaced deprecated ScalaJS Ajax usage with recommended dom.fetch API
-
 - Removed RaDec type from JSON schema for parameters in v2.0 model files
+- Removed support for "struct" parameter type, since it was removed from CSW
+- Fixed display of "default" parameter values
+- Improved "busy" cursor display
 
 ## [ICD v2.1.2] - 2021-05-25
 
