@@ -743,14 +743,21 @@ object IcdGitManager {
         val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(url).call()
         apiEntries.reverse.foreach { e =>
           feedback(s"Checking out $subsystem-${e.version} (commit: ${e.commit})")
-          git.checkout().setName(e.commit).call
-          feedback(s"Ingesting $subsystem-${e.version}")
-          val (_, problems) = db.ingest(gitWorkDir)
-          problems.foreach(p => feedback(p.errorMessage()))
-          db.query.afterIngestSubsystem(subsystem, problems, db.dbName)
-          if (!problems.exists(_.severity != "warning")) {
-            val date = DateTime.parse(e.date)
-            db.versionManager.publishApi(subsystem, Some(e.version), majorVersion = false, e.comment, e.user, date, e.commit)
+          try {
+            git.checkout().setName(e.commit).call
+            feedback(s"Ingesting $subsystem-${e.version}")
+            val (_, problems) = db.ingest(gitWorkDir)
+            problems.foreach(p => feedback(p.errorMessage()))
+            db.query.afterIngestSubsystem(subsystem, problems, db.dbName)
+            if (!problems.exists(_.severity != "warning")) {
+              val date = DateTime.parse(e.date)
+              db.versionManager.publishApi(subsystem, Some(e.version), majorVersion = false, e.comment, e.user, date, e.commit)
+            }
+          } catch {
+            case ex: Exception =>
+              ex.printStackTrace()
+              warning(s"Failed to ingest $subsystem-${e.version} (commit: ${e.commit})")
+              ex.printStackTrace()
           }
         }
         git.close()

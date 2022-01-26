@@ -1,7 +1,7 @@
 package icd.web.client
 
 import org.scalajs.dom
-import org.scalajs.dom.{Headers, HttpMethod, RequestInit}
+import org.scalajs.dom.{HttpMethod, RequestInit}
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 
 import scala.concurrent.Future
@@ -23,11 +23,9 @@ object Fetch {
         new RequestInit {
           method = HttpMethod.POST
           body = data
-          headers = new Headers {
-            js.Array(
-              js.Array("Content-Type", "application/json")
-            )
-          }
+          headers =  js.Dictionary(
+              "Content-Type" -> "application/json"
+          )
         }
       )
       .toFuture
@@ -36,9 +34,6 @@ object Fetch {
 
   // Does an HTTP POST on the URL and returns the text
   def post(url: String): Future[String] = {
-    dom
-      .fetch(url)
-      .toFuture
-      .flatMap(_.text().toFuture)
+    post(url, "").map(_._2)
   }
 }
