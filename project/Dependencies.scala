@@ -38,8 +38,8 @@ object Dependencies {
   val graphDot   = "org.scala-graph"         %% "graph-dot"   % "1.13.3"
 
   val reactivemongo               = "org.reactivemongo" %% "reactivemongo"                  % "1.0.10"
-  val play2Reactivemongo          = "org.reactivemongo" %% "play2-reactivemongo"            % "1.1.0-play28-RC3"
-  val reactivemongoPlayJsonCompat = "org.reactivemongo" %% "reactivemongo-play-json-compat" % "1.1.0-play29-RC3"
+//  val play2Reactivemongo          = "org.reactivemongo" %% "play2-reactivemongo"            % "1.1.0-play28-RC2"
+  val reactivemongoPlayJsonCompat = "org.reactivemongo" %% "reactivemongo-play-json-compat" % "1.1.0-play29-RC2"
 //  // XXX Need to fix indirect dependency conflict
   val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.1"
 

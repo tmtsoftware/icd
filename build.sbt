@@ -26,7 +26,7 @@ lazy val `icd-db` = project
         akkaStream,
         jacksonModuleScala,
         reactivemongo,
-        play2Reactivemongo,
+//        play2Reactivemongo,
         reactivemongoPlayJsonCompat,
         scalaCsv,
         playJson,
