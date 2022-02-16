@@ -84,7 +84,7 @@ users to test their local changes before publishing. This option also makes the 
 
 Note that the first time you start `icdwebserver`, it will update the ICD database from the released versions on GitHub. 
 
-To start the web app with continuous compilation during development, you can use `sbt ~run` from this directory.
+To start the web app with continuous compilation during development, you can type `~icdWebServer/run` from the sbt shell.
 
 See [icd-web-server/README.md](icd-web-server/README.md) for more information.
 

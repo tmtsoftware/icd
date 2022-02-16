@@ -23,10 +23,14 @@ class CachedIcdDbQuery(
   import IcdDbQuery._
 
   // --- Cached values ---
-  private val collectionNames = db.collectionNames.await.filter(collectionNameFilter).toSet
+  private val allCollectionNames = db.collectionNames.await
+
+  private val collectionNames = allCollectionNames.filter(collectionNameFilter).toSet
 
   // Note: this was 99% of the bottleneck: db.collectionExists calls db.getCollectionNames every time!
   override def collectionExists(name: String): Boolean = collectionNames.contains(name)
+
+  override def getAllCollectionNames: List[String] = allCollectionNames
 
   override def getCollectionNames: Set[String] = collectionNames
 
@@ -37,7 +41,7 @@ class CachedIcdDbQuery(
   private val subscribeModelMap = getSubscribeModelMap(components)
   private val publishModelMap   = getPublishModelMap(components)
   private val commandModelMap   = getCommandModelMap(components, maybePdfOptions)
-  private val alarmsModelMap   = getAlarmsModelMap(components, maybePdfOptions)
+  private val alarmsModelMap    = getAlarmsModelMap(components, maybePdfOptions)
 
   private val subscribeInfo  = components.map(c => super.getSubscribeInfo(c, maybePdfOptions))
   private val publishInfoMap = getPublishInfoMap
@@ -81,7 +85,10 @@ class CachedIcdDbQuery(
    *
    * @param components a list of component models
    */
-  private def getCommandModelMap(components: List[ComponentModel], maybePdfOptions: Option[PdfOptions]): Map[Component, CommandModel] = {
+  private def getCommandModelMap(
+      components: List[ComponentModel],
+      maybePdfOptions: Option[PdfOptions]
+  ): Map[Component, CommandModel] = {
     val list = for {
       componentModel <- components
       commandModel   <- super.getCommandModel(componentModel, maybePdfOptions)
@@ -94,10 +101,13 @@ class CachedIcdDbQuery(
    *
    * @param components a list of component models
    */
-  private def getAlarmsModelMap(components: List[ComponentModel], maybePdfOptions: Option[PdfOptions]): Map[Component, AlarmsModel] = {
+  private def getAlarmsModelMap(
+      components: List[ComponentModel],
+      maybePdfOptions: Option[PdfOptions]
+  ): Map[Component, AlarmsModel] = {
     val list = for {
       componentModel <- components
-      alarmsModel   <- super.getAlarmsModel(componentModel, maybePdfOptions)
+      alarmsModel    <- super.getAlarmsModel(componentModel, maybePdfOptions)
     } yield Component(componentModel.subsystem, componentModel.component) -> alarmsModel
     list.toMap
   }

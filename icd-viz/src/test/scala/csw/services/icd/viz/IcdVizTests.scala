@@ -1,9 +1,8 @@
 package csw.services.icd.viz
 import java.io.File
 import java.nio.file.Files
-
 import csw.services.icd.IcdValidator
-import csw.services.icd.db.{IcdDb, Resolver}
+import csw.services.icd.db.{IcdDb, Resolver, TestHelper}
 import icd.web.shared.{IcdVizOptions, SubsystemWithVersion}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -23,10 +22,12 @@ class IcdVizTests extends AnyFunSuite {
   test("Text graph generation from examples/2.0/TEST subsystem") {
     val db = IcdDb(dbName)
     db.dropDatabase() // start with a clean db for test
+
+    val testHelper = new TestHelper(db)
+    // Need ESW for ObserveEvents
+    testHelper.ingestESW()
     // ingest examples/TEST into the DB
-    val problems = db.ingestAndCleanup(getTestDir(s"$examplesDir/TEST"))
-    for (p <- problems) println(p)
-    db.query.afterIngestFiles(problems, dbName)
+    testHelper.ingestDir(getTestDir(s"$examplesDir/TEST"))
 
     val subsystems = List(SubsystemWithVersion("TEST"))
     val dotPath    = Files.createTempFile("icdviz", ".dot")

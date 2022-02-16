@@ -406,30 +406,32 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     val compName = component.component
 
     // Returns a table row displaying more details for the given event
-    def makeEventDetailsRow(eventInfo: EventInfo) = {
+    def makeEventDetailsRow(eventInfo: EventInfo, showArchiveInfo: Boolean = true) = {
       val eventModel = eventInfo.eventModel
       val totalArchiveSpacePerYear =
         if (eventModel.totalArchiveSpacePerYear.isEmpty) ""
         else if (eventModel.maybeMaxRate.isEmpty) em(eventModel.totalArchiveSpacePerYear).render.outerHTML
         else span(eventModel.totalArchiveSpacePerYear).render.outerHTML
       val headings = List("Max Rate", "Archive", "Archive Duration", "Bytes per Event", "Year Accumulation")
-      val rowList = List(
-        List(
-          formatRate(eventModel.maybeMaxRate),
-          yesNo(eventModel.archive),
-          eventModel.archiveDuration,
-          eventModel.totalSizeInBytes.toString,
-          totalArchiveSpacePerYear
-        )
-      )
+      val rowList =
+        if (showArchiveInfo)
+          List(
+            List(
+              formatRate(eventModel.maybeMaxRate),
+              yesNo(eventModel.archive),
+              eventModel.archiveDuration,
+              eventModel.totalSizeInBytes.toString,
+              totalArchiveSpacePerYear
+            )
+          )
+        else Nil
 
       div(
         if (eventModel.refError.startsWith("Error:")) makeErrorDiv(eventModel.refError) else div(),
         if (eventModel.requirements.isEmpty) div()
         else p(strong("Requirements: "), eventModel.requirements.mkString(", ")),
-        mkTable(headings, rowList),
-        if (eventModel.maybeMaxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.")
-        else span(),
+        if (showArchiveInfo) mkTable(headings, rowList) else div(),
+        if (showArchiveInfo && eventModel.maybeMaxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.") else span(),
         parameterListMarkup(eventModel.parameterList)
       )
     }
@@ -451,7 +453,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             ),
             tbody(
               for (t <- eventList) yield {
-                val (btn, row) = hiddenRowMarkup(makeEventDetailsRow(t), 3)
+                val (btn, row) = hiddenRowMarkup(makeEventDetailsRow(t, pubType != "Observe Events"), 3)
                 List(
                   tr(
                     td(

@@ -611,6 +611,7 @@ object IcdToHtml {
     def publishEventListMarkup(pubType: String, eventList: List[EventInfo]): Text.TypedTag[String] = {
       if (eventList.isEmpty) div()
       else {
+        val showArchiveInfo = pubType != "Observe Events"
         div(
           for (eventInfo <- eventList) yield {
             val eventModel  = eventInfo.eventModel
@@ -631,7 +632,7 @@ object IcdToHtml {
               else span(eventModel.totalArchiveSpacePerYear).render
             val headings =
               List("Max Rate", "Archive", "Archive Duration", "Bytes per Event", "Year Accumulation", "Required Rate")
-            val rowList = List(
+            val rowList = if (showArchiveInfo) List(
               List(
                 HtmlMarkup.formatRate(eventModel.maybeMaxRate).render,
                 yesNo(eventModel.archive),
@@ -648,7 +649,7 @@ object IcdToHtml {
                   .mkString(" ")
                   .trim()
               )
-            )
+            ) else Nil
             // Include usage text from subscribers that define it
             val subscriberUsage =
               if (clientApi)
@@ -676,7 +677,7 @@ object IcdToHtml {
                   raw(eventModel.description),
                   if (eventModel.refError.startsWith("Error:")) makeErrorDiv(eventModel.refError) else div(),
                   subscriberUsage,
-                  HtmlMarkup.mkTable(headings, rowList),
+                  if (showArchiveInfo) HtmlMarkup.mkTable(headings, rowList) else div(),
                   attributeListMarkup(eventModel.name, eventModel.parameterList),
                   hr
                 )

@@ -509,7 +509,6 @@ case class IcdDb(
    */
   //noinspection SameParameterValue
   private def ingestConfig(name: String, tmpName: String, config: Config): Unit = {
-//    import play.api.libs.json._
     import play.api.libs.json.Reads._
 
     val jsObj = Json.parse(IcdValidator.toJson(config)).as[JsObject]

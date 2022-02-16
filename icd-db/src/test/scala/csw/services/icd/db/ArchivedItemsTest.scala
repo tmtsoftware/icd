@@ -20,16 +20,14 @@ class ArchivedItemsTest extends AnyFunSuite {
   test("Test event size calculations") {
     val db = IcdDb(dbName)
     db.dropDatabase() // start with a clean db for test
-    val query          = IcdDbQuery(db.db, db.admin, None)
-    val versionManager = IcdVersionManager(query)
-
+    val testHelper = new TestHelper(db)
+    // Need ESW for ObserveEvents
+    testHelper.ingestESW()
     // ingest examples/TEST into the DB
-    val problems = db.ingestAndCleanup(getTestDir(s"$examplesDir/TEST"))
-    for (p <- problems) println(p)
-    db.query.afterIngestFiles(problems, dbName)
+    testHelper.ingestDir(getTestDir(s"$examplesDir/TEST"))
 
     new ComponentInfoHelper(displayWarnings = false, clientApi = false, maybeStaticHtml = None)
-      .getComponentInfo(versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None)
+      .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None)
       .foreach { info =>
         assert(info.componentModel.component == "lgsWfs")
         assert(info.publishes.nonEmpty)

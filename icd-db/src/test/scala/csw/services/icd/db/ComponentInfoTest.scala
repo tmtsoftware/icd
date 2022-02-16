@@ -98,30 +98,24 @@ class ComponentInfoTest extends AnyFunSuite {
   test("Get pub/sub info from database") {
     val db = IcdDb(dbName)
     db.dropDatabase() // start with a clean db for test
-    val query          = IcdDbQuery(db.db, db.admin, None)
-    val versionManager = IcdVersionManager(query)
 
+    val testHelper = new TestHelper(db)
+    // Need ESW for ObserveEvents
+    testHelper.ingestESW()
     // ingest examples/TEST into the DB
-    val problems = db.ingestAndCleanup(getTestDir(s"$examplesDir/TEST"))
-    for (p <- problems) println(p)
-    assert(problems.isEmpty)
-    db.query.afterIngestFiles(problems, dbName)
-
-    val problems2 = db.ingestAndCleanup(getTestDir(s"$examplesDir/TEST2"))
-    for (p <- problems2) println(p)
-    assert(problems2.isEmpty)
-    db.query.afterIngestFiles(problems2, dbName)
+    testHelper.ingestDir(getTestDir(s"$examplesDir/TEST"))
+    testHelper.ingestDir(getTestDir(s"$examplesDir/TEST2"))
 
     new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = None)
-      .getComponentInfo(versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None)
+      .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None)
       .foreach(checkInfo(_, clientApi = true))
 
     new ComponentInfoHelper(displayWarnings = false, clientApi = false, maybeStaticHtml = None)
-      .getComponentInfo(versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None)
+      .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None)
       .foreach(checkInfo(_, clientApi = false))
 
     new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = Some(true))
-      .getComponentInfo(versionManager, SubsystemWithVersion("TEST", None, None), None)
+      .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST", None, None), None)
       .foreach(checkInfo2(_, clientApi = true))
   }
 }

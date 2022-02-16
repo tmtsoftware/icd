@@ -2,7 +2,16 @@ package csw.services.icd.db
 
 import csw.services.icd._
 import csw.services.icd.StdName._
-import csw.services.icd.db.parser.{AlarmsModelBsonParser, CommandModelBsonParser, ComponentModelBsonParser, IcdModelBsonParser, PublishModelBsonParser, ServiceModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
+import csw.services.icd.db.parser.{
+  AlarmsModelBsonParser,
+  CommandModelBsonParser,
+  ComponentModelBsonParser,
+  IcdModelBsonParser,
+  PublishModelBsonParser,
+  ServiceModelBsonParser,
+  SubscribeModelBsonParser,
+  SubsystemModelBsonParser
+}
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.AllEventList.{Event, EventsForComponent, EventsForSubsystem}
 import icd.web.shared.{IcdModels, PdfOptions}
@@ -166,8 +175,22 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
   }
   private[db] def collectionExists(name: String): Boolean = getCollectionNames.contains(name)
 
+  private[db] def getAllCollectionNames: List[String] = {
+    db.collectionNames.await
+  }
+
   private[db] def getCollectionNames: Set[String] = {
-    db.collectionNames.await.filter(collectionNameFilter).toSet
+    getAllCollectionNames.filter(collectionNameFilter).toSet
+  }
+
+  // List of predefined observe events (defined in ESW model files)
+  private[db] def getAllObserveEvents(maybePdfOptions: Option[PdfOptions]): Map[String, IcdModels.EventModel] = {
+    getAllCollectionNames
+      .filter(s => s.startsWith("ESW.") && s.endsWith("Lib.publish"))
+      .flatMap(collName => collectionHead(db(collName)).flatMap(PublishModelBsonParser(_, maybePdfOptions, Map.empty)))
+      .flatMap(publishModel => publishModel.eventList)
+      .map(eventModel => eventModel.name -> eventModel)
+      .toMap
   }
 
   private[db] def getEntries(paths: List[IcdPath]): List[ApiCollections] = {
@@ -365,7 +388,7 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
     val collName = getPublishCollectionName(component.subsystem, component.component)
     if (collectionExists(collName)) {
       val coll = db.collection[BSONCollection](collName)
-      collectionHead(coll).flatMap(PublishModelBsonParser(_, maybePdfOptions))
+      collectionHead(coll).flatMap(PublishModelBsonParser(_, maybePdfOptions, getAllObserveEvents(maybePdfOptions)))
     }
     else None
   }
@@ -468,10 +491,10 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
    * @return list containing one item for each component that requires the service
    */
   def getServiceClients(
-                         subsystem: String,
-                         component: String,
-                         serviceName: String,
-                         maybePdfOptions: Option[PdfOptions]
+      subsystem: String,
+      component: String,
+      serviceName: String,
+      maybePdfOptions: Option[PdfOptions]
   ): List[ComponentModel] = {
     for {
       componentModel <- getComponents(maybePdfOptions)
@@ -502,7 +525,9 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
       val subsystemModel: Option[SubsystemModel] =
         entry.subsystem.flatMap(coll => collectionHead(coll).flatMap(SubsystemModelBsonParser(_, maybePdfOptions)))
       val publishModel: Option[PublishModel] =
-        entry.publish.flatMap(coll => collectionHead(coll).flatMap(PublishModelBsonParser(_, maybePdfOptions)))
+        entry.publish.flatMap(coll =>
+          collectionHead(coll).flatMap(PublishModelBsonParser(_, maybePdfOptions, getAllObserveEvents(maybePdfOptions)))
+        )
       val subscribeModel: Option[SubscribeModel] =
         entry.subscribe.flatMap(coll => collectionHead(coll).flatMap(SubscribeModelBsonParser(_, maybePdfOptions)))
       val commandModel: Option[CommandModel] =

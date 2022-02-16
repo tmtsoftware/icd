@@ -24,20 +24,19 @@ class IcdDbTests extends AnyFunSuite {
     val db = IcdDb(dbName)
     db.dropDatabase() // start with a clean db for test
 
+    val testHelper = new TestHelper(db)
+    // Need ESW for ObserveEvents
+    testHelper.ingestESW()
     // ingest examples/TEST into the DB
-    val problems = db.ingestAndCleanup(getTestDir(s"$examplesDir/TEST"))
-    for (p <- problems) println(p)
-    assert(problems.isEmpty)
-    db.query.afterIngestFiles(problems, dbName)
+    testHelper.ingestDir(getTestDir(s"$examplesDir/TEST"))
 
     // query the DB
-    assert(db.query.getComponentNames(None) == List("env.ctrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
     assert(db.query.getComponentNames(Some("TEST")) == List("env.ctrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
-    assert(db.query.getAssemblyNames(None) == List("env.ctrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
-    assert(db.query.getHcdNames(None) == List())
-    assert(db.query.getSubsystemNames == List("TEST"))
+    assert(db.query.getAssemblyNames(Some("TEST")) == List("env.ctrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
+    assert(db.query.getHcdNames(Some("TEST")) == List())
+    assert(db.query.getSubsystemNames.toSet == Set("TEST", "ESW"))
 
-    val components = db.query.getComponents(None)
+    val components = db.query.getComponents(None).filter(_.subsystem == "TEST")
     assert(components.size == 5)
 
     // Test getting items based on the component name
@@ -98,10 +97,7 @@ class IcdDbTests extends AnyFunSuite {
     assert(published.head.publishType == CurrentStates)
 
     // Ingest TEST2 subsystem
-    val problems2 = db.ingestAndCleanup(getTestDir(s"$examplesDir/TEST2"))
-    for (p <- problems2) println(p)
-    assert(problems2.isEmpty)
-    db.query.afterIngestFiles(problems2, dbName)
+    testHelper.ingestDir(getTestDir(s"$examplesDir/TEST2"))
 
     // Test icd-models
     val icdModels = db.versionManager.getIcdModels(SubsystemWithVersion("TEST"), SubsystemWithVersion("TEST2"), None)

@@ -21,11 +21,9 @@ lazy val `icd-db` = project
   .settings(
     libraryDependencies ++=
       compileScope(
-//        akkaSlf4j,
         akkaActorTyped,
         akkaActor,
         akkaStream,
-//        logbackClassic,
         jacksonModuleScala,
         reactivemongo,
         play2Reactivemongo,
@@ -45,7 +43,6 @@ lazy val `icd-db` = project
         commonsIo,
         diffson,
         scalaLogging,
-//        logbackClassic,
         jsoup,
         swaggerParser
       ) ++
@@ -61,7 +58,7 @@ lazy val `icd-viz` = project
     libraryDependencies ++=
       compileScope(graphDot) ++
         testScope(scalaTest)
-  ) dependsOn `icd-db`
+  ) dependsOn `icd-db` % "compile->compile;test->test"
 
 // Adds support for working with ICD model file repositories on GitHub, ICD version management, icd-github tool
 lazy val `icd-git` = project
