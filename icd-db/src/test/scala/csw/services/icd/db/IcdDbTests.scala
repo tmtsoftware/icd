@@ -34,7 +34,7 @@ class IcdDbTests extends AnyFunSuite {
     assert(db.query.getComponentNames(Some("TEST")) == List("env.ctrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
     assert(db.query.getAssemblyNames(Some("TEST")) == List("env.ctrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
     assert(db.query.getHcdNames(Some("TEST")) == List())
-    assert(db.query.getSubsystemNames.toSet == Set("TEST", "ESW"))
+    assert(db.query.getSubsystemNames.toSet == Set("TEST"))
 
     val components = db.query.getComponents(None).filter(_.subsystem == "TEST")
     assert(components.size == 5)
