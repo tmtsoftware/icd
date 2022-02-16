@@ -695,7 +695,12 @@ object IcdGitManager {
         Subsystems.allSubsystems.map(s => SubsystemAndVersion(s, None))
       }
     }
-    subsystems.foreach(ingest(db, _, feedback, allApiVersions))
+
+    // For ingesting subsystems into the db, make ESW is first,
+    // since it contains the predefined observe events that others depend on
+    subsystems.
+      sortWith((x, y) => x.subsystem == "ESW")
+      .foreach(ingest(db, _, feedback, allApiVersions))
     importIcdFiles(db, subsystems, feedback, allIcdVersions)
   }
 

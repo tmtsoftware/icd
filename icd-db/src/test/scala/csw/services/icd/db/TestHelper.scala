@@ -9,7 +9,7 @@ class TestHelper(db: IcdDb) {
   def ingestESW(): Unit = {
     println("Ingesting https://github.com/tmt-icd/ESW-Model-Files (needed for ObserveEvent handling)")
     "git clone https://github.com/tmt-icd/ESW-Model-Files".!
-    ingestDir(new File("ESW-Model-Files"))
+    ingestDir(new File("ESW-Model-Files/observe-events"))
     "rm -rf ESW-Model-Files".!
   }
 
