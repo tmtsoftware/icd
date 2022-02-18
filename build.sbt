@@ -11,7 +11,7 @@ val optStage = if (sys.env.contains("SCALAJS_PROD")) FullOptStage else FastOptSt
 
 // Root of the multi-project build
 lazy val root = (project in file("."))
-  .aggregate(icdWebSharedJvm, `icd-db`, `icd-git`, `icd-viz`, icdWebServer, icdWebClient, icdWebSharedJvm)
+  .aggregate(icdWebSharedJvm, `icd-db`, `icd-git`, `icd-viz`, icdWebServer, icdWebSharedJvm)
   .settings(name := "ICD")
 
 // Adds MongoDB database support, ICD versioning, queries, icd-db command line tool
