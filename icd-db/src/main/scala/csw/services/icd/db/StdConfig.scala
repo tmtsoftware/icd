@@ -1,9 +1,9 @@
 package csw.services.icd.db
 
-import java.io.{File, FileNotFoundException, InputStreamReader}
+import java.io.{File, FileInputStream, FileNotFoundException, InputStreamReader}
 import java.util.zip.{ZipEntry, ZipFile}
 import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions, ConfigValueFactory}
-import csw.services.icd.StdName
+import csw.services.icd.{Problem, StdName}
 import csw.services.icd.StdName._
 import StdConfig.Resources
 
@@ -48,7 +48,7 @@ object StdConfig {
       import scala.jdk.CollectionConverters._
       zipFile.entries().asScala.find(_.getName == name).map { e =>
         val inputStream = zipFile.getInputStream(e)
-        val s = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8)
+        val s           = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8)
         inputStream.close()
         s
       }
@@ -56,19 +56,38 @@ object StdConfig {
   }
 
   /**
-   * Returns a list for StdConfig objects, one for each ICD file in the given directory
-   * XXX TODO: Return config parse errors in StdConfig.get with file names
+   * Returns a pair of lists of StdConfig and Problem objects, for each icd model file in the given directory
    */
-  def get(dir: File): List[StdConfig] = {
-    stdNames.flatMap { stdName =>
-      val inputFile = new File(dir, stdName.name)
+  def get(dir: File): (List[StdConfig], List[Problem]) = {
+    val eList = stdNames.flatMap { stdName =>
+      val inputFile        = new File(dir, stdName.name)
+      val jsonnetInputFile = new File(dir, stdName.name.replace(".conf", ".jsonnet"))
+      val resources        = new FileResources(dir.getPath)
       if (inputFile.exists()) {
-        val config = ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())
-        val resources    = new FileResources(dir.getPath)
-        Some(StdConfig(stdName, addTargetSubsystem(config, stdName), inputFile.getPath, resources))
+        try {
+          val config    = ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())
+          val stdConfig = StdConfig(stdName, addTargetSubsystem(config, stdName), inputFile.getPath, resources)
+          Some(Right(stdConfig))
+        }
+        catch {
+          case ex: Exception => Some(Left(Problem("error", s"$inputFile: ${ex.getMessage}")))
+        }
+      }
+      else if (jsonnetInputFile.exists()) {
+        val inputStream = new FileInputStream(jsonnetInputFile)
+        try {
+          val config      = Jsonnet.preprocess(inputStream, jsonnetInputFile.getPath)
+          inputStream.close()
+          val stdConfig   = StdConfig(stdName, addTargetSubsystem(config, stdName), inputFile.getPath, resources)
+          Some(Right(stdConfig))
+        } catch {
+          case ex: Exception => Some(Left(Problem("error", s"$jsonnetInputFile: ${ex.getMessage}")))
+        }
       }
       else None
     }
+    val x = eList.partitionMap(identity)
+    (x._2, x._1)
   }
 
   /**
@@ -80,8 +99,19 @@ object StdConfig {
     if (name.endsWith(".zip"))
       get(new ZipFile(inputFile))
     else {
-      val config = ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())
-      StdConfig.get(config, fileName, resources).toList
+      val config = {
+        if (fileName.endsWith(".jsonnet")) {
+          val inputStream = new FileInputStream(inputFile)
+          val result      = Jsonnet.preprocess(inputStream, fileName)
+          inputStream.close()
+          result
+        }
+        else {
+          ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())
+        }
+      }
+      val newFileName = fileName.replace(".jsonnet", ".conf")
+      StdConfig.get(config, newFileName, resources).toList
     }
   }
 
@@ -93,10 +123,18 @@ object StdConfig {
     def isValid(f: ZipEntry) = stdSet.contains(new File(f.getName).getName)
 
     val list = for (e <- zipFile.entries().asScala.filter(isValid)) yield {
-      val reader = new InputStreamReader(zipFile.getInputStream(e))
-      val config = ConfigFactory.parseReader(reader).resolve(ConfigResolveOptions.noSystem())
-      reader.close()
-      StdConfig.get(config, e.getName, new ZipResources(zipFile)).get
+      val inputStream = zipFile.getInputStream(e)
+      val config = if (e.getName.endsWith(".jsonnet")) {
+        Jsonnet.preprocess(inputStream, e.getName)
+      }
+      else {
+        val reader = new InputStreamReader(inputStream)
+        val result = ConfigFactory.parseReader(reader).resolve(ConfigResolveOptions.noSystem())
+        reader.close()
+        result
+      }
+      val fileName = e.getName.replace(".jsonnet", ".conf")
+      StdConfig.get(config, fileName, new ZipResources(zipFile)).get
     }
     list.toList
   }

@@ -15,7 +15,7 @@ object Dependencies {
   val JQueryUiVersion       = "1.12.1"
   val BootstrapTableVersion = "1.15.5"
 
-//  val akkaSlf4j      = "com.typesafe.akka" %% "akka-slf4j"       % AkkaVersion
+  //  val akkaSlf4j      = "com.typesafe.akka" %% "akka-slf4j"       % AkkaVersion
   val akkaActorTyped = "com.typesafe.akka" %% "akka-actor-typed" % AkkaVersion
   val akkaActor      = "com.typesafe.akka" %% "akka-actor"       % AkkaVersion
   val akkaStream     = "com.typesafe.akka" %% "akka-stream"      % AkkaVersion
@@ -30,6 +30,8 @@ object Dependencies {
   val flexmarkAll = "com.vladsch.flexmark"  % "flexmark-all" % "0.64.0"
   val scalaCsv    = "com.github.tototoshi" %% "scala-csv"    % "1.3.10"
 
+  val sjsonnet = "com.databricks" %% "sjsonnet" % "0.4.2"
+
   val itext7Core = "com.itextpdf"             % "itext7-core" % "7.2.1" pomOnly ()
   val html2pdf   = "com.itextpdf"             % "html2pdf"    % "4.0.1"
   val jlatexmath = "org.scilab.forge"         % "jlatexmath"  % "1.0.7"
@@ -37,10 +39,10 @@ object Dependencies {
   val plantuml   = "net.sourceforge.plantuml" % "plantuml"    % "1.2021.1"
   val graphDot   = "org.scala-graph"         %% "graph-dot"   % "1.13.3"
 
-  val reactivemongo               = "org.reactivemongo" %% "reactivemongo"                  % "1.0.10"
-//  val play2Reactivemongo          = "org.reactivemongo" %% "play2-reactivemongo"            % "1.1.0-play28-RC2"
+  val reactivemongo = "org.reactivemongo" %% "reactivemongo" % "1.0.10"
+  //  val play2Reactivemongo          = "org.reactivemongo" %% "play2-reactivemongo"            % "1.1.0-play28-RC2"
   val reactivemongoPlayJsonCompat = "org.reactivemongo" %% "reactivemongo-play-json-compat" % "1.1.0-play29-RC2"
-//  // XXX Need to fix indirect dependency conflict
+  //  // XXX Need to fix indirect dependency conflict
   val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.1"
 
   val diffson = "org.gnieh" %% "diffson-play-json" % "4.1.1"

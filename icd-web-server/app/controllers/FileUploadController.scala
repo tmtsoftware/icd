@@ -61,6 +61,11 @@ class FileUploadController @Inject() (components: ControllerComponents) extends 
           val msg = e.getMessage
           log.error(msg, e)
           NotAcceptable(Json.toJson(List(Problem("error", msg))))
+        case e: RuntimeException =>
+          e.printStackTrace()
+          val msg = e.getMessage
+          log.error(msg, e)
+          NotAcceptable(Json.toJson(List(Problem("error", msg))))
         case t: Throwable =>
           val msg = "Internal error"
           log.error(msg, t)
@@ -86,15 +91,17 @@ class FileUploadController @Inject() (components: ControllerComponents) extends 
     }
 
     // The files might not be in any particular order, so make sure we use the correct schema version for each component
-    val schemaVersionMap = list.flatMap { sc =>
-      if (sc.stdName.isComponentModel) {
-        getComponentName(sc).map(_ -> getSchemaVersion(sc))
-      }
-      else None
-    }.toMap
+    def makeSchemaVersionMap(): Map[String, String] = {
+      list.flatMap { sc =>
+        if (sc.stdName.isComponentModel) {
+          getComponentName(sc).map(_ -> getSchemaVersion(sc))
+        }
+        else None
+      }.toMap
+    }
 
-    // Validate everything first
-    val validateProblems =
+    def validateAll(): List[Problem] = {
+      val schemaVersionMap = makeSchemaVersionMap()
       list.flatMap { sc =>
         val schemaVersion =
           if (sc.stdName.isSubsystemModel)
@@ -104,6 +111,10 @@ class FileUploadController @Inject() (components: ControllerComponents) extends 
           }
         IcdValidator.validateStdName(sc, schemaVersion)
       }
+    }
+
+    // Validate everything first
+    val validateProblems = validateAll()
     if (validateProblems.nonEmpty) {
       NotAcceptable(Json.toJson(validateProblems))
     }

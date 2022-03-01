@@ -7,8 +7,11 @@
 # See build.sbt: Causes fullOpt to be used to optimize the generated JS code
 export SCALAJS_PROD=true
 
-dir=../install_icd
-rm -rf $dir
+#java_version=`java -version 2>&1 | head -1 | cut -d'"' -f2 | sed '/^1\./s///' | cut -d'.' -f1`
+#if test $java_version != '11'; then
+#  echo "This project requires Java-11, but you have java-$java_version: Aborting.";
+#  exit 1
+#fi
 
 # Make sure we can find sbt for the build
 hash sbt 2>/dev/null || { echo >&2 "Please install sbt first.  Aborting."; exit 1; }
@@ -32,6 +35,9 @@ else
 fi
 # Should not be needed? See https://github.com/sbt/sbt-less/issues/95
 export SBT_OPTS="-Dsbt.jse.engineType=Node -Dsbt.jse.command=$NODEJS"
+
+dir=../install_icd
+rm -rf $dir
 
 for i in $dir $dir/bin $dir/lib $dir/conf; do test -d $i || mkdir $i; done
 

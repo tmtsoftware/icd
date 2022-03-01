@@ -49,7 +49,8 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
 
   // True if the file is one of the standard ICD files
   private def isStdFile(file: dom.File): Boolean = {
-    stdList.contains(basename(file)) || file.name.endsWith("-icd-model.conf") || file.name.endsWith(".json") || file.name.endsWith(".yaml")
+    stdList.contains(basename(file)) || file.name.endsWith("-icd-model.conf") || file.name.endsWith(".json") || file.name
+      .endsWith(".yaml") || file.name.endsWith(".jsonnet")
   }
 
   // HTML item displaying error messages

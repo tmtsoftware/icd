@@ -440,8 +440,9 @@ case class IcdDb(
    * @return a pair of two lists: 1: A list of the configs in the directory, 2: A list describing any problems that occurred
    */
   private[db] def ingestOneDir(dir: File): (List[StdConfig], List[Problem]) = {
-    val list = StdConfig.get(dir)
-    (list, ingestConfigs(list))
+    val (stdConfigs, problems) = StdConfig.get(dir)
+    if (problems.nonEmpty) (stdConfigs, problems)
+    else (stdConfigs, ingestConfigs(stdConfigs))
   }
 
   /**
