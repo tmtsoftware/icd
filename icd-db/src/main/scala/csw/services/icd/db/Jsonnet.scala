@@ -52,6 +52,7 @@ object Jsonnet {
       stdout.close()
       stderrStream.close()
       stdoutStream.close()
+      inputFile.delete()
     }
   }
 }
