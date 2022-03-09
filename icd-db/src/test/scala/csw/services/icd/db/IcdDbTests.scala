@@ -31,13 +31,13 @@ class IcdDbTests extends AnyFunSuite {
     testHelper.ingestDir(getTestDir(s"$examplesDir/TEST"))
 
     // query the DB
-    assert(db.query.getComponentNames(Some("TEST")) == List("env.ctrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
-    assert(db.query.getAssemblyNames(Some("TEST")) == List("env.ctrl", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
+    assert(db.query.getComponentNames(Some("TEST")) == List("env.ctrl", "jsonnet.example", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
+    assert(db.query.getAssemblyNames(Some("TEST")) == List("env.ctrl", "jsonnet.example", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
     assert(db.query.getHcdNames(Some("TEST")) == List())
     assert(db.query.getSubsystemNames.toSet == Set("TEST"))
 
     val components = db.query.getComponents(None).filter(_.subsystem == "TEST")
-    assert(components.size == 5)
+    assert(components.size == 6)
 
     // Test getting items based on the component name
     val envCtrl = db.query.getComponentModel("TEST", "env.ctrl", None).get

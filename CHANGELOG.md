@@ -13,6 +13,7 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Removed support for "struct" parameter type, since it was removed from CSW
 - Fixed display of "default" parameter values
 - Improved "busy" cursor display
+- Removed support for uploading a zip file containing the icd model files, since modern browsers now all support uploading a directory
 
 ## [ICD v2.1.2] - 2021-05-25
 

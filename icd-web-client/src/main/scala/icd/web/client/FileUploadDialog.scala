@@ -47,10 +47,10 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     ).render
   }
 
-  // True if the file is one of the standard ICD files
+  // True if the file is one of the standard ICD files (or supported resources)
   private def isStdFile(file: dom.File): Boolean = {
     stdList.contains(basename(file)) || file.name.endsWith("-icd-model.conf") || file.name.endsWith(".json") || file.name
-      .endsWith(".yaml") || file.name.endsWith(".jsonnet")
+      .endsWith(".yaml") || file.name.endsWith(".jsonnet") || file.name.endsWith(".libsonnet") || file.name.endsWith(".txt")
   }
 
   // HTML item displaying error messages
@@ -89,8 +89,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   }
 
   // Returns true if the file is a valid ICD file name
-  private def isValidFile(file: dom.File): Boolean =
-    if (inputDirSupported) isStdFile(file) else file.name.endsWith(".zip")
+  private def isValidFile(file: dom.File): Boolean = isStdFile(file)
 
   // Returns a pair of lists containing the valid and invalid ICD files
   private def getIcdFiles(e: dom.Event): (Seq[WebkitFile], Seq[WebkitFile]) = {
@@ -131,8 +130,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     statusItem.classList.remove("label-danger")
     val (validFiles, invalidFiles) = getIcdFiles(e)
     if (validFiles.isEmpty) {
-      val fileType =
-        if (inputDirSupported) "directory of .conf files for the ICD" else "a zip file containing .conf files for the ICD"
+      val fileType = "directory of .conf files for the ICD"
       displayProblem(Problem("error", s"Expected a $fileType"))
     }
     else {
@@ -200,15 +198,9 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   override def markup(): Element = {
     import scalatags.JsDom.all._
 
-    // Only Chrome supports uploading8 directories. For other browsers, use zip file upload
-    val dirMsg =
-      if (inputDirSupported)
-        "Here you can select the top level directory containing the subsystem or component files to upload."
-      else
-        "Here you can select a zip file of the top level directory containing the subsystem or component files to upload."
-    val dirLabel = if (inputDirSupported) "Model File Directory" else "Zip file containing Model File Directory"
-
-    val acceptSuffix = if (inputDirSupported) "" else ".zip,application/zip"
+    val dirMsg = "Here you can select the top level directory containing the subsystem or component files to upload."
+    val dirLabel = if (inputDirSupported) "Model File Directory" else "Error: Your browser does not support uploading a directory!"
+    val acceptSuffix = ""
 
     div(
       cls := "container",

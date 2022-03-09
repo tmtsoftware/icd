@@ -1,20 +1,17 @@
 package csw.services.icd.db
 
-import java.io.{File, FileInputStream, FileNotFoundException, InputStreamReader}
-import java.util.zip.{ZipEntry, ZipFile}
+import java.io.{File, FileNotFoundException, InputStreamReader}
 import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions, ConfigValueFactory}
 import csw.services.icd.{Problem, StdName}
 import csw.services.icd.StdName._
 import StdConfig.Resources
 
-import java.nio.charset.StandardCharsets
 import scala.io.Source
 
 object StdConfig {
 
   /**
    * Used to manage OpenApi files referenced in model files.
-   * If the model files are uploaded from a browser or in a zip file, they need to be handled differently.
    */
   trait Resources {
     def getResource(name: String): Option[String]
@@ -41,21 +38,6 @@ object StdConfig {
   }
 
   /**
-   * Reads resource files referenced in a model files in a zip file (service-model.conf OpenApi files)
-   */
-  class ZipResources(zipFile: ZipFile) extends Resources {
-    override def getResource(name: String): Option[String] = {
-      import scala.jdk.CollectionConverters._
-      zipFile.entries().asScala.find(_.getName == name).map { e =>
-        val inputStream = zipFile.getInputStream(e)
-        val s           = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8)
-        inputStream.close()
-        s
-      }
-    }
-  }
-
-  /**
    * Returns a pair of lists of StdConfig and Problem objects, for each icd model file in the given directory
    */
   def get(dir: File): (List[StdConfig], List[Problem]) = {
@@ -74,13 +56,12 @@ object StdConfig {
         }
       }
       else if (jsonnetInputFile.exists()) {
-        val inputStream = new FileInputStream(jsonnetInputFile)
         try {
-          val config      = Jsonnet.preprocess(inputStream, jsonnetInputFile.getPath)
-          inputStream.close()
-          val stdConfig   = StdConfig(stdName, addTargetSubsystem(config, stdName), inputFile.getPath, resources)
+          val config = Jsonnet.preprocess(jsonnetInputFile)
+          val stdConfig = StdConfig(stdName, addTargetSubsystem(config, stdName), inputFile.getPath, resources)
           Some(Right(stdConfig))
-        } catch {
+        }
+        catch {
           case ex: Exception => Some(Left(Problem("error", s"$jsonnetInputFile: ${ex.getMessage}")))
         }
       }
@@ -88,68 +69,6 @@ object StdConfig {
     }
     val x = eList.partitionMap(identity)
     (x._2, x._1)
-  }
-
-  /**
-   * Returns a list of StdConfig objects using the content of the given inputFile and the given fileName,
-   * if fileName is one of the standard ICD file names (or a zip file containing standard files).
-   */
-  def get(inputFile: File, fileName: String, resources: Resources): List[StdConfig] = {
-    val name = new File(fileName).getName
-    if (name.endsWith(".zip"))
-      get(new ZipFile(inputFile))
-    else {
-      val config = {
-        if (fileName.endsWith(".jsonnet")) {
-          val inputStream = new FileInputStream(inputFile)
-          val result      = Jsonnet.preprocess(inputStream, fileName)
-          inputStream.close()
-          result
-        }
-        else {
-          ConfigFactory.parseFile(inputFile).resolve(ConfigResolveOptions.noSystem())
-        }
-      }
-      val newFileName = fileName.replace(".jsonnet", ".conf")
-      StdConfig.get(config, newFileName, resources).toList
-    }
-  }
-
-  /**
-   * Returns a list for StdConfig objects, one for each ICD file in the given zip file
-   */
-  def get(zipFile: ZipFile): List[StdConfig] = {
-    import scala.jdk.CollectionConverters._
-    def isValid(f: ZipEntry) = stdSet.contains(new File(f.getName).getName)
-
-    val list = for (e <- zipFile.entries().asScala.filter(isValid)) yield {
-      val inputStream = zipFile.getInputStream(e)
-      val config = if (e.getName.endsWith(".jsonnet")) {
-        Jsonnet.preprocess(inputStream, e.getName)
-      }
-      else {
-        val reader = new InputStreamReader(inputStream)
-        val result = ConfigFactory.parseReader(reader).resolve(ConfigResolveOptions.noSystem())
-        reader.close()
-        result
-      }
-      val fileName = e.getName.replace(".jsonnet", ".conf")
-      StdConfig.get(config, fileName, new ZipResources(zipFile)).get
-    }
-    list.toList
-  }
-
-  /**
-   * Returns a StdConfig object for the given config and file name,
-   * if the fileName is one of the standard ICD file names.
-   */
-  def get(config: Config, fileName: String, resources: Resources): Option[StdConfig] = {
-    val name = new File(fileName).getName
-    stdNames.flatMap { stdName =>
-      if (name == stdName.name)
-        Some(StdConfig(stdName, addTargetSubsystem(config, stdName), fileName, resources))
-      else None
-    }.headOption
   }
 
   // Automatically add the target subsystem to $subsystem-icd-model.conf file configs.

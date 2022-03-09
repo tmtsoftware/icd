@@ -16,6 +16,7 @@ digraph icdviz {
 	"TEST.nacqNhrwfs" -> "TEST.?" [color = red, fontcolor = red, style = dashed, label = "No Subscribers:\nheartbeat\ninitialized\nnacqArchived\nnacqUnarchived\nnhwfsArchived\nnhwfsUnarchived\nstate"]
 	"TEST.?" -> "TEST.env.ctrl" [color = red, fontcolor = red, style = dashed, label = "No Senders:\nENVIRONMENTAL_CONTROL_INITIALIZE\nENVIRONMENTAL_CONTROL_STOP\nadminCommand\nengineeringCommand"]
 	"TEST2.cmTEST" -> "TEST.rtc" [color = red, fontcolor = red, style = dashed, label = "Missing in Publisher:\nngsAtmDispersion\npupilRotation\nvisWfsPos"]
+	"TEST.jsonnet.example" -> "TEST.?" [color = red, fontcolor = red, style = dashed, label = "No Subscribers:\nheartbeat\nmyEvent1\nmyEvent2\nstate"]
 	"TEST.rtc" -> "TEST.?" [color = red, fontcolor = red, style = dashed, label = "No Subscribers:\nho.scallop.m1\npwfs.pupilShift.offset\ntel.coma\ntel.focus\ntel.m1\ntel.magnification\ntel.rate\ntel.tilt"]
 	"TEST.ndme" -> "TEST.?" [color = red, fontcolor = red, style = dashed, label = "No Subscribers:\ncrateVoltage\ndiagnosticsEngr\ndiagnosticsOps\nengrMode\nhighVoltage\npower"]
 	subgraph cluster_TEST2 {
@@ -44,5 +45,6 @@ digraph icdviz {
 		"TEST.ndme" [label = ndme, color = grey, fontcolor = grey, style = bold]
 		"TEST.lgsWfs" [label = lgsWfs, color = grey, fontcolor = grey, style = bold]
 		"TEST.?" [label = "?", color = red, fontcolor = red, style = dashed]
+		"TEST.jsonnet.example" [label = "jsonnet.example", color = grey, fontcolor = grey, style = bold]
 	}
 }
