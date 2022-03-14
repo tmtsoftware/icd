@@ -24,9 +24,9 @@ class ScalaCodeGenerator(db: IcdDb) {
           case "Number" =>
             warning(s"Replacing unsupported 'Number' with 'Long'")
             "Long"
-          case "Boolean" =>
-            warning(s"Replacing unsupported 'Boolean' with 'Byte'")
-            "Byte"
+//          case "Boolean" =>
+//            warning(s"Replacing unsupported 'Boolean' with 'Byte'")
+//            "Byte"
           case "Integer" => "Int"
           case "TaiDate" => "TAITime"
           case "UtcDate" => "UTCTime"
@@ -43,16 +43,19 @@ class ScalaCodeGenerator(db: IcdDb) {
         paramType match {
           case "Array" =>
             val arrayType = getParamType(p.maybeArrayType)
-            if (arrayType == "String") {
-              warning("Replacing unsupported 'StringArray' type with 'String' (can still have multiple values!)")
-              s"""val `${p.name}Key`: Key[String] = StringKey.make("${p.name}")"""
-            }
-            else {
-              val isMatrix = p.maybeDimensions.exists(d => d.size == 2)
-              if (isMatrix)
-                s"""${arrayType}MatrixKey.make("${p.name}")"""
-              else
-                s"""${arrayType}ArrayKey.make("${p.name}")"""
+            arrayType match {
+              case "String" =>
+                warning("Replacing unsupported 'StringArray' type with 'String' (can still have multiple values!)")
+                s"""val `${p.name}Key`: Key[String] = StringKey.make("${p.name}")"""
+              case "Boolean" =>
+                warning("Replacing unsupported 'BooleanArray' type with 'Boolean' (can still have multiple values!)")
+                s"""val `${p.name}Key`: Key[Boolean] = BooleanKey.make("${p.name}")"""
+              case _ =>
+                val isMatrix = p.maybeDimensions.exists(d => d.size == 2)
+                if (isMatrix)
+                  s"""val `${p.name}Key`: Key[MatrixData[${arrayType}]] = ${arrayType}MatrixKey.make("${p.name}")"""
+                else
+                  s"""val `${p.name}Key`: Key[ArrayData[${arrayType}]] = ${arrayType}ArrayKey.make("${p.name}")"""
             }
           case t =>
             s"""val `${p.name}Key`: Key[$t] = ${t}Key.make("${p.name}")"""
@@ -80,12 +83,12 @@ class ScalaCodeGenerator(db: IcdDb) {
     params.mkString("\n")
   }
 
-  private def eventsDefs(e: EventInfo): String = {
+  private def eventsDefs(e: EventInfo, eventType: String): String = {
     s"""
        |/**
        | * ${e.eventModel.description}
        | */
-       |object `${e.eventModel.name}Event` {
+       |object `${e.eventModel.name}$eventType` {
        |    val eventKey: EventKey = EventKey(prefix, EventName("${e.eventModel.name}"))
        |
        |    ${paramsForEvent(e)}
@@ -97,11 +100,13 @@ class ScalaCodeGenerator(db: IcdDb) {
     val comment =
       s"/** API for ${info.componentModel.componentType}: ${info.componentModel.subsystem}.${info.componentModel.component} */"
     val prefix = s"""val prefix: Prefix = Prefix(Subsystem.${info.componentModel.subsystem
-      .toUpperCase()}, "${info.componentModel.component}")"""
+      .toUpperCase()
+      .replace("TEST2", "CSW")
+      .replace("TEST", "CSW")}, "${info.componentModel.component}")"""
     val eventKeys = info.publishes.toList.flatMap { p =>
-      val events = p.eventList.map(eventsDefs)
-      //  val currentStates = p.currentStateList.map(eventsDefs)
-      events
+      val events        = p.eventList.map(e => eventsDefs(e, "Event"))
+      val currentStates = p.currentStateList.map(e => eventsDefs(e, "CurrentState"))
+      events ::: currentStates
     }
     s"""
        |$comment
@@ -142,6 +147,7 @@ class ScalaCodeGenerator(db: IcdDb) {
         |import csw.params.events._
         |import csw.prefix.models._
         |import csw.params.core.generics._
+        |import csw.params.core.models._
         |import csw.params.core.models.Coords._
         |import csw.time.core.models._
         |
