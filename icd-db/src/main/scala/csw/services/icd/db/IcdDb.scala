@@ -354,7 +354,7 @@ object IcdDb extends App {
     def generate(file: File): Unit = {
       file.getName.split("\\.").last match {
         case "scala" =>
-          new ScalaCodeGenerator(db, error).generate(
+          new ScalaCodeGenerator(db).generate(
             options.subsystem.get,
             options.component,
             file,
