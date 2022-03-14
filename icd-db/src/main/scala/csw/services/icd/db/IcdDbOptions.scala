@@ -31,5 +31,6 @@ case class IcdDbOptions(
     orientation: Option[String] = None,
     fontSize: Option[Int] = None,
     lineHeight: Option[String] = None,
-    paperSize: Option[String] = None
+    paperSize: Option[String] = None,
+    packageName: Option[String] = None,
 )

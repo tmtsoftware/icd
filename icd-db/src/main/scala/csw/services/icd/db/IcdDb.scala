@@ -3,6 +3,7 @@ package csw.services.icd.db
 import java.io.File
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd._
+import csw.services.icd.codegen.scala.ScalaCodeGenerator
 import csw.services.icd.db.parser.{BaseModelParser, IcdModelParser, ServiceModelParser, SubsystemModelParser}
 import csw.services.icd.db.ComponentDataReporter._
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
@@ -114,7 +115,7 @@ object IcdDb extends App {
 
     opt[File]('o', "out") valueName "<outputFile>" action { (x, c) =>
       c.copy(outputFile = Some(x))
-    } text "Saves the selected API or ICD to the given file in a format based on the file's suffix (html, pdf)"
+    } text "Saves the selected API (or ICD) to the given file in a format based on the file's suffix (html, pdf) or generates code for the given API in a language based on the suffix (scala, java, tx (typescript))"
 
     // Note: Dropping the db while the web app is running causes issues.
     opt[String]("drop") valueName "[db|subsystem|component]" action { (x, c) =>
@@ -160,6 +161,10 @@ object IcdDb extends App {
     opt[String]("paperSize") valueName "[Letter|Legal|A4|A3]" action { (x, c) =>
       c.copy(paperSize = Some(x))
     } text "For PDF output: The paper size (default: Letter)"
+
+    opt[String]("package") valueName "package.name" action { (x, c) =>
+      c.copy(packageName = Some(x))
+    } text "Package name for generated Scala or Java files (default: no package)"
 
     help("help")
     version("version")
@@ -246,17 +251,21 @@ object IcdDb extends App {
     // --output option
     def output(file: File): Unit = {
       if (options.subsystem.isEmpty) error("Missing required subsystem name: Please specify --subsystem <name>")
-      val clientApi           = options.target.isDefined || options.clientApi.isDefined
-      val searchAllSubsystems = clientApi && options.allSubsystems.isDefined && options.target.isEmpty
-      IcdDbPrinter(db, searchAllSubsystems, clientApi, maybeCache, Some(pdfOptions)).saveToFile(
-        options.subsystem.get,
-        options.component,
-        options.target,
-        options.targetComponent,
-        options.icdVersion,
-        pdfOptions,
-        file
-      )
+      val fname = file.getName.toLowerCase()
+      if (fname.endsWith(".html") || fname.endsWith(".pdf")) {
+        val clientApi           = options.target.isDefined || options.clientApi.isDefined
+        val searchAllSubsystems = clientApi && options.allSubsystems.isDefined && options.target.isEmpty
+        IcdDbPrinter(db, searchAllSubsystems, clientApi, maybeCache, Some(pdfOptions)).saveToFile(
+          options.subsystem.get,
+          options.component,
+          options.target,
+          options.targetComponent,
+          options.icdVersion,
+          pdfOptions,
+          file
+        )
+      }
+      else generate(file)
     }
 
     // --drop option
@@ -339,6 +348,25 @@ object IcdDb extends App {
         .map(SubsystemAndVersion(_))
         .map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, options.component))
       ArchivedItemsReport(db, maybeSv, maybePdfOptions).saveToFile(file, pdfOptions)
+    }
+
+    // --generate code in the given file
+    def generate(file: File): Unit = {
+      file.getName.split("\\.").last match {
+        case "scala" =>
+          new ScalaCodeGenerator(db, error).generate(
+            options.subsystem.get,
+            options.component,
+            file,
+            options.packageName
+          )
+        case "java" =>
+          error("Java code generation not yet supported")
+        case "tx" =>
+          error("Typescript code generation not yet supported")
+        case x =>
+          error(s"Unsupported file suffix: $x")
+      }
     }
   }
 }

@@ -169,8 +169,8 @@ case class IcdDbPrinter(
   }
 
   /**
-   * Saves a document describing the ICD for the given component to the given file,
-   * in a format determined by the file's suffix, which should be one of (html, pdf).
+   * Saves a document describing the API for the given subsystem/component or ICD between two subsystems/components
+   * to the given file, in a format determined by the file's suffix, which should be one of (html, pdf).
    *
    * @param subsystemStr         the name of the subsystem (or component's subsystem) to print, followed by optional :version
    * @param maybeComponent       optional names of the component to print (separated by ",")
