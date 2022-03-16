@@ -2,10 +2,13 @@ package csw.services.icd.codegen.scala
 
 import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdDb, IcdVersionManager}
 import icd.web.shared.IcdModels.ParameterModel
-import icd.web.shared.{ComponentInfo, EventInfo, SubsystemWithVersion}
+import icd.web.shared.{ComponentInfo, EventInfo, ReceivedCommandInfo, SubsystemWithVersion}
 
 import java.io.{File, PrintWriter}
 
+/**
+ * Generates Scala code for a subsystem from the icd database.
+ */
 class ScalaCodeGenerator(db: IcdDb) {
 
   // XXX TODO
@@ -24,9 +27,9 @@ class ScalaCodeGenerator(db: IcdDb) {
           case "Number" =>
             warning(s"Replacing unsupported 'Number' with 'Long'")
             "Long"
-//          case "Boolean" =>
-//            warning(s"Replacing unsupported 'Boolean' with 'Byte'")
-//            "Byte"
+          case "Object" =>
+            warning("Replacing invalid type 'object' with 'string'")
+            "String"
           case "Integer" => "Int"
           case "TaiDate" => "TAITime"
           case "UtcDate" => "UTCTime"
@@ -53,9 +56,9 @@ class ScalaCodeGenerator(db: IcdDb) {
               case _ =>
                 val isMatrix = p.maybeDimensions.exists(d => d.size == 2)
                 if (isMatrix)
-                  s"""val `${p.name}Key`: Key[MatrixData[${arrayType}]] = ${arrayType}MatrixKey.make("${p.name}")"""
+                  s"""val `${p.name}Key`: Key[MatrixData[$arrayType]] = ${arrayType}MatrixKey.make("${p.name}")"""
                 else
-                  s"""val `${p.name}Key`: Key[ArrayData[${arrayType}]] = ${arrayType}ArrayKey.make("${p.name}")"""
+                  s"""val `${p.name}Key`: Key[ArrayData[$arrayType]] = ${arrayType}ArrayKey.make("${p.name}")"""
             }
           case t =>
             s"""val `${p.name}Key`: Key[$t] = ${t}Key.make("${p.name}")"""
@@ -71,8 +74,8 @@ class ScalaCodeGenerator(db: IcdDb) {
     }
   }
 
-  private def paramsForEvent(e: EventInfo): String = {
-    val params = e.eventModel.parameterList.map { p =>
+  private def getParams(paramList: List[ParameterModel]): String = {
+    val params = paramList.map { p =>
       s"""
          |/**
          | * ${p.description}
@@ -91,7 +94,18 @@ class ScalaCodeGenerator(db: IcdDb) {
        |object `${e.eventModel.name}$eventType` {
        |    val eventKey: EventKey = EventKey(prefix, EventName("${e.eventModel.name}"))
        |
-       |    ${paramsForEvent(e)}
+       |    ${getParams(e.eventModel.parameterList)}
+       |}
+       |""".stripMargin
+  }
+
+  private def commandDefs(c: ReceivedCommandInfo): String = {
+    s"""
+       |/**
+       | * ${c.receiveCommandModel.description}
+       | */
+       |object `${c.receiveCommandModel.name}Command` {
+       |    ${getParams(c.receiveCommandModel.parameters)}
        |}
        |""".stripMargin
   }
@@ -108,12 +122,16 @@ class ScalaCodeGenerator(db: IcdDb) {
       val currentStates = p.currentStateList.map(e => eventsDefs(e, "CurrentState"))
       events ::: currentStates
     }
+    val commandKeys = info.commands.toList.flatMap { commands =>
+      commands.commandsReceived.map(c => commandDefs(c))
+    }
     s"""
        |$comment
        |object `${info.componentModel.component}` {
        |$prefix
        |
        |${eventKeys.mkString("\n")}
+       |${commandKeys.mkString("\n")}
        |}
        |""".stripMargin
   }
