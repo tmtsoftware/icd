@@ -11,11 +11,6 @@ import java.io.{File, PrintWriter}
  */
 class ScalaCodeGenerator(db: IcdDb) {
 
-  // XXX TODO
-//  private def getUnits(units: String): String = {
-//
-//  }
-
   private def warning(s: String): Unit = {
     println(s"Warning: $s")
   }
@@ -105,6 +100,8 @@ class ScalaCodeGenerator(db: IcdDb) {
        | * ${c.receiveCommandModel.description}
        | */
        |object `${c.receiveCommandModel.name}Command` {
+       |    val commandName: CommandName = CommandName("${c.receiveCommandModel.name}")
+       |
        |    ${getParams(c.receiveCommandModel.parameters)}
        |}
        |""".stripMargin
@@ -162,6 +159,7 @@ class ScalaCodeGenerator(db: IcdDb) {
         |// See https://github.com/tmtsoftware/icd for more information.
         |
         |import csw.params.core.generics.KeyType._
+        |import csw.params.commands.CommandName
         |import csw.params.events._
         |import csw.prefix.models._
         |import csw.params.core.generics._
