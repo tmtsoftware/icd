@@ -19,7 +19,7 @@ class IcdVizTests extends AnyFunSuite {
     if (dir.exists()) dir else new File(s"../$path")
   }
 
-  test("Text graph generation from examples/2.0/TEST subsystem") {
+  test(s"Text graph generation from examples/${IcdValidator.currentSchemaVersion}/TEST subsystem") {
     val db = IcdDb(dbName)
     db.dropDatabase() // start with a clean db for test
 

@@ -1,6 +1,7 @@
 package csw.services.icd.db
 
 import com.typesafe.config.ConfigFactory
+import csw.services.icd.IcdValidator
 
 object Subsystems {
   /**
@@ -8,7 +9,7 @@ object Subsystems {
    */
   val allSubsystems: List[String] = {
     import scala.jdk.CollectionConverters._
-    val config = ConfigFactory.parseResources("2.0/subsystem.conf")
+    val config = ConfigFactory.parseResources(s"${IcdValidator.currentSchemaVersion}/subsystem.conf")
     config.getStringList("enum").asScala.toList
   }
 

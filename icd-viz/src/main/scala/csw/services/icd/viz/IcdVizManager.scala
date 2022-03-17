@@ -4,8 +4,8 @@ import java.awt.Desktop
 import java.io.{File, FileOutputStream, OutputStream}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
-
 import com.typesafe.config.{Config, ConfigFactory}
+import csw.services.icd.IcdValidator
 import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdDb, Subsystems}
 import csw.services.icd.viz.IcdVizManager.EdgeType.EdgeType
 import csw.services.icd.viz.IcdVizManager.MissingType.MissingType
@@ -161,7 +161,7 @@ object IcdVizManager {
                       d.subscribeModelInfo.component,
                       d.subscribeModelInfo.component,
                       d.subscribeModelInfo.component,
-                      "2.0",
+                      IcdValidator.currentSchemaVersion,
                       ""
                     )
                   )
@@ -260,7 +260,7 @@ object IcdVizManager {
                       s.component,
                       s.component,
                       s.component,
-                      "2.0",
+                      IcdValidator.currentSchemaVersion,
                       ""
                     )
                   )
