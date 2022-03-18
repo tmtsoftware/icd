@@ -73,7 +73,7 @@ class IcdDbTests extends AnyFunSuite {
     assert(temp_ngsWfs.minimum.contains("-inf"))
     assert(temp_ngsWfs.maximum.contains("inf"))
     assert(temp_ngsWfs.allowNaN)
-    assert(temp_ngsWfs.units == "<p>degC</p>")
+    assert(temp_ngsWfs.units == "<p>kelvin</p>")
 
     val temp_lgsWfs = attrList.find(_.name == "temp_lgsWfs").get
     assert(temp_lgsWfs.description == "<p>LGS WFS temperature</p>")
@@ -81,7 +81,7 @@ class IcdDbTests extends AnyFunSuite {
     assert(temp_lgsWfs.minimum.contains("0"))
     assert(temp_lgsWfs.maximum.contains("100"))
     assert(temp_lgsWfs.allowNaN)
-    assert(temp_lgsWfs.units == "<p>degC</p>")
+    assert(temp_lgsWfs.units == "<p>kelvin</p>")
 
     val temp_nacq = attrList.find(_.name == "temp_nacq").get
     assert(temp_nacq.description == "<p>NACQ camera temperature</p>")
@@ -89,7 +89,7 @@ class IcdDbTests extends AnyFunSuite {
     assert(temp_nacq.minimum.isEmpty)
     assert(temp_nacq.maximum.isEmpty)
     assert(!temp_nacq.allowNaN)
-    assert(temp_nacq.units == "<p>degC</p>")
+    assert(temp_nacq.units == "<p>kelvin</p>")
 
     // Test publish queries
     val published = db.query.getPublished(envCtrl, None).filter(p => p.name == "sensors" && p.publishType == CurrentStates)
