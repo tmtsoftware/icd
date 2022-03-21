@@ -5,17 +5,22 @@ This project contains support for creating, validating and viewing TMT subsystem
 *You can find a detailed description of the IDBS software [here](https://docushare.tmt.org/docushare/dsweb/Get/Version-116281/OSW%20TN018-ICDDatabaseUserManual_REL06.pdf).*
 
 Subsystem APIs are described in model files. The model files are validated using [JSON Schema](http://json-schema.org/),
-however the schema descriptions as well as the model files may also be written in
-the simpler [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md) format.
+however the schema descriptions as well as the model files are normally written in
+the simpler [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md) format (.conf suffix).
+
+Model files with the `.jsonnet` suffix are assumed to be in [jsonnet](https://jsonnet.org/) format and 
+are preprocessed to produce the JSON (see [this example](examples/3.0/TEST/jsonnet-example)).
+
 (See [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of recent changes in the JSON Schema for API model files.)
+
 In addition, HTTP services can be described using [OpenAPI](https://swagger.io/specification/) files
-(See [example Segment Service](examples/2.0/TEST2/segmentService)).
+(See [example Segment Service](examples/3.0/TEST2/segmentService)).
 
 Versions of APIs and ICDs are managed in [GitHub repositories](https://github.com/tmt-icd/ICD-Model-Files.git) and 
 the subsystem model files can be imported from GitHub (with version history) into a local MongoDB database, which is used
 by command line applications and a web app.
 
-The [examples](examples) directory also contains some example API descriptions in both the old (1.0) and new (2.0) schema versions. Both schema versions are supported for backward compatibility, however the new version should be used for future work. To help in upgrading existing subsystem APIs, branches named `schema-2.0` have been created on GitHub for the existing subsystems. 
+The [examples](examples) directory also contains some example API descriptions in both the old and new schema versions. All schema versions are supported for backward compatibility, however the newest version (3.0) should be used for future work. To help in upgrading existing subsystem APIs, branches named `schema-3.0` have been created on GitHub for the existing subsystems. 
  
 Command line applications: [icd-db](icd-db), [icd-git](icd-git) and a web app ([icdwebserver](icd-web-server)) 
 are provided for working with APIs and ICDs, querying and viewing the data.
@@ -26,12 +31,13 @@ To start the MongoDB server, you can run a command like this:
     mongod -dbpath $db
     
 where $db is the directory that contains (or should contain) the database.
+Mongodb can also be started automatically at boot time.
 
 After starting the database, ingest the published ICDs, which are stored in GitHub repositories:
 
     icd-git --ingest
 
-You should rerun this command occasionally to get any updates from newly published ICDs or APIs (The icd web app automatically ingests any missing APIs and ICDs when started).
+You can rerun this command occasionally to get any updates from newly published ICDs or APIs (The icd web app automatically ingests any missing APIs and ICDs when started).
 
 ICD Subprojects
 ---------------
@@ -48,6 +54,7 @@ There are currently these ICD subprojects:
 
 Build and Install
 -----------------
+*Note that this project currently require java-11 (not 17), due to the dependency on the Play Framework.*
 
 Note: The build requires that [node.js](https://nodejs.org/en/) be installed on the system.
 This is checked in the install.sh script, which automatically sets the SBT_OPTS environment variable if node.js is found 
@@ -66,10 +73,6 @@ For the command line apps, the `--help` option prints a summary of the command l
 The `icdwebserver` application starts the web app (by default on localhost:9000).
 You can change the port used by adding an option like this: `-Dhttp.port=9876`.
 
-Note that the build is set up so that the Play subproject is selected on start.
-So to run any commands (like sbt clean or sbt stage) that should apply to the other projects,
-you need to first switch to that project or the root project. For example `sbt root/test`. 
-
 ICD Web App
 ------------
 
@@ -82,7 +85,8 @@ settings (certificate, etc.) as needed for the server.
 Note that the `-Dicd.isPublicServer=true` option hides the *upload* feature, which allows
 users to test their local changes before publishing. This option also makes the Publish tab visible.
 
-Note that the first time you start `icdwebserver`, it will update the ICD database from the released versions on GitHub. 
+Note that the first time you start `icdwebserver`, it will update the ICD database from the released versions on GitHub, 
+which can take some time.
 
 To start the web app with continuous compilation during development, you can type `~icdWebServer/run` from the sbt shell.
 
@@ -91,12 +95,7 @@ See [icd-web-server/README.md](icd-web-server/README.md) for more information.
 Importing ICD-Model-Files from GitHub into the ICD Database with Version History (Using the Command Line Tools)
 ------------------------------------------------------------------------------------------------------------------
 
-Using the [icd-git](icd-git) command line application you can publish subsystem APIs and ICDs between subsystems 
-(assuming you have the necessary write access to the [GitHub repository](https://github.com/tmt-icd/ICD-Model-Files)).
-Publishing a subsystem API or ICD adds an entry to a JSON file on GitHub which is used later to extract specific 
-versions of the model files. 
-
-The app also lets you import subsystem model files directly from the
+The icd-git command line app lets you import subsystem model files directly from the
 [GitHub subsystem model file repositories](https://github.com/tmt-icd/)  into a local MongoDB database
 for use with the icd tools. For example, to ingest all the published APIs and ICDS into the local database, use:
 
@@ -127,8 +126,8 @@ In general, it is safer to put description text in double quotes.
 Tips
 ----
 
-See the [examples/2.0](examples/2.0) directory for some example model files.
-The exact syntax is defined by JSON-Schema files in [src/main/resources/2.0](src/main/resources/2.0).
+See the [examples/3.0](examples/3.0) directory for some example model files.
+The exact syntax is defined by JSON-Schema files in [src/main/resources/3.0](src/main/resources/3.0).
 
 Inner-Document Links
 --------------------
@@ -229,7 +228,7 @@ or $componentName/receive/$commandName/resultType/$paramName
 or abbreviated as above.
 ```
 
-See the example model files in [src/main/resources/2.0](src/main/resources/2.0) for some examples of the `ref` keyword.
+See the example model files in [src/main/resources/3.0](src/main/resources/3.0) for some examples of the `ref` keyword.
 
 Note that if there is an error in the reference, the error message is displayed in the log output of the icd-db command, if it is used, and also in the generated HTML or PDF document (in the details section).
 

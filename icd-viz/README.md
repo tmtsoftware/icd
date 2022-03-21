@@ -12,7 +12,7 @@ See also the [Graphviz](https://graphviz.org/doc/info/attrs.html) documentation 
 ## Usage
 
 ```
-icd-viz 2.0.0
+icd-viz 2.2.0
 Usage: icd-viz [options]
 
   -d, --db <name>          The name of the database to use (default: icds4)
@@ -40,8 +40,8 @@ Usage: icd-viz [options]
   --splines <value>        Use splines for edges? (default=true)
   --omittypes <value>      Comma-separated list of component types (None, HCD, Assembly, Sequencer, Application) to omit as primaries (default='None')
   --imageformat <value>    Image format (Used only if imageFile not given or has invalid suffix). One of {PDF, PNG, SVG, EPS} (default='PDF')
-  --help                   
-  --version                
+  --help
+  --version
 ```
 
 All components specified through the `--components` or `--subsystems` arguments are considered *primary* nodes and indicated with solid ovals. 

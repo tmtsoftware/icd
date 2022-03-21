@@ -2,22 +2,13 @@ ICD GitHub Support
 ==================
 
 icd-git is a command line application that reads model files from the GitHub 
-[ICD-Model-Files](https://github.com/tmt-icd/ICD-Model-Files.git) repositories and,
-if you have admin permissions,
-allows you to publish subsystem APIs and ICDs.
+[ICD-Model-Files](https://github.com/tmt-icd/ICD-Model-Files.git) repositories and
+ingests them into the icd database.
 
-Note that publishing APIs and ICDs is now done via the icd web app by a TMT admin.
+The code for publishing APIs and ICDs is contained in this subproject, however actual
+publishing is done via the icd web app by a TMT admin.
 
-In order for a subsystem to be part of an ICD, the API for it first needs to be published (Note: You need commit access to the above repo for this to work):
-
-    icd-git --subsystems TEST --publish --user $USER --password XXXXX --comment "Some comment"
-    icd-git --subsystems TEST2 --publish --user $USER --password XXXXX --comment "Some comment"
-    icd-git --subsystems TEST,TEST2 --publish --user $USER --password XXXXX --comment "Some comment"
-
-(Replace $USER with your GitHub user name and add your GitHub password.)
-The first two lines publish the TEST and TEST2 subsystems. The last line publishes the ICD between
-TEST and TEST2. 
-
+In order for a subsystem to be part of an ICD, the API for it first needs to be published.
 Publishing a subsystem API or ICD creates an entry in a JSON file in the 
 [ICD-Model-Files](https://github.com/tmt-icd/ICD-Model-Files.git)/apis or 
 [ICD-Model-Files](https://github.com/tmt-icd/ICD-Model-Files.git)/icds directory.
@@ -35,8 +26,9 @@ Subsystem Order
 ---------------
 
 Note that since the ICD from A to B is equivalent to the one from B to A, the convention is
-that the subsystems are listed in alphabetical order. This is enforced internally by the
+that the subsystems are listed in a certain order. This is enforced internally by the
 icd-git application. 
+The order of subsystems is the same as in the [subsystem.conf](../icd-db/src/main/resources/3.0/subsystem.conf)) file.
 
 Usage:
 ------
@@ -55,6 +47,7 @@ Add the `-i` or `--interactive` option to enter the required options interactive
 a list of possible subsystems and versions.
 
 ```
+icd-git 2.2.0
 Usage: icd-git [options]
 
   -l, --list               Prints the list of API or ICD versions defined on GitHub for the given subsystem options
@@ -70,13 +63,17 @@ Usage: icd-git [options]
   -p, --password <password>
                            Use with --publish or --unpublish to set the user's GitHub password
   -m, --comment <text>     Use with --publish to add a comment describing the changes made
-  -d, --db <name>          The name of the database to use (for the --ingest option, default: icds)
+  -d, --db <name>          The name of the database to use (for the --ingest option, default: icds4)
   --host <hostname>        The host name where the database is running (for the --ingest option, default: localhost)
   --port <number>          The port number to use for the database (for the --ingest option, default: 27017)
-  --ingest                 Ingests the selected subsystem and target subsystem model files and ICDs from GitHub into the ICD database (Ingests all subsystems, if neither option is given)
-  --help                   
-  --version                
+  --ingest                 Ingests the selected subsystem model files and ICDs from GitHub into the ICD database (Ingests all subsystems, if no subsystem options given)
+  --ingestMissing          Ingests any APIs or ICDs that were published, but are not yet in the local database, plus any master branch versions
+  --help
+  --version
 ```
+
+Note that the `--publish` and `--unpublish` options require permissions and are not normally used directly.
+Instead, the icd web app is used by a TMT admin to publish APIs and ICDs.
 
 Additional Configuration Options for Testing
 --------------------------------------------
@@ -118,7 +115,7 @@ Without the -i option, you need to specify all the required options:
 $ icd-git --list --subsystems TEST,TEST2
 ```
 
-For publishing, you need to also add your GitHub user name and password:
+For publishing (*not used*), you need to also add your GitHub user name and password:
 
 ```
 $ icd-git -i --publish

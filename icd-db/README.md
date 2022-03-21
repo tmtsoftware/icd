@@ -21,7 +21,7 @@ icd-db Command
 The icd-db command is generated in target/universal/stage/bin (install.sh copies it to the install/bin directory).
 
 Example files that can be ingested into the database for testing can be found
-in the [examples/2.0](../examples/2.0) directory.
+in the [examples/3.0](../examples/3.0) directory.
 
 ```
 icd-db 2.2.0
@@ -43,7 +43,7 @@ Usage: icd-db [options]
   --component2 <name>      Specifies the subsytem2 component to be used by any following options (subsystem2 must also be specified)
   --icdversion <icd-version>
                            Specifies the version to be used by any following options (overrides subsystem and subsystem2 versions)
-  -o, --out <outputFile>   Saves the selected API (or ICD) to the given file in a format based on the file's suffix (html, pdf) or generates code for the given API in a language based on the suffix (scala)
+  -o, --out <outputFile>   Saves the selected API (or ICD) to the given file in a format based on the file's suffix (html, pdf) or generates code for the given API in a language based on the suffix (scala, java, tx (typescript))
   --drop [db|subsystem|component]
                            Drops the specified component, subsystem, or the entire icd database (requires restart of icd web app)
   --versions <subsystem>   List the version history of the given subsystem
@@ -61,7 +61,7 @@ Usage: icd-db [options]
   --lineHeight <height>    For PDF or HTML file output: The line height (default: 1.6)
   --paperSize [Letter|Legal|A4|A3]
                            For PDF output: The paper size (default: Letter)
-  --package package.name   Package name for generated Scala (default: no package)
+  --package package.name   Package name for generated Scala or Java files (default: no package)
   --help
   --version
 ```
@@ -86,6 +86,16 @@ Example:
 
 ```
 
+You can also generate code based on the contents of the icd database.
+For example:
+
+```
+icd-db -s TCS --package tcs.api -o TcsApi.scala
+icd-db -s TCS -c MCSAssembly --package tcs.mcsAssembly.api -o TcsMcsAssemblyApi.scala
+```
+
+The generated Scala file contains definitions for all of the event, command and parameter keys.
+The first command generates keys for all TCS components. The second one only for the MCS Assembly.
 
 Implementation
 --------------
@@ -116,9 +126,6 @@ AOESW.psfr.command.v
 
 The code then looks for collections with names ending in .subsystem, .component, .publish, .subscribe, .command, or .service.
 Queries can be run on all collections.
-When detailed information is needed, the JSON in a collection is parsed into the same model classes used to
-create the PDF document. Creating documents from the database works in the same way as creating them from files.
-The JSON is parsed into model classes and then the document is generated from the model.
 
 # API versions
 

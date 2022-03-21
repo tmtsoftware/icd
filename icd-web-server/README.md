@@ -3,7 +3,7 @@ ICD Web App
 
 This subproject contains a Play/Scala.js based web app for accessing the ICD database.
 
-It also makes use of Bootstrap and Less.
+*Note that this project currently require java-11 (not 17), due to the dependency on the Play Framework.*
 
 * The icd-web-server subproject is a Play project and provides an HTTP API for the client.
 
@@ -37,14 +37,12 @@ in the directory containing build.sbt and open http://localhost:9000/ in a brows
 
 The subsystem and ICD versions published on GitHub are automatically listed and made available on demand.
 Use the *Upload* item to upload your own, unpublished ICD directory (choose for example, examples/NFIRAOS. Do the same for TCS).
-It is also possible to upload multiple directories at once. 
-
-*Note that newer versions of Firefox, Safari and Chrome support uploading directories. For older browsers, you have to make a zip file of the directories to upload.*
+It is also possible to upload multiple subsystem or component directories at once. 
 
 Any validation or upload errors or warnings will be displayed in the browser window.
 
 After uploading, click "Select" and select the subsystem (for example, NFIRAOS) from the Subsystem menu to view the API. 
-To view an ICD between two subsystems, select a target subsystem as well, or select an ICD
+To view an ICD between two subsystems, select a second subsystem as well, or select an ICD
 from the ICD menu, if one has been published. Use the arrow button between the two subsystems to
 change the order.
 
@@ -54,7 +52,7 @@ Publishing APIs and ICDs
 After uploading, you have an unpublished API (version = *). 
 
 In order to publish an API or ICD, commit and push your changes to the subsystem's GitHub repository ([under tmt-icd on GitHub](https://github.com/tmt-icd))
-and request that they be published. A TMT admin can use the `icd-git --publish` command or the ICD web app's Publish dialog 
+and request that they be published. A TMT admin can then use the ICD web app's Publish dialog 
 to actually publish the subsystem or ICD version (making an entry in a JSON file under `apis` or `icds` in the
 [main repository](https://github.com/tmt-icd/ICD-Model-Files.git)).
 
