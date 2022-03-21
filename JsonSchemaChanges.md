@@ -1,3 +1,11 @@
+# JSON Schema Changes for Model Version 3.0
+
+To use the new model version, set "modelVersion" to "3.0" in component-model.conf and subsystem-model.conf.
+
+* The value for the "units" field for parameters must be one of the allowed CSW unit types defined in [units.conf](icd-db/src/main/resources/3.0/units.conf).
+
+* Removed "struct" and "raDec" types, added "taiTime" and "utcTime" types (same as "taiDate" and "utcDate", which are deprecated, but still supported).
+
 # JSON Schema Changes for Model Version 2.0
 
 The API model files subsystem-model.conf and component-model.conf contain a field: `modelVersion` that was previously 

@@ -81,7 +81,7 @@ object IcdValidator {
       case "1.0" | "1.1" | "0.1" => Right("1.0")
       case "2.0"                 => Right("2.0")
       case "3.0"                 => Right("3.0")
-      case _                     => Left(Problem("error", s"Invalid modelVersion in $fileName: Expected 1.0 or 2.0"))
+      case _                     => Left(Problem("error", s"Invalid modelVersion in $fileName: Expected 1.0, 2.0 or 3.0"))
     }
   }
 
@@ -169,7 +169,7 @@ object IcdValidator {
   /**
    * Validates the given input config using the standard schema.
    *
-   * @param schemaVersion value of the component or subsystem model's modelVersion field: Should be 1.0 or 2.0
+   * @param schemaVersion value of the component or subsystem model's modelVersion field: Should be 1.0, 2.0, or 3.0.
    * @return a list of problems, if any were found
    */
   def validateStdName(sc: StdConfig, schemaVersion: String): List[Problem] = {

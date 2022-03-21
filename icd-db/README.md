@@ -24,10 +24,10 @@ Example files that can be ingested into the database for testing can be found
 in the [examples/2.0](../examples/2.0) directory.
 
 ```
-icd-db 2.0.0
+icd-db 2.2.0
 Usage: icd-db [options]
 
-  -d, --db <name>          The name of the database to use (default: icds4)
+  --db <name>              The name of the database to use (default: icds4)
   -h, --host <hostname>    The host name where the database is running (default: localhost)
   -p, --port <number>      The port number to use for the database (default: 27017)
   -i, --ingest <dir>       Top level directory containing files to ingest into the database
@@ -43,7 +43,7 @@ Usage: icd-db [options]
   --component2 <name>      Specifies the subsytem2 component to be used by any following options (subsystem2 must also be specified)
   --icdversion <icd-version>
                            Specifies the version to be used by any following options (overrides subsystem and subsystem2 versions)
-  -o, --out <outputFile>   Saves the selected API or ICD to the given file in a format based on the file's suffix (html, pdf)
+  -o, --out <outputFile>   Saves the selected API (or ICD) to the given file in a format based on the file's suffix (html, pdf) or generates code for the given API in a language based on the suffix (scala)
   --drop [db|subsystem|component]
                            Drops the specified component, subsystem, or the entire icd database (requires restart of icd web app)
   --versions <subsystem>   List the version history of the given subsystem
@@ -52,7 +52,7 @@ Usage: icd-db [options]
   -m, --missing <outputFile>
                            Generates a 'Missing Items' report to the given file (dir for csv) in a format based on the file's suffix (html, pdf, otherwise text/csv formatted files are generated in given dir)
   -a, --archived <outputFile>
-                           Generates an 'Archived Items' report for all subsystems (or the given one) to the given file in a format based on the file's suffix (html, pdf)
+                           Generates an 'Archived Items' report for all subsystems (or the given one) to the given file in a format based on the file's suffix (html, pdf, csv)
   --allSubsystems          Include all subsystems in searches for publishers, subscribers, etc. while generating API doc (Default: only consider the one subsystem)
   --clientApi              Include subscribed events and sent commands in the API dic (Default: only include published events and received commands)
   --orientation [portrait|landscape]
@@ -61,8 +61,9 @@ Usage: icd-db [options]
   --lineHeight <height>    For PDF or HTML file output: The line height (default: 1.6)
   --paperSize [Letter|Legal|A4|A3]
                            For PDF output: The paper size (default: Letter)
-  --help                   
-  --version                
+  --package package.name   Package name for generated Scala (default: no package)
+  --help
+  --version
 ```
 
 Example:

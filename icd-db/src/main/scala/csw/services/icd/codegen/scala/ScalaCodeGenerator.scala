@@ -44,8 +44,8 @@ class ScalaCodeGenerator(db: IcdDb) {
             warning("Replacing invalid type 'object' with 'string'")
             "String"
           case "Integer" => "Int"
-          case "TaiDate" => "TAITime"
-          case "UtcDate" => "UTCTime"
+          case "TaiDate" | "TaiTime" => "TAITime"
+          case "UtcDate" | "UtcTime" => "UTCTime"
           case x         => x
         }
       case None => "Double" // XXX
@@ -198,6 +198,8 @@ class ScalaCodeGenerator(db: IcdDb) {
     f.close()
     try {
       s"scalafmt $sourceFile".!
+    } catch {
+      case ex: Exception => println("Error: Scala formatting failes: Make sure you have 'scalafmt' installed.")
     }
   }
 }

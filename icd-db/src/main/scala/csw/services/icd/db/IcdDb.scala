@@ -115,7 +115,7 @@ object IcdDb extends App {
 
     opt[File]('o', "out") valueName "<outputFile>" action { (x, c) =>
       c.copy(outputFile = Some(x))
-    } text "Saves the selected API (or ICD) to the given file in a format based on the file's suffix (html, pdf) or generates code for the given API in a language based on the suffix (scala, java, tx (typescript))"
+    } text "Saves the selected API (or ICD) to the given file in a format based on the file's suffix (html, pdf) or generates code for the given API in a language based on the suffix (Currently only 'scala')"
 
     // Note: Dropping the db while the web app is running causes issues.
     opt[String]("drop") valueName "[db|subsystem|component]" action { (x, c) =>
@@ -164,7 +164,7 @@ object IcdDb extends App {
 
     opt[String]("package") valueName "package.name" action { (x, c) =>
       c.copy(packageName = Some(x))
-    } text "Package name for generated Scala or Java files (default: no package)"
+    } text "Package name for generated Scala files (default: no package)"
 
     help("help")
     version("version")
