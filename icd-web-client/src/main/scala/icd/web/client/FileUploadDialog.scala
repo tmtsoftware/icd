@@ -176,7 +176,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
       }
       if (xhr.status != 200) {
         val problems = Json.fromJson[List[Problem]](Json.parse(xhr.responseText)).getOrElse(Nil)
-        for (problem <- problems)
+        for (problem <- problems.reverse)
           displayProblem(problem)
       }
 

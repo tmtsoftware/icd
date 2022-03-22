@@ -88,12 +88,15 @@ class ScalaCodeGenerator(db: IcdDb) {
     }
   }
 
+  private def makeComment(s: String): String = {
+    val comment = if (s.startsWith("<p>") && s.endsWith("</p>")) s.drop(3).dropRight(4) else s
+    if (comment.isEmpty) comment else s"/** $comment */"
+  }
+
   private def getParams(paramList: List[ParameterModel]): String = {
     val params = paramList.map { p =>
       s"""
-         |/**
-         | * ${p.description}
-         | */
+         |${makeComment(p.description)}
          |${paramDef(p)}
          |""".stripMargin
     }
@@ -102,10 +105,8 @@ class ScalaCodeGenerator(db: IcdDb) {
 
   private def eventsDefs(e: EventInfo, eventType: String): String = {
     s"""
-       |/**
-       | * ${e.eventModel.description}
-       | */
-       |object `${e.eventModel.name}$eventType` {
+       |${makeComment(e.eventModel.description)}
+       |object `${e.eventModel.name.capitalize}$eventType` {
        |    val eventKey: EventKey = EventKey(prefix, EventName("${e.eventModel.name}"))
        |
        |    ${getParams(e.eventModel.parameterList)}
@@ -115,10 +116,8 @@ class ScalaCodeGenerator(db: IcdDb) {
 
   private def commandDefs(c: ReceivedCommandInfo): String = {
     s"""
-       |/**
-       | * ${c.receiveCommandModel.description}
-       | */
-       |object `${c.receiveCommandModel.name}Command` {
+       |${makeComment(c.receiveCommandModel.description)}
+       |object `${c.receiveCommandModel.name.capitalize}Command` {
        |    val commandName: CommandName = CommandName("${c.receiveCommandModel.name}")
        |
        |    ${getParams(c.receiveCommandModel.parameters)}
@@ -143,13 +142,31 @@ class ScalaCodeGenerator(db: IcdDb) {
     }
     s"""
        |$comment
-       |object `${info.componentModel.component}` {
+       |object `${info.componentModel.component.capitalize}` {
        |$prefix
        |
        |${eventKeys.mkString("\n")}
        |${commandKeys.mkString("\n")}
        |}
        |""".stripMargin
+  }
+
+  private def makeScalaFmtConf(): File = {
+    val scalafmtConf = File.createTempFile("scalafmt", "conf")
+    val f = new PrintWriter(scalafmtConf)
+    f.println(
+      """
+        |version = 3.3.2
+        |runner.dialect = scala213source3
+        |align.preset = more
+        |docstrings.style = Asterisk
+        |docstrings.wrap = yes
+        |indentOperator.preset = spray
+        |maxColumn = 130
+        |newlines.alwaysBeforeElseAfterCurlyIf = true
+        |""".stripMargin)
+    f.close()
+    scalafmtConf
   }
 
   /**
@@ -196,10 +213,13 @@ class ScalaCodeGenerator(db: IcdDb) {
         |}
         |""".stripMargin)
     f.close()
+    val scalafmtConf = makeScalaFmtConf()
     try {
-      s"scalafmt $sourceFile".!
+      s"scalafmt -c $scalafmtConf $sourceFile".!
     } catch {
       case ex: Exception => println("Error: Scala formatting failes: Make sure you have 'scalafmt' installed.")
+    } finally {
+      scalafmtConf.delete()
     }
   }
 }
