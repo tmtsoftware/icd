@@ -6,12 +6,13 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 
 - Added options to icd-db command line app to generate code containing the event, command and parameter keys. (currently only 'scala' is supported)
 - Added a new modelVersion "3.0", which defines the allowed parameter "units" matching the ones defined in the CSW framework and adds the parameter types "taiTime" and "utcTime" (same as taiDate and utcDate, which are still allowed: taiTime and utcTime should be preferred, matching the CSW names).
-- Added [jsonnet](https://jsonnet.org/) support. Model files with the '.jsonnet' suffix are processed with jsonnet before storing in the icd database. This can be used to avoid repetition in the model files. See [this example](examples/2.0/TEST/jsonnet-example/publish-model.jsonnet).
+- Added [jsonnet](https://jsonnet.org/) support. Model files with the '.jsonnet' suffix are processed with jsonnet before storing in the icd database. This can be used to avoid repetition in the model files. See [this example](examples/3.0/TEST/jsonnet-example/publish-model.jsonnet).
+- Changed the publish model to only allow [predefined Observe Events](icd-db/src/main/resources/3.0/observe-events.conf)
 - Added support for documenting TMT CSW components that are HTTP web services using [OpenAPI](https://swagger.io/specification/).
 - Added a new, optional icd model file: service-model.conf, that contains information about the HTTP services that a component provides or requires. For each service provided, the model file also contains the name of the OpenAPI JSON file that describes the service.
 - Updated dependencies
 - Replaced deprecated ScalaJS Ajax usage with recommended dom.fetch API
-- Removed RaDec type from JSON schema for parameters in v2.0 model files
+- Removed RaDec type from JSON schema for parameters in v2.0 and later model files
 - Removed support for "struct" parameter type, since it was removed from CSW
 - Fixed display of "default" parameter values
 - Improved "busy" cursor display
