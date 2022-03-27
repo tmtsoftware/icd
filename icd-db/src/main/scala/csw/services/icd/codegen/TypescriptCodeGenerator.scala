@@ -1,8 +1,7 @@
-package csw.services.icd.codegen.typescript
+package csw.services.icd.codegen
 
 import com.typesafe.config.ConfigFactory
 import csw.services.icd.IcdValidator
-import csw.services.icd.codegen.scala.ScalaCodeGenerator
 import csw.services.icd.db._
 import icd.web.shared.IcdModels.ParameterModel
 import icd.web.shared.{ComponentInfo, EventInfo, ReceivedCommandInfo, SubsystemWithVersion}

@@ -1,8 +1,8 @@
-package csw.services.icd.codegen.scala
+package csw.services.icd.codegen
 
 import com.typesafe.config.ConfigFactory
 import csw.services.icd.IcdValidator
-import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdDb, IcdVersionManager}
+import csw.services.icd.db._
 import icd.web.shared.IcdModels.ParameterModel
 import icd.web.shared.{ComponentInfo, EventInfo, ReceivedCommandInfo, SubsystemWithVersion}
 
@@ -52,8 +52,19 @@ class ScalaCodeGenerator(db: IcdDb) {
     }
   }
 
+  private val identChars0 = (('a' to 'z') ++ ('A' to 'Z') :+ '$' :+ '_').toSet
+  private val identChars  = (identChars0.toList ++ ('0' to '9') :+ '$' :+ '_').toSet
+
+  // Make sure s is a valid identifier, or wrap it in backticks
+  private def makeIdent(s: String): String = {
+    if (s.exists(c => !identChars.contains(c)) || !identChars0.contains(s.head))
+      s"`$s`"
+    else s
+  }
+
   private def paramDef(p: ParameterModel): String = {
     val unitsArg = getUnits(p.units).map(u => s", $u").getOrElse("")
+    val pNameKey = makeIdent(p.name + "Key")
     p.maybeType match {
       case Some(t) =>
         val paramType = getParamType(Some(t))
@@ -63,25 +74,25 @@ class ScalaCodeGenerator(db: IcdDb) {
             arrayType match {
               case "String" =>
                 warning("Replacing unsupported 'StringArray' type with 'String' (can still have multiple values!)")
-                s"""val `${p.name}Key`: Key[String] = StringKey.make("${p.name}"$unitsArg)"""
+                s"""val $pNameKey: Key[String] = StringKey.make("${p.name}"$unitsArg)"""
               case "Boolean" =>
                 warning("Replacing unsupported 'BooleanArray' type with 'Boolean' (can still have multiple values!)")
-                s"""val `${p.name}Key`: Key[Boolean] = BooleanKey.make("${p.name}"$unitsArg)"""
+                s"""val $pNameKey: Key[Boolean] = BooleanKey.make("${p.name}"$unitsArg)"""
               case _ =>
                 val isMatrix = p.maybeDimensions.exists(d => d.size == 2)
                 if (isMatrix)
-                  s"""val `${p.name}Key`: Key[MatrixData[$arrayType]] = ${arrayType}MatrixKey.make("${p.name}"$unitsArg)"""
+                  s"""val $pNameKey: Key[MatrixData[$arrayType]] = ${arrayType}MatrixKey.make("${p.name}"$unitsArg)"""
                 else
-                  s"""val `${p.name}Key`: Key[ArrayData[$arrayType]] = ${arrayType}ArrayKey.make("${p.name}"$unitsArg)"""
+                  s"""val $pNameKey: Key[ArrayData[$arrayType]] = ${arrayType}ArrayKey.make("${p.name}"$unitsArg)"""
             }
           case t =>
-            s"""val `${p.name}Key`: Key[$t] = ${t}Key.make("${p.name}"$unitsArg)"""
+            s"""val $pNameKey: Key[$t] = ${t}Key.make("${p.name}"$unitsArg)"""
         }
       case None =>
         p.maybeEnum match {
           case Some(e) =>
             val choices = e.map(choice => s""""$choice"""").mkString(", ")
-            s"""val `${p.name}Key`: GChoiceKey = ChoiceKey.make("${p.name}"$unitsArg, $choices)"""
+            s"""val $pNameKey: GChoiceKey = ChoiceKey.make("${p.name}"$unitsArg, $choices)"""
           case None =>
             ""
         }
@@ -104,9 +115,10 @@ class ScalaCodeGenerator(db: IcdDb) {
   }
 
   private def eventsDefs(e: EventInfo, eventType: String): String = {
+    val className = makeIdent(e.eventModel.name.capitalize + eventType)
     s"""
        |${makeComment(e.eventModel.description)}
-       |object `${e.eventModel.name.capitalize}$eventType` {
+       |object $className {
        |    val eventKey: EventKey = EventKey(prefix, EventName("${e.eventModel.name}"))
        |
        |    ${getParams(e.eventModel.parameterList)}
@@ -115,9 +127,10 @@ class ScalaCodeGenerator(db: IcdDb) {
   }
 
   private def commandDefs(c: ReceivedCommandInfo): String = {
+    val className = makeIdent(c.receiveCommandModel.name.capitalize + "Command")
     s"""
        |${makeComment(c.receiveCommandModel.description)}
-       |object `${c.receiveCommandModel.name.capitalize}Command` {
+       |object $className {
        |    val commandName: CommandName = CommandName("${c.receiveCommandModel.name}")
        |
        |    ${getParams(c.receiveCommandModel.parameters)}
@@ -140,9 +153,10 @@ class ScalaCodeGenerator(db: IcdDb) {
     val commandKeys = info.commands.toList.flatMap { commands =>
       commands.commandsReceived.map(c => commandDefs(c))
     }
+    val className = makeIdent(info.componentModel.component.capitalize)
     s"""
        |$comment
-       |object `${info.componentModel.component.capitalize}` {
+       |object $className {
        |$prefix
        |
        |${eventKeys.mkString("\n")}
@@ -217,7 +231,7 @@ class ScalaCodeGenerator(db: IcdDb) {
     try {
       s"scalafmt -c $scalafmtConf $sourceFile".!
     } catch {
-      case ex: Exception => println("Error: Scala formatting failed: Make sure you have 'scalafmt' installed.")
+      case _: Exception => println("Error: Scala formatting failed: Make sure you have 'scalafmt' installed.")
     } finally {
       scalafmtConf.delete()
     }
