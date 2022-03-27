@@ -43,7 +43,7 @@ Usage: icd-db [options]
   --component2 <name>      Specifies the subsytem2 component to be used by any following options (subsystem2 must also be specified)
   --icdversion <icd-version>
                            Specifies the version to be used by any following options (overrides subsystem and subsystem2 versions)
-  -o, --out <outputFile>   Saves the selected API (or ICD) to the given file in a format based on the file's suffix (html, pdf) or generates code for the given API in a language based on the suffix (scala, java, tx (typescript))
+  -o, --out <outputFile>   Saves the selected API (or ICD) to the given file in a format based on the file's suffix (html, pdf) or generates code for the given API in a language based on the suffix (scala, java, ts (typescript))
   --drop [db|subsystem|component]
                            Drops the specified component, subsystem, or the entire icd database (requires restart of icd web app)
   --versions <subsystem>   List the version history of the given subsystem

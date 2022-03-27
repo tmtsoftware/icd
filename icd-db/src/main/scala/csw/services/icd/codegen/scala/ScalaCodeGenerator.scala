@@ -217,7 +217,7 @@ class ScalaCodeGenerator(db: IcdDb) {
     try {
       s"scalafmt -c $scalafmtConf $sourceFile".!
     } catch {
-      case ex: Exception => println("Error: Scala formatting failes: Make sure you have 'scalafmt' installed.")
+      case ex: Exception => println("Error: Scala formatting failed: Make sure you have 'scalafmt' installed.")
     } finally {
       scalafmtConf.delete()
     }

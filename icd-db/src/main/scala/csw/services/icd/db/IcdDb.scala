@@ -4,6 +4,7 @@ import java.io.File
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd._
 import csw.services.icd.codegen.scala.ScalaCodeGenerator
+import csw.services.icd.codegen.typescript.TypescriptCodeGenerator
 import csw.services.icd.db.parser.{BaseModelParser, IcdModelParser, ServiceModelParser, SubsystemModelParser}
 import csw.services.icd.db.ComponentDataReporter._
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
@@ -362,8 +363,13 @@ object IcdDb extends App {
           )
         case "java" =>
           error("Java code generation not yet supported")
-        case "tx" =>
-          error("Typescript code generation not yet supported")
+        case "ts" =>
+          new TypescriptCodeGenerator(db).generate(
+            options.subsystem.get,
+            options.component,
+            file,
+            options.packageName
+          )
         case x =>
           error(s"Unsupported file suffix: $x")
       }
