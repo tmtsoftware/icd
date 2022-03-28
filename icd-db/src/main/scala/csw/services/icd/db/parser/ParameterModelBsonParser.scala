@@ -26,7 +26,9 @@ object ParameterModelBsonParser {
     val ref             = doc.getAsOpt[String]("ref").getOrElse("")
     val description     = doc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse("")
     val maybeType       = doc.getAsOpt[String]("type")
-    val maybeEnum       = doc.getAsOpt[Array[String]]("enum").map(_.toList)
+//    val maybeEnum       = doc.getAsOpt[Array[String]]("enum").map(_.toList)
+    // Handle case where enum values include numbers and strings
+    val maybeEnum       = doc.getAsOpt[Array[BSONValue]]("enum").map(_.toList.map(bsonValueToString))
     val units           = doc.getAsOpt[String]("units").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse("")
     val maxItems        = doc.getAsOpt[Int]("maxItems")
     val minItems        = doc.getAsOpt[Int]("minItems")
