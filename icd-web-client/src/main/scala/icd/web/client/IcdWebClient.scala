@@ -2,14 +2,12 @@ package icd.web.client
 
 import icd.web.shared.{BuildInfo, IcdVersion, IcdVizOptions, PdfOptions, SubsystemWithVersion}
 import org.scalajs.dom
-import org.scalajs.dom.{PopStateEvent, document}
-import org.scalajs.dom.HTMLStyleElement
+import org.scalajs.dom.{HTMLAnchorElement, HTMLStyleElement, PopStateEvent, document}
 
 import scala.concurrent.Future
 import scala.scalajs.js.annotation.{JSExportTopLevel, JSGlobalScope}
 import scalatags.JsDom.TypedTag
 import scalacss.ScalatagsCss._
-
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 import BrowserHistory._
 import Components._
@@ -56,6 +54,14 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val pdfItem = NavbarPdfItem("PDF", "Generate and display a PDF for the API or ICD", makePdf)
   pdfItem.setEnabled(false)
 
+  private val generateItem = NavbarDropDownItem(
+    "Generate",
+    "Generate code for the selected API/component",
+    List("Scala", "Java", "TypeScript"),
+    generateCode
+  )
+  generateItem.setEnabled(false)
+
   private val graphItem =
     NavbarGraphItem("Graph", "Generate and display a graph of relationships for the selected components", makeGraph)
   graphItem.setEnabled(false)
@@ -75,12 +81,12 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val passwordDialog = PasswordDialog(mainContent, PasswordListener)
 
   private val selectItem   = NavbarItem("Select", "Select the API or ICD to display", selectSubsystems())
-  private val selectDialog = SelectDialog(mainContent, Selector, pdfItem, graphItem)
+  private val selectDialog = SelectDialog(mainContent, Selector, List(pdfItem, generateItem, graphItem))
 
   private val logoutItem = NavbarItem("Logout", "Log out of the icd web app", logout)
 
   private val statusItem   = NavbarItem("Status", "Display the published status of a selected subsystem", showStatus())
-  private val statusDialog = StatusDialog(mainContent, StatusListener, pdfItem, graphItem)
+  private val statusDialog = StatusDialog(mainContent, StatusListener, List(pdfItem, generateItem, graphItem))
 
   private val fileUploadItem   = NavbarItem("Upload", "Select icd model files to ingest into the icd database", showUploadDialog())
   private val fileUploadDialog = FileUploadDialog(subsystemNames, csrfToken, inputDirSupported)
@@ -110,7 +116,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
           showPasswordDialog()()
       }
       fileUploadItem.hide()
-    } else {
+    }
+    else {
       updatePublished().onComplete(_ => showStatus()())
       publishItem.hide()
       logoutItem.hide()
@@ -150,6 +157,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     navbar.addItem(fileUploadItem)
     navbar.addItem(historyItem)
     navbar.addItem(pdfItem)
+    navbar.addItem(generateItem)
     navbar.addItem(graphItem)
     navbar.addItem(archiveItem)
     navbar.addItem(publishItem)
@@ -174,7 +182,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     val s = document.querySelector("#sidebar")
     if (show) {
       s.classList.remove("hide")
-    } else {
+    }
+    else {
       s.classList.add("hide")
     }
   }
@@ -184,7 +193,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     val s = document.querySelector(".navbar")
     if (show) {
       s.classList.remove("hide")
-    } else {
+    }
+    else {
       s.classList.add("hide")
     }
   }
@@ -206,7 +216,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         maybeTargetSubsystem = selectDialog.targetSubsystem.getSubsystemWithVersion(),
         maybeIcd = selectDialog.icdChooser.getSelectedIcdVersion
       )
-    } else {
+    }
+    else {
       for {
         _ <- subsystemNames.update()
         _ <- selectDialog.icdChooser.setIcdWithVersion(maybeIcd, saveHistory = false)
@@ -216,7 +227,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     }
   }
 
-  private def showPasswordDialog(saveHistory: Boolean = true)(): Unit = {
+  private def showPasswordDialog()(): Unit = {
     setSidebarVisible(false)
     setNavbarVisible(false)
     val title = "TMT Interface Database System"
@@ -231,7 +242,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     if (saveHistory) {
       mainContent.setContent(statusDialog, s"$title ${BuildInfo.version}")
       pushState(viewType = StatusView, maybeSourceSubsystem = maybeSubsystem.map(SubsystemWithVersion(_, None, None)))
-    } else {
+    }
+    else {
       for {
         _ <- subsystemNames.update()
       } {
@@ -312,7 +324,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       val url     = s"$baseUrl#$compId"
       dom.window.location.replace(url)
       if (saveHistory) pushState(viewType = ComponentView, compName = Some(compName), replace)
-    } else {
+    }
+    else {
       val url = s"#$compId"
       dom.window.location.hash = url
       if (saveHistory) pushState(viewType = ComponentView, compName = Some(compName), replace)
@@ -345,7 +358,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     )
     if (replace) {
       hist.replaceState()
-    } else {
+    }
+    else {
       hist.pushState()
     }
   }
@@ -368,10 +382,12 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
           )()
         case SelectView =>
           for {
-            _ <- selectDialog.subsystem
-                  .setSubsystemWithVersion(hist.maybeSourceSubsystem, findMatchingIcd = false)
-            _ <- selectDialog.targetSubsystem
-                  .setSubsystemWithVersion(hist.maybeTargetSubsystem, findMatchingIcd = false)
+            _ <-
+              selectDialog.subsystem
+                .setSubsystemWithVersion(hist.maybeSourceSubsystem, findMatchingIcd = false)
+            _ <-
+              selectDialog.targetSubsystem
+                .setSubsystemWithVersion(hist.maybeTargetSubsystem, findMatchingIcd = false)
             _ <- selectDialog.icdChooser.setIcdWithVersion(hist.maybeIcd, notifyListener = false, saveHistory = false)
           } {
             selectSubsystems(
@@ -392,7 +408,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
           ).foreach { _ =>
             if (hist.maybeUri.isDefined) {
               hist.maybeUri.foreach(uri => dom.window.location.replace(uri))
-            } else {
+            }
+            else {
               hist.currentCompnent.foreach(compName => goToComponent(compName, saveHistory = false))
             }
           }
@@ -489,7 +506,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
             setSidebarVisible(true)
           }
       }
-    } else Future.successful(())
+    }
+    else Future.successful(())
     currentView = SelectView
     if (saveHistory) {
       pushState(
@@ -508,7 +526,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     if (ar.length == 2) {
       val uri = s"#${ar.tail.head}"
       pushState(
-        replace = false,
         viewType = ComponentView,
         maybeSourceSubsystem = selectDialog.subsystem.getSubsystemWithVersion(),
         maybeTargetSubsystem = selectDialog.targetSubsystem.getSubsystemWithVersion(),
@@ -533,7 +550,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     }
     if (currentView == StatusView) {
       statusDialog.getSelectedSubsystem.foreach(showApiVersionHistory)
-    } else {
+    }
+    else {
       selectDialog.icdChooser.getSelectedIcd match {
         case Some(icdName) =>
           historyDialog.setIcd(icdName)
@@ -568,11 +586,36 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
           input(`type` := "hidden", name := "expandedIds", value := pdfOptions.expandedIds.mkString(","))
         ).render
         document.body.appendChild(tmpForm)
-        tmpForm.submit();
-        document.body.removeChild(tmpForm);
-      } else {
+        tmpForm.submit()
+        document.body.removeChild(tmpForm)
+      }
+      else {
         dom.window.open(uri) // opens in new window or tab
       }
+    }
+  }
+
+  private def generateCode(language: String): Unit = {
+    import scalatags.JsDom.all._
+    val maybeSv =
+      if (currentView == StatusView)
+        statusDialog.getSubsystemWithVersion
+      else selectDialog.subsystem.getSubsystemWithVersion()
+
+    maybeSv.foreach { sv =>
+      val className   = s"${sv.subsystem.toLowerCase().capitalize}Api"
+      val packageName = s"${sv.subsystem.toLowerCase()}.api"
+      val suffix      = language.toLowerCase().replace("typescript", "ts")
+      val sourceFile  = s"$className.$suffix"
+      val uri         = ClientRoutes.generate(sv, language, className, packageName)
+//      dom.window.open(uri) // opens in new window or tab (XXX TODO FIXME)
+      val f = Fetch.get(uri).map { text =>
+        val link = document.createElement("a").asInstanceOf[HTMLAnchorElement]
+        link.setAttribute("download", sourceFile)
+        link.href = "data:," + text
+        link.click();
+      }
+      showBusyCursorWhile(f)
     }
   }
 

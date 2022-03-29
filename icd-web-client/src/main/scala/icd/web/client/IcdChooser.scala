@@ -56,7 +56,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
     select(cls := "form-control", onchange := icdVersionSelected _).render
   }
 
-  def setEnabled(enabled: Boolean): Unit = {
+  override def setEnabled(enabled: Boolean): Unit = {
     if (enabled) {
       icdItem.removeAttribute("disabled")
       versionItem.removeAttribute("disabled")

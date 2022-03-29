@@ -53,10 +53,13 @@ object SelectDialog {
 
 /**
  * Displays the page for selecting the icds, subsystem APIs, components and versions to display
+ * @param mainContent used to display errors
+ * @param listener called for actions
+ * @param items items to enable/disable
  */
 //noinspection DuplicatedCode
 case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener,
-                        pdfItem: NavbarPdfItem, graphItem: NavbarGraphItem) extends Displayable {
+                        items: List[Displayable]) extends Displayable {
 
   val subsystem: Subsystem = Subsystem(SourceSubsystemListener)
   val targetSubsystem: Subsystem = Subsystem(
@@ -131,8 +134,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
         maybeSv: Option[SubsystemWithVersion],
         findMatchingIcd: Boolean
     ): Future[Unit] = {
-      pdfItem.setEnabled(true)
-      graphItem.setEnabled(true)
+      items.foreach(_.setEnabled(true))
       val maybeTargetSv = targetSubsystem.getSubsystemWithVersion()
       targetSubsystem.setEnabled(maybeSv.isDefined)
       applyButton.disabled = maybeSv.isEmpty

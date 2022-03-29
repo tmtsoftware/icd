@@ -11,4 +11,7 @@ trait Displayable {
    * Returns the initial HTML markup for the item
    */
   def markup(): Element
+
+  /** Enable or disable the item */
+  def setEnabled(enabled: Boolean): Unit = {}
 }

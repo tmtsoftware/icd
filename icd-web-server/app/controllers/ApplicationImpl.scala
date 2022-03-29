@@ -1,8 +1,9 @@
 package controllers
 
-import java.io.ByteArrayOutputStream
+import java.io.{ByteArrayOutputStream, File}
 import controllers.ApplicationData.maybeCache
 import csw.services.icd.IcdToPdf
+import csw.services.icd.codegen.{JavaCodeGenerator, ScalaCodeGenerator, TypescriptCodeGenerator}
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
 import csw.services.icd.db.{
   ArchivedItemsReport,
@@ -493,4 +494,77 @@ class ApplicationImpl(db: IcdDb) {
     val versionManager = new IcdVersionManager(query)
     versionManager.getIcdModels(sv, targetSv, None)
   }
+
+  /**
+   * Returns the generated source code for the given subsystem/component API in the given language
+   *
+   * @param subsystem        the source subsystem
+   * @param lang             the language to generate (scala, java, typescript)
+   * @param className        the top level class name to generate
+   * @param maybeVersion     the source subsystem's version (default: current)
+   * @param maybeComponent   optional component (default: all in subsystem)
+   * @param maybePackageName optional package name for generated scala/java code
+   */
+  def generate(
+      subsystem: String,
+      lang: String,
+      className: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      maybePackageName: Option[String]
+  ): Option[String] = {
+    val suffix     = lang.toLowerCase().replace("typescript", "ts")
+    val sourceFile = new File(s"$className.$suffix")
+    val tempFile = Some(File.createTempFile(className, s".$suffix"))
+    val versionStr = maybeVersion.map(v => s":$v").getOrElse("")
+    val subsysVers = s"$subsystem$versionStr"
+
+    def readAndDeleteFile(): Option[String] = {
+      try {
+        val src    = scala.io.Source.fromFile(tempFile.get)
+        val result = src.mkString
+        src.close()
+        tempFile.get.delete()
+        Some(result)
+      }
+      catch {
+        case ex: Exception =>
+          ex.printStackTrace()
+          None
+      }
+    }
+    suffix match {
+      case "scala" =>
+        new ScalaCodeGenerator(db).generate(
+          subsysVers,
+          maybeComponent,
+          sourceFile,
+          tempFile,
+          maybePackageName
+        )
+        readAndDeleteFile()
+      case "java" =>
+        new JavaCodeGenerator(db).generate(
+          subsysVers,
+          maybeComponent,
+          sourceFile,
+          tempFile,
+          maybePackageName
+        )
+        readAndDeleteFile()
+      case "ts" =>
+        new TypescriptCodeGenerator(db).generate(
+          subsysVers,
+          maybeComponent,
+          sourceFile,
+          tempFile,
+          maybePackageName
+        )
+        readAndDeleteFile()
+      case x =>
+        println(s"Unsupported language fo code generation: $lang")
+        None
+    }
+  }
+
 }

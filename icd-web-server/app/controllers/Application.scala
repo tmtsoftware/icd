@@ -18,7 +18,6 @@ import play.api.mvc._
 import play.api.{Configuration, Environment, Mode}
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.util.Timeout
-import csw.services.icd.html.OpenApiToHtml
 import icd.web.shared.IcdModels.{EventModel, IcdModel}
 
 import java.net.URLDecoder
@@ -739,6 +738,44 @@ class Application @Inject() (
         _
       ))
       resp.map(info => Ok(Json.toJson(info)))
+    }
+
+  /**
+   * Returns the generated source code for the given subsystem/component API in the given language
+   *
+   * @param subsystem        the source subsystem
+   * @param lang             the language to generate (scala, java, typescript)
+   * @param className        the top level class name to generate
+   * @param maybeVersion     the source subsystem's version (default: current)
+   * @param maybeComponent   optional component (default: all in subsystem)
+   * @param maybePackageName optional package name for generated scala/java code
+   */
+  def generate(
+      subsystem: String,
+      lang: String,
+      className: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      maybePackageName: Option[String]
+  ) =
+    Action.async { implicit request =>
+      val resp: Future[Option[String]] = appActor ? (
+        Generate(
+          subsystem,
+          lang,
+          className,
+          maybeVersion,
+          maybeComponent,
+          maybePackageName,
+          _
+        )
+      )
+      resp.map {
+        case Some(s) =>
+          Ok(s).as("text/plain")
+        case None =>
+          NotFound
+      }
     }
 
 }

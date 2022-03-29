@@ -22,7 +22,7 @@ case class SubsystemSwapper(listener: () => Unit) extends Displayable {
     a(swapperItem).render
   }
 
-  def setEnabled(enabled: Boolean): Unit = {
+  override def setEnabled(enabled: Boolean): Unit = {
     if (enabled) {
       swapperItem.removeAttribute("disabled")
     } else {

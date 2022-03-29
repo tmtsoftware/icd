@@ -358,6 +358,7 @@ object IcdDb extends App {
             options.subsystem.get,
             options.component,
             file,
+            None,
             options.packageName
           )
         case "java" =>
@@ -365,6 +366,7 @@ object IcdDb extends App {
             options.subsystem.get,
             options.component,
             file,
+            None,
             options.packageName
           )
         case "ts" =>
@@ -372,6 +374,7 @@ object IcdDb extends App {
             options.subsystem.get,
             options.component,
             file,
+            None,
             options.packageName
           )
         case x =>

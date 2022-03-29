@@ -112,13 +112,22 @@ object ApplicationActor extends ActorModule {
       extends Messages
   final case class UnpublishIcd(unpublishIcdInfo: UnpublishIcdInfo, replyTo: ActorRef[Try[Option[IcdVersionInfo]]])
       extends Messages
-  final case class UpdatePublished(replyTo: ActorRef[Unit])                                  extends Messages
+  final case class UpdatePublished(replyTo: ActorRef[Unit]) extends Messages
   final case class GetIcdModels(
       subsystem: String,
       maybeVersion: Option[String],
       target: String,
       maybeTargetVersion: Option[String],
       replyTo: ActorRef[List[IcdModel]]
+  ) extends Messages
+  final case class Generate(
+      subsystem: String,
+      lang: String,
+      className: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      maybePackageName: Option[String],
+      replyTo: ActorRef[Option[String]]
   ) extends Messages
 
   // -------------------------------------------------------------------
@@ -284,6 +293,24 @@ object ApplicationActor extends ActorModule {
             maybeVersion,
             target,
             maybeTargetVersion
+          )
+          Behaviors.same
+        case Generate(
+              subsystem,
+              lang,
+              className,
+              maybeVersion,
+              maybeComponent,
+              maybePackageName,
+              replyTo: ActorRef[Option[String]]
+            ) =>
+          replyTo ! app.generate(
+            subsystem,
+            lang,
+            className,
+            maybeVersion,
+            maybeComponent,
+            maybePackageName
           )
           Behaviors.same
       }

@@ -101,6 +101,8 @@ POST        /updatePublished                            controllers.Application.
 # Gets information about the ICD between two subsystems
 GET         /icdModelList/:subsystem/:target             controllers.Application.icdModelList(subsystem, version: Option[String], target, targetVersion: Option[String])
 
+# Gets the generated source code for the given subsystem/component API
+GET         /generate/:subsystem/:lang/:className        controllers.Application.generate(subsystem, lang, className, version: Option[String], component: Option[String], packageName: Option[String])
 
 
 # Map static resources from the /public folder to the /assets URL path

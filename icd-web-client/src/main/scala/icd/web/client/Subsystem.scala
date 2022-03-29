@@ -85,7 +85,7 @@ case class Subsystem(
    */
   def isDefault: Boolean = subsystemItem.selectedIndex == 0
 
-  def setEnabled(enabled: Boolean): Unit = {
+  override def setEnabled(enabled: Boolean): Unit = {
     subsystemItem.disabled = !enabled
     versionItem.disabled = !enabled
     componentItem.disabled = !enabled

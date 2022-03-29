@@ -188,7 +188,7 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
 
   def hide(): Unit = item.classList.add("hide")
 
-  def setEnabled(enabled: Boolean): Unit = {
+  override def setEnabled(enabled: Boolean): Unit = {
     if (enabled)
       item.classList.remove("disabled")
     else
@@ -230,6 +230,13 @@ case class NavbarDropDownItem(labelStr: String, tip: String, items: List[String]
   def markup(): Element = item
 
   def hide(): Unit = item.classList.add("hide")
+
+  override def setEnabled(enabled: Boolean): Unit = {
+    if (enabled)
+      item.classList.remove("disabled")
+    else
+      item.classList.add("disabled")
+  }
 }
 
 /**
@@ -369,7 +376,7 @@ case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOption
 
   def hide(): Unit = item.classList.add("hide")
 
-  def setEnabled(enabled: Boolean): Unit = {
+  override def setEnabled(enabled: Boolean): Unit = {
     if (enabled)
       item.classList.remove("disabled")
     else

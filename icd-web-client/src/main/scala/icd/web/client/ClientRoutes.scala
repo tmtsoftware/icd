@@ -24,7 +24,8 @@ object ClientRoutes {
       maybeIcdVersion: Option[String] = None,
       maybePdfOptions: Option[PdfOptions] = None,
       maybeGraphOptions: Option[IcdVizOptions] = None,
-      maybeTarget: Option[String] = None
+      maybeTarget: Option[String] = None,
+      maybePackageName: Option[String] = None
   ): String = {
     val versionAttr         = maybeVersion.map(v => s"version=$v")
     val componentAttr       = maybeComponent.map(c => s"component=$c")
@@ -34,6 +35,7 @@ object ClientRoutes {
     val targetComponentAttr = maybeTargetCompName.map(c => s"targetComponent=$c")
     val targetAttr          = maybeTarget.map(c => s"target=$c")
     val icdVersionAttr      = maybeIcdVersion.map(v => s"icdVersion=$v")
+    val packageAttr         = maybePackageName.map(v => s"packageName=$v")
     val pdfAttrs = maybePdfOptions.map(o =>
       List(
         s"orientation=${o.orientation}",
@@ -59,9 +61,9 @@ object ClientRoutes {
       ).mkString("&")
     )
     val attrs =
-      (versionAttr ++ componentAttr ++ searchAllAttr ++ clientApiAttr ++
+      (versionAttr ++ componentAttr ++ packageAttr ++ searchAllAttr ++ clientApiAttr ++
         targetAttr ++ targetVersionAttr ++ targetComponentAttr ++ icdVersionAttr ++
-        pdfAttrs ++ graphAttrs)
+        pdfAttrs ++ graphAttrs ++ packageAttr)
         .mkString("&")
     if (attrs.isEmpty) "" else s"?$attrs"
   }
@@ -73,7 +75,7 @@ object ClientRoutes {
     val attrs = getAttrs(
       sv.maybeVersion,
       None,
-      maybeTargetVersion = targetSv.maybeVersion,
+      maybeTargetVersion = targetSv.maybeVersion
     )
     s"/icdModelList/${sv.subsystem}/${targetSv.subsystem}$attrs"
   }
@@ -171,6 +173,28 @@ object ClientRoutes {
         )
         s"/icdAsPdf/${sv.subsystem}/${targetSv.subsystem}$attrs"
     }
+  }
+
+  /**
+   * Returns the route to use to "Generate" code in the given language.
+   * @param sv       the subsystem
+   * @param lang     Scala, Java or TypeScript
+   * @param className  top level class name (file basename)
+   * @param packageName  package name
+   * @return the URL path to use
+   */
+  def generate(
+      sv: SubsystemWithVersion,
+      lang: String,
+      className: String,
+      packageName: String
+  ): String = {
+    val attrs = getAttrs(
+      sv.maybeVersion,
+      sv.maybeComponent,
+      maybePackageName = Some(packageName)
+    )
+    s"/generate/${sv.subsystem}/$lang/$className$attrs"
   }
 
   /**
