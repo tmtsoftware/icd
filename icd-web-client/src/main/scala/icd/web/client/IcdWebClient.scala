@@ -317,19 +317,10 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   // Jump to the component description
-  private def goToComponent(compName: String, replace: Boolean = false, saveHistory: Boolean = true): Unit = {
+  private def goToComponent(compName: String, saveHistory: Boolean = true): Unit = {
     val compId = Components.getComponentInfoId(compName)
-    if (replace) {
-      val baseUrl = dom.window.location.href.split('#')(0)
-      val url     = s"$baseUrl#$compId"
-      dom.window.location.replace(url)
-      if (saveHistory) pushState(viewType = ComponentView, compName = Some(compName), replace)
-    }
-    else {
-      val url = s"#$compId"
-      dom.window.location.hash = url
-      if (saveHistory) pushState(viewType = ComponentView, compName = Some(compName), replace)
-    }
+    document.getElementById(compId).scrollIntoView()
+    if (saveHistory) pushState(viewType = ComponentView, compName = Some(compName))
   }
 
   /**
@@ -342,7 +333,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private def pushState(
       viewType: ViewType,
       compName: Option[String] = None,
-      replace: Boolean = false,
       maybeSourceSubsystem: Option[SubsystemWithVersion] = None,
       maybeTargetSubsystem: Option[SubsystemWithVersion] = None,
       maybeIcd: Option[IcdVersion] = None,
@@ -356,12 +346,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       compName,
       maybeUri
     )
-    if (replace) {
-      hist.replaceState()
-    }
-    else {
-      hist.pushState()
-    }
+    hist.pushState()
   }
 
   /**
