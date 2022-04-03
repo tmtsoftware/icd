@@ -2,7 +2,7 @@ package icd.web.client
 
 import icd.web.shared.{BuildInfo, IcdVersion, IcdVizOptions, PdfOptions, SubsystemWithVersion}
 import org.scalajs.dom
-import org.scalajs.dom.{HTMLAnchorElement, HTMLStyleElement, PopStateEvent, document}
+import org.scalajs.dom.{Element, HTMLAnchorElement, HTMLStyleElement, PopStateEvent, document}
 
 import scala.concurrent.Future
 import scala.scalajs.js.annotation.{JSExportTopLevel, JSGlobalScope}
@@ -18,6 +18,7 @@ import icd.web.client.StatusDialog.StatusDialogListener
 import play.api.libs.json.Json
 
 import scala.scalajs.js
+import scala.util.Success
 
 // Need to reset this JavaScript variable after loading a new API or ICD. See resources/resize.js
 @js.native
@@ -44,6 +45,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Page components
   private val expandToggler = ExpandToggler()
+  private val reloadButton = ReloadButton()
   private val mainContent   = MainContent()
   private val components    = Components(mainContent, ComponentLinkSelectionHandler)
   private val sidebar       = Sidebar(LeftSidebarListener)
@@ -161,6 +163,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     navbar.addItem(graphItem)
     navbar.addItem(archiveItem)
     navbar.addItem(publishItem)
+    navbar.addItem(reloadButton)
     navbar.addItem(expandToggler)
     navbar.addRightSideItem(logoutItem)
 
@@ -633,4 +636,39 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         ClientRoutes.archivedItemsReportFull(options)
     dom.window.open(uri) // opens in new window or tab
   }
+
+  case class ReloadButton() extends Displayable {
+    private def reloadPage(): Unit = {
+      val main = document.getElementById("main")
+      val y = main.scrollTop
+      val f = if (currentView == StatusView)
+          statusDialog.applySettings()
+      else
+        selectDialog.applySettings()
+      f.onComplete {
+        case Success(_) =>
+          println(s"XXX main.scrollTop = $y")
+          main.scrollTop = y
+        case _ =>
+      }
+    }
+
+    override def markup(): Element = {
+      import scalatags.JsDom.all._
+      import scalacss.ScalatagsCss._
+      li(
+        a(
+          button(
+            Styles.attributeBtn,
+            tpe := "button",
+            id := "reload",
+            cls := "glyphicon glyphicon-lg glyphicon-repeat",
+            title := "Reload the selected subsystem, API or ICD, refresh from icd database",
+            onclick := reloadPage _
+          )
+        )
+      ).render
+    }
+  }
+
 }

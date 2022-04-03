@@ -123,8 +123,8 @@ case class MainContent() extends Displayable {
 
   override def markup(): Element = {
     import scalacss.ScalatagsCss._
-    div(Styles.mainContent)(
-      div(Styles.main)(contentTitle, contentDescription, contentDiv)
+    div(id := "mainContent", Styles.mainContent)(
+      div(id := "main", Styles.main)(contentTitle, contentDescription, contentDiv)
     ).render
   }
 }

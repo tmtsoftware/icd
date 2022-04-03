@@ -5,12 +5,14 @@ import icd.web.shared.{ApiVersionInfo, IcdVersion, IcdVersionInfo, PublishInfo, 
 import org.scalajs.dom
 import org.scalajs.dom.Element
 import org.scalajs.dom.html.{Div, Table}
-
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
+
 import scala.util.{Failure, Success}
 import scalatags.JsDom.all._
 import scalacss.ScalatagsCss._
 import scalatags.JsDom
+
+import scala.concurrent.Future
 
 object StatusDialog {
 
@@ -53,8 +55,7 @@ object StatusDialog {
  * @param listener called for actions
  * @param items items to enable/disable
  */
-case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener,
-                        items: List[Displayable]) extends Displayable {
+case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener, items: List[Displayable]) extends Displayable {
   import StatusDialog._
 
   // The subsystem combobox
@@ -68,15 +69,20 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
     div().render
   }
 
-  // called when a subsystem is selected
-  private def onSubsystemSelected(e: dom.Event): Unit = {
+  // Display the APIs and ICDs for the selected subsystem
+  def applySettings(): Future[Unit] = {
     subsystemSelected(getSelectedSubsystem)
   }
 
   // called when a subsystem is selected
-  private def subsystemSelected(maybeSubsystem: Option[String]): Unit = {
+  private def onSubsystemSelected(e: dom.Event): Future[Unit] = {
+    applySettings()
+  }
+
+  // called when a subsystem is selected
+  private def subsystemSelected(maybeSubsystem: Option[String]): Future[Unit] = {
     detailsDiv.innerHTML = ""
-    maybeSubsystem.foreach { subsystem =>
+    val result = maybeSubsystem.map { subsystem =>
       items.foreach(_.setEnabled(true))
       detailsDiv.appendChild(p(em(s"Getting $subsystem related information...")).render)
       val f = IcdUtil.getPublishInfo(maybeSubsystem, mainContent)
@@ -88,7 +94,9 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
           mainContent.displayInternalError(ex)
       }
       showBusyCursorWhile(f.map(_ => ()))
+      f.map(_ => ())
     }
+    result.getOrElse(Future.successful(()))
   }
 
   // Input string looks like "2019-04-12T09:11:49.074Z", simplify by showing only the date
@@ -198,7 +206,8 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
             h3(s"Current ${pubInfo.subsystem} API Status"),
             apiTable(pubInfo)
           )
-        } else {
+        }
+        else {
           h3(s"No published APIs for ${pubInfo.subsystem} were found.")
         },
         if (pubInfo.icdVersions.nonEmpty) {
@@ -206,7 +215,8 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
             h3(s"Current ICDs involving ${pubInfo.subsystem}"),
             icdTable(pubInfo)
           )
-        } else {
+        }
+        else {
           h3(s"No published ICDs involving ${pubInfo.subsystem} were found.")
         }
       )
