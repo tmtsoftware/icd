@@ -33,8 +33,6 @@ else
     echo >&2 "Please install node.js first.  Aborting."
     exit 1
 fi
-# Should not be needed? See https://github.com/sbt/sbt-less/issues/95
-export SBT_OPTS="-Dsbt.jse.engineType=Node -Dsbt.jse.command=$NODEJS"
 
 dir=../install_icd
 rm -rf $dir

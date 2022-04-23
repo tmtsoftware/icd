@@ -83,7 +83,6 @@ lazy val icdWebServer = (project in file("icd-web-server"))
     pipelineStages := Seq(digest, gzip),
     // triggers scalaJSPipeline when using compile or continuous compilation
     Compile / compile := ((Compile / compile) dependsOn scalaJSPipeline).value,
-    Assets / LessKeys.less / includeFilter := "icd.less",
     libraryDependencies ++=
       compileScope(filters, guice, playJson, jqueryUi, webjarsPlay, bootstrap, bootstrapTable) ++
         testScope(specs2)

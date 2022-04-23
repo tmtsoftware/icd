@@ -1,0 +1,209 @@
+html {
+  overflow: hidden;
+}
+body {
+  overflow: visible;
+}
+img {
+  vertical-align: middle;
+}
+h2 {
+  page-break-before: always;
+}
+.pagebreak {
+  page-break-after: always;
+}
+#content html, #versionHistory html {
+  background: #fff;
+  margin: 0;
+  padding: 0;
+}
+#content body, #versionHistory body {
+  font-family: arial, freesans, clean, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: left;
+  color: #333;
+  max-width: 920px;
+}
+@media print {
+  #content body, #versionHistory body {
+    font-size: 10px;
+  }
+}
+#content .md, #versionHistory .md {
+  background-color: #eee;
+  border-radius: 3px;
+  margin: 0;
+  padding: 3px;
+}
+#content article, #versionHistory article {
+  padding: 30px;
+  border: 1px solid #cacaca;
+  background-color: white;
+}
+#content article > :first-child, #versionHistory article > :first-child {
+  margin-top: 0 !important;
+}
+#content h1, #versionHistory h1 {
+  font-size: 18px;
+  color: black;
+}
+@media print {
+  #content h1, #versionHistory h1 {
+    font-size: 14px;
+  }
+}
+#content h2, #versionHistory h2 {
+  font-size: 18px;
+  color: black;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-bottom-color: #ccc;
+}
+@media print {
+  #content h2, #versionHistory h2 {
+    font-size: 14px;
+  }
+}
+#content h3, #versionHistory h3 {
+  font-size: 16px;
+}
+@media print {
+  #content h3, #versionHistory h3 {
+    font-size: 12px;
+  }
+}
+#content h4, #versionHistory h4 {
+  font-size: 16px;
+}
+@media print {
+  #content h4, #versionHistory h4 {
+    font-size: 12px;
+  }
+}
+#content h5, #versionHistory h5 {
+  font-size: 14px;
+}
+@media print {
+  #content h5, #versionHistory h5 {
+    font-size: 10px;
+  }
+}
+#content h6, #versionHistory h6 {
+  color: #777;
+  font-size: 14px;
+}
+@media print {
+  #content h6, #versionHistory h6 {
+    font-size: 10px;
+  }
+}
+#content hr, #versionHistory hr {
+  background: transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAYAAAAECAYAAACtBE5DAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBNYWNpbnRvc2giIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OENDRjNBN0E2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OENDRjNBN0I2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo4Q0NGM0E3ODY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo4Q0NGM0E3OTY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PqqezsUAAAAfSURBVHjaYmRABcYwBiM2QSA4y4hNEKYDQxAEAAIMAHNGAzhkPOlYAAAAAElFTkSuQmCC) repeat-x 0 0;
+  border: 0 none;
+  height: 4px;
+  padding: 0;
+}
+#content pre, #content code, #versionHistory pre, #versionHistory code {
+  font: 12px 'Bitstream Vera Sans Mono', 'Courier', monospace;
+}
+#content .highlight pre, #content pre, #versionHistory .highlight pre, #versionHistory pre {
+  background-color: #f8f8f8;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  line-height: 19px;
+  overflow: auto;
+  border-radius: 3px;
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  padding: 6px 10px;
+}
+@media print {
+  #content .highlight pre, #content pre, #versionHistory .highlight pre, #versionHistory pre {
+    font-size: 10px;
+  }
+}
+#content code, #versionHistory code {
+  white-space: nowrap;
+  border: 1px solid #eaeaea;
+  background-color: #f8f8f8;
+  border-radius: 3px;
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  margin: 0 2px;
+  padding: 0 5px;
+}
+#content pre > code, #versionHistory pre > code {
+  white-space: pre;
+  border: none;
+  background: transparent;
+  margin: 0;
+  padding: 0;
+}
+#content a, #content a code, #versionHistory a, #versionHistory a code {
+  color: #4183C4;
+  text-decoration: none;
+}
+#content blockquote, #versionHistory blockquote {
+  border-left: 4px solid #ddd;
+  padding-left: 11px;
+  color: #555;
+  margin: 14px 0;
+}
+#content table, #versionHistory table {
+  font-size: 14px;
+  border-collapse: collapse;
+  margin-left: 16px;
+  margin-right: 20px;
+  margin-bottom: 20px;
+  padding: 0;
+  table-layout: fixed;
+  word-wrap: break-word;
+}
+@media print {
+  #content table, #versionHistory table {
+    font-size: 10px;
+  }
+}
+#content table tr, #versionHistory table tr {
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-top-color: #ccc;
+  background-color: #fff;
+  margin: 0;
+  padding: 0;
+}
+#content table tr:nth-child(2n), #versionHistory table tr:nth-child(2n) {
+  background-color: #f8f8f8;
+}
+#content table tr th[align="center"], #content table tr td[align="center"], #versionHistory table tr th[align="center"], #versionHistory table tr td[align="center"] {
+  text-align: center;
+}
+#content table tr th, #content table tr td, #versionHistory table tr th, #versionHistory table tr td {
+  border-width: 1px;
+  border-style: solid;
+  border-color: #ccc;
+  text-align: left;
+  margin: 0;
+  padding: 6px 13px;
+}
+#content table th, #versionHistory table th {
+  white-space: nowrap;
+}
+#content table tbody tr td p, #content table tbody tr td div p, #versionHistory table tbody tr td p, #versionHistory table tbody tr td div p {
+  padding: 5px 0;
+  border-width: 0;
+  margin: 0;
+}
+#content .alert-warning, #versionHistory .alert-warning {
+  margin-bottom: 0;
+}
+#content .shadow, #versionHistory .shadow {
+  -webkit-box-shadow: 0 5px 15px #000;
+  -moz-box-shadow: 0 5px 15px #000;
+  box-shadow: 0 5px 15px #000;
+}
+ 

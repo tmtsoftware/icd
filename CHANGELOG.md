@@ -17,6 +17,8 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Fixed display of "default" parameter values
 - Improved "busy" cursor display
 - Removed support for uploading a zip file containing the icd model files, since modern browsers now all support uploading a directory
+- Removed dependency on "less" and converted/renamed icd.less to icd.css
+- Updated list of allowed CSW Units
 
 ## [ICD v2.1.2] - 2021-05-25
 
