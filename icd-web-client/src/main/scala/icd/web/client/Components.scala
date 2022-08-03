@@ -1,7 +1,5 @@
 package icd.web.client
 
-import java.util.UUID
-
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels._
 import icd.web.shared._
@@ -370,7 +368,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
     // button to toggle visibility
-    val idStr = UUID.randomUUID().toString
+    val idStr = s"id${new java.util.Random().nextInt()}"
     val btn = button(
       Styles.attributeBtn,
       attr("data-toggle") := "collapse",
