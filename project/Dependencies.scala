@@ -32,32 +32,34 @@ object Dependencies {
 
   val sjsonnet = "com.databricks" %% "sjsonnet" % "0.4.3"
 
-  val itext7Core = "com.itextpdf"             % "itext7-core" % "7.2.3" pomOnly ()
-  val html2pdf   = "com.itextpdf"             % "html2pdf"    % "4.0.3"
-  val jlatexmath = "org.scilab.forge"         % "jlatexmath"  % "1.0.7"
-  val commonsIo  = "commons-io"               % "commons-io"  % "2.11.0"
-//  val plantuml   = "net.sourceforge.plantuml" % "plantuml"    % "1.2021.16"
-  val plantuml   = "net.sourceforge.plantuml" % "plantuml"    % "1.2022.6"
-  val graphDot   = "org.scala-graph"         %% "graph-dot"   % "1.13.3"
+  val itext7Core  = "com.itextpdf"       % "itext7-core"  % "7.2.3" pomOnly ()
+  val html2pdf    = "com.itextpdf"       % "html2pdf"     % "4.0.3"
+  val jlatexmath  = "org.scilab.forge"   % "jlatexmath"   % "1.0.7"
+  val commonsIo   = "commons-io"         % "commons-io"   % "2.11.0"
+  val commonsText = "org.apache.commons" % "commons-text" % "1.9"
 
-  val reactivemongo = "org.reactivemongo" %% "reactivemongo" % "1.0.10"
+  //  val plantuml   = "net.sourceforge.plantuml" % "plantuml"    % "1.2021.16"
+  val plantuml = "net.sourceforge.plantuml" % "plantuml"  % "1.2022.6"
+  val graphDot = "org.scala-graph"         %% "graph-dot" % "1.13.3"
+
+  val reactivemongo               = "org.reactivemongo" %% "reactivemongo"                  % "1.0.10"
   val reactivemongoPlayJsonCompat = "org.reactivemongo" %% "reactivemongo-play-json-compat" % "1.1.0-play29-RC5"
   //  // XXX Need to fix indirect dependency conflict
   val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.3"
 
   val diffson = "org.gnieh" %% "diffson-play-json" % "4.1.1"
 
-  val scalaLogging   = "com.typesafe.scala-logging" %% "scala-logging"    % "3.9.5"
-  val logbackClassic = "ch.qos.logback"              % "logback-classic"  % "1.2.10"
-  val scalatags      = "com.lihaoyi"                %% "scalatags"        % ScalaTagsVersion
+  val scalaLogging   = "com.typesafe.scala-logging" %% "scala-logging"   % "3.9.5"
+  val logbackClassic = "ch.qos.logback"              % "logback-classic" % "1.2.10"
+  val scalatags      = "com.lihaoyi"                %% "scalatags"       % ScalaTagsVersion
 //  val jsoup          = "org.jsoup"                   % "jsoup"            % "1.14.3"
-  val jsoup          = "org.jsoup"                   % "jsoup"            % "1.15.2"
-  val jgit           = "org.eclipse.jgit"            % "org.eclipse.jgit" % "6.2.0.202206071550-r"
+  val jsoup = "org.jsoup"        % "jsoup"            % "1.15.2"
+  val jgit  = "org.eclipse.jgit" % "org.eclipse.jgit" % "6.2.0.202206071550-r"
 //  val swaggerParser  = "io.swagger.parser.v3"        % "swagger-parser"   % "2.0.33"
-  val swaggerParser  = "io.swagger.parser.v3"        % "swagger-parser"   % "2.1.1"
-  val playJson       = "com.typesafe.play"          %% "play-json"        % PlayJsonVersion
-  val jqueryUi       = "org.webjars"                 % "jquery-ui"        % JQueryUiVersion
-  val webjarsPlay    = "org.webjars"                %% "webjars-play"     % "2.8.13"
+  val swaggerParser = "io.swagger.parser.v3" % "swagger-parser" % "2.1.1"
+  val playJson      = "com.typesafe.play"   %% "play-json"      % PlayJsonVersion
+  val jqueryUi      = "org.webjars"          % "jquery-ui"      % JQueryUiVersion
+  val webjarsPlay   = "org.webjars"         %% "webjars-play"   % "2.8.13"
   // Note: Updating to bootstrap-4 could be a lot of work...
   val bootstrap      = "org.webjars"       % "bootstrap"       % BootstrapVersion
   val bootstrapTable = "org.webjars.bower" % "bootstrap-table" % BootstrapTableVersion

@@ -3,7 +3,7 @@ package csw.services.icd.db
 import java.io.File
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd._
-import csw.services.icd.codegen.{JavaCodeGenerator, ScalaCodeGenerator, TypescriptCodeGenerator}
+import csw.services.icd.codegen.{JavaCodeGenerator, PythonCodeGenerator, ScalaCodeGenerator, TypescriptCodeGenerator}
 import csw.services.icd.db.parser.{BaseModelParser, IcdModelParser, ServiceModelParser, SubsystemModelParser}
 import csw.services.icd.db.ComponentDataReporter._
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
@@ -115,7 +115,7 @@ object IcdDb extends App {
 
     opt[File]('o', "out") valueName "<outputFile>" action { (x, c) =>
       c.copy(outputFile = Some(x))
-    } text "Saves the selected API (or ICD) to the given file in a format based on the file's suffix (html, pdf) or generates code for the given API in a language based on the suffix ('scala', 'java', 'ts' (typescript))"
+    } text "Saves the selected API (or ICD) to the given file in a format based on the file's suffix (html, pdf) or generates code for the given API in a language based on the suffix ('scala', 'java', 'ts' (typescript), py (python))"
 
     // Note: Dropping the db while the web app is running causes issues.
     opt[String]("drop") valueName "[db|subsystem|component]" action { (x, c) =>
@@ -371,6 +371,14 @@ object IcdDb extends App {
           )
         case "ts" =>
           new TypescriptCodeGenerator(db).generate(
+            options.subsystem.get,
+            options.component,
+            file,
+            None,
+            options.packageName
+          )
+        case "py" =>
+          new PythonCodeGenerator(db).generate(
             options.subsystem.get,
             options.component,
             file,

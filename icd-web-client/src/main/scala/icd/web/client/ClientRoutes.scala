@@ -178,7 +178,7 @@ object ClientRoutes {
   /**
    * Returns the route to use to "Generate" code in the given language.
    * @param sv       the subsystem
-   * @param lang     Scala, Java or TypeScript
+   * @param lang     Scala, Java, TypeScript or Python
    * @param className  top level class name (file basename)
    * @param packageName  package name
    * @return the URL path to use

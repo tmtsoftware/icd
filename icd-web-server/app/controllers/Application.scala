@@ -744,7 +744,7 @@ class Application @Inject() (
    * Returns the generated source code for the given subsystem/component API in the given language
    *
    * @param subsystem        the source subsystem
-   * @param lang             the language to generate (scala, java, typescript)
+   * @param lang             the language to generate (scala, java, typescript, python)
    * @param className        the top level class name to generate
    * @param maybeVersion     the source subsystem's version (default: current)
    * @param maybeComponent   optional component (default: all in subsystem)

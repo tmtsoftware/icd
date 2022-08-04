@@ -3,42 +3,16 @@ package controllers
 import java.io.{ByteArrayOutputStream, File}
 import controllers.ApplicationData.maybeCache
 import csw.services.icd.IcdToPdf
-import csw.services.icd.codegen.{JavaCodeGenerator, ScalaCodeGenerator, TypescriptCodeGenerator}
+import csw.services.icd.codegen.{JavaCodeGenerator, PythonCodeGenerator, ScalaCodeGenerator, TypescriptCodeGenerator}
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
-import csw.services.icd.db.{
-  ArchivedItemsReport,
-  CachedIcdDbQuery,
-  CachedIcdVersionManager,
-  ComponentInfoHelper,
-  IcdComponentInfo,
-  IcdDb,
-  IcdDbPrinter,
-  IcdDbQuery,
-  IcdVersionManager
-}
+import csw.services.icd.db.{ArchivedItemsReport, CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, IcdDbPrinter, IcdDbQuery, IcdVersionManager}
 import csw.services.icd.github.IcdGitManager
 import csw.services.icd.html.OpenApiToHtml
 import csw.services.icd.viz.IcdVizManager
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.AllEventList.EventsForSubsystem
 import icd.web.shared.IcdModels.{EventModel, IcdModel}
-import icd.web.shared.{
-  ApiVersionInfo,
-  ComponentInfo,
-  DiffInfo,
-  IcdName,
-  IcdVersion,
-  IcdVersionInfo,
-  IcdVizOptions,
-  PdfOptions,
-  PublishApiInfo,
-  PublishIcdInfo,
-  SubsystemInfo,
-  SubsystemWithVersion,
-  UnpublishApiInfo,
-  UnpublishIcdInfo,
-  VersionInfo
-}
+import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, IcdName, IcdVersion, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, SubsystemWithVersion, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
 import play.api.libs.json.Json
 
 import scala.util.Try
@@ -499,7 +473,7 @@ class ApplicationImpl(db: IcdDb) {
    * Returns the generated source code for the given subsystem/component API in the given language
    *
    * @param subsystem        the source subsystem
-   * @param lang             the language to generate (scala, java, typescript)
+   * @param lang             the language to generate (scala, java, typescript, python)
    * @param className        the top level class name to generate
    * @param maybeVersion     the source subsystem's version (default: current)
    * @param maybeComponent   optional component (default: all in subsystem)
@@ -513,7 +487,9 @@ class ApplicationImpl(db: IcdDb) {
       maybeComponent: Option[String],
       maybePackageName: Option[String]
   ): Option[String] = {
-    val suffix     = lang.toLowerCase().replace("typescript", "ts")
+    val suffix     = lang.toLowerCase()
+      .replace("typescript", "ts")
+      .replace("python", "py")
     val sourceFile = new File(s"$className.$suffix")
     val tempFile = Some(File.createTempFile(className, s".$suffix"))
     val versionStr = maybeVersion.map(v => s":$v").getOrElse("")
@@ -554,6 +530,15 @@ class ApplicationImpl(db: IcdDb) {
         readAndDeleteFile()
       case "ts" =>
         new TypescriptCodeGenerator(db).generate(
+          subsysVers,
+          maybeComponent,
+          sourceFile,
+          tempFile,
+          maybePackageName
+        )
+        readAndDeleteFile()
+      case "py" =>
+        new PythonCodeGenerator(db).generate(
           subsysVers,
           maybeComponent,
           sourceFile,

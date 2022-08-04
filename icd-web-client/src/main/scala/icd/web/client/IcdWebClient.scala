@@ -59,7 +59,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val generateItem = NavbarDropDownItem(
     "Generate",
     "Generate code for the selected API/component",
-    List("Scala", "Java", "TypeScript"),
+    List("Scala", "Java", "TypeScript", "Python"),
     generateCode
   )
   generateItem.setEnabled(false)
@@ -593,7 +593,9 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     maybeSv.foreach { sv =>
       val className   = s"${sv.subsystem.toLowerCase().capitalize}Api"
       val packageName = s"${sv.subsystem.toLowerCase()}.api"
-      val suffix      = language.toLowerCase().replace("typescript", "ts")
+      val suffix      = language.toLowerCase()
+        .replace("typescript", "ts")
+        .replace("python", "py")
       val sourceFile  = s"$className.$suffix"
       val uri         = ClientRoutes.generate(sv, language, className, packageName)
 //      dom.window.open(uri) // opens in new window or tab (XXX TODO FIXME)
