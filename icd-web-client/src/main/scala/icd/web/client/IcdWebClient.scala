@@ -18,6 +18,7 @@ import icd.web.client.StatusDialog.StatusDialogListener
 import play.api.libs.json.Json
 
 import scala.scalajs.js
+import scala.scalajs.js.URIUtils
 import scala.util.Success
 
 // Need to reset this JavaScript variable after loading a new API or ICD. See resources/resize.js
@@ -598,11 +599,10 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         .replace("python", "py")
       val sourceFile  = s"$className.$suffix"
       val uri         = ClientRoutes.generate(sv, language, className, packageName)
-//      dom.window.open(uri) // opens in new window or tab (XXX TODO FIXME)
       val f = Fetch.get(uri).map { text =>
         val link = document.createElement("a").asInstanceOf[HTMLAnchorElement]
         link.setAttribute("download", sourceFile)
-        link.href = "data:," + text
+        link.href = "data:," + URIUtils.encodeURIComponent(text)
         link.click();
       }
       showBusyCursorWhile(f)
@@ -649,7 +649,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         selectDialog.applySettings()
       f.onComplete {
         case Success(_) =>
-          println(s"XXX main.scrollTop = $y")
           main.scrollTop = y
         case _ =>
       }

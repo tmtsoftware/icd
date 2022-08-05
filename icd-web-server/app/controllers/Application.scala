@@ -21,6 +21,7 @@ import akka.util.Timeout
 import icd.web.shared.IcdModels.{EventModel, IcdModel}
 
 import java.net.URLDecoder
+import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -525,7 +526,7 @@ class Application @Inject() (
     }
 
   private def convertBytesToHex(bytes: Array[Byte]): String = {
-    val sb = new StringBuilder
+    val sb = new mutable.StringBuilder
     for (b <- bytes) {
       sb.append(String.format("%02x", Byte.box(b)))
     }
