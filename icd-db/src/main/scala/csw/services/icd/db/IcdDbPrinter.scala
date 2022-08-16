@@ -6,6 +6,8 @@ import csw.services.icd.html.{IcdToHtml, NumberedHeadings}
 import icd.web.shared.TitleInfo.unpublished
 import icd.web.shared.{SubsystemWithVersion, _}
 import IcdToHtml._
+import csw.services.icd.fits.IcdFits
+import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import icd.web.shared.IcdModels.IcdModel
 
 /**
@@ -62,14 +64,15 @@ case class IcdDbPrinter(
   private def getComponentInfo(
       versionManager: IcdVersionManager,
       sv: SubsystemWithVersion,
-      maybeTargetSv: Option[SubsystemWithVersion]
+      maybeTargetSv: Option[SubsystemWithVersion],
+      fitsKeyMap: FitsKeyMap
   ): List[ComponentInfo] = {
     maybeTargetSv match {
       case Some(targetSv) =>
-        IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, maybePdfOptions, staticHtml = true)
+        IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, maybePdfOptions, staticHtml = true, fitsKeyMap)
       case None =>
         new ComponentInfoHelper(searchAllSubsystems, clientApi, maybeStaticHtml = Some(true))
-          .getComponentInfoList(versionManager, sv, maybePdfOptions)
+          .getComponentInfoList(versionManager, sv, maybePdfOptions, fitsKeyMap)
     }
   }
 
@@ -82,14 +85,15 @@ case class IcdDbPrinter(
   def getApiAsHtml(sv: SubsystemWithVersion, pdfOptions: PdfOptions): Option[String] = {
     // Use caching, since we need to look at all the components multiple times, in order to determine who
     // subscribes, who calls commands, etc.
+    val fitsKeyMap      = IcdFits(db).getFitsKeyMap(Some(pdfOptions))
     val maybeSubsystems = if (searchAllSubsystems) None else Some(List(sv.subsystem))
-    val query           = new CachedIcdDbQuery(db.db, db.admin, maybeSubsystems, Some(pdfOptions))
+    val query           = new CachedIcdDbQuery(db.db, db.admin, maybeSubsystems, Some(pdfOptions), fitsKeyMap)
     val versionManager  = new CachedIcdVersionManager(query)
 
     val markup = for {
       subsystemInfo <- getSubsystemInfo(sv)
     } yield {
-      val infoList = getComponentInfo(versionManager, sv, None)
+      val infoList = getComponentInfo(versionManager, sv, None, fitsKeyMap)
       IcdToHtml.getApiAsHtml(Some(subsystemInfo), infoList, pdfOptions, clientApi)
     }
     markup.map(_.render)
@@ -118,7 +122,8 @@ case class IcdDbPrinter(
 
     // Use caching, since we need to look at all the components multiple times, in order to determine who
     // subscribes, who calls commands, etc.
-    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), Some(pdfOptions))
+    val fitsKeyMap     = IcdFits(db).getFitsKeyMap(maybePdfOptions)
+    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), Some(pdfOptions), fitsKeyMap)
     val versionManager = new CachedIcdVersionManager(query)
     val icdInfoList    = getIcdModelList(sv, targetSv)
     val markup = for {
@@ -126,10 +131,10 @@ case class IcdDbPrinter(
       targetSubsystemInfo <- getSubsystemInfo(targetSv)
     } yield {
       import scalatags.Text.all._
-      val infoList               = getComponentInfo(versionManager, sv, Some(targetSv))
+      val infoList               = getComponentInfo(versionManager, sv, Some(targetSv), fitsKeyMap)
       val titleInfo              = TitleInfo(subsystemInfo, Some(targetSv), maybeIcdVersion)
       val titleInfo1             = TitleInfo(subsystemInfo, Some(targetSv), maybeIcdVersion, "(Part 1)")
-      val infoList2              = getComponentInfo(versionManager, targetSv, Some(sv))
+      val infoList2              = getComponentInfo(versionManager, targetSv, Some(sv), fitsKeyMap)
       val titleInfo2             = TitleInfo(targetSubsystemInfo, Some(sv), maybeIcdVersion, "(Part 2)")
       val nh                     = new NumberedHeadings
       val subsystemVersion       = subsystemInfo.sv.maybeVersion.getOrElse(unpublished)

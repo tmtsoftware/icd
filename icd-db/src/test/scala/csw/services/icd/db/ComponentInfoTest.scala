@@ -107,15 +107,15 @@ class ComponentInfoTest extends AnyFunSuite {
     testHelper.ingestDir(getTestDir(s"$examplesDir/TEST2"))
 
     new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = None)
-      .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None)
+      .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None, Map.empty)
       .foreach(checkInfo(_, clientApi = true))
 
     new ComponentInfoHelper(displayWarnings = false, clientApi = false, maybeStaticHtml = None)
-      .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None)
+      .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None, Map.empty)
       .foreach(checkInfo(_, clientApi = false))
 
     new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = Some(true))
-      .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST", None, None), None)
+      .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST", None, None), None, Map.empty)
       .foreach(checkInfo2(_, clientApi = true))
   }
 }

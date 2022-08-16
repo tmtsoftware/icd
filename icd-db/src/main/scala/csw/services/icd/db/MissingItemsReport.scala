@@ -71,7 +71,7 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfO
   private val selectedSubsystemNames = selectedSubsystemsWithVersions.map(_.subsystem)
 
   // Note: Need to search entire database in order to find the missing items
-  private val query          = new CachedIcdDbQuery(db.db, db.admin, None, None)
+  private val query          = new CachedIcdDbQuery(db.db, db.admin, None, None, Map.empty)
   private val versionManager = new CachedIcdVersionManager(query)
 
   // s"$subsystem.$component" for all components in all subsystems (latest versions)

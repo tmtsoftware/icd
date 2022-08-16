@@ -1,0 +1,18 @@
+<Configuration>
+    <Appenders>
+        <Console name="STDOUT" target="SYSTEM_OUT">
+            <PatternLayout pattern="%level - %m%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Logger name="reactivemongo" level="warn">
+            <AppenderRef ref="STDOUT"/>
+        </Logger>
+        <Logger name="com.itextpdf" level="off">
+            <AppenderRef ref="STDOUT"/>
+        </Logger>
+        <Root level="warn">
+            <AppenderRef ref="STDOUT"/>
+        </Root>
+    </Loggers>
+</Configuration>

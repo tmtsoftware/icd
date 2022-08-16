@@ -456,6 +456,7 @@ case class Resolver(allModels: List[IcdModels]) {
       allowNaN = if (parameterModel.allowNaN) parameterModel.allowNaN else refParameter.allowNaN,
       defaultValue = if (parameterModel.defaultValue.nonEmpty) parameterModel.defaultValue else refParameter.defaultValue,
       typeStr = if (parameterModel.typeStr.nonEmpty) parameterModel.typeStr else refParameter.typeStr,
+      fitsKeys = parameterModel.fitsKeys,
     )
   }
 

@@ -1,19 +1,17 @@
 <configuration>
-
-    <!-- Stop output INFO at start -->
-    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+    <conversionRule conversionWord="coloredLevel"
+                    converterClass="play.api.Logger$ColoredLevel" />
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%date %coloredLevel %logger - [%level] %message%n%xException</pattern>
         </encoder>
     </appender>
 
-    <root level="warn">
+    <logger name="reactivemongo" level="WARN" />
+    <logger name="com.itextpdf" level="OFF" />
+
+    <root level="WARN">
         <appender-ref ref="STDOUT" />
     </root>
-
-    <logger name="com.itextpdf" level="OFF" />
-    <logger name="reactivemongo.core" level="OFF" />
-
 </configuration>

@@ -11,7 +11,7 @@ object ComponentDataReporter {
     val components = db.query.getComponents(None)
     components.foreach { componentModel =>
       println(s"--------- Component ${componentModel.component} --------")
-      val publishModel = db.query.getPublishModel(componentModel, None)
+      val publishModel = db.query.getPublishModel(componentModel, None, Map.empty)
       publishModel.foreach { model =>
         model.eventList.foreach { item =>
           println(s"----- Item ${item.name}")
@@ -44,12 +44,12 @@ object ComponentDataReporter {
   }
 
   def listData(db: IcdDb, subsystem: String): Unit = {
-    val publishInfo = db.query.getPublishInfo(subsystem, None)
+    val publishInfo = db.query.getPublishInfo(subsystem, None, Map.empty)
     publishInfo.foreach { componentPublishInfo =>
       println(s" ----  ${componentPublishInfo.componentName} ----- ")
       val componentModel = db.query.getComponentModel(subsystem, componentPublishInfo.componentName, None)
       val totals = componentModel.flatMap { cm =>
-        db.query.getPublishModel(cm, None).map { cpm =>
+        db.query.getPublishModel(cm, None, Map.empty).map { cpm =>
           val totalEventData = if (cpm.eventList.nonEmpty) {
             println("--- Event Data")
             listEventData(cpm.eventList)

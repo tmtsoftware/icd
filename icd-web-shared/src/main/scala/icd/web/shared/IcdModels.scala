@@ -148,6 +148,7 @@ object IcdModels {
    * @param exclusiveMaximum true if the max value in exclusive
    * @param defaultValue     default value (as a string, which may be empty)
    * @param typeStr          a generated text description of the type
+   * @param fitsKeys         a list of FITS keywords for which this parameter is the source
    */
   case class ParameterModel(
       name: String,
@@ -169,7 +170,8 @@ object IcdModels {
       exclusiveMaximum: Boolean,
       allowNaN: Boolean,
       defaultValue: String,
-      typeStr: String
+      typeStr: String,
+      fitsKeys: List[String]
   ) extends NameDesc {
 
     // Estimate size required to archive the value(s) for this parameter

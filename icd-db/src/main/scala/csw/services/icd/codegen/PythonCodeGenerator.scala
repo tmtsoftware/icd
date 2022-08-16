@@ -187,11 +187,11 @@ class PythonCodeGenerator(db: IcdDb) {
     import sys.process._
     val s              = IcdVersionManager.SubsystemAndVersion(subsystemStr)
     val sv             = SubsystemWithVersion(s.subsystem, s.maybeVersion, maybeComponent)
-    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem)), None)
+    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem)), None, Map.empty)
     val versionManager = new CachedIcdVersionManager(query)
     val subsystemModel = db.versionManager.getSubsystemModel(sv, None)
     val infoList = new ComponentInfoHelper(false, false, maybeStaticHtml = Some(true))
-      .getComponentInfoList(versionManager, sv, None)
+      .getComponentInfoList(versionManager, sv, None, Map.empty)
     val defs      = infoList.map(sourceForComponent)
     val className = sourceFile.getName.stripSuffix(".py")
     val comment   = makeComment(subsystemModel.map(_.description).getOrElse(""), "")

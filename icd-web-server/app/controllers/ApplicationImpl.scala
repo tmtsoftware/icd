@@ -6,6 +6,8 @@ import csw.services.icd.IcdToPdf
 import csw.services.icd.codegen.{JavaCodeGenerator, PythonCodeGenerator, ScalaCodeGenerator, TypescriptCodeGenerator}
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
 import csw.services.icd.db.{ArchivedItemsReport, CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, IcdDbPrinter, IcdDbQuery, IcdVersionManager}
+import csw.services.icd.fits.IcdFits
+import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import csw.services.icd.github.IcdGitManager
 import csw.services.icd.html.OpenApiToHtml
 import csw.services.icd.viz.IcdVizManager
@@ -71,10 +73,11 @@ class ApplicationImpl(db: IcdDb) {
     val clientApi           = clientApiOpt.getOrElse(false)
     val searchAllSubsystems = clientApi && searchAll.getOrElse(false)
     val subsystems          = if (searchAllSubsystems) None else Some(List(sv.subsystem))
-    val query               = new CachedIcdDbQuery(db.db, db.admin, subsystems, None)
+    val fitsKeyMap          = IcdFits(db).getFitsKeyMap()
+    val query               = new CachedIcdDbQuery(db.db, db.admin, subsystems, None, fitsKeyMap)
     val versionManager      = new CachedIcdVersionManager(query)
     new ComponentInfoHelper(displayWarnings = searchAllSubsystems, clientApi = clientApi, maybeStaticHtml = Some(false))
-      .getComponentInfoList(versionManager, sv, None)
+      .getComponentInfoList(versionManager, sv, None, fitsKeyMap)
   }
 
   /**
@@ -82,20 +85,21 @@ class ApplicationImpl(db: IcdDb) {
    * (assumes latest versions of all subsystems).
    */
   def getEventList: List[EventsForSubsystem] = {
-    val query = new CachedIcdDbQuery(db.db, db.admin, None, None)
-    query.getEventList
+    val fitsKeyMap = IcdFits(db).getFitsKeyMap()
+    val query      = new CachedIcdDbQuery(db.db, db.admin, None, None, fitsKeyMap)
+    query.getEventList(fitsKeyMap)
   }
 
-  /**
-   * Gets information about the given event in the given subsystem/component
-   * (assumes latest versions of all subsystems).
-   */
-  def getEventInfo(subsystem: String, component: String, event: String): Option[EventModel] = {
-    val componentModel = db.query.getComponentModel(subsystem, component, None)
-    componentModel
-      .flatMap(db.query.getPublishModel(_, None))
-      .flatMap(_.eventList.find(_.name == event))
-  }
+//  /**
+//   * Gets information about the given event in the given subsystem/component
+//   * (assumes latest versions of all subsystems).
+//   */
+//  def getEventInfo(subsystem: String, component: String, event: String, fitsKeyMap: FitsKeyMap): Option[EventModel] = {
+//    val componentModel = db.query.getComponentModel(subsystem, component, None)
+//    componentModel
+//      .flatMap(db.query.getPublishModel(_, None, fitsKeyMap))
+//      .flatMap(_.eventList.find(_.name == event))
+//  }
 
   /**
    * Query the database for information about the given components in an ICD
@@ -117,9 +121,10 @@ class ApplicationImpl(db: IcdDb) {
   ): List[ComponentInfo] = {
     val sv             = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     val targetSv       = SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
-    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), None)
+    val fitsKeyMap     = IcdFits(db).getFitsKeyMap()
+    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), None, fitsKeyMap)
     val versionManager = new CachedIcdVersionManager(query)
-    IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, None, staticHtml = false)
+    IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, None, staticHtml = false, fitsKeyMap)
   }
 
   // Returns the selected subsystem, target subsystem and optional ICD version
@@ -487,11 +492,12 @@ class ApplicationImpl(db: IcdDb) {
       maybeComponent: Option[String],
       maybePackageName: Option[String]
   ): Option[String] = {
-    val suffix     = lang.toLowerCase()
+    val suffix = lang
+      .toLowerCase()
       .replace("typescript", "ts")
       .replace("python", "py")
     val sourceFile = new File(s"$className.$suffix")
-    val tempFile = Some(File.createTempFile(className, s".$suffix"))
+    val tempFile   = Some(File.createTempFile(className, s".$suffix"))
     val versionStr = maybeVersion.map(v => s":$v").getOrElse("")
     val subsysVers = s"$subsystem$versionStr"
 

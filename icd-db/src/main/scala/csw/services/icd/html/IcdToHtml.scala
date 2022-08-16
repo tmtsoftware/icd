@@ -584,9 +584,9 @@ object IcdToHtml {
     import scalatags.Text.all._
     if (parameterList.isEmpty) div()
     else {
-      val headings = List("Name", "Description", "Type", "Units", "Default")
+      val headings = List("Name", "Description", "Type", "Units", "Default", "FITS Keywords")
       val rowList =
-        for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
+        for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue, a.fitsKeys.mkString(", "))
       div(cls := "nopagebreak")(
         p(strong(a(s"Parameters for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList),
@@ -632,24 +632,27 @@ object IcdToHtml {
               else span(eventModel.totalArchiveSpacePerYear).render
             val headings =
               List("Max Rate", "Archive", "Archive Duration", "Bytes per Event", "Year Accumulation", "Required Rate")
-            val rowList = if (showArchiveInfo) List(
-              List(
-                HtmlMarkup.formatRate(eventModel.maybeMaxRate).render,
-                yesNo(eventModel.archive),
-                eventModel.archiveDuration,
-                eventModel.totalSizeInBytes.toString,
-                totalArchiveSpacePerYear,
-                eventInfo.subscribers
-                  .map(s => // Add required rate for subscribers that set it
-                    HtmlMarkup.formatRate(
-                      s"${s.componentModel.subsystem}.${s.componentModel.component}",
-                      s.subscribeModelInfo.requiredRate
-                    )
+            val rowList =
+              if (showArchiveInfo)
+                List(
+                  List(
+                    HtmlMarkup.formatRate(eventModel.maybeMaxRate).render,
+                    yesNo(eventModel.archive),
+                    eventModel.archiveDuration,
+                    eventModel.totalSizeInBytes.toString,
+                    totalArchiveSpacePerYear,
+                    eventInfo.subscribers
+                      .map(s => // Add required rate for subscribers that set it
+                        HtmlMarkup.formatRate(
+                          s"${s.componentModel.subsystem}.${s.componentModel.component}",
+                          s.subscribeModelInfo.requiredRate
+                        )
+                      )
+                      .mkString(" ")
+                      .trim()
                   )
-                  .mkString(" ")
-                  .trim()
-              )
-            ) else Nil
+                )
+              else Nil
             // Include usage text from subscribers that define it
             val subscriberUsage =
               if (clientApi)

@@ -292,9 +292,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalatags.JsDom.all._
     if (parameterList.isEmpty) div()
     else {
-      val headings = List("Name", "Description", "Type", "Units", "Default")
+      val headings = List("Name", "Description", "Type", "Units", "Default", "FITS Keywords")
       val rowList =
-        for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue)
+        for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue, a.fitsKeys.mkString(", "))
       div(
         strong("Parameters"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),

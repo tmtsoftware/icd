@@ -1,5 +1,6 @@
 package csw.services.icd.db
 
+import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import csw.services.icd.html.OpenApiToHtml
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels._
@@ -28,9 +29,10 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
   def getComponentInfoList(
       versionManager: IcdVersionManager,
       sv: SubsystemWithVersion,
-      maybePdfOptions: Option[PdfOptions]
+      maybePdfOptions: Option[PdfOptions],
+      fitsKeyMap: FitsKeyMap
   ): List[ComponentInfo] = {
-    val resolvedIcdModels = versionManager.getResolvedModels(sv, maybePdfOptions)
+    val resolvedIcdModels = versionManager.getResolvedModels(sv, maybePdfOptions, fitsKeyMap)
     resolvedIcdModels.flatMap(m => getComponentInfoFromModels(versionManager, Some(m), maybePdfOptions))
   }
 
@@ -44,10 +46,11 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
   def getComponentInfo(
       versionManager: IcdVersionManager,
       sv: SubsystemWithVersion,
-      maybePdfOptions: Option[PdfOptions]
+      maybePdfOptions: Option[PdfOptions],
+      fitsKeyMap: FitsKeyMap
   ): Option[ComponentInfo] = {
     // get the models for this component
-    val resolvedIcdModels = versionManager.getResolvedModels(sv, maybePdfOptions)
+    val resolvedIcdModels = versionManager.getResolvedModels(sv, maybePdfOptions, fitsKeyMap)
     getComponentInfoFromModels(versionManager, resolvedIcdModels.headOption, maybePdfOptions)
   }
 
@@ -140,7 +143,7 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
     def getInfo(publishType: PublishType, si: SubscribeModelInfo): DetailedSubscribeInfo = {
       // XXX TODO: Would be more efficient to just get the publishModel
       val x = for {
-        t            <- query.getModels(si.subsystem, Some(si.component), maybePdfOptions)
+        t            <- query.getModels(si.subsystem, Some(si.component), maybePdfOptions, Map.empty)
         publishModel <- t.publishModel
       } yield {
         val maybeEvent = publishType match {

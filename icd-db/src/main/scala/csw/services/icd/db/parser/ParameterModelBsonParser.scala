@@ -1,8 +1,9 @@
 package csw.services.icd.db.parser
 
+import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.ParameterModel
-import icd.web.shared.PdfOptions
+import icd.web.shared.{FitsSource, PdfOptions, SubsystemWithVersion}
 import reactivemongo.api.bson._
 
 /**
@@ -21,19 +22,24 @@ object ParameterModelBsonParser {
       case x              => x.toString // should not happen
     }
 
-  def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): ParameterModel = {
-    val name            = doc.getAsOpt[String]("name").getOrElse("")
-    val ref             = doc.getAsOpt[String]("ref").getOrElse("")
-    val description     = doc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse("")
-    val maybeType       = doc.getAsOpt[String]("type")
-//    val maybeEnum       = doc.getAsOpt[Array[String]]("enum").map(_.toList)
+  def apply(
+      doc: BSONDocument,
+      maybePdfOptions: Option[PdfOptions],
+      fitsKeyMap: FitsKeyMap = Map.empty,
+      maybeSv: Option[SubsystemWithVersion] = None,
+      maybeEventName: Option[String] = None
+  ): ParameterModel = {
+    val name        = doc.getAsOpt[String]("name").getOrElse("")
+    val ref         = doc.getAsOpt[String]("ref").getOrElse("")
+    val description = doc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse("")
+    val maybeType   = doc.getAsOpt[String]("type")
     // Handle case where enum values include numbers and strings
     val maybeEnum       = doc.getAsOpt[Array[BSONValue]]("enum").map(_.toList.map(bsonValueToString))
     val units           = doc.getAsOpt[String]("units").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse("")
     val maxItems        = doc.getAsOpt[Int]("maxItems")
     val minItems        = doc.getAsOpt[Int]("minItems")
-    val maxLength        = doc.getAsOpt[Int]("maxLength")
-    val minLength        = doc.getAsOpt[Int]("minLength")
+    val maxLength       = doc.getAsOpt[Int]("maxLength")
+    val minLength       = doc.getAsOpt[Int]("minLength")
     val maybeDimensions = doc.getAsOpt[Array[Int]]("dimensions").map(_.toList)
     val itemsDoc        = doc.get("items").map(_.asInstanceOf[BSONDocument])
     val maybeArrayType  = itemsDoc.flatMap(_.get("type").map(bsonValueToString))
@@ -72,10 +78,10 @@ object ParameterModelBsonParser {
 
     val defaultValue = doc.get("default").map(bsonValueToString).getOrElse("")
 
-    // Returns "string" and includes the min/max length, if specified in brackets
+    // Returns "string" and includes the min/max length, if specified, in brackets
     def makeStringTypeStr(): String = {
       (minLength, maxLength) match {
-        case (None, None) => "string"
+        case (None, None)      => "string"
         case (None, Some(max)) => s"string[?..$max]"
         case (Some(min), None) => s"string[$min..?]"
         case (Some(min), Some(max)) =>
@@ -140,6 +146,14 @@ object ParameterModelBsonParser {
 
     val typeStr = parseTypeStr(doc, doc.getAsOpt[String]("type"))
 
+    // only need FITS keys for events
+    val fitsKeys =
+      if (maybeEventName.isDefined && maybeSv.isDefined) {
+        val sv = maybeSv.get
+        fitsKeyMap.getOrElse(FitsSource(sv.subsystem, sv.maybeComponent.get, maybeEventName.get, name, None, None), Nil)
+      }
+      else Nil
+
     ParameterModel(
       name,
       ref,
@@ -160,7 +174,8 @@ object ParameterModelBsonParser {
       exclusiveMaximum,
       allowNaN,
       defaultValue,
-      typeStr
+      typeStr,
+      fitsKeys
     )
   }
 }

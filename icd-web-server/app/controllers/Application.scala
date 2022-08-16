@@ -18,6 +18,7 @@ import play.api.mvc._
 import play.api.{Configuration, Environment, Mode}
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.util.Timeout
+import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import icd.web.shared.IcdModels.{EventModel, IcdModel}
 
 import java.net.URLDecoder
@@ -138,20 +139,20 @@ class Application @Inject() (
       resp.map(info => Ok(Json.toJson(info)))
     }
 
-  /**
-   * Query the database for information about the given event in the given subsystem/component
-   */
-  def eventInfo(subsystem: String, component: String, event: String) =
-    authAction.async {
-      val resp: Future[Option[EventModel]] =
-        appActor ? (GetEventInfo(subsystem, component, URLDecoder.decode(event, "UTF-8"), _))
-      resp.map {
-        case Some(eventModel) =>
-          Ok(Json.toJson(eventModel))
-        case None =>
-          NotFound
-      }
-    }
+//  /**
+//   * Query the database for information about the given event in the given subsystem/component
+//   */
+//  def eventInfo(subsystem: String, component: String, event: String) =
+//    authAction.async {
+//      val resp: Future[Option[EventModel]] =
+//        appActor ? (GetEventInfo(subsystem, component, URLDecoder.decode(event, "UTF-8"), _))
+//      resp.map {
+//        case Some(eventModel) =>
+//          Ok(Json.toJson(eventModel))
+//        case None =>
+//          NotFound
+//      }
+//    }
 
   /**
    * Query the database for information about the given components in an ICD

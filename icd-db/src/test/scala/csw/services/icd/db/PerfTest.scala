@@ -13,7 +13,7 @@ object PerfTest extends App {
   val versionManager = IcdVersionManager(query)
 
   new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = None)
-    .getComponentInfo(versionManager, SubsystemWithVersion(subsystem, None, Some(compName)), None)
+    .getComponentInfo(versionManager, SubsystemWithVersion(subsystem, None, Some(compName)), None, Map.empty)
     .foreach { info =>
       assert(info.componentModel.component == compName)
       assert(info.publishes.nonEmpty)

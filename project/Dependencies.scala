@@ -50,7 +50,7 @@ object Dependencies {
   val diffson = "org.gnieh" %% "diffson-play-json" % "4.1.1"
 
   val scalaLogging   = "com.typesafe.scala-logging" %% "scala-logging"   % "3.9.5"
-  val logbackClassic = "ch.qos.logback"              % "logback-classic" % "1.2.10"
+  val logbackClassic = "ch.qos.logback"              % "logback-classic" % "1.2.11"
   val scalatags      = "com.lihaoyi"                %% "scalatags"       % ScalaTagsVersion
 //  val jsoup          = "org.jsoup"                   % "jsoup"            % "1.14.3"
   val jsoup = "org.jsoup"        % "jsoup"            % "1.15.2"

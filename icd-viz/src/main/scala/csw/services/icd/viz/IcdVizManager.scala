@@ -9,7 +9,17 @@ import csw.services.icd.IcdValidator
 import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdDb, Subsystems}
 import csw.services.icd.viz.IcdVizManager.EdgeType.EdgeType
 import csw.services.icd.viz.IcdVizManager.MissingType.MissingType
-import icd.web.shared.{ComponentInfo, DetailedSubscribeInfo, EventInfo, IcdVizOptions, PdfOptions, ReceivedCommandInfo, SentCommandInfo, SubscribeInfo, SubsystemWithVersion}
+import icd.web.shared.{
+  ComponentInfo,
+  DetailedSubscribeInfo,
+  EventInfo,
+  IcdVizOptions,
+  PdfOptions,
+  ReceivedCommandInfo,
+  SentCommandInfo,
+  SubscribeInfo,
+  SubsystemWithVersion
+}
 import scalax.collection.Graph
 import scalax.collection.io.dot._
 import scalax.collection.io.dot.implicits._
@@ -21,6 +31,7 @@ import icd.web.shared.IcdModels.{ComponentModel, SubscribeModelInfo}
 import net.sourceforge.plantuml.{FileFormat, FileFormatOption, SourceStringReader}
 import scalax.collection.config.CoreConfig
 
+//noinspection SpellCheckingInspection
 object IcdVizManager {
   //noinspection TypeAnnotation
   object MissingType extends Enumeration {
@@ -63,8 +74,8 @@ object IcdVizManager {
 
   private def getSubsystemColor(subsystem: String): String = {
     subsystem match {
-      case "?"       => "red"
-      case _         => subsystemColorMap.getOrElse(subsystem, "grey")
+      case "?" => "red"
+      case _   => subsystemColorMap.getOrElse(subsystem, "grey")
     }
   }
 
@@ -84,15 +95,14 @@ object IcdVizManager {
    * @param maybeOut optional output stream to hold the generated image
    */
   def showRelationships(db: IcdDb, options: IcdVizOptions, maybeOut: Option[OutputStream] = None): Unit = {
-    val query          = new CachedIcdDbQuery(db.db, db.admin, None, None)
+    val query          = new CachedIcdDbQuery(db.db, db.admin, None, None, Map.empty)
     val versionManager = new CachedIcdVersionManager(query)
 
     // Add components from user-specified subsystems
-    val subsystemComponents = options.subsystems.flatMap(
-      sv =>
-        db.versionManager
-          .getComponentNames(sv)
-          .map(name => SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(name)))
+    val subsystemComponents = options.subsystems.flatMap(sv =>
+      db.versionManager
+        .getComponentNames(sv)
+        .map(name => SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(name)))
     )
 
     // Add selected components and remove any omitted component types
@@ -110,7 +120,8 @@ object IcdVizManager {
 
     val componentInfoHelper = new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = None)
     val noMarkdownOpt       = Some(PdfOptions(processMarkdown = false))
-    val componentInfoList   = components.flatMap(sv => componentInfoHelper.getComponentInfo(versionManager, sv, noMarkdownOpt))
+    val componentInfoList =
+      components.flatMap(sv => componentInfoHelper.getComponentInfo(versionManager, sv, noMarkdownOpt, Map.empty))
 
     def componentNameFromPrefix(prefix: String): String = {
       val sv = SubsystemWithVersion(prefix)
@@ -150,27 +161,27 @@ object IcdVizManager {
         (
           subscribes,
           subscribes
-            .map(
-              d =>
-                db.query
-                  .getComponentModel(d.subscribeModelInfo.subsystem, d.subscribeModelInfo.component, noMarkdownOpt)
-                  .getOrElse(
-                    ComponentModel(
-                      "?",
-                      d.subscribeModelInfo.subsystem,
-                      d.subscribeModelInfo.component,
-                      d.subscribeModelInfo.component,
-                      d.subscribeModelInfo.component,
-                      IcdValidator.currentSchemaVersion,
-                      ""
-                    )
+            .map(d =>
+              db.query
+                .getComponentModel(d.subscribeModelInfo.subsystem, d.subscribeModelInfo.component, noMarkdownOpt)
+                .getOrElse(
+                  ComponentModel(
+                    "?",
+                    d.subscribeModelInfo.subsystem,
+                    d.subscribeModelInfo.component,
+                    d.subscribeModelInfo.component,
+                    d.subscribeModelInfo.component,
+                    IcdValidator.currentSchemaVersion,
+                    ""
                   )
+                )
             )
             .distinct
             .filter(omitFilter)
             .filter(_.prefix != info.componentModel.prefix)
         )
-      } else (Nil, Nil)
+      }
+      else (Nil, Nil)
     }
 
     // Gets info about published events and the components involved
@@ -199,32 +210,32 @@ object IcdVizManager {
           info.publishes.toList
             .flatMap(p => p.currentStateList ++ p.eventList ++ p.observeEventList)
             .filter(_.subscribers.isEmpty)
-            .map(
-              e =>
-                // Create dummy subscriber component
-                EventInfo(
-                  e.eventModel,
-                  List(
-                    SubscribeInfo(
-                      missingComponentModel,
-                      ComponentInfo.Events,
-                      SubscribeModelInfo(
-                        info.componentModel.subsystem,
-                        info.componentModel.component,
-                        e.eventModel.name,
-                        "",
-                        1.0,
-                        None
-                      )
+            .map(e =>
+              // Create dummy subscriber component
+              EventInfo(
+                e.eventModel,
+                List(
+                  SubscribeInfo(
+                    missingComponentModel,
+                    ComponentInfo.Events,
+                    SubscribeModelInfo(
+                      info.componentModel.subsystem,
+                      info.componentModel.component,
+                      e.eventModel.name,
+                      "",
+                      1.0,
+                      None
                     )
                   )
                 )
+              )
             )
         (
           eventInfoList,
           eventInfoList.map(_ => missingComponentModel)
         )
-      } else (Nil, Nil)
+      }
+      else (Nil, Nil)
     }
 
     // Gets information about commands a component sends and the receiver components involved
@@ -249,27 +260,27 @@ object IcdVizManager {
         (
           sentCommands,
           sentCommands
-            .map(
-              s =>
-                db.query
-                  .getComponentModel(s.subsystem, s.component, noMarkdownOpt)
-                  .getOrElse(
-                    ComponentModel(
-                      "?",
-                      s.subsystem,
-                      s.component,
-                      s.component,
-                      s.component,
-                      IcdValidator.currentSchemaVersion,
-                      ""
-                    )
+            .map(s =>
+              db.query
+                .getComponentModel(s.subsystem, s.component, noMarkdownOpt)
+                .getOrElse(
+                  ComponentModel(
+                    "?",
+                    s.subsystem,
+                    s.component,
+                    s.component,
+                    s.component,
+                    IcdValidator.currentSchemaVersion,
+                    ""
                   )
+                )
             )
             .distinct
             .filter(omitFilter)
             .filter(_.prefix != info.componentModel.prefix)
         )
-      } else (Nil, Nil)
+      }
+      else (Nil, Nil)
     }
 
     // Gets information about commands received and the components sending the commands
@@ -297,7 +308,8 @@ object IcdVizManager {
           receivedCommands,
           receivedCommands.map(_ => missingComponentModel)
         )
-      } else (Nil, Nil)
+      }
+      else (Nil, Nil)
     }
 
     // Primary components are the ones specified in the options
@@ -339,12 +351,11 @@ object IcdVizManager {
           .map(e => List(s"${e.subscribeModelInfo.subsystem}.${e.subscribeModelInfo.component}", e.subscribeModelInfo.name))
           .groupMap(_.head)(_.tail.head)
         val missingType = if (missing) Some(MissingType.missingPublisher) else None
-        publishers.map(
-          c =>
-            EdgeModel(
-              ComponentPair(c.prefix, info.componentModel.prefix),
-              EdgeLabel(subscribedEventMap(c.prefix), EdgeType.events, missingType)
-            )
+        publishers.map(c =>
+          EdgeModel(
+            ComponentPair(c.prefix, info.componentModel.prefix),
+            EdgeLabel(subscribedEventMap(c.prefix), EdgeType.events, missingType)
+          )
         )
       }
     }
@@ -359,12 +370,11 @@ object IcdVizManager {
           .flatMap(e => e.subscribers.map(subscribeInfo => List(subscribeInfo.componentModel.prefix, e.eventModel.name)))
           .groupMap(_.head)(_.tail.head)
         val missingType = if (missing) Some(MissingType.noSubscribers) else None
-        subscribers.map(
-          c =>
-            EdgeModel(
-              ComponentPair(info.componentModel.prefix, c.prefix),
-              EdgeLabel(publishedEventMap(c.prefix), EdgeType.events, missingType)
-            )
+        subscribers.map(c =>
+          EdgeModel(
+            ComponentPair(info.componentModel.prefix, c.prefix),
+            EdgeLabel(publishedEventMap(c.prefix), EdgeType.events, missingType)
+          )
         )
       }
     }
@@ -379,12 +389,11 @@ object IcdVizManager {
           .map(c => List(s"${c.subsystem}.${c.component}", c.name))
           .groupMap(_.head)(_.tail.head)
         val missingType = if (missing) Some(MissingType.missingReceiver) else None
-        receivierComponents.map(
-          c =>
-            EdgeModel(
-              ComponentPair(info.componentModel.prefix, c.prefix),
-              EdgeLabel(sentCmdMap(c.prefix), EdgeType.commands, missingType)
-            )
+        receivierComponents.map(c =>
+          EdgeModel(
+            ComponentPair(info.componentModel.prefix, c.prefix),
+            EdgeLabel(sentCmdMap(c.prefix), EdgeType.commands, missingType)
+          )
         )
       }
     }
@@ -399,12 +408,11 @@ object IcdVizManager {
           .flatMap(c => c.senders.map(senderComponent => List(senderComponent.prefix, c.receiveCommandModel.name)))
           .groupMap(_.head)(_.tail.head)
         val missingType = if (missing) Some(MissingType.noSenders) else None
-        senderComponents.map(
-          c =>
-            EdgeModel(
-              ComponentPair(c.prefix, info.componentModel.prefix),
-              EdgeLabel(recvCmdmdMap(c.prefix), EdgeType.commands, missingType)
-            )
+        senderComponents.map(c =>
+          EdgeModel(
+            ComponentPair(c.prefix, info.componentModel.prefix),
+            EdgeLabel(recvCmdmdMap(c.prefix), EdgeType.commands, missingType)
+          )
         )
       }
     }
@@ -457,7 +465,8 @@ object IcdVizManager {
         )
       }
       pairs.toMap
-    } else Map.empty[String, DotSubGraph]
+    }
+    else Map.empty[String, DotSubGraph]
 
     // Creates a dot edge
     def edgeTransformer(innerEdge: Graph[String, LkDiEdge]#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
@@ -481,9 +490,11 @@ object IcdVizManager {
       val labelAttr = if (showLabel) {
         val label = if (edgeLabel.missing.isDefined) {
           s"${edgeLabel.missing.get}:\\n${edgeLabel.label}"
-        } else s"${edgeLabel.edgeType}:\\n${edgeLabel.label}"
+        }
+        else s"${edgeLabel.edgeType}:\\n${edgeLabel.label}"
         if (edgeLabel.label.nonEmpty) List(DotAttr(Id("label"), Id(label))) else Nil
-      } else Nil
+      }
+      else Nil
       Some(
         root,
         DotEdgeStmt(
@@ -513,7 +524,8 @@ object IcdVizManager {
             )
           )
         )
-      } else None
+      }
+      else None
     }
 
     // Combine duplicate edges, for example, from the publish section on one component and
@@ -558,7 +570,7 @@ object IcdVizManager {
       val desc   = reader.outputImage(f, 0, option)
       f.close()
       Option(desc) match {
-        case Some(d) =>
+        case Some(_) =>
           println(s"Generated image file $file")
           if (options.showPlot)
             viewImageFile(file)

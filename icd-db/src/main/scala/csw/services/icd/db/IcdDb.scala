@@ -442,7 +442,7 @@ case class IcdDb(
    *            and any number of subdirectories containing ICD files
    * @return a pair of two lists: 1: A list of the configs in the directories, 2: A list describing any problems that occurred
    */
-  def ingestAndCleanup(dir: File = new File(".")): List[Problem] = {
+  def   ingestAndCleanup(dir: File = new File(".")): List[Problem] = {
     val (configs, problems) = ingest(dir)
     val subsystemList       = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.config.getString("subsystem"))
 
