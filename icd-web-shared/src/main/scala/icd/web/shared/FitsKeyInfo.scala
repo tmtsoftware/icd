@@ -21,6 +21,16 @@ case class FitsSource(
     s"$subsystem.$componentName.${toShortString}"
   }
 
+  // Ignore index args for comparison
+  override def hashCode(): Int = (subsystem, componentName, eventName, parameterName).##
+
+  // Ignore index args for comparison
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case FitsSource(`subsystem`, `componentName`, `eventName`, `parameterName`, _, _) => true
+      case _ => false
+    }
+  }
 }
 
 case class FitsKeyInfo(

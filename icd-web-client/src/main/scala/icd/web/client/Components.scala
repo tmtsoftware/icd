@@ -122,10 +122,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     document.getElementById(idStr).scrollIntoView()
     val hiddenRowId = s"hiddenRow-$idStr"
     document.getElementById(hiddenRowId).classList.add("show")
-
-    //    val buttonId = s"button-$idStr"
-//    document.getElementById(buttonId).asInstanceOf[HTMLButtonElement].click()
-    //    if (saveHistory) pushState(viewType = ComponentView, compName = Some(compName))
   }
 
   // Makes the link for a component in the table

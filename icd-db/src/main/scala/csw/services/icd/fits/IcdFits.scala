@@ -209,14 +209,22 @@ case class IcdFits(db: IcdDb) {
    * Returns a map from FitsKey (which describes an event parameter) to a list of FITS keywords that
    * are based on the event parameter's value(s).
    */
-  def getFitsKeyMap(maybePdfOptions: Option[PdfOptions] = None): FitsKeyMap = {
-    val fitKeyList = getFitsKeyInfo(maybePdfOptions)
+  def getFitsKeyMap(fitKeyList: List[FitsKeyInfo]): FitsKeyMap = {
     val pairs = fitKeyList.flatMap { i =>
       i.source
         .map(s => FitsSource(s.subsystem, s.componentName, s.eventName, s.parameterName, s.index, s.rowIndex))
         .map(_ -> i.name)
     }
     pairs.toMap.groupMap(_._1)(_._2).view.mapValues(_.toList).toMap
+  }
+
+  /**
+   * Returns a map from FitsKey (which describes an event parameter) to a list of FITS keywords that
+   * are based on the event parameter's value(s).
+   */
+  def getFitsKeyMap(maybePdfOptions: Option[PdfOptions] = None): FitsKeyMap = {
+    val fitKeyList = getFitsKeyInfo(maybePdfOptions)
+    getFitsKeyMap(fitKeyList)
   }
 
   // --output option

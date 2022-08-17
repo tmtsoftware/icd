@@ -43,6 +43,56 @@ object IcdToHtml {
     lines.mkString("\n")
   }
 
+  // Makes the link for a FITS keyword source to the event that is the source of the keyword
+  private def makeLinkForFitsKeySource(fitsSource: FitsSource) = {
+    import scalatags.Text.all._
+    val idStr = Headings.idFor(
+      fitsSource.componentName,
+      "publishes",
+      "Event",
+      fitsSource.subsystem,
+      fitsSource.componentName,
+      fitsSource.eventName
+    )
+    a(
+      title := s"Go to event parameter that is the source of this FITS keyword",
+      s"${fitsSource.toShortString} ",
+      href := s"#$idStr"
+    )
+  }
+
+  // Generates table with related FITS key information
+  private def makeFitsKeyTable(fitsKeys: List[FitsKeyInfo]) = {
+    import scalatags.Text.all._
+    div(id := "FITS-Keys")(
+      h3(a(name := "FITS-Keys")("FITS Keywords")),
+      table(
+        attr("data-toggle") := "table",
+        thead(
+          tr(
+            th("Name"),
+            th("Title"),
+            th("Description"),
+            th("Type"),
+            th("Source")
+          )
+        ),
+        tbody(
+          fitsKeys.map { info =>
+            tr(
+              td(a(id := info.name, name := info.name)(info.name)),
+              td(info.title),
+              td(raw(info.description)),
+              td(info.typ),
+              td(info.source.map(makeLinkForFitsKeySource))
+            )
+          }
+        )
+      )
+    )
+  }
+
+
   /**
    * Returns HTML describing the given components in the given subsystem.
    *
@@ -56,7 +106,8 @@ object IcdToHtml {
       maybeSubsystemInfo: Option[SubsystemInfo],
       infoList: List[ComponentInfo],
       pdfOptions: PdfOptions,
-      clientApi: Boolean
+      clientApi: Boolean,
+      fitsKeys: List[FitsKeyInfo]
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
@@ -81,9 +132,12 @@ object IcdToHtml {
       else {
         (TitleInfo("", None, None), div())
       }
+
+    val fitsKeyTable = makeFitsKeyTable(fitsKeys)
     val mainContent = div(
       style := "width: 100%;",
       summaryTable,
+      fitsKeyTable,
       displayDetails(infoList, nh, forApi = true, pdfOptions, clientApi)
     )
     val toc   = nh.mkToc()
@@ -586,7 +640,8 @@ object IcdToHtml {
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default", "FITS Keywords")
       val rowList =
-        for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue, a.fitsKeys.mkString(", "))
+        for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue,
+          a.fitsKeys.map(k => s"<a href=#$k>$k</a>").mkString(", "))
       div(cls := "nopagebreak")(
         p(strong(a(s"Parameters for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList),

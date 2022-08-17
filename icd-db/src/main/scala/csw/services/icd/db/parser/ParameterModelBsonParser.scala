@@ -30,6 +30,9 @@ object ParameterModelBsonParser {
       maybeEventName: Option[String] = None
   ): ParameterModel = {
     val name        = doc.getAsOpt[String]("name").getOrElse("")
+    if (name == "oiwfs_pointingstate") {
+      println(s"XXX")
+    }
     val ref         = doc.getAsOpt[String]("ref").getOrElse("")
     val description = doc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse("")
     val maybeType   = doc.getAsOpt[String]("type")

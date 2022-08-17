@@ -85,7 +85,8 @@ case class IcdDbPrinter(
   def getApiAsHtml(sv: SubsystemWithVersion, pdfOptions: PdfOptions): Option[String] = {
     // Use caching, since we need to look at all the components multiple times, in order to determine who
     // subscribes, who calls commands, etc.
-    val fitsKeyMap      = IcdFits(db).getFitsKeyMap(Some(pdfOptions))
+    val fitsKeyList = IcdFits(db).getFitsKeyInfo(Some(pdfOptions))
+    val fitsKeyMap      = IcdFits(db).getFitsKeyMap(fitsKeyList)
     val maybeSubsystems = if (searchAllSubsystems) None else Some(List(sv.subsystem))
     val query           = new CachedIcdDbQuery(db.db, db.admin, maybeSubsystems, Some(pdfOptions), fitsKeyMap)
     val versionManager  = new CachedIcdVersionManager(query)
@@ -94,7 +95,7 @@ case class IcdDbPrinter(
       subsystemInfo <- getSubsystemInfo(sv)
     } yield {
       val infoList = getComponentInfo(versionManager, sv, None, fitsKeyMap)
-      IcdToHtml.getApiAsHtml(Some(subsystemInfo), infoList, pdfOptions, clientApi)
+      IcdToHtml.getApiAsHtml(Some(subsystemInfo), infoList, pdfOptions, clientApi, fitsKeyList)
     }
     markup.map(_.render)
   }
