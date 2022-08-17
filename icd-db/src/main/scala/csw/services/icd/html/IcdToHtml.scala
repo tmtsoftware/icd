@@ -5,7 +5,7 @@ import icd.web.shared._
 import scalatags.Text
 import Headings.idFor
 import HtmlMarkup.yesNo
-import icd.web.shared.IcdModels.{AlarmModel, ParameterModel, ComponentModel, EventModel}
+import icd.web.shared.IcdModels.{AlarmModel, ComponentModel, EventModel, ParameterModel}
 
 /**
  * Handles converting ICD API from GFM to HTML
@@ -46,13 +46,14 @@ object IcdToHtml {
   // Makes the link for a FITS keyword source to the event that is the source of the keyword
   private def makeLinkForFitsKeySource(fitsSource: FitsSource) = {
     import scalatags.Text.all._
-    val idStr = Headings.idFor(
+    val idStr = Headings.idForParam(
       fitsSource.componentName,
       "publishes",
       "Event",
       fitsSource.subsystem,
       fitsSource.componentName,
-      fitsSource.eventName
+      fitsSource.eventName,
+      fitsSource.parameterName
     )
     a(
       title := s"Go to event parameter that is the source of this FITS keyword",
@@ -62,10 +63,10 @@ object IcdToHtml {
   }
 
   // Generates table with related FITS key information
-  private def makeFitsKeyTable(fitsKeys: List[FitsKeyInfo]) = {
+  private def makeFitsKeyTable(fitsKeys: List[FitsKeyInfo], nh: Headings) = {
     import scalatags.Text.all._
     div(id := "FITS-Keys")(
-      h3(a(name := "FITS-Keys")("FITS Keywords")),
+      nh.H3("FITS Keywords", "FITS-Keys"),
       table(
         attr("data-toggle") := "table",
         thead(
@@ -91,7 +92,6 @@ object IcdToHtml {
       )
     )
   }
-
 
   /**
    * Returns HTML describing the given components in the given subsystem.
@@ -133,7 +133,7 @@ object IcdToHtml {
         (TitleInfo("", None, None), div())
       }
 
-    val fitsKeyTable = makeFitsKeyTable(fitsKeys)
+    val fitsKeyTable = makeFitsKeyTable(fitsKeys, nh)
     val mainContent = div(
       style := "width: 100%;",
       summaryTable,
@@ -633,15 +633,20 @@ object IcdToHtml {
 
   private def attributeListMarkup(
       nameStr: String,
-      parameterList: List[ParameterModel]
+      parameterList: List[ParameterModel],
+      linkId: Option[String] = None
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
     if (parameterList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default", "FITS Keywords")
       val rowList =
-        for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue,
-          a.fitsKeys.map(k => s"<a href=#$k>$k</a>").mkString(", "))
+        for (a <- parameterList) yield {
+          val paramId          = linkId.map(s => s"$s.${a.name}")
+          val nameAnchor       = paramId.map(p => s"<a id='$p' name='$p'>${a.name}</a>").getOrElse(a.name)
+          val fitsKeywordLinks = a.fitsKeys.map(k => s"<a href=#$k>$k</a>").mkString(", ")
+          List(nameAnchor, a.description, a.typeStr, a.units, a.defaultValue, fitsKeywordLinks)
+        }
       div(cls := "nopagebreak")(
         p(strong(a(s"Parameters for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList),
@@ -736,7 +741,7 @@ object IcdToHtml {
                   if (eventModel.refError.startsWith("Error:")) makeErrorDiv(eventModel.refError) else div(),
                   subscriberUsage,
                   if (showArchiveInfo) HtmlMarkup.mkTable(headings, rowList) else div(),
-                  attributeListMarkup(eventModel.name, eventModel.parameterList),
+                  attributeListMarkup(eventModel.name, eventModel.parameterList, Some(linkId)),
                   hr
                 )
               }

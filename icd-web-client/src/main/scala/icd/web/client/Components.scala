@@ -119,9 +119,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       fitsSource.componentName,
       fitsSource.eventName
     )
-    document.getElementById(idStr).scrollIntoView()
-    val hiddenRowId = s"hiddenRow-$idStr"
-    document.getElementById(hiddenRowId).classList.add("show")
+//    document.getElementById(idStr).scrollIntoView()
+    val hiddenRowId = makeHiddenRowId(idStr)
+    document.getElementById(hiddenRowId).classList.remove("collapse")
+    val paramId = s"$idStr.${fitsSource.parameterName}"
+    document.getElementById(paramId).scrollIntoView()
   }
 
   // Makes the link for a component in the table
@@ -334,14 +336,21 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    * @param parameterList list of attributes to display
    * @return
    */
-  private def parameterListMarkup(parameterList: List[ParameterModel]): TypedTag[HTMLDivElement] = {
+  private def parameterListMarkup(
+      parameterList: List[ParameterModel],
+      maybeEventId: Option[String] = None
+  ): TypedTag[HTMLDivElement] = {
     import scalatags.JsDom.all._
     if (parameterList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default", "FITS Keywords")
       val rowList =
-        for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue,
-          a.fitsKeys.map(k => s"<a href=#$k>$k</a>").mkString(", "))
+        for (a <- parameterList) yield {
+          val paramId          = maybeEventId.map(s => s"$s.${a.name}")
+          val nameAnchor       = paramId.map(p => s"<a id='$p' name='$p'>${a.name}</a>").getOrElse(a.name)
+          val fitsKeywordLinks = a.fitsKeys.map(k => s"<a href=#$k>$k</a>").mkString(", ")
+          List(nameAnchor, a.description, a.typeStr, a.units, a.defaultValue, fitsKeywordLinks)
+        }
       div(
         strong("Parameters"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
@@ -401,6 +410,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
+  // Returns an element id to use for the detail row that is normally hidden until you click on the toggle.
+  // For some reason using the string id did not work, so using the hash here.
+  private def makeHiddenRowId(id: String) = s"hiddenRow-$id".##.toString
+
   /**
    * Returns a hidden, expandable table row containing the given div item
    *
@@ -417,8 +430,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
     // button to toggle visibility
-//    val rowId    = s"id${new java.util.Random().nextInt()}"
-    val rowId    = s"hiddenRow-$targetId"
+    val rowId = makeHiddenRowId(targetId)
     val buttonId = s"button-$targetId"
     val btn = button(
       Styles.attributeBtn,
@@ -457,7 +469,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     val compName = component.component
 
     // Returns a table row displaying more details for the given event
-    def makeEventDetailsRow(eventInfo: EventInfo, showArchiveInfo: Boolean = true) = {
+    def makeEventDetailsRow(eventInfo: EventInfo, showArchiveInfo: Boolean = true, maybeEventId: Option[String] = None) = {
       val eventModel = eventInfo.eventModel
       val totalArchiveSpacePerYear =
         if (eventModel.totalArchiveSpacePerYear.isEmpty) ""
@@ -483,7 +495,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         else p(strong("Requirements: "), eventModel.requirements.mkString(", ")),
         if (showArchiveInfo) mkTable(headings, rowList) else div(),
         if (showArchiveInfo && eventModel.maybeMaxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.") else span(),
-        parameterListMarkup(eventModel.parameterList)
+        parameterListMarkup(eventModel.parameterList, maybeEventId)
       )
     }
 
@@ -505,7 +517,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             tbody(
               for (t <- eventList) yield {
                 val idStr      = idFor(compName, "publishes", pubType, component.subsystem, compName, t.eventModel.name)
-                val (btn, row) = hiddenRowMarkup(idStr, makeEventDetailsRow(t, pubType != "Observe Events"), 3)
+                val (btn, row) = hiddenRowMarkup(idStr, makeEventDetailsRow(t, pubType != "Observe Events", Some(idStr)), 3)
                 List(
                   tr(
                     td(

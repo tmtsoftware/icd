@@ -27,6 +27,31 @@ object Headings {
     val iType = if (itemType.endsWith("s")) itemType.dropRight(1) else itemType
     s"$thisComponent-$action-$iType-$subsystem.$component.$name".replace(" ", "-")
   }
+
+  /**
+   * Returns a unique id for a link target (with a parameter name).
+   *
+   * @param thisComponent component name (Component being described)
+   * @param action    publishes, subscribes, sends, receives
+   * @param itemType  Event, Alarm, etc.
+   * @param subsystem the item's subsystem
+   * @param component the item's component name
+   * @param name      item name
+   * @param paramName parameter name
+   * @return the id
+   */
+  def idForParam(
+      thisComponent: String,
+      action: String,
+      itemType: String,
+      subsystem: String,
+      component: String,
+      name: String,
+      paramName: String
+  ): String = {
+    val id = idFor(thisComponent, action, itemType, subsystem, component, name)
+    s"$id.${paramName.replace(" ", "-")}"
+  }
 }
 
 /**

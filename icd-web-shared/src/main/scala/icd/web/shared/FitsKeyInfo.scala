@@ -14,11 +14,11 @@ case class FitsSource(
       if (index.nonEmpty) s"[${index.get}]"
       else if (rowIndex.nonEmpty) s"[row ${rowIndex.get}]"
       else ""
-    s"$eventName.$parameterName$s"
+    s"$componentName.$eventName.$parameterName$s"
   }
 
   override def toString: String = {
-    s"$subsystem.$componentName.${toShortString}"
+    s"$subsystem.${toShortString}"
   }
 
   // Ignore index args for comparison
