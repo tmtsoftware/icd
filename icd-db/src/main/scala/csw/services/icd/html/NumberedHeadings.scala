@@ -48,7 +48,7 @@ class NumberedHeadings extends Headings {
     h3Counter = 0
     val ns = s"$h2Counter $title"
     toc = TocEntry(ident, ns, Nil) :: toc
-    h2(a(name := ident)(ns))
+    h2(a(name := ident, id := ident)(ns))
 
   }
 
@@ -58,7 +58,7 @@ class NumberedHeadings extends Headings {
     h4Counter = 0
     val ns = s"$h2Counter.$h3Counter $title"
     toc.head.l = TocEntry(ident, ns, Nil) :: toc.head.l
-    h3(a(name := ident)(ns))
+    h3(a(name := ident, id := ident)(ns))
   }
 
   def H4(title: String, optionalId: String = ""): Text.TypedTag[String] = {
@@ -67,7 +67,7 @@ class NumberedHeadings extends Headings {
     h5Counter = 0
     val ns = s"$h2Counter.$h3Counter.$h4Counter $title"
     toc.head.l.head.l = TocEntry(ident, ns, Nil) :: toc.head.l.head.l
-    h4(a(name := ident)(ns))
+    h4(a(name := ident, id := ident)(ns))
   }
 
   def H5(title: String, optionalId: String = ""): Text.TypedTag[String] = {
@@ -76,6 +76,6 @@ class NumberedHeadings extends Headings {
     h6Counter = 0
     val ns = s"$h2Counter.$h3Counter.$h4Counter.$h5Counter $title"
     toc.head.l.head.l.head.l = TocEntry(ident, ns, Nil) :: toc.head.l.head.l.head.l
-    h5(a(name := ident)(ns))
+    h5(a(name := ident, id := ident)(ns))
   }
 }

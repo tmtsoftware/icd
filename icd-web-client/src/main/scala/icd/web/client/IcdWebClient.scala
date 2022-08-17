@@ -1,6 +1,6 @@
 package icd.web.client
 
-import icd.web.shared.{BuildInfo, IcdVersion, IcdVizOptions, PdfOptions, SubsystemWithVersion}
+import icd.web.shared.{BuildInfo, FitsSource, Headings, IcdVersion, IcdVizOptions, PdfOptions, SubsystemWithVersion}
 import org.scalajs.dom
 import org.scalajs.dom.{Element, HTMLAnchorElement, HTMLStyleElement, PopStateEvent, document}
 
@@ -46,7 +46,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Page components
   private val expandToggler = ExpandToggler()
-  private val reloadButton = ReloadButton()
+  private val reloadButton  = ReloadButton()
   private val mainContent   = MainContent()
   private val components    = Components(mainContent, ComponentLinkSelectionHandler)
   private val sidebar       = Sidebar(LeftSidebarListener)
@@ -316,7 +316,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
             goToComponent(link.compName)
           }
       }
-
     }
   }
 
@@ -594,11 +593,12 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     maybeSv.foreach { sv =>
       val className   = s"${sv.subsystem.toLowerCase().capitalize}Api"
       val packageName = s"${sv.subsystem.toLowerCase()}.api"
-      val suffix      = language.toLowerCase()
+      val suffix = language
+        .toLowerCase()
         .replace("typescript", "ts")
         .replace("python", "py")
-      val sourceFile  = s"$className.$suffix"
-      val uri         = ClientRoutes.generate(sv, language, className, packageName)
+      val sourceFile = s"$className.$suffix"
+      val uri        = ClientRoutes.generate(sv, language, className, packageName)
       val f = Fetch.get(uri).map { text =>
         val link = document.createElement("a").asInstanceOf[HTMLAnchorElement]
         link.setAttribute("download", sourceFile)
@@ -642,11 +642,12 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   case class ReloadButton() extends Displayable {
     private def reloadPage(): Unit = {
       val main = document.getElementById("main")
-      val y = main.scrollTop
-      val f = if (currentView == StatusView)
+      val y    = main.scrollTop
+      val f =
+        if (currentView == StatusView)
           statusDialog.applySettings()
-      else
-        selectDialog.applySettings()
+        else
+          selectDialog.applySettings()
       f.onComplete {
         case Success(_) =>
           main.scrollTop = y

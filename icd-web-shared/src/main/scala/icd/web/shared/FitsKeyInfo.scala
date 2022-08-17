@@ -7,7 +7,21 @@ case class FitsSource(
     parameterName: String,
     index: Option[Int],
     rowIndex: Option[Int]
-)
+) {
+
+  def toShortString: String = {
+    val s =
+      if (index.nonEmpty) s"[${index.get}]"
+      else if (rowIndex.nonEmpty) s"[row ${rowIndex.get}]"
+      else ""
+    s"$eventName.$parameterName$s"
+  }
+
+  override def toString: String = {
+    s"$subsystem.$componentName.${toShortString}"
+  }
+
+}
 
 case class FitsKeyInfo(
     name: String,

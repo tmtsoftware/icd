@@ -193,6 +193,18 @@ case class IcdFits(db: IcdDb) {
     maybeFitsKeyList.getOrElse(Nil)
   }
 
+  def getRelatedFitsKeyInfo(
+      subsystem: String,
+      maybeComponent: Option[String] = None,
+      maybePdfOptions: Option[PdfOptions] = None
+  ): List[FitsKeyInfo] = {
+    // XXX TODO: Do the query in MongoDB?
+    getFitsKeyInfo(maybePdfOptions).filter { i =>
+      i.source
+        .exists(_.subsystem == subsystem) && (maybeComponent.isEmpty || i.source.exists(_.componentName == maybeComponent.get))
+    }
+  }
+
   /**
    * Returns a map from FitsKey (which describes an event parameter) to a list of FITS keywords that
    * are based on the event parameter's value(s).

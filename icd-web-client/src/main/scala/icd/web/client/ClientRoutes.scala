@@ -198,6 +198,15 @@ object ClientRoutes {
   }
 
   /**
+   * Returns a list of FITS keys for the given subsystem/component
+   * @return the URL path to use
+   */
+  def fitsKeyInfo(sv: SubsystemWithVersion): String = {
+    val attrs = getAttrs(None, sv.maybeComponent)
+    s"/fitsKeyInfo/${sv.subsystem}$attrs"
+  }
+
+  /**
    * Returns the route to use to get an archived items report for the given Subsystem with selected components.
    *
    * @param sv       the subsystem

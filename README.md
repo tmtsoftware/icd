@@ -154,7 +154,7 @@ where
 
 For example, to link to the description of a published event named heartbeat in the lgsWfs component in the TEST subsystem:
 
-    See: [Example document internal link](#lgsWfs-publishes-Event-TEST.lgsWfs.heartbeat).
+    See: [Example document internal link](#TEST.lgsWfs-publishes-Event-heartbeat).
  
 Reusing Event, Command and Parameter Definitions
 -------------------------------------------------

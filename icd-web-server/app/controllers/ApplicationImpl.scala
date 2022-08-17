@@ -7,14 +7,13 @@ import csw.services.icd.codegen.{JavaCodeGenerator, PythonCodeGenerator, ScalaCo
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
 import csw.services.icd.db.{ArchivedItemsReport, CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, IcdDbPrinter, IcdDbQuery, IcdVersionManager}
 import csw.services.icd.fits.IcdFits
-import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import csw.services.icd.github.IcdGitManager
 import csw.services.icd.html.OpenApiToHtml
 import csw.services.icd.viz.IcdVizManager
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.AllEventList.EventsForSubsystem
-import icd.web.shared.IcdModels.{EventModel, IcdModel}
-import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, IcdName, IcdVersion, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, SubsystemWithVersion, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
+import icd.web.shared.IcdModels.IcdModel
+import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, FitsKeyInfo, IcdName, IcdVersion, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, SubsystemWithVersion, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
 import play.api.libs.json.Json
 
 import scala.util.Try
@@ -558,4 +557,7 @@ class ApplicationImpl(db: IcdDb) {
     }
   }
 
+  def getFitsKeyInfo(subsystem: String, maybeComponent: Option[String]): List[FitsKeyInfo] = {
+    IcdFits(db).getRelatedFitsKeyInfo(subsystem, maybeComponent)
+  }
 }

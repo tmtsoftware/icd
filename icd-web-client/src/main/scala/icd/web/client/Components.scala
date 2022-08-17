@@ -4,7 +4,7 @@ import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels._
 import icd.web.shared._
 import org.scalajs.dom
-import org.scalajs.dom.{HTMLButtonElement, HTMLDivElement, HTMLElement, HTMLTableRowElement}
+import org.scalajs.dom.{HTMLButtonElement, HTMLDivElement, HTMLElement, HTMLTableRowElement, document}
 
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 import scala.concurrent.Future
@@ -34,7 +34,7 @@ object Components {
     /**
      * Called when a link for the component is clicked
      *
-     * @param link conatins the component's subsystem and name
+     * @param link contains the component's subsystem and name
      */
     def componentSelected(link: ComponentLink): Unit
   }
@@ -108,6 +108,26 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     listener.componentSelected(ComponentLink(subsystem, component))
   }
 
+  // Action when user clicks on a component link
+  private def clickedOnFitsSource(fitsSource: FitsSource)(e: dom.Event): Unit = {
+    e.preventDefault()
+    val idStr = Headings.idFor(
+      fitsSource.componentName,
+      "publishes",
+      "Event",
+      fitsSource.subsystem,
+      fitsSource.componentName,
+      fitsSource.eventName
+    )
+    document.getElementById(idStr).scrollIntoView()
+    val hiddenRowId = s"hiddenRow-$idStr"
+    document.getElementById(hiddenRowId).classList.add("show")
+
+    //    val buttonId = s"button-$idStr"
+//    document.getElementById(buttonId).asInstanceOf[HTMLButtonElement].click()
+    //    if (saveHistory) pushState(viewType = ComponentView, compName = Some(compName))
+  }
+
   // Makes the link for a component in the table
   private def makeLinkForComponent(subsystem: String, component: String): TypedTag[Anchor] = {
     import scalatags.JsDom.all._
@@ -122,6 +142,17 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   // Makes the link for a component in the table
   private def makeLinkForComponent(componentModel: ComponentModel): TypedTag[Anchor] = {
     makeLinkForComponent(componentModel.subsystem, componentModel.component)
+  }
+
+  // Makes the link for a FITS keyword source to the event that is the source of the keyword
+  private def makeLinkForFitsKeySource(fitsSource: FitsSource): TypedTag[Anchor] = {
+    import scalatags.JsDom.all._
+    a(
+      title := s"Go to event parameter that is the source of this FITS keyword",
+      s"${fitsSource.toShortString} ",
+      href := "#",
+      onclick := clickedOnFitsSource(fitsSource) _
+    )
   }
 
   /**
@@ -173,6 +204,22 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
+  /**
+   * Gets a list of FITS keywords for a given subsystem/component
+   *
+   * @param sv            the subsystem
+   * @return future list of objects describing the FITS keys whose source is an event published by the subsystem
+   */
+  private def getFitsKeyInfo(
+      sv: SubsystemWithVersion
+  ): Future[List[FitsKeyInfo]] = {
+    Fetch
+      .get(ClientRoutes.fitsKeyInfo(sv))
+      .map { text =>
+        Json.fromJson[Array[FitsKeyInfo]](Json.parse(text)).map(_.toList).getOrElse(Nil)
+      }
+  }
+
   // Gets additional information about the ICD between the two subsystems
   private def getIcdModelList(sv: SubsystemWithVersion, tv: SubsystemWithVersion): Future[List[IcdModel]] = {
     val path = ClientRoutes.icdModelList(sv, tv)
@@ -208,9 +255,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         maybeTargetSubsystem
           .map(getSubsystemInfo(_).map(i => Some(i)))
           .getOrElse(Future.successful(None))
-      icdInfoList    <- if (isIcd) getIcdModelList(sv, maybeTargetSubsystem.get) else Future.successful(Nil)
-      infoList       <- getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems, clientApi)
-      targetInfoList <- getComponentInfo(maybeTargetSubsystem, Some(sv), searchAllSubsystems, clientApi)
+      icdInfoList     <- if (isIcd) getIcdModelList(sv, maybeTargetSubsystem.get) else Future.successful(Nil)
+      infoList        <- getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems, clientApi)
+      targetInfoList  <- getComponentInfo(maybeTargetSubsystem, Some(sv), searchAllSubsystems, clientApi)
+      fitsKeyInfoList <- getFitsKeyInfo(sv)
     } yield {
       val titleInfo        = TitleInfo(subsystemInfo, maybeTargetSubsystem, maybeIcd)
       val subsystemVersion = sv.maybeVersion.getOrElse(TitleInfo.unpublished)
@@ -235,8 +283,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       // since the code is shared with non-javascript code on the server side.
       val summaryTable =
         SummaryTable.displaySummary(subsystemInfo, maybeTargetSubsystem, infoList, new HtmlHeadings, clientApi).render
+      val fitsKeyTable = makeFitsKeyTable(fitsKeyInfoList)
 
       mainContent.appendElement(div(Styles.component, id := "Summary")(raw(summaryTable)).render)
+      mainContent.appendElement(fitsKeyTable.render)
       infoList.foreach(i => displayComponentInfo(i, !isIcd, clientApi))
       if (isIcd) targetInfoList.foreach(i => displayComponentInfo(i, forApi = false, clientApi))
       infoList ++ targetInfoList
@@ -294,7 +344,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default", "FITS Keywords")
       val rowList =
-        for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue, a.fitsKeys.mkString(", "))
+        for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units, a.defaultValue,
+          a.fitsKeys.map(k => s"<a href=#$k>$k</a>").mkString(", "))
       div(
         strong("Parameters"),
         mkTable(headings, rowList, tableStyle = Styles.attributeTable),
@@ -357,27 +408,33 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   /**
    * Returns a hidden, expandable table row containing the given div item
    *
+   * @param targetId HTML id for target item (modified for toggle button and used to expand row for FITS key links)
    * @param item    the contents of the table row
    * @param colSpan the number of columns to span
    * @return a pair of (button, tr) elements, where the button toggles the visibility of the row
    */
   private def hiddenRowMarkup(
+      targetId: String,
       item: TypedTag[HTMLDivElement],
       colSpan: Int
   ): (TypedTag[HTMLButtonElement], TypedTag[HTMLTableRowElement]) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
     // button to toggle visibility
-    val idStr = s"id${new java.util.Random().nextInt()}"
+//    val rowId    = s"id${new java.util.Random().nextInt()}"
+    val rowId    = s"hiddenRow-$targetId"
+    val buttonId = s"button-$targetId"
     val btn = button(
       Styles.attributeBtn,
+      id := buttonId,
+      name := buttonId,
       attr("data-toggle") := "collapse",
-      attr("data-target") := s"#$idStr",
+      attr("data-target") := s"#$rowId",
       title := "Show/hide details"
     )(
       span(cls := "glyphicon glyphicon-collapse-down")
     )
-    val row = tr(id := idStr, cls := "collapse panel-collapse")(td(colspan := colSpan)(item))
+    val row = tr(id := rowId, cls := "collapse panel-collapse")(td(colspan := colSpan)(item))
     (btn, row)
   }
 
@@ -451,14 +508,15 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             ),
             tbody(
               for (t <- eventList) yield {
-                val (btn, row) = hiddenRowMarkup(makeEventDetailsRow(t, pubType != "Observe Events"), 3)
+                val idStr      = idFor(compName, "publishes", pubType, component.subsystem, compName, t.eventModel.name)
+                val (btn, row) = hiddenRowMarkup(idStr, makeEventDetailsRow(t, pubType != "Observe Events"), 3)
                 List(
                   tr(
                     td(
                       Styles.attributeCell,
                       p(
                         btn,
-                        a(name := idFor(compName, "publishes", pubType, component.subsystem, compName, t.eventModel.name))(
+                        a(id := idStr, name := idStr)(
                           t.eventModel.name
                         )
                       )
@@ -507,12 +565,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             ),
             tbody(
               for (m <- alarmList) yield {
-                val (btn, row) = hiddenRowMarkup(makeAlarmDetailsRow(m), 3)
+                val idStr      = idFor(compName, "publishes", "Alarms", component.subsystem, compName, m.name)
+                val (btn, row) = hiddenRowMarkup(idStr, makeAlarmDetailsRow(m), 3)
                 List(
                   tr(
                     td(
                       Styles.attributeCell,
-                      p(btn, a(name := idFor(compName, "publishes", "Alarms", component.subsystem, compName, m.name))(m.name))
+                      p(btn, a(id := idStr, name := idStr)(m.name))
                     ),
                     td(raw(m.description))
                   ),
@@ -609,7 +668,15 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               ),
               tbody(
                 for (s <- subscribeList) yield {
-                  val (btn, row) = hiddenRowMarkup(makeDetailsRow(s), 3)
+                  val idStr = idFor(
+                    compName,
+                    "subscribes",
+                    pubType,
+                    s.subscribeModelInfo.subsystem,
+                    s.subscribeModelInfo.component,
+                    s.subscribeModelInfo.name
+                  )
+                  val (btn, row) = hiddenRowMarkup(idStr, makeDetailsRow(s), 3)
                   val usage =
                     if (s.subscribeModelInfo.usage.isEmpty) div()
                     else
@@ -623,16 +690,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                         Styles.attributeCell,
                         p(
                           btn,
-                          a(
-                            name := idFor(
-                              compName,
-                              "subscribes",
-                              pubType,
-                              s.subscribeModelInfo.subsystem,
-                              s.subscribeModelInfo.component,
-                              s.subscribeModelInfo.name
-                            )
-                          )(s.subscribeModelInfo.name)
+                          a(id := idStr, name := idStr)(s.subscribeModelInfo.name)
                         )
                       ),
                       td(raw(s.description), getWarning(s), usage),
@@ -707,14 +765,15 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           tbody(
             for (r <- info) yield {
               val rc         = r.receiveCommandModel
-              val (btn, row) = hiddenRowMarkup(makeReceivedCommandDetailsRow(r.receiveCommandModel), 3)
+              val idStr      = idFor(compName, "receives", "Commands", component.subsystem, compName, rc.name)
+              val (btn, row) = hiddenRowMarkup(idStr, makeReceivedCommandDetailsRow(r.receiveCommandModel), 3)
               List(
                 tr(
                   td(
                     Styles.attributeCell,
                     p(
                       btn,
-                      a(name := idFor(compName, "receives", "Commands", component.subsystem, compName, rc.name))(rc.name)
+                      a(id := idStr, name := idStr)(rc.name)
                     )
                   ),
                   // XXX TODO: Make link to command description page with details
@@ -748,14 +807,15 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     // Returns the layout for an item describing a sent command
     def makeItem(s: SentCommandInfo) = {
+      val idStr = idFor(compName, "sends", "Commands", s.subsystem, s.component, s.name)
       s.receiveCommandModel match {
         case Some(r) =>
-          val (btn, row) = hiddenRowMarkup(makeReceivedCommandDetailsRow(r), 3)
+          val (btn, row) = hiddenRowMarkup(idStr, makeReceivedCommandDetailsRow(r), 3)
           List(
             tr(
               td(
                 Styles.attributeCell,
-                p(btn, a(name := idFor(compName, "sends", "Commands", s.subsystem, s.component, s.name))(s.name))
+                p(btn, a(id := idStr, name := idStr)(s.name))
               ),
               // XXX TODO: Make link to command description page with details
               td(raw(r.description)),
@@ -939,6 +999,39 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             td(info.componentModel.componentType),
             td(info.componentModel.wbsId)
           )
+        )
+      )
+    )
+  }
+
+  // Generates table with related FITS key information
+  private def makeFitsKeyTable(fitsKeys: List[FitsKeyInfo]) = {
+    import scalatags.JsDom.all._
+    import scalacss.ScalatagsCss._
+    div(Styles.component, id := "FITS-Keys")(
+      h3(a(name := "FITS-Keys")("FITS Keywords")),
+      table(
+        Styles.componentTable,
+        attr("data-toggle") := "table",
+        thead(
+          tr(
+            th("Name"),
+            th("Title"),
+            th("Description"),
+            th("Type"),
+            th("Source")
+          )
+        ),
+        tbody(
+          fitsKeys.map { info =>
+            tr(
+              td(a(id := info.name, name := info.name)(info.name)),
+              td(info.title),
+              td(raw(info.description)),
+              td(info.typ),
+              td(info.source.map(makeLinkForFitsKeySource))
+            )
+          }
         )
       )
     )

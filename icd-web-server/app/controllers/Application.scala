@@ -30,7 +30,7 @@ import scala.util.{Failure, Success, Try}
 /**
  * Provides the interface between the web client and the server
  */
-//noinspection TypeAnnotation,DuplicatedCode
+//noinspection TypeAnnotation,DuplicatedCode,ScalaUnusedSymbol
 @Singleton
 class Application @Inject() (
     actorSystem: akka.actor.ActorSystem,
@@ -778,6 +778,21 @@ class Application @Inject() (
         case None =>
           NotFound
       }
+    }
+
+  /**
+   * Query the database for a list of FITS keys for the given subsystem / component
+   *
+   * @param subsystem      the subsystem
+   * @param maybeComponent component name (default all in subsystem)
+   */
+  def fitsKeyInfo(
+      subsystem: String,
+      maybeComponent: Option[String]
+  ) =
+    authAction.async {
+      val resp: Future[List[FitsKeyInfo]] = appActor ? (GetFitsKeyInfo(subsystem, maybeComponent, _))
+      resp.map(info => Ok(Json.toJson(info)))
     }
 
 }

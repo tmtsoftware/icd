@@ -6,22 +6,7 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import icd.web.shared.IcdModels.{EventModel, IcdModel}
-import icd.web.shared.{
-  AllEventList,
-  ApiVersionInfo,
-  ComponentInfo,
-  DiffInfo,
-  IcdName,
-  IcdVersionInfo,
-  IcdVizOptions,
-  PdfOptions,
-  PublishApiInfo,
-  PublishIcdInfo,
-  SubsystemInfo,
-  UnpublishApiInfo,
-  UnpublishIcdInfo,
-  VersionInfo
-}
+import icd.web.shared.{AllEventList, ApiVersionInfo, ComponentInfo, DiffInfo, FitsKeyInfo, IcdName, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
 
 import scala.util.Try
 
@@ -129,6 +114,11 @@ object ApplicationActor extends ActorModule {
       maybeComponent: Option[String],
       maybePackageName: Option[String],
       replyTo: ActorRef[Option[String]]
+  ) extends Messages
+  final case class GetFitsKeyInfo(
+      subsystem: String,
+      maybeComponent: Option[String],
+      replyTo: ActorRef[List[FitsKeyInfo]]
   ) extends Messages
 
   // -------------------------------------------------------------------
@@ -303,7 +293,7 @@ object ApplicationActor extends ActorModule {
               maybeVersion,
               maybeComponent,
               maybePackageName,
-              replyTo: ActorRef[Option[String]]
+              replyTo
             ) =>
           replyTo ! app.generate(
             subsystem,
@@ -313,6 +303,9 @@ object ApplicationActor extends ActorModule {
             maybeComponent,
             maybePackageName
           )
+          Behaviors.same
+        case GetFitsKeyInfo(subsystem, maybeComponent, replyTo) =>
+          replyTo ! app.getFitsKeyInfo(subsystem, maybeComponent)
           Behaviors.same
       }
     }
