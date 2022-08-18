@@ -2,7 +2,6 @@ package csw.services.icd.fits
 
 import csw.services.icd.IcdToPdf
 import csw.services.icd.html.IcdToHtml
-import csw.services.icd.html.IcdToHtml.getTitleMarkup
 import icd.web.shared.{FitsKeyInfo, HtmlHeadings, PdfOptions}
 
 import java.io.{File, FileOutputStream}

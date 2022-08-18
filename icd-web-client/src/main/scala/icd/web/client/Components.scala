@@ -1027,7 +1027,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             th("Title"),
             th("Description"),
             th("Type"),
-            th("Source")
+            th("Source", br, i( "(component-event-param[index?])"))
           )
         ),
         tbody(

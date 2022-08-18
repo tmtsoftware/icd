@@ -80,7 +80,7 @@ object IcdToHtml {
             th("Title"),
             th("Description"),
             th("Type"),
-            th("Source (component-event-param[index?])")
+            th("Source", br, i( "(component-event-param[index?])"))
           )
         ),
         tbody(
