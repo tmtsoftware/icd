@@ -62,8 +62,13 @@ object IcdToHtml {
     )
   }
 
-  // Generates table with related FITS key information
-  private def makeFitsKeyTable(fitsKeys: List[FitsKeyInfo], nh: Headings) = {
+  /**
+   * Generates table with related FITS key information
+   * @param fitsKeys list of FITS key info
+   * @param nh used for headings
+   * @param withLinks if true, include links to event parameters for key sources
+   */
+  def makeFitsKeyTable(fitsKeys: List[FitsKeyInfo], nh: Headings, withLinks: Boolean = true): Text.TypedTag[String] = {
     import scalatags.Text.all._
     div(id := "FITS-Keys")(
       nh.H3("FITS Keywords", "FITS-Keys"),
@@ -75,17 +80,17 @@ object IcdToHtml {
             th("Title"),
             th("Description"),
             th("Type"),
-            th("Source")
+            th("Source (component-event-param[index?])")
           )
         ),
         tbody(
           fitsKeys.map { info =>
             tr(
-              td(a(id := info.name, name := info.name)(info.name)),
+              td(if (withLinks) a(id := info.name, name := info.name)(info.name) else info.name),
               td(info.title),
               td(raw(info.description)),
               td(info.typ),
-              td(info.source.map(makeLinkForFitsKeySource))
+              td(if (withLinks) info.source.map(makeLinkForFitsKeySource) else info.source.map(_.toShortString).mkString(", "))
             )
           }
         )
