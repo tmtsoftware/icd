@@ -30,7 +30,6 @@ case class IcdFitsPrinter(fitsKeyList: List[FitsKeyInfo]) {
             scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss(pdfOptions)))
           ),
           body(
-            h3(a(name := "fits-keys"), cls := "page-header")("FITS Keywords"),
             IcdToHtml.makeFitsKeyTable(fitsKeyList, nh, withLinks = false)
           )
         )
