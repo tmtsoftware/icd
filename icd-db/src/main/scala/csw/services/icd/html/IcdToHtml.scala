@@ -77,20 +77,26 @@ object IcdToHtml {
         thead(
           tr(
             th("Name"),
-            th("Title"),
+//            th("Title"),
             th("Description"),
             th("Type"),
-            th("Source", br, i( "(component-event-param[index?])"))
+//            th("Default"),
+            th("Units"),
+            th("Source", br, i("(component-event-param[index?])")),
+//            th("Note")
           )
         ),
         tbody(
           fitsKeys.map { info =>
             tr(
               td(if (withLinks) a(id := info.name, name := info.name)(info.name) else info.name),
-              td(info.title),
+//              td(info.title),
               td(raw(info.description)),
               td(info.typ),
-              td(if (withLinks) info.source.map(makeLinkForFitsKeySource) else info.source.map(_.toShortString).mkString(", "))
+//              td(info.defaultValue),
+              td(info.units),
+              td(if (withLinks) info.source.map(makeLinkForFitsKeySource) else info.source.map(_.toShortString).mkString(", ")),
+//              td(info.note)
             )
           }
         )

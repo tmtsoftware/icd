@@ -24,7 +24,7 @@ case class FitsSource(
   override def equals(obj: Any): Boolean = {
     obj match {
       case FitsSource(`subsystem`, `componentName`, `eventName`, `parameterName`, _, _) => true
-      case _ => false
+      case _                                                                            => false
     }
   }
 }
@@ -34,16 +34,10 @@ case class FitsKeyInfo(
     title: String,
     description: String,
     typ: String,
-    calculation: Option[String] = None,
     defaultValue: Option[String] = None,
-    example: Option[String] = None,
     units: Option[String] = None,
-    mandatory: Option[String] = None,
-    minimal: Option[String] = None,
-    position: Option[String] = None,
-    fitsHdu: Option[String] = None,
     source: List[FitsSource] = Nil,
-    Note: Option[String] = None
+    note: Option[String] = None
 )
 
 case class FitsKeyInfoList(fitsKeyInfo: List[FitsKeyInfo])

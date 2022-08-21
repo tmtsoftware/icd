@@ -1,9 +1,9 @@
 package csw.services.icd.fits
 
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import csw.services.icd.IcdValidator
 import csw.services.icd.db.{IcdDb, IcdDbDefaults}
-import icd.web.shared.{BuildInfo, FitsKeyInfo, FitsSource, PdfOptions}
+import icd.web.shared.{BuildInfo, FitsKeyInfo, FitsKeyInfoList, FitsSource, PdfOptions}
 import reactivemongo.api.bson.collection.BSONCollection
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -14,7 +14,7 @@ import csw.services.icd.db.parser.FitsKeyInfoListBsonParser
 import lax._
 import json2bson._
 
-import java.io.File
+import java.io.{File, FileOutputStream}
 import play.api.libs.json._
 import reactivemongo.api.bson.BSONDocument
 
@@ -79,7 +79,7 @@ object IcdFits extends App {
 
     opt[File]('o', "out") valueName "<outputFile>" action { (x, c) =>
       c.copy(outputFile = Some(x))
-    } text "Generates a document containing a table of FITS keyword information in a format based on the file's suffix (html, pdf, json, csv)"
+    } text "Generates a document containing a table of FITS keyword information in a format based on the file's suffix (html, pdf, json, csv, conf (HOCON))"
 
     opt[String]("orientation") valueName "[portrait|landscape]" action { (x, c) =>
       c.copy(orientation = Some(x))
@@ -182,11 +182,6 @@ case class IcdFits(db: IcdDb) {
     collection.insert.one(jsObj).await
   }
 
-  // Generate a JSON or csv file containing the FITS keywords
-  def generate(fitsKeyList: List[FitsKeyInfo], file: File): Unit = {
-    // XXX TODO
-  }
-
   def getFitsKeyInfo(maybePdfOptions: Option[PdfOptions] = None): List[FitsKeyInfo] = {
     val maybeDoc         = collection.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await
     val maybeFitsKeyList = maybeDoc.map(FitsKeyInfoListBsonParser(_, maybePdfOptions))
@@ -233,16 +228,57 @@ case class IcdFits(db: IcdDb) {
       filter: FitsKeyInfo => Boolean,
       pdfOptions: PdfOptions
   ): Unit = {
+    import icd.web.shared.JsonSupport._
     val fitsKeyList = getFitsKeyInfo(Some(pdfOptions)).filter(filter)
-    if (fitsKeyList.nonEmpty) {
-      val fname = file.getName.toLowerCase()
+    if (fitsKeyList.isEmpty) {
+      println("No FITS keywords found")
+    }
+    else {
+      val fitsKeyInfoList = FitsKeyInfoList(fitsKeyList)
+      val fname           = file.getName.toLowerCase()
       if (fname.endsWith(".html") || fname.endsWith(".pdf")) {
         IcdFitsPrinter(fitsKeyList).saveToFile(pdfOptions, file)
       }
-      else generate(fitsKeyList, file)
-    }
-    else {
-      // empty
+      else if (fname.endsWith(".json")) {
+        val out  = new FileOutputStream(file)
+        val json = Json.toJson(fitsKeyInfoList)
+        out.write(Json.prettyPrint(json).getBytes)
+        out.close()
+      }
+      else if (fname.endsWith(".conf")) {
+        val out     = new FileOutputStream(file)
+        val jsonStr = Json.prettyPrint(Json.toJson(fitsKeyInfoList))
+        val config  = ConfigFactory.parseString(jsonStr)
+        val opts = ConfigRenderOptions.defaults().setComments(false).setOriginComments(false)
+        out.write(config.root().render(opts).getBytes)
+        out.close()
+      }
+      else if (fname.endsWith(".csv")) {
+        import com.github.tototoshi.csv._
+        implicit object MyFormat extends DefaultCSVFormat {
+          override val lineTerminator = "\n"
+          override val delimiter      = '|'
+        }
+        def clean(s: String) = s.replace("<p>", "").replace("</p>", "").replace(MyFormat.delimiter, '/')
+        val writer           = CSVWriter.open(file)
+        writer.writeRow(List("Name", "Title", "Description", "Type", "DefaultValue", "Units", "Source", "Note"))
+        fitsKeyList.foreach { k =>
+          writer.writeRow(
+            List(
+              k.name,
+              k.title,
+              clean(k.description),
+              k.typ,
+              k.defaultValue.getOrElse(""),
+              k.units.getOrElse(""),
+              k.source.map(_.toShortString).mkString(", "),
+              k.note.getOrElse("")
+            )
+          )
+        }
+        writer.close()
+        println(s"Wrote $file")
+      }
     }
   }
 

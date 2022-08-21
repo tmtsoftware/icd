@@ -1024,20 +1024,26 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         thead(
           tr(
             th("Name"),
-            th("Title"),
+//            th("Title"),
             th("Description"),
             th("Type"),
-            th("Source", br, i( "(component-event-param[index?])"))
+//            th("Default"),
+            th("Units"),
+            th("Source", br, i( "(component-event-param[index?])")),
+//            th("Note"),
           )
         ),
         tbody(
           fitsKeys.map { info =>
             tr(
               td(a(id := info.name, name := info.name)(info.name)),
-              td(info.title),
+//              td(info.title),
               td(raw(info.description)),
               td(info.typ),
-              td(info.source.map(makeLinkForFitsKeySource))
+//              td(info.defaultValue),
+              td(info.units),
+              td(info.source.map(makeLinkForFitsKeySource)),
+//              td(info.note),
             )
           }
         )

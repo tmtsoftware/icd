@@ -39,8 +39,10 @@ object FitsKeyInfoBsonParser {
       title = doc.getAsOpt[String]("title").get,
       description = doc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
       typ = doc.getAsOpt[String]("type").get,
-      // XXX ... TODO FIXME
-      source = getSource(doc)
+      defaultValue = doc.getAsOpt[String]("defaultValue"),
+      units = doc.getAsOpt[String]("units"),
+      source = getSource(doc),
+      note = doc.getAsOpt[String]("note")
     )
   }
 }
