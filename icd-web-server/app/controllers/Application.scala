@@ -791,7 +791,16 @@ class Application @Inject() (
       maybeComponent: Option[String]
   ) =
     authAction.async {
-      val resp: Future[List[FitsKeyInfo]] = appActor ? (GetFitsKeyInfo(subsystem, maybeComponent, _))
+      val resp: Future[List[FitsKeyInfo]] = appActor ? (GetFitsKeyInfo(Some(subsystem), maybeComponent, _))
+      resp.map(info => Ok(Json.toJson(info)))
+    }
+
+  /**
+   * Query the database for a list of FITS keys for the given subsystem / component
+   */
+  def allFitsKeyInfo() =
+    authAction.async {
+      val resp: Future[List[FitsKeyInfo]] = appActor ? (GetFitsKeyInfo(None, None, _))
       resp.map(info => Ok(Json.toJson(info)))
     }
 

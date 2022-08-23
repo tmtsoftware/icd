@@ -189,14 +189,18 @@ case class IcdFits(db: IcdDb) {
   }
 
   def getRelatedFitsKeyInfo(
-      subsystem: String,
+      maybeSubsystem: Option[String],
       maybeComponent: Option[String] = None,
       maybePdfOptions: Option[PdfOptions] = None
   ): List[FitsKeyInfo] = {
-    // XXX TODO: Do the query in MongoDB?
-    getFitsKeyInfo(maybePdfOptions).filter { i =>
-      i.source
-        .exists(_.subsystem == subsystem) && (maybeComponent.isEmpty || i.source.exists(_.componentName == maybeComponent.get))
+    val fitsKeyList = getFitsKeyInfo(maybePdfOptions)
+    if (maybeSubsystem.isEmpty) fitsKeyList else {
+      // XXX TODO: Do the query in MongoDB?
+      val subsystem = maybeSubsystem.get
+      fitsKeyList.filter { i =>
+        i.source
+          .exists(_.subsystem == subsystem) && (maybeComponent.isEmpty || i.source.exists(_.componentName == maybeComponent.get))
+      }
     }
   }
 

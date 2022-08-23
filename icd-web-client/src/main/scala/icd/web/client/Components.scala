@@ -205,14 +205,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   /**
    * Gets a list of FITS keywords for a given subsystem/component
    *
-   * @param sv            the subsystem
+   * @param sv the subsystem/component
    * @return future list of objects describing the FITS keys whose source is an event published by the subsystem
    */
-  private def getFitsKeyInfo(
-      sv: SubsystemWithVersion
-  ): Future[List[FitsKeyInfo]] = {
+  private def getFitsKeyInfo(sv: SubsystemWithVersion): Future[List[FitsKeyInfo]] = {
     Fetch
-      .get(ClientRoutes.fitsKeyInfo(sv))
+      .get(ClientRoutes.fitsKeyInfo(Some(sv)))
       .map { text =>
         Json.fromJson[Array[FitsKeyInfo]](Json.parse(text)).map(_.toList).getOrElse(Nil)
       }
@@ -430,7 +428,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
     // button to toggle visibility
-    val rowId = makeHiddenRowId(targetId)
+    val rowId    = makeHiddenRowId(targetId)
     val buttonId = s"button-$targetId"
     val btn = button(
       Styles.attributeBtn,
@@ -1029,7 +1027,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             th("Type"),
 //            th("Default"),
             th("Units"),
-            th("Source", br, i( "(component-event-param[index?])")),
+            th("Source", br, i("(component-event-param[index?])"))
 //            th("Note"),
           )
         ),
@@ -1042,7 +1040,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               td(info.typ),
 //              td(info.defaultValue),
               td(info.units),
-              td(info.source.map(makeLinkForFitsKeySource)),
+              td(info.source.map(makeLinkForFitsKeySource))
 //              td(info.note),
             )
           }

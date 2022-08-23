@@ -17,6 +17,10 @@ case class FitsSource(
     s"$componentName-$eventName-$parameterName$s"
   }
 
+  def toLongString: String = {
+    s"$subsystem-${toShortString}"
+  }
+
   // Ignore index args for comparison
   override def hashCode(): Int = (subsystem, componentName, eventName, parameterName).##
 

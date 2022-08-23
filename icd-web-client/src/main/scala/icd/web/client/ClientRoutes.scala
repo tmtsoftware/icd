@@ -201,9 +201,13 @@ object ClientRoutes {
    * Returns a list of FITS keys for the given subsystem/component
    * @return the URL path to use
    */
-  def fitsKeyInfo(sv: SubsystemWithVersion): String = {
-    val attrs = getAttrs(None, sv.maybeComponent)
-    s"/fitsKeyInfo/${sv.subsystem}$attrs"
+  def fitsKeyInfo(maybeSv: Option[SubsystemWithVersion]): String = {
+    if (maybeSv.isDefined) {
+      val attrs = getAttrs(None, maybeSv.get.maybeComponent)
+      s"/fitsKeyInfo/${maybeSv.get.subsystem}$attrs"
+    } else {
+      s"/allFitsKeyInfo"
+    }
   }
 
   /**

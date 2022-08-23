@@ -557,7 +557,7 @@ class ApplicationImpl(db: IcdDb) {
     }
   }
 
-  def getFitsKeyInfo(subsystem: String, maybeComponent: Option[String]): List[FitsKeyInfo] = {
-    IcdFits(db).getRelatedFitsKeyInfo(subsystem, maybeComponent)
+  def getFitsKeyInfo(maybeSubsystem: Option[String], maybeComponent: Option[String]): List[FitsKeyInfo] = {
+    IcdFits(db).getRelatedFitsKeyInfo(maybeSubsystem, maybeComponent)
   }
 }

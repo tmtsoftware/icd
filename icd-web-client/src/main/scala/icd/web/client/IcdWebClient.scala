@@ -1,6 +1,6 @@
 package icd.web.client
 
-import icd.web.shared.{BuildInfo, FitsSource, Headings, IcdVersion, IcdVizOptions, PdfOptions, SubsystemWithVersion}
+import icd.web.shared.{BuildInfo, FitsKeyInfo, IcdVersion, IcdVizOptions, PdfOptions, SubsystemWithVersion}
 import org.scalajs.dom
 import org.scalajs.dom.{Element, HTMLAnchorElement, HTMLStyleElement, PopStateEvent, document}
 
@@ -15,7 +15,7 @@ import icd.web.client.PasswordDialog.PasswordDialogListener
 import icd.web.client.PublishDialog.PublishDialogListener
 import icd.web.client.SelectDialog.SelectDialogListener
 import icd.web.client.StatusDialog.StatusDialogListener
-import play.api.libs.json.Json
+import play.api.libs.json._
 
 import scala.scalajs.js
 import scala.scalajs.js.URIUtils
@@ -34,7 +34,7 @@ object Globals extends js.Object {
  * @param csrfToken         server token used for file upload (for security)
  * @param inputDirSupported true if uploading directories is supported (currently only for Chrome)
  */
-//noinspection DuplicatedCode
+//noinspection DuplicatedCode,ScalaUnusedSymbol,SpellCheckingInspection
 @JSExportTopLevel("IcdWebClient")
 case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
@@ -53,6 +53,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   private val historyItem   = NavbarItem("History", "Display the version history for an API or ICD", showVersionHistory())
   private val historyDialog = HistoryDialog(mainContent)
+
+  private val fitsKeywordsItem = NavbarItem("Fits Keywords", "Display information about all FITS keywords", showFitsKeywords())
 
   private val pdfItem = NavbarPdfItem("PDF", "Generate and display a PDF for the API or ICD", makePdf)
   pdfItem.setEnabled(false)
@@ -163,6 +165,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     navbar.addItem(generateItem)
     navbar.addItem(graphItem)
     navbar.addItem(archiveItem)
+    navbar.addItem(fitsKeywordsItem)
     navbar.addItem(publishItem)
     navbar.addItem(reloadButton)
     navbar.addItem(expandToggler)
@@ -528,7 +531,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     links.toArray.foreach(x => x.addEventListener("click", linkListener))
   }
 
-  // Called when the "Show ICD Version History" menu item is selected
+  // Called when the "History" item is selected
   private def showVersionHistory(saveHistory: Boolean = true)(): Unit = {
     def showApiVersionHistory(subsystem: String): Unit = {
       historyDialog.setSubsystem(subsystem)
@@ -550,6 +553,24 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
           selectDialog.subsystem.getSelectedSubsystem.foreach(showApiVersionHistory)
       }
     }
+  }
+
+  // Called when the "FITS Keywords" item is selected
+  private def showFitsKeywords(saveHistory: Boolean = true)(): Unit = {
+    import icd.web.shared.JsonSupport._
+    setSidebarVisible(false)
+    val f = Fetch
+      .get(ClientRoutes.fitsKeyInfo(None))
+      .map { text =>
+        Json.fromJson[Array[FitsKeyInfo]](Json.parse(text)).map(_.toList).getOrElse(Nil)
+      }
+    f.foreach { fitsKeys =>
+      val fitsKeywordDialog = FitsKeywordDialog(fitsKeys)
+      mainContent.setContent(fitsKeywordDialog, "FITS Keywords")
+    // XXX TODO FIXME
+    // if (saveHistory) pushState(viewType = VersionView)
+    }
+    showBusyCursorWhile(f.map(_ => ()))
   }
 
   // Gets a PDF of the currently selected ICD or subsystem API

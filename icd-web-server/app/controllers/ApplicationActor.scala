@@ -116,7 +116,7 @@ object ApplicationActor extends ActorModule {
       replyTo: ActorRef[Option[String]]
   ) extends Messages
   final case class GetFitsKeyInfo(
-      subsystem: String,
+      maybeSubsystem: Option[String],
       maybeComponent: Option[String],
       replyTo: ActorRef[List[FitsKeyInfo]]
   ) extends Messages
@@ -304,8 +304,8 @@ object ApplicationActor extends ActorModule {
             maybePackageName
           )
           Behaviors.same
-        case GetFitsKeyInfo(subsystem, maybeComponent, replyTo) =>
-          replyTo ! app.getFitsKeyInfo(subsystem, maybeComponent)
+        case GetFitsKeyInfo(maybeSubsystem, maybeComponent, replyTo) =>
+          replyTo ! app.getFitsKeyInfo(maybeSubsystem, maybeComponent)
           Behaviors.same
       }
     }
