@@ -17,7 +17,7 @@ import NavbarItem._
  */
 case class NavbarItem(labelStr: String, tip: String, listener: () => Unit) extends Displayable {
   import scalatags.JsDom.all._
-  private val item = li(a(onclick := listener, title := tip)(labelStr)).render
+  private val item = li(cls := "nav-item", a(cls := "nav-link", onclick := listener, title := tip)(labelStr)).render
 
   // Returns the HTML markup for the navbar item
   def markup(): Element = item
@@ -108,7 +108,8 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
         val attr = el.attributes.getNamedItem("aria-expanded")
         if (attr.value == "true" && el.nodeName.equalsIgnoreCase("button")) {
           Some(el.parentNode.lastChild.attributes.getNamedItem("name").value)
-        } else None
+        }
+        else None
       }
       .toList
   }
@@ -173,8 +174,10 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
   private val item = {
     import scalatags.JsDom.all._
     li(
+      cls := "nav-item",
       makePdfModal(),
       a(
+        cls := "nav-link",
         href := "#",
         title := tip,
         attr("data-toggle") := "modal",
@@ -213,8 +216,14 @@ case class NavbarDropDownItem(labelStr: String, tip: String, items: List[String]
     listener(item)
   }
 
-  private val item = li(cls := "dropdown")(
-    a(href := "#", title := tip, cls := "dropdown-toggle", attr("data-toggle") := "dropdown", role := "button")(
+  private val item = li(cls := "nav-item dropdown")(
+    a(
+      href := "#",
+      title := tip,
+      cls := "nav-link dropdown-toggle",
+      attr("data-toggle") := "dropdown",
+      role := "button"
+    )(
       labelStr,
       span(cls := "caret")
     ),
@@ -361,8 +370,10 @@ case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOption
   private val item = {
     import scalatags.JsDom.all._
     li(
+      cls := "nav-item",
       makeGraphModal(),
       a(
+        cls := "nav-link",
         href := "#",
         title := tip,
         attr("data-toggle") := "modal",

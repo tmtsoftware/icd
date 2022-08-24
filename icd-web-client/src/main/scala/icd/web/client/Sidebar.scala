@@ -3,7 +3,6 @@ package icd.web.client
 import org.scalajs.dom
 import org.scalajs.dom.Node
 import org.scalajs.dom.Element
-import org.scalajs.dom.html.UList
 import scalatags.JsDom.all._
 
 trait SidebarListener {
@@ -23,12 +22,12 @@ trait SidebarListener {
  */
 case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
 
-  val sidebarList: UList = ul(cls := "nav list-group").render
+  private val sidebarList = div(cls := "list-group list-group-flush mx-3 mt-4").render
 
   // HTML for component
   private def componentLink(compName: String) = {
     val compId = Components.getComponentInfoId(compName)
-    li(a(title := s"Scroll to $compName", href := s"#$compId", compName, onclick := componentSelected(compName) _))
+    a(title := s"Scroll to $compName", href := s"#$compId", compName, onclick := componentSelected(compName) _)
   }
 
   // called when a component link is clicked
@@ -63,9 +62,10 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
   // Markup for the sidebar
   override def markup(): Element = {
     import scalacss.ScalatagsCss._
+    import scalatags.JsDom.tags2._
 
-    div(Styles.sidebarWrapper, id := "sidebar")(
-      div(Styles.sidebar)(
+    nav(Styles.sidebarWrapper, cls := "hide collapse d-lg-block sidebar collapse bg-white", id := "sidebar")(
+      div(Styles.sidebar, cls := "position-sticky")(
         sidebarList
       )
     ).render

@@ -1,7 +1,6 @@
 package icd.web.client
 
 import org.scalajs.dom.Element
-import org.scalajs.dom.html.UList
 import scalatags.JsDom.all._
 
 /**
@@ -9,30 +8,29 @@ import scalatags.JsDom.all._
  */
 case class Navbar() extends Displayable {
 
-  val leftNavbar: UList  = ul(cls := "nav navbar-nav").render
-  val rightNavbar: UList = ul(cls := "nav navbar-nav pull-right").render
+  /*
+  navbar-nav me-auto mb-2 mb-lg-0
+   */
+  private val leftNavbar  = ul(cls := "navbar-nav").render
+  private val rightNavbar = ul(cls := "navbar-nav ms-auto mb-2 mb-lg-0").render
 
   def markup(): Element = {
     import scalatags.JsDom.tags2._
-
-    nav(cls := "navbar navbar-default navbar-fixed-top hidden-print", role := "navigation")(
-      div(cls := "navbar-header")(
+    nav(cls := "navbar navbar-expand-lg navbar-light bg-light")(
+      div(cls := "container-fluid")(
+        a(cls := "navbar-brand", href := "/")("TMT Interface Database System"),
         button(
+          cls := "navbar-toggler",
           `type` := "button",
-          cls := "navbar-toggle",
-          attr("data-toggle") := "collapse",
-          attr("data-target") := "#icd-navbar"
+          attr("data-bs-toggle") := "collapse",
+          attr("data-bs-target") := "#icd-navbar"
         )(
-          span(cls := "sr-only")("Toggle navigation/span"),
-          span(cls := "icon-bar"),
-          span(cls := "icon-bar"),
-          span(cls := "icon-bar")
+          i(cls := "fas fa-bars")
         ),
-        a(cls := "navbar-brand", href := "/")("TMT Interface Database System")
-      ),
-      div(id := "icd-navbar", cls := "collapse navbar-collapse")(
-        leftNavbar,
-        rightNavbar
+        div(id := "icd-navbar", cls := "collapse navbar-collapse")(
+          leftNavbar,
+          rightNavbar
+        )
       )
     ).render
   }

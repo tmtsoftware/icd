@@ -25,7 +25,7 @@ object Styles extends StyleSheet.Inline {
   )
 
   val mainContent: StyleA = style(
-    addClassName("col-xs-11"),
+    addClassName("col-11"),
     padding(0 px, 0 px, 0 px, 0 px),
     height(100 %%),
   )
@@ -42,7 +42,6 @@ object Styles extends StyleSheet.Inline {
   )
 
   val sidebarWrapper = style(
-    addClassNames("col-xs-1", "hide"),
     height(100 %%)
   )
 

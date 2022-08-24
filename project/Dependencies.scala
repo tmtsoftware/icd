@@ -10,10 +10,11 @@ object Dependencies {
   val ScalaTagsVersion      = "0.11.1"
   val ScalaJsDomVersion     = "2.2.0"
   val ScalaCssVersion       = "1.0.0"
-  val BootstrapVersion      = "3.4.1"
-  val JQueryVersion         = "2.2.1"
-  val JQueryUiVersion       = "1.13.1"
-  val BootstrapTableVersion = "1.15.5"
+  val BootstrapVersion      = "5.2.0"
+//  val BootstrapVersion      = "3.4.1"
+  val JQueryVersion         = "3.6.0"
+  val JQueryUiVersion       = "1.13.2"
+  val BootstrapTableVersion = "1.20.2"
 
   //  val akkaSlf4j      = "com.typesafe.akka" %% "akka-slf4j"       % AkkaVersion
   val akkaActorTyped = "com.typesafe.akka" %% "akka-actor-typed" % AkkaVersion
@@ -38,12 +39,11 @@ object Dependencies {
   val commonsIo   = "commons-io"         % "commons-io"   % "2.11.0"
   val commonsText = "org.apache.commons" % "commons-text" % "1.9"
 
-  //  val plantuml   = "net.sourceforge.plantuml" % "plantuml"    % "1.2021.16"
   val plantuml = "net.sourceforge.plantuml" % "plantuml"  % "1.2022.6"
   val graphDot = "org.scala-graph"         %% "graph-dot" % "1.13.3"
 
   val reactivemongo               = "org.reactivemongo" %% "reactivemongo"                  % "1.0.10"
-  val reactivemongoPlayJsonCompat = "org.reactivemongo" %% "reactivemongo-play-json-compat" % "1.1.0-play29-RC5"
+  val reactivemongoPlayJsonCompat = "org.reactivemongo" %% "reactivemongo-play-json-compat" % "1.1.0-play29-RC6"
   //  // XXX Need to fix indirect dependency conflict
   val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.3"
 
@@ -52,17 +52,14 @@ object Dependencies {
   val scalaLogging   = "com.typesafe.scala-logging" %% "scala-logging"   % "3.9.5"
   val logbackClassic = "ch.qos.logback"              % "logback-classic" % "1.2.11"
   val scalatags      = "com.lihaoyi"                %% "scalatags"       % ScalaTagsVersion
-//  val jsoup          = "org.jsoup"                   % "jsoup"            % "1.14.3"
   val jsoup = "org.jsoup"        % "jsoup"            % "1.15.2"
   val jgit  = "org.eclipse.jgit" % "org.eclipse.jgit" % "6.2.0.202206071550-r"
-//  val swaggerParser  = "io.swagger.parser.v3"        % "swagger-parser"   % "2.0.33"
-  val swaggerParser = "io.swagger.parser.v3" % "swagger-parser" % "2.1.1"
+  val swaggerParser = "io.swagger.parser.v3" % "swagger-parser" % "2.1.2"
   val playJson      = "com.typesafe.play"   %% "play-json"      % PlayJsonVersion
   val jqueryUi      = "org.webjars"          % "jquery-ui"      % JQueryUiVersion
   val webjarsPlay   = "org.webjars"         %% "webjars-play"   % "2.8.13"
-  // Note: Updating to bootstrap-4 could be a lot of work...
-  val bootstrap      = "org.webjars"       % "bootstrap"       % BootstrapVersion
-  val bootstrapTable = "org.webjars.bower" % "bootstrap-table" % BootstrapTableVersion
+  val bootstrap      = "org.webjars.npm"       % "bootstrap"       % BootstrapVersion
+  val bootstrapTable = "org.webjars.npm" % "bootstrap-table" % BootstrapTableVersion
 
   // ScalaJS web client scala dependencies
   val clientDeps = Def.setting(
