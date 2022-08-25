@@ -109,7 +109,7 @@ object Styles extends StyleSheet.Inline {
   )
 
   val component = style(
-    addClassName("container"),
+    addClassName("container-fluid"),
     width(100 %%),
     pageBreakBefore.always
   )
