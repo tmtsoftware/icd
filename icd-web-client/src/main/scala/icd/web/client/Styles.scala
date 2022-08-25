@@ -25,9 +25,10 @@ object Styles extends StyleSheet.Inline {
   )
 
   val mainContent: StyleA = style(
-    addClassName("col-11"),
     padding(0 px, 0 px, 0 px, 0 px),
     height(100 %%),
+    paddingLeft(240 px),
+    position.relative,
   )
 
   val main = style(
@@ -42,12 +43,16 @@ object Styles extends StyleSheet.Inline {
   )
 
   val sidebarWrapper = style(
+    addClassNames("hide"),
+    position.fixed,
+    width(240.px),
     height(100 %%)
   )
 
   val sidebar = style(
     height(100 %%),
-    overflow.auto
+    overflow.auto,
+    position.relative
   )
 
   val listGroupItem = style(
@@ -130,22 +135,22 @@ object Styles extends StyleSheet.Inline {
   )
 
   val selectDialogLabel = style(
-    addClassNames("col-xs-1"),
+    addClassNames("col-lg-1"),
     padding(6 px, 6 px, 0 px, 16 px)
   )
 
   val selectDialogSubsystem = style(
-    addClassNames("col-xs-2"),
+    addClassNames("col-lg-2"),
     padding(0 px, 0 px, 0 px, 12 px)
   )
 
   val selectDialogVersion = style(
-    addClassNames("col-xs-1"),
+    addClassNames("col-lg-1"),
     padding(0 px, 0 px, 0 px, 5 px)
   )
 
   val selectDialogComponent = style(
-    addClassNames("col-xs-4"),
+    addClassNames("col-lg-4"),
     padding(0 px, 0 px, 0 px, 5 px)
   )
 
@@ -167,12 +172,12 @@ object Styles extends StyleSheet.Inline {
   )
 
   val statusDialogLabel = style(
-    addClassNames("col-xs-1"),
+    addClassNames("col-lg-1"),
     padding(6 px, 6 px, 0 px, 16 px)
   )
 
   val statusDialogSubsystem = style(
-    addClassNames("col-xs-2"),
+    addClassNames("col-lg-2"),
     padding(0 px, 0 px, 0 px, 12 px)
   )
 

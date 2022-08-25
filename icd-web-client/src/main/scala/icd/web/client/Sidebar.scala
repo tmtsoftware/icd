@@ -27,7 +27,12 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
   // HTML for component
   private def componentLink(compName: String) = {
     val compId = Components.getComponentInfoId(compName)
-    a(title := s"Scroll to $compName", href := s"#$compId", compName, onclick := componentSelected(compName) _)
+    a(
+      cls := "list-group-item list-group-item-action py-2 ripple",
+      title := s"Scroll to $compName",
+      href := s"#$compId",
+      onclick := componentSelected(compName) _
+    )(i(cls := "fas fa-tachometer-alt fa-fw me-3")(span(compName)))
   }
 
   // called when a component link is clicked
@@ -64,9 +69,11 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
     import scalacss.ScalatagsCss._
     import scalatags.JsDom.tags2._
 
-    nav(Styles.sidebarWrapper, cls := "hide collapse d-lg-block sidebar collapse bg-white", id := "sidebar")(
-      div(Styles.sidebar, cls := "position-sticky")(
-        sidebarList
+    header(Styles.sidebarWrapper)(
+      nav(cls := "hide collapse d-lg-block sidebar collapse bg-white", id := "sidebar")(
+        div(Styles.sidebar, cls := "position-sticky")(
+          sidebarList
+        )
       )
     ).render
   }

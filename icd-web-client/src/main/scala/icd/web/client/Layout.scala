@@ -9,8 +9,7 @@ import scalatags.JsDom.all._
  * Manages the main layout (below the navbar)
  */
 case class Layout() extends Displayable {
-
-  val wrapper: Div = div(Styles.layout).render
+  val wrapper: Div = div(Styles.layout, cls := "row flex-nowrap").render
 
   override def markup(): Element = wrapper
 

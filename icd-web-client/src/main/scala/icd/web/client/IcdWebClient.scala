@@ -41,9 +41,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val cssSettings = scalacss.devOrProdDefaults
   import cssSettings._
 
-  private val head = dom.document.head
-  private val body = dom.document.body
-
   // Page components
   private val expandToggler = ExpandToggler()
   private val reloadButton  = ReloadButton()
@@ -154,8 +151,9 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Layout the components on the page
   private def doLayout(): Unit = {
+    import scalatags.JsDom.all._
     // Add CSS styles
-    head.appendChild(Styles.render[TypedTag[HTMLStyleElement]].render)
+    document.head.appendChild(Styles.render[TypedTag[HTMLStyleElement]].render)
 
     navbar.addItem(statusItem)
     navbar.addItem(selectItem)
@@ -171,11 +169,10 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     navbar.addItem(expandToggler)
     navbar.addRightSideItem(logoutItem)
 
+    document.body.appendChild(navbar.markup())
     layout.addItem(sidebar)
     layout.addItem(mainContent)
-
-    body.appendChild(navbar.markup())
-    body.appendChild(layout.markup())
+    document.body.appendChild(layout.markup())
   }
 
   // Update the list of Subsystem options
