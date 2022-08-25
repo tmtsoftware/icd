@@ -27,13 +27,14 @@ object Styles extends StyleSheet.Inline {
   val mainContent: StyleA = style(
     padding(0 px, 0 px, 0 px, 0 px),
     height(100 %%),
-    paddingLeft(240 px),
+//    paddingLeft(240 px),
     position.relative,
   )
 
   val main = style(
-    position.relative,
+//    position.absolute,
     height(100 %%),
+    maxWidth(100 %%),
     overflow.auto,
     padding(0 px, 0 px, 0 px, 15 px),
   )
@@ -43,7 +44,6 @@ object Styles extends StyleSheet.Inline {
   )
 
   val sidebarWrapper = style(
-    addClassNames("hide"),
     position.fixed,
     width(240.px),
     height(100 %%)

@@ -51,9 +51,9 @@ case class PasswordDialog(mainContent: MainContent, listener: PasswordDialogList
   private def usernameChanged(): Unit = {
     val username = usernameBox.value
     if (username.isEmpty)
-      usernameMissing.classList.remove("hide")
+      usernameMissing.classList.remove("d-none")
     else
-      usernameMissing.classList.add("hide")
+      usernameMissing.classList.add("d-none")
   }
 
   // Publish password field
@@ -86,10 +86,10 @@ case class PasswordDialog(mainContent: MainContent, listener: PasswordDialogList
   private def passwordChanged(): Unit = {
     val password = passwordBox.value
     if (password.isEmpty)
-      passwordMissing.classList.remove("hide")
+      passwordMissing.classList.remove("d-none")
     else
-      passwordMissing.classList.add("hide")
-    passwordIncorrect.classList.add("hide")
+      passwordMissing.classList.add("d-none")
+    passwordIncorrect.classList.add("d-none")
   }
 
   //noinspection ScalaUnusedSymbol
@@ -116,7 +116,7 @@ case class PasswordDialog(mainContent: MainContent, listener: PasswordDialogList
         ex.printStackTrace()
 //        ex.xhr.status match {
 //          case 401 => // Unauthorized
-        passwordIncorrect.classList.remove("hide")
+        passwordIncorrect.classList.remove("d-none")
 //        }
       case _ =>
     }

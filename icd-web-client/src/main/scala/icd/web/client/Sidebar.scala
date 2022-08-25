@@ -69,8 +69,8 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
     import scalacss.ScalatagsCss._
     import scalatags.JsDom.tags2._
 
-    header(Styles.sidebarWrapper)(
-      nav(cls := "hide collapse d-lg-block sidebar collapse bg-white", id := "sidebar")(
+    header(Styles.sidebarWrapper, id := "sidebarWrapper")(
+      nav(cls := "collapse sidebar d-lg-block collapse bg-white", id := "sidebar")(
         div(Styles.sidebar, cls := "position-sticky")(
           sidebarList
         )

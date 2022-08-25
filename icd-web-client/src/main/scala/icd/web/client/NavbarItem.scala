@@ -22,7 +22,7 @@ case class NavbarItem(labelStr: String, tip: String, listener: () => Unit) exten
   // Returns the HTML markup for the navbar item
   def markup(): Element = item
 
-  def hide(): Unit = item.classList.add("hide")
+  def hide(): Unit = item.classList.add("d-none")
 }
 
 object NavbarItem {
@@ -189,7 +189,7 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
   // Returns the HTML markup for the navbar item
   def markup(): Element = item
 
-  def hide(): Unit = item.classList.add("hide")
+  def hide(): Unit = item.classList.add("d-none")
 
   override def setEnabled(enabled: Boolean): Unit = {
     if (enabled)
@@ -238,7 +238,7 @@ case class NavbarDropDownItem(labelStr: String, tip: String, items: List[String]
   // Returns the HTML markup for the navbar item
   def markup(): Element = item
 
-  def hide(): Unit = item.classList.add("hide")
+  def hide(): Unit = item.classList.add("d-none")
 
   override def setEnabled(enabled: Boolean): Unit = {
     if (enabled)
@@ -385,7 +385,7 @@ case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOption
   // Returns the HTML markup for the navbar item
   def markup(): Element = item
 
-  def hide(): Unit = item.classList.add("hide")
+  def hide(): Unit = item.classList.add("d-none")
 
   override def setEnabled(enabled: Boolean): Unit = {
     if (enabled)

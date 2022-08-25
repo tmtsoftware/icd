@@ -183,12 +183,12 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Hide or show the sidebar
   private def setSidebarVisible(show: Boolean): Unit = {
-    val s = document.querySelector("#sidebar")
+    val s = document.querySelector("#sidebarWrapper")
     if (show) {
-      s.classList.remove("hide")
+      s.classList.remove("d-none")
     }
     else {
-      s.classList.add("hide")
+      s.classList.add("d-none")
     }
   }
 
@@ -196,10 +196,10 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private def setNavbarVisible(show: Boolean): Unit = {
     val s = document.querySelector(".navbar")
     if (show) {
-      s.classList.remove("hide")
+      s.classList.remove("d-none")
     }
     else {
-      s.classList.add("hide")
+      s.classList.add("d-none")
     }
   }
 

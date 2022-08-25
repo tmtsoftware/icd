@@ -166,7 +166,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
 
     // Displays status after upload complete
     def onloadListener(e: dom.Event) = {
-      busyStatusItem.classList.add("hide")
+      busyStatusItem.classList.add("d-none")
       val statusClass = if (xhr.status == 200) "label-success" else "label-danger"
       if (!statusItem.classList.contains("label-danger")) {
         val statusMsg = if (xhr.status == 200) "Success" else xhr.statusText
@@ -190,7 +190,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     //start upload
     statusItem.classList.add("label-default")
     statusItem.textContent = "Working..."
-    busyStatusItem.classList.remove("hide")
+    busyStatusItem.classList.remove("d-none")
     xhr.send(formData)
   }
 
@@ -216,7 +216,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
         div(cls := "panel panel-info")(
           div(cls := "panel-body")(
             div(label(s"$dirLabel to upload:")(inputItem)),
-            div(cls := "hide")(
+            div(cls := "d-none")(
               button(`type` := "submit")("Upload Files")
             )
           )

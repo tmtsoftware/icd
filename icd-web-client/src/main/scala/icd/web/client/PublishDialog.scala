@@ -185,9 +185,9 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
   private def commentChanged(): Unit = {
     val comment = commentBox.value
     if (comment.isEmpty)
-      commentMissing.classList.remove("hide")
+      commentMissing.classList.remove("d-none")
     else
-      commentMissing.classList.add("hide")
+      commentMissing.classList.add("d-none")
     // Update the enabled states of the publish/unpublish buttons
     changeListener()
   }
@@ -216,9 +216,9 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
   private def usernameChanged(): Unit = {
     val username = usernameBox.value
     if (username.isEmpty)
-      usernameMissing.classList.remove("hide")
+      usernameMissing.classList.remove("d-none")
     else
-      usernameMissing.classList.add("hide")
+      usernameMissing.classList.add("d-none")
   }
 
   // Publish password field
@@ -251,10 +251,10 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
   private def passwordChanged(): Unit = {
     val password = passwordBox.value
     if (password.isEmpty)
-      passwordMissing.classList.remove("hide")
+      passwordMissing.classList.remove("d-none")
     else
-      passwordMissing.classList.add("hide")
-    passwordIncorrect.classList.add("hide")
+      passwordMissing.classList.add("d-none")
+    passwordIncorrect.classList.add("d-none")
   }
 
   // Message to display above publish button
@@ -301,14 +301,14 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
       //          case 400 => // BadRequest
       //            setPublishStatus(ex.xhr.responseText)
       //          case 401 => // Unauthorized
-      //            passwordIncorrect.classList.remove("hide")
+      //            passwordIncorrect.classList.remove("d-none")
       //          case 406 => // NotAcceptable
       //            setPublishStatus(ex.xhr.responseText)
       //        }
       case Failure(ex: Exception) =>
         ex.printStackTrace()
         setPublishStatus(ex.getMessage)
-        passwordIncorrect.classList.remove("hide")
+        passwordIncorrect.classList.remove("d-none")
       case _ =>
     }
   }
@@ -619,7 +619,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
         .post(url = ClientRoutes.checkGitHubCredentials, data = Json.toJson(gitHubCredentials).toString())
         .map { p =>
           if (p._1 == 200) {
-            $id("gitHubCredentials").classList.add("hide")
+            $id("gitHubCredentials").classList.add("d-none")
             $id("contentDivPlaceholder").innerHTML = ""
             $id("contentDivPlaceholder").appendChild(contentDiv)
           }
