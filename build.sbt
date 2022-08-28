@@ -84,7 +84,7 @@ lazy val icdWebServer = (project in file("icd-web-server"))
     // triggers scalaJSPipeline when using compile or continuous compilation
     Compile / compile := ((Compile / compile) dependsOn scalaJSPipeline).value,
     libraryDependencies ++=
-      compileScope(filters, guice, playJson, jqueryUi, webjarsPlay, bootstrap, bootstrapTable) ++
+      compileScope(filters, guice, playJson, jqueryUi, webjarsPlay, bootstrap, bootstrapTable, bootstrapIcons) ++
         testScope(specs2)
   )
   .enablePlugins(PlayScala, SbtWeb, DockerPlugin)
@@ -95,10 +95,7 @@ val clientJsDeps = Def.setting(
   Seq(
     "org.webjars"     % "jquery"          % JQueryVersion / "jquery.js" minified "jquery.min.js",
     "org.webjars"     % "jquery-ui"       % JQueryUiVersion / "jquery-ui.min.js" dependsOn "jquery.js",
-//    "org.webjars.npm" % "popperjs__core"  % PopperVersion / "lib/popper.js",
-//    "org.webjars.npm" % "popperjs__core"  % PopperVersion / "esm/popper.js",
-    "org.webjars.npm" % "popperjs__core"  % PopperVersion / "umd/popper.js",
-    "org.webjars.npm" % "bootstrap"       % BootstrapVersion / "bootstrap.min.js",
+    "org.webjars.npm" % "bootstrap"       % BootstrapVersion / "bootstrap.bundle.js",
     "org.webjars.npm" % "bootstrap-table" % BootstrapTableVersion / "dist/bootstrap-table.min.js",
     ProvidedJS / "resize.js" dependsOn "jquery-ui.min.js"
   )

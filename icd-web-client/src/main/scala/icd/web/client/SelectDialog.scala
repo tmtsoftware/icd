@@ -83,13 +83,13 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   // Displays a checkbox for the "search all subsystems for API dependencies" option
   private val searchAllCheckbox: Input = {
     import scalatags.JsDom.all._
-    input(`type` := "checkbox", disabled := true).render
+    input(`type` := "checkbox", cls := "form-check-input", disabled := true).render
   }
 
   // Displays a checkbox for the "include client API" option
   private val clientApiCheckbox: Input = {
     import scalatags.JsDom.all._
-    input(`type` := "checkbox", disabled := true, onchange := clientApiCheckboxChanged() _).render
+    input(`type` := "checkbox", cls := "form-check-input", disabled := true, onchange := clientApiCheckboxChanged() _).render
   }
 
   private def clientApiCheckboxChanged()(e: dom.Event): Unit = {
@@ -241,8 +241,8 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       div(Styles.selectDialogSubsystemRow, subsystem.markup()),
       div(Styles.subsystemSwapper, subsystemSwapper.markup()),
       div(Styles.selectDialogSubsystemRow, targetSubsystem.markup()),
-      div(cls := "checkbox", label(clientApiCheckbox, "Include client API information (subscribed events, sent commands)")),
-      div(cls := "checkbox", label(searchAllCheckbox, "Search all TMT subsystems for API dependencies")),
+      div(cls := "form-check", clientApiCheckbox, label("Include client API information (subscribed events, sent commands)")),
+      div(cls := "form-check", searchAllCheckbox, label("Search all TMT subsystems for API dependencies")),
       div(Styles.selectDialogApplyButton, applyButton)
     ).render
   }

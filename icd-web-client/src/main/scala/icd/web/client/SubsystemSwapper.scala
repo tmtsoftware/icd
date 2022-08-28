@@ -11,10 +11,10 @@ case class SubsystemSwapper(listener: () => Unit) extends Displayable {
     import scalatags.JsDom.all._
     button(
       tpe := "button",
-      cls := "btn btn-default glyphicon glyphicon-resize-vertical",
+      cls := "btn btn-default",
       title := "Swap first and second subsystems",
       onclick := listener
-    ).render
+    )(i(cls := "bi bi-arrow-down-up")).render
   }
 
   override def markup(): Element = {

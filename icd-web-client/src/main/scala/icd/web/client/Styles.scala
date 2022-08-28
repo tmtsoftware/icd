@@ -167,12 +167,10 @@ object Styles extends StyleSheet.Inline {
   )
 
   val statusDialogLabel = style(
-    addClassNames("col-1"),
     padding(6 px, 6 px, 0 px, 16 px)
   )
 
   val statusDialogSubsystem = style(
-    addClassNames("col-2"),
     padding(0 px, 0 px, 0 px, 12 px)
   )
 

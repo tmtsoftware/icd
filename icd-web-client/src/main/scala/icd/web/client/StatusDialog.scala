@@ -281,10 +281,10 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
   override def markup(): Element = {
     div(
       cls := "container",
-      div(Styles.statusDialogSubsystemRow, msg),
+      div(Styles.statusDialogSubsystemRow, cls := "container-fluid")(msg),
       div(cls := "row")(
-        div(Styles.statusDialogLabel)(label("Subsystem")),
-        div(Styles.statusDialogSubsystem)(subsystemItem)
+        div(Styles.statusDialogLabel, cls := "col-2")(label("Subsystem")),
+        div(Styles.statusDialogSubsystem, cls := "col-3")(subsystemItem)
       ),
       p(""),
       detailsDiv

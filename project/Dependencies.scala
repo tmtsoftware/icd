@@ -11,10 +11,10 @@ object Dependencies {
   val ScalaJsDomVersion     = "2.2.0"
   val ScalaCssVersion       = "1.0.0"
   val BootstrapVersion      = "5.2.0"
-  val PopperVersion         = "2.11.5"
   val JQueryVersion         = "3.6.0"
   val JQueryUiVersion       = "1.13.2"
   val BootstrapTableVersion = "1.20.2"
+  val BootstrapIconsVersion = "1.9.1"
 
   //  val akkaSlf4j      = "com.typesafe.akka" %% "akka-slf4j"       % AkkaVersion
   val akkaActorTyped = "com.typesafe.akka" %% "akka-actor-typed" % AkkaVersion
@@ -59,8 +59,8 @@ object Dependencies {
   val jqueryUi       = "org.webjars"                 % "jquery-ui"        % JQueryUiVersion
   val webjarsPlay    = "org.webjars"                %% "webjars-play"     % "2.8.13"
   val bootstrap      = "org.webjars.npm"             % "bootstrap"        % BootstrapVersion
-  val popper         = "org.webjars.npm"             % "popperjs__core"   % PopperVersion
   val bootstrapTable = "org.webjars.npm"             % "bootstrap-table"  % BootstrapTableVersion
+  val bootstrapIcons = "org.webjars.npm"             % "bootstrap-icons"  % BootstrapIconsVersion
 
   // ScalaJS web client scala dependencies
   val clientDeps = Def.setting(
