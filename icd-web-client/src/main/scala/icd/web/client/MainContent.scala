@@ -50,7 +50,7 @@ case class MainContent() extends Displayable {
   def setTitle(title: String, maybeSubtitle: Option[String] = None, maybeDescription: Option[String] = None): Unit = {
     maybeSubtitle match {
       case Some(subtitle) =>
-        contentTitle.innerHTML = s"$title<br><small>$subtitle</small>"
+        contentTitle.innerHTML = s"$title<br><small class='text-secondary'>$subtitle</small>"
       case None =>
         contentTitle.textContent = title
     }
@@ -123,8 +123,8 @@ case class MainContent() extends Displayable {
 
   override def markup(): Element = {
     import scalacss.ScalatagsCss._
-    div(id := "mainContent", Styles.mainContent)(
-      div(id := "main", Styles.main, cls := "container-fluid pt-4")(contentTitle, contentDescription, contentDiv)
+    div(Styles.mainContent, id := "mainContent", cls := "col overflow-auto h-100")(
+      contentTitle, contentDescription, contentDiv
     ).render
   }
 }

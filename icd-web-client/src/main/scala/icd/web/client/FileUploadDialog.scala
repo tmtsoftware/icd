@@ -236,7 +236,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
       ),
       h4("Status")(
         span(style := "margin-left:15px;"),
-        span(id := "busyStatus", cls := "glyphicon glyphicon-refresh glyphicon-refresh-animate hide"),
+        span(id := "busyStatus", cls := "glyphicon glyphicon-refresh glyphicon-refresh-animate d-none"),
         span(style := "margin-left:15px;"),
         span(id := "status", cls := "label", "Working...")
       ),

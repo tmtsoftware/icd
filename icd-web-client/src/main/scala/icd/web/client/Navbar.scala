@@ -13,8 +13,7 @@ case class Navbar() extends Displayable {
 
   def markup(): Element = {
     import scalatags.JsDom.tags2._
-    header(
-      nav(cls := "navbar navbar-expand-lg navbar-light bg-white fixed-top")(
+      nav(cls := "navbar navbar-expand-md navbar-light bg-light")(
         div(cls := "container-fluid")(
           a(cls := "navbar-brand", href := "/")("TMT Interface Database System"),
           button(
@@ -30,7 +29,6 @@ case class Navbar() extends Displayable {
             rightNavbar
           )
         )
-      )
     ).render
   }
 

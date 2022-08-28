@@ -175,7 +175,7 @@ object IcdToHtml {
     import scalatags.Text.all._
     titleInfo.maybeSubtitle match {
       case Some(subtitle) =>
-        h3(a(name := titleId), cls := "page-header")(titleInfo.title, br, small(subtitle))
+        h3(a(name := titleId), cls := "page-header")(titleInfo.title, br, small(cls := "text-secondary")(subtitle))
       case None =>
         h3(a(name := titleId), cls := "page-header")(titleInfo.title)
     }

@@ -9,9 +9,10 @@ import scalatags.JsDom.all._
  * Manages the main layout (below the navbar)
  */
 case class Layout() extends Displayable {
-  val wrapper: Div = div(Styles.layout, cls := "flex-nowrap").render
+  private val row: Div = div(cls := "row h-100").render
+  private val container: Div = div(Styles.layout, cls :=   "container-fluid vh-100")(row).render
 
-  override def markup(): Element = wrapper
+  override def markup(): Element = container
 
   /**
    * Adds an item to the layout.
@@ -19,6 +20,6 @@ case class Layout() extends Displayable {
    * @param displayable the item to be added
    */
   def addItem(displayable: Displayable): Unit = {
-    wrapper.appendChild(displayable.markup())
+    row.appendChild(displayable.markup())
   }
 }

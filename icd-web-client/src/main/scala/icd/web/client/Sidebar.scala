@@ -3,6 +3,7 @@ package icd.web.client
 import org.scalajs.dom
 import org.scalajs.dom.Node
 import org.scalajs.dom.Element
+import org.scalajs.dom.html.UList
 import scalatags.JsDom.all._
 
 trait SidebarListener {
@@ -22,17 +23,12 @@ trait SidebarListener {
  */
 case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
 
-  private val sidebarList = div(cls := "list-group list-group-flush mx-3 mt-4").render
+  val sidebarList: UList = ul(cls := "nav list-group").render
 
   // HTML for component
   private def componentLink(compName: String) = {
     val compId = Components.getComponentInfoId(compName)
-    a(
-      cls := "list-group-item list-group-item-action py-2 ripple",
-      title := s"Scroll to $compName",
-      href := s"#$compId",
-      onclick := componentSelected(compName) _
-    )(i(cls := "fas fa-tachometer-alt fa-fw me-3")(span(compName)))
+    li(a(title := s"Scroll to $compName", href := s"#$compId", compName, onclick := componentSelected(compName) _))
   }
 
   // called when a component link is clicked
@@ -67,14 +63,9 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
   // Markup for the sidebar
   override def markup(): Element = {
     import scalacss.ScalatagsCss._
-    import scalatags.JsDom.tags2._
 
-    header(Styles.sidebarWrapper, id := "sidebarWrapper")(
-      nav(cls := "collapse sidebar d-lg-block collapse bg-white", id := "sidebar")(
-        div(Styles.sidebar, cls := "position-sticky")(
-          sidebarList
-        )
-      )
+    div(id := "sidebar", cls := "d-none col-1 overflow-auto h-100")(
+      sidebarList
     ).render
   }
 }

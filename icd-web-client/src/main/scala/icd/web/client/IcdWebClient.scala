@@ -183,7 +183,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Hide or show the sidebar
   private def setSidebarVisible(show: Boolean): Unit = {
-    val s = document.querySelector("#sidebarWrapper")
+    val s = document.querySelector("#sidebar")
     if (show) {
       s.classList.remove("d-none")
     }

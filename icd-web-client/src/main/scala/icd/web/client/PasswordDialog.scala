@@ -78,7 +78,7 @@ case class PasswordDialog(mainContent: MainContent, listener: PasswordDialogList
   private val passwordIncorrect = {
     div(
       id := "passwordIncorrect",
-      cls := "has-error hide",
+      cls := "has-error d-none",
       label(cls := "control-label", "Password or username is incorrect!")
     ).render
   }

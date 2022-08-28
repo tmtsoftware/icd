@@ -13,47 +13,42 @@ object Styles extends StyleSheet.Inline {
   import language.postfixOps
 
   val layout: StyleA = style(
-    height(95 %%),
-    width(100 %%),
-    position.fixed,
-    top(50 px),
-    // Increase top offset in the range 400 to 790 px,
-    // since the navbar items wrap around at that size
-    media.minWidth(400 px).maxWidth(790 px)(top(100 px)),
-    left(0 px),
-    display.block,
+//    height(95 %%),
+//    width(100 %%),
+//    position.fixed,
+//    top(50 px),
+//    // Increase top offset in the range 400 to 790 px,
+//    // since the navbar items wrap around at that size
+//    media.minWidth(400 px).maxWidth(790 px)(top(100 px)),
+//    left(0 px),
+//    display.block,
   )
 
   val mainContent: StyleA = style(
-    padding(0 px, 0 px, 0 px, 0 px),
-    height(100 %%),
-//    paddingLeft(240 px),
-    position.relative,
+    padding(50 px, 0 px, 0 px, 15 px),
   )
 
-  val main = style(
-//    position.absolute,
-    height(100 %%),
-    maxWidth(100 %%),
-    overflow.auto,
-    padding(0 px, 0 px, 0 px, 15 px),
-  )
+//  val main = style(
+//    position.relative,
+//    height(100 %%),
+//    overflow.auto,
+//    padding(0 px, 0 px, 0 px, 15 px),
+//  )
 
   val contentDiv = style(
     float.left,
+    padding(0 px, 0 px, 100 px, 0 px)
   )
 
-  val sidebarWrapper = style(
-    position.fixed,
-    width(240.px),
-    height(100 %%)
-  )
+//  val sidebarWrapper = style(
+//    addClassNames("col-1", "d-none"),
+//    height(100 %%)
+//  )
 
-  val sidebar = style(
-    height(100 %%),
-    overflow.auto,
-    position.relative
-  )
+//  val sidebar = style(
+//    height(100 %%),
+//    overflowY.auto
+//  )
 
   val listGroupItem = style(
     addClassName("list-group-item"),
@@ -135,22 +130,22 @@ object Styles extends StyleSheet.Inline {
   )
 
   val selectDialogLabel = style(
-    addClassNames("col-lg-1"),
+    addClassNames("col-1"),
     padding(6 px, 6 px, 0 px, 16 px)
   )
 
   val selectDialogSubsystem = style(
-    addClassNames("col-lg-2"),
+    addClassNames("col-2"),
     padding(0 px, 0 px, 0 px, 12 px)
   )
 
   val selectDialogVersion = style(
-    addClassNames("col-lg-1"),
+    addClassNames("col-1"),
     padding(0 px, 0 px, 0 px, 5 px)
   )
 
   val selectDialogComponent = style(
-    addClassNames("col-lg-4"),
+    addClassNames("col-4"),
     padding(0 px, 0 px, 0 px, 5 px)
   )
 
@@ -172,12 +167,12 @@ object Styles extends StyleSheet.Inline {
   )
 
   val statusDialogLabel = style(
-    addClassNames("col-lg-1"),
+    addClassNames("col-1"),
     padding(6 px, 6 px, 0 px, 16 px)
   )
 
   val statusDialogSubsystem = style(
-    addClassNames("col-lg-2"),
+    addClassNames("col-2"),
     padding(0 px, 0 px, 0 px, 12 px)
   )
 
