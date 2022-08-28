@@ -58,7 +58,7 @@ case class Subsystem(
   // The subsystem combobox
   private val subsystemItem = {
     import scalatags.JsDom.all._
-    select(cls := "form-control", onchange := subsystemSelected _)(
+    select(cls := "form-select", onchange := subsystemSelected _)(
       if (enablePlaceholder)
         option(value := placeholderMsg, selected := true)(placeholderMsg)
       else
@@ -69,13 +69,13 @@ case class Subsystem(
   // The subsystem version combobox
   private val versionItem = {
     import scalatags.JsDom.all._
-    select(cls := "form-control", onchange := subsystemVersionSelected _).render
+    select(cls := "form-select", onchange := subsystemVersionSelected _).render
   }
 
   // The component combobox
   private val componentItem = {
     import scalatags.JsDom.all._
-    select(cls := "form-control")(
+    select(cls := "form-select")(
       option(value := componentPlaceholder, selected := true)(componentPlaceholder)
     ).render
   }

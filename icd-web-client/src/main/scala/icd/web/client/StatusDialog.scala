@@ -60,7 +60,7 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
 
   // The subsystem combobox
   private val subsystemItem = {
-    select(cls := "form-control", onchange := onSubsystemSelected _)(
+    select(cls := "form-select", onchange := onSubsystemSelected _)(
       option(value := placeholderMsg, disabled := true, selected := true)(placeholderMsg)
     ).render
   }
