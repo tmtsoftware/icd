@@ -4,7 +4,7 @@ import Settings._
 
 def compileScope(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 def testScope(deps: ModuleID*): Seq[ModuleID]    = deps map (_ % "test")
-def toPathMapping(f: File): (File, String) = f -> f.getName
+def toPathMapping(f: File): (File, String)       = f          -> f.getName
 
 // SCALAJS_PROD is set in install.sh to enable fully optimized JavaScript
 val optStage = if (sys.env.contains("SCALAJS_PROD")) FullOptStage else FastOptStage
@@ -50,7 +50,6 @@ lazy val `icd-db` = project
         testScope(scalaTest)
   ) dependsOn icdWebSharedJvm
 
-
 // Command line tool to support visualization of API and ICD relationships
 lazy val `icd-viz` = project
   .enablePlugins(DeployApp)
@@ -94,9 +93,10 @@ lazy val icdWebServer = (project in file("icd-web-server"))
 // ScalaJS client JavaScript dependencies
 val clientJsDeps = Def.setting(
   Seq(
-    "org.webjars" % "jquery"    % JQueryVersion / "jquery.js" minified "jquery.min.js",
-    "org.webjars" % "jquery-ui" % JQueryUiVersion / "jquery-ui.min.js" dependsOn "jquery.js",
-    "org.webjars.npm"       % "bootstrap"       % BootstrapVersion / "bootstrap.min.js" dependsOn "jquery.js",
+    "org.webjars"     % "jquery"          % JQueryVersion / "jquery.js" minified "jquery.min.js",
+    "org.webjars"     % "jquery-ui"       % JQueryUiVersion / "jquery-ui.min.js" dependsOn "jquery.js",
+    "org.webjars.npm" % "popperjs__core"  % PopperVersion / "lib/popper.js",
+    "org.webjars.npm" % "bootstrap"       % BootstrapVersion / "bootstrap.min.js",
     "org.webjars.npm" % "bootstrap-table" % BootstrapTableVersion / "dist/bootstrap-table.min.js",
     ProvidedJS / "resize.js" dependsOn "jquery-ui.min.js"
   )
@@ -123,7 +123,7 @@ lazy val icdWebClient = (project in file("icd-web-client"))
 lazy val icdWebShared = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("icd-web-shared"))
-//  .jsConfigure(_.enablePlugins(ScalaJSWeb))
+  //  .jsConfigure(_.enablePlugins(ScalaJSWeb))
   .enablePlugins(BuildInfoPlugin)
   .settings(
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),

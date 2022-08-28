@@ -129,7 +129,7 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
     val apiVersionInfo = pubInfo.apiVersions.head
     table(
       Styles.componentTable,
-      attr("data-toggle") := "table",
+      attr("data-bs-toggle") := "table",
       thead(
         tr(
           th("Subsystem"),
@@ -163,7 +163,7 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
   private def icdTable(pubInfo: PublishInfo): JsDom.TypedTag[Table] = {
     table(
       Styles.componentTable,
-      attr("data-toggle") := "table",
+      attr("data-bs-toggle") := "table",
       thead(
         tr(
           th("Subsystem 1"),

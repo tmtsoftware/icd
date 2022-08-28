@@ -91,7 +91,7 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
       }
 
       table(
-        attr("data-toggle") := "table",
+        attr("data-bs-toggle") := "table",
         thead(
           tr(headings.map(th(_)))
         ),
@@ -176,7 +176,7 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
       div(
         table(
           Styles.componentTable,
-          attr("data-toggle") := "table",
+          attr("data-bs-toggle") := "table",
           thead(
             tr(
               th(subsystem, br, "Version"),
@@ -211,7 +211,7 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
       div(
         table(
           Styles.componentTable,
-          attr("data-toggle") := "table",
+          attr("data-bs-toggle") := "table",
           thead(
             tr(
               th("ICD", br, "Version"),

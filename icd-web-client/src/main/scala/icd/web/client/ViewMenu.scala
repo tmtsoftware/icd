@@ -11,7 +11,7 @@ case class ViewMenu() extends Displayable {
   def markup(): Element = {
     import scalatags.JsDom.all._
     li(cls := "dropdown")(
-      a(cls := "dropdown-toggle", attr("data-toggle") := "dropdown", "View", b(cls := "caret")),
+      a(cls := "dropdown-toggle", attr("data-bs-toggle") := "dropdown", "View", b(cls := "caret")),
       ul(cls := "dropdown-menu")()
     ).render
   }

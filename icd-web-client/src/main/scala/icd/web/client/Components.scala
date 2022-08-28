@@ -75,7 +75,7 @@ object Components {
       else {
         table(
           tableStyle,
-          attr("data-toggle") := "table",
+          attr("data-bs-toggle") := "table",
           thead(
             tr(newHead.map(th(_)))
           ),
@@ -434,8 +434,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       Styles.attributeBtn,
       id := buttonId,
       name := buttonId,
-      attr("data-toggle") := "collapse",
-      attr("data-target") := s"#$rowId",
+      attr("data-bs-toggle") := "collapse",
+      attr("data-bs-target") := s"#$rowId",
       title := "Show/hide details"
     )(
       span(cls := "glyphicon glyphicon-collapse-down")
@@ -504,7 +504,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         div(
           h3(s"$pubType Published by $compName"),
           table(
-            attr("data-toggle") := "table",
+            attr("data-bs-toggle") := "table",
             thead(
               tr(
                 th("Name"),
@@ -562,7 +562,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         div(
           h3(s"Alarms Published by $compName"),
           table(
-            attr("data-toggle") := "table",
+            attr("data-bs-toggle") := "table",
             thead(
               tr(
                 th("Name"),
@@ -664,7 +664,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             Styles.componentSection,
             table(
               Styles.componentTable,
-              attr("data-toggle") := "table",
+              attr("data-bs-toggle") := "table",
               thead(
                 tr(
                   th("Name"),
@@ -760,7 +760,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         h4(s"Command Configurations Received by $compName"),
         table(
           Styles.componentTable,
-          attr("data-toggle") := "table",
+          attr("data-bs-toggle") := "table",
           thead(
             tr(
               th("Name"),
@@ -848,7 +848,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         h4(s"Command Configurations Sent by $compName"),
         table(
           Styles.componentTable,
-          attr("data-toggle") := "table",
+          attr("data-bs-toggle") := "table",
           thead(
             tr(
               th("Name"),
@@ -987,7 +987,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     div(
       table(
         Styles.componentTable,
-        attr("data-toggle") := "table",
+        attr("data-bs-toggle") := "table",
         thead(
           tr(
             th("Subsystem"),
@@ -1018,7 +1018,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       h3(a(name := "FITS-Keys")("FITS Keywords")),
       table(
         Styles.componentTable,
-        attr("data-toggle") := "table",
+        attr("data-bs-toggle") := "table",
         thead(
           tr(
             th("Name"),

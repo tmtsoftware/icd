@@ -73,7 +73,7 @@ object IcdToHtml {
     div(id := "FITS-Keys")(
       nh.H3("FITS Keywords", "FITS-Keys"),
       table(
-        attr("data-toggle") := "table",
+        attr("data-bs-toggle") := "table",
         thead(
           tr(
             th("Name"),

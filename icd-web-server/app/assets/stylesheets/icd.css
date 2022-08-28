@@ -1,5 +1,7 @@
 html {
   overflow: hidden;
+  /* To match Bootstrap 3 setting! */
+  font-size: 14px;
 }
 body {
   overflow: visible;
@@ -68,6 +70,7 @@ h2 {
     font-size: 14px;
   }
 }
+
 #content h3, #versionHistory h3 {
   font-size: 16px;
 }

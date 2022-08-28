@@ -44,7 +44,7 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo]) extends Displayable {
     div(Styles.component, id := "FITS-Keys")(
       table(
         Styles.componentTable,
-        attr("data-toggle") := "table",
+        attr("data-bs-toggle") := "table",
         thead(
           tr(
             th("Name"),

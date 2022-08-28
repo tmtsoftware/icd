@@ -61,8 +61,8 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
       title := buttonTitle,
       disabled := true,
       onclick := publishButtonClicked(unpublish) _,
-      attr("data-toggle") := "modal",
-      attr("data-target") := "#publishModal"
+      attr("data-bs-toggle") := "modal",
+      attr("data-bs-target") := "#publishModal"
     )(s).render
   }
 
@@ -72,15 +72,15 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
       div(cls := "modal-dialog")(
         div(cls := "modal-content")(
           div(cls := "modal-header")(
-            button(`type` := "button", cls := "close", attr("data-dismiss") := "modal")(raw("&times;")),
+            button(`type` := "button", cls := "close", attr("data-bs-dismiss") := "modal")(raw("&times;")),
             h4(cls := "modal-title")("Confirm Publish")
           ),
           div(cls := "modal-body")(
             h3(id := "confirmPublishMessage")(s"Are you sure you want to ...")
           ),
           div(cls := "modal-footer")(
-            button(`type` := "button", cls := "btn btn-default", attr("data-dismiss") := "modal")("Cancel"),
-            button(id := "confirmPublishButton", `type` := "button", cls := "btn btn-primary", attr("data-dismiss") := "modal")
+            button(`type` := "button", cls := "btn btn-default", attr("data-bs-dismiss") := "modal")("Cancel"),
+            button(id := "confirmPublishButton", `type` := "button", cls := "btn btn-primary", attr("data-bs-dismiss") := "modal")
           )
         )
       )
@@ -665,7 +665,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
           helpMsg,
           table(
             Styles.componentTable,
-            attr("data-toggle") := "table",
+            attr("data-bs-toggle") := "table",
             thead(
               tr(
                 th("Subsystem"),

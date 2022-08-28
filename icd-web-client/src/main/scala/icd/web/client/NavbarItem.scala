@@ -121,7 +121,7 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
       div(cls := "modal-dialog")(
         div(cls := "modal-content")(
           div(cls := "modal-header")(
-            button(`type` := "button", cls := "close", attr("data-dismiss") := "modal")(raw("&times;")),
+            button(`type` := "button", cls := "close", attr("data-bs-dismiss") := "modal")(raw("&times;")),
             h4(cls := "modal-title")("PDF Options")
           ),
           div(cls := "modal-body")(
@@ -158,12 +158,12 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
             )
           ),
           div(cls := "modal-footer")(
-            button(`type` := "button", cls := "btn btn-default", attr("data-dismiss") := "modal")("Cancel"),
+            button(`type` := "button", cls := "btn btn-default", attr("data-bs-dismiss") := "modal")("Cancel"),
             button(
               onclick := pdfModalListener _,
               `type` := "button",
               cls := "btn btn-primary",
-              attr("data-dismiss") := "modal"
+              attr("data-bs-dismiss") := "modal"
             )("Apply")
           )
         )
@@ -180,8 +180,8 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
         cls := "nav-link",
         href := "#",
         title := tip,
-        attr("data-toggle") := "modal",
-        attr("data-target") := s"#pdfModal$labelStr"
+        attr("data-bs-toggle") := "modal",
+        attr("data-bs-target") := s"#pdfModal$labelStr"
       )(labelStr)
     ).render
   }
@@ -221,7 +221,7 @@ case class NavbarDropDownItem(labelStr: String, tip: String, items: List[String]
       href := "#",
       title := tip,
       cls := "nav-link dropdown-toggle",
-      attr("data-toggle") := "dropdown",
+      attr("data-bs-toggle") := "dropdown",
       role := "button"
     )(
       labelStr,
@@ -312,7 +312,7 @@ case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOption
       div(cls := "modal-dialog")(
         div(cls := "modal-content")(
           div(cls := "modal-header")(
-            button(`type` := "button", cls := "close", attr("data-dismiss") := "modal")(raw("&times;")),
+            button(`type` := "button", cls := "close", attr("data-bs-dismiss") := "modal")(raw("&times;")),
             h4(cls := "modal-title")("Graph Options")
           ),
           div(cls := "modal-body")(
@@ -354,12 +354,12 @@ case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOption
             )
           ),
           div(cls := "modal-footer")(
-            button(`type` := "button", cls := "btn btn-default", attr("data-dismiss") := "modal")("Cancel"),
+            button(`type` := "button", cls := "btn btn-default", attr("data-bs-dismiss") := "modal")("Cancel"),
             button(
               onclick := graphModalListener _,
               `type` := "button",
               cls := "btn btn-primary",
-              attr("data-dismiss") := "modal"
+              attr("data-bs-dismiss") := "modal"
             )("Apply")
           )
         )
@@ -376,8 +376,8 @@ case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOption
         cls := "nav-link",
         href := "#",
         title := tip,
-        attr("data-toggle") := "modal",
-        attr("data-target") := s"#graphModal"
+        attr("data-bs-toggle") := "modal",
+        attr("data-bs-target") := s"#graphModal"
       )(labelStr)
     ).render
   }

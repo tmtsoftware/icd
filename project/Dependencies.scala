@@ -11,7 +11,7 @@ object Dependencies {
   val ScalaJsDomVersion     = "2.2.0"
   val ScalaCssVersion       = "1.0.0"
   val BootstrapVersion      = "5.2.0"
-//  val BootstrapVersion      = "3.4.1"
+  val PopperVersion         = "2.11.5"
   val JQueryVersion         = "3.6.0"
   val JQueryUiVersion       = "1.13.2"
   val BootstrapTableVersion = "1.20.2"
@@ -49,17 +49,18 @@ object Dependencies {
 
   val diffson = "org.gnieh" %% "diffson-play-json" % "4.1.1"
 
-  val scalaLogging   = "com.typesafe.scala-logging" %% "scala-logging"   % "3.9.5"
-  val logbackClassic = "ch.qos.logback"              % "logback-classic" % "1.2.11"
-  val scalatags      = "com.lihaoyi"                %% "scalatags"       % ScalaTagsVersion
-  val jsoup = "org.jsoup"        % "jsoup"            % "1.15.2"
-  val jgit  = "org.eclipse.jgit" % "org.eclipse.jgit" % "6.2.0.202206071550-r"
-  val swaggerParser = "io.swagger.parser.v3" % "swagger-parser" % "2.1.2"
-  val playJson      = "com.typesafe.play"   %% "play-json"      % PlayJsonVersion
-  val jqueryUi      = "org.webjars"          % "jquery-ui"      % JQueryUiVersion
-  val webjarsPlay   = "org.webjars"         %% "webjars-play"   % "2.8.13"
-  val bootstrap      = "org.webjars.npm"       % "bootstrap"       % BootstrapVersion
-  val bootstrapTable = "org.webjars.npm" % "bootstrap-table" % BootstrapTableVersion
+  val scalaLogging   = "com.typesafe.scala-logging" %% "scala-logging"    % "3.9.5"
+  val logbackClassic = "ch.qos.logback"              % "logback-classic"  % "1.2.11"
+  val scalatags      = "com.lihaoyi"                %% "scalatags"        % ScalaTagsVersion
+  val jsoup          = "org.jsoup"                   % "jsoup"            % "1.15.2"
+  val jgit           = "org.eclipse.jgit"            % "org.eclipse.jgit" % "6.2.0.202206071550-r"
+  val swaggerParser  = "io.swagger.parser.v3"        % "swagger-parser"   % "2.1.2"
+  val playJson       = "com.typesafe.play"          %% "play-json"        % PlayJsonVersion
+  val jqueryUi       = "org.webjars"                 % "jquery-ui"        % JQueryUiVersion
+  val webjarsPlay    = "org.webjars"                %% "webjars-play"     % "2.8.13"
+  val bootstrap      = "org.webjars.npm"             % "bootstrap"        % BootstrapVersion
+  val popper         = "org.webjars.npm"             % "popperjs__core"   % PopperVersion
+  val bootstrapTable = "org.webjars.npm"             % "bootstrap-table"  % BootstrapTableVersion
 
   // ScalaJS web client scala dependencies
   val clientDeps = Def.setting(
