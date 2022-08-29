@@ -85,7 +85,8 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
       def displayJson(json: String) = {
         if (json.startsWith("\"")) {
           div(json.substring(1, json.length - 1).replace("\\n", "\n").trim.split("\n").map(s => p(s)))
-        } else {
+        }
+        else {
           pre(code(Styles.unstyledPre, Json.prettyPrint(Json.parse(json))))
         }
       }
@@ -114,7 +115,8 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
       if (l.length == 2) {
         val (component, section) = (l(0), l(1))
         s"Changes to component $component in the $section section"
-      } else path
+      }
+      else path
     }
 
     def diffInfoMarkup(diffInfo: DiffInfo) = {
@@ -153,17 +155,16 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
 
   // Returns a checkbox displaying the version (select two to compare versions)
   private def makeVersionCheckBox(version: Option[String], compButton: Button) = {
-    div(cls := "checkbox")(
-      label(
-        input(
-          name := "version",
-          title := s"Select this version for comparison",
-          tpe := "checkbox",
-          onchange := checkboxListener(compButton) _,
-          value := version.getOrElse("")
-        ),
-        version
-      )
+    div(cls := "form-check")(
+      input(
+        name := "version",
+        cls := "form-check-input",
+        title := s"Select this version for comparison",
+        tpe := "checkbox",
+        onchange := checkboxListener(compButton) _,
+        value := version.getOrElse("")
+      ),
+      label(cls := "form-check-label", version)
     )
   }
 

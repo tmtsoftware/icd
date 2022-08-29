@@ -205,7 +205,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
   }
 
   private val majorVersionCheckBox = {
-    input(tpe := "checkbox", onchange := changeListener _).render
+    input(tpe := "checkbox", cls := "form-check-input", onchange := changeListener _).render
   }
 
   // Message about missing username
@@ -597,18 +597,18 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
 
   // Returns a checkbox displaying the API name
   private def makeSubsystemCheckBox(publishInfo: PublishInfo) = {
-    div(cls := "checkbox")(
-      label(
-        input(
-          id := s"${publishInfo.subsystem}Checkbox",
-          name := "api",
-          title := s"Select this API to publish",
-          tpe := "checkbox",
-          onchange := changeListener _,
-          value := Json.toJson(publishInfo).toString()
-        ),
-        publishInfo.subsystem
-      )
+    div(
+      cls := "form-check",
+      input(
+        id := s"${publishInfo.subsystem}Checkbox",
+        cls := "form-check-input",
+        name := "api",
+        title := s"Select this API to publish",
+        tpe := "checkbox",
+        onchange := changeListener _,
+        value := Json.toJson(publishInfo).toString()
+      ),
+      label(cls := "form-check-label", publishInfo.subsystem)
     )
   }
 
@@ -700,7 +700,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
             )
           ),
           div(Styles.commentBox, label("Comments")("*", commentBox, commentMissing)),
-          div(cls := "checkbox")(label(majorVersionCheckBox, "Increment major version")),
+          div(cls := "form-check", majorVersionCheckBox, label("Increment major version")),
           div(
             publishLabel,
             br,

@@ -33,22 +33,26 @@ object NavbarItem {
       units: Option[String] = None
   ): JsDom.TypedTag[Div] = {
     import scalatags.JsDom.all._
-    val unitsStr = units.map(" " + _).getOrElse("")
-    div(cls := "radio-inline")(
+    val unitsStr   = units.map(" " + _).getOrElse("")
+    val defaultStr = if (valueStr == defaultValue) " (default)" else ""
+    val labelStr   = s"$valueStr$unitsStr$defaultStr"
+    div(cls := "form-check")(
       if (valueStr == defaultValue)
-        label(input(`type` := "radio", name := nameStr, value := valueStr, checked))(s"$valueStr$unitsStr (default)")
+        input(`type` := "radio", cls := "form-check-input", name := nameStr, value := valueStr, checked)
       else
-        label(input(`type` := "radio", name := nameStr, value := valueStr))(s"$valueStr$unitsStr")
+        input(`type` := "radio", cls := "form-check-input", name := nameStr, value := valueStr),
+      label(cls := "form-check-label", labelStr)
     )
   }
 
   def makeCheckbox(nameStr: String, valueStr: String, isSelected: Boolean): JsDom.TypedTag[Div] = {
     import scalatags.JsDom.all._
-    div(cls := "checkbox")(
+    div(cls := "form-check")(
       if (isSelected)
-        label(input(`type` := "checkbox", id := nameStr, name := nameStr, checked), valueStr)
+        input(`type` := "checkbox", cls := "form-check-input", id := nameStr, name := nameStr, checked)
       else
-        label(input(`type` := "checkbox", id := nameStr, name := nameStr), valueStr)
+        input(`type` := "checkbox", cls := "form-check-input", id := nameStr, name := nameStr),
+      label(cls := "form-check-label", valueStr)
     )
   }
 
@@ -145,15 +149,15 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
               hr,
               p(),
               h5(s"Details:"),
-              div(cls := "radio")(
-                label(input(`type` := "radio", name := s"details$labelStr", value := "true", checked))(
-                  "Show the details for all events, commands, alarms (default)"
-                )
+              div(
+                cls := "form-check",
+                input(`type` := "radio", cls := "form-check-input", name := s"details$labelStr", value := "true", checked),
+                label(cls := "form-check-label", "Show the details for all events, commands, alarms (default)")
               ),
-              div(cls := "radio")(
-                label(input(`type` := "radio", name := s"details$labelStr", value := "false"))(
-                  "Include only the details that are expanded in the HTML view"
-                )
+              div(
+                cls := "form-check",
+                input(`type` := "radio", cls := "form-check-input", name := s"details$labelStr", value := "false"),
+                label(cls := "form-check-label", "Include only the details that are expanded in the HTML view")
               )
             )
           ),
