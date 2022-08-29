@@ -227,14 +227,11 @@ case class NavbarDropDownItem(labelStr: String, tip: String, items: List[String]
       cls := "nav-link dropdown-toggle",
       attr("data-bs-toggle") := "dropdown",
       role := "button"
-    )(
-      labelStr,
-      span(cls := "caret")
-    ),
+    )(labelStr),
     ul(
       cls := "dropdown-menu",
       items.map { item =>
-        li(a(href := "#", onclick := itemSelected(item) _)(item))
+        li(a(cls := "dropdown-item", href := "#", onclick := itemSelected(item) _)(item))
       }
     )
   ).render
