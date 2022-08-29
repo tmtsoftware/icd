@@ -19,11 +19,10 @@ case class ExpandToggler() extends Displayable {
           Styles.attributeBtn,
           tpe := "button",
           id := "expand-init",
-          cls := "glyphicon glyphicon-lg glyphicon-collapse-down",
           title := "Expand or collapse all detailed information"
           // XXX Its easier to do this in JavaScript directly, see resources/resize.js: navbarExpandAll
           //      onclick := listener
-        )
+        )(i(cls := "bi bi-caret-down-square"))
       )
     ).render
   }

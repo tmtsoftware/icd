@@ -637,7 +637,7 @@ object IcdToHtml {
   private def makeErrorDiv(msg: String): Text.TypedTag[String] = {
     import scalatags.Text.all._
     div(cls := "alert alert-warning", role := "alert")(
-      span(cls := "glyphicon glyphicon-warning-sign", attr("aria-hidden") := "true"),
+      i(cls := "bi bi-exclamation-triangle"),
       span(em(s" $msg"))
     )
   }

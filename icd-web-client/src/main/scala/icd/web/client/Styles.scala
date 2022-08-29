@@ -118,7 +118,7 @@ object Styles extends StyleSheet.Inline {
   )
 
   val attributeBtn = style(
-    addClassNames("btn", "btn-default", "btn-xs"),
+    addClassNames("btn", "btn-outline-dark", "btn-sm"),
     margin(0 px),
     outline.none,
     borderRadius(0 px),

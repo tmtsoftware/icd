@@ -432,13 +432,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     val buttonId = s"button-$targetId"
     val btn = button(
       Styles.attributeBtn,
+      `type` := "button",
       id := buttonId,
       name := buttonId,
       attr("data-bs-toggle") := "collapse",
       attr("data-bs-target") := s"#$rowId",
       title := "Show/hide details"
     )(
-      span(cls := "glyphicon glyphicon-collapse-down")
+      i(cls := "bi bi-caret-down-square")
     )
     val row = tr(id := rowId, cls := "collapse panel-collapse")(td(colspan := colSpan)(item))
     (btn, row)
@@ -454,7 +455,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def makeErrorDiv(msg: String): TypedTag[Div] = {
     import scalatags.JsDom.all._
     div(cls := "alert alert-warning", role := "alert")(
-      span(cls := "glyphicon glyphicon-warning-sign", attr("aria-hidden") := "true"),
+      span(i(cls := "bi bi-exclamation-triangle"), attr("aria-hidden") := "true"),
       span(em(s" $msg"))
     )
   }
@@ -806,7 +807,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     def getWarning(m: SentCommandInfo) =
       m.warning.map { msg =>
         div(cls := "alert alert-warning", role := "alert")(
-          span(cls := "glyphicon glyphicon-warning-sign", attr("aria-hidden") := "true"),
+          span(i(cls := "bi bi-exclamation-triangle"), attr("aria-hidden") := "true"),
           span(em(s" Warning: $msg"))
         )
       }

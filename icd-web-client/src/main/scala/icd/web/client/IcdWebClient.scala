@@ -682,10 +682,9 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
             Styles.attributeBtn,
             tpe := "button",
             id := "reload",
-            cls := "glyphicon glyphicon-lg glyphicon-repeat",
             title := "Reload the selected subsystem, API or ICD, refresh from icd database",
             onclick := reloadPage _
-          )
+          )(i(cls := "bi bi-arrow-clockwise"))
         )
       ).render
     }
