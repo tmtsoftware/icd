@@ -7,6 +7,7 @@ import csw.services.icd.{IcdValidator, PdfCache, Problem}
 import csw.services.icd.db.ApiVersions.ApiEntry
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.db.{ApiVersions, IcdDb, IcdDbDefaults, IcdVersionManager, IcdVersions, Subsystems}
+import csw.services.icd.fits.IcdFits
 import icd.web.shared.{ApiVersionInfo, GitHubCredentials, IcdVersion, IcdVersionInfo, PublishInfo, SubsystemWithVersion}
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib.ObjectId
@@ -698,8 +699,8 @@ object IcdGitManager {
 
     // For ingesting subsystems into the db, make ESW is first,
     // since it contains the predefined observe events that others depend on
-    subsystems.
-      sortWith((x, y) => x.subsystem == "ESW")
+    subsystems
+      .sortWith((x, y) => x.subsystem == "ESW")
       .foreach(ingest(db, _, feedback, allApiVersions))
     importIcdFiles(db, subsystems, feedback, allIcdVersions)
   }
@@ -763,6 +764,14 @@ object IcdGitManager {
               ex.printStackTrace()
               warning(s"Failed to ingest $subsystem-${e.version} (commit: ${e.commit})")
               ex.printStackTrace()
+          }
+        }
+        // If this is DMS, read the list of FITS Keywords
+        if (subsystem == "DMS") {
+          val fitsKeywordFile = new File(s"$gitWorkDir/FITS-Keywords", "FITS-Keywords.json")
+          if (fitsKeywordFile.exists()) {
+            feedback(s"Ingesting ${fitsKeywordFile.getPath}")
+            new IcdFits(db).ingest(fitsKeywordFile)
           }
         }
         git.close()

@@ -296,15 +296,6 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
 
   private def displayFetchErrors(f: Future[Unit]): Unit = {
     f.onComplete {
-      //      case Failure(ex: AjaxException) =>
-      //        ex.xhr.status match {
-      //          case 400 => // BadRequest
-      //            setPublishStatus(ex.xhr.responseText)
-      //          case 401 => // Unauthorized
-      //            passwordIncorrect.classList.remove("d-none")
-      //          case 406 => // NotAcceptable
-      //            setPublishStatus(ex.xhr.responseText)
-      //        }
       case Failure(ex: Exception) =>
         ex.printStackTrace()
         setPublishStatus(ex.getMessage)
@@ -313,49 +304,64 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
     }
   }
 
+  private def unpublishApi(publishInfo: PublishInfo): Future[Unit] = {
+    val user             = usernameBox.value
+    val password         = passwordBox.value
+    val comment          = commentBox.value
+    val version          = publishInfo.apiVersions.head.version
+    val unpublishApiInfo = UnpublishApiInfo(publishInfo.subsystem, version, user, password, comment)
+    val fetchFuture      = Fetch.post(url = ClientRoutes.unpublishApi, data = Json.toJson(unpublishApiInfo).toString())
+    fetchFuture.flatMap { p =>
+      p._1 match {
+        case 200 => // OK
+          val apiVersionInfo      = Json.fromJson[ApiVersionInfo](Json.parse(p._2)).get
+          val maybeApiVersionInfo = publishInfo.apiVersions.tail.headOption
+          for {
+            _ <- publishChangeListener.publishChange()
+            _ <- updateTableRow(unpublish = true, api = true, publishInfo.subsystem, maybeApiVersionInfo).map(_ => ())
+          } yield {
+            updateEnabledStates()
+            setPublishStatus(s"Unpublished ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
+          }
+        case _ =>
+          setPublishStatus(p._2)
+          passwordIncorrect.classList.remove("hide")
+          Future.successful(())
+      }
+    }
+  }
+
+  private def publishApi(publishInfo: PublishInfo): Future[Unit] = {
+    val majorVersion   = majorVersionCheckBox.checked
+    val user           = usernameBox.value
+    val password       = passwordBox.value
+    val comment        = commentBox.value
+    val publishApiInfo = PublishApiInfo(publishInfo.subsystem, majorVersion, user, password, comment)
+    val fetchFuture    = Fetch.post(url = ClientRoutes.publishApi, data = Json.toJson(publishApiInfo).toString())
+    fetchFuture.flatMap { p =>
+      p._1 match {
+        case 200 => // OK
+          val apiVersionInfo = Json.fromJson[ApiVersionInfo](Json.parse(p._2)).get
+          for {
+            _ <- publishChangeListener.publishChange()
+            _ <- updateTableRow(unpublish = false, api = true, publishInfo.subsystem, Some(apiVersionInfo)).map(_ => ())
+          } yield {
+            updateEnabledStates()
+            setPublishStatus(s"Published ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
+          }
+        case _ =>
+          setPublishStatus(p._2)
+          passwordIncorrect.classList.remove("hide")
+          Future.successful(())
+      }
+    }
+  }
+
   // Publish (Unpublish) an API on GitHub
   private def publishApi(unpublish: Boolean, publishInfo: PublishInfo): Unit = {
-    val majorVersion = majorVersionCheckBox.checked
-    val user         = usernameBox.value
-    val password     = passwordBox.value
-    val comment      = commentBox.value
-
     setPublishButtonDisabled(true)
     setUnpublishButtonDisabled(true)
-    val f = if (unpublish) {
-      val version          = publishInfo.apiVersions.head.version
-      val unpublishApiInfo = UnpublishApiInfo(publishInfo.subsystem, version, user, password, comment)
-      Fetch.post(url = ClientRoutes.unpublishApi, data = Json.toJson(unpublishApiInfo).toString()).flatMap { p =>
-        p._1 match {
-          case 200 => // OK
-            val apiVersionInfo      = Json.fromJson[ApiVersionInfo](Json.parse(p._2)).get
-            val maybeApiVersionInfo = publishInfo.apiVersions.tail.headOption
-            for {
-              _ <- publishChangeListener.publishChange()
-              _ <- updateTableRow(unpublish, api = true, publishInfo.subsystem, maybeApiVersionInfo).map(_ => ())
-            } yield {
-              updateEnabledStates()
-              setPublishStatus(s"Unpublished ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
-            }
-        }
-      }
-    }
-    else {
-      val publishApiInfo = PublishApiInfo(publishInfo.subsystem, majorVersion, user, password, comment)
-      Fetch.post(url = ClientRoutes.publishApi, data = Json.toJson(publishApiInfo).toString()).flatMap { p =>
-        p._1 match {
-          case 200 => // OK
-            val apiVersionInfo = Json.fromJson[ApiVersionInfo](Json.parse(p._2)).get
-            for {
-              _ <- publishChangeListener.publishChange()
-              _ <- updateTableRow(unpublish, api = true, publishInfo.subsystem, Some(apiVersionInfo)).map(_ => ())
-            } yield {
-              updateEnabledStates()
-              setPublishStatus(s"Published ${apiVersionInfo.subsystem}-${apiVersionInfo.version}")
-            }
-        }
-      }
-    }
+    val f = if (unpublish) unpublishApi(publishInfo) else publishApi(publishInfo)
     displayFetchErrors(f)
     showBusyCursorWhile(f.map(_ => ()))
   }
@@ -700,10 +706,10 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
             )
           ),
           div(Styles.commentBox, label("Comments")("*", commentBox, commentMissing)),
-          div(cls := "form-check", majorVersionCheckBox, label("Increment major version")),
+          div(cls := "form-check", majorVersionCheckBox, label(cls := "form-check-label", "Increment major version")),
           div(
-            publishLabel,
             br,
+            p(strong(publishLabel)),
             makePublishButton(unpublish = false),
             " ",
             makePublishButton(unpublish = true),

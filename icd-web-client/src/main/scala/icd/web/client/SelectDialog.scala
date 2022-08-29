@@ -58,8 +58,7 @@ object SelectDialog {
  * @param items items to enable/disable
  */
 //noinspection DuplicatedCode
-case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener,
-                        items: List[Displayable]) extends Displayable {
+case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener, items: List[Displayable]) extends Displayable {
 
   val subsystem: Subsystem = Subsystem(SourceSubsystemListener)
   val targetSubsystem: Subsystem = Subsystem(
@@ -67,7 +66,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
     placeholderMsg = "Select Subsystem"
   )
   val subsystemSwapper: SubsystemSwapper = SubsystemSwapper(swapSubsystems)
-  val icdChooser: IcdChooser = IcdChooser(IcdChooserListener)
+  val icdChooser: IcdChooser             = IcdChooser(IcdChooserListener)
 
   // Displays the Apply button
   private val applyButton: Button = {
@@ -223,7 +222,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
     val maybeTargetSv = targetSubsystem.getSubsystemWithVersion()
     val maybeIcd      = icdChooser.getSelectedIcdVersion
     val showClientApi = clientApi() || maybeTargetSv.isDefined
-    val searchAll = searchAllSubsystems() && maybeTargetSv.isEmpty
+    val searchAll     = searchAllSubsystems() && maybeTargetSv.isEmpty
     listener.subsystemsSelected(maybeSv, maybeTargetSv, maybeIcd, searchAll, showClientApi)
   }
 
@@ -241,8 +240,16 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       div(Styles.selectDialogSubsystemRow, subsystem.markup()),
       div(Styles.subsystemSwapper, subsystemSwapper.markup()),
       div(Styles.selectDialogSubsystemRow, targetSubsystem.markup()),
-      div(cls := "form-check", clientApiCheckbox, label("Include client API information (subscribed events, sent commands)")),
-      div(cls := "form-check", searchAllCheckbox, label("Search all TMT subsystems for API dependencies")),
+      div(
+        cls := "form-check",
+        clientApiCheckbox,
+        label(cls := "form-check-label", "Include client API information (subscribed events, sent commands)")
+      ),
+      div(
+        cls := "form-check",
+        searchAllCheckbox,
+        label(cls := "form-check-label", "Search all TMT subsystems for API dependencies")
+      ),
       div(Styles.selectDialogApplyButton, applyButton)
     ).render
   }
