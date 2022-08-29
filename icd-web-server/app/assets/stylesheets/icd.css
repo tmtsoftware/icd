@@ -15,6 +15,7 @@ h2 {
 .pagebreak {
   page-break-after: always;
 }
+
 #content html, #versionHistory html {
   background: #fff;
   margin: 0;

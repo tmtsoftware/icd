@@ -25,7 +25,7 @@ object Styles extends StyleSheet.Inline {
   )
 
   val mainContent: StyleA = style(
-    padding(30 px, 0 px, 0 px, 15 px),
+    padding(75 px, 0 px, 0 px, 15 px),
   )
 
 //  val main = style(
