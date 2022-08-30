@@ -279,10 +279,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       // since the code is shared with non-javascript code on the server side.
       val summaryTable =
         SummaryTable.displaySummary(subsystemInfo, maybeTargetSubsystem, infoList, new HtmlHeadings, clientApi).render
-      val fitsKeyTable = makeFitsKeyTable(fitsKeyInfoList)
 
       mainContent.appendElement(div(Styles.component, id := "Summary")(raw(summaryTable)).render)
-      mainContent.appendElement(fitsKeyTable.render)
+      if (fitsKeyInfoList.nonEmpty) mainContent.appendElement(makeFitsKeyTable(fitsKeyInfoList).render)
       infoList.foreach(i => displayComponentInfo(i, !isIcd, clientApi))
       if (isIcd) targetInfoList.foreach(i => displayComponentInfo(i, forApi = false, clientApi))
       infoList ++ targetInfoList

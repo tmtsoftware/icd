@@ -144,11 +144,10 @@ object IcdToHtml {
         (TitleInfo("", None, None), div())
       }
 
-    val fitsKeyTable = makeFitsKeyTable(fitsKeys, nh)
     val mainContent = div(
       style := "width: 100%;",
       summaryTable,
-      fitsKeyTable,
+      if (fitsKeys.nonEmpty) makeFitsKeyTable(fitsKeys, nh) else div(),
       displayDetails(infoList, nh, forApi = true, pdfOptions, clientApi)
     )
     val toc   = nh.mkToc()
