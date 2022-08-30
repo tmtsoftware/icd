@@ -199,8 +199,8 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
 
   // Returns the detailed information markup for the selected subsystem
   private def detailsMarkup(pubInfo: PublishInfo): Div = {
-    div(cls := "panel panel-info")(
-      div(cls := "panel-body")(
+    div(cls := "card")(
+      div(cls := "card-body")(
         if (pubInfo.apiVersions.nonEmpty) {
           div(
             h3(s"Current ${pubInfo.subsystem} API Status"),

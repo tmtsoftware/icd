@@ -666,8 +666,8 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
     div(
       makePublishModal(),
       messageItem,
-      div(cls := "panel panel-info")(
-        div(cls := "panel-body")(
+      div(cls := "card")(
+        div(cls := "card-body")(
           helpMsg,
           table(
             Styles.componentTable,

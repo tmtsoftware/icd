@@ -122,12 +122,15 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   private def fileSelectReset(e: dom.Event): Unit = {
     clearProblems()
     inputItem.value = ""
+    setProgressBar(0)
+    statusItem.classList.remove("text-bg-danger")
+    statusItem.classList.remove("text-bg-success")
   }
 
   // Called when a file selection has been made
   private def fileSelectHandler(e: dom.Event): Unit = {
     clearProblems()
-    statusItem.classList.remove("label-danger")
+    statusItem.classList.remove("text-bg-danger")
     val (validFiles, invalidFiles) = getIcdFiles(e)
     if (validFiles.isEmpty) {
       val fileType = "directory of .conf files for the ICD"
@@ -145,6 +148,13 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     }
   }
 
+  private def setProgressBar(percent: Int): Unit = {
+    val progressDiv = document.querySelector("#progress").asInstanceOf[HTMLDivElement]
+    progressDiv.setAttribute("aria-valuenow", percent.toString)
+    progressDiv.setAttribute("style", s"width:$percent%")
+    progressDiv.innerHTML = s"$percent %"
+  }
+
   // Starts uploading the selected files (or files in selected directory) to the server
   private def uploadFiles(files: List[WebkitFile]): Unit = {
     val formData = new FormData()
@@ -157,20 +167,17 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
 
     // Updates progress bar during upload
     def progressListener(e: dom.Event): Unit = {
-      val pc          = e.loaded / e.total * 100
-      val progressDiv = document.querySelector("#progress").asInstanceOf[HTMLDivElement]
-      progressDiv.style.width = s"$pc %"
-      progressDiv.setAttribute("aria-valuenow", pc.toString)
-      progressDiv.innerHTML = s"$pc %"
+      val pc = e.loaded / e.total * 100
+      setProgressBar(pc)
     }
 
     // Displays status after upload complete
     def onloadListener(e: dom.Event) = {
       busyStatusItem.classList.add("d-none")
-      val statusClass = if (xhr.status == 200) "label-success" else "label-danger"
-      if (!statusItem.classList.contains("label-danger")) {
+      val statusClass = if (xhr.status == 200) "text-bg-success" else "text-bg-danger"
+      if (!statusItem.classList.contains("text-bg-danger")) {
         val statusMsg = if (xhr.status == 200) "Success" else xhr.statusText
-        statusItem.classList.remove("label-default")
+        statusItem.classList.remove("text-bg-primary")
         statusItem.classList.add(statusClass)
         statusItem.textContent = statusMsg
       }
@@ -188,7 +195,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     xhr.onload = onloadListener _
 
     //start upload
-    statusItem.classList.add("label-default")
+    statusItem.classList.add("text-bg-primary")
     statusItem.textContent = "Working..."
     busyStatusItem.classList.remove("d-none")
     xhr.send(formData)
@@ -199,11 +206,12 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     import scalatags.JsDom.all._
 
     val dirMsg = "Here you can select the top level directory containing the subsystem or component files to upload."
-    val dirLabel = if (inputDirSupported) "Model File Directory" else "Error: Your browser does not support uploading a directory!"
+    val dirLabel =
+      if (inputDirSupported) "Model File Directory to upload:" else "Error: Your browser does not support uploading a directory!"
     val acceptSuffix = ""
 
     div(
-      cls := "container",
+      cls := "container-fluid",
       p(dirMsg),
       form(
         id := "upload",
@@ -213,19 +221,21 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
         attr("enctype") := "multipart/form-data"
       )(
         input(`type` := "hidden", name := "csrfToken", value := csrfToken, accept := acceptSuffix),
-        div(cls := "panel panel-info")(
-          div(cls := "panel-body")(
-            div(label(s"$dirLabel to upload:")(inputItem)),
+        div(cls := "card")(
+          div(cls := "card-body")(
+            label(strong(dirLabel)),
+            div(inputItem),
             div(cls := "d-none")(
               button(`type` := "submit")("Upload Files")
             )
           )
         )
       ),
+      p(),
       div(cls := "progress")(
         div(
           id := "progress",
-          cls := "progress-bar progress-bar-info progress-bar-striped",
+          cls := "progress-bar progress-bar-striped",
           role := "progressbar",
           attr("aria-valuenow") := "0",
           attr("aria-valuemin") := "0",
@@ -234,13 +244,14 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
           "0%"
         )
       ),
+      p(),
       h4("Status")(
         span(style := "margin-left:15px;"),
         div(id := "busyStatus", cls := "spinner-border d-none", role := "status")(
           span(cls := "visually-hidden")
         ),
         span(style := "margin-left:15px;"),
-        span(id := "status", cls := "label", "Working...")
+        span(id := "status", cls := "badge", "Working...")
       ),
       messagesItem
     ).render
