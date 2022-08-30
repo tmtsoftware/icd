@@ -11,21 +11,25 @@ object Styles extends StyleSheet.Inline {
   import dsl._
   import language.postfixOps
 
-  val mainContent: StyleA = style(
-    padding(75 px, 0 px, 0 px, 15 px),
+  val mainContent = style(
+    padding(7 px, 0 px, 0 px, 15 px),
+  )
+
+  val sidebar = style(
+    padding(7 px, 0 px, 0 px, 5 px),
+  )
+
+  val navbar = style(
+    borderBottom(1 px, solid, gray)
+  )
+
+  val layout = style(
+    padding(50 px, 0 px, 0 px, 0 px),
   )
 
   val contentDiv = style(
     float.left,
     padding(0 px, 0 px, 100 px, 0 px)
-  )
-
-  val listGroupItem = style(
-    addClassName("list-group-item"),
-    borderRadius(0 px),
-    borderLeft(0 px),
-    borderRight(0 px),
-    borderTop(0 px)
   )
 
   // Control width of tables in the information displayed for selected components
@@ -41,20 +45,12 @@ object Styles extends StyleSheet.Inline {
     whiteSpace.nowrap
   )
 
-  // Used for table columns that should wrap at "."
-  val wrapTableColumn = style(
-    wordBreak.breakAll,
-    wordWrap.breakWord
-  )
-
   val fileUploadMessages = style(
     addClassNames("alert", "alert-info"),
     padding(0 px, 10 px),
     margin(1 em, 0 em),
     border(1 px, solid, gray)
   )
-
-  val publishMessages = fileUploadMessages
 
   val commentBox = style(
     padding(10 px, 0 px),
@@ -159,8 +155,4 @@ object Styles extends StyleSheet.Inline {
     backgroundColor.transparent
   )
 
-  val checkboxStyle = style(
-    float.left,
-    margin(9 px, 0 px, 0 px)
-  )
 }

@@ -12,8 +12,9 @@ case class Navbar() extends Displayable {
   private val rightNavbar = ul(cls := "navbar-nav ms-auto mb-2 mb-lg-0").render
 
   def markup(): Element = {
+    import scalacss.ScalatagsCss._
     import scalatags.JsDom.tags2._
-      nav(cls := "navbar navbar-expand-lg bg-light fixed-top")(
+      nav(Styles.navbar, cls := "navbar navbar-expand-lg bg-light fixed-top")(
         div(cls := "container-fluid")(
           a(cls := "navbar-brand", href := "/")("TMT Interface Database System"),
           button(

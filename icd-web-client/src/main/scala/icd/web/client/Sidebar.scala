@@ -64,7 +64,7 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
   override def markup(): Element = {
     import scalacss.ScalatagsCss._
 
-    div(id := "sidebar", cls := "d-none col-1 overflow-auto h-100")(
+    div(Styles.sidebar, id := "sidebar", cls := "d-none col-1 overflow-auto h-100")(
       sidebarList
     ).render
   }

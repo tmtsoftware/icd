@@ -287,7 +287,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
    * If the linked subsystem is the source or target subsystem, use the component from the
    * selected version of the subsystem, otherwise use the latest version.
    */
-  private object ComponentLinkSelectionHandler extends ComponentListener {
+  object ComponentLinkSelectionHandler extends ComponentListener {
     def componentSelected(link: ComponentLink): Unit = {
       val maybeSv              = selectDialog.subsystem.getSubsystemWithVersion()
       val maybeTargetSv        = selectDialog.targetSubsystem.getSubsystemWithVersion()
@@ -315,8 +315,10 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Jump to the component description
   private def goToComponent(compName: String, saveHistory: Boolean = true): Unit = {
     val compId = Components.getComponentInfoId(compName)
-    document.getElementById(compId).scrollIntoView()
-    if (saveHistory) pushState(viewType = ComponentView, compName = Some(compName))
+    if (compId != null) {
+      document.getElementById(compId).scrollIntoView()
+      if (saveHistory) pushState(viewType = ComponentView, compName = Some(compName))
+    }
   }
 
   /**
@@ -554,7 +556,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         Json.fromJson[Array[FitsKeyInfo]](Json.parse(text)).map(_.toList).getOrElse(Nil)
       }
     f.foreach { fitsKeys =>
-      val fitsKeywordDialog = FitsKeywordDialog(fitsKeys)
+      val fitsKeywordDialog = FitsKeywordDialog(fitsKeys, ComponentLinkSelectionHandler)
       mainContent.setContent(fitsKeywordDialog, "FITS Keywords")
     // XXX TODO FIXME
     // if (saveHistory) pushState(viewType = VersionView)

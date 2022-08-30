@@ -1,5 +1,6 @@
 package icd.web.client
 
+import icd.web.client.Components.ComponentListener
 import icd.web.shared.{FitsKeyInfo, FitsSource}
 import org.scalajs.dom
 import org.scalajs.dom.Element
@@ -7,23 +8,12 @@ import org.scalajs.dom.html.Anchor
 import scalatags.JsDom
 import scalatags.JsDom.all._
 
-case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo]) extends Displayable {
+case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], listener: ComponentListener) extends Displayable {
 
   // Action when user clicks on a component link
   private def clickedOnFitsSource(fitsSource: FitsSource)(e: dom.Event): Unit = {
     e.preventDefault()
-//    val idStr = Headings.idFor(
-//      fitsSource.componentName,
-//      "publishes",
-//      "Event",
-//      fitsSource.subsystem,
-//      fitsSource.componentName,
-//      fitsSource.eventName
-//    )
-//    val hiddenRowId = makeHiddenRowId(idStr)
-//    document.getElementById(hiddenRowId).classList.remove("collapse")
-//    val paramId = s"$idStr.${fitsSource.parameterName}"
-//    document.getElementById(paramId).scrollIntoView()
+    listener.componentSelected(Components.ComponentLink(fitsSource.subsystem, fitsSource.componentName))
   }
 
   // Makes the link for a FITS keyword source to the event that is the source of the keyword
