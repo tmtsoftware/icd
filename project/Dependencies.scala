@@ -42,7 +42,8 @@ object Dependencies {
   val plantuml = "net.sourceforge.plantuml" % "plantuml"  % "1.2022.7"
   val graphDot = "org.scala-graph"         %% "graph-dot" % "1.13.3"
 
-  val reactivemongo               = "org.reactivemongo" %% "reactivemongo"                  % "1.0.10"
+//  val reactivemongo               = "org.reactivemongo" %% "reactivemongo"                  % "1.0.10"
+  val reactivemongo               = "org.reactivemongo" %% "reactivemongo"                  % "1.1.0-RC6"
   val reactivemongoPlayJsonCompat = "org.reactivemongo" %% "reactivemongo-play-json-compat" % "1.1.0-play29-RC6"
   //  // XXX Need to fix indirect dependency conflict
   val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.3"

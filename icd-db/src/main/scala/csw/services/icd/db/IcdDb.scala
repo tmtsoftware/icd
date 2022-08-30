@@ -13,10 +13,13 @@ import icd.web.shared.{BuildInfo, PdfOptions, SubsystemWithVersion}
 import io.swagger.v3.parser.util.DeserializationUtils
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.{JsObject, Json}
-import reactivemongo.api.{AsyncDriver, DB, MongoConnection}
+import reactivemongo.api.FailoverStrategy.FactorFun
+import reactivemongo.api.{AsyncDriver, DB, FailoverStrategy, MongoConnection, MongoConnectionOptions}
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 
 object IcdDbDefaults {
   val conf: Config          = ConfigFactory.load
@@ -28,11 +31,24 @@ object IcdDbDefaults {
   val tmpCollSuffix = ".tmp"
 
   def connectToDatabase(host: String, port: Int, dbName: String): DB = {
+    // Taken from https://stackoverflow.com/questions/54706942/mongoerror-no-primary-node-is-available
+    // as workaround for error after upgrading to reactivemongo-1.1.0-RC6: "No primary node is available"
+    val mdbConnectionFS = FailoverStrategy.apply(
+      Duration(15000, TimeUnit.MILLISECONDS),
+      5,
+      FactorFun(1.0)
+    )
+    val connOptions : MongoConnectionOptions = MongoConnectionOptions.default.copy(
+      keepAlive = true,
+      failoverStrategy = mdbConnectionFS,
+//      nbChannelsPerNode = 20
+    )
+
     val mongoUri = s"mongodb://$host:$port/$dbName"
     val driver   = AsyncDriver()
     val database = for {
       uri <- MongoConnection.fromString(mongoUri)
-      con <- driver.connect(uri)
+      con <- driver.connect(Seq("localhost"), connOptions, dbName)
       dn  <- Future(uri.db.get)
       db  <- con.database(dn)
     } yield db
@@ -45,7 +61,7 @@ object IcdDbDefaults {
       connectToDatabase(host, port, dbName).drop().await
     }
     catch {
-      case _: Exception =>
+      case e: Exception => e.printStackTrace()
     }
   }
 
@@ -407,7 +423,7 @@ case class IcdDb(
 ) {
   // Cleanup databases from earlier releases
   IcdDbDefaults.deleteDatabase(host, port, "icds")
-//  IcdDbDefaults.deleteDatabase(host, port, "icds2")
+  IcdDbDefaults.deleteDatabase(host, port, "icds2")
   IcdDbDefaults.deleteDatabase(host, port, "icds3")
 
   val db: DB    = IcdDbDefaults.connectToDatabase(host, port, dbName)
