@@ -410,7 +410,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   // Returns an element id to use for the detail row that is normally hidden until you click on the toggle.
   // For some reason using the string id did not work, so using the hash here.
-  private def makeHiddenRowId(id: String) = s"hiddenRow-$id".##.toString
+  private def makeHiddenRowId(id: String) = s"hiddenRow-${id.##}"
 
   /**
    * Returns a hidden, expandable table row containing the given div item
@@ -432,6 +432,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     val buttonId = s"button-$targetId"
     val btn = button(
       Styles.attributeBtn,
+      cls := "btn btn-sm",
       `type` := "button",
       id := buttonId,
       name := buttonId,

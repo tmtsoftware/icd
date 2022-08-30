@@ -1,4 +1,3 @@
-var navbarExpandAll = false;
 
 $(document).ready(function () {
 
@@ -24,18 +23,6 @@ $(document).ready(function () {
             if (x >= (par - 100)) {
                 $("#sidebar").resizable("option", "maxWidth", ui.size.width);
             }
-        }
-    });
-
-    // Implement Expand/Collapse toolbar button
-    // (based on http://jsfiddle.net/KyleMit/f8ypa/)
-    $('#expand-init').click(function () {
-        if (navbarExpandAll) {
-            navbarExpandAll = false;
-            $('.panel-collapse').collapse('hide');
-        } else {
-            navbarExpandAll = true;
-            $('.panel-collapse').collapse('show');
         }
     });
 

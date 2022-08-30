@@ -21,13 +21,6 @@ import scala.scalajs.js
 import scala.scalajs.js.URIUtils
 import scala.util.Success
 
-// Need to reset this JavaScript variable after loading a new API or ICD. See resources/resize.js
-@js.native
-@JSGlobalScope
-object Globals extends js.Object {
-  var navbarExpandAll: Boolean = js.native
-}
-
 /**
  * Main class for the ICD web app.
  *
@@ -484,7 +477,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   ): Future[Unit] = {
     sidebar.clearComponents()
     mainContent.clearContent()
-    Globals.navbarExpandAll = false
     val f = if (maybeSv.isDefined) {
       showBusyCursorWhile {
         components
@@ -659,7 +651,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   case class ReloadButton() extends Displayable {
     private def reloadPage(): Unit = {
-      val main = document.getElementById("main")
+      val main = document.getElementById("mainContent")
       val y    = main.scrollTop
       val f =
         if (currentView == StatusView)
@@ -679,12 +671,13 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       li(
         a(
           button(
+            cls := "btn btn-sm",
             Styles.attributeBtn,
             tpe := "button",
             id := "reload",
             title := "Reload the selected subsystem, API or ICD, refresh from icd database",
             onclick := reloadPage _
-          )(i(cls := "bi bi-arrow-clockwise"))
+          )(i(Styles.navbarBtn, cls := "bi bi-arrow-clockwise"))
         )
       ).render
     }

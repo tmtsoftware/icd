@@ -118,11 +118,14 @@ object Styles extends StyleSheet.Inline {
   )
 
   val attributeBtn = style(
-    addClassNames("btn", "btn-outline-dark", "btn-sm"),
     margin(0 px),
     outline.none,
     borderRadius(0 px),
     border(0 px)
+  )
+
+  val navbarBtn = style(
+    fontSize(17 px)
   )
 
   val attributeCell = style(

@@ -17,12 +17,13 @@ case class ExpandToggler() extends Displayable {
       a(
         button(
           Styles.attributeBtn,
+          cls := "btn btn-sm",
           tpe := "button",
           id := "expand-init",
+          attr("data-bs-toggle") := "collapse",
+          attr("data-bs-target") := ".panel-collapse",
           title := "Expand or collapse all detailed information"
-          // XXX Its easier to do this in JavaScript directly, see resources/resize.js: navbarExpandAll
-          //      onclick := listener
-        )(i(cls := "bi bi-caret-down-square"))
+        )(i(Styles.navbarBtn, cls := "bi bi-caret-down-square"))
       )
     ).render
   }
