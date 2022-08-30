@@ -148,7 +148,7 @@ object ParameterModelBsonParser {
 
     // only need FITS keys for events
     val fitsKeys =
-      if (maybeEventName.isDefined && maybeSv.isDefined) {
+      if (fitsKeyMap.nonEmpty && maybeEventName.isDefined && maybeSv.isDefined) {
         val sv = maybeSv.get
         fitsKeyMap.getOrElse(FitsSource(sv.subsystem, sv.maybeComponent.get, maybeEventName.get, name, None, None), Nil)
       }

@@ -107,7 +107,7 @@ class IcdDbTests extends AnyFunSuite {
     assert(icdModels.tail.head.subsystem == "TEST2")
     assert(icdModels.tail.head.targetSubsystem == "TEST")
     assert(icdModels.head.description.startsWith("<p>This part contains extra information relevant to the TEST-TEST2 ICD"))
-    assert(icdModels.tail.head.description == ("<p>Here is additional information about the ICD from the TEST2 API.</p>"))
+    assert(icdModels.tail.head.description == "<p>Here is additional information about the ICD from the TEST2 API.</p>")
 
     // Test accessing ICD models
     testModels(db)

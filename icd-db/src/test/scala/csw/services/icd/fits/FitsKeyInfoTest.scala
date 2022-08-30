@@ -17,11 +17,12 @@ class FitsKeyInfoTest extends AnyFunSuite {
     if (dir.exists()) dir else new File(s"../$path")
   }
 
-  test("XXX") {
+  test("Test FITS keyword access") {
     val db = IcdDb(dbName)
     db.dropDatabase() // start with a clean db for test
     val icdFits = IcdFits(db)
-    icdFits.ingest(new File("/shared/work/tmt/csw/icd/examples/3.0/FITS-Keywords.json"))
+    val dir = getTestDir(examplesDir)
+    icdFits.ingest(new File(s"$dir/FITS-Keywords.json"))
     icdFits.output(new File("xxx.pdf"), _ => true, PdfOptions())
     val fitsKeyMap = icdFits.getFitsKeyMap(None)
     val crpix1 = fitsKeyMap(FitsSource("TCS", "PointingKernelAssembly", "WCSFITSHeader", "CRPIX1", None, None))

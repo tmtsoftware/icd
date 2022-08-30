@@ -13,7 +13,7 @@ object Dependencies {
   val BootstrapVersion      = "5.2.0"
   val JQueryVersion         = "3.6.0"
   val JQueryUiVersion       = "1.13.2"
-  val BootstrapTableVersion = "1.20.2"
+  val BootstrapTableVersion = "1.21.0"
   val BootstrapIconsVersion = "1.9.1"
 
   //  val akkaSlf4j      = "com.typesafe.akka" %% "akka-slf4j"       % AkkaVersion
@@ -39,7 +39,7 @@ object Dependencies {
   val commonsIo   = "commons-io"         % "commons-io"   % "2.11.0"
   val commonsText = "org.apache.commons" % "commons-text" % "1.9"
 
-  val plantuml = "net.sourceforge.plantuml" % "plantuml"  % "1.2022.6"
+  val plantuml = "net.sourceforge.plantuml" % "plantuml"  % "1.2022.7"
   val graphDot = "org.scala-graph"         %% "graph-dot" % "1.13.3"
 
   val reactivemongo               = "org.reactivemongo" %% "reactivemongo"                  % "1.0.10"
@@ -52,7 +52,7 @@ object Dependencies {
   val scalaLogging   = "com.typesafe.scala-logging" %% "scala-logging"    % "3.9.5"
   val logbackClassic = "ch.qos.logback"              % "logback-classic"  % "1.2.11"
   val scalatags      = "com.lihaoyi"                %% "scalatags"        % ScalaTagsVersion
-  val jsoup          = "org.jsoup"                   % "jsoup"            % "1.15.2"
+  val jsoup          = "org.jsoup"                   % "jsoup"            % "1.15.3"
   val jgit           = "org.eclipse.jgit"            % "org.eclipse.jgit" % "6.2.0.202206071550-r"
   val swaggerParser  = "io.swagger.parser.v3"        % "swagger-parser"   % "2.1.2"
   val playJson       = "com.typesafe.play"          %% "play-json"        % PlayJsonVersion
