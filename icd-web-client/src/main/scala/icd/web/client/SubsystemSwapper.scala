@@ -11,7 +11,7 @@ case class SubsystemSwapper(listener: () => Unit) extends Displayable {
     import scalatags.JsDom.all._
     button(
       tpe := "button",
-      cls := "btn btn-default",
+      cls := "btn btn-secondary",
       title := "Swap first and second subsystems",
       onclick := listener
     )(i(cls := "bi bi-arrow-down-up")).render

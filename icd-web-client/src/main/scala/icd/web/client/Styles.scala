@@ -3,7 +3,6 @@ package icd.web.client
 import scalacss.internal.mutable.StyleSheet
 
 import scalacss.DevDefaults._
-//import scalacss.ProdDefaults._
 
 //noinspection TypeAnnotation
 // CSS styles
@@ -12,43 +11,14 @@ object Styles extends StyleSheet.Inline {
   import dsl._
   import language.postfixOps
 
-  val layout: StyleA = style(
-//    height(95 %%),
-//    width(100 %%),
-//    position.fixed,
-//    top(50 px),
-//    // Increase top offset in the range 400 to 790 px,
-//    // since the navbar items wrap around at that size
-//    media.minWidth(400 px).maxWidth(790 px)(top(100 px)),
-//    left(0 px),
-//    display.block,
-  )
-
   val mainContent: StyleA = style(
     padding(75 px, 0 px, 0 px, 15 px),
   )
-
-//  val main = style(
-//    position.relative,
-//    height(100 %%),
-//    overflow.auto,
-//    padding(0 px, 0 px, 0 px, 15 px),
-//  )
 
   val contentDiv = style(
     float.left,
     padding(0 px, 0 px, 100 px, 0 px)
   )
-
-//  val sidebarWrapper = style(
-//    addClassNames("col-1", "d-none"),
-//    height(100 %%)
-//  )
-
-//  val sidebar = style(
-//    height(100 %%),
-//    overflowY.auto
-//  )
 
   val listGroupItem = style(
     addClassName("list-group-item"),
@@ -169,14 +139,6 @@ object Styles extends StyleSheet.Inline {
     padding(20 px, 0 px, 20 px, 0 px)
   )
 
-  val statusDialogLabel = style(
-    padding(6 px, 6 px, 0 px, 16 px)
-  )
-
-  val statusDialogSubsystem = style(
-    padding(0 px, 0 px, 0 px, 12 px)
-  )
-
   val statusDialogSubsystemRow = style(
     padding(0 px, 0 px, 20 px, 0 px)
   )
@@ -201,8 +163,4 @@ object Styles extends StyleSheet.Inline {
     float.left,
     margin(9 px, 0 px, 0 px)
   )
-
-//  val busyWaiting = style(
-//    cursor.progress
-//  )
 }

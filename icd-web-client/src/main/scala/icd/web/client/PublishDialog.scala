@@ -50,7 +50,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
 
   // Displays the Publish (Unpublish) button (at the bottom of the dialog)
   private def makePublishButton(unpublish: Boolean): Button = {
-    val buttonClass = if (unpublish) "btn" else "btn btn-primary"
+    val buttonClass = if (unpublish) "btn btn-secondary" else "btn btn-primary"
     val buttonId    = if (unpublish) "unpublishButton" else "publishButton"
     val s           = if (unpublish) "Unpublish" else "Publish"
     val buttonTitle = s"$s the selected API, or ICD if two APIs are selected"
@@ -79,7 +79,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
             h3(id := "confirmPublishMessage")(s"Are you sure you want to ...")
           ),
           div(cls := "modal-footer")(
-            button(`type` := "button", cls := "btn btn-default", attr("data-bs-dismiss") := "modal")("Cancel"),
+            button(`type` := "button", cls := "btn btn-secondary", attr("data-bs-dismiss") := "modal")("Cancel"),
             button(id := "confirmPublishButton", `type` := "button", cls := "btn btn-primary", attr("data-bs-dismiss") := "modal")
           )
         )
@@ -325,7 +325,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
           }
         case _ =>
           setPublishStatus(p._2)
-          passwordIncorrect.classList.remove("hide")
+          passwordIncorrect.classList.remove("d-none")
           Future.successful(())
       }
     }
@@ -351,7 +351,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
           }
         case _ =>
           setPublishStatus(p._2)
-          passwordIncorrect.classList.remove("hide")
+          passwordIncorrect.classList.remove("d-none")
           Future.successful(())
       }
     }

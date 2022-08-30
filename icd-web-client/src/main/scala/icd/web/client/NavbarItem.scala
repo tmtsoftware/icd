@@ -162,7 +162,7 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
             )
           ),
           div(cls := "modal-footer")(
-            button(`type` := "button", cls := "btn btn-default", attr("data-bs-dismiss") := "modal")("Cancel"),
+            button(`type` := "button", cls := "btn btn-secondary", attr("data-bs-dismiss") := "modal")("Cancel"),
             button(
               onclick := pdfModalListener _,
               `type` := "button",
@@ -355,7 +355,7 @@ case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOption
             )
           ),
           div(cls := "modal-footer")(
-            button(`type` := "button", cls := "btn btn-default", attr("data-bs-dismiss") := "modal")("Cancel"),
+            button(`type` := "button", cls := "btn btn-secondary", attr("data-bs-dismiss") := "modal")("Cancel"),
             button(
               onclick := graphModalListener _,
               `type` := "button",

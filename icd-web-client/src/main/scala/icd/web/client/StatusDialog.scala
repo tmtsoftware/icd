@@ -43,7 +43,6 @@ object StatusDialog {
         ),
         " for more information"
       ),
-      br,
       p("Select a subsystem to see the current status:")
     )
   val placeholderMsg: String = "Select subsystem"
@@ -60,7 +59,7 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
 
   // The subsystem combobox
   private val subsystemItem = {
-    select(cls := "form-select", onchange := onSubsystemSelected _)(
+    select(id := "statusSubsystemItem", cls := "form-select", onchange := onSubsystemSelected _)(
       option(value := placeholderMsg, disabled := true, selected := true)(placeholderMsg)
     ).render
   }
@@ -280,14 +279,15 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
 
   override def markup(): Element = {
     div(
-      cls := "container",
-      div(Styles.statusDialogSubsystemRow, cls := "container-fluid")(msg),
-      div(cls := "row")(
-        div(Styles.statusDialogLabel, cls := "col-2")(label("Subsystem")),
-        div(Styles.statusDialogSubsystem, cls := "col-3")(subsystemItem)
+      div(Styles.statusDialogSubsystemRow)(msg),
+      div(
+        cls := "input-group",
+        style := "width: fit-content",
+        label(cls := "input-group-text", `for` := "statusSubsystemItem")("Subsystem"),
+        subsystemItem
       ),
       p(""),
-      detailsDiv
+      div(detailsDiv)
     ).render
   }
 }
