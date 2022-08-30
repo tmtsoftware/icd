@@ -23,12 +23,18 @@ trait SidebarListener {
  */
 case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
 
-  val sidebarList: UList = ul(cls := "nav list-group").render
+  private val sidebarList = ul(cls := "list-group").render
 
   // HTML for component
   private def componentLink(compName: String) = {
     val compId = Components.getComponentInfoId(compName)
-    li(a(title := s"Scroll to $compName", href := s"#$compId", compName, onclick := componentSelected(compName) _))
+    a(
+      cls := "list-group-item list-group-item-action",
+      title := s"Scroll to $compName",
+      href := "#",
+      compName,
+      onclick := componentSelected(compName) _
+    )
   }
 
   // called when a component link is clicked
@@ -64,7 +70,7 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
   override def markup(): Element = {
     import scalacss.ScalatagsCss._
 
-    div(Styles.sidebar, id := "sidebar", cls := "d-none col-1 overflow-auto h-100")(
+    div(Styles.sidebar, id := "sidebar", cls := "d-none col-1 h-100")(
       sidebarList
     ).render
   }

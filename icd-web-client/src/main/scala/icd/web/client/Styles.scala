@@ -17,10 +17,8 @@ object Styles extends StyleSheet.Inline {
 
   val sidebar = style(
     padding(7 px, 0 px, 0 px, 5 px),
-  )
-
-  val navbar = style(
-    borderBottom(1 px, solid, gray)
+    overflowY.auto,
+    overflowX.hidden
   )
 
   val layout = style(
