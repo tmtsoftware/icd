@@ -41,6 +41,7 @@ object PublishModelBsonParser {
           eventList = oldEvents ++ getItems("events", EventModelBsonParser(_, maybePdfOptions, fitsKeyMap, maybeSv)),
           observeEventList = getObserveEventItems("observeEvents", observeEventMap(_)),
           currentStateList = getItems("currentStates", EventModelBsonParser(_, maybePdfOptions, fitsKeyMap, maybeSv)),
+          imageList = getItems("images", ImageModelBsonParser(_, maybePdfOptions, maybeSv)),
           alarmList = getItems("alarms", AlarmModelBsonParser(_, maybePdfOptions))
         )
       }

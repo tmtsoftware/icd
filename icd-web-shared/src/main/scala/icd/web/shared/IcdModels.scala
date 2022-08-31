@@ -190,14 +190,14 @@ object IcdModels {
         case "string"  =>
           // Use maxLength if given, or minLength, if greater than the default, otherwise the default length
           maxLength.getOrElse(minLength.map(math.max(defaultStringSize, _)).getOrElse(defaultStringSize))
-        case "byte"    => 1
-        case "short"   => 2
-        case "long"    => 4
-        case "float"   => 4
-        case "double"  => 8
+        case "byte"                => 1
+        case "short"               => 2
+        case "long"                => 4
+        case "float"               => 4
+        case "double"              => 8
         case "taiDate" | "taiTime" => 12
         case "utcDate" | "utcTime" => 12
-        case "raDec"   => 16
+        case "raDec"               => 16
         //  EqCoord(tag: Tag, ra: Angle, dec: Angle, frame: EqFrame, catalogName: String, pm: ProperMotion)
         case "eqCoord" => tagSize + 2 * angleSize + eqFrameSize + catalogNameSize + properMotionSize
         // SolarSystemCoord(tag: Tag, body: SolarSystemObject)
@@ -245,6 +245,24 @@ object IcdModels {
       }
     }
   }
+
+  /**
+   * Defines the properties of a metadata
+   *
+   * @param name             name of the metadata
+   * @param ref              if not empty, a reference to another metadata to copy missing values from
+   *                         in the form component/section/name/paramSection/paramName (may be abbreviated, if in same scope)
+   * @param refError contains an error message if ref is invalid (not stored in the db)
+   * @param description       description of the metadata
+   * @param fits              XXX TODO (example: ITIME, SCALE)
+   */
+  case class MetadataModel(
+      name: String,
+      ref: String,
+      refError: String,
+      description: String,
+      fits: String
+  ) extends NameDesc
 
   /**
    * Model for a commands configuration that a component receives
@@ -512,6 +530,23 @@ object IcdModels {
     lazy val totalArchiveSpacePerYear: String = if (archive) bytesToString(totalArchiveBytesPerYear) else ""
   }
 
+  /**
+   * Models the event published by a component
+   *
+   * @param name event name
+   * @param ref if not empty, a reference to another event model in the
+   *            form component/events/name, component/observeEvents/name, etc (may be abbreviated if in same component/section)
+   * @param refError contains an error message if ref is invalid (not stored in the db)
+   * @param description event description
+   */
+  case class ImageModel(
+      name: String,
+      ref: String,
+      refError: String,
+      description: String,
+      channel: String,
+      metadataList: List[MetadataModel]
+  ) extends NameDesc
 }
 
 import IcdModels._
