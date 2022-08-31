@@ -22,7 +22,8 @@ by command line applications and a web app.
 
 The [examples](examples) directory also contains some example API descriptions in both the old and new schema versions. All schema versions are supported for backward compatibility, however the newest version (3.0) should be used for future work. To help in upgrading existing subsystem APIs, branches named `schema-3.0` have been created on GitHub for the existing subsystems. 
  
-Command line applications: [icd-db](icd-db), [icd-git](icd-git) and a web app ([icdwebserver](icd-web-server)) 
+Command line applications: [icd-db](icd-db), [icd-fits](icd-db/src/main/scala/csw/services/icd/fits), 
+[icd-git](icd-git) and a web app ([icdwebserver](icd-web-server)) 
 are provided for working with APIs and ICDs, querying and viewing the data.
 
 The applications here assume the [MongoDB database](https://www.mongodb.com) is running. 
@@ -106,6 +107,18 @@ ingesting the files from the repository.
 
 The icd web app lists the published versions of subsystem APIs and ICDs from GitHub and the model
 files are checked out and ingested into the database automatically as needed the *first time* you start the web app. 
+
+FITS Keywords
+-------------
+
+The generated APIs and ICDs contain infomation about FITS keywords that are based on event parameters.
+The information is stored in a JSON file in the [DMS-Model-Files](https://github.com/tmt-icd/DMS-Model-Files/tree/master/FITS-Keywords)
+GitHub repo. Once DMS is published, the file should be automatically loaded by the icdwebserver or icd-git commands.
+Until then, the keywords can be manually loaded into the icd database once by running 
+
+```
+icd-fits -i examples/3.0/FITS-Keywords.json.
+```
 
 Known Issues
 ------------

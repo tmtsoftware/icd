@@ -11,7 +11,7 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Added support for documenting TMT CSW components that are HTTP web services using [OpenAPI](https://swagger.io/specification/).
 - Added a new, optional icd model file: service-model.conf, that contains information about the HTTP services that a component provides or requires. For each service provided, the model file also contains the name of the OpenAPI JSON file that describes the service.
 - Updated dependencies
-- Replaced deprecated ScalaJS Ajax usage with recommended dom.fetch API
+- Replaced deprecated ScalaJS Ajax usage with recommended dom fetch API
 - Removed RaDec type from JSON schema for parameters in v2.0 and later model files
 - Removed support for "struct" parameter type, since it was removed from CSW
 - Fixed display of "default" parameter values
@@ -19,6 +19,8 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Removed support for uploading a zip file containing the icd model files, since modern browsers now all support uploading a directory
 - Removed dependency on "less" and converted/renamed icd.less to icd.css
 - Updated list of allowed CSW Units
+- Updated all dependencies to the latest versions, including Bootstrap-5.2.0 and support for MongoDB-6.0
+- Added support for FITS keywords, icd-fits command line app, FITS Keyword tab (FITS Keywords will be automatically imported once the DMS subsystem model files have been published. For now, you can use `icd-fits -i examples/3.0/FITS-Keywords.json`)
 
 ## [ICD v2.1.2] - 2021-05-25
 
