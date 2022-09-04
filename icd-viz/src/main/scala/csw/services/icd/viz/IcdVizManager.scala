@@ -49,6 +49,7 @@ object IcdVizManager {
   object EdgeType extends Enumeration {
     type EdgeType = Value
     val events   = Value("Events")
+    val images   = Value("Images")
     val commands = Value("Commands")
   }
 

@@ -625,6 +625,7 @@ object IcdToHtml {
             subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == Events)),
             subscribeListMarkup("Observe Events", subscribes.subscribeInfo.filter(_.itemType == ObserveEvents)),
             subscribeListMarkup("Current States", subscribes.subscribeInfo.filter(_.itemType == CurrentStates)),
+            subscribeListMarkup("Images", subscribes.subscribeInfo.filter(_.itemType == Images)),
             subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == Alarms))
           )
         }

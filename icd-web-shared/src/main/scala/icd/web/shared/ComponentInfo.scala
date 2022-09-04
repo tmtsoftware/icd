@@ -170,9 +170,9 @@ case class DetailedSubscribeInfo(
     publisher: Option[ComponentModel],
     warnings: Boolean = true
 ) {
-  val description: String = eventModel.map(_.description).getOrElse(imageModel.map(_.description).getOrElse(""))
+  val description: String = eventModel.orElse(imageModel).map(_.description).getOrElse("")
   val warning: Option[String] =
-    if (!warnings || eventModel.nonEmpty) None
+    if (!warnings || eventModel.nonEmpty || imageModel.nonEmpty) None
     else if (publisher.isEmpty) {
       Some(
         s"Component ${subscribeModelInfo.subsystem}.${subscribeModelInfo.component} was not found"

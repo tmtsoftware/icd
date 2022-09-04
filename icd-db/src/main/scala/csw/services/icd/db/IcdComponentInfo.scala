@@ -210,7 +210,7 @@ object IcdComponentInfo {
           case Events        => publishModel.eventList.find(t => t.name == si.name)
           case ObserveEvents => publishModel.observeEventList.find(t => t.name == si.name)
           case CurrentStates => publishModel.currentStateList.find(t => t.name == si.name)
-          case _        => None
+          case _             => None
         }
         val maybeImageModel = publishType match {
           case Images => publishModel.imageList.find(t => t.name == si.name)
@@ -224,9 +224,12 @@ object IcdComponentInfo {
     models.subscribeModel match {
       case None => None
       case Some(m) =>
-        val subscribeInfo = (m.eventList.map(getInfo(Events, _)) ++
-          m.observeEventList.map(getInfo(ObserveEvents, _)) ++
-          m.currentStateList.map(getInfo(CurrentStates, _))).flatten
+        val subscribeInfo = (
+          m.eventList.map(getInfo(Events, _)) ++
+            m.observeEventList.map(getInfo(ObserveEvents, _)) ++
+            m.currentStateList.map(getInfo(CurrentStates, _)) ++
+            m.imageList.map(getInfo(Images, _))
+        ).flatten
         val desc = m.description
         if (subscribeInfo.nonEmpty)
           Some(Subscribes(desc, subscribeInfo))
