@@ -122,11 +122,16 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
         val currentStateList = m.currentStateList.map { t =>
           EventInfo(t, getSubscribers(query, prefix, t.name, t.description, CurrentStates, maybePdfOptions))
         }
-        // TODO: Ignore alarms in publish-model.conf if alarm-model.conf is present? Or merge any alarms found?
-//        val alarmList = models.alarmsModel.map(_.alarmList).getOrElse(m.alarmList)
+        val imageList = m.imageList.map { t =>
+          ImageInfo(t, getSubscribers(query, prefix, t.name, t.description, Images, maybePdfOptions))
+        }
         val alarmList = models.alarmsModel.toList.flatMap(_.alarmList) ++ m.alarmList
-        if (m.description.nonEmpty || eventList.nonEmpty || observeEventList.nonEmpty || alarmList.nonEmpty)
-          Some(Publishes(m.description, eventList, observeEventList, currentStateList, alarmList))
+
+        if (
+          m.description.nonEmpty || eventList.nonEmpty || observeEventList.nonEmpty || currentStateList.nonEmpty
+          || imageList.nonEmpty || alarmList.nonEmpty
+        )
+          Some(Publishes(m.description, eventList, observeEventList, currentStateList, imageList, alarmList))
         else None
     }
   }
@@ -146,15 +151,19 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
         t            <- query.getModels(si.subsystem, Some(si.component), maybePdfOptions, Map.empty)
         publishModel <- t.publishModel
       } yield {
-        val maybeEvent = publishType match {
+        val maybeEventModel = publishType match {
           case Events        => publishModel.eventList.find(t => t.name == si.name)
           case ObserveEvents => publishModel.observeEventList.find(t => t.name == si.name)
           case CurrentStates => publishModel.currentStateList.find(t => t.name == si.name)
-          case Alarms        => None
+          case _             => None
         }
-        DetailedSubscribeInfo(publishType, si, maybeEvent, t.componentModel, displayWarnings)
+        val maybeImageModel = publishType match {
+          case Images => publishModel.imageList.find(t => t.name == si.name)
+          case _      => None
+        }
+        DetailedSubscribeInfo(publishType, si, maybeEventModel, maybeImageModel, t.componentModel, displayWarnings)
       }
-      x.headOption.getOrElse(DetailedSubscribeInfo(publishType, si, None, None, displayWarnings))
+      x.headOption.getOrElse(DetailedSubscribeInfo(publishType, si, None, None, None, displayWarnings))
     }
 
     models.subscribeModel match {
@@ -162,7 +171,8 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
       case Some(m) =>
         val subscribeInfo = m.eventList.map(getInfo(Events, _)) ++
           m.observeEventList.map(getInfo(ObserveEvents, _)) ++
-          m.currentStateList.map(getInfo(CurrentStates, _))
+          m.currentStateList.map(getInfo(CurrentStates, _)) ++
+          m.imageList.map(getInfo(Images, _))
         val desc = m.description
         if (desc.nonEmpty || subscribeInfo.nonEmpty)
           Some(Subscribes(desc, subscribeInfo))

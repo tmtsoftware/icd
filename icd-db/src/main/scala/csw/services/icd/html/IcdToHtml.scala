@@ -5,7 +5,7 @@ import icd.web.shared._
 import scalatags.Text
 import Headings.idFor
 import HtmlMarkup.yesNo
-import icd.web.shared.IcdModels.{AlarmModel, ComponentModel, EventModel, ParameterModel}
+import icd.web.shared.IcdModels.{AlarmModel, ComponentModel, EventModel, MetadataModel, ParameterModel}
 
 /**
  * Handles converting ICD API from GFM to HTML
@@ -82,7 +82,7 @@ object IcdToHtml {
             th("Type"),
 //            th("Default"),
             th("Units"),
-            th("Source", br, i("(component-event-param[index?])")),
+            th("Source", br, i("(component-event-param[index?])"))
 //            th("Note")
           )
         ),
@@ -95,7 +95,7 @@ object IcdToHtml {
               td(info.typ),
 //              td(info.defaultValue),
               td(info.units),
-              td(if (withLinks) info.source.map(makeLinkForFitsKeySource) else info.source.map(_.toShortString).mkString(", ")),
+              td(if (withLinks) info.source.map(makeLinkForFitsKeySource) else info.source.map(_.toShortString).mkString(", "))
 //              td(info.note)
             )
           }
@@ -603,7 +603,8 @@ object IcdToHtml {
                     )
                   ),
                   if (maxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.") else span(),
-                  si.eventModel.map(t => attributeListMarkup(t.name, t.parameterList))
+                  si.eventModel.map(t => attributeListMarkup(t.name, t.parameterList)),
+                  si.imageModel.map(t => imageMetadataListMarkup(t.name, t.metadataList))
                 )
               }
               else
@@ -661,6 +662,28 @@ object IcdToHtml {
         p(strong(a(s"Parameters for $nameStr"))),
         HtmlMarkup.mkTable(headings, rowList),
         parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError))
+      )
+    }
+  }
+
+  private def imageMetadataListMarkup(
+      nameStr: String,
+      metadataList: List[MetadataModel],
+      linkId: Option[String] = None
+  ): Text.TypedTag[String] = {
+    import scalatags.Text.all._
+    if (metadataList.isEmpty) div()
+    else {
+      val headings = List("Name", "Description", "Keyword")
+      val rowList =
+        for (a <- metadataList) yield {
+          val metadataId = linkId.map(s => s"$s.${a.name}")
+          val nameAnchor = metadataId.map(p => s"<a id='$p' name='$p'>${a.name}</a>").getOrElse(a.name)
+          List(nameAnchor, a.description, a.keyword)
+        }
+      div(cls := "nopagebreak")(
+        p(strong(a(s"Image Metadata for $nameStr"))),
+        HtmlMarkup.mkTable(headings, rowList)
       )
     }
   }
@@ -767,6 +790,63 @@ object IcdToHtml {
       }
     }
 
+    def publishImageListMarkup(pubType: String, imageList: List[ImageInfo]): Text.TypedTag[String] = {
+      if (imageList.isEmpty) div()
+      else {
+        div(
+          for (imageInfo <- imageList) yield {
+            val imageModel  = imageInfo.imageModel
+            val linkId      = idFor(compName, "publishes", pubType, component.subsystem, compName, imageModel.name)
+            val showDetails = pdfOptions.details || pdfOptions.expandedIds.contains(linkId)
+            val subscribers =
+              imageInfo.subscribers
+                .map(s => s"${s.componentModel.subsystem}.${s.componentModel.component}")
+                .distinct
+                .mkString(", ")
+            val subscriberInfo =
+              if (clientApi)
+                span(strong(s"Subscribers: "), if (subscribers.isEmpty) "none" else subscribers)
+              else span
+            // Include usage text from subscribers that define it
+            val subscriberUsage =
+              if (clientApi)
+                div(
+                  imageInfo.subscribers.map(s =>
+                    if (s.subscribeModelInfo.usage.isEmpty) div()
+                    else
+                      div(
+                        strong(s"Usage by ${s.componentModel.subsystem}.${s.componentModel.component}: "),
+                        raw(s.subscribeModelInfo.usage)
+                      )
+                  )
+                )
+              else span
+            div(cls := "nopagebreak")(
+              nh.H4(
+                s"${singlePubType(pubType)}: ${imageModel.name}",
+                linkId
+              ),
+              if (showDetails) {
+                div(
+                  if (clientApi) p(publisherInfo, ", ", subscriberInfo) else p(publisherInfo),
+                  raw(imageModel.description),
+                  subscriberUsage,
+                  imageMetadataListMarkup(imageModel.name, imageModel.metadataList, Some(linkId)),
+                  hr
+                )
+              }
+              else
+                div(
+                  if (clientApi) p(publisherInfo, ", ", subscriberInfo) else p(publisherInfo),
+                  raw(imageModel.description),
+                  subscriberUsage
+                )
+            )
+          }
+        )
+      }
+    }
+
     def publishAlarmListMarkup(alarmList: List[AlarmModel], pdfOptions: PdfOptions): Text.TypedTag[String] = {
       if (alarmList.isEmpty) div()
       else {
@@ -835,6 +915,7 @@ object IcdToHtml {
             publishEventListMarkup("Observe Events", publishes.observeEventList),
             if (forApi) totalArchiveSpace() else span(),
             publishEventListMarkup("Current States", publishes.currentStateList),
+            publishImageListMarkup("Images", publishes.imageList),
             publishAlarmListMarkup(publishes.alarmList, pdfOptions)
           )
         }

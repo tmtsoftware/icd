@@ -105,7 +105,8 @@ object SummaryTable {
                     val yearlyAccum =
                       if (itemType.endsWith("Events")) info.item.asInstanceOf[EventModel].totalArchiveSpacePerYear else ""
                     td(yearlyAccum)
-                  } else span(),
+                  }
+                  else span(),
                   td(raw(firstParagraph(info.item.description)))
                 )
               }
@@ -149,7 +150,7 @@ object SummaryTable {
               for {
                 info <- list
               } yield {
-                val prefix = wrap(s"${info.publisherSubsystem}.${info.publisherComponent}")
+                val prefix     = wrap(s"${info.publisherSubsystem}.${info.publisherComponent}")
                 val prefixItem = span(prefix)
                 val description = info.maybeWarning match {
                   case Some(msg) => p(em("Warning: ", msg))
@@ -199,7 +200,7 @@ object SummaryTable {
               for {
                 info <- list
               } yield {
-                val prefix = wrap(s"${info.publisherSubsystem}.${info.publisherComponent}")
+                val prefix     = wrap(s"${info.publisherSubsystem}.${info.publisherComponent}")
                 val prefixItem = span(prefix)
                 val publisherComponent =
                   if (info.publisherSubsystem == info.subscriber.subsystem)
@@ -262,6 +263,12 @@ object SummaryTable {
         event <- pub.currentStateList
       } yield PublishedItem(info.componentModel, event.eventModel, event.subscribers.map(_.componentModel).distinct)
 
+      val publishedImages = for {
+        info  <- infoList
+        pub   <- info.publishes.toList
+        image <- pub.imageList
+      } yield PublishedItem(info.componentModel, image.imageModel, image.subscribers.map(_.componentModel).distinct)
+
       val publishedAlarms = for {
         info  <- infoList
         pub   <- info.publishes.toList
@@ -278,6 +285,7 @@ object SummaryTable {
         publishedSummaryMarkup("Events", publishedEvents, "Published by", "for"),
         publishedSummaryMarkup("Observe Events", publishedObserveEvents, "Published by", "for"),
         publishedSummaryMarkup("Current States", publishedCurrentStates, "Published by", "for"),
+        publishedSummaryMarkup("Images", publishedImages, "Published by", "for"),
         publishedSummaryMarkup("Alarms", publishedAlarms, "Published by", "for"),
         publishedSummaryMarkup("Commands", receivedCommands, "Received by", "from")
       )
@@ -297,7 +305,7 @@ object SummaryTable {
           event.publisher,
           event.warning,
           info.componentModel,
-          OptionalNameDesc(event.subscribeModelInfo.name, event.eventModel)
+          OptionalNameDesc(event.subscribeModelInfo.name, event.eventModel.orElse(event.imageModel))
         )
       )
       val subscribedEvents        = allSubscribed.filter(_._1 == Events).map(_._2)

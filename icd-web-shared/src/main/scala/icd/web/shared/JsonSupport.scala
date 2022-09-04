@@ -14,6 +14,7 @@ object JsonSupport {
         case Events        => "Events"
         case ObserveEvents => "ObserveEvents"
         case CurrentStates => "CurrentStates"
+        case Images        => "Images"
         case Alarms        => "Alarms"
       })
   }
@@ -23,6 +24,7 @@ object JsonSupport {
         case "Events"        => Events
         case "ObserveEvents" => ObserveEvents
         case "CurrentStates" => CurrentStates
+        case "Images"        => Images
         case "Alarms"        => Alarms
         case x               => throw new RuntimeException(s"Bad publish type: $x")
       })
@@ -48,9 +50,12 @@ object JsonSupport {
   implicit val componentModelFormat        = Json.format[ComponentModel]
   implicit val parameterModelFormat        = Json.format[ParameterModel]
   implicit val eventModelFormat            = Json.format[EventModel]
+  implicit val metadataModelFormat         = Json.format[MetadataModel]
+  implicit val imageModelFormat            = Json.format[ImageModel]
   implicit val subscribeModelInfoFormat    = Json.format[SubscribeModelInfo]
   implicit val subscribeInfoFormat         = Json.format[SubscribeInfo]
   implicit val eventInfoFormat             = Json.format[EventInfo]
+  implicit val imageInfoFormat             = Json.format[ImageInfo]
   implicit val alarmModelFormat            = Json.format[AlarmModel]
   implicit val detailedSubscribeInfoFormat = Json.format[DetailedSubscribeInfo]
   implicit val publishesFormat             = Json.format[Publishes]

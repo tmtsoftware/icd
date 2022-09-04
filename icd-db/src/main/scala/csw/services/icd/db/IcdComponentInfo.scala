@@ -122,8 +122,11 @@ object IcdComponentInfo {
         val currentStateList = m.currentStateList.map { t =>
           EventInfo(t, getSubscribers(m.subsystem, component, prefix, t.name, t.description, CurrentStates, targetModelsList))
         }
+        val imageList = m.imageList.map { t =>
+          ImageInfo(t, getSubscribers(m.subsystem, component, prefix, t.name, t.description, Images, targetModelsList))
+        }
         if (eventList.nonEmpty || observeEventList.nonEmpty)
-          Some(Publishes(m.description, eventList, observeEventList, currentStateList, Nil))
+          Some(Publishes(m.description, eventList, observeEventList, currentStateList, imageList, Nil))
         else None
     }
   }
@@ -172,6 +175,7 @@ object IcdComponentInfo {
         case Events        => subscribeModel.eventList
         case ObserveEvents => subscribeModel.observeEventList
         case CurrentStates => subscribeModel.currentStateList
+        case Images        => subscribeModel.imageList
         case Alarms        => Nil
       }
     }
@@ -202,13 +206,17 @@ object IcdComponentInfo {
         if componentModel.component == si.component && componentModel.subsystem == si.subsystem
         publishModel <- t.publishModel
       } yield {
-        val maybeEvent = publishType match {
+        val maybeEventModel = publishType match {
           case Events        => publishModel.eventList.find(t => t.name == si.name)
           case ObserveEvents => publishModel.observeEventList.find(t => t.name == si.name)
           case CurrentStates => publishModel.currentStateList.find(t => t.name == si.name)
-          case Alarms        => None
+          case _        => None
         }
-        DetailedSubscribeInfo(publishType, si, maybeEvent, Some(componentModel))
+        val maybeImageModel = publishType match {
+          case Images => publishModel.imageList.find(t => t.name == si.name)
+          case _      => None
+        }
+        DetailedSubscribeInfo(publishType, si, maybeEventModel, maybeImageModel, Some(componentModel))
       }
       x.headOption
     }

@@ -29,7 +29,8 @@ object SubscribeModelBsonParser {
           description = subscribeDoc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
           eventList = oldEvents ++ getItems("events"),
           observeEventList = getItems("observeEvents"),
-          currentStateList = getItems("currentStates")
+          currentStateList = getItems("currentStates"),
+          imageList = getItems("images"),
         )
       }
   }

@@ -250,18 +250,13 @@ object IcdModels {
    * Defines the properties of a metadata
    *
    * @param name             name of the metadata
-   * @param ref              if not empty, a reference to another metadata to copy missing values from
-   *                         in the form component/section/name/paramSection/paramName (may be abbreviated, if in same scope)
-   * @param refError contains an error message if ref is invalid (not stored in the db)
-   * @param description       description of the metadata
-   * @param fits              XXX TODO (example: ITIME, SCALE)
+   * @param description      description of the metadata
+   * @param keyword          FITS keyword (example: ITIME, SCALE)
    */
   case class MetadataModel(
       name: String,
-      ref: String,
-      refError: String,
       description: String,
-      fits: String
+      keyword: String
   ) extends NameDesc
 
   /**
@@ -347,6 +342,7 @@ object IcdModels {
       eventList: List[EventModel],
       observeEventList: List[EventModel],
       currentStateList: List[EventModel],
+      imageList: List[ImageModel],
       // For backward compatibility: Now the alarms are in a separate model file
       alarmList: List[AlarmModel]
   )
@@ -375,7 +371,8 @@ object IcdModels {
       description: String,
       eventList: List[SubscribeModelInfo],
       observeEventList: List[SubscribeModelInfo],
-      currentStateList: List[SubscribeModelInfo]
+      currentStateList: List[SubscribeModelInfo],
+      imageList: List[SubscribeModelInfo],
   )
 
   /**
@@ -534,15 +531,10 @@ object IcdModels {
    * Models the event published by a component
    *
    * @param name event name
-   * @param ref if not empty, a reference to another event model in the
-   *            form component/events/name, component/observeEvents/name, etc (may be abbreviated if in same component/section)
-   * @param refError contains an error message if ref is invalid (not stored in the db)
    * @param description event description
    */
   case class ImageModel(
       name: String,
-      ref: String,
-      refError: String,
       description: String,
       channel: String,
       metadataList: List[MetadataModel]

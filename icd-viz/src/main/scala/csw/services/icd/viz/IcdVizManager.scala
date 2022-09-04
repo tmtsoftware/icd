@@ -13,7 +13,9 @@ import icd.web.shared.{
   ComponentInfo,
   DetailedSubscribeInfo,
   EventInfo,
+  EventOrImageInfo,
   IcdVizOptions,
+  ImageInfo,
   PdfOptions,
   ReceivedCommandInfo,
   SentCommandInfo,
@@ -141,7 +143,7 @@ object IcdVizManager {
     def getSubscriberInfo(info: ComponentInfo): (List[DetailedSubscribeInfo], List[ComponentModel]) = {
       val subscribes = info.subscribes.toList
         .flatMap(_.subscribeInfo)
-        .filter(d => d.eventModel.isDefined && d.publisher.isDefined && omitFilter(d.publisher.get))
+        .filter(d => (d.eventModel.isDefined || d.imageModel.isDefined) && d.publisher.isDefined && omitFilter(d.publisher.get))
       (
         subscribes,
         subscribes
@@ -157,7 +159,7 @@ object IcdVizManager {
       if (options.missingEvents) {
         val subscribes = info.subscribes.toList
           .flatMap(_.subscribeInfo)
-          .filter(d => d.eventModel.isEmpty)
+          .filter(d => d.eventModel.isEmpty && d.imageModel.isEmpty)
         (
           subscribes,
           subscribes
@@ -185,15 +187,22 @@ object IcdVizManager {
     }
 
     // Gets info about published events and the components involved
-    def getPublisherInfo(info: ComponentInfo): (List[EventInfo], List[ComponentModel]) = {
+    def getPublisherInfo(info: ComponentInfo): (List[EventOrImageInfo], List[ComponentModel]) = {
       val eventInfoList =
         info.publishes.toList
           .flatMap(p => p.currentStateList ++ p.eventList ++ p.observeEventList)
           .filter(_.subscribers.nonEmpty)
           .map(e => EventInfo(e.eventModel, e.subscribers.filter(s => omitFilter(s.componentModel))))
+      val imageInfoList =
+        info.publishes.toList
+          .flatMap(p => p.imageList)
+          .filter(_.subscribers.nonEmpty)
+          .map(e => ImageInfo(e.imageModel, e.subscribers.filter(s => omitFilter(s.componentModel))))
+      val infoList = eventInfoList.map(x => EventOrImageInfo(x.eventModel, x.subscribers)) ++
+        imageInfoList.map(x => EventOrImageInfo(x.imageModel, x.subscribers))
       (
-        eventInfoList,
-        eventInfoList
+        infoList,
+        infoList
           .flatMap(_.subscribers)
           .map(_.componentModel)
           .distinct
@@ -203,36 +212,59 @@ object IcdVizManager {
     }
 
     // Gets info about published events with no subscribers
-    def getMissingSubscriberInfo(info: ComponentInfo): (List[EventInfo], List[ComponentModel]) = {
+    def getMissingSubscriberInfo(info: ComponentInfo): (List[EventOrImageInfo], List[ComponentModel]) = {
       if (options.missingEvents) {
         val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
-        val eventInfoList =
-          info.publishes.toList
-            .flatMap(p => p.currentStateList ++ p.eventList ++ p.observeEventList)
-            .filter(_.subscribers.isEmpty)
-            .map(e =>
-              // Create dummy subscriber component
-              EventInfo(
-                e.eventModel,
-                List(
-                  SubscribeInfo(
-                    missingComponentModel,
-                    ComponentInfo.Events,
-                    SubscribeModelInfo(
-                      info.componentModel.subsystem,
-                      info.componentModel.component,
-                      e.eventModel.name,
-                      "",
-                      1.0,
-                      None
-                    )
+        val eventInfoList = info.publishes.toList
+          .flatMap(p => p.currentStateList ++ p.eventList ++ p.observeEventList)
+          .filter(_.subscribers.isEmpty)
+          .map(e =>
+            // Create dummy subscriber component
+            EventOrImageInfo(
+              e.eventModel,
+              List(
+                SubscribeInfo(
+                  missingComponentModel,
+                  ComponentInfo.Events,
+                  SubscribeModelInfo(
+                    info.componentModel.subsystem,
+                    info.componentModel.component,
+                    e.eventModel.name,
+                    "",
+                    1.0,
+                    None
                   )
                 )
               )
             )
+          )
+        val imageInfoList = info.publishes.toList
+          .flatMap(p => p.imageList)
+          .filter(_.subscribers.isEmpty)
+          .map(e =>
+            // Create dummy subscriber component
+            EventOrImageInfo(
+              e.imageModel,
+              List(
+                SubscribeInfo(
+                  missingComponentModel,
+                  ComponentInfo.Events,
+                  SubscribeModelInfo(
+                    info.componentModel.subsystem,
+                    info.componentModel.component,
+                    e.imageModel.name,
+                    "",
+                    1.0,
+                    None
+                  )
+                )
+              )
+            )
+          )
+        val infoList = eventInfoList ++ imageInfoList
         (
-          eventInfoList,
-          eventInfoList.map(_ => missingComponentModel)
+          infoList,
+          infoList.map(_ => missingComponentModel)
         )
       }
       else (Nil, Nil)
@@ -367,7 +399,7 @@ object IcdVizManager {
         val (publishedEvents, subscribers) = if (missing) getMissingSubscriberInfo(info) else getPublisherInfo(info)
         // Map of subscriber component name to list of subscribed event names that info.component publishes
         val publishedEventMap = publishedEvents
-          .flatMap(e => e.subscribers.map(subscribeInfo => List(subscribeInfo.componentModel.prefix, e.eventModel.name)))
+          .flatMap(e => e.subscribers.map(subscribeInfo => List(subscribeInfo.componentModel.prefix, e.model.name)))
           .groupMap(_.head)(_.tail.head)
         val missingType = if (missing) Some(MissingType.noSubscribers) else None
         subscribers.map(c =>

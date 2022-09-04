@@ -29,7 +29,7 @@ package object client {
     import scalatags.JsDom.all._
     div(cls := "alert alert-danger", role := "alert")(
       span(i(cls := "bi bi-exclamation-triangle"), attr("aria-hidden") := "true"),
-      span(cls := "sr-only", "Error"),
+      span(cls := "sr-only", " Error: "),
       s" $msg"
     ).toString()
   }
@@ -39,7 +39,7 @@ package object client {
     import scalatags.JsDom.all._
     div(cls := "alert alert-warning", role := "alert")(
       span(i(cls := "bi bi-exclamation-triangle"), attr("aria-hidden") := "true"),
-      span(cls := "sr-only", "Warning"),
+      span(cls := "sr-only", " Warning: "),
       s" $msg"
     ).toString()
   }

@@ -357,6 +357,31 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
+   * Returns a table of image metadata
+   */
+  private def imageMetadataListMarkup(
+      nameStr: String,
+      metadataList: List[MetadataModel],
+      maybeImageId: Option[String] = None
+  ): TypedTag[HTMLDivElement] = {
+    import scalatags.JsDom.all._
+    if (metadataList.isEmpty) div()
+    else {
+      val headings = List("Name", "Description", "Keyword")
+      val rowList =
+        for (a <- metadataList) yield {
+          val imageId          = maybeImageId.map(s => s"$s.${a.name}")
+          val nameAnchor       = imageId.map(p => s"<a id='$p' name='$p'>${a.name}</a>").getOrElse(a.name)
+          List(nameAnchor, a.description, a.keyword)
+        }
+      div(
+        strong(s"Image Metadata for $nameStr"),
+        mkTable(headings, rowList, tableStyle = Styles.attributeTable)
+      )
+    }
+  }
+
+  /**
    * Returns a table of parameters
    *
    * @param parameterList list of attributes to display
@@ -498,6 +523,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       )
     }
 
+    // Returns a table row displaying more details for the given image
+    def makeImageDetailsRow(imageInfo: ImageInfo, maybeImageId: Option[String] = None) = {
+      val imageModel = imageInfo.imageModel
+      div(
+        imageMetadataListMarkup(imageModel.name, imageModel.metadataList, maybeImageId)
+      )
+    }
+
     // Returns the markup for the published event
     def publishEventListMarkup(pubType: String, eventList: List[EventInfo]) = {
       if (eventList.isEmpty) div()
@@ -529,6 +562,49 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                       )
                     ),
                     td(raw(t.eventModel.description)),
+                    if (clientApi)
+                      td(p(t.subscribers.map(_.componentModel).distinct.map(makeLinkForComponent)))
+                    else span
+                  ),
+                  row
+                )
+              }
+            )
+          )
+        )
+    }
+
+    // Returns the markup for the published image
+    def publishImageListMarkup(pubType: String, imageList: List[ImageInfo]) = {
+      if (imageList.isEmpty) div()
+      else
+        div(
+          h3(s"$pubType Published by $compName"),
+          table(
+            attr("data-bs-toggle") := "table",
+            thead(
+              tr(
+                th("Name"),
+                th("Description"),
+                if (clientApi) th("Subscribers") else span
+              )
+            ),
+            tbody(
+              for (t <- imageList) yield {
+                val idStr      = idFor(compName, "publishes", pubType, component.subsystem, compName, t.imageModel.name)
+                val (btn, row) = hiddenRowMarkup(idStr, makeImageDetailsRow(t, Some(idStr)), 3)
+                List(
+                  tr(
+                    td(
+                      Styles.attributeCell,
+                      p(
+                        btn,
+                        a(id := idStr, name := idStr)(
+                          t.imageModel.name
+                        )
+                      )
+                    ),
+                    td(raw(t.imageModel.description)),
                     if (clientApi)
                       td(p(t.subscribers.map(_.componentModel).distinct.map(makeLinkForComponent)))
                     else span
@@ -615,6 +691,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             publishEventListMarkup("Observe Events", publishes.observeEventList),
             if (forApi) totalArchiveSpace() else span(),
             publishEventListMarkup("Current States", publishes.currentStateList),
+            publishImageListMarkup("Images", publishes.imageList),
             publishAlarmListMarkup(publishes.alarmList)
           )
         }
@@ -644,11 +721,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         )
       )
 
-      val attrTable = si.eventModel.map(t => parameterListMarkup(t.parameterList)).getOrElse(div())
+      val attrTable          = si.eventModel.map(t => parameterListMarkup(t.parameterList)).getOrElse(div())
+      val imageMetadataTable = si.imageModel.map(t => imageMetadataListMarkup(t.name, t.metadataList)).getOrElse(div())
       div(
         mkTable(headings, rowList),
         if (maxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.") else span(),
-        attrTable
+        attrTable,
+        imageMetadataTable
       )
     }
 
@@ -722,6 +801,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == Events)),
             subscribeListMarkup("Observe Events", subscribes.subscribeInfo.filter(_.itemType == ObserveEvents)),
             subscribeListMarkup("Current States", subscribes.subscribeInfo.filter(_.itemType == CurrentStates)),
+            subscribeListMarkup("Images", subscribes.subscribeInfo.filter(_.itemType == Images)),
             subscribeListMarkup("Alarms", subscribes.subscribeInfo.filter(_.itemType == Alarms))
           )
         }

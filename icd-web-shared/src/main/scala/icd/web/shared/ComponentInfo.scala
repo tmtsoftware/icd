@@ -14,6 +14,8 @@ object ComponentInfo {
 
   case object CurrentStates extends PublishType
 
+  case object Images extends PublishType
+
   case object Alarms extends PublishType
 
   /**
@@ -24,25 +26,33 @@ object ComponentInfo {
    * @return a new ComponentInfo with empty items removed
    */
   def applyIcdFilter(info: ComponentInfo): ComponentInfo = {
-    val (oldEventList, oldObserveEventList) =
+    val (oldEventList, oldObserveEventList, oldCurrentStateList, oldImageList) =
       info.publishes match {
-        case None => (Nil, Nil)
+        case None => (Nil, Nil, Nil, Nil)
         case Some(p) =>
-          (p.eventList, p.observeEventList)
+          (p.eventList, p.observeEventList, p.currentStateList, p.imageList)
       }
     val oldCommandsReceived = info.commands.toList.flatMap(_.commandsReceived)
     val oldCommandsSent     = info.commands.toList.flatMap(_.commandsSent)
 
-    val newEventList = oldEventList.filter(p => p.subscribers.nonEmpty)
-    val newObserveEventList =
-      oldObserveEventList.filter(p => p.subscribers.nonEmpty)
+    val newEventList        = oldEventList.filter(p => p.subscribers.nonEmpty)
+    val newObserveEventList = oldObserveEventList.filter(p => p.subscribers.nonEmpty)
+    val newCurrentStateList = oldCurrentStateList.filter(p => p.subscribers.nonEmpty)
+    val newImageList        = oldImageList.filter(p => p.subscribers.nonEmpty)
 
     val newCommandsReceived =
       oldCommandsReceived.filter(p => p.senders.nonEmpty)
     val newCommandsSent = oldCommandsSent.filter(p => p.receiver.nonEmpty)
 
     val publishes =
-      info.publishes.map(p => p.copy(eventList = newEventList, observeEventList = newObserveEventList))
+      info.publishes.map(p =>
+        p.copy(
+          eventList = newEventList,
+          observeEventList = newObserveEventList,
+          currentStateList = newCurrentStateList,
+          imageList = newImageList
+        )
+      )
 
     val commands = info.commands.map(c =>
       c.copy(
@@ -83,6 +93,15 @@ case class ComponentInfo(
 )
 
 /**
+ * Describes a published event or image
+ *
+ * @param model  the publisher's event or image information
+ * @param subscribers a list of the other components that subscribe to this item
+ */
+case class EventOrImageInfo(model: NameDesc, subscribers: List[SubscribeInfo])
+
+
+/**
  * Describes a published event
  *
  * @param eventModel  the publisher's event information
@@ -91,12 +110,21 @@ case class ComponentInfo(
 case class EventInfo(eventModel: EventModel, subscribers: List[SubscribeInfo])
 
 /**
+ * Describes a published image
+ *
+ * @param imageModel  the publisher's image information
+ * @param subscribers a list of the other components that subscribe to this image
+ */
+case class ImageInfo(imageModel: ImageModel, subscribers: List[SubscribeInfo])
+
+/**
  * Describes what values a component publishes
  *
  * @param description      optional top level description of published items (in html format, after markdown processing)
  * @param eventList        list of published events
  * @param observeEventList list of published observe events
  * @param currentStateList list of published current states
+ * @param imageList        list of published images
  * @param alarmList        list of published alarms
  */
 case class Publishes(
@@ -104,6 +132,7 @@ case class Publishes(
     eventList: List[EventInfo],
     observeEventList: List[EventInfo],
     currentStateList: List[EventInfo],
+    imageList: List[ImageInfo],
     alarmList: List[AlarmModel]
 ) {
 
@@ -111,7 +140,7 @@ case class Publishes(
    * True if the component publishes something
    */
   def nonEmpty: Boolean =
-    eventList.nonEmpty || observeEventList.nonEmpty || alarmList.nonEmpty
+    eventList.nonEmpty || observeEventList.nonEmpty || currentStateList.nonEmpty || imageList.nonEmpty || alarmList.nonEmpty
 }
 
 /**
@@ -128,7 +157,8 @@ case class SubscribeInfo(componentModel: ComponentModel, itemType: PublishType, 
  *
  * @param itemType           the publish type (Event, Alarm, ObserveEvent, etc.)
  * @param subscribeModelInfo data from the input subscribe model
- * @param eventModel         set only if itemType is not Alarms
+ * @param eventModel         set only if itemType is not Alarms or Image
+ * @param imageModel         set only if itemType is Image
  * @param publisher          the publisher's component model
  * @param warnings           if true, display a warning if no publisher event was specified
  */
@@ -136,11 +166,11 @@ case class DetailedSubscribeInfo(
     itemType: PublishType,
     subscribeModelInfo: SubscribeModelInfo,
     eventModel: Option[EventModel],
+    imageModel: Option[ImageModel],
     publisher: Option[ComponentModel],
     warnings: Boolean = true
 ) {
-  val description: String = eventModel.map(_.description).getOrElse("")
-
+  val description: String = eventModel.map(_.description).getOrElse(imageModel.map(_.description).getOrElse(""))
   val warning: Option[String] =
     if (!warnings || eventModel.nonEmpty) None
     else if (publisher.isEmpty) {
