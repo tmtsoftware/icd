@@ -249,7 +249,7 @@ object IcdVizManager {
               List(
                 SubscribeInfo(
                   missingComponentModel,
-                  ComponentInfo.Events,
+                  ComponentInfo.Images,
                   SubscribeModelInfo(
                     info.componentModel.subsystem,
                     info.componentModel.component,

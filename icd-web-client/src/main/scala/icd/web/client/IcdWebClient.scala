@@ -316,8 +316,11 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private def goToComponent(compName: String, saveHistory: Boolean = true): Unit = {
     val compId = Components.getComponentInfoId(compName)
     if (compId != null) {
-      document.getElementById(compId).scrollIntoView()
-      if (saveHistory) pushState(viewType = ComponentView, compName = Some(compName))
+      val elem = document.getElementById(compId)
+      if (elem != null) {
+        elem.scrollIntoView()
+        if (saveHistory) pushState(viewType = ComponentView, compName = Some(compName))
+      }
     }
   }
 
