@@ -117,7 +117,7 @@ GitHub repo. Once DMS is published, the file should be automatically loaded by t
 Until then, the keywords can be manually loaded into the icd database once by running 
 
 ```
-icd-fits -i examples/3.0/FITS-Keywords.json.
+icd-fits -i examples/3.0/FITS-Dictionary.json.
 ```
 
 Known Issues
