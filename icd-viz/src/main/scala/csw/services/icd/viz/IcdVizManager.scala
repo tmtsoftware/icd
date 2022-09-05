@@ -12,10 +12,8 @@ import csw.services.icd.viz.IcdVizManager.MissingType.MissingType
 import icd.web.shared.{
   ComponentInfo,
   DetailedSubscribeInfo,
-  EventInfo,
   EventOrImageInfo,
   IcdVizOptions,
-  ImageInfo,
   PdfOptions,
   ReceivedCommandInfo,
   SentCommandInfo,
@@ -38,10 +36,12 @@ object IcdVizManager {
   //noinspection TypeAnnotation
   object MissingType extends Enumeration {
     type MissingType = Value
-    val noSubscribers    = Value("No Subscribers")
-    val missingPublisher = Value("Missing in Publisher")
-    val noSenders        = Value("No Senders")
-    val missingReceiver  = Value("Missing in Receiver")
+    val noEventSubscribers    = Value("No subscribers")
+    val missingEventPublisher = Value("Missing in publisher")
+    val noImageSubscribers    = Value("No image subscribers")
+    val missingImagePublisher = Value("Image missing in publisher")
+    val noSenders             = Value("No senders")
+    val missingReceiver       = Value("Missing in receiver")
   }
 
   //noinspection TypeAnnotation
@@ -84,6 +84,7 @@ object IcdVizManager {
 
   private val commandColor = "chocolate" // command color
   private val eventColor   = "dimgrey"   // event colors
+  private val imageColor   = "purple"    // image colors
   private val missingColor = "red"       // missing command or event color
 
   private val nodeFontsize      = 20
@@ -141,10 +142,12 @@ object IcdVizManager {
     }
 
     // Get info about subscribed events and the components involved
-    def getSubscriberInfo(info: ComponentInfo): (List[DetailedSubscribeInfo], List[ComponentModel]) = {
+    def getSubscriberInfo(info: ComponentInfo, images: Boolean): (List[DetailedSubscribeInfo], List[ComponentModel]) = {
       val subscribes = info.subscribes.toList
         .flatMap(_.subscribeInfo)
-        .filter(d => (d.eventModel.isDefined || d.imageModel.isDefined) && d.publisher.isDefined && omitFilter(d.publisher.get))
+        .filter(d =>
+          (if (images) d.imageModel.isDefined else d.eventModel.isDefined) && d.publisher.isDefined && omitFilter(d.publisher.get)
+        )
       (
         subscribes,
         subscribes
@@ -155,12 +158,12 @@ object IcdVizManager {
       )
     }
 
-    // Get info about subscribed events where the publisher doesn't publish the event
-    def getMissingPublisherInfo(info: ComponentInfo): (List[DetailedSubscribeInfo], List[ComponentModel]) = {
+    // Get info about subscribed events or images where the publisher doesn't publish the event
+    def getMissingPublisherInfo(info: ComponentInfo, images: Boolean): (List[DetailedSubscribeInfo], List[ComponentModel]) = {
       if (options.missingEvents) {
         val subscribes = info.subscribes.toList
           .flatMap(_.subscribeInfo)
-          .filter(d => d.eventModel.isEmpty && d.imageModel.isEmpty)
+          .filter(d => images == (d.itemType == ComponentInfo.Images) && d.imageModel.isEmpty && d.eventModel.isEmpty)
         (
           subscribes,
           subscribes
@@ -188,19 +191,18 @@ object IcdVizManager {
     }
 
     // Gets info about published events and the components involved
-    def getPublisherInfo(info: ComponentInfo): (List[EventOrImageInfo], List[ComponentModel]) = {
-      val eventInfoList =
-        info.publishes.toList
-          .flatMap(p => p.currentStateList ++ p.eventList ++ p.observeEventList)
-          .filter(_.subscribers.nonEmpty)
-          .map(e => EventInfo(e.eventModel, e.subscribers.filter(s => omitFilter(s.componentModel))))
-      val imageInfoList =
-        info.publishes.toList
-          .flatMap(p => p.imageList)
-          .filter(_.subscribers.nonEmpty)
-          .map(e => ImageInfo(e.imageModel, e.subscribers.filter(s => omitFilter(s.componentModel))))
-      val infoList = eventInfoList.map(x => EventOrImageInfo(x.eventModel, x.subscribers)) ++
-        imageInfoList.map(x => EventOrImageInfo(x.imageModel, x.subscribers))
+    def getPublisherInfo(info: ComponentInfo, images: Boolean): (List[EventOrImageInfo], List[ComponentModel]) = {
+      val infoList =
+        if (images)
+          info.publishes.toList
+            .flatMap(p => p.imageList)
+            .filter(_.subscribers.nonEmpty)
+            .map(e => EventOrImageInfo(e.imageModel, e.subscribers.filter(s => omitFilter(s.componentModel))))
+        else
+          info.publishes.toList
+            .flatMap(p => p.currentStateList ++ p.eventList ++ p.observeEventList)
+            .filter(_.subscribers.nonEmpty)
+            .map(e => EventOrImageInfo(e.eventModel, e.subscribers.filter(s => omitFilter(s.componentModel))))
       (
         infoList,
         infoList
@@ -213,56 +215,58 @@ object IcdVizManager {
     }
 
     // Gets info about published events with no subscribers
-    def getMissingSubscriberInfo(info: ComponentInfo): (List[EventOrImageInfo], List[ComponentModel]) = {
+    def getMissingSubscriberInfo(info: ComponentInfo, images: Boolean): (List[EventOrImageInfo], List[ComponentModel]) = {
       if (options.missingEvents) {
         val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
-        val eventInfoList = info.publishes.toList
-          .flatMap(p => p.currentStateList ++ p.eventList ++ p.observeEventList)
-          .filter(_.subscribers.isEmpty)
-          .map(e =>
-            // Create dummy subscriber component
-            EventOrImageInfo(
-              e.eventModel,
-              List(
-                SubscribeInfo(
-                  missingComponentModel,
-                  ComponentInfo.Events,
-                  SubscribeModelInfo(
-                    info.componentModel.subsystem,
-                    info.componentModel.component,
-                    e.eventModel.name,
-                    "",
-                    1.0,
-                    None
+        val infoList =
+          if (images)
+            info.publishes.toList
+              .flatMap(p => p.imageList)
+              .filter(_.subscribers.isEmpty)
+              .map(e =>
+                // Create dummy subscriber component
+                EventOrImageInfo(
+                  e.imageModel,
+                  List(
+                    SubscribeInfo(
+                      missingComponentModel,
+                      ComponentInfo.Images,
+                      SubscribeModelInfo(
+                        info.componentModel.subsystem,
+                        info.componentModel.component,
+                        e.imageModel.name,
+                        "",
+                        1.0,
+                        None
+                      )
+                    )
                   )
                 )
               )
-            )
-          )
-        val imageInfoList = info.publishes.toList
-          .flatMap(p => p.imageList)
-          .filter(_.subscribers.isEmpty)
-          .map(e =>
-            // Create dummy subscriber component
-            EventOrImageInfo(
-              e.imageModel,
-              List(
-                SubscribeInfo(
-                  missingComponentModel,
-                  ComponentInfo.Images,
-                  SubscribeModelInfo(
-                    info.componentModel.subsystem,
-                    info.componentModel.component,
-                    e.imageModel.name,
-                    "",
-                    1.0,
-                    None
+          else
+            info.publishes.toList
+              .flatMap(p => p.currentStateList ++ p.eventList ++ p.observeEventList)
+              .filter(_.subscribers.isEmpty)
+              .map(e =>
+                // Create dummy subscriber component
+                EventOrImageInfo(
+                  e.eventModel,
+                  List(
+                    SubscribeInfo(
+                      missingComponentModel,
+                      ComponentInfo.Events,
+                      SubscribeModelInfo(
+                        info.componentModel.subsystem,
+                        info.componentModel.component,
+                        e.eventModel.name,
+                        "",
+                        1.0,
+                        None
+                      )
+                    )
                   )
                 )
               )
-            )
-          )
-        val infoList = eventInfoList ++ imageInfoList
         (
           infoList,
           infoList.map(_ => missingComponentModel)
@@ -350,11 +354,17 @@ object IcdVizManager {
 
     // All subsystems related to the primary components
     val allSubsystems = componentInfoList.flatMap { info =>
-      val (_, subscriberComponents)       = getSubscriberInfo(info)
-      val (_, missingPublisherComponents) = getMissingPublisherInfo(info)
+      val (_, eventSubscriberComponents)       = getSubscriberInfo(info, images = false)
+      val (_, missingEventPublisherComponents) = getMissingPublisherInfo(info, images = false)
 
-      val (_, publisherComponents)         = getPublisherInfo(info)
-      val (_, missingSubscriberComponents) = getMissingSubscriberInfo(info)
+      val (_, eventPublisherComponents)         = getPublisherInfo(info, images = false)
+      val (_, missingEventSubscriberComponents) = getMissingSubscriberInfo(info, images = false)
+
+      val (_, imageSubscriberComponents)       = getSubscriberInfo(info, images = true)
+      val (_, missingImagePublisherComponents) = getMissingPublisherInfo(info, images = true)
+
+      val (_, imagePublisherComponents)         = getPublisherInfo(info, images = true)
+      val (_, missingImageSubscriberComponents) = getMissingSubscriberInfo(info, images = true)
 
       val (_, receivierComponents)        = getSentCommandInfo(info)
       val (_, missingReceivierComponents) = getMissingReceiverInfo(info)
@@ -362,10 +372,14 @@ object IcdVizManager {
       val (_, senderComponents)        = getReceivedCommandInfo(info)
       val (_, missingSenderComponents) = getMissingSenderCommandInfo(info)
 
-      (info.componentModel :: (subscriberComponents ++
-        missingPublisherComponents ++
-        publisherComponents ++
-        missingSubscriberComponents ++
+      (info.componentModel :: (eventSubscriberComponents ++
+        missingEventPublisherComponents ++
+        eventPublisherComponents ++
+        missingEventSubscriberComponents ++
+        imageSubscriberComponents ++
+        missingImagePublisherComponents ++
+        imagePublisherComponents ++
+        missingImageSubscriberComponents ++
         receivierComponents ++
         missingReceivierComponents ++
         senderComponents ++
@@ -376,18 +390,21 @@ object IcdVizManager {
 
     // Edges for events that the primary components subscribe to.
     // If missing is true, only those with missing publishers, otherwise only those not missing a publisher.
-    def getSubscribedEventEdges(missing: Boolean): List[EdgeModel] = {
+    // If images is true, get subscribed images, otherwise subscribed events.
+    def getSubscribedEventEdges(missing: Boolean, images: Boolean): List[EdgeModel] = {
       componentInfoList.flatMap { info =>
-        val (subscribedEvents, publishers) = if (missing) getMissingPublisherInfo(info) else getSubscriberInfo(info)
+        val (subscribedEvents, publishers) =
+          if (missing) getMissingPublisherInfo(info, images) else getSubscriberInfo(info, images)
         // Map of publisher component name to list of published event names that info.component subscribes to
         val subscribedEventMap = subscribedEvents
           .map(e => List(s"${e.subscribeModelInfo.subsystem}.${e.subscribeModelInfo.component}", e.subscribeModelInfo.name))
           .groupMap(_.head)(_.tail.head)
-        val missingType = if (missing) Some(MissingType.missingPublisher) else None
+        val missingType =
+          if (missing) Some(if (images) MissingType.missingImagePublisher else MissingType.missingEventPublisher) else None
         publishers.map(c =>
           EdgeModel(
             ComponentPair(c.prefix, info.componentModel.prefix),
-            EdgeLabel(subscribedEventMap(c.prefix), EdgeType.events, missingType)
+            EdgeLabel(subscribedEventMap(c.prefix), if (images) EdgeType.images else EdgeType.events, missingType)
           )
         )
       }
@@ -395,18 +412,21 @@ object IcdVizManager {
 
     // Edges for events that the primary components publish
     // If missing is true, only those with no subscribers, otherwise only those with subscribers.
-    def getPublishedEventEdges(missing: Boolean): List[EdgeModel] = {
+    // If images is true, get subscribed images, otherwise subscribed events.
+    def getPublishedEventEdges(missing: Boolean, images: Boolean): List[EdgeModel] = {
       componentInfoList.flatMap { info =>
-        val (publishedEvents, subscribers) = if (missing) getMissingSubscriberInfo(info) else getPublisherInfo(info)
+        val (publishedEvents, subscribers) =
+          if (missing) getMissingSubscriberInfo(info, images) else getPublisherInfo(info, images)
         // Map of subscriber component name to list of subscribed event names that info.component publishes
         val publishedEventMap = publishedEvents
           .flatMap(e => e.subscribers.map(subscribeInfo => List(subscribeInfo.componentModel.prefix, e.model.name)))
           .groupMap(_.head)(_.tail.head)
-        val missingType = if (missing) Some(MissingType.noSubscribers) else None
+        val missingType =
+          if (missing) Some(if (images) MissingType.noImageSubscribers else MissingType.noEventSubscribers) else None
         subscribers.map(c =>
           EdgeModel(
             ComponentPair(info.componentModel.prefix, c.prefix),
-            EdgeLabel(publishedEventMap(c.prefix), EdgeType.events, missingType)
+            EdgeLabel(publishedEventMap(c.prefix), if (images) EdgeType.images else EdgeType.events, missingType)
           )
         )
       }
@@ -505,9 +525,14 @@ object IcdVizManager {
     def edgeTransformer(innerEdge: Graph[String, LkDiEdge]#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
       val edge      = innerEdge.edge
       val edgeLabel = edge.label.asInstanceOf[EdgeLabel]
-      val showLabel = options.eventLabels && edgeLabel.edgeType == EdgeType.events ||
+      val showLabel = options.eventLabels &&
+        (edgeLabel.edgeType == EdgeType.events || edgeLabel.edgeType == EdgeType.images) ||
         options.commandLabels && edgeLabel.edgeType == EdgeType.commands
-      val color = if (edgeLabel.edgeType == EdgeType.events) eventColor else commandColor
+      val color = edgeLabel.edgeType match {
+        case EdgeType.events => eventColor
+        case EdgeType.images => imageColor
+        case _               => commandColor
+      }
       val styleAttr =
         if (edgeLabel.missing.isDefined)
           List(
@@ -627,11 +652,20 @@ object IcdVizManager {
     }
 
     // Combine edges where publish/subscribe or send/receive could cause duplicates (not needed if the other side is missing)
-    val eventEdgeModels          = combineEdgeModels(getSubscribedEventEdges(missing = false) ++ getPublishedEventEdges(missing = false))
-    val missingEventEdgeModels   = getSubscribedEventEdges(missing = true) ++ getPublishedEventEdges(missing = true)
+    val eventEdgeModels = combineEdgeModels(
+      getSubscribedEventEdges(missing = false, images = false) ++ getPublishedEventEdges(missing = false, images = false)
+    )
+    val imageEdgeModels = combineEdgeModels(
+      getSubscribedEventEdges(missing = false, images = true) ++ getPublishedEventEdges(missing = false, images = true)
+    )
+    val missingEventEdgeModels =
+      getSubscribedEventEdges(missing = true, images = false) ++ getPublishedEventEdges(missing = true, images = false)
+    val missingImageEdgeModels =
+      getSubscribedEventEdges(missing = true, images = true) ++ getPublishedEventEdges(missing = true, images = true)
     val commandEdgeModels        = combineEdgeModels(getSentCommandEdges(missing = false) ++ getReceivedCommandEdges(missing = false))
     val missingCommandEdgeModels = getSentCommandEdges(missing = true) ++ getReceivedCommandEdges(missing = true)
-    val allEdgeModels            = eventEdgeModels ++ missingEventEdgeModels ++ commandEdgeModels ++ missingCommandEdgeModels
+    val allEdgeModels =
+      eventEdgeModels ++ imageEdgeModels ++ missingEventEdgeModels ++ missingImageEdgeModels ++ commandEdgeModels ++ missingCommandEdgeModels
 
     // Create the final graph
     val g = Graph.from(
