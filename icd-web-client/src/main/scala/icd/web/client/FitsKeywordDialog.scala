@@ -7,6 +7,7 @@ import org.scalajs.dom.Element
 import org.scalajs.dom.html.Anchor
 import scalatags.JsDom
 import scalatags.JsDom.all._
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 
 case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], listener: ComponentListener) extends Displayable {
 
@@ -14,6 +15,8 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], listener: ComponentLis
   private def clickedOnFitsSource(fitsSource: FitsSource)(e: dom.Event): Unit = {
     e.preventDefault()
     listener.componentSelected(Components.ComponentLink(fitsSource.subsystem, fitsSource.componentName))
+      // Once the component is loaded, go to the parameter as well
+      .foreach(_ -> Components.clickedOnFitsSource(fitsSource)(e))
   }
 
   // Makes the link for a FITS keyword source to the event that is the source of the keyword

@@ -36,7 +36,7 @@ object Components {
      *
      * @param link contains the component's subsystem and name
      */
-    def componentSelected(link: ComponentLink): Unit
+    def componentSelected(link: ComponentLink): Future[Unit]
   }
 
   // Displayed version for unpublished APIs

@@ -288,7 +288,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
    * selected version of the subsystem, otherwise use the latest version.
    */
   object ComponentLinkSelectionHandler extends ComponentListener {
-    def componentSelected(link: ComponentLink): Unit = {
+    def componentSelected(link: ComponentLink): Future[Unit] = {
       val maybeSv              = selectDialog.subsystem.getSubsystemWithVersion()
       val maybeTargetSv        = selectDialog.targetSubsystem.getSubsystemWithVersion()
       val maybeSubsystem       = maybeSv.map(_.subsystem)
@@ -297,8 +297,10 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       Some(link.subsystem) match {
         case `maybeSubsystem` if maybeSv.flatMap(_.maybeComponent).isEmpty =>
           goToComponent(link.compName)
+          Future.successful(())
         case `maybeTargetSubsystem` if maybeTargetSv.flatMap(_.maybeComponent).isEmpty =>
           goToComponent(link.compName)
+          Future.successful(())
         case _ =>
           val maybeLinkSv = Some(SubsystemWithVersion(link.subsystem, None, Some(link.compName)))
           for {
