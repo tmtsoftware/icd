@@ -88,6 +88,27 @@ object Components {
       }
     }
   }
+
+  // Returns an element id to use for the detail row that is normally hidden until you click on the toggle.
+  // For some reason using the string id did not work, so using the hash here.
+  private def makeHiddenRowId(id: String) = s"hiddenRow-${id.##}"
+
+  // Action when user clicks on a component link
+  def clickedOnFitsSource(fitsSource: FitsSource)(e: dom.Event): Unit = {
+    e.preventDefault()
+    val idStr = Headings.idFor(
+      fitsSource.componentName,
+      "publishes",
+      "Event",
+      fitsSource.subsystem,
+      fitsSource.componentName,
+      fitsSource.eventName
+    )
+    val hiddenRowId = makeHiddenRowId(idStr)
+    document.getElementById(hiddenRowId).classList.remove("collapse")
+    val paramId = s"$idStr.${fitsSource.parameterName}"
+    document.getElementById(paramId).scrollIntoView()
+  }
 }
 
 /**
@@ -106,24 +127,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def clickedOnComponent(subsystem: String, component: String)(e: dom.Event): Unit = {
     e.preventDefault()
     listener.componentSelected(ComponentLink(subsystem, component))
-  }
-
-  // Action when user clicks on a component link
-  private def clickedOnFitsSource(fitsSource: FitsSource)(e: dom.Event): Unit = {
-    e.preventDefault()
-    val idStr = Headings.idFor(
-      fitsSource.componentName,
-      "publishes",
-      "Event",
-      fitsSource.subsystem,
-      fitsSource.componentName,
-      fitsSource.eventName
-    )
-//    document.getElementById(idStr).scrollIntoView()
-    val hiddenRowId = makeHiddenRowId(idStr)
-    document.getElementById(hiddenRowId).classList.remove("collapse")
-    val paramId = s"$idStr.${fitsSource.parameterName}"
-    document.getElementById(paramId).scrollIntoView()
   }
 
   // Makes the link for a component in the table
@@ -431,10 +434,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       )
     }
   }
-
-  // Returns an element id to use for the detail row that is normally hidden until you click on the toggle.
-  // For some reason using the string id did not work, so using the hash here.
-  private def makeHiddenRowId(id: String) = s"hiddenRow-${id.##}"
 
   /**
    * Returns a hidden, expandable table row containing the given div item
@@ -1096,33 +1095,27 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
     div(Styles.component, id := "FITS-Keys")(
-      h3(a(name := "FITS-Keys")("FITS Keywords")),
+      h3(a(name := "FITS-Keys")("FITS Dictionary")),
       table(
         Styles.componentTable,
         attr("data-bs-toggle") := "table",
         thead(
           tr(
             th("Name"),
-//            th("Title"),
             th("Description"),
             th("Type"),
-//            th("Default"),
             th("Units"),
             th("Source", br, i("(component-event-param[index?])"))
-//            th("Note"),
           )
         ),
         tbody(
           fitsKeys.map { info =>
             tr(
               td(a(id := info.name, name := info.name)(info.name)),
-//              td(info.title),
               td(raw(info.description)),
               td(info.typ),
-//              td(info.defaultValue),
               td(info.units),
               td(info.source.map(makeLinkForFitsKeySource))
-//              td(info.note),
             )
           }
         )

@@ -44,7 +44,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val historyItem   = NavbarItem("History", "Display the version history for an API or ICD", showVersionHistory())
   private val historyDialog = HistoryDialog(mainContent)
 
-  private val fitsKeywordsItem = NavbarItem("Fits Keywords", "Display information about all FITS keywords", showFitsKeywords())
+  private val fitsKeywordsItem = NavbarItem("FITS Dictionary", "Display information about all FITS keywords", showFitsKeywords())
 
   private val pdfItem = NavbarPdfItem("PDF", "Generate and display a PDF for the API or ICD", makePdf)
   pdfItem.setEnabled(false)
@@ -560,7 +560,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       }
     f.foreach { fitsKeys =>
       val fitsKeywordDialog = FitsKeywordDialog(fitsKeys, ComponentLinkSelectionHandler)
-      mainContent.setContent(fitsKeywordDialog, "FITS Keywords")
+      mainContent.setContent(fitsKeywordDialog, "FITS Dictionary")
     // XXX TODO FIXME
     // if (saveHistory) pushState(viewType = VersionView)
     }

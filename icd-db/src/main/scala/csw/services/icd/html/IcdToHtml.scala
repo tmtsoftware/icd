@@ -71,7 +71,7 @@ object IcdToHtml {
   def makeFitsKeyTable(fitsKeys: List[FitsKeyInfo], nh: Headings, withLinks: Boolean = true): Text.TypedTag[String] = {
     import scalatags.Text.all._
     div(id := "FITS-Keys")(
-      nh.H3("FITS Keywords", "FITS-Keys"),
+      nh.H3("FITS Dictionary", "FITS-Keys"),
       table(
         attr("data-bs-toggle") := "table",
         thead(

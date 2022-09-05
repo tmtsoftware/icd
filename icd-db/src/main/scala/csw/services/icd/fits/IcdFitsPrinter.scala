@@ -26,7 +26,7 @@ case class IcdFitsPrinter(fitsKeyList: List[FitsKeyInfo]) {
         val nh = new HtmlHeadings
         val markup = html(
           head(
-            scalatags.Text.tags2.title("FITS Keywords"),
+            scalatags.Text.tags2.title("FITS Dictionary"),
             scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss(pdfOptions)))
           ),
           body(
