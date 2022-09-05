@@ -194,13 +194,14 @@ case class IcdFits(db: IcdDb) {
       maybePdfOptions: Option[PdfOptions] = None
   ): List[FitsKeyInfo] = {
     val fitsKeyList = getFitsKeyInfo(maybePdfOptions)
-    if (maybeSubsystem.isEmpty) fitsKeyList else {
+    if (maybeSubsystem.isEmpty) fitsKeyList.sorted
+    else {
       // XXX TODO: Do the query in MongoDB?
       val subsystem = maybeSubsystem.get
-      fitsKeyList.filter { i =>
+      fitsKeyList.filter(i =>
         i.source
           .exists(_.subsystem == subsystem) && (maybeComponent.isEmpty || i.source.exists(_.componentName == maybeComponent.get))
-      }
+      ).sorted
     }
   }
 
@@ -253,7 +254,7 @@ case class IcdFits(db: IcdDb) {
         val out     = new FileOutputStream(file)
         val jsonStr = Json.prettyPrint(Json.toJson(fitsKeyInfoList))
         val config  = ConfigFactory.parseString(jsonStr)
-        val opts = ConfigRenderOptions.defaults().setComments(false).setOriginComments(false)
+        val opts    = ConfigRenderOptions.defaults().setComments(false).setOriginComments(false)
         out.write(config.root().render(opts).getBytes)
         out.close()
       }

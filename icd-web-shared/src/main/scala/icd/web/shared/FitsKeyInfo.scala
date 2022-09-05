@@ -33,6 +33,10 @@ case class FitsSource(
   }
 }
 
+object FitsKeyInfo {
+  implicit def orderingByName[A <: FitsKeyInfo]: Ordering[A] = Ordering.by(e => (e.name))
+}
+
 case class FitsKeyInfo(
     name: String,
     title: String,
