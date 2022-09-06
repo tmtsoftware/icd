@@ -1,7 +1,6 @@
 package csw.services.icd.fits
 
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
-import csw.services.icd.IcdValidator
 import csw.services.icd.db.{IcdDb, IcdDbDefaults}
 import icd.web.shared.{BuildInfo, FitsKeyInfo, FitsKeyInfoList, FitsSource, PdfOptions}
 import reactivemongo.api.bson.collection.BSONCollection
@@ -9,12 +8,11 @@ import reactivemongo.api.bson.collection.BSONCollection
 import scala.concurrent.ExecutionContext.Implicits.global
 import csw.services.icd._
 import reactivemongo.play.json.compat._
-import bson2json._
 import csw.services.icd.db.parser.FitsKeyInfoListBsonParser
 import lax._
 import json2bson._
 
-import java.io.{File, FileOutputStream}
+import java.io.{File, FileInputStream, FileOutputStream}
 import play.api.libs.json._
 import reactivemongo.api.bson.BSONDocument
 
@@ -144,7 +142,7 @@ object IcdFits extends App {
       Nil
     )
 
-    if (options.list) list()
+    if (options.list) icdFits.list(options.subsystem, options.component, pdfOptions)
 
     options.ingest.foreach(icdFits.ingest)
 
@@ -161,9 +159,6 @@ object IcdFits extends App {
 
     db.close()
     System.exit(0)
-
-    def list(): Unit = {}
-
   }
 
 }
@@ -175,8 +170,11 @@ case class IcdFits(db: IcdDb) {
 
   def ingest(file: File): Unit = {
     // XXX TODO: validate first
-    val config = ConfigFactory.parseFile(file)
-    val jsObj  = Json.parse(IcdValidator.toJson(config)).as[JsObject]
+//    val config = ConfigFactory.parseFile(file)
+//    val jsObj  = Json.parse(IcdValidator.toJson(config)).as[JsObject]
+    val inputStream = new FileInputStream(file)
+    val jsObj = Json.parse(inputStream).asInstanceOf[JsObject]
+    inputStream.close()
     collection.drop().await
     collection.create().await
     collection.insert.one(jsObj).await
@@ -198,11 +196,21 @@ case class IcdFits(db: IcdDb) {
     else {
       // XXX TODO: Do the query in MongoDB?
       val subsystem = maybeSubsystem.get
-      fitsKeyList.filter(i =>
-        i.source
-          .exists(_.subsystem == subsystem) && (maybeComponent.isEmpty || i.source.exists(_.componentName == maybeComponent.get))
-      ).sorted
+      fitsKeyList
+        .filter(i =>
+          i.source
+            .exists(_.subsystem == subsystem) && (maybeComponent.isEmpty || i.source
+            .exists(_.componentName == maybeComponent.get))
+        )
+        .sorted
     }
+  }
+
+  /**
+   * Print the related FITS keywords to stdout
+   */
+  def list(maybeSubsystem: Option[String], maybeComponent: Option[String], pdfOptions: PdfOptions): Unit = {
+    getRelatedFitsKeyInfo(maybeSubsystem, maybeComponent, Some(pdfOptions)).foreach { k => println(k.name) }
   }
 
   /**
