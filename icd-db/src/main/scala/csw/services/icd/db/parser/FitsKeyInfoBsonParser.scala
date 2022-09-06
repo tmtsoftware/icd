@@ -1,8 +1,15 @@
 package csw.services.icd.db.parser
 
 import csw.services.icd.html.HtmlMarkup
-import icd.web.shared.{FitsKeyInfo, FitsSource, PdfOptions}
+import icd.web.shared.{FitsKeyInfo, FitsSource, FitsTags, PdfOptions}
 import reactivemongo.api.bson._
+
+object FitsTagsBsonParser {
+  def apply(doc: BSONDocument): FitsTags = {
+    val map = doc.toMap.view.mapValues(_.asOpt[List[String]].getOrElse(Nil)).filterKeys(_ != "_id").toMap
+    FitsTags(map)
+  }
+}
 
 object FitsSourceBsonParser {
   def apply(doc: BSONDocument): Option[FitsSource] = {

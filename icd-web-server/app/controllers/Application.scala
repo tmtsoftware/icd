@@ -796,6 +796,15 @@ class Application @Inject() (
     }
 
   /**
+   * Query the database for a map of tags to FITS keyword names
+   */
+  def fitsTags() =
+    authAction.async {
+      val resp: Future[FitsTags] = appActor ? GetFitsTags
+      resp.map(info => Ok(Json.toJson(info)))
+    }
+
+  /**
    * Query the database for a list of FITS keys for the given subsystem / component
    */
   def allFitsKeyInfo() =

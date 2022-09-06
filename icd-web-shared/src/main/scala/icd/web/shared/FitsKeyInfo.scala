@@ -1,5 +1,9 @@
 package icd.web.shared
 
+// Holds a map from tag to list of FITS keywords
+case class FitsTags(tags: Map[String, List[String]])
+
+// Source parameter of the FITS keyword
 case class FitsSource(
     subsystem: String,
     componentName: String,
@@ -37,6 +41,7 @@ object FitsKeyInfo {
   implicit def orderingByName[A <: FitsKeyInfo]: Ordering[A] = Ordering.by(e => (e.name))
 }
 
+// Information about one FITS keyword
 case class FitsKeyInfo(
     name: String,
     title: String,

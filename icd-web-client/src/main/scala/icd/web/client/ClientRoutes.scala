@@ -211,6 +211,11 @@ object ClientRoutes {
   }
 
   /**
+   * Returns a FitsTags object containing a map of tags to list of FITS keywords
+   */
+  val fitsTags: String = "/fitsTags"
+
+  /**
    * Returns the route to use to get an archived items report for the given Subsystem with selected components.
    *
    * @param sv       the subsystem

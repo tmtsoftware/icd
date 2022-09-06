@@ -1,6 +1,6 @@
 package icd.web.client
 
-import icd.web.shared.{BuildInfo, FitsKeyInfo, IcdVersion, IcdVizOptions, PdfOptions, SubsystemWithVersion}
+import icd.web.shared.{BuildInfo, FitsKeyInfo, FitsTags, IcdVersion, IcdVizOptions, PdfOptions, SubsystemWithVersion}
 import org.scalajs.dom
 import org.scalajs.dom.{Element, HTMLAnchorElement, HTMLStyleElement, PopStateEvent, document}
 
@@ -555,13 +555,21 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private def showFitsKeywords(saveHistory: Boolean = true)(): Unit = {
     import icd.web.shared.JsonSupport._
     setSidebarVisible(false)
-    val f = Fetch
+    val fKeys = Fetch
       .get(ClientRoutes.fitsKeyInfo(None))
       .map { text =>
         Json.fromJson[Array[FitsKeyInfo]](Json.parse(text)).map(_.toList).getOrElse(Nil)
       }
-    f.foreach { fitsKeys =>
-      val fitsKeywordDialog = FitsKeywordDialog(fitsKeys, ComponentLinkSelectionHandler)
+    val fTags = Fetch
+      .get(ClientRoutes.fitsTags)
+      .map { text =>
+        Json.fromJson[FitsTags](Json.parse(text)).getOrElse(FitsTags(Map.empty))
+      }
+    val f = for {
+      fitsKeys <- fKeys
+      fitsTags <- fTags
+    } yield {
+      val fitsKeywordDialog = FitsKeywordDialog(fitsKeys, fitsTags, ComponentLinkSelectionHandler)
       mainContent.setContent(fitsKeywordDialog, "FITS Dictionary")
     // XXX TODO FIXME
     // if (saveHistory) pushState(viewType = VersionView)

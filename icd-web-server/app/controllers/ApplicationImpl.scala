@@ -13,7 +13,7 @@ import csw.services.icd.viz.IcdVizManager
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.AllEventList.EventsForSubsystem
 import icd.web.shared.IcdModels.IcdModel
-import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, FitsKeyInfo, IcdName, IcdVersion, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, SubsystemWithVersion, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
+import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, FitsKeyInfo, FitsTags, IcdName, IcdVersion, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, SubsystemWithVersion, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
 import play.api.libs.json.Json
 
 import scala.util.Try
@@ -559,5 +559,9 @@ class ApplicationImpl(db: IcdDb) {
 
   def getFitsKeyInfo(maybeSubsystem: Option[String], maybeComponent: Option[String]): List[FitsKeyInfo] = {
     IcdFits(db).getRelatedFitsKeyInfo(maybeSubsystem, maybeComponent)
+  }
+
+  def getFitsTags: FitsTags = {
+    IcdFits(db).getFitsTags
   }
 }

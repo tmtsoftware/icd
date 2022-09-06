@@ -36,6 +36,20 @@ object Styles extends StyleSheet.Inline {
     maxWidth(90 %%)
   )
 
+  val fitsTags = style(
+    marginLeft(16 px),
+  )
+
+  val fitsTagsLabel = style(
+    marginRight(16 px),
+  )
+
+  val fitsTable = style(
+    padding(10 px, 0 px, 0 px, 0 px),
+    tableLayout.fixed,
+    maxWidth(90 %%)
+  )
+
   val emptyStyle = style()
 
   // Used for table columns that should not wrap

@@ -6,7 +6,7 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import icd.web.shared.IcdModels.{EventModel, IcdModel}
-import icd.web.shared.{AllEventList, ApiVersionInfo, ComponentInfo, DiffInfo, FitsKeyInfo, IcdName, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
+import icd.web.shared.{AllEventList, ApiVersionInfo, ComponentInfo, DiffInfo, FitsKeyInfo, FitsTags, IcdName, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
 
 import scala.util.Try
 
@@ -119,6 +119,9 @@ object ApplicationActor extends ActorModule {
       maybeSubsystem: Option[String],
       maybeComponent: Option[String],
       replyTo: ActorRef[List[FitsKeyInfo]]
+  ) extends Messages
+  final case class GetFitsTags(
+      replyTo: ActorRef[FitsTags]
   ) extends Messages
 
   // -------------------------------------------------------------------
@@ -306,6 +309,9 @@ object ApplicationActor extends ActorModule {
           Behaviors.same
         case GetFitsKeyInfo(maybeSubsystem, maybeComponent, replyTo) =>
           replyTo ! app.getFitsKeyInfo(maybeSubsystem, maybeComponent)
+          Behaviors.same
+        case GetFitsTags(replyTo) =>
+          replyTo ! app.getFitsTags
           Behaviors.same
       }
     }

@@ -768,10 +768,16 @@ object IcdGitManager {
         }
         // If this is DMS, read the list of FITS Keywords
         if (subsystem == "DMS") {
+          val icdFits = new IcdFits(db)
           val fitsKeywordFile = new File(s"$gitWorkDir/FITS-Dictionary", "FITS-Dictionary.json")
           if (fitsKeywordFile.exists()) {
             feedback(s"Ingesting ${fitsKeywordFile.getPath}")
-            new IcdFits(db).ingest(fitsKeywordFile)
+            icdFits.ingest(fitsKeywordFile)
+          }
+          val fitsTagFile = new File(s"$gitWorkDir/FITS-Dictionary", "FITS-Tags.conf")
+          if (fitsTagFile.exists()) {
+            feedback(s"Ingesting ${fitsTagFile.getPath}")
+            icdFits.ingestTags(fitsTagFile)
           }
         }
         git.close()

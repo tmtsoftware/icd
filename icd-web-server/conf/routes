@@ -110,6 +110,9 @@ GET         /fitsKeyInfo/:subsystem                     controllers.Application.
 # Gets list of all FITS keywords
 GET         /allFitsKeyInfo                             controllers.Application.allFitsKeyInfo()
 
+# Gets a map of tags to list of FITS keyword names
+GET         /fitsTags                                   controllers.Application.fitsTags()
+
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                               controllers.Assets.versioned(file)
 

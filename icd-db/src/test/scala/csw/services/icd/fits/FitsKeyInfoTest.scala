@@ -17,6 +17,20 @@ class FitsKeyInfoTest extends AnyFunSuite {
     if (dir.exists()) dir else new File(s"../$path")
   }
 
+  test("Test FITS tag access") {
+    val db = IcdDb(dbName)
+    db.dropDatabase() // start with a clean db for test
+    val icdFits = IcdFits(db)
+    val dir = getTestDir(examplesDir)
+    icdFits.ingestTags(new File(s"$dir/FITS-Tags.conf"))
+    val fitsTags = icdFits.getFitsTags
+    assert(fitsTags.tags.nonEmpty)
+    assert(fitsTags.tags.contains("SL"))
+    assert(fitsTags.tags.contains("DL"))
+    assert(fitsTags.tags("SL").nonEmpty)
+    assert(fitsTags.tags("DL").nonEmpty)
+  }
+
   test("Test FITS keyword access") {
     val db = IcdDb(dbName)
     db.dropDatabase() // start with a clean db for test

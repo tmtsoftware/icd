@@ -1,20 +1,23 @@
 package icd.web.client
 
 import icd.web.client.Components.ComponentListener
-import icd.web.shared.{FitsKeyInfo, FitsSource}
+import icd.web.shared.{FitsKeyInfo, FitsSource, FitsTags}
 import org.scalajs.dom
-import org.scalajs.dom.Element
+import org.scalajs.dom.{Element, HTMLInputElement, document}
 import org.scalajs.dom.html.Anchor
 import scalatags.JsDom
 import scalatags.JsDom.all._
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 
-case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], listener: ComponentListener) extends Displayable {
+import scala.scalajs.js.Object.keys
+
+case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, listener: ComponentListener) extends Displayable {
 
   // Action when user clicks on a component link
   private def clickedOnFitsSource(fitsSource: FitsSource)(e: dom.Event): Unit = {
     e.preventDefault()
-    listener.componentSelected(Components.ComponentLink(fitsSource.subsystem, fitsSource.componentName))
+    listener
+      .componentSelected(Components.ComponentLink(fitsSource.subsystem, fitsSource.componentName))
       // Once the component is loaded, go to the parameter as well
       .foreach(_ -> Components.clickedOnFitsSource(fitsSource)(e))
   }
@@ -30,13 +33,47 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], listener: ComponentLis
     )
   }
 
+  private def checkboxListener(e: dom.Event): Unit = {
+    val checked = document.querySelectorAll(s"input[name='fitsTag']:checked")
+      .map(elem => elem.asInstanceOf[HTMLInputElement].value)
+      .toList
+
+    println(s"XXX checked = $checked")
+
+//    fitsTags.tags.keys.toList.foreach { key =>
+//      val name = s"fitsTag-$key"
+//    }
+  }
+
+  private def makeFitsTagCheckboxes() = {
+    import scalatags.JsDom.all._
+    import scalacss.ScalatagsCss._
+    div(Styles.fitsTags)(
+      label(Styles.fitsTagsLabel, strong("Tags: ")),
+      fitsTags.tags.keys.toList.map(key =>
+        div(cls := "form-check form-check-inline")(
+          input(
+            cls := "form-check-input",
+            `type` := "checkbox",
+            checked,
+            name := s"fitsTag",
+            value := key,
+            onchange := checkboxListener _
+          ),
+          label(cls := "form-check-label", `for` := "inlineCheckbox1")(key)
+        )
+      )
+    )
+  }
+
   // Generates table with related FITS key information
   private def makeFitsKeyTable() = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
     div(Styles.component, id := "FITS-Keys")(
+      makeFitsTagCheckboxes(),
       table(
-        Styles.componentTable,
+        Styles.fitsTable,
         attr("data-bs-toggle") := "table",
         thead(
           tr(
