@@ -1092,7 +1092,7 @@
       "note": null
     },
     {
-      "name": "READTIME",
+      "name": "READTIMEXXX",
       "title": "Start time of the first pixel read",
       "description": "Start time of the first pixel read",
       "type": "integer",

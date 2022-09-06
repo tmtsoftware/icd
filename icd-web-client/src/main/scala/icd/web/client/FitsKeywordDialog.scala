@@ -9,8 +9,6 @@ import scalatags.JsDom
 import scalatags.JsDom.all._
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 
-import scala.scalajs.js.Object.keys
-
 case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, listener: ComponentListener) extends Displayable {
 
   // Action when user clicks on a component link
@@ -38,11 +36,14 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
       .map(elem => elem.asInstanceOf[HTMLInputElement].value)
       .toList
 
-    println(s"XXX checked = $checked")
-
-//    fitsTags.tags.keys.toList.foreach { key =>
-//      val name = s"fitsTag-$key"
-//    }
+    fitsKeys.map(_.name).foreach { key =>
+      val elem = document.querySelector(s"#$key")
+      val tags = getTags(key)
+      if (checked.intersect(tags).nonEmpty)
+        elem.classList.remove("d-none")
+      else
+        elem.classList.add("d-none")
+    }
   }
 
   private def makeFitsTagCheckboxes() = {
@@ -64,6 +65,13 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
         )
       )
     )
+  }
+
+  // Gets the tags for the given FITS keyword
+  private def getTags(fitsKey: String): List[String] = {
+    fitsTags.tags.keys.toList.flatMap { tag =>
+      if (fitsTags.tags(tag).contains(fitsKey)) Some(tag) else None
+    }
   }
 
   // Generates table with related FITS key information
@@ -89,8 +97,8 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
         ),
         tbody(
           fitsKeys.map { info =>
-            tr(
-              td(a(id := info.name, name := info.name)(info.name)),
+            tr(id := info.name)(
+              td(info.name),
               td(info.title),
               td(raw(info.description)),
               td(info.typ),
