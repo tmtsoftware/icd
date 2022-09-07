@@ -31,39 +31,46 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
     )
   }
 
-  private def checkboxListener(e: dom.Event): Unit = {
-    val checked = document.querySelectorAll(s"input[name='fitsTag']:checked")
+  private def radioButtonListener(e: dom.Event): Unit = {
+    val selected = document.querySelectorAll(s"input[name='fitsTag']:checked")
       .map(elem => elem.asInstanceOf[HTMLInputElement].value)
       .toList
+      .head
 
     fitsKeys.map(_.name).foreach { key =>
       val elem = document.querySelector(s"#$key")
       val tags = getTags(key)
-      if (checked.intersect(tags).nonEmpty)
+      if (selected == "All" || tags.contains(selected))
         elem.classList.remove("d-none")
       else
         elem.classList.add("d-none")
     }
   }
 
-  private def makeFitsTagCheckboxes() = {
+  private def makeFitsTagPanel() = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
     div(Styles.fitsTags)(
       label(Styles.fitsTagsLabel, strong("Tags: ")),
-      fitsTags.tags.keys.toList.map(key =>
+      ("All" :: fitsTags.tags.keys.toList).map { key =>
+        val displayName = key match {
+          case "DL" => "Diffraction-limited"
+          case "SL" => "Seeing-limited"
+          case _ => key
+        }
         div(cls := "form-check form-check-inline")(
           input(
             cls := "form-check-input",
-            `type` := "checkbox",
-            checked,
-            name := s"fitsTag",
+            `type` := "radio",
+            name := "fitsTag",
             value := key,
-            onchange := checkboxListener _
+            id := s"fitsTag-$key",
+            if (key == "All") checked else name := "fitsTag",
+            onchange := radioButtonListener _
           ),
-          label(cls := "form-check-label", `for` := "inlineCheckbox1")(key)
+          label(cls := "form-check-label", `for` := s"fitsTag-$key")(displayName)
         )
-      )
+      }
     )
   }
 
@@ -79,7 +86,7 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
     div(Styles.component, id := "FITS-Keys")(
-      makeFitsTagCheckboxes(),
+      makeFitsTagPanel(),
       table(
         Styles.fitsTable,
         attr("data-bs-toggle") := "table",
