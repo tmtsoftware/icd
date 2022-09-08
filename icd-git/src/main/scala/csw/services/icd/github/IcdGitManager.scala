@@ -748,7 +748,7 @@ object IcdGitManager {
       try {
         val git = Git.cloneRepository.setDirectory(gitWorkDir).setURI(url).call()
         apiEntries.reverse.foreach { e =>
-          feedback(s"Checking out $subsystem-${e.version} (commit: ${e.commit})")
+          feedback(s"Checking out $subsystem-${e.version} (commit: ${e.commit}) from $url")
           try {
             git.checkout().setName(e.commit).call
             feedback(s"Ingesting $subsystem-${e.version}")

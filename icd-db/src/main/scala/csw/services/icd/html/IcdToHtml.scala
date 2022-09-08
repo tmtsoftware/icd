@@ -90,7 +90,7 @@ object IcdToHtml {
               td(raw(info.description)),
               td(info.typ),
               td(info.units),
-              td(if (withLinks) info.source.map(makeLinkForFitsKeySource) else info.source.map(_.toShortString).mkString(", "))
+              td(if (withLinks) info.source.map(makeLinkForFitsKeySource) else info.source.map(_.toLongString).mkString(", "))
             )
           }
         )

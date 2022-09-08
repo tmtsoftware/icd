@@ -265,7 +265,7 @@ case class IcdFits(db: IcdDb) {
       pdfOptions: PdfOptions
   ): Unit = {
     import icd.web.shared.JsonSupport._
-    val fitsKeyList = getFitsKeyInfo(Some(pdfOptions)).filter(filter)
+    val fitsKeyList = getFitsKeyInfo(Some(pdfOptions)).filter(filter).sorted
     if (fitsKeyList.isEmpty) {
       println("No FITS keywords found")
     }

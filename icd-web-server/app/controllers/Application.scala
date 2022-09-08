@@ -48,7 +48,7 @@ class Application @Inject() (
   import JsonSupport._
   import ApplicationActor._
 
-  implicit val timeout          = Timeout(120.seconds)
+  implicit val timeout          = Timeout(1000.seconds)
   implicit val typedActorSystem = actorSystem.toTyped
   import actorSystem._
 
