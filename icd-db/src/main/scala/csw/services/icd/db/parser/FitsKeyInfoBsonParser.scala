@@ -43,13 +43,10 @@ object FitsKeyInfoBsonParser {
   def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): FitsKeyInfo = {
     FitsKeyInfo(
       name = doc.getAsOpt[String]("name").get,
-      title = doc.getAsOpt[String]("title").get,
       description = doc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
       typ = doc.getAsOpt[String]("type").get,
-      defaultValue = doc.getAsOpt[String]("defaultValue"),
       units = doc.getAsOpt[String]("units"),
-      source = getSource(doc),
-      note = doc.getAsOpt[String]("note")
+      source = getSource(doc)
     )
   }
 }

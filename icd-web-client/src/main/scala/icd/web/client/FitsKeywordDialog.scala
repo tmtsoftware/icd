@@ -93,26 +93,20 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
         thead(
           tr(
             th("Name"),
-            th("Title"),
             th("Description"),
             th("Type"),
-            th("Default"),
             th("Units"),
-            th("Source", br, i("(component-event-param[index?])")),
-            th("Note")
+            th("Source", br, i("(component-event-param[index?])"))
           )
         ),
         tbody(
           fitsKeys.map { info =>
             tr(id := info.name)(
               td(info.name),
-              td(info.title),
               td(raw(info.description)),
               td(info.typ),
-              td(info.defaultValue),
               td(info.units),
-              td(info.source.map(makeLinkForFitsKeySource)),
-              td(info.note)
+              td(info.source.map(makeLinkForFitsKeySource))
             )
           }
         )

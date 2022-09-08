@@ -83,12 +83,11 @@ case class IcdDbPrinter(
    * @param pdfOptions options for PDF generation
    */
   def getApiAsHtml(sv: SubsystemWithVersion, pdfOptions: PdfOptions): Option[String] = {
-    // Use caching, since we need to look at all the components multiple times, in order to determine who
-    // subscribes, who calls commands, etc.
-//    val fitsKeyList = IcdFits(db).getFitsKeyInfo(Some(pdfOptions))
-    val fitsKeyList = IcdFits(db).getRelatedFitsKeyInfo(Some(sv.subsystem), sv.maybeComponent, Some(pdfOptions)).sorted
+    val fitsKeyList = IcdFits(db).getRelatedFitsKeyInfo(Some(sv.subsystem), sv.maybeComponent, None, Some(pdfOptions)).sorted
     val fitsKeyMap      = IcdFits(db).getFitsKeyMap(fitsKeyList)
     val maybeSubsystems = if (searchAllSubsystems) None else Some(List(sv.subsystem))
+    // Use caching, since we need to look at all the components multiple times, in order to determine who
+    // subscribes, who calls commands, etc.
     val query           = new CachedIcdDbQuery(db.db, db.admin, maybeSubsystems, Some(pdfOptions), fitsKeyMap)
     val versionManager  = new CachedIcdVersionManager(query)
 

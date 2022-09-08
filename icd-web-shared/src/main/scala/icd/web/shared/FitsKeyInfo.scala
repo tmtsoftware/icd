@@ -44,13 +44,10 @@ object FitsKeyInfo {
 // Information about one FITS keyword
 case class FitsKeyInfo(
     name: String,
-    title: String,
     description: String,
     typ: String,
-    defaultValue: Option[String] = None,
     units: Option[String] = None,
-    source: List[FitsSource] = Nil,
-    note: Option[String] = None
+    source: List[FitsSource] = Nil
 )
 
 case class FitsKeyInfoList(fitsKeyInfo: List[FitsKeyInfo])

@@ -9,6 +9,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import csw.services.icd._
 import reactivemongo.play.json.compat._
 import csw.services.icd.db.parser.{FitsKeyInfoListBsonParser, FitsTagsBsonParser}
+import csw.services.icd.fits.IcdFits.Options
 import lax._
 import json2bson._
 
@@ -34,6 +35,7 @@ object IcdFits extends App {
       port: Int = IcdDbDefaults.defaultPort,
       subsystem: Option[String] = None,
       component: Option[String] = None,
+      tag: Option[String] = None,
       list: Boolean = false,
       outputFile: Option[File] = None,
       ingest: Option[File] = None,
@@ -68,6 +70,10 @@ object IcdFits extends App {
     opt[String]('s', "subsystem") valueName "<subsystem>" action { (x, c) =>
       c.copy(subsystem = Some(x))
     } text "Specifies the subsystem to be used by any following options"
+
+    opt[String]('t', "tag") valueName "<tag>" action { (x, c) =>
+      c.copy(tag = Some(x))
+    } text "Filters the list of FITS keywords to those with the given tag"
 
     opt[Unit]('l', "list") action { (_, c) =>
       c.copy(list = true)
@@ -148,20 +154,13 @@ object IcdFits extends App {
       Nil
     )
 
-    if (options.list) icdFits.list(options.subsystem, options.component, pdfOptions)
+    if (options.list) icdFits.list(options.subsystem, options.component, options.tag, pdfOptions)
 
     options.ingestTags.foreach(icdFits.ingestTags)
     options.ingest.foreach(icdFits.ingest)
 
     if (options.outputFile.nonEmpty) {
-      def filter(fitsKeyInfo: FitsKeyInfo): Boolean = {
-        val subsystemMatches = options.subsystem.isEmpty ||
-          fitsKeyInfo.source.map(_.subsystem).contains(options.subsystem.get)
-        val componentMatches = options.component.isEmpty ||
-          fitsKeyInfo.source.map(_.componentName).contains(options.component.get)
-        subsystemMatches && componentMatches
-      }
-      icdFits.output(options.outputFile.get, filter, pdfOptions)
+      icdFits.output(options.outputFile.get, options, pdfOptions)
     }
 
     db.close()
@@ -198,8 +197,8 @@ case class IcdFits(db: IcdDb) {
   }
 
   def getFitsTags: FitsTags = {
-    val maybeFitsTagDoc  = fitsTagCollection.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await
-    val maybeFitsTags = maybeFitsTagDoc.map(FitsTagsBsonParser(_))
+    val maybeFitsTagDoc = fitsTagCollection.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await
+    val maybeFitsTags   = maybeFitsTagDoc.map(FitsTagsBsonParser(_))
     maybeFitsTags.getOrElse(FitsTags(Map.empty))
   }
 
@@ -212,28 +211,43 @@ case class IcdFits(db: IcdDb) {
   def getRelatedFitsKeyInfo(
       maybeSubsystem: Option[String],
       maybeComponent: Option[String] = None,
+      maybeTag: Option[String] = None,
       maybePdfOptions: Option[PdfOptions] = None
   ): List[FitsKeyInfo] = {
+    val fitsTags    = getFitsTags
     val fitsKeyList = getFitsKeyInfo(maybePdfOptions)
-    if (maybeSubsystem.isEmpty) fitsKeyList.sorted
-    else {
-      // XXX TODO: Do the query in MongoDB?
-      val subsystem = maybeSubsystem.get
-      fitsKeyList
-        .filter(i =>
-          i.source
-            .exists(_.subsystem == subsystem) && (maybeComponent.isEmpty || i.source
-            .exists(_.componentName == maybeComponent.get))
+    // filter key list by tag
+    val l1 =
+      if (maybeTag.isEmpty || !fitsTags.tags.contains(maybeTag.get))
+        fitsKeyList
+      else {
+        val tag = maybeTag.get
+        fitsKeyList.filter(fitsKey => fitsTags.tags(tag).contains(fitsKey.name))
+      }
+    // filter key list by subsystem/component
+    val l2 = {
+      if (maybeSubsystem.isEmpty) l1
+      else {
+        val subsystem = maybeSubsystem.get
+        l1.filter(i =>
+          i.source.exists(_.subsystem == subsystem) && (maybeComponent.isEmpty ||
+            i.source.exists(_.componentName == maybeComponent.get))
         )
-        .sorted
+      }
     }
+    l2.sorted
   }
 
   /**
    * Print the related FITS keywords to stdout
    */
-  def list(maybeSubsystem: Option[String], maybeComponent: Option[String], pdfOptions: PdfOptions): Unit = {
-    getRelatedFitsKeyInfo(maybeSubsystem, maybeComponent, Some(pdfOptions)).foreach { k => println(k.name) }
+  def list(
+      maybeSubsystem: Option[String],
+      maybeComponent: Option[String],
+      maybeTag: Option[String],
+      pdfOptions: PdfOptions
+  ): Unit = {
+    getRelatedFitsKeyInfo(maybeSubsystem, maybeComponent, maybeTag, Some(pdfOptions)).foreach { k => println(k.name) }
   }
 
   /**
@@ -259,13 +273,9 @@ case class IcdFits(db: IcdDb) {
   }
 
   // --output option
-  def output(
-      file: File,
-      filter: FitsKeyInfo => Boolean,
-      pdfOptions: PdfOptions
-  ): Unit = {
+  def output(file: File, options: Options, pdfOptions: PdfOptions): Unit = {
     import icd.web.shared.JsonSupport._
-    val fitsKeyList = getFitsKeyInfo(Some(pdfOptions)).filter(filter).sorted
+    val fitsKeyList = getRelatedFitsKeyInfo(options.subsystem, options.component, options.tag, Some(pdfOptions))
     if (fitsKeyList.isEmpty) {
       println("No FITS keywords found")
     }
@@ -297,18 +307,15 @@ case class IcdFits(db: IcdDb) {
         }
         def clean(s: String) = s.replace("<p>", "").replace("</p>", "").replace(MyFormat.delimiter, '/')
         val writer           = CSVWriter.open(file)
-        writer.writeRow(List("Name", "Title", "Description", "Type", "DefaultValue", "Units", "Source", "Note"))
+        writer.writeRow(List("Name", "Description", "Type", "Units", "Source"))
         fitsKeyList.foreach { k =>
           writer.writeRow(
             List(
               k.name,
-              k.title,
               clean(k.description),
               k.typ,
-              k.defaultValue.getOrElse(""),
               k.units.getOrElse(""),
-              k.source.map(_.toShortString).mkString(", "),
-              k.note.getOrElse("")
+              k.source.map(_.toShortString).mkString(", ")
             )
           )
         }

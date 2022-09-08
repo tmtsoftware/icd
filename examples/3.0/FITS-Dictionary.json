@@ -2,10 +2,8 @@
   "fitsKeyInfo": [
     {
       "name": "CRPIX1",
-      "title": "Coordinate system reference pixel",
       "description": "This is the X coordinate of the reference pixel in the image",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -14,15 +12,12 @@
           "eventName": "WCSFITSHeader",
           "parameterName": "CRPIX1"
         }
-      ],
-      "note": "Standard FITS Keywords"
+      ]
     },
     {
       "name": "CRPIX2",
-      "title": "Coordinate system reference pixel",
       "description": "This is the Y coordinate of the reference pixel in the image",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -31,15 +26,12 @@
           "eventName": "WCSFITSHeader",
           "parameterName": "CRPIX2"
         }
-      ],
-      "note": "Standard FITS Keywords"
+      ]
     },
     {
       "name": "CRVAL1",
-      "title": "Coordinate system value at reference pixel",
       "description": "This is the Right ascension at the reference pixel",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -48,15 +40,12 @@
           "eventName": "WCSFITSHeader",
           "parameterName": "CRVAL1"
         }
-      ],
-      "note": "Standard FITS Keywords"
+      ]
     },
     {
       "name": "CRVAL2",
-      "title": "Coordinate system value at reference pixel",
       "description": "This is the Declination at the reference pixel",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -65,15 +54,12 @@
           "eventName": "WCSFITSHeader",
           "parameterName": "CRVAL2"
         }
-      ],
-      "note": "Standard FITS Keywords"
+      ]
     },
     {
       "name": "CTYPE1",
-      "title": "Name of the coordinate axis",
       "description": "This is the Projection type RA---TAN",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -82,15 +68,12 @@
           "eventName": "WCSFITSHeader",
           "parameterName": "CTYPE1"
         }
-      ],
-      "note": "Standard FITS Keywords"
+      ]
     },
     {
       "name": "CTYPE2",
-      "title": "Name of the coordinate axis",
       "description": "This is the Projection type DEC—TAN",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -99,15 +82,12 @@
           "eventName": "WCSFITSHeader",
           "parameterName": "CTYPE2"
         }
-      ],
-      "note": "Standard FITS Keywords"
+      ]
     },
     {
       "name": "CD1_1",
-      "title": "Projection of unit vector of axis 1 of one coordinate system with respect to axis 1 of the other coordinate system",
-      "description": "This is the Transformation matrix element 1,1",
+      "description": "Projection of unit vector of axis 1 of one coordinate system with respect to axis 1 of the other coordinate system",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -116,15 +96,12 @@
           "eventName": "WCSFITSHeader",
           "parameterName": "CD1_1"
         }
-      ],
-      "note": "Standard FITS Keywords"
+      ]
     },
     {
       "name": "CD1_2",
-      "title": "Projection of unit vector of axis 1 of one coordinate system with respect to axis 2 of the other coordinate system",
-      "description": "This is the Transformation matrix element 1,2",
+      "description": "Projection of unit vector of axis 1 of one coordinate system with respect to axis 2 of the other coordinate system",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -133,15 +110,12 @@
           "eventName": "WCSFITSHeader",
           "parameterName": "CD1_2"
         }
-      ],
-      "note": "Standard FITS Keywords"
+      ]
     },
     {
       "name": "CD2_1",
-      "title": "Projection of unit vector of axis 2 of one coordinate system with respect to axis 1 of the other coordinate system",
-      "description": "This is the Transformation matrix element 2,1",
+      "description": "Projection of unit vector of axis 2 of one coordinate system with respect to axis 1 of the other coordinate system",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -150,15 +124,12 @@
           "eventName": "WCSFITSHeader",
           "parameterName": "CD2_1"
         }
-      ],
-      "note": "Standard FITS Keywords"
+      ]
     },
     {
       "name": "CD2_2",
-      "title": "Projection of unit vector of axis 2 of one coordinate system with respect to axis 2 of the other coordinate system",
-      "description": "This is the Transformation matrix element 2,2",
+      "description": "Projection of unit vector of axis 2 of one coordinate system with respect to axis 2 of the other coordinate system",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -167,15 +138,12 @@
           "eventName": "WCSFITSHeader",
           "parameterName": "CD2_2"
         }
-      ],
-      "note": "Standard FITS Keywords"
+      ]
     },
     {
       "name": "RADECSYS",
-      "title": "This is the Frame type",
       "description": "Reference frame of equatorial or ecliptic coordinates",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -184,33 +152,24 @@
           "eventName": "WCSFITSHeader",
           "parameterName": "RADECSYS"
         }
-      ],
-      "note": "Standard FITS Keywords"
+      ]
     },
     {
       "name": "DATE",
-      "title": "Date of file creation",
       "description": "The date on which  the HDU was created, in the format specified in the FITS Standard. The old date format was ‘yy/mm/dd’ and may be used only for dates from 1900 through 1999. The new Y2K compliant date format is ‘yyyy-mm-dd’ or ‘yyyy-mm- ddTHH:MM:SS[.sss] ’.",
       "type": "string",
-      "defaultValue": null,
-      "units": null,
-      "note": "Standard FITS Keywords"
+      "units": null
     },
     {
       "name": "DATE-OBS",
-      "title": "Date of the observation",
       "description": "The date of the observation, in the format specified in the FITS Standard. The old date format was ‘yy/mm/dd’ and may be used only for dates from 1900 through 1999. The new Y2K compliant date format is ‘yyyy- mm-dd’ or ‘yyyy- mm- ddTHH:MM:SS[.sss] ’.",
       "type": "string",
-      "defaultValue": null,
-      "units": null,
-      "note": "Standard FITS Keywords"
+      "units": null
     },
     {
       "name": "EQUINOX",
-      "title": "Equinox of celestial coordinate system",
       "description": "The value field shall contain a floating point number giving the equinox in years for the celestial coordinate system in which positions are expressed. The interpretation of epoch depends upon the value of RADESYSa if present: Besselian if the value is FK4 or FK4-NO-E, Julian if the value is FK5; not applicable if the value is ICRS or GAPPT.",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -219,15 +178,12 @@
           "eventName": "CurrentPosition",
           "parameterName": "Equinox"
         }
-      ],
-      "note": "Standard FITS Keywords"
+      ]
     },
     {
       "name": "OBJECT",
-      "title": "Name or type of observed object",
       "description": "The value field shall contain a character string giving a name or type of the object observed. Often ‘TARGNAME’ is used for target name, in which case ‘OBJECT’ can be used to specify the object category.",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -236,24 +192,18 @@
           "eventName": "object",
           "parameterName": null
         }
-      ],
-      "note": "Standard FITS Keywords"
+      ]
     },
     {
       "name": "OBSERVER",
-      "title": "Observer who acquired the data",
       "description": "The value field shall contain a character string identifying who acquired the data associated with the header.",
       "type": "string",
-      "defaultValue": null,
-      "units": null,
-      "note": "Standard FITS Keywords"
+      "units": null
     },
     {
       "name": "RA",
-      "title": "Current right ascension",
       "description": "Current right ascension (ICRS, at equinox)",
       "type": "float",
-      "defaultValue": null,
       "units": "degree",
       "source": [
         {
@@ -262,15 +212,12 @@
           "eventName": "currentPosition",
           "parameterName": "ra"
         }
-      ],
-      "note": "Standard FITS Keywords"
+      ]
     },
     {
       "name": "DEC",
-      "title": "Current declination",
       "description": "Current declination (ICRS, at equinox)",
       "type": "float",
-      "defaultValue": null,
       "units": "degree",
       "source": [
         {
@@ -279,15 +226,12 @@
           "eventName": "currentPosition",
           "parameterName": "dec"
         }
-      ],
-      "note": "Standard FITS Keywords"
+      ]
     },
     {
       "name": "PARANG",
-      "title": "Current parallactic angle",
       "description": "Current parallactic angle (ICRS, at equinox)",
       "type": "float",
-      "defaultValue": null,
       "units": "degree",
       "source": [
         {
@@ -296,15 +240,12 @@
           "eventName": "currentPosition",
           "parameterName": "parallactic"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "AZ",
-      "title": "Current Azimuth",
       "description": "Current Azimuth",
       "type": "float",
-      "defaultValue": null,
       "units": "degree",
       "source": [
         {
@@ -313,15 +254,12 @@
           "eventName": "currentPosition",
           "parameterName": "az"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "EL",
-      "title": "Current Elevation",
       "description": "Current Elevation",
       "type": "float",
-      "defaultValue": null,
       "units": "degree",
       "source": [
         {
@@ -330,15 +268,12 @@
           "eventName": "currentPosition",
           "parameterName": "el"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "Z",
-      "title": "Current Zenith Angle",
       "description": "Current Zenith Angle",
       "type": "float",
-      "defaultValue": null,
       "units": "degree",
       "source": [
         {
@@ -347,15 +282,12 @@
           "eventName": "currentPosition",
           "parameterName": "z"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "HA",
-      "title": "Current Hour Angle",
       "description": "Current Hour Angle",
       "type": "float",
-      "defaultValue": null,
       "units": "degree",
       "source": [
         {
@@ -364,15 +296,12 @@
           "eventName": "currentPosition",
           "parameterName": "ha"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "AIRMASS",
-      "title": "Air Mass",
       "description": "Air Mass (TBD whether plane-parallel, i.e., sec(z), or curvature-corrected)",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -381,15 +310,12 @@
           "eventName": "currentPosition",
           "parameterName": "airmass"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "TELFOCUS",
-      "title": "Current focus",
       "description": "Current focus (with 10 micrometer precision)",
       "type": "float",
-      "defaultValue": null,
       "units": "mm",
       "source": [
         {
@@ -398,15 +324,12 @@
           "eventName": "currentPosition",
           "parameterName": "focus"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "TELFRAT",
-      "title": "Telescope F-ratio",
       "description": "Telescope F-ratio (TBD: this is a static quantity)",
       "type": "float",
-      "defaultValue": 15.0,
       "units": null,
       "source": [
         {
@@ -415,15 +338,12 @@
           "eventName": "currentPosition",
           "parameterName": "fratio"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "LST",
-      "title": "Local Sidereal Time",
       "description": "Local Sidereal Time",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -432,15 +352,12 @@
           "eventName": "currentPosition",
           "parameterName": "lst"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "PNTGST",
-      "title": "Current state of the pointing system.",
       "description": "Current state of the pointing system as enum [SLEWING,TRACKING,INPOSITION].",
       "type": "string",
-      "defaultValue": null,
       "units": "null",
       "source": [
         {
@@ -449,15 +366,12 @@
           "eventName": "pointingStatus",
           "parameterName": "pointingstate"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "M3ROT",
-      "title": "Current M3 position in rotation.",
       "description": "Current M3 position in rotation.",
       "type": "float",
-      "defaultValue": null,
       "units": "degree",
       "source": [
         {
@@ -466,15 +380,12 @@
           "eventName": "M3 Position",
           "parameterName": "rotation"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "M3TILT",
-      "title": "Current M3 position in tilt.",
       "description": "Current M3 position in tilt.",
       "type": "float",
-      "defaultValue": null,
       "units": "degree",
       "source": [
         {
@@ -483,15 +394,12 @@
           "eventName": "M3 Position",
           "parameterName": "tilt"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "M2TIP",
-      "title": "Current M2 position in tip.",
       "description": "Current M2 position in tip.",
       "type": "float",
-      "defaultValue": null,
       "units": "degree",
       "source": [
         {
@@ -500,15 +408,12 @@
           "eventName": "M2 Position",
           "parameterName": "tip"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "M2TILT",
-      "title": "Current M2 position in tilt.",
       "description": "Current M2 position in tilt.",
       "type": "float",
-      "defaultValue": null,
       "units": "degree",
       "source": [
         {
@@ -517,15 +422,12 @@
           "eventName": "M2 Position",
           "parameterName": "tilt"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "M2PISTON",
-      "title": "Current M2 position in piston.",
       "description": "Current M2 position in piston.",
       "type": "float",
-      "defaultValue": null,
       "units": "m",
       "source": [
         {
@@ -534,15 +436,12 @@
           "eventName": "M2 Position",
           "parameterName": "piston"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "M2DECENX",
-      "title": "Current M2 position in decenter-x.",
       "description": "Current M2 position in decenter-x.",
       "type": "float",
-      "defaultValue": null,
       "units": "m",
       "source": [
         {
@@ -551,15 +450,12 @@
           "eventName": "M2 Position",
           "parameterName": "decenter-x"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "M2DECENY",
-      "title": "Current M2 position in decenter-y.",
       "description": "Current M2 position in decenter-y.",
       "type": "float",
-      "defaultValue": null,
       "units": "m",
       "source": [
         {
@@ -568,15 +464,12 @@
           "eventName": "M2 Position",
           "parameterName": "decenter-y"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "IMGDISWV",
-      "title": "An array of wavelengths. Each provided wavelength value must be unique.",
       "description": "An array of wavelengths. Each provided wavelength value must be unique.",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -591,15 +484,12 @@
           "eventName": "atmDispersion",
           "parameterName": "wavelength"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "IMGDISWT",
-      "title": "An array of weights. They must sum to 1.0.",
       "description": "An array of weights. They must sum to 1.0.",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -614,15 +504,12 @@
           "eventName": "atmDispersion ?",
           "parameterName": "weight"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "IMGDISVL",
-      "title": "An array of atmospheric dispersion values.",
       "description": "An array of atmospheric dispersion values.",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -637,15 +524,12 @@
           "eventName": "atmDispersion",
           "parameterName": "dispersion"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "INROTANG",
-      "title": "Current rotator angle in the XY plane of the FCRSIRIS.",
       "description": "Current rotator angle in the XY plane of the FCRSIRIS.",
       "type": "float",
-      "defaultValue": null,
       "units": "degree",
       "source": [
         {
@@ -654,15 +538,12 @@
           "eventName": "instrumentRotatorAngle",
           "parameterName": "instrumentAngle"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "PROTANG",
-      "title": "Future IRIS pupil rotation angle in the X,Y plane of the FCRSIRIS-ROT that will be valid at the time indicated by \"timestamp\" attribute.",
       "description": "Future IRIS pupil rotation angle in the X,Y plane of the FCRSIRIS-ROT that will be valid at the time indicated by \"timestamp\" attribute.",
       "type": "float",
-      "defaultValue": null,
       "units": "degree",
       "source": [
         {
@@ -671,15 +552,12 @@
           "eventName": "pupilRotation",
           "parameterName": "pupilRotation"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "PA",
-      "title": "Current angle between Y axis of FCRSIRIS and Declination axis (ICRS).",
       "description": "Current angle between Y axis of FCRSIRIS and Declination axis (ICRS).",
       "type": "float",
-      "defaultValue": null,
       "units": "degree",
       "source": [
         {
@@ -688,15 +566,12 @@
           "eventName": "positionAngle",
           "parameterName": "positionAngle"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "OIWFS1PS",
-      "title": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "description": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "type": "string",
-      "defaultValue": null,
       "units": "mm",
       "source": [
         {
@@ -706,15 +581,12 @@
           "parameterName": "oiwfs_pos",
           "rowIndex": 0
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "OIWFS2PS",
-      "title": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "description": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "type": "string",
-      "defaultValue": null,
       "units": "mm",
       "source": [
         {
@@ -724,15 +596,12 @@
           "parameterName": "oiwfs_pos",
           "rowIndex": 1
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "OIWFS3PS",
-      "title": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "description": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "type": "string",
-      "defaultValue": null,
       "units": "mm",
       "source": [
         {
@@ -742,15 +611,12 @@
           "parameterName": "oiwfs_pos",
           "rowIndex": 2
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "OIWFS1ST",
-      "title": "Current state of the probe event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "description": "Current state of the probe event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -760,15 +626,12 @@
           "parameterName": "oiwfs_pointingstate",
           "index": 0
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "OIWFS2ST",
-      "title": "Current state of the probe event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "description": "Current state of the probe event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -778,15 +641,12 @@
           "parameterName": "oiwfs_pointingstate",
           "index": 1
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "OIWFS3ST",
-      "title": "Current state of the probe event stream",
       "description": "Current state of the probe event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -796,15 +656,12 @@
           "parameterName": "oiwfs_pointingstate",
           "index": 2
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "ODGW1PS",
-      "title": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "description": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "type": "string",
-      "defaultValue": null,
       "units": "mm",
       "source": [
         {
@@ -814,15 +671,12 @@
           "parameterName": "odgw_pos",
           "rowIndex": 0
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "ODGW2PS",
-      "title": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "description": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "type": "string",
-      "defaultValue": null,
       "units": "mm",
       "source": [
         {
@@ -832,15 +686,12 @@
           "parameterName": "odgw_pos",
           "rowIndex": 1
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "ODGW3PS",
-      "title": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "description": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "type": "string",
-      "defaultValue": null,
       "units": "mm",
       "source": [
         {
@@ -850,15 +701,12 @@
           "parameterName": "odgw_pos",
           "rowIndex": 2
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "ODGW4PS",
-      "title": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "description": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "type": "string",
-      "defaultValue": null,
       "units": "mm",
       "source": [
         {
@@ -868,15 +716,12 @@
           "parameterName": "odgw_pos",
           "rowIndex": 3
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "ODGW1ST",
-      "title": "Current state of the ODGW event stream",
       "description": "Current state of the ODGW event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -886,15 +731,12 @@
           "parameterName": "odgw_pointingstate",
           "index": 0
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "ODGW2ST",
-      "title": "Current state of the ODGW event stream",
       "description": "Current state of the ODGW event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -904,15 +746,12 @@
           "parameterName": "odgw_pointingstate",
           "index": 1
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "ODGW3ST",
-      "title": "Current state of the ODGW event stream",
       "description": "Current state of the ODGW event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -922,15 +761,12 @@
           "parameterName": "odgw_pointingstate",
           "index": 2
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "ODGW4ST",
-      "title": "Current state of the ODGW event stream",
       "description": "Current state of the ODGW event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -940,15 +776,12 @@
           "parameterName": "odgw_pointingstate",
           "index": 3
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "ENCBASE",
-      "title": "This is the Current Base Position.",
       "description": "This is the Current Base Position.",
       "type": "float",
-      "defaultValue": null,
       "units": "degree",
       "source": [
         {
@@ -957,15 +790,12 @@
           "eventName": "CurrentPosition",
           "parameterName": "base"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "ENCCAP",
-      "title": "This is the Current Cap Position",
       "description": "This is the Current Cap Position",
       "type": "float",
-      "defaultValue": null,
       "units": "degree",
       "source": [
         {
@@ -974,15 +804,12 @@
           "eventName": "CurrentPosition",
           "parameterName": "cap"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "FILTER",
-      "title": "Current imager filter name.",
       "description": "Current imager filter name. When two or more filters are inserted in the science light path, filter names are concatinated with TBD character in the order of wheel number.",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1003,15 +830,12 @@
           "eventName": null,
           "parameterName": null
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "XSIZE",
-      "title": "Window Size X",
       "description": "Window Size X",
       "type": "integer",
-      "defaultValue": null,
       "units": "pixels",
       "source": [
         {
@@ -1020,15 +844,12 @@
           "eventName": null,
           "parameterName": null
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "YSIZE",
-      "title": "Window Size Y",
       "description": "Window Size Y",
       "type": "integer",
-      "defaultValue": null,
       "units": "Pixels",
       "source": [
         {
@@ -1037,15 +858,12 @@
           "eventName": null,
           "parameterName": null
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "XSTART",
-      "title": "Subarray Start X",
       "description": "Subarray Start X",
       "type": "integer",
-      "defaultValue": null,
       "units": "pixels",
       "source": [
         {
@@ -1054,15 +872,12 @@
           "eventName": null,
           "parameterName": null
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "YSTART",
-      "title": "Subarray Start Y",
       "description": "Subarray Start Y",
       "type": "integer",
-      "defaultValue": null,
       "units": "pixels",
       "source": [
         {
@@ -1071,15 +886,12 @@
           "eventName": null,
           "parameterName": null
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "SARRMODE",
-      "title": "Subarray Mode",
       "description": "Subarray Mode [FULL_FRAME,SUB_ARRAY,ODGW]",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1088,15 +900,12 @@
           "eventName": null,
           "parameterName": null
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "READTIMEXXX",
-      "title": "Start time of the first pixel read",
       "description": "Start time of the first pixel read",
       "type": "integer",
-      "defaultValue": null,
       "units": "Microseconds in MJD",
       "source": [
         {
@@ -1105,15 +914,12 @@
           "eventName": null,
           "parameterName": null
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "RST_TIME",
-      "title": "Time of the last reset",
       "description": "Time of the last reset",
       "type": "integer",
-      "defaultValue": null,
       "units": "Microseconds in MJD",
       "source": [
         {
@@ -1122,15 +928,12 @@
           "eventName": null,
           "parameterName": null
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "FRM_TIME",
-      "title": "Time taken to read all the pixels in the readout frame",
       "description": "Time taken to read all the pixels in the readout frame",
       "type": "integer",
-      "defaultValue": null,
       "units": "Microseconds",
       "source": [
         {
@@ -1139,15 +942,12 @@
           "eventName": null,
           "parameterName": null
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "OBS_ID",
-      "title": "Observation id",
       "description": "Observation id",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1156,15 +956,12 @@
           "eventName": "cmdStatus",
           "parameterName": "observationId ?"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "DET_ID",
-      "title": "Detector ID",
       "description": "Detector ID IMG1/2/3/4 ,SLC/LEN",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1173,15 +970,12 @@
           "eventName": null,
           "parameterName": null
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "EXP_NO",
-      "title": "Exposure number",
       "description": "Exposure number  XXXX 0-9999",
       "type": "integer",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1190,15 +984,12 @@
           "eventName": null,
           "parameterName": null
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "RAMP_NO",
-      "title": "Ramp within Exposure",
       "description": "Ramp within Exposure [0-99999]",
       "type": "integer",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1207,15 +998,12 @@
           "eventName": null,
           "parameterName": null
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "READ_NO",
-      "title": "Readout Within Ramp",
       "description": "Readout Within Ramp [0-99999]",
       "type": "integer",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1224,15 +1012,12 @@
           "eventName": null,
           "parameterName": null
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "COMPLETE",
-      "title": "Indicates if Pixels were readout",
       "description": "Indicates if Pixels were readout",
       "type": "type",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1241,15 +1026,12 @@
           "eventName": null,
           "parameterName": null
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "CLDSTPX",
-      "title": "Current position in X axis.",
       "description": "Current position in X axis.",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1258,15 +1040,12 @@
           "eventName": "current",
           "parameterName": "x_pos"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "CLDSTPY",
-      "title": "Current position in Y axis.",
       "description": "Current position in Y axis.",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1275,15 +1054,12 @@
           "eventName": "current",
           "parameterName": "y_pos"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "CLDSTPTH",
-      "title": "Current angle of the rotary stage.",
       "description": "Current angle of the rotary stage.",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1292,15 +1068,12 @@
           "eventName": "current",
           "parameterName": "theta"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "PPMIRRST",
-      "title": "Whether the mirror is inserted into the light path or not.",
       "description": "Whether the mirror is inserted into the light path or not, values: (IN, INTERMEDIATE, OUT, UNKNOWN).",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1309,15 +1082,12 @@
           "eventName": "MIRROR_state",
           "parameterName": "selection"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "FILTWAVE",
-      "title": "Current effective filter wavelength.",
       "description": "Current effective filter wavelength. Effective wavelength is defined as ... ?",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1326,15 +1096,12 @@
           "eventName": "current",
           "parameterName": "wavelength"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "FILTDRFL",
-      "title": "Indicates whether a dark filter is inserted or not.",
       "description": "Indicates whether a dark filter is inserted or not.",
       "type": "type",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1343,15 +1110,12 @@
           "eventName": "current",
           "parameterName": "dark"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "FILT1POS",
-      "title": "Current position name of the wheel 1.",
       "description": "Current position name of the wheel 1 (as enum: (TBD1, TBD2, TBD3, TBD4, TBD5, TBD6, TBD7, TBD8, TBD9, TBD10, TBD11, TBD12, TBD13, TBD14, THROUGH, HOME, INTERMEDIATE, UNKNOWN).",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1360,15 +1124,12 @@
           "eventName": "wheel1",
           "parameterName": "position"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "FILT2POS",
-      "title": "Current position name of the wheel 2.",
       "description": "Current position name of the wheel 2, values: (TBD1, TBD2, TBD3, TBD4, TBD5, TBD6, TBD7, TBD8, TBD9, TBD10, TBD11, TBD12, TBD13, TBD14, THROUGH, HOME, INTERMEDIATE, UNKNOWN).",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1377,15 +1138,12 @@
           "eventName": "wheel2",
           "parameterName": "position"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "FILT3POS",
-      "title": "Current position name of the wheel 3.",
       "description": "Current position name of the wheel 3, values: (TBD1, TBD2, TBD3, TBD4, TBD5, TBD6, TBD7, TBD8, TBD9, TBD10, TBD11, TBD12, TBD13, TBD14, THROUGH, HOME, INTERMEDIATE, UNKNOWN).",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1394,15 +1152,12 @@
           "eventName": "wheel3",
           "parameterName": "position"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "FILT4POS",
-      "title": "Current position name of the wheel 4.",
       "description": "Current position name of the wheel 4, values: (TBD1, TBD2, TBD3, TBD4, TBD5, TBD6, TBD7, TBD8, TBD9, TBD10, TBD11, TBD12, TBD13, TBD14, THROUGH, HOME, INTERMEDIATE, UNKNOWN)",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1411,15 +1166,12 @@
           "eventName": "wheel4",
           "parameterName": "position"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "FILT5POS",
-      "title": "Current position name of the wheel 5.",
       "description": "Current position name of the wheel 5, values: (TBD1, TBD2, TBD3, TBD4, TBD5, TBD6, TBD7, TBD8, TBD9, TBD10, TBD11, TBD12, TBD13, TBD14, THROUGH, HOME, INTERMEDIATE, UNKNOWN)",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1428,15 +1180,12 @@
           "eventName": "wheel5",
           "parameterName": "position"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "OIWF1SXY",
-      "title": "oiwfs1 2-element array holding x,y values.",
       "description": "oiwfs1 2-element array holding x,y values.",
       "type": "array[2] of double",
-      "defaultValue": null,
       "units": "mm",
       "source": [
         {
@@ -1445,15 +1194,12 @@
           "eventName": null,
           "parameterName": null
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "OIWF2SXY",
-      "title": "oiwfs2 2-element array holding x,y values.",
       "description": "oiwfs2 2-element array holding x,y values.",
       "type": "array[2] of double",
-      "defaultValue": null,
       "units": "mm",
       "source": [
         {
@@ -1462,15 +1208,12 @@
           "eventName": null,
           "parameterName": null
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "OIWF3SXY",
-      "title": "oiwfs3 2-element array holding x,y values.",
       "description": "oiwfs3 2-element array holding x,y values.",
       "type": "array[2] of double",
-      "defaultValue": null,
       "units": "mm",
       "source": [
         {
@@ -1479,15 +1222,12 @@
           "eventName": null,
           "parameterName": null
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "EXPNO",
-      "title": "Number of current (if in progress) or last IFS exposure at current dither pattern with current instrument configuration (1-based).",
       "description": "Number of current (if in progress) or last IFS exposure at current dither pattern with current instrument configuration (1-based).",
       "type": "integer",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1496,15 +1236,12 @@
           "eventName": "exposureRepeats",
           "parameterName": "currentIFSExposureNumber"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "DITHNO",
-      "title": "Total number of IFS exposures at current dither pattern.",
       "description": "Total number of IFS exposures at current dither pattern.",
       "type": "integer",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1513,15 +1250,12 @@
           "eventName": "exposureRepeats",
           "parameterName": "numberOfIFSExposures"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "IFSSTATE",
-      "title": "IFS is currently observing.",
       "description": "IFS is currently observing, means when set the start prepare event was received and will stay that way until the observation is complete is received.",
       "type": "type",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1530,15 +1264,12 @@
           "eventName": "observing",
           "parameterName": "ifs"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "IMSTATE",
-      "title": "IMAGER is currently observing.",
       "description": "IMAGER is currently observing, means when set the start prepare event was received and will stay that way until the observation is complete is received.",
       "type": "type",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1547,15 +1278,12 @@
           "eventName": "observing",
           "parameterName": "imager"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "NUMREADS",
-      "title": "Number of raw readouts used in the sampling mode per ramp.",
       "description": "Number of raw readouts used in the sampling mode per ramp. This is the number of raw readouts that are added together before being used in the sampling mode to create a single frame. This number is only used in sample modes of MDS and UTR.",
       "type": "integer",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1570,15 +1298,12 @@
           "eventName": "imagerObserveSettings",
           "parameterName": "numReads"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "NUMRAMPS",
-      "title": "Number of configured ramps. ",
       "description": "Number of configured ramps. Each ramp is bounded by resets and is of integration time in length. Each ramp has the sampling mode applied. The resultant raw Science Frame is created by adding the output of each ramp.",
       "type": "integer",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1593,15 +1318,12 @@
           "eventName": "imagerObserveSettings",
           "parameterName": "numRamps"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "RAMPINTT",
-      "title": "Integration time, this is the length of time for each ramp.",
       "description": "Integration time, this is the length of time for each ramp.",
       "type": "integer",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1616,15 +1338,12 @@
           "eventName": "imagerObserveSettings",
           "parameterName": "integrationTime"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "SAMPMODE",
-      "title": "This is the sampling mode.",
       "description": "This is the sampling mode. This could be CDS, MDS or UTR.",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1639,15 +1358,12 @@
           "eventName": "imagerObserveSettings",
           "parameterName": "samplingMode"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "IFSSCALE",
-      "title": "IFS Scale.",
       "description": "IFS Scale.",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1656,15 +1372,12 @@
           "eventName": "scale",
           "parameterName": "current"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "IFSMODE",
-      "title": "Current IFS mode.",
       "description": "Current IFS mode. Indicates if in slicer or lenslet mode.",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1673,15 +1386,12 @@
           "eventName": "IFSmode",
           "parameterName": "mode"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "PCKMRRPS",
-      "title": "Current position name of pickoff mirror mechanism.",
       "description": "Current position name of pickoff mirror mechanism, values: (IN, OUT).",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1690,15 +1400,12 @@
           "eventName": "pickoffMirrorMech",
           "parameterName": "position"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "PRSCPPOS",
-      "title": "Current position name of periscope mirror mechanism.",
       "description": "Current position name of periscope mirror mechanism, values: (IN, OUT).",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1707,15 +1414,12 @@
           "eventName": "periscopeMirrorMech",
           "parameterName": "position"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "IFSO1POS",
-      "title": "Current position name of first optics mechanism.",
       "description": "Current position name of first optics mechanism, values: (TBD1, TBD2).",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1724,15 +1428,12 @@
           "eventName": "firstopticsmech",
           "parameterName": "position"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "IFSO2POS",
-      "title": "Current position name of second optics mechanism.",
       "description": "Current position name of second optics mechanism, values: (TBD1, TBD2).",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1741,15 +1442,12 @@
           "eventName": "secondopticsmech",
           "parameterName": "position"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "IFSGRTST",
-      "title": "The current grating selection.",
       "description": "The current grating selection, values: (4000-Z, 4000-Y, 4000-J, 4000-H, 4000-K, 4000-H+K, 8000-Z, 8000-Y, 8000-J, 8000-H, 8000-Kn1-3, 8000-Kn4-5, 8000-Kbb, 10000-Z, 10000-Y, 10000-J, 10000-H, 1000-K, Mirror, INTERMEDIATE, UNKNOWN).",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1758,15 +1456,12 @@
           "eventName": "GRATING_state",
           "parameterName": "selection"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "LLMSKST",
-      "title": "The current lenslet mask position.",
       "description": "The current lenslet mask position, values: enum: (FULL_OPEN, SERRATED_WIDE, FINE_MASK, FINE_MASK_CALIBRATION, INTERMEDIATE, UNKNOWN).",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1775,15 +1470,12 @@
           "eventName": "LENSLETMASK_state",
           "parameterName": "selection"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "SLMSKST",
-      "title": "The current slicer mask position.",
       "description": "The current slicer mask position, values: (FULL_OPEN, INTERMEDIATE, HALF, UNKNOWN).",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1792,15 +1484,12 @@
           "eventName": "SLICERMASK_state",
           "parameterName": "selection"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "IFSRES",
-      "title": "Current spectral resolution.",
       "description": "Current spectral resolution, values: (4000-Z, 4000-Y, 4000-J, 4000-H, 4000-K, 4000-H+K, 8000-Z, 8000-Y, 8000-J, 8000-H, 8000-Kn1-3, 8000-Kn4-5, 8000-Kbb, 10000-Z, 10000-Y, 10000-J, 10000-H, 1000-K, Mirror).",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1809,15 +1498,12 @@
           "eventName": "resolution",
           "parameterName": "current"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "IFSGRTPS",
-      "title": "Current position name of spectral resolution grating mechanism.",
       "description": "Current position name of spectral resolution grating mechanism.",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1826,15 +1512,12 @@
           "eventName": "gratingmech",
           "parameterName": "position"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "LLMSKPOS",
-      "title": "Current position name of spectral resolution lenslet mask mechanism.",
       "description": "Current position name of spectral resolution lenslet mask mechanism.",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1843,15 +1526,12 @@
           "eventName": "lensletmaskmech",
           "parameterName": "position"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "OBSID",
-      "title": "Observation ID.",
       "description": "Observation ID given by LOAD_CONFIGURATION command.",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1866,15 +1546,12 @@
           "eventName": "currentConfig",
           "parameterName": "obsId"
         }
-      ],
-      "note": "OBSID and EXPTIme are in the group that are common to all instruments."
+      ]
     },
     {
       "name": "EXPTIME",
-      "title": "Actual total exposure time.",
       "description": "Actual total exposure time which is rampIntegrationTime multiplied by ramps.",
       "type": "float",
-      "defaultValue": null,
       "units": "second",
       "source": [
         {
@@ -1889,15 +1566,12 @@
           "eventName": "currentConfig",
           "parameterName": "totalTime"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "RAMPTIME",
-      "title": "Actual integration time of one ramp.",
       "description": "Actual integration time of one ramp. The reuqested integration time is rounded down to the nearest valid integration time which is a multiple of readoutTime.",
       "type": "float",
-      "defaultValue": null,
       "units": "second",
       "source": [
         {
@@ -1912,15 +1586,12 @@
           "eventName": "currentConfig",
           "parameterName": "rampIntegrationTime"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "READTIME",
-      "title": "Time to clock one detector.",
       "description": "Time to clock one detector, which is dependent on pixel clocking time and subarray dimensions and channels used.",
       "type": "float",
-      "defaultValue": null,
       "units": "second",
       "source": [
         {
@@ -1935,15 +1606,12 @@
           "eventName": "currentConfig",
           "parameterName": "readoutTime"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "GAIN",
-      "title": "Conversion of photoelectrons to counts for each detector.",
       "description": "Conversion of photoelectrons to counts for each detector.",
       "type": "integer",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1952,15 +1620,12 @@
           "eventName": "systemConf",
           "parameterName": "gain"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "READNOIS",
-      "title": "Nominal read noise of the entire array measured at commissioning phase.",
       "description": "Nominal read noise of the entire array measured at commissioning phase.",
       "type": "integer",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1969,15 +1634,12 @@
           "eventName": "systemConf",
           "parameterName": "readNoise"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "IMGTMPXX",
-      "title": "ID of the sensor assigned for the temperature reading.",
       "description": "ID of the sensor assigned for the temperature reading.",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -1986,15 +1648,12 @@
           "eventName": "IMGTEMP[XX]",
           "parameterName": "sensorID"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "IFSTMPXX",
-      "title": "ID of the sensor assigned for the temperature reading.",
       "description": "ID of the sensor assigned for the temperature reading.",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -2003,15 +1662,12 @@
           "eventName": "IFSTEMP[XX]",
           "parameterName": "sensorID"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "TMPTMP",
-      "title": "ID of the sensor assigned for the temperature reading.",
       "description": "ID of the sensor assigned for the temperature reading.",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -2020,16 +1676,13 @@
           "eventName": "TEMP_TEMP[N]",
           "parameterName": "sensorID"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "SSLGSALT",
-      "title": "Current altitude estimated based on measured range distance and the value set for zenith angle.",
       "description": "Current altitude estimated based on measured range distance and the value set for zenith angle (= current.rangeDistance*cos(simTcs.zenithAngle)).",
       "type": "float",
       "calculation": "double (85 ≤ x ≤ 100)",
-      "defaultValue": null,
       "units": "km",
       "source": [
         {
@@ -2038,15 +1691,12 @@
           "eventName": "current",
           "parameterName": "altitude"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "SSLGSMAG",
-      "title": "Magnitude estimate of the variable intensity NGS sources in R band (TBC), based on manual and motorized attenuator (current.attenuation).",
       "description": "Magnitude estimate of the variable intensity NGS sources in R band (TBC), based on manual and motorized attenuator (current.attenuation).",
       "type": "array[7] of double",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -2055,15 +1705,12 @@
           "eventName": "state",
           "parameterName": "magnitude"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "LGSR0",
-      "title": "Fried parameter (r0).",
       "description": "Fried parameter (r0).",
       "type": "float",
-      "defaultValue": null,
       "units": "m",
       "source": [
         {
@@ -2072,15 +1719,12 @@
           "eventName": "turbLgs",
           "parameterName": "r0"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "LGSTHT0",
-      "title": "Isoplanatic angle (θ0).",
       "description": "Isoplanatic angle (θ0).",
       "type": "float",
-      "defaultValue": null,
       "units": "mas",
       "source": [
         {
@@ -2089,15 +1733,12 @@
           "eventName": "turbLgs",
           "parameterName": "theta0"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "LGSTHT2",
-      "title": "Generalized isoplanatic angle (θ2).",
       "description": "Generalized isoplanatic angle (θ2).",
       "type": "float",
-      "defaultValue": null,
       "units": "mas",
       "source": [
         {
@@ -2106,15 +1747,12 @@
           "eventName": "turbLgs",
           "parameterName": "theta2"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "LGSL0",
-      "title": "Turbulence outer scale (L0).",
       "description": "Turbulence outer scale (L0).",
       "type": "float",
-      "defaultValue": null,
       "units": "m",
       "source": [
         {
@@ -2123,15 +1761,12 @@
           "eventName": "turbLgs",
           "parameterName": "L0"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "LGSTAU0",
-      "title": "Coherence time (τ0).",
       "description": "Coherence time (τ0).",
       "type": "float",
-      "defaultValue": null,
       "units": "second",
       "source": [
         {
@@ -2140,15 +1775,12 @@
           "eventName": "turbLgs",
           "parameterName": "tau0"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "LGSCN2P",
-      "title": "Cn2 turbulence profile (p).",
       "description": "Cn2 turbulence profile (p).",
       "type": "array[12] of float",
-      "defaultValue": null,
       "units": "m-5/3",
       "source": [
         {
@@ -2157,15 +1789,12 @@
           "eventName": "turbLgs",
           "parameterName": "profile"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "NGSPROF",
-      "title": "Ground layer turbulence (p).",
       "description": "Ground layer turbulence (p).",
       "type": "float",
-      "defaultValue": null,
       "units": "m-5/3",
       "source": [
         {
@@ -2174,15 +1803,12 @@
           "eventName": "turbNgs",
           "parameterName": "groundLayer"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "NGSR0",
-      "title": "Fried parameter (r0).",
       "description": "Fried parameter (r0).",
       "type": "float",
-      "defaultValue": null,
       "units": "m",
       "source": [
         {
@@ -2191,15 +1817,12 @@
           "eventName": "turbNgs",
           "parameterName": "r0"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "NGSL0",
-      "title": "Turbulence outer scale (L0).",
       "description": "Turbulence outer scale (L0).",
       "type": "float",
-      "defaultValue": null,
       "units": "m",
       "source": [
         {
@@ -2208,15 +1831,12 @@
           "eventName": "turbNgs",
           "parameterName": "l0"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "NGSTAU0",
-      "title": "Coherence time (τ0).",
       "description": "Coherence time (τ0).",
       "type": "float",
-      "defaultValue": null,
       "units": "second",
       "source": [
         {
@@ -2225,15 +1845,12 @@
           "eventName": "turbNgs",
           "parameterName": "tau0"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "AORATEHO",
-      "title": "High-order loop rate. In LGS mode this is equal to the LGS WFS frame rate. In NGS or SL mode this is equal to the PWFS frame rate.",
       "description": "High-order loop rate. In LGS mode this is equal to the LGS WFS frame rate. In NGS or SL mode this is equal to the PWFS frame rate.",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -2242,15 +1859,12 @@
           "eventName": "mode",
           "parameterName": "rateHo"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "AORATELO",
-      "title": "Low-order loop rate. This is equal to the Tier 1 and 2 steady-state frame rate.",
       "description": "Low-order loop rate. This is equal to the Tier 1 and 2 steady-state frame rate.",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -2259,15 +1873,12 @@
           "eventName": "mode",
           "parameterName": "rateLo"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "AORATELT",
-      "title": "Low-order truth loop rate. This is equal to the Tier 3 and 3F steady-state frame rate.",
       "description": "Low-order truth loop rate. This is equal to the Tier 3 and 3F steady-state frame rate.",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -2276,15 +1887,12 @@
           "eventName": "mode",
           "parameterName": "rateLot"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "AORATEWC",
-      "title": "Wavefront correction. In LGS mode this should be at least equal to the LGS WFS frame rate. In NGS mode this should be at least equal to the PWFS frame rate. In SL mode his should be at least to the Tier 1 and 2 steady-state frame rate.",
       "description": "Wavefront correction. In LGS mode this should be at least equal to the LGS WFS frame rate. In NGS mode this should be at least equal to the PWFS frame rate. In SL mode his should be at least to the Tier 1 and 2 steady-state frame rate.",
       "type": "float",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -2293,15 +1901,12 @@
           "eventName": "mode",
           "parameterName": "rateWc"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "AOTIER1",
-      "title": "Tier 1 detector assignment.",
       "description": "Tier 1 detector assignment, values: (PWFS, OIWFSA, OIWFSB, OIWFSC).",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -2310,15 +1915,12 @@
           "eventName": "mode",
           "parameterName": "tier1"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "AOTIER2",
-      "title": "Tier 2 detector assignment. The array is ordered Tier 2 [A B].",
       "description": "Tier 2 detector assignment. The array is ordered Tier 2 [A B]. Type is array[2] of enum: (NONE, PWFS, OIWFSA, OIWFSB, OIWFSC, ODGW1, ODGW2, ODGW3, ODGW4).",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -2327,15 +1929,12 @@
           "eventName": "mode",
           "parameterName": "tier2"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "AOTIER3",
-      "title": "Tier 3 detector assignment. The array is ordered Tier 3 [A B C D].",
       "description": "Tier 3 detector assignment. The array is ordered Tier 3 [A B C D]. Type is array[4] of enum: (NONE, OIWFSA, OIWFSB, OIWFSC, ODGW1, ODGW2, ODGW3, ODGW4)",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -2344,15 +1943,12 @@
           "eventName": "mode",
           "parameterName": "tier3"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "AOTIER3F",
-      "title": "Tier 3F detector assignment",
       "description": "Tier 3F detector assignment. Values: (NONE, OIWFSA, OIWFSB, OIWFSC)",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -2361,15 +1957,12 @@
           "eventName": "mode",
           "parameterName": "tier3f"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "ODGWIMEL",
-      "title": "Ellipticity value based on the averaged spot ellipticity profile, i.e., ratio between σ1 and σ2 of the ellipse.",
       "description": "Ellipticity value based on the averaged spot ellipticity profile, i.e., ratio between σ1 and σ2 of the ellipse.",
       "type": "array[4] of float",
-      "defaultValue": null,
       "units": "pixel",
       "source": [
         {
@@ -2378,15 +1971,12 @@
           "eventName": "odgwImage",
           "parameterName": "ellip"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "ODGWIMS1",
-      "title": "Image size 1 (σ1) based on the averaged spot ellipticity profile.",
       "description": "Image size 1 (σ1) based on the averaged spot ellipticity profile.",
       "type": "array[4] of float",
-      "defaultValue": null,
       "units": "pixel",
       "source": [
         {
@@ -2395,15 +1985,12 @@
           "eventName": "odgwImage",
           "parameterName": "size1"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "ODGWIMS2",
-      "title": "Image size 2 (σ2) based on the averaged spot ellipticity profile.",
       "description": "Image size 2 (σ2) based on the averaged spot ellipticity profile.",
       "type": "array[4] of float",
-      "defaultValue": null,
       "units": "pixel",
       "source": [
         {
@@ -2412,15 +1999,12 @@
           "eventName": "odgwImage",
           "parameterName": "size2"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "ODGWIMRT",
-      "title": "Image rotation angle between the unrotated elliptical coordinate system and the local detector coordinate system.",
       "description": "Image rotation angle between the unrotated elliptical coordinate system and the local detector coordinate system.",
       "type": "array[4] of float",
-      "defaultValue": null,
       "units": "pixel",
       "source": [
         {
@@ -2429,15 +2013,12 @@
           "eventName": "odgwImage",
           "parameterName": "rot"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "AOISMST",
-      "title": "Current ISM selection.",
       "description": "Current ISM selection. Values: enum: (BOTTOM, SIDE, TOP, INTERMEDIATE, UNKNOWN)",
       "type": "string",
-      "defaultValue": null,
       "units": null,
       "source": [
         {
@@ -2446,15 +2027,12 @@
           "eventName": "state",
           "parameterName": "select"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "AODM0TM",
-      "title": "Current temperature of DM0",
       "description": "Current temperature of DM0",
       "type": "float",
-      "defaultValue": null,
       "units": "C",
       "source": [
         {
@@ -2463,15 +2041,12 @@
           "eventName": "temperature",
           "parameterName": "dm0"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "AODM11TM",
-      "title": "Current temperature of DM11",
       "description": "Current temperature of DM11",
       "type": "float",
-      "defaultValue": null,
       "units": "C",
       "source": [
         {
@@ -2480,15 +2055,12 @@
           "eventName": "temperature",
           "parameterName": "dm11"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "AONAALT",
-      "title": "Current best estimate of the sodium layer altitude.",
       "description": "Current best estimate of the sodium layer altitude.",
       "type": "double (1 ≤ x ≤ 65)",
-      "defaultValue": null,
       "units": "km",
       "source": [
         {
@@ -2497,15 +2069,12 @@
           "eventName": "sodiumLayer",
           "parameterName": "altitude"
         }
-      ],
-      "note": null
+      ]
     },
     {
       "name": "AOENCLTM",
-      "title": "Air temperature inside the optical enclosure as reported by the refrigeration controller and the 1-Wire Sensor.",
       "description": "Air temperature inside the optical enclosure as reported by the refrigeration controller and the 1-Wire Sensor.",
       "type": "array[2] of double (-40 ≤ x ≤ 4 0)",
-      "defaultValue": null,
       "units": "C",
       "source": [
         {
@@ -2514,8 +2083,7 @@
           "eventName": "temperature",
           "parameterName": "inside"
         }
-      ],
-      "note": null
+      ]
     }
   ]
 }
