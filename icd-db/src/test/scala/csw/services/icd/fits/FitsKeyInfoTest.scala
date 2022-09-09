@@ -37,7 +37,7 @@ class FitsKeyInfoTest extends AnyFunSuite {
     val icdFits = IcdFits(db)
     val dir = getTestDir(examplesDir)
     icdFits.ingest(new File(s"$dir/FITS-Dictionary.json"))
-    icdFits.output(new File("xxx.pdf"), _ => true, PdfOptions())
+    icdFits.output(new File("XXX.pdf"), None, None, None, PdfOptions())
     val fitsKeyMap = icdFits.getFitsKeyMap(None)
     val crpix1 = fitsKeyMap(FitsSource("TCS", "PointingKernelAssembly", "WCSFITSHeader", "CRPIX1", None, None))
     assert(crpix1.contains("CRPIX1"))

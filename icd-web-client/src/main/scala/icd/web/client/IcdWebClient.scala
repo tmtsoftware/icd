@@ -5,7 +5,7 @@ import org.scalajs.dom
 import org.scalajs.dom.{Element, HTMLAnchorElement, HTMLStyleElement, PopStateEvent, document}
 
 import scala.concurrent.Future
-import scala.scalajs.js.annotation.{JSExportTopLevel, JSGlobalScope}
+import scala.scalajs.js.annotation.JSExportTopLevel
 import scalatags.JsDom.TypedTag
 import scalacss.ScalatagsCss._
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
@@ -44,7 +44,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val historyItem   = NavbarItem("History", "Display the version history for an API or ICD", showVersionHistory())
   private val historyDialog = HistoryDialog(mainContent)
 
-  private val fitsKeywordsItem = NavbarItem("FITS Dictionary", "Display information about all FITS keywords", showFitsKeywords())
+  private val fitsDictionaryItem = NavbarItem("FITS Dictionary", "Display information about all FITS keywords", showFitsDictionary())
 
   private val pdfItem = NavbarPdfItem("PDF", "Generate and display a PDF for the API or ICD", makePdf)
   pdfItem.setEnabled(false)
@@ -156,7 +156,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     navbar.addItem(generateItem)
     navbar.addItem(graphItem)
     navbar.addItem(archiveItem)
-    navbar.addItem(fitsKeywordsItem)
+    navbar.addItem(fitsDictionaryItem)
     navbar.addItem(publishItem)
     navbar.addItem(reloadButton)
     navbar.addItem(expandToggler)
@@ -363,6 +363,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         case UploadView  => showUploadDialog(saveHistory = false)()
         case PublishView => showPublishDialog(saveHistory = false)()
         case VersionView => showVersionHistory(saveHistory = false)()
+        case VersionView => showFitsDictionary(saveHistory = false)()
         case StatusView =>
           showStatus(
             hist.maybeSourceSubsystem.map(_.subsystem),
@@ -551,8 +552,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     }
   }
 
-  // Called when the "FITS Keywords" item is selected
-  private def showFitsKeywords(saveHistory: Boolean = true)(): Unit = {
+  // Called when the "FITS Dictionary" item is selected
+  private def showFitsDictionary(saveHistory: Boolean = true)(): Unit = {
     import icd.web.shared.JsonSupport._
     setSidebarVisible(false)
     val fKeys = Fetch
@@ -571,8 +572,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     } yield {
       val fitsKeywordDialog = FitsKeywordDialog(fitsKeys, fitsTags, ComponentLinkSelectionHandler)
       mainContent.setContent(fitsKeywordDialog, "FITS Dictionary")
-    // XXX TODO FIXME
-    // if (saveHistory) pushState(viewType = VersionView)
+     if (saveHistory) pushState(viewType = FitsView)
     }
     showBusyCursorWhile(f.map(_ => ()))
   }

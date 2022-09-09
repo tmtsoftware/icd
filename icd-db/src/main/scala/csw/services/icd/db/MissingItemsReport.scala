@@ -123,6 +123,8 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfO
         val receivedCommands = getPublishedItems(component, commandModel.map(_.receive.map(_.name)).getOrElse(Nil))
         val sentCommands     = getSubscribedItems(component, commandModel.map(_.send).getOrElse(Nil))
 
+        // XXX TODO FIXME: Add sub/pub images
+
         // "$subsystem.$component" for referenced components
         def getPubComp(i: PublishedItemInfo)     = s"${i.publisherSubsystem}.${i.publisherComponent}"
         def getSubPubComp(i: SubscribedItemInfo) = s"${i.publisherSubsystem}.${i.publisherComponent}"

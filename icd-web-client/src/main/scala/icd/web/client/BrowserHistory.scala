@@ -7,31 +7,29 @@ import play.api.libs.json._
 import BrowserHistory._
 
 object BrowserHistory {
-  // JSON support
-
   import icd.web.shared.JsonSupport._
 
   implicit val viewTypeWrites: Writes[ViewType] =
     (v: ViewType) =>
       JsString(v match {
         case ComponentView => "ComponentView"
-//        case IcdView       => "IcdView"
         case StatusView    => "StatusView"
         case SelectView    => "SelectView"
         case UploadView    => "UploadView"
         case PublishView    => "PublishView"
         case VersionView   => "VersionView"
+        case FitsView   => "FitsView"
       })
   implicit val viewTypeReads: Reads[ViewType] = {
     case JsString(s) =>
       JsSuccess(s match {
         case "ComponentView" => ComponentView
-//        case "IcdView"       => IcdView
         case "StatusView"    => StatusView
         case "SelectView"    => SelectView
         case "UploadView"    => UploadView
         case "PublishView"    => PublishView
         case "VersionView"   => VersionView
+        case "FitsView"   => FitsView
       })
     case _ => JsError("bad ViewType")
   }
@@ -49,9 +47,6 @@ object BrowserHistory {
   // Viewing components selected in sidebar
   case object ComponentView extends ViewType
 
-//  // Viewing an ICD
-//  case object IcdView extends ViewType
-
   // Uploading ICD files
   case object UploadView extends ViewType
 
@@ -60,6 +55,9 @@ object BrowserHistory {
 
   // Viewing the version history
   case object VersionView extends ViewType
+
+  // Viewing the FITS Dictionary
+  case object FitsView extends ViewType
 
   // Gets  BrowserHistory from the event
   def popState(e: PopStateEvent): Option[BrowserHistory] = {

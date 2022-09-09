@@ -555,6 +555,72 @@ object IcdToHtml {
           p(em(" Warning: ", msg))
         }
 
+      def subscribeDetailsMarkup(si: DetailedSubscribeInfo) = {
+        val sInfo = si.subscribeModelInfo
+        if (si.imageModel.nonEmpty) {
+          // Markup for subscribed image
+          val imageModel = si.imageModel.get
+          val maxRate    = imageModel.maybeMaxRate
+          val imageSize  = s"${imageModel.size._1} x ${imageModel.size._2}"
+          div(
+            table(
+              thead(
+                tr(
+                  th("Subsystem"),
+                  th("Component"),
+                  th("Prefix.Name"),
+                  th("Channel"),
+                  th("Size"),
+                  th("Pixel Size"),
+                  th("Max Rate")
+                )
+              ),
+              tbody(
+                tr(
+                  td(sInfo.subsystem),
+                  td(sInfo.component),
+                  td(si.path),
+                  td(imageModel.channel),
+                  td(imageSize),
+                  td(imageModel.pixelSize.toString),
+                  td(HtmlMarkup.formatRate(maxRate))
+                )
+              )
+            ),
+            si.imageModel.map(t => imageMetadataListMarkup(t.name, t.metadataList))
+          )
+
+        }
+        else {
+          // Markup for subscribed event
+          val maxRate = si.eventModel.flatMap(_.maybeMaxRate)
+          div(
+            table(
+              thead(
+                tr(
+                  th("Subsystem"),
+                  th("Component"),
+                  th("Prefix.Name"),
+                  th("Max Rate"),
+                  th("Publisher's Max Rate")
+                )
+              ),
+              tbody(
+                tr(
+                  td(sInfo.subsystem),
+                  td(sInfo.component),
+                  td(si.path),
+                  td(HtmlMarkup.formatRate(sInfo.maxRate)),
+                  td(HtmlMarkup.formatRate(maxRate))
+                )
+              )
+            ),
+            if (maxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.") else span(),
+            si.eventModel.map(t => attributeListMarkup(t.name, t.parameterList))
+          )
+        }
+      }
+
       if (subscribeList.isEmpty) div()
       else
         div(
@@ -573,37 +639,7 @@ object IcdToHtml {
               raw(si.description),
               getWarning(si),
               if (sInfo.usage.isEmpty) div() else div(strong("Usage:"), raw(sInfo.usage)),
-              if (showDetails) {
-                val maxRate = si.eventModel.flatMap(_.maybeMaxRate)
-                div(
-                  table(
-                    thead(
-                      tr(
-                        th("Subsystem"),
-                        th("Component"),
-                        th("Prefix.Name"),
-                        th("Max Rate"),
-                        th("Publisher's Max Rate")
-                      )
-                    ),
-                    tbody(
-                      tr(
-                        td(sInfo.subsystem),
-                        td(sInfo.component),
-                        td(si.path),
-                        td(HtmlMarkup.formatRate(sInfo.maxRate)),
-                        td(HtmlMarkup.formatRate(maxRate))
-                      )
-                    )
-                  ),
-                  if (maxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.") else span(),
-                  si.eventModel.map(t => attributeListMarkup(t.name, t.parameterList)),
-                  si.imageModel.map(t => imageMetadataListMarkup(t.name, t.metadataList))
-                )
-              }
-              else
-                div(
-                )
+              if (showDetails) subscribeDetailsMarkup(si) else div()
             )
           }
         )

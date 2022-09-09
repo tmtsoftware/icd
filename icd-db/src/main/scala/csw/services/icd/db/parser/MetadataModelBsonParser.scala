@@ -14,6 +14,7 @@ object MetadataModelBsonParser {
     MetadataModel(
       name = name,
       description = doc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
+      dataType = doc.getAsOpt[String]("type").getOrElse(""),
       keyword = doc.getAsOpt[String]("keyword").getOrElse("")
     )
   }

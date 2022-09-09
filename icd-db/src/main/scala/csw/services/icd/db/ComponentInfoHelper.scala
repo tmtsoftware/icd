@@ -69,8 +69,8 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
     models.flatMap { icdModels =>
       val componentModel = icdModels.componentModel
       val publishes      = getPublishes(versionManager.query, icdModels, maybePdfOptions)
-      val subscribes     = if (clientApi) getSubscribes(versionManager.query, icdModels, maybePdfOptions) else None
-      val commands       = getCommands(versionManager.query, icdModels, maybePdfOptions)
+      val subscribes     = if (clientApi) getSubscribes(versionManager, icdModels, maybePdfOptions) else None
+      val commands       = getCommands(versionManager, icdModels, maybePdfOptions)
       val services       = getServices(versionManager.query, icdModels, maybePdfOptions)
       componentModel.map { model =>
         ComponentInfo(model, publishes, subscribes, commands, services)
@@ -139,16 +139,24 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
   /**
    * Gets information about the items the component subscribes to, along with the publisher of each item
    *
-   * @param query  the database query handle
+   * @param versionManager  used to access the database
    * @param models the model objects for the component
    */
-  private def getSubscribes(query: IcdDbQuery, models: IcdModels, maybePdfOptions: Option[PdfOptions]): Option[Subscribes] = {
-
+  private def getSubscribes(
+      versionManager: IcdVersionManager,
+      models: IcdModels,
+      maybePdfOptions: Option[PdfOptions]
+  ): Option[Subscribes] = {
     // Gets additional information about the given subscription, including info from the publisher
     def getInfo(publishType: PublishType, si: SubscribeModelInfo): DetailedSubscribeInfo = {
-      // XXX TODO: Would be more efficient to just get the publishModel
+      // XXX TODO FIXME: Would be more efficient to just get the publishModel!
       val x = for {
-        t            <- query.getModels(si.subsystem, Some(si.component), maybePdfOptions, Map.empty)
+        t  <- versionManager.query.getModels(si.subsystem, Some(si.component), maybePdfOptions, Map.empty)
+//        t <- versionManager.getResolvedModels(
+//          SubsystemWithVersion(si.subsystem, None, Some(si.component)),
+//          maybePdfOptions,
+//          Map.empty
+//        )
         publishModel <- t.publishModel
       } yield {
         val maybeEventModel = publishType match {
@@ -208,19 +216,23 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
    * Gets a list of commands sent by the component, including information about the components
    * that receive each command.
    *
-   * @param query  database query handle
+   * @param versionManager  database API
    * @param models model objects for component
    */
   private def getCommandsSent(
-      query: IcdDbQuery,
+      versionManager: IcdVersionManager,
       models: IcdModels,
       maybePdfOptions: Option[PdfOptions]
   ): List[SentCommandInfo] = {
+    val query = versionManager.query
     val result = for {
       cmd  <- models.commandModel.toList
       sent <- cmd.send
     } yield {
+      // XXX TODO FIXME: Would be more efficient to just get the command model!
       val recv = query.getCommand(sent.subsystem, sent.component, sent.name, maybePdfOptions)
+//      val x = versionManager.getResolvedModels(SubsystemWithVersion(sent.subsystem, None, Some(sent.component)), maybePdfOptions, Map.empty)
+//      val recv = x.flatMap(_.commandModel.map(_.receive)).flatten.headOption
       SentCommandInfo(
         sent.name,
         sent.subsystem,
@@ -236,12 +248,17 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
   /**
    * Gets a list of commands sent or received by the component
    *
-   * @param query  database query handle
+   * @param versionManager  database API
    * @param models model objects for component
    */
-  private def getCommands(query: IcdDbQuery, models: IcdModels, maybePdfOptions: Option[PdfOptions]): Option[Commands] = {
+  private def getCommands(
+      versionManager: IcdVersionManager,
+      models: IcdModels,
+      maybePdfOptions: Option[PdfOptions]
+  ): Option[Commands] = {
+    val query    = versionManager.query
     val received = getCommandsReceived(query, models, maybePdfOptions)
-    val sent     = if (clientApi) getCommandsSent(query, models, maybePdfOptions) else Nil
+    val sent     = if (clientApi) getCommandsSent(versionManager, models, maybePdfOptions) else Nil
     models.commandModel match {
       case None => None
       case Some(m) =>

@@ -251,11 +251,13 @@ object IcdModels {
    *
    * @param name             name of the metadata
    * @param description      description of the metadata
+   * @param dataType         data type of FITS keyword values (float, double, integer, short, long, byte)
    * @param keyword          FITS keyword (example: ITIME, SCALE)
    */
   case class MetadataModel(
       name: String,
       description: String,
+      dataType: String,
       keyword: String
   ) extends NameDesc
 
@@ -372,7 +374,7 @@ object IcdModels {
       eventList: List[SubscribeModelInfo],
       observeEventList: List[SubscribeModelInfo],
       currentStateList: List[SubscribeModelInfo],
-      imageList: List[SubscribeModelInfo],
+      imageList: List[SubscribeModelInfo]
   )
 
   /**
@@ -532,12 +534,22 @@ object IcdModels {
    *
    * @param name event name
    * @param description event description
+   * @param channel the image channel name
+   * @param format format (For example: "FITS")
+   * @param size image dimemsions
+   * @param pixelSize bytes per pixel
+   * @param maybeMaxRate maximum rate the image is published
+   * @param metadataList list of image metadata (FITS keywords)
    */
   case class ImageModel(
-      name: String,
-      description: String,
-      channel: String,
-      metadataList: List[MetadataModel]
+                         name: String,
+                         description: String,
+                         channel: String,
+                         format: String,
+                         size: (Int, Int),
+                         pixelSize: Int,
+                         maybeMaxRate: Option[Double],
+                         metadataList: List[MetadataModel]
   ) extends NameDesc
 }
 

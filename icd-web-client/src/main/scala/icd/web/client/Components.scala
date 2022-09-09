@@ -370,12 +370,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalatags.JsDom.all._
     if (metadataList.isEmpty) div()
     else {
-      val headings = List("Name", "Description", "Keyword")
+      val headings = List("Name", "Description", "Type", "Keyword")
       val rowList =
         for (a <- metadataList) yield {
-          val imageId          = maybeImageId.map(s => s"$s.${a.name}")
-          val nameAnchor       = imageId.map(p => s"<a id='$p' name='$p'>${a.name}</a>").getOrElse(a.name)
-          List(nameAnchor, a.description, a.keyword)
+          val imageId    = maybeImageId.map(s => s"$s.${a.name}")
+          val nameAnchor = imageId.map(p => s"<a id='$p' name='$p'>${a.name}</a>").getOrElse(a.name)
+          List(nameAnchor, a.description, a.dataType, a.keyword)
         }
       div(
         strong(s"Image Metadata for $nameStr"),
@@ -585,6 +585,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               tr(
                 th("Name"),
                 th("Description"),
+                th("Channel"),
+                th("Format"),
+                th("Size"),
+                th("Pixel Size"),
+                th("Max Rate"),
                 if (clientApi) th("Subscribers") else span
               )
             ),
@@ -592,6 +597,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               for (t <- imageList) yield {
                 val idStr      = idFor(compName, "publishes", pubType, component.subsystem, compName, t.imageModel.name)
                 val (btn, row) = hiddenRowMarkup(idStr, makeImageDetailsRow(t, Some(idStr)), 3)
+                val imageSize = t.imageModel.size match {
+                  case (0, 0) => ""
+                  case (w, h) => s"$w x $h"
+                }
+                val maxRate = t.imageModel.maybeMaxRate.map(_.toString).getOrElse("")
                 List(
                   tr(
                     td(
@@ -604,6 +614,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                       )
                     ),
                     td(raw(t.imageModel.description)),
+                    td(t.imageModel.channel),
+                    td(t.imageModel.format),
+                    td(imageSize),
+                    td(t.imageModel.pixelSize.toString),
+                    td(maxRate),
                     if (clientApi)
                       td(p(t.subscribers.map(_.componentModel).distinct.map(makeLinkForComponent)))
                     else span
@@ -704,30 +719,55 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalacss.ScalatagsCss._
 
     val compName = component.component
+
     // Returns a table row displaying more details for the given subscription
     def makeDetailsRow(si: DetailedSubscribeInfo) = {
-      val sInfo   = si.subscribeModelInfo
-      val maxRate = si.eventModel.flatMap(_.maybeMaxRate)
-      val headings =
-        List("Subsystem", "Component", "Prefix.Name", "Max Rate", "Publisher's Max Rate")
-      val rowList = List(
-        List(
-          sInfo.subsystem,
-          sInfo.component,
-          si.path,
-          formatRate(sInfo.maxRate),
-          formatRate(maxRate)
+      val sInfo = si.subscribeModelInfo
+      if (si.imageModel.nonEmpty) {
+        // Layout for image subscriber details taken from image publisher
+        val imageModel = si.imageModel.get
+        val maxRate = imageModel.maybeMaxRate
+        val headings =
+          List("Subsystem", "Component", "Prefix.Name", "Channel", "Format", "Size", "Pixel Size", "Max Rate")
+        val rowList = List(
+          List(
+            sInfo.subsystem,
+            sInfo.component,
+            si.path,
+            imageModel.channel,
+            imageModel.format,
+            s"${imageModel.size._1} x ${imageModel.size._1}",
+            imageModel.pixelSize.toString,
+            formatRate(maxRate)
+          )
         )
-      )
-
-      val attrTable          = si.eventModel.map(t => parameterListMarkup(t.parameterList)).getOrElse(div())
-      val imageMetadataTable = si.imageModel.map(t => imageMetadataListMarkup(t.name, t.metadataList)).getOrElse(div())
-      div(
-        mkTable(headings, rowList),
-        if (maxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.") else span(),
-        attrTable,
-        imageMetadataTable
-      )
+        val imageMetadataTable = si.imageModel.map(t => imageMetadataListMarkup(t.name, t.metadataList)).getOrElse(div())
+        div(
+          mkTable(headings, rowList),
+          imageMetadataTable
+        )
+      }
+      else {
+        // Layout for event subscriber details taken from event publisher
+        val maxRate = si.eventModel.flatMap(_.maybeMaxRate)
+        val headings =
+          List("Subsystem", "Component", "Prefix.Name", "Max Rate", "Publisher's Max Rate")
+        val rowList = List(
+          List(
+            sInfo.subsystem,
+            sInfo.component,
+            si.path,
+            formatRate(sInfo.maxRate),
+            formatRate(maxRate)
+          )
+        )
+        val attrTable = si.eventModel.map(t => parameterListMarkup(t.parameterList)).getOrElse(div())
+        div(
+          mkTable(headings, rowList),
+          if (maxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.") else span(),
+          attrTable
+        )
+      }
     }
 
     def subscribeListMarkup(pubType: String, subscribeList: List[DetailedSubscribeInfo]) = {

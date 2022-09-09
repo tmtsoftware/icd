@@ -708,7 +708,8 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
         List(
           subscribeModel.eventList.map(i => Subscribed(component, i, Events, getPath(i))),
           subscribeModel.observeEventList.map(i => Subscribed(component, i, ObserveEvents, getPath(i))),
-          subscribeModel.currentStateList.map(i => Subscribed(component, i, CurrentStates, getPath(i)))
+          subscribeModel.currentStateList.map(i => Subscribed(component, i, CurrentStates, getPath(i))),
+          subscribeModel.imageList.map(i => Subscribed(component, i, Images, getPath(i))),
         ).flatten
       case None => Nil
     }

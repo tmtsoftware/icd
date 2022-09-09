@@ -9,7 +9,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import csw.services.icd._
 import reactivemongo.play.json.compat._
 import csw.services.icd.db.parser.{FitsKeyInfoListBsonParser, FitsTagsBsonParser}
-import csw.services.icd.fits.IcdFits.Options
 import lax._
 import json2bson._
 
@@ -160,7 +159,7 @@ object IcdFits extends App {
     options.ingest.foreach(icdFits.ingest)
 
     if (options.outputFile.nonEmpty) {
-      icdFits.output(options.outputFile.get, options, pdfOptions)
+      icdFits.output(options.outputFile.get, options.subsystem, options.component, options.tag, pdfOptions)
     }
 
     db.close()
@@ -273,9 +272,15 @@ case class IcdFits(db: IcdDb) {
   }
 
   // --output option
-  def output(file: File, options: Options, pdfOptions: PdfOptions): Unit = {
+  def output(
+      file: File,
+      maybeSubsystem: Option[String],
+      maybeComponent: Option[String],
+      maybeTag: Option[String],
+      pdfOptions: PdfOptions
+  ): Unit = {
     import icd.web.shared.JsonSupport._
-    val fitsKeyList = getRelatedFitsKeyInfo(options.subsystem, options.component, options.tag, Some(pdfOptions))
+    val fitsKeyList = getRelatedFitsKeyInfo(maybeSubsystem, maybeComponent, maybeTag, Some(pdfOptions))
     if (fitsKeyList.isEmpty) {
       println("No FITS keywords found")
     }
