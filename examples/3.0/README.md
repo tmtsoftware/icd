@@ -1,3 +1,16 @@
+FITS Keywords
+-------------
+
+The generated APIs and ICDs contain infomation about FITS keywords that are based on event parameters.
+The information is stored in two files under [DMS-Model-Files](https://github.com/tmt-icd/DMS-Model-Files/tree/master/FITS-Dictionary)
+on GitHub. Once DMS is published, the file should be automatically loaded by the `icdwebserver` or `icd-git --ingest` commands.
+Until then, the FITS keywords and `tags` can be manually loaded into the icd database once by running (from this directory):
+
+```
+icd-fits -i FITS-Dictionary.json --ingestTags FITS-Tags.conf
+```
+
+
 FITS Dictionary and Tag files
 -------------------------------
 
