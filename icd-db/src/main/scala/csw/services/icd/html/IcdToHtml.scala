@@ -74,14 +74,14 @@ object IcdToHtml {
       nh.H3("FITS Dictionary", "FITS-Keys"),
       table(
         attr("data-bs-toggle") := "table",
-        // XXX TODO FIXME - add channel
+        // XXX TODO FIXME - add tag column if no tag selected (All tgs)
         thead(
           tr(
             th("Name"),
             th("Description"),
             th("Type"),
             th("Units"),
-            // XXX TODO FIXME - add channel
+            // XXX TODO FIXME - add tag column if no tag selected (All tgs)
             th("Source", br, i("(component-event-param[index?])"))
           )
         ),

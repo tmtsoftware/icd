@@ -1150,7 +1150,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         ),
         tbody(
           fitsKeys.map { info =>
-            // XXX TODO FIXME - add channel
+            // XXX TODO FIXME - add tag column if no tag selected (All tgs)
             tr(
               td(a(id := info.name, name := info.name)(info.name)),
               td(raw(info.description)),

@@ -122,7 +122,7 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
         ),
         tbody(
           fitsKeys.map { fitsKey =>
-            // XXX TODO FIXME - add channel
+            // XXX TODO FIXME - add tag column if no tag selected (All tgs)
             tr(id := fitsKey.name)(
               td(fitsKey.name),
               td(raw(fitsKey.description)),
