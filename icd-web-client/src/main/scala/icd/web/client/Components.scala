@@ -726,7 +726,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       if (si.imageModel.nonEmpty) {
         // Layout for image subscriber details taken from image publisher
         val imageModel = si.imageModel.get
-        val maxRate = imageModel.maybeMaxRate
+        val maxRate    = imageModel.maybeMaxRate
         val headings =
           List("Subsystem", "Component", "Prefix.Name", "Channel", "Format", "Size", "Pixel Size", "Max Rate")
         val rowList = List(
@@ -1150,12 +1150,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         ),
         tbody(
           fitsKeys.map { info =>
+            // XXX TODO FIXME - add channel
             tr(
               td(a(id := info.name, name := info.name)(info.name)),
               td(raw(info.description)),
               td(info.typ),
               td(info.units),
-              td(info.source.map(makeLinkForFitsKeySource))
+              td(info.channels.map(c => makeLinkForFitsKeySource(c.source)))
             )
           }
         )

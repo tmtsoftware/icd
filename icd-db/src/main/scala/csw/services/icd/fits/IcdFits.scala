@@ -215,26 +215,44 @@ case class IcdFits(db: IcdDb) {
   ): List[FitsKeyInfo] = {
     val fitsTags    = getFitsTags
     val fitsKeyList = getFitsKeyInfo(maybePdfOptions)
-    // filter key list by tag
-    val l1 =
-      if (maybeTag.isEmpty || !fitsTags.tags.contains(maybeTag.get))
-        fitsKeyList
-      else {
-        val tag = maybeTag.get
-        fitsKeyList.filter(fitsKey => fitsTags.tags(tag).contains(fitsKey.name))
-      }
     // filter key list by subsystem/component
-    val l2 = {
-      if (maybeSubsystem.isEmpty) l1
+    val l1 = {
+      if (maybeSubsystem.isEmpty) fitsKeyList
       else {
         val subsystem = maybeSubsystem.get
-        l1.filter(i =>
-          i.source.exists(_.subsystem == subsystem) && (maybeComponent.isEmpty ||
-            i.source.exists(_.componentName == maybeComponent.get))
+        fitsKeyList.filter(fitsKey =>
+          fitsKey.channels.exists(_.source.subsystem == subsystem) && (maybeComponent.isEmpty ||
+            fitsKey.channels.exists(_.source.componentName == maybeComponent.get))
         )
       }
     }
-    l2.sorted
+    // filter key list by tag
+    val l2 =
+      if (maybeTag.isEmpty || !fitsTags.tags.contains(maybeTag.get))
+        l1
+      else {
+        val tag = maybeTag.get
+        l1.filter { fitsKey =>
+          fitsKey.channels.map(_.name) match {
+            case List("") => fitsTags.tags(tag).contains(fitsKey.name)
+            case channels  => channels.exists(c => fitsTags.tags(tag).contains(s"${fitsKey.name}/$c"))
+          }
+        }
+      }
+
+    // remove any channels that do not match the selected tag's channel
+    val l3 =
+      if (maybeTag.isEmpty || !fitsTags.tags.contains(maybeTag.get))
+        l2
+      else {
+        val tag = maybeTag.get
+        l2.map { fitsKey =>
+          val channels = fitsKey.channels.filter(c => fitsTags.tags(tag).contains(s"${fitsKey.name}/$c"))
+          fitsKey.copy(channels = channels)
+        }
+      }
+
+    l3.sorted
   }
 
   /**
@@ -250,13 +268,22 @@ case class IcdFits(db: IcdDb) {
   }
 
   /**
-   * Returns a map from FitsKey (which describes an event parameter) to a list of FITS keywords that
+   * Returns a map from FitsSource (which describes an event parameter) to a list of FITS keywords that
    * are based on the event parameter's value(s).
    */
   def getFitsKeyMap(fitKeyList: List[FitsKeyInfo]): FitsKeyMap = {
     val pairs = fitKeyList.flatMap { i =>
-      i.source
-        .map(s => FitsSource(s.subsystem, s.componentName, s.eventName, s.parameterName, s.index, s.rowIndex))
+      i.channels
+        .map(s =>
+          FitsSource(
+            s.source.subsystem,
+            s.source.componentName,
+            s.source.eventName,
+            s.source.parameterName,
+            s.source.index,
+            s.source.rowIndex
+          )
+        )
         .map(_ -> i.name)
     }
     pairs.toMap.groupMap(_._1)(_._2).view.mapValues(_.toList).toMap
@@ -312,6 +339,7 @@ case class IcdFits(db: IcdDb) {
         }
         def clean(s: String) = s.replace("<p>", "").replace("</p>", "").replace(MyFormat.delimiter, '/')
         val writer           = CSVWriter.open(file)
+        // XXX TODO FIXME - add channel
         writer.writeRow(List("Name", "Description", "Type", "Units", "Source"))
         fitsKeyList.foreach { k =>
           writer.writeRow(
@@ -320,7 +348,7 @@ case class IcdFits(db: IcdDb) {
               clean(k.description),
               k.typ,
               k.units.getOrElse(""),
-              k.source.map(_.toShortString).mkString(", ")
+              k.channels.map(_.source.toShortString).mkString(", ")
             )
           )
         }

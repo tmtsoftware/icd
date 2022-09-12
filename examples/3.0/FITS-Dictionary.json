@@ -5,154 +5,132 @@
       "description": "This is the X coordinate of the reference pixel in the image",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "PointingKernelAssembly",
-          "eventName": "WCSFITSHeader",
-          "parameterName": "CRPIX1"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "PointingKernelAssembly",
+        "eventName": "WCSFITSHeader",
+        "parameterName": "CRPIX1"
+      }
     },
     {
       "name": "CRPIX2",
       "description": "This is the Y coordinate of the reference pixel in the image",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "PointingKernelAssembly",
-          "eventName": "WCSFITSHeader",
-          "parameterName": "CRPIX2"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "PointingKernelAssembly",
+        "eventName": "WCSFITSHeader",
+        "parameterName": "CRPIX2"
+      }
     },
     {
       "name": "CRVAL1",
       "description": "This is the Right ascension at the reference pixel",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "PointingKernelAssembly",
-          "eventName": "WCSFITSHeader",
-          "parameterName": "CRVAL1"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "PointingKernelAssembly",
+        "eventName": "WCSFITSHeader",
+        "parameterName": "CRVAL1"
+      }
     },
     {
       "name": "CRVAL2",
       "description": "This is the Declination at the reference pixel",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "PointingKernelAssembly",
-          "eventName": "WCSFITSHeader",
-          "parameterName": "CRVAL2"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "PointingKernelAssembly",
+        "eventName": "WCSFITSHeader",
+        "parameterName": "CRVAL2"
+      }
     },
     {
       "name": "CTYPE1",
       "description": "This is the Projection type RA---TAN",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "PointingKernelAssembly",
-          "eventName": "WCSFITSHeader",
-          "parameterName": "CTYPE1"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "PointingKernelAssembly",
+        "eventName": "WCSFITSHeader",
+        "parameterName": "CTYPE1"
+      }
     },
     {
       "name": "CTYPE2",
       "description": "This is the Projection type DEC—TAN",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "PointingKernelAssembly",
-          "eventName": "WCSFITSHeader",
-          "parameterName": "CTYPE2"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "PointingKernelAssembly",
+        "eventName": "WCSFITSHeader",
+        "parameterName": "CTYPE2"
+      }
     },
     {
       "name": "CD1_1",
       "description": "Projection of unit vector of axis 1 of one coordinate system with respect to axis 1 of the other coordinate system",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "PointingKernelAssembly",
-          "eventName": "WCSFITSHeader",
-          "parameterName": "CD1_1"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "PointingKernelAssembly",
+        "eventName": "WCSFITSHeader",
+        "parameterName": "CD1_1"
+      }
     },
     {
       "name": "CD1_2",
       "description": "Projection of unit vector of axis 1 of one coordinate system with respect to axis 2 of the other coordinate system",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "PointingKernelAssembly",
-          "eventName": "WCSFITSHeader",
-          "parameterName": "CD1_2"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "PointingKernelAssembly",
+        "eventName": "WCSFITSHeader",
+        "parameterName": "CD1_2"
+      }
     },
     {
       "name": "CD2_1",
       "description": "Projection of unit vector of axis 2 of one coordinate system with respect to axis 1 of the other coordinate system",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "PointingKernelAssembly",
-          "eventName": "WCSFITSHeader",
-          "parameterName": "CD2_1"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "PointingKernelAssembly",
+        "eventName": "WCSFITSHeader",
+        "parameterName": "CD2_1"
+      }
     },
     {
       "name": "CD2_2",
       "description": "Projection of unit vector of axis 2 of one coordinate system with respect to axis 2 of the other coordinate system",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "PointingKernelAssembly",
-          "eventName": "WCSFITSHeader",
-          "parameterName": "CD2_2"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "PointingKernelAssembly",
+        "eventName": "WCSFITSHeader",
+        "parameterName": "CD2_2"
+      }
     },
     {
       "name": "RADECSYS",
       "description": "Reference frame of equatorial or ecliptic coordinates",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "PointingKernelAssembly",
-          "eventName": "WCSFITSHeader",
-          "parameterName": "RADECSYS"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "PointingKernelAssembly",
+        "eventName": "WCSFITSHeader",
+        "parameterName": "RADECSYS"
+      }
     },
     {
       "name": "DATE",
@@ -171,28 +149,24 @@
       "description": "The value field shall contain a floating point number giving the equinox in years for the celestial coordinate system in which positions are expressed. The interpretation of epoch depends upon the value of RADESYSa if present: Besselian if the value is FK4 or FK4-NO-E, Julian if the value is FK5; not applicable if the value is ICRS or GAPPT.",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "PointingKernelAssembly",
-          "eventName": "CurrentPosition",
-          "parameterName": "Equinox"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "PointingKernelAssembly",
+        "eventName": "CurrentPosition",
+        "parameterName": "Equinox"
+      }
     },
     {
       "name": "OBJECT",
       "description": "The value field shall contain a character string giving a name or type of the object observed. Often ‘TARGNAME’ is used for target name, in which case ‘OBJECT’ can be used to specify the object category.",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "ESW",
-          "componentName": "ocs",
-          "eventName": "object",
-          "parameterName": null
-        }
-      ]
+      "source": {
+        "subsystem": "ESW",
+        "componentName": "ocs",
+        "eventName": "object",
+        "parameterName": null
+      }
     },
     {
       "name": "OBSERVER",
@@ -205,284 +179,254 @@
       "description": "Current right ascension (ICRS, at equinox)",
       "type": "float",
       "units": "degree",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "pk",
-          "eventName": "currentPosition",
-          "parameterName": "ra"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "pk",
+        "eventName": "currentPosition",
+        "parameterName": "ra"
+      }
     },
     {
       "name": "DEC",
       "description": "Current declination (ICRS, at equinox)",
       "type": "float",
       "units": "degree",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "pk",
-          "eventName": "currentPosition",
-          "parameterName": "dec"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "pk",
+        "eventName": "currentPosition",
+        "parameterName": "dec"
+      }
     },
     {
       "name": "PARANG",
       "description": "Current parallactic angle (ICRS, at equinox)",
       "type": "float",
       "units": "degree",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "pk",
-          "eventName": "currentPosition",
-          "parameterName": "parallactic"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "pk",
+        "eventName": "currentPosition",
+        "parameterName": "parallactic"
+      }
     },
     {
       "name": "AZ",
       "description": "Current Azimuth",
       "type": "float",
       "units": "degree",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "pk",
-          "eventName": "currentPosition",
-          "parameterName": "az"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "pk",
+        "eventName": "currentPosition",
+        "parameterName": "az"
+      }
     },
     {
       "name": "EL",
       "description": "Current Elevation",
       "type": "float",
       "units": "degree",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "pk",
-          "eventName": "currentPosition",
-          "parameterName": "el"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "pk",
+        "eventName": "currentPosition",
+        "parameterName": "el"
+      }
     },
     {
       "name": "Z",
       "description": "Current Zenith Angle",
       "type": "float",
       "units": "degree",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "pk",
-          "eventName": "currentPosition",
-          "parameterName": "z"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "pk",
+        "eventName": "currentPosition",
+        "parameterName": "z"
+      }
     },
     {
       "name": "HA",
       "description": "Current Hour Angle",
       "type": "float",
       "units": "degree",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "pk",
-          "eventName": "currentPosition",
-          "parameterName": "ha"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "pk",
+        "eventName": "currentPosition",
+        "parameterName": "ha"
+      }
     },
     {
       "name": "AIRMASS",
       "description": "Air Mass (TBD whether plane-parallel, i.e., sec(z), or curvature-corrected)",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "pk",
-          "eventName": "currentPosition",
-          "parameterName": "airmass"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "pk",
+        "eventName": "currentPosition",
+        "parameterName": "airmass"
+      }
     },
     {
       "name": "TELFOCUS",
       "description": "Current focus (with 10 micrometer precision)",
       "type": "float",
       "units": "mm",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "pk",
-          "eventName": "currentPosition",
-          "parameterName": "focus"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "pk",
+        "eventName": "currentPosition",
+        "parameterName": "focus"
+      }
     },
     {
       "name": "TELFRAT",
       "description": "Telescope F-ratio (TBD: this is a static quantity)",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "pk",
-          "eventName": "currentPosition",
-          "parameterName": "fratio"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "pk",
+        "eventName": "currentPosition",
+        "parameterName": "fratio"
+      }
     },
     {
       "name": "LST",
       "description": "Local Sidereal Time",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "pk",
-          "eventName": "currentPosition",
-          "parameterName": "lst"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "pk",
+        "eventName": "currentPosition",
+        "parameterName": "lst"
+      }
     },
     {
       "name": "PNTGST",
       "description": "Current state of the pointing system as enum [SLEWING,TRACKING,INPOSITION].",
       "type": "string",
       "units": "null",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "pk",
-          "eventName": "pointingStatus",
-          "parameterName": "pointingstate"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "pk",
+        "eventName": "pointingStatus",
+        "parameterName": "pointingstate"
+      }
     },
     {
       "name": "M3ROT",
       "description": "Current M3 position in rotation.",
       "type": "float",
       "units": "degree",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "TCS M3 Assembly",
-          "eventName": "M3 Position",
-          "parameterName": "rotation"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "TCS M3 Assembly",
+        "eventName": "M3 Position",
+        "parameterName": "rotation"
+      }
     },
     {
       "name": "M3TILT",
       "description": "Current M3 position in tilt.",
       "type": "float",
       "units": "degree",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "TCS M3 Assembly",
-          "eventName": "M3 Position",
-          "parameterName": "tilt"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "TCS M3 Assembly",
+        "eventName": "M3 Position",
+        "parameterName": "tilt"
+      }
     },
     {
       "name": "M2TIP",
       "description": "Current M2 position in tip.",
       "type": "float",
       "units": "degree",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "TCS M2 Assembly",
-          "eventName": "M2 Position",
-          "parameterName": "tip"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "TCS M2 Assembly",
+        "eventName": "M2 Position",
+        "parameterName": "tip"
+      }
     },
     {
       "name": "M2TILT",
       "description": "Current M2 position in tilt.",
       "type": "float",
       "units": "degree",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "TCS M2 Assembly",
-          "eventName": "M2 Position",
-          "parameterName": "tilt"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "TCS M2 Assembly",
+        "eventName": "M2 Position",
+        "parameterName": "tilt"
+      }
     },
     {
       "name": "M2PISTON",
       "description": "Current M2 position in piston.",
       "type": "float",
       "units": "m",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "TCS M2 Assembly",
-          "eventName": "M2 Position",
-          "parameterName": "piston"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "TCS M2 Assembly",
+        "eventName": "M2 Position",
+        "parameterName": "piston"
+      }
     },
     {
       "name": "M2DECENX",
       "description": "Current M2 position in decenter-x.",
       "type": "float",
       "units": "m",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "TCS M2 Assembly",
-          "eventName": "M2 Position",
-          "parameterName": "decenter-x"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "TCS M2 Assembly",
+        "eventName": "M2 Position",
+        "parameterName": "decenter-x"
+      }
     },
     {
       "name": "M2DECENY",
       "description": "Current M2 position in decenter-y.",
       "type": "float",
       "units": "m",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "TCS M2 Assembly",
-          "eventName": "M2 Position",
-          "parameterName": "decenter-y"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "TCS M2 Assembly",
+        "eventName": "M2 Position",
+        "parameterName": "decenter-y"
+      }
     },
     {
       "name": "IMGDISWV",
       "description": "An array of wavelengths. Each provided wavelength value must be unique.",
       "type": "string",
       "units": null,
-      "source": [
+      "channel": [
         {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "imgAtmDispersion",
-          "parameterName": "wavelength"
+          "name": "IMG-ATM",
+          "comment": "",
+          "source": {
+            "subsystem": "TCS",
+            "componentName": "cmIRIS",
+            "eventName": "imgAtmDispersion",
+            "parameterName": "wavelength"
+          }
         },
         {
-          "subsystem": "TCS",
-          "componentName": "cmNFIRAOS",
-          "eventName": "atmDispersion",
-          "parameterName": "wavelength"
+          "name": "ATM",
+          "comment": "",
+          "source": {
+            "subsystem": "TCS",
+            "componentName": "cmNFIRAOS",
+            "eventName": "atmDispersion",
+            "parameterName": "wavelength"
+          }
         }
       ]
     },
@@ -491,18 +435,26 @@
       "description": "An array of weights. They must sum to 1.0.",
       "type": "string",
       "units": null,
-      "source": [
+      "channel": [
         {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "imgAtmDispersion",
-          "parameterName": "weight"
+          "name": "IMG-ATM",
+          "comment": "",
+          "source": {
+            "subsystem": "TCS",
+            "componentName": "cmIRIS",
+            "eventName": "imgAtmDispersion",
+            "parameterName": "weight"
+          }
         },
         {
-          "subsystem": "TCS",
-          "componentName": "cmNFIRAOS ?",
-          "eventName": "atmDispersion ?",
-          "parameterName": "weight"
+          "name": "ATM",
+          "comment": "",
+          "source": {
+            "subsystem": "TCS",
+            "componentName": "cmNFIRAOS",
+            "eventName": "atmDispersion",
+            "parameterName": "weight"
+          }
         }
       ]
     },
@@ -511,18 +463,26 @@
       "description": "An array of atmospheric dispersion values.",
       "type": "string",
       "units": null,
-      "source": [
+      "channel": [
         {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "imgAtmDispersion",
-          "parameterName": "dispersion"
+          "name": "IMG-ATM",
+          "comment": "",
+          "source": {
+            "subsystem": "TCS",
+            "componentName": "cmIRIS",
+            "eventName": "imgAtmDispersion",
+            "parameterName": "dispersion"
+          }
         },
         {
-          "subsystem": "TCS",
-          "componentName": "cmNFIRAOS",
-          "eventName": "atmDispersion",
-          "parameterName": "dispersion"
+          "name": "ATM",
+          "comment": "",
+          "source": {
+            "subsystem": "TCS",
+            "componentName": "cmNFIRAOS",
+            "eventName": "atmDispersion",
+            "parameterName": "dispersion"
+          }
         }
       ]
     },
@@ -531,304 +491,278 @@
       "description": "Current rotator angle in the XY plane of the FCRSIRIS.",
       "type": "float",
       "units": "degree",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "instrumentRotatorAngle",
-          "parameterName": "instrumentAngle"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "cmIRIS",
+        "eventName": "instrumentRotatorAngle",
+        "parameterName": "instrumentAngle"
+      }
     },
     {
       "name": "PROTANG",
       "description": "Future IRIS pupil rotation angle in the X,Y plane of the FCRSIRIS-ROT that will be valid at the time indicated by \"timestamp\" attribute.",
       "type": "float",
       "units": "degree",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "pupilRotation",
-          "parameterName": "pupilRotation"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "cmIRIS",
+        "eventName": "pupilRotation",
+        "parameterName": "pupilRotation"
+      }
     },
     {
       "name": "PA",
       "description": "Current angle between Y axis of FCRSIRIS and Declination axis (ICRS).",
       "type": "float",
       "units": "degree",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "positionAngle",
-          "parameterName": "positionAngle"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "cmIRIS",
+        "eventName": "positionAngle",
+        "parameterName": "positionAngle"
+      }
     },
     {
       "name": "OIWFS1PS",
       "description": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "type": "string",
       "units": "mm",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "oiwfsProbeDemands",
-          "parameterName": "oiwfs_pos",
-          "rowIndex": 0
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "cmIRIS",
+        "eventName": "oiwfsProbeDemands",
+        "parameterName": "oiwfs_pos",
+        "rowIndex": 0
+      }
     },
     {
       "name": "OIWFS2PS",
       "description": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "type": "string",
       "units": "mm",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "oiwfsProbeDemands",
-          "parameterName": "oiwfs_pos",
-          "rowIndex": 1
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "cmIRIS",
+        "eventName": "oiwfsProbeDemands",
+        "parameterName": "oiwfs_pos",
+        "rowIndex": 1
+      }
     },
     {
       "name": "OIWFS3PS",
       "description": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "type": "string",
       "units": "mm",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "oiwfsProbeDemands",
-          "parameterName": "oiwfs_pos",
-          "rowIndex": 2
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "cmIRIS",
+        "eventName": "oiwfsProbeDemands",
+        "parameterName": "oiwfs_pos",
+        "rowIndex": 2
+      }
     },
     {
       "name": "OIWFS1ST",
       "description": "Current state of the probe event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "oiwfsProbeDemands",
-          "parameterName": "oiwfs_pointingstate",
-          "index": 0
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "cmIRIS",
+        "eventName": "oiwfsProbeDemands",
+        "parameterName": "oiwfs_pointingstate",
+        "index": 0
+      }
     },
     {
       "name": "OIWFS2ST",
       "description": "Current state of the probe event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "oiwfsProbeDemands",
-          "parameterName": "oiwfs_pointingstate",
-          "index": 1
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "cmIRIS",
+        "eventName": "oiwfsProbeDemands",
+        "parameterName": "oiwfs_pointingstate",
+        "index": 1
+      }
     },
     {
       "name": "OIWFS3ST",
       "description": "Current state of the probe event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "oiwfsProbeDemands",
-          "parameterName": "oiwfs_pointingstate",
-          "index": 2
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "cmIRIS",
+        "eventName": "oiwfsProbeDemands",
+        "parameterName": "oiwfs_pointingstate",
+        "index": 2
+      }
     },
     {
       "name": "ODGW1PS",
       "description": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "type": "string",
       "units": "mm",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "odgwPosDemands",
-          "parameterName": "odgw_pos",
-          "rowIndex": 0
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "cmIRIS",
+        "eventName": "odgwPosDemands",
+        "parameterName": "odgw_pos",
+        "rowIndex": 0
+      }
     },
     {
       "name": "ODGW2PS",
       "description": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "type": "string",
       "units": "mm",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "odgwPosDemands",
-          "parameterName": "odgw_pos",
-          "rowIndex": 1
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "cmIRIS",
+        "eventName": "odgwPosDemands",
+        "parameterName": "odgw_pos",
+        "rowIndex": 1
+      }
     },
     {
       "name": "ODGW3PS",
       "description": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "type": "string",
       "units": "mm",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "odgwPosDemands",
-          "parameterName": "odgw_pos",
-          "rowIndex": 2
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "cmIRIS",
+        "eventName": "odgwPosDemands",
+        "parameterName": "odgw_pos",
+        "rowIndex": 2
+      }
     },
     {
       "name": "ODGW4PS",
       "description": "2-element array holding x,y values in the FCRSIRIS-ROT.",
       "type": "string",
       "units": "mm",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "odgwPosDemands",
-          "parameterName": "odgw_pos",
-          "rowIndex": 3
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "cmIRIS",
+        "eventName": "odgwPosDemands",
+        "parameterName": "odgw_pos",
+        "rowIndex": 3
+      }
     },
     {
       "name": "ODGW1ST",
       "description": "Current state of the ODGW event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "odgwPosDemands",
-          "parameterName": "odgw_pointingstate",
-          "index": 0
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "cmIRIS",
+        "eventName": "odgwPosDemands",
+        "parameterName": "odgw_pointingstate",
+        "index": 0
+      }
     },
     {
       "name": "ODGW2ST",
       "description": "Current state of the ODGW event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "odgwPosDemands",
-          "parameterName": "odgw_pointingstate",
-          "index": 1
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "cmIRIS",
+        "eventName": "odgwPosDemands",
+        "parameterName": "odgw_pointingstate",
+        "index": 1
+      }
     },
     {
       "name": "ODGW3ST",
       "description": "Current state of the ODGW event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "odgwPosDemands",
-          "parameterName": "odgw_pointingstate",
-          "index": 2
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "cmIRIS",
+        "eventName": "odgwPosDemands",
+        "parameterName": "odgw_pointingstate",
+        "index": 2
+      }
     },
     {
       "name": "ODGW4ST",
       "description": "Current state of the ODGW event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "cmIRIS",
-          "eventName": "odgwPosDemands",
-          "parameterName": "odgw_pointingstate",
-          "index": 3
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "cmIRIS",
+        "eventName": "odgwPosDemands",
+        "parameterName": "odgw_pointingstate",
+        "index": 3
+      }
     },
     {
       "name": "ENCBASE",
       "description": "This is the Current Base Position.",
       "type": "float",
       "units": "degree",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "EncAssembly",
-          "eventName": "CurrentPosition",
-          "parameterName": "base"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "EncAssembly",
+        "eventName": "CurrentPosition",
+        "parameterName": "base"
+      }
     },
     {
       "name": "ENCCAP",
       "description": "This is the Current Cap Position",
       "type": "float",
       "units": "degree",
-      "source": [
-        {
-          "subsystem": "TCS",
-          "componentName": "EncAssembly",
-          "eventName": "CurrentPosition",
-          "parameterName": "cap"
-        }
-      ]
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "EncAssembly",
+        "eventName": "CurrentPosition",
+        "parameterName": "cap"
+      }
     },
     {
       "name": "FILTER",
       "description": "Current imager filter name. When two or more filters are inserted in the science light path, filter names are concatinated with TBD character in the order of wheel number.",
       "type": "string",
       "units": null,
-      "source": [
+      "channel": [
         {
-          "subsystem": "IRIS",
-          "componentName": "imager.filter",
-          "eventName": "current",
-          "parameterName": "name"
+          "name": "IRIS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "imager.filter",
+            "eventName": "current",
+            "parameterName": "name"
+          }
         },
         {
-          "subsystem": "WFOS",
-          "componentName": null,
-          "eventName": null,
-          "parameterName": null
+          "name": "WFOS",
+          "comment": "",
+          "source": {
+            "subsystem": "WFOS",
+            "componentName": null,
+            "eventName": null,
+            "parameterName": null
+          }
         },
         {
-          "subsystem": "MODHIS",
-          "componentName": null,
-          "eventName": null,
-          "parameterName": null
+          "name": "MODHIS",
+          "comment": "",
+          "source": {
+            "subsystem": "MODHIS",
+            "componentName": null,
+            "eventName": null,
+            "parameterName": null
+          }
         }
       ]
     },
@@ -837,466 +771,410 @@
       "description": "Window Size X",
       "type": "integer",
       "units": "pixels",
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": null,
-          "eventName": null,
-          "parameterName": null
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": null,
+        "eventName": null,
+        "parameterName": null
+      }
     },
     {
       "name": "YSIZE",
       "description": "Window Size Y",
       "type": "integer",
       "units": "Pixels",
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": null,
-          "eventName": null,
-          "parameterName": null
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": null,
+        "eventName": null,
+        "parameterName": null
+      }
     },
     {
       "name": "XSTART",
       "description": "Subarray Start X",
       "type": "integer",
       "units": "pixels",
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": null,
-          "eventName": null,
-          "parameterName": null
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": null,
+        "eventName": null,
+        "parameterName": null
+      }
     },
     {
       "name": "YSTART",
       "description": "Subarray Start Y",
       "type": "integer",
       "units": "pixels",
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": null,
-          "eventName": null,
-          "parameterName": null
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": null,
+        "eventName": null,
+        "parameterName": null
+      }
     },
     {
       "name": "SARRMODE",
       "description": "Subarray Mode [FULL_FRAME,SUB_ARRAY,ODGW]",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": null,
-          "eventName": null,
-          "parameterName": null
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": null,
+        "eventName": null,
+        "parameterName": null
+      }
     },
     {
       "name": "READTIMEXXX",
       "description": "Start time of the first pixel read",
       "type": "integer",
       "units": "Microseconds in MJD",
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": null,
-          "eventName": null,
-          "parameterName": null
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": null,
+        "eventName": null,
+        "parameterName": null
+      }
     },
     {
       "name": "RST_TIME",
       "description": "Time of the last reset",
       "type": "integer",
       "units": "Microseconds in MJD",
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": null,
-          "eventName": null,
-          "parameterName": null
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": null,
+        "eventName": null,
+        "parameterName": null
+      }
     },
     {
       "name": "FRM_TIME",
       "description": "Time taken to read all the pixels in the readout frame",
       "type": "integer",
       "units": "Microseconds",
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": null,
-          "eventName": null,
-          "parameterName": null
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": null,
+        "eventName": null,
+        "parameterName": null
+      }
     },
     {
       "name": "OBS_ID",
       "description": "Observation id",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "is",
-          "eventName": "cmdStatus",
-          "parameterName": "observationId ?"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "is",
+        "eventName": "cmdStatus",
+        "parameterName": "observationId ?"
+      }
     },
     {
       "name": "DET_ID",
       "description": "Detector ID IMG1/2/3/4 ,SLC/LEN",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": null,
-          "eventName": null,
-          "parameterName": null
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": null,
+        "eventName": null,
+        "parameterName": null
+      }
     },
     {
       "name": "EXP_NO",
       "description": "Exposure number  XXXX 0-9999",
       "type": "integer",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": null,
-          "eventName": null,
-          "parameterName": null
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": null,
+        "eventName": null,
+        "parameterName": null
+      }
     },
     {
       "name": "RAMP_NO",
       "description": "Ramp within Exposure [0-99999]",
       "type": "integer",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": null,
-          "eventName": null,
-          "parameterName": null
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": null,
+        "eventName": null,
+        "parameterName": null
+      }
     },
     {
       "name": "READ_NO",
       "description": "Readout Within Ramp [0-99999]",
       "type": "integer",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": null,
-          "eventName": null,
-          "parameterName": null
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": null,
+        "eventName": null,
+        "parameterName": null
+      }
     },
     {
       "name": "COMPLETE",
       "description": "Indicates if Pixels were readout",
       "type": "type",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": null,
-          "eventName": null,
-          "parameterName": null
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": null,
+        "eventName": null,
+        "parameterName": null
+      }
     },
     {
       "name": "CLDSTPX",
       "description": "Current position in X axis.",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "imager.coldstop",
-          "eventName": "current",
-          "parameterName": "x_pos"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "imager.coldstop",
+        "eventName": "current",
+        "parameterName": "x_pos"
+      }
     },
     {
       "name": "CLDSTPY",
       "description": "Current position in Y axis.",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "imager.coldstop",
-          "eventName": "current",
-          "parameterName": "y_pos"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "imager.coldstop",
+        "eventName": "current",
+        "parameterName": "y_pos"
+      }
     },
     {
       "name": "CLDSTPTH",
       "description": "Current angle of the rotary stage.",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "imager.coldstop",
-          "eventName": "current",
-          "parameterName": "theta"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "imager.coldstop",
+        "eventName": "current",
+        "parameterName": "theta"
+      }
     },
     {
       "name": "PPMIRRST",
       "description": "Whether the mirror is inserted into the light path or not, values: (IN, INTERMEDIATE, OUT, UNKNOWN).",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": null,
-          "componentName": "pupilview",
-          "eventName": "MIRROR_state",
-          "parameterName": "selection"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "pupilview",
+        "eventName": "MIRROR_state",
+        "parameterName": "selection"
+      }
     },
     {
       "name": "FILTWAVE",
       "description": "Current effective filter wavelength. Effective wavelength is defined as ... ?",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "imager.filter",
-          "eventName": "current",
-          "parameterName": "wavelength"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "imager.filter",
+        "eventName": "current",
+        "parameterName": "wavelength"
+      }
     },
     {
       "name": "FILTDRFL",
       "description": "Indicates whether a dark filter is inserted or not.",
       "type": "type",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "imager.filter",
-          "eventName": "current",
-          "parameterName": "dark"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "imager.filter",
+        "eventName": "current",
+        "parameterName": "dark"
+      }
     },
     {
       "name": "FILT1POS",
       "description": "Current position name of the wheel 1 (as enum: (TBD1, TBD2, TBD3, TBD4, TBD5, TBD6, TBD7, TBD8, TBD9, TBD10, TBD11, TBD12, TBD13, TBD14, THROUGH, HOME, INTERMEDIATE, UNKNOWN).",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "imager.filter",
-          "eventName": "wheel1",
-          "parameterName": "position"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "imager.filter",
+        "eventName": "wheel1",
+        "parameterName": "position"
+      }
     },
     {
       "name": "FILT2POS",
       "description": "Current position name of the wheel 2, values: (TBD1, TBD2, TBD3, TBD4, TBD5, TBD6, TBD7, TBD8, TBD9, TBD10, TBD11, TBD12, TBD13, TBD14, THROUGH, HOME, INTERMEDIATE, UNKNOWN).",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "imager.filter",
-          "eventName": "wheel2",
-          "parameterName": "position"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "imager.filter",
+        "eventName": "wheel2",
+        "parameterName": "position"
+      }
     },
     {
       "name": "FILT3POS",
       "description": "Current position name of the wheel 3, values: (TBD1, TBD2, TBD3, TBD4, TBD5, TBD6, TBD7, TBD8, TBD9, TBD10, TBD11, TBD12, TBD13, TBD14, THROUGH, HOME, INTERMEDIATE, UNKNOWN).",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "imager.filter",
-          "eventName": "wheel3",
-          "parameterName": "position"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "imager.filter",
+        "eventName": "wheel3",
+        "parameterName": "position"
+      }
     },
     {
       "name": "FILT4POS",
       "description": "Current position name of the wheel 4, values: (TBD1, TBD2, TBD3, TBD4, TBD5, TBD6, TBD7, TBD8, TBD9, TBD10, TBD11, TBD12, TBD13, TBD14, THROUGH, HOME, INTERMEDIATE, UNKNOWN)",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "imager.filter",
-          "eventName": "wheel4",
-          "parameterName": "position"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "imager.filter",
+        "eventName": "wheel4",
+        "parameterName": "position"
+      }
     },
     {
       "name": "FILT5POS",
       "description": "Current position name of the wheel 5, values: (TBD1, TBD2, TBD3, TBD4, TBD5, TBD6, TBD7, TBD8, TBD9, TBD10, TBD11, TBD12, TBD13, TBD14, THROUGH, HOME, INTERMEDIATE, UNKNOWN)",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "imager.filter",
-          "eventName": "wheel5",
-          "parameterName": "position"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "imager.filter",
+        "eventName": "wheel5",
+        "parameterName": "position"
+      }
     },
     {
       "name": "OIWF1SXY",
       "description": "oiwfs1 2-element array holding x,y values.",
       "type": "array[2] of double",
       "units": "mm",
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "the same as OIWFS1PS?",
-          "eventName": null,
-          "parameterName": null
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "the same as OIWFS1PS?",
+        "eventName": null,
+        "parameterName": null
+      }
     },
     {
       "name": "OIWF2SXY",
       "description": "oiwfs2 2-element array holding x,y values.",
       "type": "array[2] of double",
       "units": "mm",
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "the same as OIWFS2PS?",
-          "eventName": null,
-          "parameterName": null
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "the same as OIWFS2PS?",
+        "eventName": null,
+        "parameterName": null
+      }
     },
     {
       "name": "OIWF3SXY",
       "description": "oiwfs3 2-element array holding x,y values.",
       "type": "array[2] of double",
       "units": "mm",
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "the same as OIWFS3PS?",
-          "eventName": null,
-          "parameterName": null
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "the same as OIWFS3PS?",
+        "eventName": null,
+        "parameterName": null
+      }
     },
     {
       "name": "EXPNO",
       "description": "Number of current (if in progress) or last IFS exposure at current dither pattern with current instrument configuration (1-based).",
       "type": "integer",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "is",
-          "eventName": "exposureRepeats",
-          "parameterName": "currentIFSExposureNumber"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "is",
+        "eventName": "exposureRepeats",
+        "parameterName": "currentIFSExposureNumber"
+      }
     },
     {
       "name": "DITHNO",
       "description": "Total number of IFS exposures at current dither pattern.",
       "type": "integer",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "is",
-          "eventName": "exposureRepeats",
-          "parameterName": "numberOfIFSExposures"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "is",
+        "eventName": "exposureRepeats",
+        "parameterName": "numberOfIFSExposures"
+      }
     },
     {
       "name": "IFSSTATE",
       "description": "IFS is currently observing, means when set the start prepare event was received and will stay that way until the observation is complete is received.",
       "type": "type",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "is",
-          "eventName": "observing",
-          "parameterName": "ifs"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "is",
+        "eventName": "observing",
+        "parameterName": "ifs"
+      }
     },
     {
       "name": "IMSTATE",
       "description": "IMAGER is currently observing, means when set the start prepare event was received and will stay that way until the observation is complete is received.",
       "type": "type",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "is",
-          "eventName": "observing",
-          "parameterName": "imager"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "is",
+        "eventName": "observing",
+        "parameterName": "imager"
+      }
     },
     {
       "name": "NUMREADS",
       "description": "Number of raw readouts used in the sampling mode per ramp. This is the number of raw readouts that are added together before being used in the sampling mode to create a single frame. This number is only used in sample modes of MDS and UTR.",
       "type": "integer",
       "units": null,
-      "source": [
+      "channel": [
         {
-          "subsystem": "IRIS",
-          "componentName": "is",
-          "eventName": "ifsObserveSettings",
-          "parameterName": "numReads"
+          "name": "IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "is",
+            "eventName": "ifsObserveSettings",
+            "parameterName": "numReads"
+          }
         },
         {
-          "subsystem": "IRIS",
-          "componentName": "is",
-          "eventName": "imagerObserveSettings",
-          "parameterName": "numReads"
+          "name": "IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "is",
+            "eventName": "imagerObserveSettings",
+            "parameterName": "numReads"
+          }
         }
       ]
     },
@@ -1305,18 +1183,26 @@
       "description": "Number of configured ramps. Each ramp is bounded by resets and is of integration time in length. Each ramp has the sampling mode applied. The resultant raw Science Frame is created by adding the output of each ramp.",
       "type": "integer",
       "units": null,
-      "source": [
+      "channel": [
         {
-          "subsystem": "IRIS",
-          "componentName": "is",
-          "eventName": "ifsObserveSettings",
-          "parameterName": "numRamps"
+          "name": "IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "is",
+            "eventName": "ifsObserveSettings",
+            "parameterName": "numRamps"
+          }
         },
         {
-          "subsystem": "IRIS",
-          "componentName": "is",
-          "eventName": "imagerObserveSettings",
-          "parameterName": "numRamps"
+          "name": "IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "is",
+            "eventName": "imagerObserveSettings",
+            "parameterName": "numRamps"
+          }
         }
       ]
     },
@@ -1325,18 +1211,26 @@
       "description": "Integration time, this is the length of time for each ramp.",
       "type": "integer",
       "units": null,
-      "source": [
+      "channel": [
         {
-          "subsystem": "IRIS",
-          "componentName": "is",
-          "eventName": "ifsObserveSettings",
-          "parameterName": "integrationTime"
+          "name": "IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "is",
+            "eventName": "ifsObserveSettings",
+            "parameterName": "integrationTime"
+          }
         },
         {
-          "subsystem": "IRIS",
-          "componentName": "is",
-          "eventName": "imagerObserveSettings",
-          "parameterName": "integrationTime"
+          "name": "IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "is",
+            "eventName": "imagerObserveSettings",
+            "parameterName": "integrationTime"
+          }
         }
       ]
     },
@@ -1345,18 +1239,26 @@
       "description": "This is the sampling mode. This could be CDS, MDS or UTR.",
       "type": "string",
       "units": null,
-      "source": [
+      "channel": [
         {
-          "subsystem": "IRIS",
-          "componentName": "is",
-          "eventName": "ifsObserveSettings",
-          "parameterName": "samplingMode"
+          "name": "IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "is",
+            "eventName": "ifsObserveSettings",
+            "parameterName": "samplingMode"
+          }
         },
         {
-          "subsystem": "IRIS",
-          "componentName": "is",
-          "eventName": "imagerObserveSettings",
-          "parameterName": "samplingMode"
+          "name": "IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "is",
+            "eventName": "imagerObserveSettings",
+            "parameterName": "samplingMode"
+          }
         }
       ]
     },
@@ -1365,186 +1267,170 @@
       "description": "IFS Scale.",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "ifs.scale",
-          "eventName": "scale",
-          "parameterName": "current"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "ifs.scale",
+        "eventName": "scale",
+        "parameterName": "current"
+      }
     },
     {
       "name": "IFSMODE",
       "description": "Current IFS mode. Indicates if in slicer or lenslet mode.",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "ifs.scale",
-          "eventName": "IFSmode",
-          "parameterName": "mode"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "ifs.scale",
+        "eventName": "IFSmode",
+        "parameterName": "mode"
+      }
     },
     {
       "name": "PCKMRRPS",
       "description": "Current position name of pickoff mirror mechanism, values: (IN, OUT).",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "ifs.scale",
-          "eventName": "pickoffMirrorMech",
-          "parameterName": "position"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "ifs.scale",
+        "eventName": "pickoffMirrorMech",
+        "parameterName": "position"
+      }
     },
     {
       "name": "PRSCPPOS",
       "description": "Current position name of periscope mirror mechanism, values: (IN, OUT).",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "ifs.scale",
-          "eventName": "periscopeMirrorMech",
-          "parameterName": "position"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "ifs.scale",
+        "eventName": "periscopeMirrorMech",
+        "parameterName": "position"
+      }
     },
     {
       "name": "IFSO1POS",
       "description": "Current position name of first optics mechanism, values: (TBD1, TBD2).",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "ifs.scale",
-          "eventName": "firstopticsmech",
-          "parameterName": "position"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "ifs.scale",
+        "eventName": "firstopticsmech",
+        "parameterName": "position"
+      }
     },
     {
       "name": "IFSO2POS",
       "description": "Current position name of second optics mechanism, values: (TBD1, TBD2).",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "ifs.scale",
-          "eventName": "secondopticsmech",
-          "parameterName": "position"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "ifs.scale",
+        "eventName": "secondopticsmech",
+        "parameterName": "position"
+      }
     },
     {
       "name": "IFSGRTST",
       "description": "The current grating selection, values: (4000-Z, 4000-Y, 4000-J, 4000-H, 4000-K, 4000-H+K, 8000-Z, 8000-Y, 8000-J, 8000-H, 8000-Kn1-3, 8000-Kn4-5, 8000-Kbb, 10000-Z, 10000-Y, 10000-J, 10000-H, 1000-K, Mirror, INTERMEDIATE, UNKNOWN).",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "ifs.res",
-          "eventName": "GRATING_state",
-          "parameterName": "selection"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "ifs.res",
+        "eventName": "GRATING_state",
+        "parameterName": "selection"
+      }
     },
     {
       "name": "LLMSKST",
       "description": "The current lenslet mask position, values: enum: (FULL_OPEN, SERRATED_WIDE, FINE_MASK, FINE_MASK_CALIBRATION, INTERMEDIATE, UNKNOWN).",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "ifs.res",
-          "eventName": "LENSLETMASK_state",
-          "parameterName": "selection"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "ifs.res",
+        "eventName": "LENSLETMASK_state",
+        "parameterName": "selection"
+      }
     },
     {
       "name": "SLMSKST",
       "description": "The current slicer mask position, values: (FULL_OPEN, INTERMEDIATE, HALF, UNKNOWN).",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "ifs.res",
-          "eventName": "SLICERMASK_state",
-          "parameterName": "selection"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "ifs.res",
+        "eventName": "SLICERMASK_state",
+        "parameterName": "selection"
+      }
     },
     {
       "name": "IFSRES",
       "description": "Current spectral resolution, values: (4000-Z, 4000-Y, 4000-J, 4000-H, 4000-K, 4000-H+K, 8000-Z, 8000-Y, 8000-J, 8000-H, 8000-Kn1-3, 8000-Kn4-5, 8000-Kbb, 10000-Z, 10000-Y, 10000-J, 10000-H, 1000-K, Mirror).",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "ifs.res",
-          "eventName": "resolution",
-          "parameterName": "current"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "ifs.res",
+        "eventName": "resolution",
+        "parameterName": "current"
+      }
     },
     {
       "name": "IFSGRTPS",
       "description": "Current position name of spectral resolution grating mechanism.",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "ifs.res",
-          "eventName": "gratingmech",
-          "parameterName": "position"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "ifs.res",
+        "eventName": "gratingmech",
+        "parameterName": "position"
+      }
     },
     {
       "name": "LLMSKPOS",
       "description": "Current position name of spectral resolution lenslet mask mechanism.",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "ifs.res",
-          "eventName": "lensletmaskmech",
-          "parameterName": "position"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "ifs.res",
+        "eventName": "lensletmaskmech",
+        "parameterName": "position"
+      }
     },
     {
       "name": "OBSID",
       "description": "Observation ID given by LOAD_CONFIGURATION command.",
       "type": "string",
       "units": null,
-      "source": [
+      "channel": [
         {
-          "subsystem": "IRIS",
-          "componentName": "ifs.detector",
-          "eventName": "currentConfig",
-          "parameterName": "obsId"
+          "name": "IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "ifs.detector",
+            "eventName": "currentConfig",
+            "parameterName": "obsId"
+          }
         },
         {
-          "subsystem": "IRIS",
-          "componentName": "imager.detector",
-          "eventName": "currentConfig",
-          "parameterName": "obsId"
+          "name": "IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "imager.detector",
+            "eventName": "currentConfig",
+            "parameterName": "obsId"
+          }
         }
       ]
     },
@@ -1553,18 +1439,26 @@
       "description": "Actual total exposure time which is rampIntegrationTime multiplied by ramps.",
       "type": "float",
       "units": "second",
-      "source": [
+      "channel": [
         {
-          "subsystem": "IRIS",
-          "componentName": "ifs.detector",
-          "eventName": "currentConfig",
-          "parameterName": "totalTime"
+          "name": "IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "ifs.detector",
+            "eventName": "currentConfig",
+            "parameterName": "totalTime"
+          }
         },
         {
-          "subsystem": "IRIS",
-          "componentName": "imager.detector",
-          "eventName": "currentConfig",
-          "parameterName": "totalTime"
+          "name": "IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "imager.detector",
+            "eventName": "currentConfig",
+            "parameterName": "totalTime"
+          }
         }
       ]
     },
@@ -1573,18 +1467,26 @@
       "description": "Actual integration time of one ramp. The reuqested integration time is rounded down to the nearest valid integration time which is a multiple of readoutTime.",
       "type": "float",
       "units": "second",
-      "source": [
+      "channel": [
         {
-          "subsystem": "IRIS",
-          "componentName": "ifs.detector",
-          "eventName": "currentConfig",
-          "parameterName": "rampIntegrationTime"
+          "name": "IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "ifs.detector",
+            "eventName": "currentConfig",
+            "parameterName": "rampIntegrationTime"
+          }
         },
         {
-          "subsystem": "IRIS",
-          "componentName": "imager.detector",
-          "eventName": "currentConfig",
-          "parameterName": "rampIntegrationTime"
+          "name": "IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "imager.detector",
+            "eventName": "currentConfig",
+            "parameterName": "rampIntegrationTime"
+          }
         }
       ]
     },
@@ -1593,18 +1495,26 @@
       "description": "Time to clock one detector, which is dependent on pixel clocking time and subarray dimensions and channels used.",
       "type": "float",
       "units": "second",
-      "source": [
+      "channel": [
         {
-          "subsystem": "IRIS",
-          "componentName": "ifs.detector",
-          "eventName": "currentConfig",
-          "parameterName": "readoutTime"
+          "name": "IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "ifs.detector",
+            "eventName": "currentConfig",
+            "parameterName": "readoutTime"
+          }
         },
         {
-          "subsystem": "IRIS",
-          "componentName": "imager.detector",
-          "eventName": "currentConfig",
-          "parameterName": "readoutTime"
+          "name": "IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "imager.detector",
+            "eventName": "currentConfig",
+            "parameterName": "readoutTime"
+          }
         }
       ]
     },
@@ -1613,70 +1523,60 @@
       "description": "Conversion of photoelectrons to counts for each detector.",
       "type": "integer",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "imager.detector",
-          "eventName": "systemConf",
-          "parameterName": "gain"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "imager.detector",
+        "eventName": "systemConf",
+        "parameterName": "gain"
+      }
     },
     {
       "name": "READNOIS",
       "description": "Nominal read noise of the entire array measured at commissioning phase.",
       "type": "integer",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "imager.detector",
-          "eventName": "systemConf",
-          "parameterName": "readNoise"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "imager.detector",
+        "eventName": "systemConf",
+        "parameterName": "readNoise"
+      }
     },
     {
       "name": "IMGTMPXX",
       "description": "ID of the sensor assigned for the temperature reading.",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "sc.cryoenv",
-          "eventName": "IMGTEMP[XX]",
-          "parameterName": "sensorID"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "sc.cryoenv",
+        "eventName": "IMGTEMP[XX]",
+        "parameterName": "sensorID"
+      }
     },
     {
       "name": "IFSTMPXX",
       "description": "ID of the sensor assigned for the temperature reading.",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "sc.cryoenv",
-          "eventName": "IFSTEMP[XX]",
-          "parameterName": "sensorID"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "sc.cryoenv",
+        "eventName": "IFSTEMP[XX]",
+        "parameterName": "sensorID"
+      }
     },
     {
       "name": "TMPTMP",
       "description": "ID of the sensor assigned for the temperature reading.",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "IRIS",
-          "componentName": "el.env",
-          "eventName": "TEMP_TEMP[N]",
-          "parameterName": "sensorID"
-        }
-      ]
+      "source": {
+        "subsystem": "IRIS",
+        "componentName": "el.env",
+        "eventName": "TEMP_TEMP[N]",
+        "parameterName": "sensorID"
+      }
     },
     {
       "name": "SSLGSALT",
@@ -1684,406 +1584,348 @@
       "type": "float",
       "calculation": "double (85 ≤ x ≤ 100)",
       "units": "km",
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "ssLgs",
-          "eventName": "current",
-          "parameterName": "altitude"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "ssLgs",
+        "eventName": "current",
+        "parameterName": "altitude"
+      }
     },
     {
       "name": "SSLGSMAG",
       "description": "Magnitude estimate of the variable intensity NGS sources in R band (TBC), based on manual and motorized attenuator (current.attenuation).",
       "type": "array[7] of double",
       "units": null,
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "ssNgs",
-          "eventName": "state",
-          "parameterName": "magnitude"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "ssNgs",
+        "eventName": "state",
+        "parameterName": "magnitude"
+      }
     },
     {
       "name": "LGSR0",
       "description": "Fried parameter (r0).",
       "type": "float",
       "units": "m",
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "turbLgs",
-          "parameterName": "r0"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "turbLgs",
+        "parameterName": "r0"
+      }
     },
     {
       "name": "LGSTHT0",
       "description": "Isoplanatic angle (θ0).",
       "type": "float",
       "units": "mas",
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "turbLgs",
-          "parameterName": "theta0"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "turbLgs",
+        "parameterName": "theta0"
+      }
     },
     {
       "name": "LGSTHT2",
       "description": "Generalized isoplanatic angle (θ2).",
       "type": "float",
       "units": "mas",
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "turbLgs",
-          "parameterName": "theta2"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "turbLgs",
+        "parameterName": "theta2"
+      }
     },
     {
       "name": "LGSL0",
       "description": "Turbulence outer scale (L0).",
       "type": "float",
       "units": "m",
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "turbLgs",
-          "parameterName": "L0"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "turbLgs",
+        "parameterName": "L0"
+      }
     },
     {
       "name": "LGSTAU0",
       "description": "Coherence time (τ0).",
       "type": "float",
       "units": "second",
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "turbLgs",
-          "parameterName": "tau0"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "turbLgs",
+        "parameterName": "tau0"
+      }
     },
     {
       "name": "LGSCN2P",
       "description": "Cn2 turbulence profile (p).",
       "type": "array[12] of float",
       "units": "m-5/3",
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "turbLgs",
-          "parameterName": "profile"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "turbLgs",
+        "parameterName": "profile"
+      }
     },
     {
       "name": "NGSPROF",
       "description": "Ground layer turbulence (p).",
       "type": "float",
       "units": "m-5/3",
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "turbNgs",
-          "parameterName": "groundLayer"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "turbNgs",
+        "parameterName": "groundLayer"
+      }
     },
     {
       "name": "NGSR0",
       "description": "Fried parameter (r0).",
       "type": "float",
       "units": "m",
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "turbNgs",
-          "parameterName": "r0"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "turbNgs",
+        "parameterName": "r0"
+      }
     },
     {
       "name": "NGSL0",
       "description": "Turbulence outer scale (L0).",
       "type": "float",
       "units": "m",
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "turbNgs",
-          "parameterName": "l0"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "turbNgs",
+        "parameterName": "l0"
+      }
     },
     {
       "name": "NGSTAU0",
       "description": "Coherence time (τ0).",
       "type": "float",
       "units": "second",
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "turbNgs",
-          "parameterName": "tau0"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "turbNgs",
+        "parameterName": "tau0"
+      }
     },
     {
       "name": "AORATEHO",
       "description": "High-order loop rate. In LGS mode this is equal to the LGS WFS frame rate. In NGS or SL mode this is equal to the PWFS frame rate.",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "mode",
-          "parameterName": "rateHo"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "mode",
+        "parameterName": "rateHo"
+      }
     },
     {
       "name": "AORATELO",
       "description": "Low-order loop rate. This is equal to the Tier 1 and 2 steady-state frame rate.",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "mode",
-          "parameterName": "rateLo"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "mode",
+        "parameterName": "rateLo"
+      }
     },
     {
       "name": "AORATELT",
       "description": "Low-order truth loop rate. This is equal to the Tier 3 and 3F steady-state frame rate.",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "mode",
-          "parameterName": "rateLot"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "mode",
+        "parameterName": "rateLot"
+      }
     },
     {
       "name": "AORATEWC",
       "description": "Wavefront correction. In LGS mode this should be at least equal to the LGS WFS frame rate. In NGS mode this should be at least equal to the PWFS frame rate. In SL mode his should be at least to the Tier 1 and 2 steady-state frame rate.",
       "type": "float",
       "units": null,
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "mode",
-          "parameterName": "rateWc"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "mode",
+        "parameterName": "rateWc"
+      }
     },
     {
       "name": "AOTIER1",
       "description": "Tier 1 detector assignment, values: (PWFS, OIWFSA, OIWFSB, OIWFSC).",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "mode",
-          "parameterName": "tier1"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "mode",
+        "parameterName": "tier1"
+      }
     },
     {
       "name": "AOTIER2",
       "description": "Tier 2 detector assignment. The array is ordered Tier 2 [A B]. Type is array[2] of enum: (NONE, PWFS, OIWFSA, OIWFSB, OIWFSC, ODGW1, ODGW2, ODGW3, ODGW4).",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "mode",
-          "parameterName": "tier2"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "mode",
+        "parameterName": "tier2"
+      }
     },
     {
       "name": "AOTIER3",
       "description": "Tier 3 detector assignment. The array is ordered Tier 3 [A B C D]. Type is array[4] of enum: (NONE, OIWFSA, OIWFSB, OIWFSC, ODGW1, ODGW2, ODGW3, ODGW4)",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "mode",
-          "parameterName": "tier3"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "mode",
+        "parameterName": "tier3"
+      }
     },
     {
       "name": "AOTIER3F",
       "description": "Tier 3F detector assignment. Values: (NONE, OIWFSA, OIWFSB, OIWFSC)",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "mode",
-          "parameterName": "tier3f"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "mode",
+        "parameterName": "tier3f"
+      }
     },
     {
       "name": "ODGWIMEL",
       "description": "Ellipticity value based on the averaged spot ellipticity profile, i.e., ratio between σ1 and σ2 of the ellipse.",
       "type": "array[4] of float",
       "units": "pixel",
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "odgwImage",
-          "parameterName": "ellip"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "odgwImage",
+        "parameterName": "ellip"
+      }
     },
     {
       "name": "ODGWIMS1",
       "description": "Image size 1 (σ1) based on the averaged spot ellipticity profile.",
       "type": "array[4] of float",
       "units": "pixel",
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "odgwImage",
-          "parameterName": "size1"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "odgwImage",
+        "parameterName": "size1"
+      }
     },
     {
       "name": "ODGWIMS2",
       "description": "Image size 2 (σ2) based on the averaged spot ellipticity profile.",
       "type": "array[4] of float",
       "units": "pixel",
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "odgwImage",
-          "parameterName": "size2"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "odgwImage",
+        "parameterName": "size2"
+      }
     },
     {
       "name": "ODGWIMRT",
       "description": "Image rotation angle between the unrotated elliptical coordinate system and the local detector coordinate system.",
       "type": "array[4] of float",
       "units": "pixel",
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "rtc",
-          "eventName": "odgwImage",
-          "parameterName": "rot"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "rtc",
+        "eventName": "odgwImage",
+        "parameterName": "rot"
+      }
     },
     {
       "name": "AOISMST",
       "description": "Current ISM selection. Values: enum: (BOTTOM, SIDE, TOP, INTERMEDIATE, UNKNOWN)",
       "type": "string",
       "units": null,
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "ism",
-          "eventName": "state",
-          "parameterName": "select"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "ism",
+        "eventName": "state",
+        "parameterName": "select"
+      }
     },
     {
       "name": "AODM0TM",
       "description": "Current temperature of DM0",
       "type": "float",
       "units": "C",
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "dm",
-          "eventName": "temperature",
-          "parameterName": "dm0"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "dm",
+        "eventName": "temperature",
+        "parameterName": "dm0"
+      }
     },
     {
       "name": "AODM11TM",
       "description": "Current temperature of DM11",
       "type": "float",
       "units": "C",
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "dm",
-          "eventName": "temperature",
-          "parameterName": "dm11"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "dm",
+        "eventName": "temperature",
+        "parameterName": "dm11"
+      }
     },
     {
       "name": "AONAALT",
       "description": "Current best estimate of the sodium layer altitude.",
       "type": "double (1 ≤ x ≤ 65)",
       "units": "km",
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "lgsTrombone",
-          "eventName": "sodiumLayer",
-          "parameterName": "altitude"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "lgsTrombone",
+        "eventName": "sodiumLayer",
+        "parameterName": "altitude"
+      }
     },
     {
       "name": "AOENCLTM",
       "description": "Air temperature inside the optical enclosure as reported by the refrigeration controller and the 1-Wire Sensor.",
       "type": "array[2] of double (-40 ≤ x ≤ 4 0)",
       "units": "C",
-      "source": [
-        {
-          "subsystem": "NFIRAOS",
-          "componentName": "encl",
-          "eventName": "temperature",
-          "parameterName": "inside"
-        }
-      ]
+      "source": {
+        "subsystem": "NFIRAOS",
+        "componentName": "encl",
+        "eventName": "temperature",
+        "parameterName": "inside"
+      }
     }
   ]
 }

@@ -74,12 +74,14 @@ object IcdToHtml {
       nh.H3("FITS Dictionary", "FITS-Keys"),
       table(
         attr("data-bs-toggle") := "table",
+        // XXX TODO FIXME - add channel
         thead(
           tr(
             th("Name"),
             th("Description"),
             th("Type"),
             th("Units"),
+            // XXX TODO FIXME - add channel
             th("Source", br, i("(component-event-param[index?])"))
           )
         ),
@@ -90,7 +92,12 @@ object IcdToHtml {
               td(raw(info.description)),
               td(info.typ),
               td(info.units),
-              td(if (withLinks) info.source.map(makeLinkForFitsKeySource) else info.source.map(_.toLongString).mkString(", "))
+              td(
+                if (withLinks)
+                  info.channels.map(c => makeLinkForFitsKeySource(c.source))
+                else
+                  info.channels.map(c => c.source.toLongString).mkString(", ")
+              )
             )
           }
         )

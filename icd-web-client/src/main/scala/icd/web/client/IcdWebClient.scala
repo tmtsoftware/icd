@@ -363,7 +363,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         case UploadView  => showUploadDialog(saveHistory = false)()
         case PublishView => showPublishDialog(saveHistory = false)()
         case VersionView => showVersionHistory(saveHistory = false)()
-        case VersionView => showFitsDictionary(saveHistory = false)()
+        case FitsView => showFitsDictionary(saveHistory = false)()
         case StatusView =>
           showStatus(
             hist.maybeSourceSubsystem.map(_.subsystem),
