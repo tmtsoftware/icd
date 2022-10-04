@@ -191,7 +191,7 @@ case class Resolver(allModels: List[IcdModels]) {
     models.map(resolveIcdModels)
   }
 
-  private def resolveIcdModels(models: IcdModels): IcdModels = {
+  private[db] def resolveIcdModels(models: IcdModels): IcdModels = {
     IcdModels(
       subsystemModel = models.subsystemModel,
       componentModel = models.componentModel,
@@ -227,7 +227,7 @@ case class Resolver(allModels: List[IcdModels]) {
     maybeRefCommandModel.get
   }
 
-  private def resolveReceiveCommandModel(
+  private[db] def resolveReceiveCommandModel(
       commandModel: CommandModel,
       receiveCommandModel: ReceiveCommandModel
   ): ReceiveCommandModel = {
@@ -314,7 +314,7 @@ case class Resolver(allModels: List[IcdModels]) {
     receiveCommandModel.copy(ref = "", parameters = args, resultType = resultType)
   }
 
-  private def resolvePublishModel(publishModel: PublishModel): PublishModel = {
+  def resolvePublishModel(publishModel: PublishModel): PublishModel = {
     publishModel.copy(
       eventList = publishModel.eventList.map(resolveEvent(publishModel, Ref.events, _)),
       observeEventList = publishModel.observeEventList.map(resolveEvent(publishModel, Ref.observeEvents, _)),

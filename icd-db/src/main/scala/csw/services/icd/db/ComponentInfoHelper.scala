@@ -149,24 +149,24 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
   ): Option[Subscribes] = {
     // Gets additional information about the given subscription, including info from the publisher
     def getInfo(publishType: PublishType, si: SubscribeModelInfo): DetailedSubscribeInfo = {
-      // XXX TODO FIXME: Would be more efficient to just get the publishModel!
       val x = for {
-        t  <- versionManager.query.getModels(si.subsystem, Some(si.component), maybePdfOptions, Map.empty)
-//        t <- versionManager.getResolvedModels(
-//          SubsystemWithVersion(si.subsystem, None, Some(si.component)),
-//          maybePdfOptions,
-//          Map.empty
-//        )
-        publishModel <- t.publishModel
+        t <- versionManager.getModels(
+          SubsystemWithVersion(si.subsystem, None, Some(si.component)),
+          subsystemOnly = false,
+          maybePdfOptions,
+          Map.empty
+        )
+        // need to resolve any "refs" in the publisher's publish model
+        resolvedPublishModel <- t.publishModel.map(p => Resolver(List(t)).resolvePublishModel(p))
       } yield {
         val maybeEventModel = publishType match {
-          case Events        => publishModel.eventList.find(t => t.name == si.name)
-          case ObserveEvents => publishModel.observeEventList.find(t => t.name == si.name)
-          case CurrentStates => publishModel.currentStateList.find(t => t.name == si.name)
+          case Events        => resolvedPublishModel.eventList.find(t => t.name == si.name)
+          case ObserveEvents => resolvedPublishModel.observeEventList.find(t => t.name == si.name)
+          case CurrentStates => resolvedPublishModel.currentStateList.find(t => t.name == si.name)
           case _             => None
         }
         val maybeImageModel = publishType match {
-          case Images => publishModel.imageList.find(t => t.name == si.name)
+          case Images => resolvedPublishModel.imageList.find(t => t.name == si.name)
           case _      => None
         }
         DetailedSubscribeInfo(publishType, si, maybeEventModel, maybeImageModel, t.componentModel, displayWarnings)
@@ -229,16 +229,34 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
       cmd  <- models.commandModel.toList
       sent <- cmd.send
     } yield {
-      // XXX TODO FIXME: Would be more efficient to just get the command model!
-      val recv = query.getCommand(sent.subsystem, sent.component, sent.name, maybePdfOptions)
-//      val x = versionManager.getResolvedModels(SubsystemWithVersion(sent.subsystem, None, Some(sent.component)), maybePdfOptions, Map.empty)
-//      val recv = x.flatMap(_.commandModel.map(_.receive)).flatten.headOption
+      // Need to resolve any refs in the receiver's model
+      val allModels = versionManager.getModels(
+        SubsystemWithVersion(sent.subsystem, None, Some(sent.component)),
+        subsystemOnly = false,
+        maybePdfOptions,
+        Map.empty
+      )
+      val targetComponentModel = allModels.flatMap(_.componentModel).headOption
+      val targetCmdModel = allModels
+        .flatMap(_.commandModel)
+        .headOption
+        .getOrElse(
+          CommandModel(
+            sent.subsystem,
+            sent.component,
+            "",
+            Nil,
+            Nil
+          )
+        )
+      val targetRecvModel   = targetCmdModel.receive.find(_.name == sent.name)
+      val resolvedRecvModel = targetRecvModel.map(r => Resolver(allModels).resolveReceiveCommandModel(targetCmdModel, r))
       SentCommandInfo(
         sent.name,
         sent.subsystem,
         sent.component,
-        recv,
-        query.getComponentModel(sent.subsystem, sent.component, maybePdfOptions),
+        resolvedRecvModel,
+        targetComponentModel,
         displayWarnings
       )
     }
