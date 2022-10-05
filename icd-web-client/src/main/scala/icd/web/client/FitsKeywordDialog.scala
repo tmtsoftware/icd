@@ -10,7 +10,8 @@ import scalatags.JsDom.all._
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 
 case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, listener: ComponentListener) extends Displayable {
-
+  private val allTags = "All"
+  
   // Action when user clicks on a component link
   private def clickedOnFitsSource(fitsSource: FitsSource)(e: dom.Event): Unit = {
     e.preventDefault()
@@ -23,6 +24,7 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
   // Makes the link for a FITS keyword source to the event that is the source of the keyword
   private def makeLinkForFitsKeySource(fitsKey: FitsKeyInfo, fitsChannel: FitsChannel): JsDom.TypedTag[Anchor] = {
     import scalatags.JsDom.all._
+    val tags = fitsTags.tags.keys.toList
     a(
       id := s"${fitsKey.name}-${fitsChannel.name}-source",
       title := s"Go to event parameter that is the source of this FITS keyword",
@@ -32,17 +34,21 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
     )
   }
 
-  private def radioButtonListener(e: dom.Event): Unit = {
-    val tag = document
+  // Gets the selected tag from the radio buttons
+  private def getSelectedTag: String = {
+    document
       .querySelectorAll(s"input[name='fitsTag']:checked")
       .map(elem => elem.asInstanceOf[HTMLInputElement].value)
       .toList
       .head
+  }
 
+  private def radioButtonListener(e: dom.Event): Unit = {
+    val tag = getSelectedTag
     // Set which rows are visible based on the selected tag
     fitsKeys.foreach { fitsKey =>
       val elem = document.querySelector(s"#${fitsKey.name}")
-      if (tag == "All")
+      if (tag == allTags)
         elem.classList.remove("d-none")
       else {
         val tags = getTags(fitsKey)
@@ -70,7 +76,7 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
     import scalacss.ScalatagsCss._
     div(Styles.fitsTags)(
       label(Styles.fitsTagsLabel, strong("Tags: ")),
-      ("All" :: fitsTags.tags.keys.toList).map { key =>
+      (allTags :: fitsTags.tags.keys.toList).map { key =>
         val displayName = key match {
           case "DL" => "Diffraction-limited"
           case "SL" => "Seeing-limited"
@@ -83,7 +89,7 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
             name := "fitsTag",
             value := key,
             id := s"fitsTag-$key",
-            if (key == "All") checked else name := "fitsTag",
+            if (key == allTags) checked else name := "fitsTag",
             onchange := radioButtonListener _
           ),
           label(cls := "form-check-label", `for` := s"fitsTag-$key")(displayName)
@@ -106,6 +112,7 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
   private def makeFitsKeyTable() = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
+    val showTag = getSelectedTag != allTags
     div(Styles.component, id := "FITS-Keys")(
       makeFitsTagPanel(),
       table(
