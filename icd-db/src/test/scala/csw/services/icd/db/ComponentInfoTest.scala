@@ -88,12 +88,52 @@ class ComponentInfoTest extends AnyFunSuite {
         serviceRequiredInfo.maybeServiceModelProvider.map(_.openApi).foreach { openApiJson =>
           val paths = serviceRequiredInfo.serviceModelClient.paths
           val json  = OpenApiToHtml.filterOpenApiJson(openApiJson, paths)
-          println(s"XXX filtered OpenApiJson = \n$json")
+//          println(s"XXX filtered OpenApiJson = \n$json")
         // XXX TODO
         }
       }
     }
   }
+
+  private def checkInfo3(info: ComponentInfo, clientApi: Boolean): Unit = {
+    assert(info.componentModel.component == "test2Pk")
+    assert(info.publishes.nonEmpty)
+    assert(info.subscribes.nonEmpty)
+    assert(info.commands.nonEmpty)
+    val pubEventList = info.publishes.get.eventList
+//    val recvCommands = info.commands.get.commandsReceived
+//    assert(recvCommands.nonEmpty)
+
+    assert(pubEventList.exists(_.eventModel.name == "zenithAngle"))
+    assert(pubEventList.exists(_.eventModel.name == "parallacticAngle"))
+
+    assert(info.subscribes.nonEmpty == clientApi)
+    if (clientApi) {
+      // Check that the client refs were resolved correctly
+      val subscribeInfo = info.subscribes.get.subscribeInfo
+      assert(subscribeInfo.nonEmpty)
+      assert(subscribeInfo.exists(d => d.eventModel.get.name == "engMode" && d.subscribeModelInfo.subsystem == "TEST"))
+      assert(subscribeInfo.exists(d => d.eventModel.get.name == "engMode2" && d.subscribeModelInfo.subsystem == "TEST"))
+      val engMode = subscribeInfo.find(_.eventModel.get.name == "engMode").get
+      val engMode2 = subscribeInfo.find(_.eventModel.get.name == "engMode2").get
+      assert(engMode.description == engMode2.description)
+      assert(engMode.eventModel.get.description == engMode2.eventModel.get.description)
+
+      val sentCommands = info.commands.get.commandsSent
+      assert(sentCommands.nonEmpty)
+      assert(sentCommands.exists(_.name == "LGS_WFS_INITIALIZE"))
+      val cmd = sentCommands.find(_.name == "LGS_WFS_INITIALIZE").get
+      assert(cmd.receiveCommandModel.nonEmpty)
+      assert(cmd.receiveCommandModel.get.description.contains("LGS_WFS_INITIALIZE command will"))
+      assert(cmd.receiveCommandModel.get.parameters.exists(_.name == "wfsUsed"))
+      assert(cmd.receiveCommandModel.get.parameters.exists(_.name == "wfsUsed2"))
+      assert(cmd.receiveCommandModel.get.parameters.find(_.name == "wfsUsed2").get.description == "<p>OIWFS used</p>")
+    } else {
+      assert(info.subscribes.isEmpty)
+      assert(info.commands.get.commandsSent.isEmpty)
+    }
+  }
+
 
   test("Get pub/sub info from database") {
     val db = IcdDb(dbName)
@@ -117,5 +157,13 @@ class ComponentInfoTest extends AnyFunSuite {
     new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = Some(true))
       .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST", None, None), None, Map.empty)
       .foreach(checkInfo2(_, clientApi = true))
+
+    new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = None)
+      .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST2", None, Some("test2Pk")), None, Map.empty)
+      .foreach(checkInfo3(_, clientApi = true))
+
+    new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = None)
+      .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST2", None, Some("test2Pk")), None, Map.empty)
+      .foreach(checkInfo3(_, clientApi = false))
   }
 }
