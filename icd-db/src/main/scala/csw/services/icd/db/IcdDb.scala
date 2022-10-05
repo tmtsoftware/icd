@@ -536,7 +536,7 @@ case class IcdDb(
       val tmpName  = s"$collectionName${IcdDbDefaults.tmpCollSuffix}"
       // Convert YAML to JSON if needed
       val json =
-        if (fileName.endsWith(".yaml"))
+        if (fileName.endsWith(".yml"))
           DeserializationUtils.deserializeIntoTree(contents, fileName).toPrettyString
         else contents
       // Ingest into db
