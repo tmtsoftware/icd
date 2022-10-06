@@ -532,25 +532,21 @@ case class IcdDb(
   def ingestConfig(stdConfig: StdConfig): List[Problem] = {
     // Ingest a single OpenApi file
     def ingestOpenApiFile(collectionName: String, fileName: String, resources: Resources): Unit = {
+      val parseOptions = new ParseOptions()
+      parseOptions.setResolve(true)
+      parseOptions.setResolveFully(true)
       val tmpName  = s"$collectionName${IcdDbDefaults.tmpCollSuffix}"
+      val openAPI = new OpenAPIV3Parser().read(fileName, null, parseOptions)
       // Convert YAML to JSON if needed
-      val json =
+      val jsonStr =
         if (fileName.endsWith(".yml") || fileName.endsWith(".yaml")) {
-          import io.swagger.util.Yaml
-          val parseOptions = new ParseOptions()
-          parseOptions.setResolve(true)
-          parseOptions.setResolveFully(true)
-          val openAPI = new OpenAPIV3Parser().read(fileName, null, parseOptions)
-          val yaml = Yaml.pretty().writeValueAsString(openAPI)
+          val yaml = io.swagger.util.Yaml.pretty().writeValueAsString(openAPI)
           DeserializationUtils.deserializeIntoTree(yaml, fileName).toPrettyString
         } else {
-          val maybeContents = resources.getResource(fileName)
-          if (maybeContents.isEmpty) throw new RuntimeException(s"Missing OpenApi file: $fileName")
-          val contents = maybeContents.get
-          contents
+          io.swagger.util.Json.pretty().writeValueAsString(openAPI)
         }
       // Ingest into db
-      val jsObj = Json.parse(json).as[JsObject]
+      val jsObj = Json.parse(jsonStr).as[JsObject]
       manager.ingest(collectionName, tmpName, jsObj)
     }
 
