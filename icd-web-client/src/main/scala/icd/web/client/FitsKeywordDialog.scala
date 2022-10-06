@@ -33,17 +33,12 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
     )
   }
 
-  // Gets the selected tag from the radio buttons
-  private def getSelectedTag: String = {
-    document
+  private def radioButtonListener(e: dom.Event): Unit = {
+    val tag = document
       .querySelectorAll(s"input[name='fitsTag']:checked")
       .map(elem => elem.asInstanceOf[HTMLInputElement].value)
       .toList
       .head
-  }
-
-  private def radioButtonListener(e: dom.Event): Unit = {
-    val tag = getSelectedTag
     // Set which rows are visible based on the selected tag
     fitsKeys.foreach { fitsKey =>
       val elem = document.querySelector(s"#${fitsKey.name}")
@@ -111,7 +106,6 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
   private def makeFitsKeyTable() = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
-    val showTag = getSelectedTag != allTags
     div(Styles.component, id := "FITS-Keys")(
       makeFitsTagPanel(),
       table(
