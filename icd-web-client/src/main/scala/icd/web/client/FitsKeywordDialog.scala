@@ -24,7 +24,6 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
   // Makes the link for a FITS keyword source to the event that is the source of the keyword
   private def makeLinkForFitsKeySource(fitsKey: FitsKeyInfo, fitsChannel: FitsChannel): JsDom.TypedTag[Anchor] = {
     import scalatags.JsDom.all._
-    val tags = fitsTags.tags.keys.toList
     a(
       id := s"${fitsKey.name}-${fitsChannel.name}-source",
       title := s"Go to event parameter that is the source of this FITS keyword",
