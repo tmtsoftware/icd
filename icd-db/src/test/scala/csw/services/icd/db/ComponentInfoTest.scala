@@ -98,7 +98,6 @@ class ComponentInfoTest extends AnyFunSuite {
   private def checkInfo3(info: ComponentInfo, clientApi: Boolean): Unit = {
     assert(info.componentModel.component == "test2Pk")
     assert(info.publishes.nonEmpty)
-    assert(info.subscribes.nonEmpty)
     assert(info.commands.nonEmpty)
     val pubEventList = info.publishes.get.eventList
 //    val recvCommands = info.commands.get.commandsReceived
@@ -162,7 +161,7 @@ class ComponentInfoTest extends AnyFunSuite {
       .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST2", None, Some("test2Pk")), None, Map.empty)
       .foreach(checkInfo3(_, clientApi = true))
 
-    new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = None)
+    new ComponentInfoHelper(displayWarnings = false, clientApi = false, maybeStaticHtml = None)
       .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST2", None, Some("test2Pk")), None, Map.empty)
       .foreach(checkInfo3(_, clientApi = false))
   }

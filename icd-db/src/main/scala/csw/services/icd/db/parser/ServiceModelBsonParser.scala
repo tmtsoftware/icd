@@ -58,9 +58,8 @@ object ServiceModelBsonParser {
       if (doc.isEmpty) None
       else {
         // When reading from the database replace the openApi file name with the contents that were ingested for that file
-        val openApi     = doc.getAsOpt[String]("openApi").get
-        def basename(s: String) = s.split('.').dropRight(1).mkString(".")
-        val collName = s"$subsystem.$component.service.${basename(openApi)}"
+        val name     = doc.getAsOpt[String]("name").get
+        val collName = s"$subsystem.$component.service.$name"
         val coll = db.collection[BSONCollection](collName)
         val openApiDoc  = coll.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await.get
         Some(

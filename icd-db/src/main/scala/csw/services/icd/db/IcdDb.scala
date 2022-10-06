@@ -10,6 +10,8 @@ import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.db.StdConfig.Resources
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.{BuildInfo, PdfOptions, SubsystemWithVersion}
+import io.swagger.v3.parser.OpenAPIV3Parser
+import io.swagger.v3.parser.core.models.{ParseOptions, SwaggerParseResult}
 import io.swagger.v3.parser.util.DeserializationUtils
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.{JsObject, Json}
@@ -530,17 +532,21 @@ case class IcdDb(
   def ingestConfig(stdConfig: StdConfig): List[Problem] = {
     // Ingest a single OpenApi file
     def ingestOpenApiFile(collectionName: String, fileName: String, resources: Resources): Unit = {
-      val maybeContents = resources.getResource(fileName)
-      if (maybeContents.isEmpty) throw new RuntimeException(s"Missing OpenApi file: $fileName")
-      val contents = maybeContents.get
+      val parseOptions = new ParseOptions()
+      parseOptions.setResolve(true)
+      parseOptions.setResolveFully(true)
       val tmpName  = s"$collectionName${IcdDbDefaults.tmpCollSuffix}"
+      val openAPI = new OpenAPIV3Parser().read(fileName, null, parseOptions)
       // Convert YAML to JSON if needed
-      val json =
-        if (fileName.endsWith(".yaml"))
-          DeserializationUtils.deserializeIntoTree(contents, fileName).toPrettyString
-        else contents
+      val jsonStr =
+        if (fileName.endsWith(".yml") || fileName.endsWith(".yaml")) {
+          val yaml = io.swagger.util.Yaml.pretty().writeValueAsString(openAPI)
+          DeserializationUtils.deserializeIntoTree(yaml, fileName).toPrettyString
+        } else {
+          io.swagger.util.Json.pretty().writeValueAsString(openAPI)
+        }
       // Ingest into db
-      val jsObj = Json.parse(json).as[JsObject]
+      val jsObj = Json.parse(jsonStr).as[JsObject]
       manager.ingest(collectionName, tmpName, jsObj)
     }
 
