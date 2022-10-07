@@ -64,7 +64,7 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
       }
 
     div(
-      if (index != 0) hr else span(),
+      if (index != 0) hr(cls := fitsTagNameCls) else span(),
       id := s"${fitsKey.name}-${fitsChannel.name}-source",
       // Show the tag name
       maybeTag.map(tag => span(cls := fitsTagNameCls, tag, ": ")),
@@ -152,6 +152,7 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
   }
 
   // Gets the tags for the given FITS keyword
+  // XXX TODO FIXME: Use tagMap?
   private def getTags(fitsKey: FitsKeyInfo): List[String] = {
     fitsTags.tags.keys.toList.filter { tag =>
       fitsKey.channels.map(_.name) match {
@@ -191,7 +192,7 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
             th("Description"),
             th("Type"),
             th("Units"),
-            th("Source", br, i("(component-event-param[index?])"))
+            th(span(cls := fitsTagNameCls, "Tag: "), a(href := "#")("Source"), br, i("(component-event-param[index?])"))
           )
         ),
         tbody(
