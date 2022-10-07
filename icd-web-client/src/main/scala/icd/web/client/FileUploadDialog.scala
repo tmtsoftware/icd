@@ -89,9 +89,6 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
     if (inputDirSupported) file.webkitRelativePath else file.name
   }
 
-  // Returns true if the file is a valid ICD file name
-  private def isValidFile(file: dom.File): Boolean = isStdFile(file)
-
   // Returns a pair of lists containing the valid and invalid ICD files
   private def getIcdFiles(e: dom.Event): (Seq[WebkitFile], Seq[WebkitFile]) = {
     val files = e.target.files
@@ -105,11 +102,11 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
           f.webkitRelativePath.contains("/icds/") ||
           f.name.endsWith(".md")
         }
-        .partition(isValidFile)
+        .partition(isStdFile)
     }
     else {
       val fileList = for (i <- 0 until files.length) yield files(i).asInstanceOf[WebkitFile]
-      fileList.filterNot(_.name.endsWith(".md")).partition(isValidFile)
+      fileList.filterNot(_.name.endsWith(".md")).partition(isStdFile)
     }
   }
 
@@ -159,7 +156,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   // Starts uploading the selected files (or files in selected directory) to the server
   private def uploadFiles(files: List[WebkitFile]): Unit = {
     val formData = new FormData()
-    for (file <- files if isValidFile(file)) {
+    for (file <- files if isStdFile(file)) {
       formData.append(getFilePath(file), file)
     }
 

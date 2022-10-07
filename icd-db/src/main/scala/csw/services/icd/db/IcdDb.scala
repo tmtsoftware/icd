@@ -8,6 +8,7 @@ import csw.services.icd.db.parser.{BaseModelParser, IcdModelParser, ServiceModel
 import csw.services.icd.db.ComponentDataReporter._
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.db.StdConfig.Resources
+import csw.services.icd.fits.IcdFits
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.{BuildInfo, PdfOptions, SubsystemWithVersion}
 import io.swagger.v3.parser.OpenAPIV3Parser
@@ -40,9 +41,9 @@ object IcdDbDefaults {
       5,
       FactorFun(1.0)
     )
-    val connOptions : MongoConnectionOptions = MongoConnectionOptions.default.copy(
+    val connOptions: MongoConnectionOptions = MongoConnectionOptions.default.copy(
       keepAlive = true,
-      failoverStrategy = mdbConnectionFS,
+      failoverStrategy = mdbConnectionFS
 //      nbChannelsPerNode = 20
     )
 
@@ -460,7 +461,7 @@ case class IcdDb(
    *            and any number of subdirectories containing ICD files
    * @return a pair of two lists: 1: A list of the configs in the directories, 2: A list describing any problems that occurred
    */
-  def   ingestAndCleanup(dir: File = new File(".")): List[Problem] = {
+  def ingestAndCleanup(dir: File = new File(".")): List[Problem] = {
     val (configs, problems) = ingest(dir)
     val subsystemList       = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.config.getString("subsystem"))
 
@@ -492,12 +493,30 @@ case class IcdDb(
    */
   def ingest(dir: File = new File(".")): (List[StdConfig], List[Problem]) = {
     val validateProblems = IcdValidator.validateDirRecursive(dir)
-    if (validateProblems.nonEmpty)
-      (Nil, validateProblems)
-    else {
-      val listOfPairs = (dir :: subDirs(dir)).map(ingestOneDir)
-      (listOfPairs.flatMap(_._1), listOfPairs.flatMap(_._2))
+    val result =
+      if (validateProblems.nonEmpty)
+        (Nil, validateProblems)
+      else {
+        val listOfPairs = (dir :: subDirs(dir)).map(ingestOneDir)
+        (listOfPairs.flatMap(_._1), listOfPairs.flatMap(_._2))
+      }
+
+    // If this is DMS, read the list of FITS Keywords
+    // XXXX TODO FIXME: validate and append error messages
+    val icdFits = new IcdFits(this)
+    val dmsDictDir  = new File(s"$dir/DMS-Model-Files/FITS-Dictionary")
+    if (dmsDictDir.isDirectory) {
+      val fitsKeywordFile = new File(dmsDictDir, "FITS-Dictionary.json")
+      if (fitsKeywordFile.exists()) {
+        icdFits.ingest(fitsKeywordFile)
+      }
+      val fitsTagFile = new File(dmsDictDir, "FITS-Tags.conf")
+      if (fitsTagFile.exists()) {
+        icdFits.ingestTags(fitsTagFile)
+      }
     }
+
+    result
   }
 
   /**
@@ -535,14 +554,15 @@ case class IcdDb(
       val parseOptions = new ParseOptions()
       parseOptions.setResolve(true)
       parseOptions.setResolveFully(true)
-      val tmpName  = s"$collectionName${IcdDbDefaults.tmpCollSuffix}"
+      val tmpName = s"$collectionName${IcdDbDefaults.tmpCollSuffix}"
       val openAPI = new OpenAPIV3Parser().read(fileName, null, parseOptions)
       // Convert YAML to JSON if needed
       val jsonStr =
         if (fileName.endsWith(".yml") || fileName.endsWith(".yaml")) {
           val yaml = io.swagger.util.Yaml.pretty().writeValueAsString(openAPI)
           DeserializationUtils.deserializeIntoTree(yaml, fileName).toPrettyString
-        } else {
+        }
+        else {
           io.swagger.util.Json.pretty().writeValueAsString(openAPI)
         }
       // Ingest into db
