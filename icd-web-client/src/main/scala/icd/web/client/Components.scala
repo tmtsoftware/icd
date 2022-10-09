@@ -146,13 +146,17 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Makes the link for a FITS keyword source to the event that is the source of the keyword
-  private def makeLinkForFitsKeySource(fitsSource: FitsSource): TypedTag[Anchor] = {
+  private def makeLinkForFitsKeySource(fitsKey: FitsKeyInfo, fitsChannel: FitsChannel, index: Int) = {
     import scalatags.JsDom.all._
-    a(
-      title := s"Go to event parameter that is the source of this FITS keyword",
-      s"${fitsSource.toShortString} ",
-      href := "#",
-      onclick := clickedOnFitsSource(fitsSource) _
+    val fitsSource = fitsChannel.source
+    div(
+      if (index != 0) hr else span(),
+      a(
+        title := s"Go to event parameter that is the source of this FITS keyword",
+        s"${fitsSource.toShortString} ",
+        href := "#",
+        onclick := clickedOnFitsSource(fitsSource) _
+      )
     )
   }
 
@@ -254,10 +258,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         maybeTargetSubsystem
           .map(getSubsystemInfo(_).map(i => Some(i)))
           .getOrElse(Future.successful(None))
-      icdInfoList     <- if (isIcd) getIcdModelList(sv, maybeTargetSubsystem.get) else Future.successful(Nil)
-      infoList        <- getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems, clientApi)
-      targetInfoList  <- getComponentInfo(maybeTargetSubsystem, Some(sv), searchAllSubsystems, clientApi)
-      fitsDict <- getFitsDictionary(sv)
+      icdInfoList    <- if (isIcd) getIcdModelList(sv, maybeTargetSubsystem.get) else Future.successful(Nil)
+      infoList       <- getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems, clientApi)
+      targetInfoList <- getComponentInfo(maybeTargetSubsystem, Some(sv), searchAllSubsystems, clientApi)
+      fitsDict       <- getFitsDictionary(sv)
     } yield {
       val titleInfo        = TitleInfo(subsystemInfo, maybeTargetSubsystem, maybeIcd)
       val subsystemVersion = sv.maybeVersion.getOrElse(TitleInfo.unpublished)
@@ -1151,14 +1155,17 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           )
         ),
         tbody(
-          fitsKeys.map { info =>
+          fitsKeys.map { fitsKey =>
+            val iList = fitsKey.channels.indices.toList
+            val zList = fitsKey.channels.zip(iList)
+
             // XXX TODO FIXME - add tag column if no tag selected (All tgs)
             tr(
-              td(a(id := info.name, name := info.name)(info.name)),
-              td(raw(info.description)),
-              td(info.typ),
-              td(info.units),
-              td(info.channels.map(c => makeLinkForFitsKeySource(c.source)))
+              td(a(id := fitsKey.name, name := fitsKey.name)(fitsKey.name)),
+              td(raw(fitsKey.description)),
+              td(fitsKey.typ),
+              td(fitsKey.units),
+              td(zList.map(p => makeLinkForFitsKeySource(fitsKey, p._1, p._2)))
             )
           }
         )
