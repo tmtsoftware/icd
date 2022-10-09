@@ -54,3 +54,5 @@ case class FitsKeyInfo(
 )
 
 case class FitsKeyInfoList(fitsKeyInfo: List[FitsKeyInfo])
+
+case class FitsDictionary(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags)

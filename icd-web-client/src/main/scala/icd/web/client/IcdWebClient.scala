@@ -1,6 +1,6 @@
 package icd.web.client
 
-import icd.web.shared.{BuildInfo, FitsKeyInfo, FitsTags, IcdVersion, IcdVizOptions, PdfOptions, SubsystemWithVersion}
+import icd.web.shared.{BuildInfo, FitsDictionary, IcdVersion, IcdVizOptions, PdfOptions, SubsystemWithVersion}
 import org.scalajs.dom
 import org.scalajs.dom.{Element, HTMLAnchorElement, HTMLStyleElement, PopStateEvent, document}
 
@@ -17,7 +17,6 @@ import icd.web.client.SelectDialog.SelectDialogListener
 import icd.web.client.StatusDialog.StatusDialogListener
 import play.api.libs.json._
 
-import scala.scalajs.js
 import scala.scalajs.js.URIUtils
 import scala.util.Success
 
@@ -44,7 +43,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val historyItem   = NavbarItem("History", "Display the version history for an API or ICD", showVersionHistory())
   private val historyDialog = HistoryDialog(mainContent)
 
-  private val fitsDictionaryItem = NavbarItem("FITS Dictionary", "Display information about all FITS keywords", showFitsDictionary())
+  private val fitsDictionaryItem =
+    NavbarItem("FITS Dictionary", "Display information about all FITS keywords", showFitsDictionary())
 
   private val pdfItem = NavbarPdfItem("PDF", "Generate and display a PDF for the API or ICD", makePdf)
   pdfItem.setEnabled(false)
@@ -363,7 +363,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         case UploadView  => showUploadDialog(saveHistory = false)()
         case PublishView => showPublishDialog(saveHistory = false)()
         case VersionView => showVersionHistory(saveHistory = false)()
-        case FitsView => showFitsDictionary(saveHistory = false)()
+        case FitsView    => showFitsDictionary(saveHistory = false)()
         case StatusView =>
           showStatus(
             hist.maybeSourceSubsystem.map(_.subsystem),
@@ -556,23 +556,17 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private def showFitsDictionary(saveHistory: Boolean = true)(): Unit = {
     import icd.web.shared.JsonSupport._
     setSidebarVisible(false)
-    val fKeys = Fetch
-      .get(ClientRoutes.fitsKeyInfo(None))
-      .map { text =>
-        Json.fromJson[Array[FitsKeyInfo]](Json.parse(text)).map(_.toList).getOrElse(Nil)
-      }
-    val fTags = Fetch
-      .get(ClientRoutes.fitsTags)
-      .map { text =>
-        Json.fromJson[FitsTags](Json.parse(text)).getOrElse(FitsTags(Map.empty))
-      }
     val f = for {
-      fitsKeys <- fKeys
-      fitsTags <- fTags
+      fitsDict <- Fetch
+        .get(ClientRoutes.fitsDictionary(None))
+        .map { text =>
+          Json.fromJson[FitsDictionary](Json.parse(text)).get
+        }
     } yield {
-      val fitsKeywordDialog = FitsKeywordDialog(fitsKeys, fitsTags, ComponentLinkSelectionHandler)
+      val fitsKeywordDialog = FitsKeywordDialog(fitsDict, ComponentLinkSelectionHandler)
       mainContent.setContent(fitsKeywordDialog, "FITS Dictionary")
-     if (saveHistory) pushState(viewType = FitsView)
+      currentView = FitsView
+      if (saveHistory) pushState(viewType = FitsView)
     }
     showBusyCursorWhile(f.map(_ => ()))
   }
@@ -580,30 +574,38 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Gets a PDF of the currently selected ICD or subsystem API
   private def makePdf(pdfOptions: PdfOptions): Unit = {
     import scalatags.JsDom.all._
-    val maybeSv =
-      if (currentView == StatusView)
-        statusDialog.getSubsystemWithVersion
-      else selectDialog.subsystem.getSubsystemWithVersion()
 
-    maybeSv.foreach { sv =>
-      val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion()
-      val maybeIcdVersion = selectDialog.icdChooser.getSelectedIcdVersion.map(_.icdVersion)
-      val searchAll       = selectDialog.searchAllSubsystems()
-      val clientApi       = selectDialog.clientApi()
-      val uri             = ClientRoutes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll, clientApi, pdfOptions)
+    if (currentView == FitsView) {
+      val tag = FitsKeywordDialog.getFitsTag
+      val uri = ClientRoutes.fitsDictionaryAsPdf(tag, pdfOptions)
+      dom.window.open(uri) // opens in new window or tab
+    }
+    else {
+      val maybeSv =
+        if (currentView == StatusView)
+          statusDialog.getSubsystemWithVersion
+        else selectDialog.subsystem.getSubsystemWithVersion()
 
-      if (!pdfOptions.details && pdfOptions.expandedIds.nonEmpty) {
-        // We need to do a POST in case expandedIds are passed, which can be very long, so create a temp form
-        val formId = "tmpPdfForm"
-        val tmpForm = form(id := formId, method := "POST", action := uri, target := "_blank")(
-          input(`type` := "hidden", name := "expandedIds", value := pdfOptions.expandedIds.mkString(","))
-        ).render
-        document.body.appendChild(tmpForm)
-        tmpForm.submit()
-        document.body.removeChild(tmpForm)
-      }
-      else {
-        dom.window.open(uri) // opens in new window or tab
+      maybeSv.foreach { sv =>
+        val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion()
+        val maybeIcdVersion = selectDialog.icdChooser.getSelectedIcdVersion.map(_.icdVersion)
+        val searchAll       = selectDialog.searchAllSubsystems()
+        val clientApi       = selectDialog.clientApi()
+        val uri             = ClientRoutes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll, clientApi, pdfOptions)
+
+        if (!pdfOptions.details && pdfOptions.expandedIds.nonEmpty) {
+          // We need to do a POST in case expandedIds are passed, which can be very long, so create a temp form
+          val formId = "tmpPdfForm"
+          val tmpForm = form(id := formId, method := "POST", action := uri, target := "_blank")(
+            input(`type` := "hidden", name := "expandedIds", value := pdfOptions.expandedIds.mkString(","))
+          ).render
+          document.body.appendChild(tmpForm)
+          tmpForm.submit()
+          document.body.removeChild(tmpForm)
+        }
+        else {
+          dom.window.open(uri) // opens in new window or tab
+        }
       }
     }
   }

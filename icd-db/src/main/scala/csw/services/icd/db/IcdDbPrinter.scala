@@ -6,7 +6,7 @@ import csw.services.icd.html.{IcdToHtml, NumberedHeadings}
 import icd.web.shared.TitleInfo.unpublished
 import icd.web.shared.{SubsystemWithVersion, _}
 import IcdToHtml._
-import csw.services.icd.fits.IcdFits
+import csw.services.icd.fits.{IcdFits, IcdFitsDefs}
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import icd.web.shared.IcdModels.IcdModel
 
@@ -83,8 +83,8 @@ case class IcdDbPrinter(
    * @param pdfOptions options for PDF generation
    */
   def getApiAsHtml(sv: SubsystemWithVersion, pdfOptions: PdfOptions): Option[String] = {
-    val fitsKeyList = IcdFits(db).getRelatedFitsKeyInfo(Some(sv.subsystem), sv.maybeComponent, None, Some(pdfOptions)).sorted
-    val fitsKeyMap      = IcdFits(db).getFitsKeyMap(fitsKeyList)
+    val fitsDictionary = IcdFits(db).getFitsDictionary(Some(sv.subsystem), sv.maybeComponent, None, Some(pdfOptions))
+    val fitsKeyMap      = IcdFitsDefs.getFitsKeyMap(fitsDictionary.fitsKeys)
     val maybeSubsystems = if (searchAllSubsystems) None else Some(List(sv.subsystem))
     // Use caching, since we need to look at all the components multiple times, in order to determine who
     // subscribes, who calls commands, etc.
@@ -95,7 +95,7 @@ case class IcdDbPrinter(
       subsystemInfo <- getSubsystemInfo(sv)
     } yield {
       val infoList = getComponentInfo(versionManager, sv, None, fitsKeyMap)
-      IcdToHtml.getApiAsHtml(Some(subsystemInfo), infoList, pdfOptions, clientApi, fitsKeyList)
+      IcdToHtml.getApiAsHtml(Some(subsystemInfo), infoList, pdfOptions, clientApi, fitsDictionary)
     }
     markup.map(_.render)
   }

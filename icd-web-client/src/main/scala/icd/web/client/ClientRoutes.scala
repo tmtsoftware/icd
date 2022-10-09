@@ -176,6 +176,25 @@ object ClientRoutes {
   }
 
   /**
+   * Returns the route to use to get a PDF for the FITS keyword info
+   *
+   * @param tag "All" for all keywords, otherwise restrict output to given tag, as defined in DMS-Model-Files/FITS-Dictionary
+   * @param pdfOptions options for PDF generation
+   * @return the URL path to use
+   */
+  def fitsDictionaryAsPdf(
+      tag: String,
+      pdfOptions: PdfOptions
+  ): String = {
+    val attrs = getAttrs(
+      maybeVersion = None,
+      maybeComponent = None,
+      maybePdfOptions = Some(pdfOptions)
+    )
+    s"/fitsDictionaryAsPdf/$tag$attrs"
+  }
+
+  /**
    * Returns the route to use to "Generate" code in the given language.
    * @param sv       the subsystem
    * @param lang     Scala, Java, TypeScript or Python
@@ -198,22 +217,18 @@ object ClientRoutes {
   }
 
   /**
-   * Returns a list of FITS keys for the given subsystem/component
-   * @return the URL path to use
-   */
-  def fitsKeyInfo(maybeSv: Option[SubsystemWithVersion]): String = {
-    if (maybeSv.isDefined) {
-      val attrs = getAttrs(None, maybeSv.get.maybeComponent)
-      s"/fitsKeyInfo/${maybeSv.get.subsystem}$attrs"
-    } else {
-      s"/allFitsKeyInfo"
-    }
-  }
-
-  /**
    * Returns a FitsTags object containing a map of tags to list of FITS keywords
    */
-  val fitsTags: String = "/fitsTags"
+  def fitsDictionary(maybeSv: Option[SubsystemWithVersion]): String = {
+    if (maybeSv.isDefined) {
+      val subsystemAttr = s"subsystem=${maybeSv.get.subsystem}"
+      val componentAttr       = maybeSv.get.maybeComponent.map(c => s"&component=$c").getOrElse("")
+      val attrs = s"?${subsystemAttr}$componentAttr"
+      s"/fitsDictionary$attrs"
+    } else {
+      s"/fitsDictionary"
+    }
+  }
 
   /**
    * Returns the route to use to get an archived items report for the given Subsystem with selected components.

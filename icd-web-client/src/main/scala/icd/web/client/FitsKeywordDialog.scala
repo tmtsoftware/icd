@@ -1,7 +1,7 @@
 package icd.web.client
 
 import icd.web.client.Components.ComponentListener
-import icd.web.shared.{FitsChannel, FitsKeyInfo, FitsSource, FitsTags}
+import icd.web.shared.{FitsChannel, FitsDictionary, FitsKeyInfo, FitsSource}
 import org.scalajs.dom
 import org.scalajs.dom.{Element, HTMLInputElement, document}
 import scalatags.JsDom.all._
@@ -12,20 +12,6 @@ object FitsKeywordDialog {
 
   private val fitsTagNameCls = "fitsTagName"
 
-  // Inverts a map of T to List[T]
-  implicit class MapInverter[T](map: Map[T, List[T]]) {
-    def invert: Map[T, T] = {
-      val result = collection.mutable.Map.empty[T, T]
-
-      for ((key, values) <- map) {
-        for (v <- values) {
-          result += (v -> key)
-        }
-      }
-      result.toMap
-    }
-  }
-
   private def hideElement(e: Element): Unit = {
     e.classList.add("d-none")
   }
@@ -33,13 +19,28 @@ object FitsKeywordDialog {
   private def showElement(e: Element): Unit = {
     e.classList.remove("d-none")
   }
+
+  /**
+   * Returns the selected FITS tag (or "All")
+   */
+  def getFitsTag: String = {
+    document
+      .querySelectorAll(s"input[name='fitsTag']:checked")
+      .map(elem => elem.asInstanceOf[HTMLInputElement].value)
+      .toList
+      .head
+  }
 }
 
-case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, listener: ComponentListener) extends Displayable {
+case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListener) extends Displayable {
   import FitsKeywordDialog._
+  import icd.web.shared.SharedUtils.MapInverter
+
+  private val fitsTags = fitsDict.fitsTags
+  private val fitsKeys = fitsDict.fitsKeys
 
   // Map from FITS keyword to list of tags for that keyword
-  private val tagMap = fitsTags.tags.invert
+  private val tagMap = fitsDict.fitsTags.tags.invert
 
   // Action when user clicks on a component link
   private def clickedOnFitsSource(fitsSource: FitsSource)(e: dom.Event): Unit = {
@@ -79,11 +80,7 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
 
   //noinspection ScalaUnusedSymbol
   private def radioButtonListener(e: dom.Event): Unit = {
-    val tag = document
-      .querySelectorAll(s"input[name='fitsTag']:checked")
-      .map(elem => elem.asInstanceOf[HTMLInputElement].value)
-      .toList
-      .head
+    val tag = getFitsTag
 
     // Only show tag names if All is selected
     val tagNameElems = document.querySelectorAll(s".$fitsTagNameCls")
@@ -192,7 +189,7 @@ case class FitsKeywordDialog(fitsKeys: List[FitsKeyInfo], fitsTags: FitsTags, li
             th("Description"),
             th("Type"),
             th("Units"),
-            th(span(cls := fitsTagNameCls, "Tag: "), a(href := "#")("Source"), br, i("(component-event-param[index?])"))
+            th(span(cls := fitsTagNameCls, "Tag: "), a(href := "#")("Source"))
           )
         ),
         tbody(

@@ -2,7 +2,7 @@ package csw.services.icd.fits
 
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import csw.services.icd.db.{IcdDb, IcdDbDefaults}
-import icd.web.shared.{BuildInfo, FitsKeyInfo, FitsKeyInfoList, FitsSource, FitsTags, PdfOptions}
+import icd.web.shared.{BuildInfo, FitsDictionary, FitsKeyInfo, FitsKeyInfoList, FitsSource, FitsTags, PdfOptions}
 import reactivemongo.api.bson.collection.BSONCollection
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -21,6 +21,28 @@ object IcdFitsDefs {
   val fitsTagCollectionName = "fits.tags"
 
   type FitsKeyMap = Map[FitsSource, List[String]]
+
+  /**
+   * Returns a map from FitsSource (which describes an event parameter) to a list of FITS keywords that
+   * are based on the event parameter's value(s).
+   */
+  def getFitsKeyMap(fitKeyList: List[FitsKeyInfo]): FitsKeyMap = {
+    val pairs = fitKeyList.flatMap { i =>
+      i.channels
+        .map(s =>
+          FitsSource(
+            s.source.subsystem,
+            s.source.componentName,
+            s.source.eventName,
+            s.source.parameterName,
+            s.source.index,
+            s.source.rowIndex
+          )
+        )
+        .map(_ -> i.name)
+    }
+    pairs.toMap.groupMap(_._1)(_._2).view.mapValues(_.toList).toMap
+  }
 }
 
 object IcdFits extends App {
@@ -207,12 +229,12 @@ case class IcdFits(db: IcdDb) {
     maybeFitsKeyList.getOrElse(Nil)
   }
 
-  def getRelatedFitsKeyInfo(
+  def getFitsDictionary(
       maybeSubsystem: Option[String],
       maybeComponent: Option[String] = None,
       maybeTag: Option[String] = None,
       maybePdfOptions: Option[PdfOptions] = None
-  ): List[FitsKeyInfo] = {
+  ): FitsDictionary = {
     val fitsTags    = getFitsTags
     val fitsKeyList = getFitsKeyInfo(maybePdfOptions)
     // filter key list by subsystem/component
@@ -247,12 +269,12 @@ case class IcdFits(db: IcdDb) {
       else {
         val tag = maybeTag.get
         l2.map { fitsKey =>
-          val channels = fitsKey.channels.filter(c => fitsTags.tags(tag).contains(s"${fitsKey.name}/$c"))
+          val channels = fitsKey.channels.filter(c => c.name.isEmpty || fitsTags.tags(tag).contains(s"${fitsKey.name}/${c.name}"))
           fitsKey.copy(channels = channels)
         }
       }
 
-    l3.sorted
+    FitsDictionary(l3.sorted, fitsTags)
   }
 
   /**
@@ -264,29 +286,8 @@ case class IcdFits(db: IcdDb) {
       maybeTag: Option[String],
       pdfOptions: PdfOptions
   ): Unit = {
-    getRelatedFitsKeyInfo(maybeSubsystem, maybeComponent, maybeTag, Some(pdfOptions)).foreach { k => println(k.name) }
-  }
-
-  /**
-   * Returns a map from FitsSource (which describes an event parameter) to a list of FITS keywords that
-   * are based on the event parameter's value(s).
-   */
-  def getFitsKeyMap(fitKeyList: List[FitsKeyInfo]): FitsKeyMap = {
-    val pairs = fitKeyList.flatMap { i =>
-      i.channels
-        .map(s =>
-          FitsSource(
-            s.source.subsystem,
-            s.source.componentName,
-            s.source.eventName,
-            s.source.parameterName,
-            s.source.index,
-            s.source.rowIndex
-          )
-        )
-        .map(_ -> i.name)
-    }
-    pairs.toMap.groupMap(_._1)(_._2).view.mapValues(_.toList).toMap
+    val fitsDictionary = getFitsDictionary(maybeSubsystem, maybeComponent, maybeTag, Some(pdfOptions))
+    fitsDictionary.fitsKeys.foreach { k => println(k.name) }
   }
 
   /**
@@ -295,7 +296,7 @@ case class IcdFits(db: IcdDb) {
    */
   def getFitsKeyMap(maybePdfOptions: Option[PdfOptions] = None): FitsKeyMap = {
     val fitKeyList = getFitsKeyInfo(maybePdfOptions)
-    getFitsKeyMap(fitKeyList)
+    IcdFitsDefs.getFitsKeyMap(fitKeyList)
   }
 
   // --output option
@@ -307,23 +308,25 @@ case class IcdFits(db: IcdDb) {
       pdfOptions: PdfOptions
   ): Unit = {
     import icd.web.shared.JsonSupport._
-    val fitsKeyList = getRelatedFitsKeyInfo(maybeSubsystem, maybeComponent, maybeTag, Some(pdfOptions))
+    val fitsDictionary = getFitsDictionary(maybeSubsystem, maybeComponent, maybeTag, Some(pdfOptions))
+    val fitsKeyList = fitsDictionary.fitsKeys
     if (fitsKeyList.isEmpty) {
       println("No FITS keywords found")
     }
     else {
-      val fitsKeyInfoList = FitsKeyInfoList(fitsKeyList)
       val fname           = file.getName.toLowerCase()
       if (fname.endsWith(".html") || fname.endsWith(".pdf")) {
-        IcdFitsPrinter(fitsKeyList).saveToFile(pdfOptions, file)
+        IcdFitsPrinter(fitsDictionary).saveToFile(maybeTag, pdfOptions, file)
       }
       else if (fname.endsWith(".json")) {
+        val fitsKeyInfoList = FitsKeyInfoList(fitsKeyList)
         val out  = new FileOutputStream(file)
         val json = Json.toJson(fitsKeyInfoList)
         out.write(Json.prettyPrint(json).getBytes)
         out.close()
       }
       else if (fname.endsWith(".conf")) {
+        val fitsKeyInfoList = FitsKeyInfoList(fitsKeyList)
         val out     = new FileOutputStream(file)
         val jsonStr = Json.prettyPrint(Json.toJson(fitsKeyInfoList))
         val config  = ConfigFactory.parseString(jsonStr)

@@ -44,62 +44,89 @@ object IcdToHtml {
   }
 
   // Makes the link for a FITS keyword source to the event that is the source of the keyword
-  private def makeLinkForFitsKeySource(fitsSource: FitsSource) = {
+  private def makeLinkForFitsKeySource(
+      fitsKey: FitsKeyInfo,
+      fitsChannel: FitsChannel,
+      index: Int,
+      withLinks: Boolean,
+      tagMap: Map[String, String]
+  ) = {
     import scalatags.Text.all._
-    val idStr = Headings.idForParam(
-      fitsSource.componentName,
-      "publishes",
-      "Event",
-      fitsSource.subsystem,
-      fitsSource.componentName,
-      fitsSource.eventName,
-      fitsSource.parameterName
-    )
-    a(
-      title := s"Go to event parameter that is the source of this FITS keyword",
-      s"${fitsSource.toShortString} ",
-      href := s"#$idStr"
+    val fitsSource = fitsChannel.source
+    // Get tag for key
+    val maybeTag =
+      if (fitsChannel.name.isEmpty) {
+        tagMap.get(fitsKey.name)
+      }
+      else {
+        tagMap.get(s"${fitsKey.name}/${fitsChannel.name}")
+      }
+
+    div(
+      if (index != 0) hr else span(),
+      maybeTag.map(tag => span(tag, ": ")),
+      if (withLinks) {
+        a(
+          title := s"Go to event parameter that is the source of this FITS keyword",
+          s"${fitsSource.toLongString} ",
+          href := s"#${Headings.idForParam(
+            fitsSource.componentName,
+            "publishes",
+            "Event",
+            fitsSource.subsystem,
+            fitsSource.componentName,
+            fitsSource.eventName,
+            fitsSource.parameterName
+          )}"
+        )
+      }
+      else span(s"${fitsSource.toLongString} ")
     )
   }
 
   /**
    * Generates table with related FITS key information
-   * @param fitsKeys list of FITS key info
+   * @param maybeTag if defined, list is restricted to tag
+   * @param fitsDictionary fits keywords and tags
    * @param nh used for headings
    * @param withLinks if true, include links to event parameters for key sources
    */
-  def makeFitsKeyTable(fitsKeys: List[FitsKeyInfo], nh: Headings, withLinks: Boolean = true): Text.TypedTag[String] = {
+  def makeFitsKeyTable(
+      maybeTag: Option[String],
+      fitsDictionary: FitsDictionary,
+      nh: Headings,
+      withLinks: Boolean = true
+  ): Text.TypedTag[String] = {
     import scalatags.Text.all._
+    import icd.web.shared.SharedUtils.MapInverter
+
+    // Map from FITS keyword to list of tags for that keyword
+    val tagMap = if (maybeTag.isEmpty) fitsDictionary.fitsTags.tags.invert else Map.empty[String, String]
+
+    def makeFitsTableRows() = {
+      fitsDictionary.fitsKeys.map { fitsKey =>
+        val iList = fitsKey.channels.indices.toList
+        val zList = fitsKey.channels.zip(iList)
+        tr(
+          td(if (withLinks) a(id := fitsKey.name, name := fitsKey.name)(fitsKey.name) else fitsKey.name),
+          td(raw(fitsKey.description)),
+          td(fitsKey.typ),
+          td(fitsKey.units),
+          td(zList.map(p => makeLinkForFitsKeySource(fitsKey, p._1, p._2, withLinks, tagMap)))
+        )
+      }
+    }
+
+    val s = maybeTag.map(t => s" (tag: $t)").getOrElse("")
     div(id := "FITS-Keys")(
-      nh.H3("FITS Dictionary", "FITS-Keys"),
+      nh.H3(s"FITS Dictionary$s", "FITS-Keys"),
       table(
         attr("data-bs-toggle") := "table",
-        // XXX TODO FIXME - add tag column if no tag selected (All tgs)
         thead(
-          tr(
-            th("Name"),
-            th("Description"),
-            th("Type"),
-            th("Units"),
-            // XXX TODO FIXME - add tag column if no tag selected (All tgs)
-            th("Source", br, i("(component-event-param[index?])"))
-          )
+          tr(th("Name"), th("Description"), th("Type"), th("Units"), th("Tag: Source"))
         ),
         tbody(
-          fitsKeys.map { info =>
-            tr(
-              td(if (withLinks) a(id := info.name, name := info.name)(info.name) else info.name),
-              td(raw(info.description)),
-              td(info.typ),
-              td(info.units),
-              td(
-                if (withLinks)
-                  info.channels.map(c => makeLinkForFitsKeySource(c.source))
-                else
-                  info.channels.map(c => c.source.toLongString).mkString(", ")
-              )
-            )
-          }
+          makeFitsTableRows()
         )
       )
     )
@@ -112,6 +139,7 @@ object IcdToHtml {
    * @param infoList           details about each component and what it publishes, subscribes to, etc.
    * @param pdfOptions         options for pdf generation
    * @param clientApi          if true, include subscribed events, sent commands
+   * @param fitsDictionary     FITS keys and tags
    * @return the html tags
    */
   def getApiAsHtml(
@@ -119,7 +147,7 @@ object IcdToHtml {
       infoList: List[ComponentInfo],
       pdfOptions: PdfOptions,
       clientApi: Boolean,
-      fitsKeys: List[FitsKeyInfo]
+      fitsDictionary: FitsDictionary
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
@@ -148,7 +176,7 @@ object IcdToHtml {
     val mainContent = div(
       style := "width: 100%;",
       summaryTable,
-      if (fitsKeys.nonEmpty) makeFitsKeyTable(fitsKeys, nh) else div(),
+      if (fitsDictionary.fitsKeys.nonEmpty) makeFitsKeyTable(None, fitsDictionary, nh) else div(),
       displayDetails(infoList, nh, forApi = true, pdfOptions, clientApi)
     )
     val toc   = nh.mkToc()
@@ -407,7 +435,7 @@ object IcdToHtml {
             nh.H3(s"Services for ${component.component}"),
             raw(services.description),
             servicesProvidedMarkup(component, services.servicesProvided, nh, pdfOptions, clientApi),
-            if (forApi && clientApi) servicesRequiredMarkup(component, services.servicesRequired, nh, pdfOptions) else div()
+            if (forApi && clientApi) servicesRequiredMarkup(component, services.servicesRequired, nh) else div()
           )
         }
         else div()
@@ -420,8 +448,7 @@ object IcdToHtml {
   private def servicesRequiredMarkup(
       component: ComponentModel,
       info: List[ServicesRequiredInfo],
-      nh: NumberedHeadings,
-      pdfOptions: PdfOptions
+      nh: NumberedHeadings
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
 

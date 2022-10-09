@@ -47,4 +47,18 @@ object SharedUtils {
       (newHead, newRows)
     }
   }
+
+  // Inverts a map of T to List[T]
+  implicit class MapInverter[T](map: Map[T, List[T]]) {
+    def invert: Map[T, T] = {
+      val result = collection.mutable.Map.empty[T, T]
+
+      for ((key, values) <- map) {
+        for (v <- values) {
+          result += (v -> key)
+        }
+      }
+      result.toMap
+    }
+  }
 }

@@ -38,6 +38,9 @@ GET         /apiAsPdf/:subsystem                        controllers.Application.
 # Gets the PDF for the given subsystem API (using POST to pass list of expanded row ids)
 POST        /apiAsPdf/:subsystem                        controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], clientApi: Option[Boolean], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
 
+# Gets the PDF for the FITS keywords
+GET         /fitsDictionaryAsPdf/:tag                   controllers.Application.fitsDictionaryAsPdf(tag, orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
+
 # Gets an archived items report (PDF) for the given subsystem API (and component)
 GET         /archivedItemsReport/:subsystem             controllers.Application.archivedItemsReport(subsystem, version: Option[String], component: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])
 
@@ -104,14 +107,8 @@ GET         /icdModelList/:subsystem/:target             controllers.Application
 # Gets the generated source code for the given subsystem/component API
 GET         /generate/:subsystem/:lang/:className        controllers.Application.generate(subsystem, lang, className, version: Option[String], component: Option[String], packageName: Option[String])
 
-# Gets list of FITS keys for the given subsystem/component
-GET         /fitsKeyInfo/:subsystem                     controllers.Application.fitsKeyInfo(subsystem, component: Option[String])
-
-# Gets list of all FITS keywords
-GET         /allFitsKeyInfo                             controllers.Application.allFitsKeyInfo()
-
-# Gets a map of tags to list of FITS keyword names
-GET         /fitsTags                                   controllers.Application.fitsTags()
+# Gets the FITS dictionary and tags
+GET         /fitsDictionary                             controllers.Application.fitsDictionary(subsystem: Option[String], component: Option[String])
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                               controllers.Assets.versioned(file)

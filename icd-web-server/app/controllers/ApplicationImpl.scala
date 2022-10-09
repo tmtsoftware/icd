@@ -6,14 +6,14 @@ import csw.services.icd.IcdToPdf
 import csw.services.icd.codegen.{JavaCodeGenerator, PythonCodeGenerator, ScalaCodeGenerator, TypescriptCodeGenerator}
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
 import csw.services.icd.db.{ArchivedItemsReport, CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, IcdDbPrinter, IcdDbQuery, IcdVersionManager}
-import csw.services.icd.fits.IcdFits
+import csw.services.icd.fits.{IcdFits, IcdFitsPrinter}
 import csw.services.icd.github.IcdGitManager
 import csw.services.icd.html.OpenApiToHtml
 import csw.services.icd.viz.IcdVizManager
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.AllEventList.EventsForSubsystem
 import icd.web.shared.IcdModels.IcdModel
-import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, FitsKeyInfo, FitsTags, IcdName, IcdVersion, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, SubsystemWithVersion, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
+import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, FitsDictionary, FitsKeyInfo, FitsTags, IcdName, IcdVersion, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, SubsystemWithVersion, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
 import play.api.libs.json.Json
 
 import scala.util.Try
@@ -217,6 +217,21 @@ class ApplicationImpl(db: IcdDb) {
     val searchAllSubsystems = clientApi && searchAll.getOrElse(false)
     val icdPrinter          = IcdDbPrinter(db, searchAllSubsystems, clientApi, maybeCache, Some(pdfOptions))
     icdPrinter.saveApiAsPdf(sv, pdfOptions)
+  }
+
+  /**
+   * Returns the PDF for the FITS keywords
+   *
+   * @param tag "All" for all keywords, otherwise restrict output to given tag, as defined in DMS-Model-Files/FITS-Dictionary
+   * @param pdfOptions options for PDF generation
+   */
+  def getFitsDictionaryAsPdf(
+      tag: String,
+      pdfOptions: PdfOptions
+  ): Option[Array[Byte]] = {
+    val maybeTag = if (tag == "All") None else Some(tag)
+    val fitsDictionary = IcdFits(db).getFitsDictionary(maybeSubsystem = None, maybeTag = maybeTag, maybePdfOptions = Some(pdfOptions))
+    IcdFitsPrinter(fitsDictionary).saveAsPdf(maybeTag, pdfOptions)
   }
 
   /**
@@ -557,11 +572,7 @@ class ApplicationImpl(db: IcdDb) {
     }
   }
 
-  def getFitsKeyInfo(maybeSubsystem: Option[String], maybeComponent: Option[String]): List[FitsKeyInfo] = {
-    IcdFits(db).getRelatedFitsKeyInfo(maybeSubsystem, maybeComponent)
-  }
-
-  def getFitsTags: FitsTags = {
-    IcdFits(db).getFitsTags
+  def getFitsDictionary(maybeSubsystem: Option[String], maybeComponent: Option[String]): FitsDictionary = {
+    IcdFits(db).getFitsDictionary(maybeSubsystem, maybeComponent)
   }
 }

@@ -18,8 +18,7 @@ import play.api.mvc._
 import play.api.{Configuration, Environment, Mode}
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.util.Timeout
-import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
-import icd.web.shared.IcdModels.{EventModel, IcdModel}
+import icd.web.shared.IcdModels.IcdModel
 
 import java.net.URLDecoder
 import scala.collection.mutable
@@ -281,6 +280,41 @@ class Application @Inject() (
           searchAll,
           clientApi,
           PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedIds),
+          _
+        )
+      )
+      resp.map {
+        case Some(bytes) =>
+          Ok(bytes).as("application/pdf")
+        case None =>
+          NotFound
+      }
+    }
+
+  /**
+   * Returns a PDF for the FITS keyword information
+   *
+   * @param tag "All" for all keywords, otherwise restrict output to given tag, as defined in DMS-Model-Files/FITS-Dictionary
+   * @param maybeOrientation "portrait" or "landscape" (default)
+   * @param maybeFontSize    base font size
+   * @param maybeLineHeight  line-height for HTML
+   * @param maybePaperSize   Letter, Legal, A4, A3, default: Letter
+   * @param maybeDetails     Not used (for compatibility with other PDF generating APIs)
+   *
+   */
+  def fitsDictionaryAsPdf(
+      tag: String,
+      maybeOrientation: Option[String],
+      maybeFontSize: Option[Int],
+      maybeLineHeight: Option[String],
+      maybePaperSize: Option[String],
+      maybeDetails: Option[Boolean]
+  ) =
+    Action.async { implicit request =>
+      val resp: Future[Option[Array[Byte]]] = appActor ? (
+        GetFitsDictionaryAsPdf(
+          tag,
+          PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize),
           _
         )
       )
@@ -781,35 +815,14 @@ class Application @Inject() (
     }
 
   /**
-   * Query the database for a list of FITS keys for the given subsystem / component
-   *
-   * @param subsystem      the subsystem
-   * @param maybeComponent component name (default all in subsystem)
+   * Query the database for the FITS Dictionary and tags
    */
-  def fitsKeyInfo(
-      subsystem: String,
+  def fitsDictionary(
+      subsystem: Option[String],
       maybeComponent: Option[String]
   ) =
     authAction.async {
-      val resp: Future[List[FitsKeyInfo]] = appActor ? (GetFitsKeyInfo(Some(subsystem), maybeComponent, _))
-      resp.map(info => Ok(Json.toJson(info)))
-    }
-
-  /**
-   * Query the database for a map of tags to FITS keyword names
-   */
-  def fitsTags() =
-    authAction.async {
-      val resp: Future[FitsTags] = appActor ? GetFitsTags
-      resp.map(info => Ok(Json.toJson(info)))
-    }
-
-  /**
-   * Query the database for a list of FITS keys for the given subsystem / component
-   */
-  def allFitsKeyInfo() =
-    authAction.async {
-      val resp: Future[List[FitsKeyInfo]] = appActor ? (GetFitsKeyInfo(None, None, _))
+      val resp: Future[FitsDictionary] = appActor ? (GetFitsDictionary(subsystem, maybeComponent, _))
       resp.map(info => Ok(Json.toJson(info)))
     }
 

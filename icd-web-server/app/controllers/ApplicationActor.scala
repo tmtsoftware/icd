@@ -6,7 +6,25 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import icd.web.shared.IcdModels.{EventModel, IcdModel}
-import icd.web.shared.{AllEventList, ApiVersionInfo, ComponentInfo, DiffInfo, FitsKeyInfo, FitsTags, IcdName, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
+import icd.web.shared.{
+  AllEventList,
+  ApiVersionInfo,
+  ComponentInfo,
+  DiffInfo,
+  FitsDictionary,
+  FitsKeyInfo,
+  FitsTags,
+  IcdName,
+  IcdVersionInfo,
+  IcdVizOptions,
+  PdfOptions,
+  PublishApiInfo,
+  PublishIcdInfo,
+  SubsystemInfo,
+  UnpublishApiInfo,
+  UnpublishIcdInfo,
+  VersionInfo
+}
 
 import scala.util.Try
 
@@ -65,6 +83,11 @@ object ApplicationActor extends ActorModule {
       pdfOptions: PdfOptions,
       replyTo: ActorRef[Option[Array[Byte]]]
   ) extends Messages
+  final case class GetFitsDictionaryAsPdf(
+      tag: String,
+      pdfOptions: PdfOptions,
+      replyTo: ActorRef[Option[Array[Byte]]]
+  ) extends Messages
   final case class GetArchivedItemsReport(
       subsystem: String,
       maybeVersion: Option[String],
@@ -115,13 +138,10 @@ object ApplicationActor extends ActorModule {
       maybePackageName: Option[String],
       replyTo: ActorRef[Option[String]]
   ) extends Messages
-  final case class GetFitsKeyInfo(
+  final case class GetFitsDictionary(
       maybeSubsystem: Option[String],
       maybeComponent: Option[String],
-      replyTo: ActorRef[List[FitsKeyInfo]]
-  ) extends Messages
-  final case class GetFitsTags(
-      replyTo: ActorRef[FitsTags]
+      replyTo: ActorRef[FitsDictionary]
   ) extends Messages
 
   // -------------------------------------------------------------------
@@ -203,6 +223,16 @@ object ApplicationActor extends ActorModule {
             maybeComponent,
             searchAll,
             clientApi,
+            pdfOptions
+          )
+          Behaviors.same
+        case GetFitsDictionaryAsPdf(
+              tag,
+              pdfOptions,
+              replyTo: ActorRef[Option[Array[Byte]]]
+            ) =>
+          replyTo ! app.getFitsDictionaryAsPdf(
+            tag,
             pdfOptions
           )
           Behaviors.same
@@ -307,11 +337,8 @@ object ApplicationActor extends ActorModule {
             maybePackageName
           )
           Behaviors.same
-        case GetFitsKeyInfo(maybeSubsystem, maybeComponent, replyTo) =>
-          replyTo ! app.getFitsKeyInfo(maybeSubsystem, maybeComponent)
-          Behaviors.same
-        case GetFitsTags(replyTo) =>
-          replyTo ! app.getFitsTags
+        case GetFitsDictionary(maybeSubsystem, maybeComponent, replyTo) =>
+          replyTo ! app.getFitsDictionary(maybeSubsystem, maybeComponent)
           Behaviors.same
       }
     }

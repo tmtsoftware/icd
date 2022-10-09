@@ -211,11 +211,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    * @param sv the subsystem/component
    * @return future list of objects describing the FITS keys whose source is an event published by the subsystem
    */
-  private def getFitsKeyInfo(sv: SubsystemWithVersion): Future[List[FitsKeyInfo]] = {
+  private def getFitsDictionary(sv: SubsystemWithVersion): Future[FitsDictionary] = {
     Fetch
-      .get(ClientRoutes.fitsKeyInfo(Some(sv)))
+      .get(ClientRoutes.fitsDictionary(Some(sv)))
       .map { text =>
-        Json.fromJson[Array[FitsKeyInfo]](Json.parse(text)).map(_.toList).getOrElse(Nil)
+        Json.fromJson[FitsDictionary](Json.parse(text)).get
       }
   }
 
@@ -257,7 +257,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       icdInfoList     <- if (isIcd) getIcdModelList(sv, maybeTargetSubsystem.get) else Future.successful(Nil)
       infoList        <- getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems, clientApi)
       targetInfoList  <- getComponentInfo(maybeTargetSubsystem, Some(sv), searchAllSubsystems, clientApi)
-      fitsKeyInfoList <- getFitsKeyInfo(sv)
+      fitsDict <- getFitsDictionary(sv)
     } yield {
       val titleInfo        = TitleInfo(subsystemInfo, maybeTargetSubsystem, maybeIcd)
       val subsystemVersion = sv.maybeVersion.getOrElse(TitleInfo.unpublished)
@@ -284,7 +284,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         SummaryTable.displaySummary(subsystemInfo, maybeTargetSubsystem, infoList, new HtmlHeadings, clientApi).render
 
       mainContent.appendElement(div(Styles.component, id := "Summary")(raw(summaryTable)).render)
-      if (fitsKeyInfoList.nonEmpty) mainContent.appendElement(makeFitsKeyTable(fitsKeyInfoList).render)
+      if (fitsDict.fitsKeys.nonEmpty) mainContent.appendElement(makeFitsKeyTable(fitsDict).render)
       infoList.foreach(i => displayComponentInfo(i, !isIcd, clientApi))
       if (isIcd) targetInfoList.foreach(i => displayComponentInfo(i, forApi = false, clientApi))
       infoList ++ targetInfoList
@@ -296,14 +296,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     f
   }
 
-  // Removes the component display
-  def removeComponentInfo(compName: String): Unit = {
-    val elem = $id(getComponentInfoId(compName))
-    if (elem != null) {
-      // remove inner content so we can reuse the div and keep the position on the page
-      elem.innerHTML = ""
-    }
-  }
+//  // Removes the component display
+//  def removeComponentInfo(compName: String): Unit = {
+//    val elem = $id(getComponentInfoId(compName))
+//    if (elem != null) {
+//      // remove inner content so we can reuse the div and keep the position on the page
+//      elem.innerHTML = ""
+//    }
+//  }
 
   /**
    * Displays the information for a component, appending to the other selected components, if any.
@@ -1131,9 +1131,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Generates table with related FITS key information
-  private def makeFitsKeyTable(fitsKeys: List[FitsKeyInfo]) = {
+  // XXX TODO FIXME: Add tags
+  private def makeFitsKeyTable(fitsDict: FitsDictionary) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
+    val fitsKeys = fitsDict.fitsKeys
     div(Styles.component, id := "FITS-Keys")(
       h3(a(name := "FITS-Keys")("FITS Dictionary")),
       table(

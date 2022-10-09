@@ -99,4 +99,5 @@ object JsonSupport {
   implicit val fitsKeyInfoFormat           = Json.format[FitsKeyInfo]
   implicit val fitsKeyInfoListFormat       = Json.format[FitsKeyInfoList]
   implicit val fitsTagsFormat              = Json.format[FitsTags]
+  implicit val fitsDictionaryFormat        = Json.format[FitsDictionary]
 }
