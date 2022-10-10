@@ -128,8 +128,8 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
       label(Styles.fitsTagsLabel, strong("Tags: ")),
       (allTags :: fitsTags.tags.keys.toList).map { key =>
         val displayName = key match {
-          case "DL" => "Diffraction-limited"
-          case "SL" => "Seeing-limited"
+          case "DL" => "Diffraction-limited (DL)"
+          case "SL" => "Seeing-limited (SL)"
           case _    => key
         }
         div(cls := "form-check form-check-inline")(

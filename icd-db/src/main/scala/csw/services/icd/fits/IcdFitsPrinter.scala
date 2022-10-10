@@ -20,7 +20,8 @@ case class IcdFitsPrinter(fitsDict: FitsDictionary) {
           scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss(pdfOptions)))
         ),
         body(
-          IcdToHtml.makeFitsKeyTable(maybeTag, fitsDict, nh, withLinks = false)
+          IcdToHtml.makeFitsKeyTable(maybeTag, fitsDict, nh, withLinks = false),
+          maybeTag.map(_ => span()).getOrElse(p(i("* Tags: DL = Diffraction-limited, SL = Seeing-limited")))
         )
       )
       Some(markup.render)
