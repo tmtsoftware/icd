@@ -200,7 +200,15 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
   }
 
   def markup(): Element = {
-    div(makeFitsKeyTable()).render
+    if (fitsKeys.isEmpty || fitsTags.tags.isEmpty)
+      div(
+        p(
+          "Missing FITS Dictionary data: May need to manually upload/ingest ",
+          a(href := "https://github.com/tmt-icd/DMS-Model-Files")("DMS-Model-Files")
+        )
+      ).render
+    else
+      div(makeFitsKeyTable()).render
   }
 
 }
