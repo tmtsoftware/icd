@@ -121,7 +121,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
     val titleExt                         = maybeSv.map(sv => s" for $sv").getOrElse("")
     val title                            = s"Archived Items Report$titleExt"
     val archivedItems: List[ArchiveInfo] = getArchivedItems
-    val averageEventSize                 = archivedItems.map(_.sizeInBytes).sum / archivedItems.size
+    val averageEventSize                 = if (archivedItems.isEmpty) 0 else archivedItems.map(_.sizeInBytes).sum / archivedItems.size
     val markup = html(
       head(
         scalatags.Text.tags2.title(title),

@@ -20,7 +20,6 @@ import akka.actor.typed.scaladsl.AskPattern._
 import akka.util.Timeout
 import icd.web.shared.IcdModels.IcdModel
 
-import java.net.URLDecoder
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.concurrent.Future
@@ -137,21 +136,6 @@ class Application @Inject() (
         appActor ? GetEventList
       resp.map(info => Ok(Json.toJson(info)))
     }
-
-//  /**
-//   * Query the database for information about the given event in the given subsystem/component
-//   */
-//  def eventInfo(subsystem: String, component: String, event: String) =
-//    authAction.async {
-//      val resp: Future[Option[EventModel]] =
-//        appActor ? (GetEventInfo(subsystem, component, URLDecoder.decode(event, "UTF-8"), _))
-//      resp.map {
-//        case Some(eventModel) =>
-//          Ok(Json.toJson(eventModel))
-//        case None =>
-//          NotFound
-//      }
-//    }
 
   /**
    * Query the database for information about the given components in an ICD

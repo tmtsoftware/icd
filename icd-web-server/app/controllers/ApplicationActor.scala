@@ -48,12 +48,6 @@ object ApplicationActor extends ActorModule {
       replyTo: ActorRef[List[ComponentInfo]]
   ) extends Messages
   final case class GetEventList(replyTo: ActorRef[List[AllEventList.EventsForSubsystem]]) extends Messages
-//  final case class GetEventInfo(
-//      subsystem: String,
-//      component: String,
-//      event: String,
-//      replyTo: ActorRef[Option[EventModel]]
-//  ) extends Messages
   final case class GetIcdComponentInfo(
       subsystem: String,
       maybeVersion: Option[String],
@@ -165,9 +159,6 @@ object ApplicationActor extends ActorModule {
         case GetEventList(replyTo) =>
           replyTo ! app.getEventList
           Behaviors.same
-//        case GetEventInfo(subsystem, component, event, replyTo) =>
-//          replyTo ! app.getEventInfo(subsystem, component, event)
-//          Behaviors.same
         case GetIcdComponentInfo(
               subsystem,
               maybeVersion,

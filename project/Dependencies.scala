@@ -3,17 +3,17 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 
 object Dependencies {
   val Version               = "2.2.0"
-  val ScalaVersion          = "2.13.8"
-  val AkkaVersion           = "2.6.19"
+  val ScalaVersion          = "2.13.10"
+  val AkkaVersion           = "2.6.20"
   val PlayVersion           = "2.8.13"
-  val PlayJsonVersion       = "2.9.2"
+  val PlayJsonVersion       = "2.9.3"
   val ScalaTagsVersion      = "0.11.1"
   val ScalaJsDomVersion     = "2.2.0"
   val ScalaCssVersion       = "1.0.0"
-  val BootstrapVersion      = "5.2.0"
+  val BootstrapVersion      = "5.2.2"
   val JQueryVersion         = "3.6.0"
   val JQueryUiVersion       = "1.13.2"
-  val BootstrapTableVersion = "1.21.0"
+  val BootstrapTableVersion = "1.21.1"
   val BootstrapIconsVersion = "1.9.1"
 
   //  val akkaSlf4j      = "com.typesafe.akka" %% "akka-slf4j"       % AkkaVersion
@@ -26,7 +26,7 @@ object Dependencies {
   val jsonSchemaValidator = "com.github.everit-org.json-schema" % "org.everit.json.schema" % "1.14.1"
   val ficus               = "com.iheart"                       %% "ficus"                  % "1.5.2"
   val typesafeConfig      = "com.typesafe"                      % "config"                 % "1.4.2"
-  val scalaTest           = "org.scalatest"                    %% "scalatest"              % "3.2.13"
+  val scalaTest           = "org.scalatest"                    %% "scalatest"              % "3.2.14"
 
   val flexmarkAll = "com.vladsch.flexmark"  % "flexmark-all" % "0.64.0"
   val scalaCsv    = "com.github.tototoshi" %% "scala-csv"    % "1.3.10"
@@ -37,24 +37,24 @@ object Dependencies {
   val html2pdf    = "com.itextpdf"       % "html2pdf"     % "4.0.3"
   val jlatexmath  = "org.scilab.forge"   % "jlatexmath"   % "1.0.7"
   val commonsIo   = "commons-io"         % "commons-io"   % "2.11.0"
-  val commonsText = "org.apache.commons" % "commons-text" % "1.9"
+  val commonsText = "org.apache.commons" % "commons-text" % "1.10.0"
 
-  val plantuml = "net.sourceforge.plantuml" % "plantuml"  % "1.2022.7"
+  val plantuml = "net.sourceforge.plantuml" % "plantuml"  % "1.2022.8"
   val graphDot = "org.scala-graph"         %% "graph-dot" % "1.13.3"
 
   val reactivemongo               = "org.reactivemongo" %% "reactivemongo"                  % "1.1.0-RC6"
   val reactivemongoPlayJsonCompat = "org.reactivemongo" %% "reactivemongo-play-json-compat" % "1.1.0-play29-RC6"
   //  // XXX Need to fix indirect dependency conflict
-  val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.3"
+  val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.4"
 
-  val diffson = "org.gnieh" %% "diffson-play-json" % "4.1.1"
+  val diffson = "org.gnieh" %% "diffson-play-json" % "4.3.0"
 
   val scalaLogging   = "com.typesafe.scala-logging" %% "scala-logging"    % "3.9.5"
   val logbackClassic = "ch.qos.logback"              % "logback-classic"  % "1.2.11"
   val scalatags      = "com.lihaoyi"                %% "scalatags"        % ScalaTagsVersion
   val jsoup          = "org.jsoup"                   % "jsoup"            % "1.15.3"
-  val jgit           = "org.eclipse.jgit"            % "org.eclipse.jgit" % "6.2.0.202206071550-r"
-  val swaggerParser  = "io.swagger.parser.v3"        % "swagger-parser"   % "2.1.2"
+  val jgit           = "org.eclipse.jgit"            % "org.eclipse.jgit" % "6.3.0.202209071007-r"
+  val swaggerParser  = "io.swagger.parser.v3"        % "swagger-parser"   % "2.1.3"
   val playJson       = "com.typesafe.play"          %% "play-json"        % PlayJsonVersion
   val jqueryUi       = "org.webjars"                 % "jquery-ui"        % JQueryUiVersion
   val webjarsPlay    = "org.webjars"                %% "webjars-play"     % "2.8.13"
