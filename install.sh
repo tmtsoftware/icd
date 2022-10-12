@@ -20,6 +20,10 @@ hash sbt 2>/dev/null || { echo >&2 "Please install sbt first.  Aborting."; exit 
 hash cs 2>/dev/null || { echo >&2 "Please install cs (https://get-coursier.io/) first.  Aborting."; exit 1; }
 hash swagger-codegen 2>/dev/null || { echo >&2 "Please install swagger-codegen first (use: cs install --contrib swagger-codegen).  Aborting."; exit 1; }
 
+# Check version of swagger-codegen, since there is a problem with older versions and Java-17
+sc_version=`swagger-codegen version`
+test $"sc_version" == "3.0.35" -o `echo -e "$sc_version\n3.0.35" | sort -Vr | tail -1` == "3.0.35" || { echo >&2 "Version of swagger-codegen is too old: Please update (run: cs update swagger-codegen).  Aborting."; exit 1; }
+
 # Graphviz is required for UML support and icd-viz
 hash dot 2>/dev/null || { echo >&2 "Please install graphviz first (See https://graphviz.org/download/).  Aborting."; exit 1; }
 
