@@ -176,7 +176,7 @@ object IcdToHtml {
     val mainContent = div(
       style := "width: 100%;",
       summaryTable,
-      if (fitsDictionary.fitsKeys.nonEmpty) makeFitsKeyTable(None, fitsDictionary, nh) else div(),
+//      if (fitsDictionary.fitsKeys.nonEmpty) makeFitsKeyTable(None, fitsDictionary, nh) else div(),
       displayDetails(infoList, nh, forApi = true, pdfOptions, clientApi)
     )
     val toc   = nh.mkToc()

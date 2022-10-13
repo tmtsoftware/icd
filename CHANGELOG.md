@@ -21,6 +21,7 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Updated list of allowed CSW Units
 - Updated all dependencies to the latest versions, including Bootstrap-5.2.0 and support for MongoDB-6.0
 - Added support for a FITS keyword dictionary, and the icd-fits command line app, FITS Dictionary tab (FITS Keywords will be automatically imported once the DMS subsystem model files have been published. For now, you can use `icd-fits -i examples/3.0/FITS-Dictionary.json --ingestTags examples/3.0/FITS-Tags.conf`) or manually upload/ingest the [DMS-Model-Files](https://github.com/tmt-icd/DMS-Model-Files) GitHub repo in the icd web app.
+- Updated to Play-Framework-2.9.0-M2, which means icd can now be compiled and run with Java-17 (as well as Java-11).
 
 ## [ICD v2.1.2] - 2021-05-25
 

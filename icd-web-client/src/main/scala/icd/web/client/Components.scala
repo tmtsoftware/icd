@@ -288,7 +288,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         SummaryTable.displaySummary(subsystemInfo, maybeTargetSubsystem, infoList, new HtmlHeadings, clientApi).render
 
       mainContent.appendElement(div(Styles.component, id := "Summary")(raw(summaryTable)).render)
-      if (fitsDict.fitsKeys.nonEmpty) mainContent.appendElement(makeFitsKeyTable(fitsDict).render)
+      if (!isIcd && fitsDict.fitsKeys.nonEmpty) mainContent.appendElement(makeFitsKeyTable(fitsDict).render)
       infoList.foreach(i => displayComponentInfo(i, !isIcd, clientApi))
       if (isIcd) targetInfoList.foreach(i => displayComponentInfo(i, forApi = false, clientApi))
       infoList ++ targetInfoList
