@@ -7,12 +7,11 @@ import csw.services.icd.codegen.{JavaCodeGenerator, PythonCodeGenerator, ScalaCo
 import csw.services.icd.db.parser.{BaseModelParser, IcdModelParser, ServiceModelParser, SubsystemModelParser}
 import csw.services.icd.db.ComponentDataReporter._
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
-import csw.services.icd.db.StdConfig.Resources
 import csw.services.icd.fits.IcdFits
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.{BuildInfo, PdfOptions, SubsystemWithVersion}
 import io.swagger.v3.parser.OpenAPIV3Parser
-import io.swagger.v3.parser.core.models.{ParseOptions, SwaggerParseResult}
+import io.swagger.v3.parser.core.models.ParseOptions
 import io.swagger.v3.parser.util.DeserializationUtils
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.{JsObject, Json}
@@ -484,6 +483,32 @@ case class IcdDb(
   }
 
   /**
+   * If DMS-Model-Files/FITS-Dictionary exists, ingest it into the icd database
+   * @param dir the top level directory containing one or more of the the standard set of ICD files
+   *            and any number of subdirectories containing ICD files
+   */
+  private def ingestFitsDictionary(dir: File): List[Problem] = {
+    // Uploads from web app have an extra temp directory at root
+    val dmsDictDir1 = new File(s"$dir/FITS-Dictionary")
+    val dmsDictDir2 = new File(s"$dir/DMS-Model-Files/FITS-Dictionary")
+    val dmsDictDir = if (dmsDictDir1.isDirectory) dmsDictDir1 else dmsDictDir2
+    if (dmsDictDir.isDirectory) {
+      val icdFits         = new IcdFits(this)
+      val fitsKeywordFile = new File(dmsDictDir, "FITS-Dictionary.json")
+      val fitsProblems = if (fitsKeywordFile.exists()) {
+        icdFits.ingest(fitsKeywordFile)
+      }
+      else Nil
+      val fitsTagFile = new File(dmsDictDir, "FITS-Tags.conf")
+      if (fitsTagFile.exists()) {
+        icdFits.ingestTags(fitsTagFile)
+      }
+      fitsProblems
+    }
+    else Nil
+  }
+
+  /**
    * Ingests all the files with the standard names (stdNames) in the given directory and recursively
    * in its subdirectories into the database.
    *
@@ -493,7 +518,7 @@ case class IcdDb(
    */
   def ingest(dir: File = new File(".")): (List[StdConfig], List[Problem]) = {
     val validateProblems = IcdValidator.validateDirRecursive(dir)
-    val result =
+    val problems =
       if (validateProblems.nonEmpty)
         (Nil, validateProblems)
       else {
@@ -501,22 +526,9 @@ case class IcdDb(
         (listOfPairs.flatMap(_._1), listOfPairs.flatMap(_._2))
       }
 
-    // If this is DMS, read the list of FITS Keywords
-    // XXXX TODO FIXME: validate and append error messages
-    val icdFits = new IcdFits(this)
-    val dmsDictDir  = new File(s"$dir/DMS-Model-Files/FITS-Dictionary")
-    if (dmsDictDir.isDirectory) {
-      val fitsKeywordFile = new File(dmsDictDir, "FITS-Dictionary.json")
-      if (fitsKeywordFile.exists()) {
-        icdFits.ingest(fitsKeywordFile)
-      }
-      val fitsTagFile = new File(dmsDictDir, "FITS-Tags.conf")
-      if (fitsTagFile.exists()) {
-        icdFits.ingestTags(fitsTagFile)
-      }
-    }
-
-    result
+    if (problems._2.nonEmpty)
+      problems
+    else (Nil, ingestFitsDictionary(dir))
   }
 
   /**
@@ -550,7 +562,7 @@ case class IcdDb(
    */
   def ingestConfig(stdConfig: StdConfig): List[Problem] = {
     // Ingest a single OpenApi file
-    def ingestOpenApiFile(collectionName: String, fileName: String, resources: Resources): Unit = {
+    def ingestOpenApiFile(collectionName: String, fileName: String): Unit = {
       val parseOptions = new ParseOptions()
       parseOptions.setResolve(true)
       parseOptions.setResolveFully(true)
@@ -576,7 +588,7 @@ case class IcdDb(
         val serviceModel = ServiceModelParser(stdConfig.config)
         val dirName      = new File(stdConfig.fileName).getParent
         serviceModel.provides
-          .foreach(p => ingestOpenApiFile(s"$collectionName.${p.name}", s"$dirName/${p.openApi}", stdConfig.resources))
+          .foreach(p => ingestOpenApiFile(s"$collectionName.${p.name}", s"$dirName/${p.openApi}"))
       }
     }
 

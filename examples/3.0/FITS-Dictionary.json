@@ -4,7 +4,7 @@
       "name": "CRPIX1",
       "description": "This is the X coordinate of the reference pixel in the image",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "PointingKernelAssembly",
@@ -16,7 +16,7 @@
       "name": "CRPIX2",
       "description": "This is the Y coordinate of the reference pixel in the image",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "PointingKernelAssembly",
@@ -28,7 +28,7 @@
       "name": "CRVAL1",
       "description": "This is the Right ascension at the reference pixel",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "PointingKernelAssembly",
@@ -40,7 +40,7 @@
       "name": "CRVAL2",
       "description": "This is the Declination at the reference pixel",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "PointingKernelAssembly",
@@ -52,7 +52,7 @@
       "name": "CTYPE1",
       "description": "This is the Projection type RA---TAN",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "PointingKernelAssembly",
@@ -64,7 +64,7 @@
       "name": "CTYPE2",
       "description": "This is the Projection type DEC—TAN",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "PointingKernelAssembly",
@@ -76,7 +76,7 @@
       "name": "CD1_1",
       "description": "Projection of unit vector of axis 1 of one coordinate system with respect to axis 1 of the other coordinate system",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "PointingKernelAssembly",
@@ -88,7 +88,7 @@
       "name": "CD1_2",
       "description": "Projection of unit vector of axis 1 of one coordinate system with respect to axis 2 of the other coordinate system",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "PointingKernelAssembly",
@@ -100,7 +100,7 @@
       "name": "CD2_1",
       "description": "Projection of unit vector of axis 2 of one coordinate system with respect to axis 1 of the other coordinate system",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "PointingKernelAssembly",
@@ -112,7 +112,7 @@
       "name": "CD2_2",
       "description": "Projection of unit vector of axis 2 of one coordinate system with respect to axis 2 of the other coordinate system",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "PointingKernelAssembly",
@@ -124,7 +124,7 @@
       "name": "RADECSYS",
       "description": "Reference frame of equatorial or ecliptic coordinates",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "PointingKernelAssembly",
@@ -136,19 +136,19 @@
       "name": "DATE",
       "description": "The date on which  the HDU was created, in the format specified in the FITS Standard. The old date format was ‘yy/mm/dd’ and may be used only for dates from 1900 through 1999. The new Y2K compliant date format is ‘yyyy-mm-dd’ or ‘yyyy-mm- ddTHH:MM:SS[.sss] ’.",
       "type": "string",
-      "units": null
+      "units": "NoUnits"
     },
     {
       "name": "DATE-OBS",
       "description": "The date of the observation, in the format specified in the FITS Standard. The old date format was ‘yy/mm/dd’ and may be used only for dates from 1900 through 1999. The new Y2K compliant date format is ‘yyyy- mm-dd’ or ‘yyyy- mm- ddTHH:MM:SS[.sss] ’.",
       "type": "string",
-      "units": null
+      "units": "NoUnits"
     },
     {
       "name": "EQUINOX",
       "description": "The value field shall contain a floating point number giving the equinox in years for the celestial coordinate system in which positions are expressed. The interpretation of epoch depends upon the value of RADESYSa if present: Besselian if the value is FK4 or FK4-NO-E, Julian if the value is FK5; not applicable if the value is ICRS or GAPPT.",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "PointingKernelAssembly",
@@ -160,7 +160,7 @@
       "name": "OBJECT",
       "description": "The value field shall contain a character string giving a name or type of the object observed. Often ‘TARGNAME’ is used for target name, in which case ‘OBJECT’ can be used to specify the object category.",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "ESW",
         "componentName": "ocs",
@@ -172,7 +172,7 @@
       "name": "OBSERVER",
       "description": "The value field shall contain a character string identifying who acquired the data associated with the header.",
       "type": "string",
-      "units": null
+      "units": "NoUnits"
     },
     {
       "name": "RA",
@@ -262,7 +262,7 @@
       "name": "AIRMASS",
       "description": "Air Mass (TBD whether plane-parallel, i.e., sec(z), or curvature-corrected)",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "pk",
@@ -286,7 +286,7 @@
       "name": "TELFRAT",
       "description": "Telescope F-ratio (TBD: this is a static quantity)",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "pk",
@@ -298,7 +298,7 @@
       "name": "LST",
       "description": "Local Sidereal Time",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "pk",
@@ -406,7 +406,7 @@
       "name": "IMGDISWV",
       "description": "An array of wavelengths. Each provided wavelength value must be unique.",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "channel": [
         {
           "name": "IMG-ATM",
@@ -434,7 +434,7 @@
       "name": "IMGDISWT",
       "description": "An array of weights. They must sum to 1.0.",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "channel": [
         {
           "name": "IMG-ATM",
@@ -462,7 +462,7 @@
       "name": "IMGDISVL",
       "description": "An array of atmospheric dispersion values.",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "channel": [
         {
           "name": "IMG-ATM",
@@ -565,7 +565,7 @@
       "name": "OIWFS1ST",
       "description": "Current state of the probe event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "cmIRIS",
@@ -578,7 +578,7 @@
       "name": "OIWFS2ST",
       "description": "Current state of the probe event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "cmIRIS",
@@ -591,7 +591,7 @@
       "name": "OIWFS3ST",
       "description": "Current state of the probe event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "cmIRIS",
@@ -656,7 +656,7 @@
       "name": "ODGW1ST",
       "description": "Current state of the ODGW event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "cmIRIS",
@@ -669,7 +669,7 @@
       "name": "ODGW2ST",
       "description": "Current state of the ODGW event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "cmIRIS",
@@ -682,7 +682,7 @@
       "name": "ODGW3ST",
       "description": "Current state of the ODGW event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "cmIRIS",
@@ -695,7 +695,7 @@
       "name": "ODGW4ST",
       "description": "Current state of the ODGW event stream as enum: (SLEWING, TRACKING, INPOSITION)",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "cmIRIS",
@@ -732,7 +732,7 @@
       "name": "FILTER",
       "description": "Current imager filter name. When two or more filters are inserted in the science light path, filter names are concatinated with TBD character in the order of wheel number.",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "channel": [
         {
           "name": "IRIS",
@@ -818,7 +818,7 @@
       "name": "SARRMODE",
       "description": "Subarray Mode [FULL_FRAME,SUB_ARRAY,ODGW]",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": null,
@@ -866,7 +866,7 @@
       "name": "OBS_ID",
       "description": "Observation id",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "is",
@@ -878,7 +878,7 @@
       "name": "DET_ID",
       "description": "Detector ID IMG1/2/3/4 ,SLC/LEN",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": null,
@@ -890,7 +890,7 @@
       "name": "EXP_NO",
       "description": "Exposure number  XXXX 0-9999",
       "type": "integer",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": null,
@@ -902,7 +902,7 @@
       "name": "RAMP_NO",
       "description": "Ramp within Exposure [0-99999]",
       "type": "integer",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": null,
@@ -914,7 +914,7 @@
       "name": "READ_NO",
       "description": "Readout Within Ramp [0-99999]",
       "type": "integer",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": null,
@@ -926,7 +926,7 @@
       "name": "COMPLETE",
       "description": "Indicates if Pixels were readout",
       "type": "type",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": null,
@@ -938,7 +938,7 @@
       "name": "CLDSTPX",
       "description": "Current position in X axis.",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "imager.coldstop",
@@ -950,7 +950,7 @@
       "name": "CLDSTPY",
       "description": "Current position in Y axis.",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "imager.coldstop",
@@ -962,7 +962,7 @@
       "name": "CLDSTPTH",
       "description": "Current angle of the rotary stage.",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "imager.coldstop",
@@ -974,7 +974,7 @@
       "name": "PPMIRRST",
       "description": "Whether the mirror is inserted into the light path or not, values: (IN, INTERMEDIATE, OUT, UNKNOWN).",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "pupilview",
@@ -986,7 +986,7 @@
       "name": "FILTWAVE",
       "description": "Current effective filter wavelength. Effective wavelength is defined as ... ?",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "imager.filter",
@@ -998,7 +998,7 @@
       "name": "FILTDRFL",
       "description": "Indicates whether a dark filter is inserted or not.",
       "type": "type",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "imager.filter",
@@ -1010,7 +1010,7 @@
       "name": "FILT1POS",
       "description": "Current position name of the wheel 1 (as enum: (TBD1, TBD2, TBD3, TBD4, TBD5, TBD6, TBD7, TBD8, TBD9, TBD10, TBD11, TBD12, TBD13, TBD14, THROUGH, HOME, INTERMEDIATE, UNKNOWN).",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "imager.filter",
@@ -1022,7 +1022,7 @@
       "name": "FILT2POS",
       "description": "Current position name of the wheel 2, values: (TBD1, TBD2, TBD3, TBD4, TBD5, TBD6, TBD7, TBD8, TBD9, TBD10, TBD11, TBD12, TBD13, TBD14, THROUGH, HOME, INTERMEDIATE, UNKNOWN).",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "imager.filter",
@@ -1034,7 +1034,7 @@
       "name": "FILT3POS",
       "description": "Current position name of the wheel 3, values: (TBD1, TBD2, TBD3, TBD4, TBD5, TBD6, TBD7, TBD8, TBD9, TBD10, TBD11, TBD12, TBD13, TBD14, THROUGH, HOME, INTERMEDIATE, UNKNOWN).",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "imager.filter",
@@ -1046,7 +1046,7 @@
       "name": "FILT4POS",
       "description": "Current position name of the wheel 4, values: (TBD1, TBD2, TBD3, TBD4, TBD5, TBD6, TBD7, TBD8, TBD9, TBD10, TBD11, TBD12, TBD13, TBD14, THROUGH, HOME, INTERMEDIATE, UNKNOWN)",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "imager.filter",
@@ -1058,7 +1058,7 @@
       "name": "FILT5POS",
       "description": "Current position name of the wheel 5, values: (TBD1, TBD2, TBD3, TBD4, TBD5, TBD6, TBD7, TBD8, TBD9, TBD10, TBD11, TBD12, TBD13, TBD14, THROUGH, HOME, INTERMEDIATE, UNKNOWN)",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "imager.filter",
@@ -1106,7 +1106,7 @@
       "name": "EXPNO",
       "description": "Number of current (if in progress) or last IFS exposure at current dither pattern with current instrument configuration (1-based).",
       "type": "integer",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "is",
@@ -1118,7 +1118,7 @@
       "name": "DITHNO",
       "description": "Total number of IFS exposures at current dither pattern.",
       "type": "integer",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "is",
@@ -1130,7 +1130,7 @@
       "name": "IFSSTATE",
       "description": "IFS is currently observing, means when set the start prepare event was received and will stay that way until the observation is complete is received.",
       "type": "type",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "is",
@@ -1142,7 +1142,7 @@
       "name": "IMSTATE",
       "description": "IMAGER is currently observing, means when set the start prepare event was received and will stay that way until the observation is complete is received.",
       "type": "type",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "is",
@@ -1154,7 +1154,7 @@
       "name": "NUMREADS",
       "description": "Number of raw readouts used in the sampling mode per ramp. This is the number of raw readouts that are added together before being used in the sampling mode to create a single frame. This number is only used in sample modes of MDS and UTR.",
       "type": "integer",
-      "units": null,
+      "units": "NoUnits",
       "channel": [
         {
           "name": "IFS",
@@ -1182,7 +1182,7 @@
       "name": "NUMRAMPS",
       "description": "Number of configured ramps. Each ramp is bounded by resets and is of integration time in length. Each ramp has the sampling mode applied. The resultant raw Science Frame is created by adding the output of each ramp.",
       "type": "integer",
-      "units": null,
+      "units": "NoUnits",
       "channel": [
         {
           "name": "IFS",
@@ -1210,7 +1210,7 @@
       "name": "RAMPINTT",
       "description": "Integration time, this is the length of time for each ramp.",
       "type": "integer",
-      "units": null,
+      "units": "NoUnits",
       "channel": [
         {
           "name": "IFS",
@@ -1238,7 +1238,7 @@
       "name": "SAMPMODE",
       "description": "This is the sampling mode. This could be CDS, MDS or UTR.",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "channel": [
         {
           "name": "IFS",
@@ -1266,7 +1266,7 @@
       "name": "IFSSCALE",
       "description": "IFS Scale.",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "ifs.scale",
@@ -1278,7 +1278,7 @@
       "name": "IFSMODE",
       "description": "Current IFS mode. Indicates if in slicer or lenslet mode.",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "ifs.scale",
@@ -1290,7 +1290,7 @@
       "name": "PCKMRRPS",
       "description": "Current position name of pickoff mirror mechanism, values: (IN, OUT).",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "ifs.scale",
@@ -1302,7 +1302,7 @@
       "name": "PRSCPPOS",
       "description": "Current position name of periscope mirror mechanism, values: (IN, OUT).",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "ifs.scale",
@@ -1314,7 +1314,7 @@
       "name": "IFSO1POS",
       "description": "Current position name of first optics mechanism, values: (TBD1, TBD2).",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "ifs.scale",
@@ -1326,7 +1326,7 @@
       "name": "IFSO2POS",
       "description": "Current position name of second optics mechanism, values: (TBD1, TBD2).",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "ifs.scale",
@@ -1338,7 +1338,7 @@
       "name": "IFSGRTST",
       "description": "The current grating selection, values: (4000-Z, 4000-Y, 4000-J, 4000-H, 4000-K, 4000-H+K, 8000-Z, 8000-Y, 8000-J, 8000-H, 8000-Kn1-3, 8000-Kn4-5, 8000-Kbb, 10000-Z, 10000-Y, 10000-J, 10000-H, 1000-K, Mirror, INTERMEDIATE, UNKNOWN).",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "ifs.res",
@@ -1350,7 +1350,7 @@
       "name": "LLMSKST",
       "description": "The current lenslet mask position, values: enum: (FULL_OPEN, SERRATED_WIDE, FINE_MASK, FINE_MASK_CALIBRATION, INTERMEDIATE, UNKNOWN).",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "ifs.res",
@@ -1362,7 +1362,7 @@
       "name": "SLMSKST",
       "description": "The current slicer mask position, values: (FULL_OPEN, INTERMEDIATE, HALF, UNKNOWN).",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "ifs.res",
@@ -1374,7 +1374,7 @@
       "name": "IFSRES",
       "description": "Current spectral resolution, values: (4000-Z, 4000-Y, 4000-J, 4000-H, 4000-K, 4000-H+K, 8000-Z, 8000-Y, 8000-J, 8000-H, 8000-Kn1-3, 8000-Kn4-5, 8000-Kbb, 10000-Z, 10000-Y, 10000-J, 10000-H, 1000-K, Mirror).",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "ifs.res",
@@ -1386,7 +1386,7 @@
       "name": "IFSGRTPS",
       "description": "Current position name of spectral resolution grating mechanism.",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "ifs.res",
@@ -1398,7 +1398,7 @@
       "name": "LLMSKPOS",
       "description": "Current position name of spectral resolution lenslet mask mechanism.",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "ifs.res",
@@ -1410,7 +1410,7 @@
       "name": "OBSID",
       "description": "Observation ID given by LOAD_CONFIGURATION command.",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "channel": [
         {
           "name": "IFS",
@@ -1522,7 +1522,7 @@
       "name": "GAIN",
       "description": "Conversion of photoelectrons to counts for each detector.",
       "type": "integer",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "imager.detector",
@@ -1534,7 +1534,7 @@
       "name": "READNOIS",
       "description": "Nominal read noise of the entire array measured at commissioning phase.",
       "type": "integer",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "imager.detector",
@@ -1546,7 +1546,7 @@
       "name": "IMGTMPXX",
       "description": "ID of the sensor assigned for the temperature reading.",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "sc.cryoenv",
@@ -1558,7 +1558,7 @@
       "name": "IFSTMPXX",
       "description": "ID of the sensor assigned for the temperature reading.",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "sc.cryoenv",
@@ -1570,7 +1570,7 @@
       "name": "TMPTMP",
       "description": "ID of the sensor assigned for the temperature reading.",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "el.env",
@@ -1595,7 +1595,7 @@
       "name": "SSLGSMAG",
       "description": "Magnitude estimate of the variable intensity NGS sources in R band (TBC), based on manual and motorized attenuator (current.attenuation).",
       "type": "array[7] of double",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "NFIRAOS",
         "componentName": "ssNgs",
@@ -1727,7 +1727,7 @@
       "name": "AORATEHO",
       "description": "High-order loop rate. In LGS mode this is equal to the LGS WFS frame rate. In NGS or SL mode this is equal to the PWFS frame rate.",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "NFIRAOS",
         "componentName": "rtc",
@@ -1739,7 +1739,7 @@
       "name": "AORATELO",
       "description": "Low-order loop rate. This is equal to the Tier 1 and 2 steady-state frame rate.",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "NFIRAOS",
         "componentName": "rtc",
@@ -1751,7 +1751,7 @@
       "name": "AORATELT",
       "description": "Low-order truth loop rate. This is equal to the Tier 3 and 3F steady-state frame rate.",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "NFIRAOS",
         "componentName": "rtc",
@@ -1763,7 +1763,7 @@
       "name": "AORATEWC",
       "description": "Wavefront correction. In LGS mode this should be at least equal to the LGS WFS frame rate. In NGS mode this should be at least equal to the PWFS frame rate. In SL mode his should be at least to the Tier 1 and 2 steady-state frame rate.",
       "type": "float",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "NFIRAOS",
         "componentName": "rtc",
@@ -1775,7 +1775,7 @@
       "name": "AOTIER1",
       "description": "Tier 1 detector assignment, values: (PWFS, OIWFSA, OIWFSB, OIWFSC).",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "NFIRAOS",
         "componentName": "rtc",
@@ -1787,7 +1787,7 @@
       "name": "AOTIER2",
       "description": "Tier 2 detector assignment. The array is ordered Tier 2 [A B]. Type is array[2] of enum: (NONE, PWFS, OIWFSA, OIWFSB, OIWFSC, ODGW1, ODGW2, ODGW3, ODGW4).",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "NFIRAOS",
         "componentName": "rtc",
@@ -1799,7 +1799,7 @@
       "name": "AOTIER3",
       "description": "Tier 3 detector assignment. The array is ordered Tier 3 [A B C D]. Type is array[4] of enum: (NONE, OIWFSA, OIWFSB, OIWFSC, ODGW1, ODGW2, ODGW3, ODGW4)",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "NFIRAOS",
         "componentName": "rtc",
@@ -1811,7 +1811,7 @@
       "name": "AOTIER3F",
       "description": "Tier 3F detector assignment. Values: (NONE, OIWFSA, OIWFSB, OIWFSC)",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "NFIRAOS",
         "componentName": "rtc",
@@ -1871,7 +1871,7 @@
       "name": "AOISMST",
       "description": "Current ISM selection. Values: enum: (BOTTOM, SIDE, TOP, INTERMEDIATE, UNKNOWN)",
       "type": "string",
-      "units": null,
+      "units": "NoUnits",
       "source": {
         "subsystem": "NFIRAOS",
         "componentName": "ism",

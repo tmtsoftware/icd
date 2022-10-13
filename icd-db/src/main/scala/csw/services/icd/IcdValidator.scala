@@ -9,7 +9,6 @@ import csw.services.icd.db.parser.ServiceModelParser
 import io.swagger.v3.parser.OpenAPIV3Parser
 import org.everit.json.schema.loader.SchemaClient
 
-import scala.io.Source
 import scala.util.{Failure, Success, Try}
 import org.everit.json.schema.{Schema, ValidationException}
 import org.everit.json.schema.loader.SchemaLoader
@@ -26,27 +25,27 @@ object IcdValidator {
   val schemaVersionKey     = "modelVersion"
   val currentSchemaVersion = "3.0"
 
-  /**
-   * Returns a string with the contents of the given file, converted to JSON, if it was not already.
-   * JSON files are recognized by the file suffix .json.
-   *
-   * @param file a file in HOCON or JSON format
-   * @return the file contents in JSON format
-   */
-  def toJson(file: File): String = {
-    if (!file.exists()) throw new FileNotFoundException(file.getName)
-    if (file.getName.endsWith(".json")) {
-      val source = Source.fromFile(file)
-      val json   = source.mkString
-      source.close()
-      json
-    }
-    else {
-      val config =
-        ConfigFactory.parseFile(file).resolve(ConfigResolveOptions.noSystem())
-      toJson(config)
-    }
-  }
+//  /**
+//   * Returns a string with the contents of the given file, converted to JSON, if it was not already.
+//   * JSON files are recognized by the file suffix .json.
+//   *
+//   * @param file a file in HOCON or JSON format
+//   * @return the file contents in JSON format
+//   */
+//  def toJson(file: File): String = {
+//    if (!file.exists()) throw new FileNotFoundException(file.getName)
+//    if (file.getName.endsWith(".json")) {
+//      val source = Source.fromFile(file)
+//      val json   = source.mkString
+//      source.close()
+//      json
+//    }
+//    else {
+//      val config =
+//        ConfigFactory.parseFile(file).resolve(ConfigResolveOptions.noSystem())
+//      toJson(config)
+//    }
+//  }
 
   val jsonOptions: ConfigRenderOptions =
     ConfigRenderOptions.defaults().setComments(false).setOriginComments(false)
@@ -104,7 +103,7 @@ object IcdValidator {
    *
    * @param dir the directory containing the standard set of ICD files (default: current dir)
    */
-  def validateOneDir(dir: File = new File("."), deprecatedWarning: Boolean = true): List[Problem] = {
+  def validateOneDir(dir: File = new File(".")): List[Problem] = {
     import StdName._
     if (!dir.isDirectory) {
       List(Problem("error", s"$dir does not exist or is not a directory"))
@@ -148,7 +147,7 @@ object IcdValidator {
     def validateOpenApi(fileName: String): List[Problem] = {
       val maybeContents = sc.resources.getResource(fileName)
       if (maybeContents.isEmpty) {
-        List(Problem("error", s"Can't locate ${fileName}"))
+        List(Problem("error", s"Can't locate $fileName"))
       }
       else {
         val parseResult = new OpenAPIV3Parser().readContents(maybeContents.get, null, null)
@@ -187,6 +186,26 @@ object IcdValidator {
       case Left(problem) =>
         List(problem)
     }
+  }
+
+  /**
+   * Validates the FITS-Dictionary.json file
+   * @param jsonStr the contents of the file
+   * @return a list of validation errors, if any were found
+   */
+  def validateFitsDictionary(jsonStr: String): List[Problem] = {
+    val schemaPath   = s"$currentSchemaVersion/fits-dictionary-schema.conf"
+    val schemaConfig = ConfigFactory.parseResources(schemaPath)
+    val jsonSchema = new JSONObject(toJson(schemaConfig))
+    val schemaLoader = SchemaLoader
+      .builder()
+      .schemaClient(HoconSchemaClient)
+      .schemaJson(jsonSchema)
+      .resolutionScope("classpath:/")
+      .build()
+    val schema    = schemaLoader.load().build().asInstanceOf[Schema]
+    val jsonInput = new JSONObject(jsonStr)
+    validateJson(schema, jsonInput, "FITS-Dictionary.json")
   }
 
   /**

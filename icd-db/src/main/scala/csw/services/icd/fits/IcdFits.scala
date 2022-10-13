@@ -60,6 +60,7 @@ object IcdFits extends App {
       list: Boolean = false,
       outputFile: Option[File] = None,
       ingest: Option[File] = None,
+      validate: Option[File] = None,
       ingestTags: Option[File] = None,
       orientation: Option[String] = None,
       fontSize: Option[Int] = None,
@@ -99,6 +100,10 @@ object IcdFits extends App {
     opt[Unit]('l', "list") action { (_, c) =>
       c.copy(list = true)
     } text "Prints the list of known FITS keywords"
+
+    opt[File]( "validate") valueName "<file>" action { (x, c) =>
+      c.copy(validate = Some(x))
+    } text "Validates a JSON formatted file containing the FITS Keyword dictionary and prints out any errors"
 
     opt[File]('i', "ingest") valueName "<file>" action { (x, c) =>
       c.copy(ingest = Some(x))
@@ -177,6 +182,7 @@ object IcdFits extends App {
 
     if (options.list) icdFits.list(options.subsystem, options.component, options.tag, pdfOptions)
 
+    options.validate.foreach(file => icdFits.validate(file).foreach(println))
     options.ingestTags.foreach(icdFits.ingestTags)
     options.ingest.foreach(icdFits.ingest)
 
@@ -205,16 +211,32 @@ case class IcdFits(db: IcdDb) {
     fitsTagCollection.insert.one(jsObj).await
   }
 
-  def ingest(file: File): Unit = {
-    // XXX TODO: validate first
-//    val config = ConfigFactory.parseFile(file)
-//    val jsObj  = Json.parse(IcdValidator.toJson(config)).as[JsObject]
+  /**
+   * Validate the FITS-Dictionary.json file and return a list of problems, if found
+   */
+  def validate(file: File): List[Problem] = {
     val inputStream = new FileInputStream(file)
     val jsObj       = Json.parse(inputStream).asInstanceOf[JsObject]
+    val problems = IcdValidator.validateFitsDictionary(jsObj.toString())
     inputStream.close()
-    fitsKeyCollection.drop().await
-    fitsKeyCollection.create().await
-    fitsKeyCollection.insert.one(jsObj).await
+    problems
+  }
+
+  /**
+   * Ingest the FITS-Dictionary.json file into the icd db
+   */
+  def ingest(file: File): List[Problem] = {
+    val inputStream = new FileInputStream(file)
+    val jsObj       = Json.parse(inputStream).asInstanceOf[JsObject]
+//    val problems = IcdValidator.validateFitsDictionary(jsObj.toString())
+    val problems = Nil
+    inputStream.close()
+    if (problems.isEmpty) {
+      fitsKeyCollection.drop().await
+      fitsKeyCollection.create().await
+      fitsKeyCollection.insert.one(jsObj).await
+    }
+    problems
   }
 
   def getFitsTags: FitsTags = {
