@@ -136,14 +136,16 @@
       "name": "DATE",
       "description": "The date on which  the HDU was created, in the format specified in the FITS Standard. The old date format was ‘yy/mm/dd’ and may be used only for dates from 1900 through 1999. The new Y2K compliant date format is ‘yyyy-mm-dd’ or ‘yyyy-mm- ddTHH:MM:SS[.sss] ’.",
       "type": "string",
-      "units": "NoUnits"
+      "units": "NoUnits",
+      "source": {}
     },
     {
       "name": "DATE-OBS",
       "description": "The date of the observation, in the format specified in the FITS Standard. The old date format was ‘yy/mm/dd’ and may be used only for dates from 1900 through 1999. The new Y2K compliant date format is ‘yyyy- mm-dd’ or ‘yyyy- mm- ddTHH:MM:SS[.sss] ’.",
       "type": "string",
-      "units": "NoUnits"
-    },
+      "units": "NoUnits",
+      "source": {}
+      },
     {
       "name": "EQUINOX",
       "description": "The value field shall contain a floating point number giving the equinox in years for the celestial coordinate system in which positions are expressed. The interpretation of epoch depends upon the value of RADESYSa if present: Besselian if the value is FK4 or FK4-NO-E, Julian if the value is FK5; not applicable if the value is ICRS or GAPPT.",
@@ -165,14 +167,15 @@
         "subsystem": "ESW",
         "componentName": "ocs",
         "eventName": "object",
-        "parameterName": null
+        "parameterName": "XXX"
       }
     },
     {
       "name": "OBSERVER",
       "description": "The value field shall contain a character string identifying who acquired the data associated with the header.",
       "type": "string",
-      "units": "NoUnits"
+      "units": "NoUnits",
+      "source": {}
     },
     {
       "name": "RA",
@@ -749,9 +752,9 @@
           "comment": "",
           "source": {
             "subsystem": "WFOS",
-            "componentName": null,
-            "eventName": null,
-            "parameterName": null
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
           }
         },
         {
@@ -759,9 +762,9 @@
           "comment": "",
           "source": {
             "subsystem": "MODHIS",
-            "componentName": null,
-            "eventName": null,
-            "parameterName": null
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
           }
         }
       ]
@@ -773,9 +776,9 @@
       "units": "pixels",
       "source": {
         "subsystem": "IRIS",
-        "componentName": null,
-        "eventName": null,
-        "parameterName": null
+        "componentName": "",
+        "eventName": "",
+        "parameterName": ""
       }
     },
     {
@@ -785,9 +788,9 @@
       "units": "Pixels",
       "source": {
         "subsystem": "IRIS",
-        "componentName": null,
-        "eventName": null,
-        "parameterName": null
+        "componentName": "",
+        "eventName": "",
+        "parameterName": ""
       }
     },
     {
@@ -797,9 +800,9 @@
       "units": "pixels",
       "source": {
         "subsystem": "IRIS",
-        "componentName": null,
-        "eventName": null,
-        "parameterName": null
+        "componentName": "",
+        "eventName": "",
+        "parameterName": ""
       }
     },
     {
@@ -809,9 +812,9 @@
       "units": "pixels",
       "source": {
         "subsystem": "IRIS",
-        "componentName": null,
-        "eventName": null,
-        "parameterName": null
+        "componentName": "",
+        "eventName": "",
+        "parameterName": ""
       }
     },
     {
@@ -821,9 +824,9 @@
       "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
-        "componentName": null,
-        "eventName": null,
-        "parameterName": null
+        "componentName": "",
+        "eventName": "",
+        "parameterName": ""
       }
     },
     {
@@ -833,9 +836,9 @@
       "units": "Microseconds in MJD",
       "source": {
         "subsystem": "IRIS",
-        "componentName": null,
-        "eventName": null,
-        "parameterName": null
+        "componentName": "",
+        "eventName": "",
+        "parameterName": ""
       }
     },
     {
@@ -845,9 +848,9 @@
       "units": "Microseconds in MJD",
       "source": {
         "subsystem": "IRIS",
-        "componentName": null,
-        "eventName": null,
-        "parameterName": null
+        "componentName": "",
+        "eventName": "",
+        "parameterName": ""
       }
     },
     {
@@ -857,9 +860,9 @@
       "units": "Microseconds",
       "source": {
         "subsystem": "IRIS",
-        "componentName": null,
-        "eventName": null,
-        "parameterName": null
+        "componentName": "",
+        "eventName": "",
+        "parameterName": ""
       }
     },
     {
@@ -881,9 +884,9 @@
       "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
-        "componentName": null,
-        "eventName": null,
-        "parameterName": null
+        "componentName": "",
+        "eventName": "",
+        "parameterName": ""
       }
     },
     {
@@ -893,9 +896,9 @@
       "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
-        "componentName": null,
-        "eventName": null,
-        "parameterName": null
+        "componentName": "",
+        "eventName": "",
+        "parameterName": ""
       }
     },
     {
@@ -905,9 +908,9 @@
       "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
-        "componentName": null,
-        "eventName": null,
-        "parameterName": null
+        "componentName": "",
+        "eventName": "",
+        "parameterName": ""
       }
     },
     {
@@ -917,9 +920,9 @@
       "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
-        "componentName": null,
-        "eventName": null,
-        "parameterName": null
+        "componentName": "",
+        "eventName": "",
+        "parameterName": ""
       }
     },
     {
@@ -929,9 +932,9 @@
       "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
-        "componentName": null,
-        "eventName": null,
-        "parameterName": null
+        "componentName": "",
+        "eventName": "",
+        "parameterName": ""
       }
     },
     {
@@ -1074,8 +1077,8 @@
       "source": {
         "subsystem": "IRIS",
         "componentName": "the same as OIWFS1PS?",
-        "eventName": null,
-        "parameterName": null
+        "eventName": "",
+        "parameterName": ""
       }
     },
     {
@@ -1086,8 +1089,8 @@
       "source": {
         "subsystem": "IRIS",
         "componentName": "the same as OIWFS2PS?",
-        "eventName": null,
-        "parameterName": null
+        "eventName": "",
+        "parameterName": ""
       }
     },
     {
@@ -1098,8 +1101,8 @@
       "source": {
         "subsystem": "IRIS",
         "componentName": "the same as OIWFS3PS?",
-        "eventName": null,
-        "parameterName": null
+        "eventName": "",
+        "parameterName": ""
       }
     },
     {
@@ -1580,9 +1583,8 @@
     },
     {
       "name": "SSLGSALT",
-      "description": "Current altitude estimated based on measured range distance and the value set for zenith angle (= current.rangeDistance*cos(simTcs.zenithAngle)).",
-      "type": "float",
-      "calculation": "double (85 ≤ x ≤ 100)",
+      "description": "Current altitude (85 ≤ x ≤ 100) estimated based on measured range distance and the value set for zenith angle (= current.rangeDistance*cos(simTcs.zenithAngle)).",
+      "type": "double",
       "units": "km",
       "source": {
         "subsystem": "NFIRAOS",
