@@ -146,7 +146,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Makes the link for a FITS keyword source to the event that is the source of the keyword
-  private def makeLinkForFitsKeySource(fitsKey: FitsKeyInfo, fitsChannel: FitsChannel, index: Int) = {
+  private def makeLinkForFitsKeySource(fitsChannel: FitsChannel, index: Int) = {
     import scalatags.JsDom.all._
     val fitsSource = fitsChannel.source
     div(
@@ -1019,12 +1019,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     maybeServices match {
       case None => div()
       case Some(services) =>
-        if (services.servicesProvided.nonEmpty || (services.servicesRequired.nonEmpty && forApi && clientApi)) {
+        if (services.servicesProvided.nonEmpty || (services.servicesRequired.nonEmpty && clientApi)) {
           div(
             h3(s"Services for ${component.component}"),
             raw(services.description),
             servicesProvidedMarkup(component, services.servicesProvided, clientApi),
-            if (forApi && clientApi) servicesRequiredMarkup(component, services.servicesRequired) else div()
+            if (clientApi) servicesRequiredMarkup(component, services.servicesRequired) else div()
           )
         }
         else div()
@@ -1045,10 +1045,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         h4(servicesRequiredTitle(compName)),
         for (s <- info) yield {
           val m = s.serviceModelClient
-          val providerInfo = {
-            val provider = s"${s.serviceModelClient.subsystem}.${s.serviceModelClient.component}"
-            span(strong(s"Provider: "), provider)
-          }
+          val providerInfo =
+            span(strong(s"Provider: "), makeLinkForComponent(s.serviceModelClient.subsystem, s.serviceModelClient.component))
           val openInNewTab = () => {
             val newTab = dom.window.open()
             newTab.document.write(s.maybeHtml.get)
@@ -1084,8 +1082,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         for (s <- info) yield {
           val m = s.serviceModelProvider
           val consumerInfo = if (clientApi) {
-            val consumers = s.requiredBy.distinct.map(s => s"${s.subsystem}.${s.component}").mkString(", ")
-            span(strong(s"Consumers: "), if (consumers.isEmpty) "none" else consumers)
+            val consumers = s.requiredBy.distinct.map(s => makeLinkForComponent(s.subsystem, s.component))
+            span(strong(s"Consumers: "), if (consumers.isEmpty) "none" else span(consumers))
           }
           else span
           val openInNewTab = () => {
@@ -1165,7 +1163,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               td(raw(fitsKey.description)),
               td(fitsKey.typ),
               td(fitsKey.units),
-              td(zList.map(p => makeLinkForFitsKeySource(fitsKey, p._1, p._2)))
+              td(zList.map(p => makeLinkForFitsKeySource(p._1, p._2)))
             )
           }
         )
