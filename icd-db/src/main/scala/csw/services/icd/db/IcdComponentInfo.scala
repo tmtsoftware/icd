@@ -313,21 +313,21 @@ object IcdComponentInfo {
    * @param targetModelsList the target model objects
    */
   private def getCommandsSent(
-      query: IcdDbQuery,
-      models: IcdModels,
-      targetModelsList: List[IcdModels],
-      maybePdfOptions: Option[PdfOptions]
-  ): List[SentCommandInfo] = {
+                               query: IcdDbQuery,
+                               models: IcdModels,
+                               targetModelsList: List[IcdModels],
+                               maybePdfOptions: Option[PdfOptions]
+                             ): List[SentCommandInfo] = {
     val result = for {
       cmd  <- models.commandModel.toList
       sent <- cmd.send
+      recv <- getCommand(sent.subsystem, sent.component, sent.name, targetModelsList)
     } yield {
-      val maybeReceiver = getCommand(sent.subsystem, sent.component, sent.name, targetModelsList)
       SentCommandInfo(
         sent.name,
         sent.subsystem,
         sent.component,
-        maybeReceiver,
+        Some(recv),
         query.getComponentModel(sent.subsystem, sent.component, maybePdfOptions)
       )
     }
@@ -427,7 +427,7 @@ object IcdComponentInfo {
       val html = if (clientComponents.size == 1 && clientComponents.head.subsystem != serviceModel.subsystem) {
         // If there is only one client in another subsystem (might be an ICD), only document the used routes.
         // Note that the getServiceClients() call above tells us that the following service client exists
-        val paths = targetModelsList.head.serviceModel.head.requires
+        val paths = targetModelsList.filter(_.componentModel == clientComponents.headOption).head.serviceModel.head.requires
           .find(s => s.subsystem == serviceModel.subsystem && s.component == serviceModel.component && s.name == provides.name)
           .get
           .paths
