@@ -35,14 +35,19 @@ object ComponentInfo {
     val oldCommandsReceived = info.commands.toList.flatMap(_.commandsReceived)
     val oldCommandsSent     = info.commands.toList.flatMap(_.commandsSent)
 
+    val oldServicesProvided = info.services.toList.flatMap(_.servicesProvided)
+    val oldServicesRequired = info.services.toList.flatMap(_.servicesRequired)
+
     val newEventList        = oldEventList.filter(p => p.subscribers.nonEmpty)
     val newObserveEventList = oldObserveEventList.filter(p => p.subscribers.nonEmpty)
     val newCurrentStateList = oldCurrentStateList.filter(p => p.subscribers.nonEmpty)
     val newImageList        = oldImageList.filter(p => p.subscribers.nonEmpty)
 
-    val newCommandsReceived =
-      oldCommandsReceived.filter(p => p.senders.nonEmpty)
+    val newCommandsReceived = oldCommandsReceived.filter(p => p.senders.nonEmpty)
     val newCommandsSent = oldCommandsSent.filter(p => p.receiver.nonEmpty)
+
+    val newServicesProvided = oldServicesProvided.filter(p => p.requiredBy.nonEmpty)
+    val newServicesRequired = oldServicesRequired.filter(p => p.maybeServiceModelProvider.nonEmpty)
 
     val publishes =
       info.publishes.map(p =>
@@ -61,7 +66,14 @@ object ComponentInfo {
       )
     )
 
-    ComponentInfo(info.componentModel, publishes, info.subscribes, commands, info.services)
+    val services = info.services.map(s =>
+      s.copy(
+        servicesProvided = newServicesProvided,
+        servicesRequired = newServicesRequired
+      )
+    )
+
+    ComponentInfo(info.componentModel, publishes, info.subscribes, commands, services)
   }
 
   /**
