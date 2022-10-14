@@ -228,6 +228,7 @@ case class IcdFits(db: IcdDb) {
   def ingest(file: File): List[Problem] = {
     val inputStream = new FileInputStream(file)
     val jsObj       = Json.parse(inputStream).asInstanceOf[JsObject]
+    // Don't want to prevent ingesting API due to error in FITS dict
 //    val problems = IcdValidator.validateFitsDictionary(jsObj.toString())
     val problems = Nil
     inputStream.close()
