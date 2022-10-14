@@ -2,8 +2,8 @@ package icd.web.shared
 
 import scalatags.Text
 import scalatags.Text.all._
-import icd.web.shared.ComponentInfo.{Alarms, CurrentStates, Events, ObserveEvents}
-import icd.web.shared.IcdModels.{ComponentModel, EventModel}
+import icd.web.shared.ComponentInfo.{Alarms, CurrentStates, Events, Images, ObserveEvents}
+import icd.web.shared.IcdModels.{ComponentModel, EventModel, NameDesc}
 import Headings.idFor
 
 //noinspection DuplicatedCode
@@ -51,6 +51,7 @@ object SummaryTable {
       val (action, publisher, subscribers) = heading.toLowerCase() match {
         case "published by" => ("publishes", "Publisher", "Subscribers")
         case "received by"  => ("receives", "Receiver", "Senders")
+        case "provided by"  => ("provides", "Provider", "Consumers")
       }
 
       val targetStr = if (maybeTargetSv.isDefined) s" $prep ${maybeTargetSv.get.subsystem}$targetComponentPart" else ""
@@ -130,6 +131,7 @@ object SummaryTable {
         val (action, publisher, subscriber) = heading.toLowerCase() match {
           case "published by" => ("publishes", "Publisher", "Subscribers")
           case "received by"  => ("receives", "Receiver", "Senders")
+          case "provided by"  => ("provides", "Provider", "Consumers")
         }
 
         val target = maybeTargetSv.get.subsystem
@@ -182,6 +184,7 @@ object SummaryTable {
         val (subscribes, subscriber, publisher) = heading.toLowerCase() match {
           case "subscribed to by" => ("subscribes", "Subscriber", "Publisher")
           case "sent by"          => ("sends", "Sender", "Receiver")
+          case "required by"      => ("requires", "Consumer", "Provider")
         }
         val targetStr = if (maybeTargetSv.isDefined) s" $prep ${maybeTargetSv.get.subsystem}$targetComponentPart" else ""
         div(
@@ -281,13 +284,27 @@ object SummaryTable {
         command  <- commands.commandsReceived
       } yield PublishedItem(info.componentModel, command.receiveCommandModel, command.senders.distinct)
 
+      val providedServices = for {
+        info     <- infoList
+        services <- info.services.toList
+        service  <- services.servicesProvided
+      } yield {
+        val nameDesc = new NameDesc {
+          override val name: String = service.serviceModelProvider.name
+          // XXX TODO FIXME
+          override val description: String = "An HTTP service (TODO: get title from OpenApi JSON doc))"
+        }
+        PublishedItem(info.componentModel, nameDesc, service.requiredBy.distinct)
+      }
+
       div(
         publishedSummaryMarkup("Events", publishedEvents, "Published by", "for"),
         publishedSummaryMarkup("Observe Events", publishedObserveEvents, "Published by", "for"),
         publishedSummaryMarkup("Current States", publishedCurrentStates, "Published by", "for"),
         publishedSummaryMarkup("Images", publishedImages, "Published by", "for"),
         publishedSummaryMarkup("Alarms", publishedAlarms, "Published by", "for"),
-        publishedSummaryMarkup("Commands", receivedCommands, "Received by", "from")
+        publishedSummaryMarkup("Commands", receivedCommands, "Received by", "from"),
+        publishedSummaryMarkup("Services", providedServices, "Provided by", "for")
       )
     }
 
@@ -311,6 +328,7 @@ object SummaryTable {
       val subscribedEvents        = allSubscribed.filter(_._1 == Events).map(_._2)
       val subscribedObserveEvents = allSubscribed.filter(_._1 == ObserveEvents).map(_._2)
       val subscribedCurrentStates = allSubscribed.filter(_._1 == CurrentStates).map(_._2)
+      val subscribedImages        = allSubscribed.filter(_._1 == Images).map(_._2)
       val subscribedAlarms        = allSubscribed.filter(_._1 == Alarms).map(_._2)
 
       val sentCommands = for {
@@ -325,31 +343,63 @@ object SummaryTable {
         info.componentModel,
         OptionalNameDesc(command.name, command.receiveCommandModel)
       )
+
+      val requiredServices = for {
+        info     <- infoList
+        services <- info.services.toList
+        service  <- services.servicesRequired
+      } yield {
+        val nameDesc = new NameDesc {
+          override val name: String = service.serviceModelClient.name
+          // XXX TODO FIXME
+          override val description: String = "An HTTP service (TODO: get title from OpenApi JSON doc))"
+        }
+        SubscribedItem(
+          service.serviceModelClient.subsystem,
+          service.serviceModelClient.component,
+          service.provider,
+          None,
+          info.componentModel,
+          OptionalNameDesc(nameDesc.name, Some(nameDesc))
+        )
+      }
+
       div(
         if (isIcd)
           div(
             subscribedSummaryMarkup("Events", subscribedEvents, "Published by", "for"),
             subscribedSummaryMarkup("Observe Events", subscribedObserveEvents, "Published by", "for"),
             subscribedSummaryMarkup("Current States", subscribedCurrentStates, "Published by", "for"),
+            subscribedSummaryMarkup("Images", subscribedImages, "Published by", "for"),
             subscribedSummaryMarkup("Alarms", subscribedAlarms, "Published by", "for"),
-            subscribedSummaryMarkup("Commands", sentCommands, "Received by", "from")
+            subscribedSummaryMarkup("Commands", sentCommands, "Received by", "from"),
+            subscribedSummaryMarkup("Services", requiredServices, "Provided by", "for")
           )
         else
           div(
             subscribedSummaryMarkup("Events", subscribedEvents, "Subscribed to by", "from"),
             subscribedSummaryMarkup("Observe Events", subscribedObserveEvents, "Subscribed to by", "from"),
             subscribedSummaryMarkup("Current States", subscribedCurrentStates, "Subscribed to by", "from"),
+            subscribedSummaryMarkup("Images", subscribedImages, "Subscribed to by", "from"),
             subscribedSummaryMarkup("Alarms", subscribedAlarms, "Subscribed to by", "from"),
-            subscribedSummaryMarkup("Commands", sentCommands, "Sent by", "to")
+            subscribedSummaryMarkup("Commands", sentCommands, "Sent by", "to"),
+            subscribedSummaryMarkup("Services", requiredServices, "Required by", "from")
           )
       )
     }
 
-    div(
-      nh.H2("Summary"),
-      publishedSummary(),
-      if (clientApi) subscribedSummary() else span()
-    )
+    try {
+      div(
+        nh.H2("Summary"),
+        publishedSummary(),
+        if (clientApi) subscribedSummary() else span()
+      )
+    } catch {
+      case ex: Exception =>
+        ex.printStackTrace()
+        div(p(s"Summary Table: Internal error: ${ex.toString}"))
+
+    }
   }
 
 }

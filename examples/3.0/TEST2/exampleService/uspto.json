@@ -2,7 +2,7 @@
   "openapi": "3.0.1",
   "servers": [
     {
-      "url": "{scheme}://developer.uspto.gov/ds-api",
+      "url": "http://developer.uspto.gov/ds-api",
       "variables": {
         "scheme": {
           "description": "The Data Set API is accessible via https and http",
