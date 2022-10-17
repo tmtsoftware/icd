@@ -15,9 +15,11 @@ import icd.web.shared._
  * @param maybeStaticHtml  for services documented by OpenApi JSON, determines the type of HTML generated
  *                       (static (true) is plain HTML, non-static (false) includes JavaScript)
  *                       A value of None means don't generate the HTML at all.
+ * @param subsystemsWithVersion a list of subsystems for the queries that have non-default versions
  */
 //noinspection DuplicatedCode
-class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeStaticHtml: Option[Boolean]) {
+class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeStaticHtml: Option[Boolean],
+                          subsystemsWithVersion: List[SubsystemWithVersion] = Nil) {
 
   /**
    * Query the database for information about all the subsystem's components
@@ -95,11 +97,12 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
       subscribeType: PublishType,
       maybePdfOptions: Option[PdfOptions]
   ): List[SubscribeInfo] = {
-    if (clientApi)
+    if (clientApi) {
+      // XXX TODO FIXME: Should use selected versions of subsystems (for icd-viz at least)
       query.subscribes(s"$prefix.$name", subscribeType, maybePdfOptions).map { s =>
         SubscribeInfo(s.component, s.subscribeType, s.subscribeModelInfo)
       }
-    else Nil
+    } else Nil
   }
 
   /**
@@ -136,6 +139,13 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
     }
   }
 
+  private def makeSubsystemWithVersion(subsystem: String, maybeComponent: Option[String]): SubsystemWithVersion = {
+    subsystemsWithVersion.find(_.subsystem == subsystem) match {
+      case Some(sv) => SubsystemWithVersion(subsystem, sv.maybeVersion, maybeComponent)
+      case None => SubsystemWithVersion(subsystem, None, maybeComponent)
+    }
+  }
+
   /**
    * Gets information about the items the component subscribes to, along with the publisher of each item
    *
@@ -151,7 +161,7 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
     def getInfo(publishType: PublishType, si: SubscribeModelInfo): DetailedSubscribeInfo = {
       val x = for {
         t <- versionManager.getModels(
-          SubsystemWithVersion(si.subsystem, None, Some(si.component)),
+          makeSubsystemWithVersion(si.subsystem, Some(si.component)),
           subsystemOnly = false,
           maybePdfOptions,
           Map.empty
@@ -231,7 +241,7 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
     } yield {
       // Need to resolve any refs in the receiver's model
       val allModels = versionManager.getModels(
-        SubsystemWithVersion(sent.subsystem, None, Some(sent.component)),
+        makeSubsystemWithVersion(sent.subsystem, Some(sent.component)),
         subsystemOnly = false,
         maybePdfOptions,
         Map.empty

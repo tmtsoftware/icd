@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd.IcdValidator
-import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdDb, Subsystems}
+import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, Subsystems}
 import csw.services.icd.viz.IcdVizManager.EdgeType.EdgeType
 import csw.services.icd.viz.IcdVizManager.MissingType.MissingType
 import icd.web.shared.{
@@ -122,10 +122,22 @@ object IcdVizManager {
         maybeComponentModel.map(_ => sv)
       }
 
-    val componentInfoHelper = new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = None)
-    val noMarkdownOpt       = Some(PdfOptions(processMarkdown = false))
-    val componentInfoList =
+    val noMarkdownOpt = Some(PdfOptions(processMarkdown = false))
+
+    val componentInfoList = if (components.size == 2) {
+      // XXX Limit to the two components of an ICD?
+      IcdComponentInfo
+        .getComponentInfo(versionManager, components.head, components.tail.head, noMarkdownOpt, staticHtml = false)
+        .toList
+    }
+    else {
+      // XXX TODO FIXME: If there are multiple subsystem/somponents with versions, only the latest versions are used for
+      //  looking up dependent components to get subscribers/publishers, etc.
+      val subsystems = components.map(c => SubsystemWithVersion(c.subsystem, c.maybeVersion, None)).distinct
+      val componentInfoHelper =
+        new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = None, subsystems)
       components.flatMap(sv => componentInfoHelper.getComponentInfo(versionManager, sv, noMarkdownOpt, Map.empty))
+    }
 
     def componentNameFromPrefix(prefix: String): String = {
       val sv = SubsystemWithVersion(prefix)
@@ -158,9 +170,22 @@ object IcdVizManager {
       )
     }
 
+    // Gets the component model for the given subsystem/component, making sure to use
+    // the selected subsystem version, if subsystem is one of the primary subsystems and
+    // a version was specified.
+    def getComponentModel(subsystem: String, componentName: String): Option[ComponentModel] = {
+      components.find(c => c.subsystem == subsystem && c.maybeVersion.nonEmpty) match {
+        case Some(sv) =>
+          val compSv = sv.copy(maybeComponent = Some(componentName))
+          db.versionManager.getComponentModel(compSv, noMarkdownOpt)
+        case None =>
+          db.query.getComponentModel(subsystem, componentName, noMarkdownOpt)
+      }
+    }
+
     // Get info about subscribed events or images where the publisher doesn't publish the event
     def getMissingPublisherInfo(info: ComponentInfo, images: Boolean): (List[DetailedSubscribeInfo], List[ComponentModel]) = {
-      if (options.missingEvents) {
+      if (options.missingEvents && isRelevant(info.componentModel)) {
         val subscribes = info.subscribes.toList
           .flatMap(_.subscribeInfo)
           .filter(d => images == (d.itemType == ComponentInfo.Images) && d.imageModel.isEmpty && d.eventModel.isEmpty)
@@ -168,8 +193,7 @@ object IcdVizManager {
           subscribes,
           subscribes
             .map(d =>
-              db.query
-                .getComponentModel(d.subscribeModelInfo.subsystem, d.subscribeModelInfo.component, noMarkdownOpt)
+              getComponentModel(d.subscribeModelInfo.subsystem, d.subscribeModelInfo.component)
                 .getOrElse(
                   ComponentModel(
                     "?",
@@ -214,9 +238,14 @@ object IcdVizManager {
       )
     }
 
+    // If there are two components (ICD), only consider those
+    def isRelevant(m: ComponentModel): Boolean = {
+      components.size != 2 || components.exists(c => c.subsystem == m.subsystem && c.maybeComponent.contains(m.component))
+    }
+
     // Gets info about published events with no subscribers
     def getMissingSubscriberInfo(info: ComponentInfo, images: Boolean): (List[EventOrImageInfo], List[ComponentModel]) = {
-      if (options.missingEvents) {
+      if (options.missingEvents && isRelevant(info.componentModel)) {
         val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
         val infoList =
           if (images)
@@ -290,7 +319,7 @@ object IcdVizManager {
 
     // Gets information about commands a component sends where no receiver was found
     def getMissingReceiverInfo(info: ComponentInfo): (List[SentCommandInfo], List[ComponentModel]) = {
-      if (options.missingCommands) {
+      if (options.missingCommands && isRelevant(info.componentModel)) {
         val sentCommands = info.commands.toList
           .flatMap(_.commandsSent)
           .filter(_.receiveCommandModel.isEmpty)
@@ -298,8 +327,7 @@ object IcdVizManager {
           sentCommands,
           sentCommands
             .map(s =>
-              db.query
-                .getComponentModel(s.subsystem, s.component, noMarkdownOpt)
+              getComponentModel(s.subsystem, s.component)
                 .getOrElse(
                   ComponentModel(
                     "?",
@@ -335,7 +363,7 @@ object IcdVizManager {
 
     // Gets information about commands received where there are no senders
     def getMissingSenderCommandInfo(info: ComponentInfo): (List[ReceivedCommandInfo], List[ComponentModel]) = {
-      if (options.missingCommands) {
+      if (options.missingCommands && isRelevant(info.componentModel)) {
         val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
         val receivedCommands = info.commands.toList
           .flatMap(_.commandsReceived)

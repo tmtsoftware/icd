@@ -50,32 +50,36 @@ object IcdComponentInfo {
       .map(ComponentInfo.applyIcdFilter)
   }
 
-//  /**
-//   * Query the database for information about the given component
-//   *
-//   * @param versionManager used to access versions of components
-//   * @param sv    the subsystem
-//   * @param targetSv    the target subsystem of the ICD
-//   * @return an object containing information about the component
-//   */
-//  private def getComponentInfo(
-//      versionManager: IcdVersionManager,
-//      sv: SubsystemWithVersion,
-//      targetSv: SubsystemWithVersion,
-//      maybePdfOptions: Option[PdfOptions]
-//  ): Option[ComponentInfo] = {
-//    // get the models for this component
-//    val modelsList       = versionManager.getModels(sv, subsystemOnly = false, maybePdfOptions)
-//    val targetModelsList = versionManager.getModels(targetSv, subsystemOnly = false, maybePdfOptions)
-//    getComponentInfoFromModels(versionManager, modelsList.headOption, targetModelsList, maybePdfOptions)
-//  }
+  /**
+   * Query the database for information about the given component
+   *
+   * @param versionManager used to access versions of components
+   * @param sv    the subsystem
+   * @param targetSv    the target subsystem of the ICD
+   * @param staticHtml for services documented by OpenApi JSON, determines the type of HTML generated
+   *                   (static is plain HTML, non-static includes JavaScript)
+   *
+   * @return an object containing information about the component
+   */
+  def getComponentInfo(
+      versionManager: IcdVersionManager,
+      sv: SubsystemWithVersion,
+      targetSv: SubsystemWithVersion,
+      maybePdfOptions: Option[PdfOptions],
+      staticHtml: Boolean
+  ): Option[ComponentInfo] = {
+    // get the models for this component
+    val modelsList       = versionManager.getModels(sv, subsystemOnly = false, maybePdfOptions)
+    val targetModelsList = versionManager.getModels(targetSv, subsystemOnly = false, maybePdfOptions)
+    getComponentInfoFromModels(versionManager, modelsList.headOption, targetModelsList, maybePdfOptions, staticHtml)
+  }
 
   /**
    * Query the database for information about the given component
    *
    * @param versionManager used to access versions of components
-   * @param models    the component models for subsystem1
-   * @param targetModelsList    the component models for the target subsystem
+   * @param models    the component models for a component in the first subsystem
+   * @param targetModelsList    the component models for all the target subsystem components
    * @param maybePdfOptions optional settings used when converting Markdown to HTML for use in PDF output
    * @param staticHtml for services documented by OpenApi JSON, determines the type of HTML generated
    *                   (static is plain HTML, non-static includes JavaScript)
