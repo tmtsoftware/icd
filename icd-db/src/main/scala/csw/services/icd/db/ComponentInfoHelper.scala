@@ -171,7 +171,6 @@ class ComponentInfoHelper(
       val x = for {
         t <- versionManager.getModels(
           makeSubsystemWithVersion(si.subsystem, Some(si.component)),
-          subsystemOnly = false,
           maybePdfOptions,
           Map.empty
         )
@@ -250,7 +249,6 @@ class ComponentInfoHelper(
       // Need to resolve any refs in the receiver's model
       val allModels = versionManager.getModels(
         makeSubsystemWithVersion(sent.subsystem, Some(sent.component)),
-        subsystemOnly = false,
         maybePdfOptions,
         Map.empty
       )

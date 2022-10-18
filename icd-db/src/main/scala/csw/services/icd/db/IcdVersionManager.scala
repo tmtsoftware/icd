@@ -94,13 +94,14 @@ object IcdVersionManager {
       date: DateTime,
       commit: String,
       parts: List[PartInfo]
-  ) {
-    // Gets the version of the part with the given path
-    def getPartVersion(path: String): Option[Int] = {
-      val list = for (part <- parts if part.path == path) yield part.version
-      list.headOption
-    }
-  }
+  )
+//  {
+//    // Gets the version of the part with the given path
+//    def getPartVersion(path: String): Option[Int] = {
+//      val list = for (part <- parts if part.path == path) yield part.version
+//      list.headOption
+//    }
+//  }
 
   // XXX TODO: Use automatic JSON conversion for reading and writing this?
   object VersionInfo {
@@ -481,43 +482,70 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * (In this case the definitions are stored in sub-collections in the DB).
    *
    * @param sv            the subsystem
-   * @param subsystemOnly if true, return only the models for the top level subsystem
+   * @param maybePdfOptions options for generating HTML for PDF doc
+   * @param fitsKeyMap FITS key info, if needed
+   * @param includeOnly if not empty, include only the named models in the result ("subsystemModel", "publishModel", etc.)
    * @return a list of IcdModels for the given version of the subsystem or component
    */
   private[db] def getModels(
       sv: SubsystemWithVersion,
-      subsystemOnly: Boolean = false,
-      maybePdfOptions: Option[PdfOptions],
-      fitsKeyMap: FitsKeyMap = Map.empty
+      maybePdfOptions: Option[PdfOptions] = None,
+      fitsKeyMap: FitsKeyMap = Map.empty,
+      includeOnly: Set[String] = Set.empty
   ): List[IcdModels] = {
 
     // Return an object that holds all the model classes associated with a single ICD entry.
     def makeModels(versionMap: Map[String, Int], entry: ApiCollections): IcdModels = {
       def getDocVersion(coll: BSONCollection): BSONDocument = getVersionOf(coll, versionMap(coll.name))
+
       val subsystemModel: Option[SubsystemModel] =
-        entry.subsystem.flatMap(coll => SubsystemModelBsonParser(getDocVersion(coll), maybePdfOptions))
+        if (includeOnly.isEmpty || includeOnly.contains("subsystemModel"))
+          entry.subsystem.flatMap(coll => SubsystemModelBsonParser(getDocVersion(coll), maybePdfOptions))
+        else None
+
       val publishModel: Option[IcdModels.PublishModel] =
-        entry.publish.flatMap(coll =>
-          PublishModelBsonParser(
-            getDocVersion(coll),
-            maybePdfOptions,
-            query.getAllObserveEvents(maybePdfOptions),
-            fitsKeyMap,
-            Some(sv)
+        if (includeOnly.isEmpty || includeOnly.contains("publishModel"))
+          entry.publish.flatMap(coll =>
+            PublishModelBsonParser(
+              getDocVersion(coll),
+              maybePdfOptions,
+              query.getAllObserveEvents(maybePdfOptions),
+              fitsKeyMap,
+              Some(sv)
+            )
           )
-        )
+        else None
+
       val subscribeModel: Option[IcdModels.SubscribeModel] =
-        entry.subscribe.flatMap(coll => SubscribeModelBsonParser(getDocVersion(coll), maybePdfOptions))
+        if (includeOnly.isEmpty || includeOnly.contains("subscribeModel"))
+          entry.subscribe.flatMap(coll => SubscribeModelBsonParser(getDocVersion(coll), maybePdfOptions))
+        else None
+
       val commandModel: Option[IcdModels.CommandModel] =
-        entry.command.flatMap(coll => parser.CommandModelBsonParser(getDocVersion(coll), maybePdfOptions))
+        if (includeOnly.isEmpty || includeOnly.contains("commandModel"))
+          entry.command.flatMap(coll => parser.CommandModelBsonParser(getDocVersion(coll), maybePdfOptions))
+        else None
+
       val componentModel: Option[IcdModels.ComponentModel] =
-        entry.component.flatMap(coll => ComponentModelBsonParser(getDocVersion(coll), maybePdfOptions))
+        if (includeOnly.isEmpty || includeOnly.contains("componentModel"))
+          entry.component.flatMap(coll => ComponentModelBsonParser(getDocVersion(coll), maybePdfOptions))
+        else None
+
       val serviceModel: Option[IcdModels.ServiceModel] =
-        entry.services.flatMap(coll => ServiceModelBsonParser(db, getDocVersion(coll), maybePdfOptions))
+        if (includeOnly.isEmpty || includeOnly.contains("serviceModel"))
+          entry.services.flatMap(coll => ServiceModelBsonParser(db, getDocVersion(coll), maybePdfOptions))
+        else None
+
       val alarmsModel: Option[IcdModels.AlarmsModel] =
-        entry.alarms.flatMap(coll => AlarmsModelBsonParser(getDocVersion(coll), maybePdfOptions))
+        if (includeOnly.isEmpty || includeOnly.contains("alarmsModel"))
+          entry.alarms.flatMap(coll => AlarmsModelBsonParser(getDocVersion(coll), maybePdfOptions))
+        else None
+
       val icdModels: List[IcdModels.IcdModel] =
-        entry.icds.flatMap(coll => IcdModelBsonParser(getDocVersion(coll), maybePdfOptions))
+        if (includeOnly.isEmpty || includeOnly.contains("icdModels"))
+          entry.icds.flatMap(coll => IcdModelBsonParser(getDocVersion(coll), maybePdfOptions))
+        else Nil
+
       IcdModels(subsystemModel, componentModel, publishModel, subscribeModel, commandModel, alarmsModel, serviceModel, icdModels)
     }
 
@@ -525,45 +553,14 @@ case class IcdVersionManager(query: IcdDbQuery) {
       case Some(versionInfo) =>
         val versionMap = versionInfo.parts.map(v => v.path -> v.version).toMap
         val allEntries = getEntries(versionInfo.parts)
-        val entries    = if (subsystemOnly) allEntries.take(1) else allEntries
+        val entries    = if (includeOnly.contains("subsystemModel")) allEntries.take(1) else allEntries
         entries.map(makeModels(versionMap, _))
       case None =>
-        val v = sv.maybeVersion.map("-" + _).getOrElse("")
         println(s"$sv not found in the icd database.")
         Nil
     }
   }
 
-//  /**
-//   * Returns a list of subscribe models for the given subsystem version or component,
-//   * based on the data in the database.
-//   *
-//   * @param sv            the subsystem
-//   * @return a list of subscribe models for the given version of the subsystem or component
-//   */
-//  private[db] def getSubscribeModels(
-//      sv: SubsystemWithVersion,
-//      maybePdfOptions: Option[PdfOptions]
-//  ): List[IcdModels.SubscribeModel] = {
-//
-//    // Return an object that holds all the model classes associated with a single ICD entry.
-//    def makeModels(versionMap: Map[String, Int], entry: ApiCollections): Option[IcdModels.SubscribeModel] = {
-//      def getDocVersion(coll: BSONCollection): BSONDocument = getVersionOf(coll, versionMap(coll.name))
-//
-//      entry.subscribe.flatMap(coll => SubscribeModelBsonParser(getDocVersion(coll), maybePdfOptions))
-//    }
-//
-//    getVersion(sv) match {
-//      case Some(versionInfo) =>
-//        val versionMap = versionInfo.parts.map(v => v.path -> v.version).toMap
-//        val entries    = getEntries(versionInfo.parts)
-//        entries.flatMap(makeModels(versionMap, _))
-//      case None =>
-//        val v = sv.maybeVersion.map("-" + _).getOrElse("")
-//        println(s"$sv not found in the icd database.")
-//        Nil
-//    }
-//  }
 
   /**
    * Returns allModelsList if sv.component is empty, otherwise a list with just the given component models
@@ -583,7 +580,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       case Some(compName) =>
         // XXX TODO FIXME: return filtered allModelsList?
         val compSv = SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(compName))
-        getModels(compSv, subsystemOnly = false, maybePdfOptions, fitsKeyMap)
+        getModels(compSv, maybePdfOptions, fitsKeyMap)
     }
   }
 
@@ -605,7 +602,6 @@ case class IcdVersionManager(query: IcdDbQuery) {
     val allIcdModels = allComponentSvs.flatMap(compSv =>
       getModels(
         compSv,
-        subsystemOnly = false,
         maybePdfOptions,
         fitsKeyMap
       )
@@ -625,7 +621,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       sv: SubsystemWithVersion,
       maybePdfOptions: Option[PdfOptions]
   ): Option[SubsystemModel] = {
-    getModels(sv, subsystemOnly = true, maybePdfOptions, Map.empty).headOption.flatMap(_.subsystemModel)
+    getModels(sv, maybePdfOptions, Map.empty, Set("subsystemModel")).headOption.flatMap(_.subsystemModel)
   }
 
   /**
@@ -637,10 +633,10 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * @return the list of icd models that correspond to the two subsystems
    */
   def getIcdModels(sv: SubsystemWithVersion, tv: SubsystemWithVersion, maybePdfOptions: Option[PdfOptions]): List[IcdModel] = {
-    val svIcds = getModels(sv, subsystemOnly = true, maybePdfOptions).headOption.toList
+    val svIcds = getModels(sv, maybePdfOptions, includeOnly = Set("icdModels")).headOption.toList
       .flatMap(_.icdModels)
       .filter(_.targetSubsystem == tv.subsystem)
-    val tvIcds = getModels(tv, subsystemOnly = true, maybePdfOptions).headOption.toList
+    val tvIcds = getModels(tv, maybePdfOptions, includeOnly = Set("icdModels")).headOption.toList
       .flatMap(_.icdModels)
       .filter(_.targetSubsystem == sv.subsystem)
     svIcds ::: tvIcds
@@ -654,7 +650,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * @return the subsystem model
    */
   def getComponentModel(sv: SubsystemWithVersion, maybePdfOptions: Option[PdfOptions]): Option[ComponentModel] = {
-    getModels(sv, subsystemOnly = false, maybePdfOptions).headOption.flatMap(_.componentModel)
+    getModels(sv, maybePdfOptions = maybePdfOptions, includeOnly = Set("componentModel")).headOption.flatMap(_.componentModel)
   }
 
   /**
@@ -883,10 +879,13 @@ case class IcdVersionManager(query: IcdDbQuery) {
       .filter(c => !versionedSubsystems.exists(sv => sv.subsystem == c.subsystem))
     val subscribeInfo1 = components1.map(c => query.getSubscribeInfo(c, maybePdfOptions))
     val subscribeInfo2 = for {
-      sv             <- versionedSubsystems
-      componentName  <- getComponentNames(sv)
-      // XXX TODO FIXME could make more efficient
-      models         <- getModels(sv.copy(maybeComponent = Some(componentName)), maybePdfOptions = maybePdfOptions)
+      sv            <- versionedSubsystems
+      componentName <- getComponentNames(sv)
+      models <- getModels(
+        sv.copy(maybeComponent = Some(componentName)),
+        maybePdfOptions = maybePdfOptions,
+        includeOnly = Set("componentModel", "subscribeModel")
+      )
       componentModel <- models.componentModel
       subscribeModel <- models.subscribeModel
     } yield {

@@ -360,17 +360,17 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
     getCollection(collName)
   }
 
-  /**
-   * Returns the model object for the subsystem with the given name
-   */
-  def getSubsystemModel(subsystem: String, maybePdfOptions: Option[PdfOptions]): Option[SubsystemModel] = {
-    val collName = getSubsystemCollectionName(subsystem)
-    if (collectionExists(collName)) {
-      val coll = db.collection[BSONCollection](collName)
-      collectionHead(coll).flatMap(SubsystemModelBsonParser(_, maybePdfOptions))
-    }
-    else None
-  }
+//  /**
+//   * Returns the model object for the subsystem with the given name
+//   */
+//  def getSubsystemModel(subsystem: String, maybePdfOptions: Option[PdfOptions]): Option[SubsystemModel] = {
+//    val collName = getSubsystemCollectionName(subsystem)
+//    if (collectionExists(collName)) {
+//      val coll = db.collection[BSONCollection](collName)
+//      collectionHead(coll).flatMap(SubsystemModelBsonParser(_, maybePdfOptions))
+//    }
+//    else None
+//  }
 
   /**
    * Returns the model object for the component with the given name

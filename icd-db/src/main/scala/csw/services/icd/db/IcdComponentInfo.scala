@@ -69,8 +69,8 @@ object IcdComponentInfo {
       staticHtml: Boolean
   ): Option[ComponentInfo] = {
     // get the models for this component
-    val modelsList       = versionManager.getModels(sv, subsystemOnly = false, maybePdfOptions)
-    val targetModelsList = versionManager.getModels(targetSv, subsystemOnly = false, maybePdfOptions)
+    val modelsList       = versionManager.getModels(sv, maybePdfOptions)
+    val targetModelsList = versionManager.getModels(targetSv, maybePdfOptions)
     getComponentInfoFromModels(versionManager, modelsList.headOption, targetModelsList, maybePdfOptions, staticHtml)
   }
 

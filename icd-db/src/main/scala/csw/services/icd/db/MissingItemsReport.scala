@@ -110,7 +110,7 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfO
     def getItems: List[Items] = {
       for {
         sv        <- subsystemsWithVersions
-        models    <- versionManager.getModels(sv, subsystemOnly = false, Some(pdfOptions))
+        models    <- versionManager.getModels(sv, Some(pdfOptions))
         component <- models.componentModel
       } yield {
         val publishModel           = models.publishModel
