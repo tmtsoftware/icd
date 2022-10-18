@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd.IcdValidator
-import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, Subsystems}
+import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdDb, Subsystems}
 import csw.services.icd.viz.IcdVizManager.EdgeType.EdgeType
 import csw.services.icd.viz.IcdVizManager.MissingType.MissingType
 import icd.web.shared.{
@@ -124,20 +124,11 @@ object IcdVizManager {
 
     val noMarkdownOpt = Some(PdfOptions(processMarkdown = false))
 
-    val componentInfoList = if (components.size == 2) {
-      // XXX Limit to the two components of an ICD?
-      IcdComponentInfo
-        .getComponentInfo(versionManager, components.head, components.tail.head, noMarkdownOpt, staticHtml = false)
-        .toList
-    }
-    else {
-      // XXX TODO FIXME: If there are multiple subsystem/somponents with versions, only the latest versions are used for
-      //  looking up dependent components to get subscribers/publishers, etc.
-      val subsystems = components.map(c => SubsystemWithVersion(c.subsystem, c.maybeVersion, None)).distinct
-      val componentInfoHelper =
-        new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = None, subsystems)
+    val subsystems = components.map(c => SubsystemWithVersion(c.subsystem, c.maybeVersion, None)).distinct
+    val componentInfoHelper =
+      new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = None, subsystems)
+    val componentInfoList =
       components.flatMap(sv => componentInfoHelper.getComponentInfo(versionManager, sv, noMarkdownOpt, Map.empty))
-    }
 
     def componentNameFromPrefix(prefix: String): String = {
       val sv = SubsystemWithVersion(prefix)
@@ -185,7 +176,7 @@ object IcdVizManager {
 
     // Get info about subscribed events or images where the publisher doesn't publish the event
     def getMissingPublisherInfo(info: ComponentInfo, images: Boolean): (List[DetailedSubscribeInfo], List[ComponentModel]) = {
-      if (options.missingEvents && isRelevant(info.componentModel)) {
+      if (options.missingEvents) {
         val subscribes = info.subscribes.toList
           .flatMap(_.subscribeInfo)
           .filter(d => images == (d.itemType == ComponentInfo.Images) && d.imageModel.isEmpty && d.eventModel.isEmpty)
@@ -238,14 +229,9 @@ object IcdVizManager {
       )
     }
 
-    // If there are two components (ICD), only consider those
-    def isRelevant(m: ComponentModel): Boolean = {
-      components.size != 2 || components.exists(c => c.subsystem == m.subsystem && c.maybeComponent.contains(m.component))
-    }
-
     // Gets info about published events with no subscribers
     def getMissingSubscriberInfo(info: ComponentInfo, images: Boolean): (List[EventOrImageInfo], List[ComponentModel]) = {
-      if (options.missingEvents && isRelevant(info.componentModel)) {
+      if (options.missingEvents) {
         val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
         val infoList =
           if (images)
@@ -319,7 +305,7 @@ object IcdVizManager {
 
     // Gets information about commands a component sends where no receiver was found
     def getMissingReceiverInfo(info: ComponentInfo): (List[SentCommandInfo], List[ComponentModel]) = {
-      if (options.missingCommands && isRelevant(info.componentModel)) {
+      if (options.missingCommands) {
         val sentCommands = info.commands.toList
           .flatMap(_.commandsSent)
           .filter(_.receiveCommandModel.isEmpty)
@@ -363,7 +349,7 @@ object IcdVizManager {
 
     // Gets information about commands received where there are no senders
     def getMissingSenderCommandInfo(info: ComponentInfo): (List[ReceivedCommandInfo], List[ComponentModel]) = {
-      if (options.missingCommands && isRelevant(info.componentModel)) {
+      if (options.missingCommands) {
         val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
         val receivedCommands = info.commands.toList
           .flatMap(_.commandsReceived)

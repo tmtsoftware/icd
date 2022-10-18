@@ -18,8 +18,12 @@ import icd.web.shared._
  * @param subsystemsWithVersion a list of subsystems for the queries that have non-default versions
  */
 //noinspection DuplicatedCode
-class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeStaticHtml: Option[Boolean],
-                          subsystemsWithVersion: List[SubsystemWithVersion] = Nil) {
+class ComponentInfoHelper(
+    displayWarnings: Boolean,
+    clientApi: Boolean,
+    maybeStaticHtml: Option[Boolean],
+    subsystemsWithVersion: List[SubsystemWithVersion] = Nil
+) {
 
   /**
    * Query the database for information about all the subsystem's components
@@ -70,7 +74,7 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
   ): Option[ComponentInfo] = {
     models.flatMap { icdModels =>
       val componentModel = icdModels.componentModel
-      val publishes      = getPublishes(versionManager.query, icdModels, maybePdfOptions)
+      val publishes      = getPublishes(versionManager, icdModels, maybePdfOptions)
       val subscribes     = if (clientApi) getSubscribes(versionManager, icdModels, maybePdfOptions) else None
       val commands       = getCommands(versionManager, icdModels, maybePdfOptions)
       val services       = getServices(versionManager.query, icdModels, maybePdfOptions)
@@ -83,14 +87,14 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
   /**
    * Gets information about who subscribes to the given published items
    *
-   * @param query         database query handle
+   * @param versionManager database query handle
    * @param prefix        component's prefix
    * @param name          simple name of the published item
    * @param desc          description of the item
    * @param subscribeType event, alarm, etc...
    */
   private def getSubscribers(
-      query: IcdDbQuery,
+      versionManager: IcdVersionManager,
       prefix: String,
       name: String,
       desc: String,
@@ -98,35 +102,40 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
       maybePdfOptions: Option[PdfOptions]
   ): List[SubscribeInfo] = {
     if (clientApi) {
-      // XXX TODO FIXME: Should use selected versions of subsystems (for icd-viz at least)
-      query.subscribes(s"$prefix.$name", subscribeType, maybePdfOptions).map { s =>
+      versionManager.subscribes(s"$prefix.$name", subscribeType, maybePdfOptions, subsystemsWithVersion).map { s =>
         SubscribeInfo(s.component, s.subscribeType, s.subscribeModelInfo)
       }
-    } else Nil
+    }
+    else Nil
   }
 
   /**
    * Gets information about the items published by a component, along with a reference to the subscribers to each item
    *
-   * @param query  database query handle
+   * @param versionManager  database query handle
    * @param models the model objects for the component
    */
-  private def getPublishes(query: IcdDbQuery, models: IcdModels, maybePdfOptions: Option[PdfOptions]): Option[Publishes] = {
+  private def getPublishes(
+      versionManager: IcdVersionManager,
+      models: IcdModels,
+      maybePdfOptions: Option[PdfOptions]
+  ): Option[Publishes] = {
+    val query = versionManager.query
     models.publishModel match {
       case None => None
       case Some(m) =>
         val prefix = s"${m.subsystem}.${m.component}"
         val eventList = m.eventList.map { t =>
-          EventInfo(t, getSubscribers(query, prefix, t.name, t.description, Events, maybePdfOptions))
+          EventInfo(t, getSubscribers(versionManager, prefix, t.name, t.description, Events, maybePdfOptions))
         }
         val observeEventList = m.observeEventList.map { t =>
-          EventInfo(t, getSubscribers(query, prefix, t.name, t.description, ObserveEvents, maybePdfOptions))
+          EventInfo(t, getSubscribers(versionManager, prefix, t.name, t.description, ObserveEvents, maybePdfOptions))
         }
         val currentStateList = m.currentStateList.map { t =>
-          EventInfo(t, getSubscribers(query, prefix, t.name, t.description, CurrentStates, maybePdfOptions))
+          EventInfo(t, getSubscribers(versionManager, prefix, t.name, t.description, CurrentStates, maybePdfOptions))
         }
         val imageList = m.imageList.map { t =>
-          ImageInfo(t, getSubscribers(query, prefix, t.name, t.description, Images, maybePdfOptions))
+          ImageInfo(t, getSubscribers(versionManager, prefix, t.name, t.description, Images, maybePdfOptions))
         }
         val alarmList = models.alarmsModel.toList.flatMap(_.alarmList) ++ m.alarmList
 
@@ -142,7 +151,7 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
   private def makeSubsystemWithVersion(subsystem: String, maybeComponent: Option[String]): SubsystemWithVersion = {
     subsystemsWithVersion.find(_.subsystem == subsystem) match {
       case Some(sv) => SubsystemWithVersion(subsystem, sv.maybeVersion, maybeComponent)
-      case None => SubsystemWithVersion(subsystem, None, maybeComponent)
+      case None     => SubsystemWithVersion(subsystem, None, maybeComponent)
     }
   }
 
@@ -234,7 +243,6 @@ class ComponentInfoHelper(displayWarnings: Boolean, clientApi: Boolean, maybeSta
       models: IcdModels,
       maybePdfOptions: Option[PdfOptions]
   ): List[SentCommandInfo] = {
-    val query = versionManager.query
     val result = for {
       cmd  <- models.commandModel.toList
       sent <- cmd.send

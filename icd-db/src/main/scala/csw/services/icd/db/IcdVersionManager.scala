@@ -24,6 +24,7 @@ import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.play.json.compat._
 import bson2json._
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
+import icd.web.shared.ComponentInfo.PublishType
 import lax._
 import json2bson._
 
@@ -288,21 +289,21 @@ case class IcdVersionManager(query: IcdDbQuery) {
     else current
   }
 
-  /**
-   * Returns a list of published version names of the subsystem
-   *
-   * @param subsystem the name of the subsystem
-   */
-  def getVersionNames(subsystem: String): List[String] = {
-    val collName = versionCollectionName(subsystem)
-    if (collectionExists(collName)) {
-      val docs = sortCollectionById(collName)
-      docs.map { doc =>
-        doc.getAsOpt[String](versionStrKey).get
-      }
-    }
-    else Nil
-  }
+//  /**
+//   * Returns a list of published version names of the subsystem
+//   *
+//   * @param subsystem the name of the subsystem
+//   */
+//  def getVersionNames(subsystem: String): List[String] = {
+//    val collName = versionCollectionName(subsystem)
+//    if (collectionExists(collName)) {
+//      val docs = sortCollectionById(collName)
+//      docs.map { doc =>
+//        doc.getAsOpt[String](versionStrKey).get
+//      }
+//    }
+//    else Nil
+//  }
 
   /**
    * Returns information about the given version of the given subsystem or component
@@ -497,7 +498,13 @@ case class IcdVersionManager(query: IcdDbQuery) {
         entry.subsystem.flatMap(coll => SubsystemModelBsonParser(getDocVersion(coll), maybePdfOptions))
       val publishModel: Option[IcdModels.PublishModel] =
         entry.publish.flatMap(coll =>
-          PublishModelBsonParser(getDocVersion(coll), maybePdfOptions, query.getAllObserveEvents(maybePdfOptions), fitsKeyMap, Some(sv))
+          PublishModelBsonParser(
+            getDocVersion(coll),
+            maybePdfOptions,
+            query.getAllObserveEvents(maybePdfOptions),
+            fitsKeyMap,
+            Some(sv)
+          )
         )
       val subscribeModel: Option[IcdModels.SubscribeModel] =
         entry.subscribe.flatMap(coll => SubscribeModelBsonParser(getDocVersion(coll), maybePdfOptions))
@@ -527,6 +534,37 @@ case class IcdVersionManager(query: IcdDbQuery) {
     }
   }
 
+//  /**
+//   * Returns a list of subscribe models for the given subsystem version or component,
+//   * based on the data in the database.
+//   *
+//   * @param sv            the subsystem
+//   * @return a list of subscribe models for the given version of the subsystem or component
+//   */
+//  private[db] def getSubscribeModels(
+//      sv: SubsystemWithVersion,
+//      maybePdfOptions: Option[PdfOptions]
+//  ): List[IcdModels.SubscribeModel] = {
+//
+//    // Return an object that holds all the model classes associated with a single ICD entry.
+//    def makeModels(versionMap: Map[String, Int], entry: ApiCollections): Option[IcdModels.SubscribeModel] = {
+//      def getDocVersion(coll: BSONCollection): BSONDocument = getVersionOf(coll, versionMap(coll.name))
+//
+//      entry.subscribe.flatMap(coll => SubscribeModelBsonParser(getDocVersion(coll), maybePdfOptions))
+//    }
+//
+//    getVersion(sv) match {
+//      case Some(versionInfo) =>
+//        val versionMap = versionInfo.parts.map(v => v.path -> v.version).toMap
+//        val entries    = getEntries(versionInfo.parts)
+//        entries.flatMap(makeModels(versionMap, _))
+//      case None =>
+//        val v = sv.maybeVersion.map("-" + _).getOrElse("")
+//        println(s"$sv not found in the icd database.")
+//        Nil
+//    }
+//  }
+
   /**
    * Returns allModelsList if sv.component is empty, otherwise a list with just the given component models
    * @param allModelsList a list of all component models in the subsystem
@@ -541,7 +579,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       fitsKeyMap: FitsKeyMap
   ): List[IcdModels] = {
     sv.maybeComponent match {
-      case None => allModelsList
+      case None           => allModelsList
       case Some(compName) =>
         // XXX TODO FIXME: return filtered allModelsList?
         val compSv = SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(compName))
@@ -585,7 +623,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
    */
   def getSubsystemModel(
       sv: SubsystemWithVersion,
-      maybePdfOptions: Option[PdfOptions],
+      maybePdfOptions: Option[PdfOptions]
   ): Option[SubsystemModel] = {
     getModels(sv, subsystemOnly = true, maybePdfOptions, Map.empty).headOption.flatMap(_.subsystemModel)
   }
@@ -821,5 +859,44 @@ case class IcdVersionManager(query: IcdDbQuery) {
         }
     }
     else Nil
+  }
+
+  /**
+   * Returns a list describing the components that subscribe to the given event, currentState, etc.
+   * This version is like the one in IcdDbQuery.subscribes(), except that it takes a list of
+   * subsystems that need to have the given version (The rest are assumed to be the current versions).
+   *
+   * @param path          full path name of value (prefix + name)
+   * @param subscribeType events, currentState, etc...
+   * @param subsystems    a list of subsystems whose versions should be used to search
+   *                      (For other subsystems, the latest version is used)
+   */
+  def subscribes(
+      path: String,
+      subscribeType: PublishType,
+      maybePdfOptions: Option[PdfOptions],
+      subsystems: List[SubsystemWithVersion]
+  ): List[Subscribed] = {
+    val versionedSubsystems = subsystems.filter(_.maybeVersion.isDefined)
+    val components1 = query
+      .getComponents(maybePdfOptions)
+      .filter(c => !versionedSubsystems.exists(sv => sv.subsystem == c.subsystem))
+    val subscribeInfo1 = components1.map(c => query.getSubscribeInfo(c, maybePdfOptions))
+    val subscribeInfo2 = for {
+      sv             <- versionedSubsystems
+      componentName  <- getComponentNames(sv)
+      // XXX TODO FIXME could make more efficient
+      models         <- getModels(sv.copy(maybeComponent = Some(componentName)), maybePdfOptions = maybePdfOptions)
+      componentModel <- models.componentModel
+      subscribeModel <- models.subscribeModel
+    } yield {
+      SubscribeInfo(componentModel, query.getSubscribedTo(componentModel, Some(subscribeModel)))
+    }
+    val subscribeInfo = subscribeInfo1 ++ subscribeInfo2
+
+    for {
+      i <- subscribeInfo
+      s <- i.subscribesTo.filter(sub => sub.path == path && sub.subscribeType == subscribeType)
+    } yield s
   }
 }

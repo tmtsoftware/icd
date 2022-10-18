@@ -693,23 +693,24 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
 
   /**
    * Returns a list of items the given component subscribes to
-   *
-   * @param component the component model
    */
-  private def getSubscribedTo(component: ComponentModel, maybePdfOptions: Option[PdfOptions]): List[Subscribed] = {
+  private[db] def getSubscribedTo(
+      componentModel: ComponentModel,
+      subscribeModel: Option[SubscribeModel]
+  ): List[Subscribed] = {
     // Gets the full path of the subscribed item
     def getPath(i: SubscribeModelInfo): String = {
       val prefix = s"${i.subsystem}.${i.component}"
       s"$prefix.${i.name}"
     }
 
-    getSubscribeModel(component, maybePdfOptions) match {
+    subscribeModel match {
       case Some(subscribeModel) =>
         List(
-          subscribeModel.eventList.map(i => Subscribed(component, i, Events, getPath(i))),
-          subscribeModel.observeEventList.map(i => Subscribed(component, i, ObserveEvents, getPath(i))),
-          subscribeModel.currentStateList.map(i => Subscribed(component, i, CurrentStates, getPath(i))),
-          subscribeModel.imageList.map(i => Subscribed(component, i, Images, getPath(i))),
+          subscribeModel.eventList.map(i => Subscribed(componentModel, i, Events, getPath(i))),
+          subscribeModel.observeEventList.map(i => Subscribed(componentModel, i, ObserveEvents, getPath(i))),
+          subscribeModel.currentStateList.map(i => Subscribed(componentModel, i, CurrentStates, getPath(i))),
+          subscribeModel.imageList.map(i => Subscribed(componentModel, i, Images, getPath(i)))
         ).flatten
       case None => Nil
     }
@@ -719,7 +720,8 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
    * Returns an object describing what the given component subscribes to
    */
   private[db] def getSubscribeInfo(c: ComponentModel, maybePdfOptions: Option[PdfOptions]): SubscribeInfo = {
-    SubscribeInfo(c, getSubscribedTo(c, maybePdfOptions))
+    val maybeSubscribeModel = getSubscribeModel(c, maybePdfOptions)
+    SubscribeInfo(c, getSubscribedTo(c, maybeSubscribeModel))
   }
 
   /**
