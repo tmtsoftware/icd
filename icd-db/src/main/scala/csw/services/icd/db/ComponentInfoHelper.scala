@@ -10,6 +10,7 @@ import icd.web.shared._
  * Support for creating instances of the shared (scala/scala.js) ComponentInfo class.
  * (This code can't be shared, since it accesses the database, which is on the server.)
  *
+ * @param versionManager used to access the database
  * @param displayWarnings if true warn when no publishers are found for a subscribed event etc.
  * @param clientApi if true include subscribed events and sent commands
  * @param maybeStaticHtml  for services documented by OpenApi JSON, determines the type of HTML generated
@@ -19,6 +20,7 @@ import icd.web.shared._
  */
 //noinspection DuplicatedCode
 class ComponentInfoHelper(
+    versionManager: IcdVersionManager,
     displayWarnings: Boolean,
     clientApi: Boolean,
     maybeStaticHtml: Option[Boolean],
@@ -28,56 +30,50 @@ class ComponentInfoHelper(
   /**
    * Query the database for information about all the subsystem's components
    *
-   * @param versionManager used to access the database
    * @param sv the subsystem
    * @return a list of objects containing information about the components
    */
   def getComponentInfoList(
-      versionManager: IcdVersionManager,
       sv: SubsystemWithVersion,
       maybePdfOptions: Option[PdfOptions],
       fitsKeyMap: FitsKeyMap
   ): List[ComponentInfo] = {
     val resolvedIcdModels = versionManager.getResolvedModels(sv, maybePdfOptions, fitsKeyMap)
-    resolvedIcdModels.flatMap(m => getComponentInfoFromModels(versionManager, Some(m), maybePdfOptions))
+    resolvedIcdModels.flatMap(m => getComponentInfoFromModels(Some(m), maybePdfOptions))
   }
 
   /**
    * Query the database for information about the given component
    *
-   * @param versionManager    used to access the database
    * @param sv       the subsystem and component
    * @return an object containing information about the component, if found
    */
   def getComponentInfo(
-      versionManager: IcdVersionManager,
       sv: SubsystemWithVersion,
       maybePdfOptions: Option[PdfOptions],
       fitsKeyMap: FitsKeyMap
   ): Option[ComponentInfo] = {
     // get the models for this component
     val resolvedIcdModels = versionManager.getResolvedModels(sv, maybePdfOptions, fitsKeyMap)
-    getComponentInfoFromModels(versionManager, resolvedIcdModels.headOption, maybePdfOptions)
+    getComponentInfoFromModels(resolvedIcdModels.headOption, maybePdfOptions)
   }
 
   /**
    * Gets component info from the given IcdModels object
    *
-   * @param versionManager    used to access the database
    * @param models            models for a component
    * @return an object containing information about the component, if found
    */
   private def getComponentInfoFromModels(
-      versionManager: IcdVersionManager,
       models: Option[IcdModels],
       maybePdfOptions: Option[PdfOptions]
   ): Option[ComponentInfo] = {
     models.flatMap { icdModels =>
       val componentModel = icdModels.componentModel
-      val publishes      = getPublishes(versionManager, icdModels, maybePdfOptions)
-      val subscribes     = if (clientApi) getSubscribes(versionManager, icdModels, maybePdfOptions) else None
-      val commands       = getCommands(versionManager, icdModels, maybePdfOptions)
-      val services       = getServices(versionManager.query, icdModels, maybePdfOptions)
+      val publishes      = getPublishes(icdModels, maybePdfOptions)
+      val subscribes     = if (clientApi) getSubscribes(icdModels, maybePdfOptions) else None
+      val commands       = getCommands(icdModels, maybePdfOptions)
+      val services       = getServices(icdModels, maybePdfOptions)
       componentModel.map { model =>
         ComponentInfo(model, publishes, subscribes, commands, services)
       }
@@ -87,14 +83,12 @@ class ComponentInfoHelper(
   /**
    * Gets information about who subscribes to the given published items
    *
-   * @param versionManager database query handle
    * @param prefix        component's prefix
    * @param name          simple name of the published item
    * @param desc          description of the item
    * @param subscribeType event, alarm, etc...
    */
   private def getSubscribers(
-      versionManager: IcdVersionManager,
       prefix: String,
       name: String,
       desc: String,
@@ -112,30 +106,27 @@ class ComponentInfoHelper(
   /**
    * Gets information about the items published by a component, along with a reference to the subscribers to each item
    *
-   * @param versionManager  database query handle
    * @param models the model objects for the component
    */
   private def getPublishes(
-      versionManager: IcdVersionManager,
       models: IcdModels,
       maybePdfOptions: Option[PdfOptions]
   ): Option[Publishes] = {
-    val query = versionManager.query
     models.publishModel match {
       case None => None
       case Some(m) =>
         val prefix = s"${m.subsystem}.${m.component}"
         val eventList = m.eventList.map { t =>
-          EventInfo(t, getSubscribers(versionManager, prefix, t.name, t.description, Events, maybePdfOptions))
+          EventInfo(t, getSubscribers(prefix, t.name, t.description, Events, maybePdfOptions))
         }
         val observeEventList = m.observeEventList.map { t =>
-          EventInfo(t, getSubscribers(versionManager, prefix, t.name, t.description, ObserveEvents, maybePdfOptions))
+          EventInfo(t, getSubscribers(prefix, t.name, t.description, ObserveEvents, maybePdfOptions))
         }
         val currentStateList = m.currentStateList.map { t =>
-          EventInfo(t, getSubscribers(versionManager, prefix, t.name, t.description, CurrentStates, maybePdfOptions))
+          EventInfo(t, getSubscribers(prefix, t.name, t.description, CurrentStates, maybePdfOptions))
         }
         val imageList = m.imageList.map { t =>
-          ImageInfo(t, getSubscribers(versionManager, prefix, t.name, t.description, Images, maybePdfOptions))
+          ImageInfo(t, getSubscribers(prefix, t.name, t.description, Images, maybePdfOptions))
         }
         val alarmList = models.alarmsModel.toList.flatMap(_.alarmList) ++ m.alarmList
 
@@ -158,11 +149,9 @@ class ComponentInfoHelper(
   /**
    * Gets information about the items the component subscribes to, along with the publisher of each item
    *
-   * @param versionManager  used to access the database
    * @param models the model objects for the component
    */
   private def getSubscribes(
-      versionManager: IcdVersionManager,
       models: IcdModels,
       maybePdfOptions: Option[PdfOptions]
   ): Option[Subscribes] = {
@@ -210,11 +199,9 @@ class ComponentInfoHelper(
    * Gets a list of commands received by the component, including information about which components
    * send each command.
    *
-   * @param query  database query handle
    * @param models model objects for component
    */
   private def getCommandsReceived(
-      query: IcdDbQuery,
       models: IcdModels,
       maybePdfOptions: Option[PdfOptions]
   ): List[ReceivedCommandInfo] = {
@@ -224,7 +211,7 @@ class ComponentInfoHelper(
     } yield {
       val senders =
         if (clientApi)
-          query.getCommandSenders(cmd.subsystem, cmd.component, received.name, maybePdfOptions)
+          versionManager.getCommandSenders(cmd.subsystem, cmd.component, received.name, maybePdfOptions, subsystemsWithVersion)
         else Nil
       ReceivedCommandInfo(received, senders)
     }
@@ -234,11 +221,9 @@ class ComponentInfoHelper(
    * Gets a list of commands sent by the component, including information about the components
    * that receive each command.
    *
-   * @param versionManager  database API
    * @param models model objects for component
    */
   private def getCommandsSent(
-      versionManager: IcdVersionManager,
       models: IcdModels,
       maybePdfOptions: Option[PdfOptions]
   ): List[SentCommandInfo] = {
@@ -282,17 +267,14 @@ class ComponentInfoHelper(
   /**
    * Gets a list of commands sent or received by the component
    *
-   * @param versionManager  database API
    * @param models model objects for component
    */
   private def getCommands(
-      versionManager: IcdVersionManager,
       models: IcdModels,
       maybePdfOptions: Option[PdfOptions]
   ): Option[Commands] = {
-    val query    = versionManager.query
-    val received = getCommandsReceived(query, models, maybePdfOptions)
-    val sent     = if (clientApi) getCommandsSent(versionManager, models, maybePdfOptions) else Nil
+    val received = getCommandsReceived(models, maybePdfOptions)
+    val sent     = if (clientApi) getCommandsSent(models, maybePdfOptions) else Nil
     models.commandModel match {
       case None => None
       case Some(m) =>
@@ -306,11 +288,9 @@ class ComponentInfoHelper(
   /**
    * Gets a list of services provided by the component
    *
-   * @param query  database query handle
    * @param models model objects for component
    */
   private def getServicesProvided(
-      query: IcdDbQuery,
       models: IcdModels,
       maybePdfOptions: Option[PdfOptions]
   ): List[ServiceProvidedInfo] = {
@@ -320,7 +300,7 @@ class ComponentInfoHelper(
     } yield {
       val clientComponents =
         if (clientApi)
-          query.getServiceClients(serviceModel.subsystem, serviceModel.component, provides.name, maybePdfOptions)
+          versionManager.query.getServiceClients(serviceModel.subsystem, serviceModel.component, provides.name, maybePdfOptions)
         else Nil
       val html = maybeStaticHtml.map(staticHtml => OpenApiToHtml.getHtml(provides.openApi, staticHtml)).getOrElse("<div/>")
       ServiceProvidedInfo(provides, clientComponents, html)
@@ -330,11 +310,9 @@ class ComponentInfoHelper(
   /**
    * Gets a list of services required by the component
    *
-   * @param query  database query handle
    * @param models model objects for component
    */
   private def getServicesRequired(
-      query: IcdDbQuery,
       models: IcdModels,
       maybePdfOptions: Option[PdfOptions]
   ): List[ServicesRequiredInfo] = {
@@ -342,7 +320,8 @@ class ComponentInfoHelper(
       serviceModel       <- models.serviceModel.toList
       serviceModelClient <- serviceModel.requires
     } yield {
-      val maybeServiceModel         = query.getServiceModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions)
+      val maybeServiceModel =
+        versionManager.query.getServiceModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions)
       val maybeServiceModelProvider = maybeServiceModel.flatMap(_.provides.find(_.name == serviceModelClient.name))
       val maybeHtml = for {
         p          <- maybeServiceModelProvider
@@ -351,7 +330,7 @@ class ComponentInfoHelper(
       ServicesRequiredInfo(
         serviceModelClient,
         maybeServiceModelProvider,
-        query.getComponentModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions),
+        versionManager.query.getComponentModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions),
         maybeHtml,
         displayWarnings
       )
@@ -361,12 +340,11 @@ class ComponentInfoHelper(
   /**
    * Gets a list of services used or provided by the component
    *
-   * @param query  database query handle
    * @param models model objects for component
    */
-  private def getServices(query: IcdDbQuery, models: IcdModels, maybePdfOptions: Option[PdfOptions]): Option[Services] = {
-    val provided = getServicesProvided(query, models, maybePdfOptions)
-    val required = if (clientApi) getServicesRequired(query, models, maybePdfOptions) else Nil
+  private def getServices(models: IcdModels, maybePdfOptions: Option[PdfOptions]): Option[Services] = {
+    val provided = getServicesProvided(models, maybePdfOptions)
+    val required = if (clientApi) getServicesRequired(models, maybePdfOptions) else Nil
     models.serviceModel match {
       case None => None
       case Some(m) =>

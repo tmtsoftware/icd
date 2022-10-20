@@ -75,8 +75,8 @@ class ApplicationImpl(db: IcdDb) {
     val fitsKeyMap          = IcdFits(db).getFitsKeyMap()
     val query               = new CachedIcdDbQuery(db.db, db.admin, subsystems, None, fitsKeyMap)
     val versionManager      = new CachedIcdVersionManager(query)
-    new ComponentInfoHelper(displayWarnings = searchAllSubsystems, clientApi = clientApi, maybeStaticHtml = Some(false))
-      .getComponentInfoList(versionManager, sv, None, fitsKeyMap)
+    new ComponentInfoHelper(versionManager, displayWarnings = searchAllSubsystems, clientApi = clientApi, maybeStaticHtml = Some(false))
+      .getComponentInfoList(sv, None, fitsKeyMap)
   }
 
   /**

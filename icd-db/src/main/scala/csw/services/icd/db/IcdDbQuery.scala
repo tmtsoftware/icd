@@ -471,26 +471,26 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
     getCommandModel(subsystem, component, maybePdfOptions: Option[PdfOptions]).flatMap(_.receive.find(_.name == commandName))
   }
 
-  /**
-   * Returns a list of components that send the given command to the given component/subsystem
-   *
-   * @param subsystem   the target component's subsystem
-   * @param component   the target component
-   * @param commandName the name of the command being sent
-   * @return list containing one item for each component that sends the command
-   */
-  def getCommandSenders(
-      subsystem: String,
-      component: String,
-      commandName: String,
-      maybePdfOptions: Option[PdfOptions]
-  ): List[ComponentModel] = {
-    for {
-      componentModel <- getComponents(maybePdfOptions)
-      commandModel   <- getCommandModel(componentModel, maybePdfOptions)
-      _              <- commandModel.send.find(s => s.subsystem == subsystem && s.component == component && s.name == commandName)
-    } yield componentModel
-  }
+//  /**
+//   * Returns a list of components that send the given command to the given component/subsystem
+//   *
+//   * @param subsystem   the target component's subsystem
+//   * @param component   the target component
+//   * @param commandName the name of the command being sent
+//   * @return list containing one item for each component that sends the command
+//   */
+//  def getCommandSenders(
+//      subsystem: String,
+//      component: String,
+//      commandName: String,
+//      maybePdfOptions: Option[PdfOptions]
+//  ): List[ComponentModel] = {
+//    for {
+//      componentModel <- getComponents(maybePdfOptions)
+//      commandModel   <- getCommandModel(componentModel, maybePdfOptions)
+//      _              <- commandModel.send.find(s => s.subsystem == subsystem && s.component == component && s.name == commandName)
+//    } yield componentModel
+//  }
 
   /**
    * Returns a list of components that require the given service from the given component/subsystem
@@ -731,18 +731,18 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
     getComponents(maybePdfOptions).map(c => getSubscribeInfo(c, maybePdfOptions))
   }
 
-  /**
-   * Returns a list describing the components that subscribe to the given value.
-   *
-   * @param path          full path name of value (prefix + name)
-   * @param subscribeType events, alarm, etc...
-   */
-  def subscribes(path: String, subscribeType: PublishType, maybePdfOptions: Option[PdfOptions]): List[Subscribed] = {
-    for {
-      i <- getSubscribeInfo(maybePdfOptions)
-      s <- i.subscribesTo.filter(sub => sub.path == path && sub.subscribeType == subscribeType)
-    } yield s
-  }
+//  /**
+//   * Returns a list describing the components that subscribe to the given value.
+//   *
+//   * @param path          full path name of value (prefix + name)
+//   * @param subscribeType events, alarm, etc...
+//   */
+//  def subscribes(path: String, subscribeType: PublishType, maybePdfOptions: Option[PdfOptions]): List[Subscribed] = {
+//    for {
+//      i <- getSubscribeInfo(maybePdfOptions)
+//      s <- i.subscribesTo.filter(sub => sub.path == path && sub.subscribeType == subscribeType)
+//    } yield s
+//  }
 
   /**
    * Gets a list of system events for the given subsystem

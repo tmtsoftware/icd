@@ -145,24 +145,24 @@ class ComponentInfoTest extends AnyFunSuite {
     testHelper.ingestDir(getTestDir(s"$examplesDir/TEST"))
     testHelper.ingestDir(getTestDir(s"$examplesDir/TEST2"))
 
-    new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = None)
-      .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None, Map.empty)
+    new ComponentInfoHelper(db.versionManager, displayWarnings = false, clientApi = true, maybeStaticHtml = None)
+      .getComponentInfo(SubsystemWithVersion("TEST", None, Some("lgsWfs")), None, Map.empty)
       .foreach(checkInfo(_, clientApi = true))
 
-    new ComponentInfoHelper(displayWarnings = false, clientApi = false, maybeStaticHtml = None)
-      .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST", None, Some("lgsWfs")), None, Map.empty)
+    new ComponentInfoHelper(db.versionManager, displayWarnings = false, clientApi = false, maybeStaticHtml = None)
+      .getComponentInfo(SubsystemWithVersion("TEST", None, Some("lgsWfs")), None, Map.empty)
       .foreach(checkInfo(_, clientApi = false))
 
-    new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = Some(true))
-      .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST", None, None), None, Map.empty)
+    new ComponentInfoHelper(db.versionManager, displayWarnings = false, clientApi = true, maybeStaticHtml = Some(true))
+      .getComponentInfo(SubsystemWithVersion("TEST", None, None), None, Map.empty)
       .foreach(checkInfo2(_, clientApi = true))
 
-    new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = None)
-      .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST2", None, Some("test2Pk")), None, Map.empty)
+    new ComponentInfoHelper(db.versionManager, displayWarnings = false, clientApi = true, maybeStaticHtml = None)
+      .getComponentInfo(SubsystemWithVersion("TEST2", None, Some("test2Pk")), None, Map.empty)
       .foreach(checkInfo3(_, clientApi = true))
 
-    new ComponentInfoHelper(displayWarnings = false, clientApi = false, maybeStaticHtml = None)
-      .getComponentInfo(db.versionManager, SubsystemWithVersion("TEST2", None, Some("test2Pk")), None, Map.empty)
+    new ComponentInfoHelper(db.versionManager, displayWarnings = false, clientApi = false, maybeStaticHtml = None)
+      .getComponentInfo(SubsystemWithVersion("TEST2", None, Some("test2Pk")), None, Map.empty)
       .foreach(checkInfo3(_, clientApi = false))
   }
 }

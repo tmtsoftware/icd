@@ -71,8 +71,8 @@ case class IcdDbPrinter(
       case Some(targetSv) =>
         IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, maybePdfOptions, staticHtml = true, fitsKeyMap)
       case None =>
-        new ComponentInfoHelper(searchAllSubsystems, clientApi, maybeStaticHtml = Some(true))
-          .getComponentInfoList(versionManager, sv, maybePdfOptions, fitsKeyMap)
+        new ComponentInfoHelper(versionManager, searchAllSubsystems, clientApi, maybeStaticHtml = Some(true))
+          .getComponentInfoList(sv, maybePdfOptions, fitsKeyMap)
     }
   }
 

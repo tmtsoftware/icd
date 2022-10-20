@@ -12,8 +12,8 @@ object PerfTest extends App {
   val query          = IcdDbQuery(db.db, db.admin, Some(List(subsystem)))
   val versionManager = IcdVersionManager(query)
 
-  new ComponentInfoHelper(displayWarnings = false, clientApi = true, maybeStaticHtml = None)
-    .getComponentInfo(versionManager, SubsystemWithVersion(subsystem, None, Some(compName)), None, Map.empty)
+  new ComponentInfoHelper(versionManager, displayWarnings = false, clientApi = true, maybeStaticHtml = None)
+    .getComponentInfo(SubsystemWithVersion(subsystem, None, Some(compName)), None, Map.empty)
     .foreach { info =>
       assert(info.componentModel.component == compName)
       assert(info.publishes.nonEmpty)

@@ -561,7 +561,6 @@ case class IcdVersionManager(query: IcdDbQuery) {
     }
   }
 
-
   /**
    * Returns allModelsList if sv.component is empty, otherwise a list with just the given component models
    * @param allModelsList a list of all component models in the subsystem
@@ -858,9 +857,24 @@ case class IcdVersionManager(query: IcdDbQuery) {
   }
 
   /**
+   * Returns a list of components not belonging to the given subsystems with versions.
+   *
+   * @param versionedSubsystems    a list of subsystems whose versions should be used to search
+   *                      (For other subsystems, the latest version is used)
+   */
+  private def getUnversionedComponents(
+      versionedSubsystems: List[SubsystemWithVersion],
+      maybePdfOptions: Option[PdfOptions]
+  ): List[ComponentModel] = {
+    query
+      .getComponents(maybePdfOptions)
+      .filter(c => !versionedSubsystems.exists(sv => sv.subsystem == c.subsystem))
+  }
+
+  /**
    * Returns a list describing the components that subscribe to the given event, currentState, etc.
-   * This version is like the one in IcdDbQuery.subscribes(), except that it takes a list of
-   * subsystems that need to have the given version (The rest are assumed to be the current versions).
+   * This function takes a list of subsystems that need to have the given version (The rest are
+   * assumed to be the current versions).
    *
    * @param path          full path name of value (prefix + name)
    * @param subscribeType events, currentState, etc...
@@ -874,10 +888,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
       subsystems: List[SubsystemWithVersion]
   ): List[Subscribed] = {
     val versionedSubsystems = subsystems.filter(_.maybeVersion.isDefined)
-    val components1 = query
-      .getComponents(maybePdfOptions)
-      .filter(c => !versionedSubsystems.exists(sv => sv.subsystem == c.subsystem))
-    val subscribeInfo1 = components1.map(c => query.getSubscribeInfo(c, maybePdfOptions))
+    val components1         = getUnversionedComponents(versionedSubsystems, maybePdfOptions)
+    val subscribeInfo1      = components1.map(c => query.getSubscribeInfo(c, maybePdfOptions))
     val subscribeInfo2 = for {
       sv            <- versionedSubsystems
       componentName <- getComponentNames(sv)
@@ -898,4 +910,50 @@ case class IcdVersionManager(query: IcdDbQuery) {
       s <- i.subscribesTo.filter(sub => sub.path == path && sub.subscribeType == subscribeType)
     } yield s
   }
+
+  /**
+   * Returns a list of components that send the given command to the given component/subsystem
+   * This function takes a list of subsystems that need to have the given version (The rest are
+   * assumed to be the current versions).
+   *
+   * @param subsystem   the target component's subsystem
+   * @param component   the target component
+   * @param commandName the name of the command being sent
+   * @param subsystems    a list of subsystems whose versions should be used to search
+   *                      (For other subsystems, the latest version is used)
+   * @return list containing one item for each component that sends the command
+   */
+  def getCommandSenders(
+      subsystem: String,
+      component: String,
+      commandName: String,
+      maybePdfOptions: Option[PdfOptions],
+      subsystems: List[SubsystemWithVersion]
+  ): List[ComponentModel] = {
+    val versionedSubsystems = subsystems.filter(_.maybeVersion.isDefined)
+
+    val components1 = for {
+      componentModel <- getUnversionedComponents(versionedSubsystems, maybePdfOptions)
+      commandModel   <- query.getCommandModel(componentModel, maybePdfOptions)
+      _              <- commandModel.send.find(s => s.subsystem == subsystem && s.component == component && s.name == commandName)
+    } yield componentModel
+
+    val components2 = for {
+      sv            <- versionedSubsystems
+      componentName <- getComponentNames(sv)
+      models <- getModels(
+        sv.copy(maybeComponent = Some(componentName)),
+        maybePdfOptions = maybePdfOptions,
+        includeOnly = Set("componentModel", "commandModel")
+      )
+      componentModel <- models.componentModel
+      commandModel   <- models.commandModel
+      _              <- commandModel.send.find(s => s.subsystem == subsystem && s.component == component && s.name == commandName)
+    } yield {
+      componentModel
+    }
+
+    components1 ++ components2
+  }
+
 }

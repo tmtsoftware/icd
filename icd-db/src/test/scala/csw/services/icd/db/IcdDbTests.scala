@@ -136,8 +136,8 @@ class IcdDbTests extends AnyFunSuite {
         commandModel.receive.foreach { receiveCommandModel =>
           val opt = db.query.getCommand(commandModel.subsystem, commandModel.component, receiveCommandModel.name, None)
           assert(opt.get == receiveCommandModel)
-          val senders = db.query
-            .getCommandSenders(commandModel.subsystem, commandModel.component, receiveCommandModel.name, None)
+          val senders = db.versionManager
+            .getCommandSenders(commandModel.subsystem, commandModel.component, receiveCommandModel.name, None, Nil)
             .map(_.component)
         }
       }
