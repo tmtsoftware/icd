@@ -492,26 +492,26 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
 //    } yield componentModel
 //  }
 
-  /**
-   * Returns a list of components that require the given service from the given component/subsystem
-   *
-   * @param subsystem   the service provider subsystem
-   * @param component   the service provider component
-   * @param serviceName the name of the service
-   * @return list containing one item for each component that requires the service
-   */
-  def getServiceClients(
-      subsystem: String,
-      component: String,
-      serviceName: String,
-      maybePdfOptions: Option[PdfOptions]
-  ): List[ComponentModel] = {
-    for {
-      componentModel <- getComponents(maybePdfOptions)
-      serviceModel   <- getServiceModel(componentModel, maybePdfOptions)
-      _              <- serviceModel.requires.find(s => s.subsystem == subsystem && s.component == component && s.name == serviceName)
-    } yield componentModel
-  }
+//  /**
+//   * Returns a list of components that require the given service from the given component/subsystem
+//   *
+//   * @param subsystem   the service provider subsystem
+//   * @param component   the service provider component
+//   * @param serviceName the name of the service
+//   * @return list containing one item for each component that requires the service
+//   */
+//  def getServiceClients(
+//      subsystem: String,
+//      component: String,
+//      serviceName: String,
+//      maybePdfOptions: Option[PdfOptions]
+//  ): List[ComponentModel] = {
+//    for {
+//      componentModel <- getComponents(maybePdfOptions)
+//      serviceModel   <- getServiceModel(componentModel, maybePdfOptions)
+//      _              <- serviceModel.requires.find(s => s.subsystem == subsystem && s.component == component && s.name == serviceName)
+//    } yield componentModel
+//  }
 
   // ---
 

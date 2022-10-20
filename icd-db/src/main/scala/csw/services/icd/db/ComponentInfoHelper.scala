@@ -300,7 +300,13 @@ class ComponentInfoHelper(
     } yield {
       val clientComponents =
         if (clientApi)
-          versionManager.query.getServiceClients(serviceModel.subsystem, serviceModel.component, provides.name, maybePdfOptions)
+          versionManager.getServiceClients(
+            serviceModel.subsystem,
+            serviceModel.component,
+            provides.name,
+            maybePdfOptions,
+            subsystemsWithVersion
+          )
         else Nil
       val html = maybeStaticHtml.map(staticHtml => OpenApiToHtml.getHtml(provides.openApi, staticHtml)).getOrElse("<div/>")
       ServiceProvidedInfo(provides, clientComponents, html)
@@ -321,7 +327,12 @@ class ComponentInfoHelper(
       serviceModelClient <- serviceModel.requires
     } yield {
       val maybeServiceModel =
-        versionManager.query.getServiceModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions)
+        versionManager.getServiceModel(
+          serviceModelClient.subsystem,
+          serviceModelClient.component,
+          maybePdfOptions,
+          subsystemsWithVersion
+        )
       val maybeServiceModelProvider = maybeServiceModel.flatMap(_.provides.find(_.name == serviceModelClient.name))
       val maybeHtml = for {
         p          <- maybeServiceModelProvider
@@ -330,7 +341,8 @@ class ComponentInfoHelper(
       ServicesRequiredInfo(
         serviceModelClient,
         maybeServiceModelProvider,
-        versionManager.query.getComponentModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions),
+        versionManager
+          .getComponentModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions, subsystemsWithVersion),
         maybeHtml,
         displayWarnings
       )

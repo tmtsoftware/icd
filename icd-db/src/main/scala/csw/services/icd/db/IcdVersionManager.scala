@@ -1,7 +1,7 @@
 package csw.services.icd.db
 
 import csw.services.icd._
-import icd.web.shared.IcdModels.{ComponentModel, IcdModel, SubsystemModel}
+import icd.web.shared.IcdModels.{ComponentModel, IcdModel, ServiceModel, SubsystemModel}
 import icd.web.shared.{IcdModels, IcdVersion, IcdVersionInfo, PdfOptions, SubsystemWithVersion}
 import org.joda.time.{DateTime, DateTimeZone}
 import diffson.playJson._
@@ -931,7 +931,6 @@ case class IcdVersionManager(query: IcdDbQuery) {
       subsystems: List[SubsystemWithVersion]
   ): List[ComponentModel] = {
     val versionedSubsystems = subsystems.filter(_.maybeVersion.isDefined)
-
     val components1 = for {
       componentModel <- getUnversionedComponents(versionedSubsystems, maybePdfOptions)
       commandModel   <- query.getCommandModel(componentModel, maybePdfOptions)
@@ -954,6 +953,102 @@ case class IcdVersionManager(query: IcdDbQuery) {
     }
 
     components1 ++ components2
+  }
+
+  /**
+   * Returns a list of components that require the given service from the given component/subsystem
+   * This function takes a list of subsystems that need to have the given version (The rest are
+   * assumed to be the current versions).
+   *
+   * @param subsystem   the service provider subsystem
+   * @param component   the service provider component
+   * @param serviceName the name of the service
+   * @param subsystems    a list of subsystems whose versions should be used to search
+   *                      (For other subsystems, the latest version is used)
+   * @return list containing one item for each component that requires the service
+   */
+  def getServiceClients(
+      subsystem: String,
+      component: String,
+      serviceName: String,
+      maybePdfOptions: Option[PdfOptions],
+      subsystems: List[SubsystemWithVersion]
+  ): List[ComponentModel] = {
+    val versionedSubsystems = subsystems.filter(_.maybeVersion.isDefined)
+    val components1 = for {
+      componentModel <- getUnversionedComponents(versionedSubsystems, maybePdfOptions)
+      serviceModel   <- query.getServiceModel(componentModel, maybePdfOptions)
+      _              <- serviceModel.requires.find(s => s.subsystem == subsystem && s.component == component && s.name == serviceName)
+    } yield componentModel
+
+    val components2 = for {
+      sv            <- versionedSubsystems
+      componentName <- getComponentNames(sv)
+      models <- getModels(
+        sv.copy(maybeComponent = Some(componentName)),
+        maybePdfOptions = maybePdfOptions,
+        includeOnly = Set("componentModel", "serviceModel")
+      )
+      componentModel <- models.componentModel
+      serviceModel   <- models.serviceModel
+      _              <- serviceModel.requires.find(s => s.subsystem == subsystem && s.component == component && s.name == serviceName)
+    } yield {
+      componentModel
+    }
+
+    components1 ++ components2
+  }
+
+  /**
+   * Gets the given ServiceModel, using the given subsystem versions, if needed
+   * @param subsystem   the service provider subsystem
+   * @param componentName   the service provider component
+   * @param subsystems    a list of subsystems whose versions should be used to search
+   *                      (For other subsystems, the latest version is used)
+   * @return the service model if found
+   */
+  def getServiceModel(
+      subsystem: String,
+      componentName: String,
+      maybePdfOptions: Option[PdfOptions],
+      subsystems: List[SubsystemWithVersion]
+  ): Option[ServiceModel] = {
+    val versionedSubsystems = subsystems.filter(_.maybeVersion.isDefined)
+    versionedSubsystems.find(_.subsystem == subsystem) match {
+      case Some(sv) =>
+        getModels(
+          sv.copy(maybeComponent = Some(componentName)),
+          maybePdfOptions = maybePdfOptions,
+          includeOnly = Set("serviceModel")
+        ).flatMap(_.serviceModel).headOption
+      case None =>
+        query.getServiceModel(subsystem, componentName, maybePdfOptions)
+    }
+  }
+
+  /**
+   * Returns the model object for the component with the given name.
+   * This function takes a list of subsystems that need to have the given version (The rest are
+   * assumed to be the current versions).
+   */
+  def getComponentModel(
+      subsystem: String,
+      componentName: String,
+      maybePdfOptions: Option[PdfOptions],
+      subsystems: List[SubsystemWithVersion]
+  ): Option[ComponentModel] = {
+    val versionedSubsystems = subsystems.filter(_.maybeVersion.isDefined)
+    versionedSubsystems.find(_.subsystem == subsystem) match {
+      case Some(sv) =>
+        getModels(
+          sv.copy(maybeComponent = Some(componentName)),
+          maybePdfOptions = maybePdfOptions,
+          includeOnly = Set("componentModel")
+        ).flatMap(_.componentModel).headOption
+      case None =>
+        query.getComponentModel(subsystem, componentName, maybePdfOptions)
+    }
+
   }
 
 }

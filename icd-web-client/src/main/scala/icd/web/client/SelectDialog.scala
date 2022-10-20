@@ -96,7 +96,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
     searchAllCheckbox.disabled = maybeTargetSv.isDefined || !clientApi()
   }
 
-  icdChooser.updateIcdOptions()
+  showBusyCursorWhile(icdChooser.updateIcdOptions())
   targetSubsystem.setEnabled(false)
   subsystemSwapper.setEnabled(false)
   applyButton.disabled = true
