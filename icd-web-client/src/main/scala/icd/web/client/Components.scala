@@ -1080,6 +1080,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       div(
         h4(servicesProvidedTitle(compName)),
         for (s <- info) yield {
+          val idStr      = idFor(compName, "provides", "Service", component.subsystem, compName, s.serviceModelProvider.name)
           val m = s.serviceModelProvider
           val consumerInfo = if (clientApi) {
             val consumers = s.requiredBy.distinct.map(s => makeLinkForComponent(s.subsystem, s.component))
@@ -1091,7 +1092,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             newTab.document.write(s.html)
           }
           div(cls := "nopagebreak")(
-            h5(s"HTTP Service: ${m.name}"),
+            h5(s"HTTP Service: ", a(id := idStr, name := idStr)(m.name)),
             if (clientApi) p(consumerInfo) else div(),
             div(
               a(onclick := openInNewTab, title := s"Open ${m.name} API in new tab.")(s"Open ${m.name} API in new tab.")
