@@ -1,0 +1,1226 @@
+openapi: 3.0.0
+info:
+  version: '1.0'
+  title: TMT Data Managment System REST Endpoints
+  description: >-
+    DMS is the package of services and infrastructure software that
+    manages TMT data, including science and engineering data.
+
+    Visit [TMT Website](http://www.tmt.org) for more information.
+
+    Complete codebase is available on [Github](https://github.com/tmtsoftware/dms).
+
+    Collection of routes listed on this page are http end points exposed by TMT common software.
+  x-logo:
+    url: tmt.png
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+tags:
+  - name: Detector Data Collection Service
+    description: >-
+      The Detector Data Collection Service (DDCS) watches for new exposures written by data producers and moves them to the permanent store.
+  - name: Engineering Access Service
+    description: >-
+      The Engineering Access Service (EAS) is an HTTP service that provides querying capability to retrieve sets of engineering data (both event and non-event data) from the Engineering Database.
+  - name: File Submission Service
+    description: >-
+      The File Submission Service (FSS) is an HTTP service that allows files to be added to the Engineering Database.
+  - name: Metadata Access Service
+    description: >-
+      The Metadata Access Service (MAS) is an HTTP service that allows clients (applications and users) to fetch metadata for an ExposureId in a variety of formats such as FITS header and JSON. It also supports a request for specific header information using one or more FITS keywords.
+  - name: Science Data Access Service
+    description: >-
+      The Science Data Access Service (SDAS) is an HTTP service that allows science data to be retrieved from the Science Data Storage System.
+  - name: Science Data Storage Service
+    description: >-
+      The Science Data Storage Service (SDSS) is an HTTP service that allows science data to be added to the Science Data Storage System.
+  - name: Calibration Data Service
+    description: >-
+      The Calibration Data Service (CDS) is an HTTP service that identifies and returns the location of calibration files suitable for reduction.
+paths:
+  '/transfer/{subsystem}': 
+    get: 
+      description: Obtain a URI for a instrument transfer area on the Summit Storage
+      summary: Get transfer area URI
+      tags:
+      - Detector Data Collection Service
+      operationId: get transfer URI
+      parameters:
+        - name: subsystem
+          in: path
+          required: true
+          description: specify subsystem that will be using transfer area
+          schema:
+            $ref: '#/components/schemas/Subsystem'
+      responses: 
+        '200':
+          description: URI of transfer area
+          content:
+            application/json:
+              schema: 
+                type: string
+        '404':
+          description: Not Found
+
+  '/eng/events': 
+    get:
+      description: Returns values for a set of event parameters over a specified time range
+      summary: Get engineering data
+      tags:
+        - Engineering Access Service
+      operationId: retrieve data
+      parameters:
+        - $ref: '#/components/parameters/startDateReq'
+        - $ref: '#/components/parameters/startTimeReq'
+        - $ref: '#/components/parameters/endDateReq'
+        - $ref: '#/components/parameters/endTimeReq'
+        - name: timeStep
+          in: query
+          description: period of data returned in seconds, resampled using method defined in `resampleMethod` parameter.
+          schema:
+            type: integer
+            minimum: 1
+        - name: resampleMethod
+          in: query
+          schema:
+            $ref: '#/components/schemas/ResampleMethod'
+          description: >
+            Resampling methods if `timeStep` is specified:
+              * `interp` - linearly interpolated between data points
+              * `nearest` - nearest matched time to a past or future event
+              * `past` - nearest past time
+              * `binned` - data is binned
+        - name: subsystem
+          in: query
+          description: specify subsystem to retrieve all events for a subsystem
+          schema:
+            $ref: '#/components/schemas/Subsystem'
+        - name: events
+          in: query
+          description: list of Events to get data for
+          schema: 
+            type: array
+            items:
+              $ref: '#/components/schemas/EventKey'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EngData'
+        '404':
+          description: Not Found
+  '/eng/logs':
+    get:
+      description: >-
+        Returns log messages over a specified time range
+      summary: Get system logs
+      tags:
+        - Engineering Access Service
+      operationId: retrieve logs
+      parameters:
+        - $ref: '#/components/parameters/startDateReq'
+        - $ref: '#/components/parameters/startTimeReq'
+        - $ref: '#/components/parameters/endDateReq'
+        - $ref: '#/components/parameters/endTimeReq'
+        - name: subsystem
+          in: query
+          required: true
+          schema: 
+            type: array
+            items:
+              $ref: '#/components/schemas/Subsystem'
+        - name: component
+          in: query
+          required: true
+          schema: 
+            type: array
+            items:
+              type: string
+        - name: outputType
+          in: query
+          schema:
+            type: string
+            enum: [json, text]
+            default: json
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogData'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/SimpleLogData'
+        '404':
+          description: Not Found
+  '/eng/files/search':
+    get:
+      description: >-
+        Returns a list of URIs for engineering ancillary data that match query parameters
+      summary: Find engineering ancillary data
+      tags:
+        - Engineering Access Service
+      operationId: search files
+      parameters:
+        - $ref: '#/components/parameters/startDateReq'
+        - $ref: '#/components/parameters/startTimeReq'
+        - $ref: '#/components/parameters/endDateReq'
+        - $ref: '#/components/parameters/endTimeReq'
+        - name: subsystem
+          in: query
+          required: true
+          description: specify subsystem to retrieve all events for a subsystem
+          schema:
+            $ref: '#/components/schemas/Subsystem'
+        - name: channelName
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: tags
+          in: query
+          schema:
+            type: array
+            items:
+             $ref: '#/components/schemas/Tag'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileData'
+        '404':
+          description: Not Found
+  '/eng/files':
+    get:
+      description: Get one or more ancillary files based on URI. If more than one file is specified, exposures will be returned in a zip file.
+      summary: Get engineering ancillary file(s)
+      tags: 
+      - Engineering Access Service
+      operationId: retrieve eng ancillary files
+      parameters:
+      - name: URIs
+        in: query
+        description: One or more URIs of ancillary files to retrieve 
+        required: true
+        schema: 
+          type: array
+          items: 
+            type: string
+      - name: package
+        in: query
+        description: Type of packaging if multiple files are requested
+        schema:
+          $ref: '#/components/schemas/PackageType'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/octet-stream:
+              schema: {}
+        '404':
+          description: Not Found
+    put:
+      description: Add an ancillary file to engineering storage
+      summary: Add engineering ancillary file
+      tags:
+      - File Submission Service
+      operationId: add eng file
+      parameters:
+      - name: channelName
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: date
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: time
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: subsystem
+        in: query
+        required: true
+        schema:
+           $ref: '#/components/schemas/Subsystem'
+      - name: tags
+        in: query
+        schema:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+      requestBody: 
+        description: file to be uploaded
+        required: true
+        content:
+          application/octet-stream:
+            schema: {}
+      responses: 
+        '200':
+          description: URI of file if successfully added
+          content:
+            application/json:
+              schema: 
+                type: string
+        '404':
+          description: Not Found                
+  '/eng/all/{subsystem}':
+    get:
+      description: >-
+        Returns all engineering data for a subsystem over a specified time range
+      summary: Get all engineering data for a subsystem
+      tags:
+        - Engineering Access Service
+      operationId: retrieve all
+      parameters:
+        - $ref: '#/components/parameters/startDateReq'
+        - $ref: '#/components/parameters/startTimeReq'
+        - $ref: '#/components/parameters/endDateReq'
+        - $ref: '#/components/parameters/endTimeReq'
+        - name: subsystem
+          in: path
+          required: true
+          description: specify subsystem to retrieve all events for a subsystem
+          schema:
+            $ref: '#/components/schemas/Subsystem'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyData'
+        '404':
+          description: Not Found
+
+  '/metadata/header':
+    get:
+      description: Get a full or partial FITS header for a specific exposure. 
+      summary: Get FITS header
+      tags: 
+      - Metadata Access Service
+      operationId: retrieve header
+      parameters:
+      - name: exposureId
+        in: query
+        description: Exposure ID of exposure 
+        required: true
+        schema: 
+          $ref: '#/components/schemas/ExposureId'
+      - name: keywords
+        in: query
+        description: Optional set of keyword names to retrieve.  If this is not specified, the entire header is returned.
+        schema:
+          type: array
+          items: 
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Header'
+        '404':
+          description: Not Found
+  '/metadata/raw':
+    get:
+      description: Get raw metadata as a list of Events for a specific Observe Event for a specific exposure.  A single Event can optionally be retrieved by passing in the Event path.
+      summary: Get raw metadata
+      tags: 
+      - Metadata Access Service
+      operationId: retrieve raw metadata
+      parameters:
+      - name: exposureId
+        in: query
+        description: Exposure ID of exposure 
+        required: true
+        schema: 
+          $ref: '#/components/schemas/ExposureId'
+      - name: observeEvent
+        in: query
+        description: ObserveEvent name 
+        required: true
+        schema: 
+          $ref: '#/components/schemas/ObserveEvent'
+      - name: event
+        in: query
+        description: Event including prefix.  If this is used, only the data for the specificed Event is returned.
+        schema: 
+          $ref: '#/components/schemas/EventKey'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EngData'
+        '404':
+          description: Not Found
+   
+  '/science/retrieve/{URI}':
+    get:
+      description: Download one or more exposures based on URI
+      summary: Get science file(s)
+      tags: 
+      - Science Data Access Service
+      operationId: retrieve science files
+      parameters:
+      - name: URI
+        in: path
+        description: location of files
+        required: true
+        schema: 
+          type: array
+          items:
+            type: string
+      - name: compression
+        in: query
+        description: Type of compression, if desired
+        schema:
+          $ref: '#/components/schemas/CompressionType'
+      - name: package
+        in: query
+        description: Type of packaging, if multiple files are downloaded
+        schema:
+          $ref: '#/components/schemas/PackageType'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/octet-stream:
+              schema: {}
+        '404':
+          description: Not Found
+  '/science/files':
+    get:
+      description: Locate an exposure based on Exposure ID. 
+      summary: Locate science file
+      tags: 
+      - Science Data Access Service
+      operationId: locate science file
+      parameters:
+      - name: exposureId
+        in: query
+        description: Exposure ID of exposure 
+        required: true
+        schema: 
+          $ref: '#/components/schemas/ExposureId'
+      responses:
+        '200':
+          description: URI of file if successfully found
+          content:
+            application/json:
+              schema: 
+                type: string
+          
+        '404':
+          description: Not Found
+    put:
+      description: Add science file to the science archive
+      summary: Add science file
+      tags:
+      - Science Data Storage Service
+      operationId: add science file
+      parameters:
+      - name: exposureId
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/ExposureId'
+      requestBody: 
+        description: file to be uploaded
+        required: true
+        content:
+          application/octet-stream:
+            schema: {}
+      responses: 
+        '200':
+          description: URI of file if successfully added
+          content:
+            application/json:
+              schema: 
+                type: string
+        '404':
+          description: Not Found
+  '/science/search':
+    get:
+      description: Search storage for files based on query parameters
+      summary: Search storage
+      tags:
+      - Science Data Access Service
+      operationId: locate files
+      parameters:
+        - $ref: '#/components/parameters/fileType'
+        - $ref: '#/components/parameters/originalFilename'
+        - $ref: '#/components/parameters/programId'
+        - $ref: '#/components/parameters/obsId'
+        - $ref: '#/components/parameters/observer'
+        - $ref: '#/components/parameters/objectName'
+        - $ref: '#/components/parameters/ra'
+        - $ref: '#/components/parameters/dec'
+        - $ref: '#/components/parameters/radius'
+        - $ref: '#/components/parameters/startDate'
+        - $ref: '#/components/parameters/startTime'
+        - $ref: '#/components/parameters/endDate'
+        - $ref: '#/components/parameters/endTime'
+        - $ref: '#/components/parameters/instrument'
+        - $ref: '#/components/parameters/channel'
+        - $ref: '#/components/parameters/integrationTime'
+        - $ref: '#/components/parameters/coadds'
+        - $ref: '#/components/parameters/filter'
+        - $ref: '#/components/parameters/scale'
+        - $ref: '#/components/parameters/spectralResolution'
+        - $ref: '#/components/parameters/aoMode'
+        - $ref: '#/components/parameters/outputFormat'
+        
+      responses: 
+        '200':
+          description: URIs of matching files.  Media type depends on `outputType parameter`
+          content:
+            application/json:
+              schema: 
+                type: array
+                items:
+                  $ref: '#/components/schemas/ScienceSearchResultItem'
+            text/csv:
+              schema:
+                type: string
+                example: "uri1, name1, exposureID1, data1, time1, ra1, dec1, instrument1, channel1, itime,1 coadds1, filter1, scale1, res1, aoMode1\nuri2, name2, exposureID2, data2, time2, ra2, dec2, instrument2, channel2, itime2, coadds2, filter2, scale2, res2, aoMode2"
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/VOTABLE'
+                
+            text/html:
+              schema:
+                type: string
+                example: "<html>\n<h1>myFavouriteGalaxies</h1>\n<h2>Velocities and Distance estimations</h2>\n<TABLE name=\"results\">\n<TR>\n<TD>010.68</TD><TD>+41.27</TD><TD>N 224</TD><TD>-297</TD><TD>5</TD><TD href=\"http://someurl/somefile.fits\">Download</TD><TD>0.7</TD>\n</TR>\n<TR>\n<TD>287.43</TD><TD>-63.85</TD><TD>N 6744</TD><TD>839</TD><TD>6</TD><TD>10.4</TD>\n</TR>\n<TR>\n<TD>023.48</TD><TD>+30.66</TD><TD>N 598</TD><TD>-182</TD><TD>3</TD><TD>0.7</TD><TD href=\"http://someurl/somefile2.fits\">Download</TD>\n</TR>\n</TABLE></html>"
+        '404':
+          description: Not Found
+  '/science/ancillary':
+    put:
+      description: Add an ancillary file to science storage
+      summary: Add science ancillary file
+      tags:
+      - Science Data Storage Service
+      operationId: add ancillary file
+      parameters:
+      - name: id
+        description: ObsId, ProgramId, or ExposureId to associate this file
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: date
+        in: query
+        schema:
+          type: string
+      - name: time
+        in: query
+        schema:
+          type: string
+      - name: type
+        in: query
+        description: type of file (e.g Weather Map, PSF data)
+        required: true
+        schema:
+          type: string
+      - name: tags
+        in: query
+        schema:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+      requestBody: 
+        description: file to be uploaded
+        required: true
+        content:
+          application/octet-stream:
+            schema: {}
+      responses: 
+        '200':
+          description: URI of file if successfully added
+          content:
+            application/json:
+              schema: 
+                type: string
+        '404':
+          description: Not Found         
+  '/calibration/search':
+    get:
+      description: Search storage for calibration files based on query parameters
+      summary: Search storage
+      tags:
+      - Calibration Data Service
+      operationId: locate calibration files
+      parameters:
+        - $ref: '#/components/parameters/originalFilename'
+        - $ref: '#/components/parameters/calibrationType'
+        - $ref: '#/components/parameters/startDate'
+        - $ref: '#/components/parameters/startTime'
+        - $ref: '#/components/parameters/endDate'
+        - $ref: '#/components/parameters/endTime'
+        - $ref: '#/components/parameters/instrument'
+        - $ref: '#/components/parameters/channel'
+        - $ref: '#/components/parameters/integrationTime'
+        - $ref: '#/components/parameters/coadds'
+        - $ref: '#/components/parameters/filter'
+        - $ref: '#/components/parameters/scale'
+        - $ref: '#/components/parameters/spectralResolution'
+        - $ref: '#/components/parameters/aoMode'
+        - name: exposureId
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/ExposureId'
+      responses: 
+        '200':
+          description: Exposure IDs of matching files
+          content:
+            application/json:
+              schema: 
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExposureId'
+        '404':
+          description: Not Found
+
+servers:
+  - url: http://localhost:4000/
+components:
+  securitySchemes:
+    Bearer:
+      description:
+        Represents Access token that applications use to make API requests on behalf of a user.
+        The access token represents the authorization of a specific application to access specific parts of a user’s data.
+        Config service admin API requires you to provide this access token in header.
+        To know more on how to authenticate and authorize yourself and get access token, refer this http://tmtsoftware.github.io/csw/services/aas.html
+      type: apiKey
+      name: Authorization
+      in: header
+  parameters:
+    startDate:
+      name: startDate
+      in: query
+      description: time range start date
+      schema:
+        type: string
+    startTime:
+      name: startTime
+      in: query
+      description: time range start time
+      schema:
+        type: string
+    endDate:
+      name: endDate
+      in: query
+      description: time range end date
+      schema:
+        type: string
+    endTime:
+      name: endTime
+      in: query
+      description: time range end time
+      schema:
+        type: string
+    startDateReq:
+      name: startDate
+      in: query
+      description: time range start date
+      required: true
+      schema:
+        type: string
+    startTimeReq:
+      name: startTime
+      in: query
+      description: time range start time
+      required: true
+      schema:
+        type: string
+    endDateReq:
+      name: endDate
+      in: query
+      description: time range end date
+      schema:
+        type: string
+      required: true
+    endTimeReq:
+      name: endTime
+      in: query
+      description: time range end time
+      required: true
+      schema:
+        type: string
+    originalFilename:
+      name: originalFilename
+      in: query
+      description: filename of file when submitting to DMS
+      schema:
+        type: string
+    programId:
+      name: programId
+      in: query
+      description: String identifier for the program, in format &lt;YYYY>&lt;S>-P&lt;XXX>, where &lt;YYYY> is the semester year, &lt;S> is the semester (either A or B), and &lt;XXX> is the three digit program number
+      example: 2039B-P042
+      schema:
+        type: string
+    obsId:
+      name: obsId
+      in: query
+      description: String identifier for the observation, in format &lt;ProgramID>-O&lt;XXX>, where &lt;ProgramID> is the Program ID (e.g. 2039B-P042) and XXX is the observation number
+      example: 2039B-P042-O567
+      schema:
+        type: string
+    observer:
+      name: observer
+      in: query
+      description: Name of observer or observing team
+      schema:
+        type: string
+    objectName:
+      name: object
+      in: query
+      description: name of object
+      schema:
+        type: string
+    ra:
+      name: ra
+      in: query
+      description: Right Ascension of center point of search area in any common format (XX.YYY, AAh BBm CC.DDDs, HH MM SS.XXX)
+      schema:
+        type: string
+    dec:
+      name: dec
+      in: query
+      description: Declination of center point of search area in any common format (+XX.YYY, +AAd BBm CC.DDDs, +DD MM SS.XXX)
+      schema:
+        type: string
+    radius:
+      name: radius
+      in: query
+      description: radius of search area in arcsec. `ra` and `dec` parameters are required when using this parameter
+      schema:
+        type: number
+    instrument:
+      name: instrument
+      in: query
+      description: name of instrument to restrict results
+      example: IRIS
+      schema:
+        type: string
+    channel:
+      name: channel
+      in: query
+      description: channel of instrument to restrict results.  `instrument` parameter is required when using this parameter
+      example: imager
+      schema:
+        type: string
+    integrationTime:
+      name: itime
+      in: query
+      description: Results will only return exposures matching this exact integration time in seconds
+      schema:
+        type: number
+        minimum: 0
+    coadds:
+      name: coadds
+      in: query
+      description: Results will only return exposures matching this exact number of coadds
+      schema:
+        type: integer
+        minimum: 1
+    filter:
+      name: filter
+      in: query
+      description: Results will only return exposures using this filter
+      schema:
+        type: string
+    scale:
+      name: scale
+      in: query
+      description: Results will only return exposures in this scale
+      schema:
+        type: string
+    spectralResolution:
+      name: res
+      in: query
+      description: Results will only return exposures in this exact spectral resolution
+      schema:
+        type: string
+    aoMode:
+      name: aoMode
+      in: query
+      description: Results will only return exposures taken in this AO Mode
+      example: MCAO
+      schema:
+        type: string
+    calibrationType:
+      name: calType
+      in: query
+      description: type of calibration file to locate.  `fileType` must be "calibration" to use this parameter
+      schema:
+        $ref: '#/components/schemas/CalibrationFileType'
+    fileType:
+      name: fileType
+      in: query
+      description: type of file to search for
+      schema:
+        $ref: '#/components/schemas/FileType'
+    outputFormat:
+      name: format
+      in: query
+      description: format of results
+      schema:
+        $ref: '#/components/schemas/OutputFormat'
+
+  schemas:
+    ExposureId:
+      type: string
+    ObserveEvent:
+      type: string
+    HeaderItem: 
+      type: object
+      properties:
+        keyword:
+          type: string
+        value:
+          {}
+        comment: 
+          type: string
+    Header:
+      type: array
+      items: 
+        $ref: '#/components/schemas/HeaderItem'
+    DataResponse:
+      type: object
+      required:
+      - dataResponseType
+      properties:
+        dataResponseType: 
+          type: string
+      discriminator:
+        propertyName: dataResponseType
+    Subsystem: 
+      description: name of subsystem
+      type: string
+      enum: [AOESW, APS, CIS, CLN, CRYO, CSW, DMS, DPS, ENC, ESEN, ESW, HNDL, HQ, IRIS, LGSF, M1COAT, M1CS, M1S, M2COAT, M2S, M3S, MODHIS, NFIRAOS, OSS, REFR, SCMS, SER, SOSS, STR, SUM, TCS, TINS, WFOS]
+    ResampleMethod:
+      type: string
+      enum: [interp, nearest, past, binned]
+    EventType:
+      description: type of event
+      type: string
+      enum: [boolean, char, byte, short, long, int, float, double, string, utcTime, taiTime]
+    CalibrationFileType:
+      description: Type of calibration file
+      type: string
+      enum: [flat, bias, dark, wavelengthSolution]
+    FileType:
+      description: Type of file
+      type: string
+      enum: [science, calibration, processed, ancillary]
+    OutputFormat:
+      description: Format of results
+      type: string
+      enum: [JSON, CSV, VOTABLE, HTML]
+    PackageType:
+      description: type of packing for multiple files
+      type: string
+      enum: [tar, zip, gzip]
+    CompressionType:
+      description: type of compression
+      type: string
+      enum: [gzip, fpack]
+    EventKey:
+      type: string
+      description: name of event including prefix
+    Tag:
+      type: object
+      properties:
+        name: 
+          type: string
+        value: 
+          type: string
+      required:
+      - name
+      - value
+    Parameter:
+      description: Event parameter
+      type: string
+      properties:
+        name:
+          type: string
+          description: name of parameter
+        index: 
+          type: integer
+          minimum: 0
+    ParameterValue:
+      type: object
+      properties:
+        name:
+          type: string
+        datatype:
+           $ref: '#/components/schemas/EventType'
+        values: 
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemValue'
+    ItemValue:
+      type: object
+      properties:
+        value: 
+          { }
+        timestamp:
+          type: string
+    EventData:
+      description: returned engineering event data
+      type: object
+      properties:
+        EventName: 
+          type: string
+        Parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParameterValue'
+    EngData:
+      allOf: 
+      - $ref: '#/components/schemas/DataResponse'
+      - type: object
+        properties:
+          eventData:
+            type: array
+            items:
+              $ref: '#/components/schemas/EventData'
+    SimpleLogData:
+      type: string
+      example: "[INFO] Attempting to find connection (LocationServiceExampleClientApp.scala 131)\n[DEBUG] Trying HTTP connection (LocationServiceExampleClientApp.scala 134)"
+    LogItem:
+      type: object
+      properties:
+        "@prefix": 
+          type: string
+        "@subsystem":
+          $ref: '#/components/schemas/Subsystem'
+        "@componentName":
+          type: string
+        "@host": 
+          type: string
+        "@name":
+          type: string
+        "@severity": 
+          type: string
+        "@version": 
+          type: number
+        actor: 
+          type: string
+        class: 
+          type: string
+        file: 
+          type: string
+        line: 
+          type: integer
+        message: 
+          type: string
+        timestamp:
+          type: string
+    LogData: 
+      allOf: 
+      - $ref: '#/components/schemas/DataResponse'
+      - type: object
+        properties:
+          messages:
+            type: array
+            items: 
+              $ref: '#/components/schemas/LogItem'
+            example: 
+              - "@prefix": "ESW.my-component-name"
+                "@subsystem": "ESW"
+                "@componentName": "my-component-name"
+                "@host": "tmthost.local"
+                "@name": "LocationServiceExampleClient"
+                "@severity": "INFO"
+                "@version": "0.1"
+                actor: "akka://csw-examples-locationServiceClient@10.131.23.195:53618/user/$a"
+                class: "csw.location.LocationServiceExampleClient"
+                file: "LocationServiceExampleClientApp.scala"
+                line: 149
+                message: "Sending query to service: ping"
+                timestamp: "2017-11-30T10:58:03.102Z"
+              - "@prefix": "ESW.my-second-component"
+                "@subsystem": "ESW"
+                "@componentName": "my-second-component"
+                "@host": "tmthost2.local"
+                "@name": "LocationServiceExampleServer"
+                "@severity": "DEBUG"
+                "@version": "0.2"
+                actor: "akka://csw-examples-locationServiceClien2@10.131.23.196:53618/user/$a"
+                class: "csw.location.LocationServiceExampleClient"
+                file: "LocationServiceExampleServiceApp.scala"
+                line: 243
+                message: "Sending response: pong"
+                timestamp: "2017-11-30T10:58:03.112Z"
+              
+    FileItem:
+      type: object
+      properties:
+        uri: 
+          type: string
+        timestamp:
+          type: string
+        subsystem:
+          $ref: '#/components/schemas/Subsystem'
+        channelName:
+          type: string
+        tags:
+          type: array
+          items: 
+            $ref: '#/components/schemas/Tag'
+    FileData:
+      allOf: 
+      - $ref: '#/components/schemas/DataResponse'
+      - type: object
+        properties:
+          files: 
+            type: array
+            items:
+              $ref: '#/components/schemas/FileItem'
+    AnyData:
+      type: array
+      items:
+        anyOf:
+          - $ref: '#/components/schemas/EngData'
+          - $ref: '#/components/schemas/LogData'
+          - $ref: '#/components/schemas/FileData'
+        discriminator: 
+          propertyName: dataResponseType
+    ScienceSearchResultItem:
+      type: object
+      properties: 
+        uri:
+          type: string
+        name: 
+          type: string
+        exposureId:
+          type: string
+        date: 
+          type: string
+        time: 
+          type: string
+        ra: 
+          type: string
+        dec: 
+          type: string
+        instrument:
+          type: string
+        channel:
+          type: string
+        itime:
+          type: number
+        coadds:
+          type: integer
+        filter:
+          type: string
+        scale:
+          type: string
+        res:
+          type: string
+        aoMode:
+          type: string
+    
+    VOTABLE:
+      type: object
+      properties:
+        version:
+          type: number
+          example: 1.4
+          xml:
+            attribute: true
+        xmlns:
+          type: string
+          example: http://www.ivoa.net/xml/VOTable/v1.3
+          xml:
+            attribute: true
+        RESOURCE: 
+          type: object
+          properties:
+            name: 
+              type: string
+              example: myFavouriteGalaxies
+              xml:
+                attribute: true
+            COOSYS: 
+              type: object
+              properties:
+                ID:
+                  type: string
+                  example: sys
+                  xml: 
+                    attribute: true
+                equinox:
+                  type: string
+                  example: J2000
+                  xml: 
+                    attribute: true
+                epoch:
+                  type: string
+                  example: J2000
+                  xml: 
+                    attribute: true
+                system:
+                  type: string
+                  example: eq_FK5
+                  xml: 
+                    attribute: true
+            TABLE: 
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: results
+                  xml:
+                    attribute: true
+                DESCRIPTION: 
+                  type: string
+                  example: Velocities and Distance estimations
+                PARAM:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      example: Telescope
+                      xml:
+                        attribute: true
+                    datatype:
+                      type: string
+                      example: float
+                      xml:
+                        attribute: true
+                    ucd:
+                      type: string
+                      example: phys.size;instr.tel
+                      xml:
+                        attribute: true
+                    unit:
+                      type: string
+                      example: m
+                      xml:
+                        attribute: true
+                    value:
+                      type: string
+                      example: 3.6
+                      xml:
+                        attribute: true
+                FIELD:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        xml:
+                          attribute: true
+                      DESCRIPTION:
+                        type: string
+                      ID:
+                        type: string
+                        xml:
+                          attribute: true
+                      ucd: 
+                        type: string
+                        xml:
+                          attribute: true
+                      datatype:
+                        type: string
+                        xml:
+                          attribute: true
+                      width:
+                        type: integer
+                        xml:
+                          attribute: true
+                      precision:
+                        type: integer
+                        xml:
+                          attribute: true
+                      unit:
+                        type: string
+                        xml:
+                          attribute: true
+                      ref: 
+                        type: string
+                        xml:
+                          attribute: true
+                  example:
+                  - name: "RA" 
+                    ID: "col1" 
+                    ucd: "pos.eq.ra;meta.main" 
+                    datatype: "float" 
+                    width: "6" 
+                    precision: "2" 
+                    unit: "deg" 
+                    ref: "sys"
+                  - name: "Dec" 
+                    ID: "col2" 
+                    ucd: "pos.eq.dec;meta.main" 
+                    datatype: "float" 
+                    width: "6" 
+                    precision: "2" 
+                    unit: "deg" 
+                    ref: "sys"
+                  - name: "Name" 
+                    ID: "col3" 
+                    ucd: "meta.id;meta.main" 
+                    datatype: "char" 
+                    arraysize: "8*"
+                  - name: "RVel" 
+                    ID: "col4"
+                    ucd: "spect.dopplerVeloc" 
+                    datatype: "int" 
+                    width: "5" 
+                    unit: "km/s"
+                  - name: "e_RVel" 
+                    ID: "col5" 
+                    ucd: "stat.error;spect.dopplerVeloc" 
+                    datatype: "int" 
+                    width: "3" 
+                    unit: "km/s"
+                  - name: "R" 
+                    ID: "col6" 
+                    ucd: "pos.distance;pos.heliocentric" 
+                    datatype: "float" 
+                    width: "4" 
+                    precision: "1" 
+                    unit: "Mpc"
+                    DESCRIPTION: Distance of Galaxy, assuming H=75km/s/Mpc
+                DATA:
+                  type: object
+                  properties:
+                    tabledata:
+                      type: array
+                      items:
+                        type: array
+                        items:
+                          type: string
+                          xml:
+                            name: TD
+                        xml:
+                          name: TR
+                          wrapped: true
+                      xml: 
+                        name: TABLEDATA
+                        wrapped: true
+                      example:
+                        - ["010.68","+41.27","N 224","-297","5","0.7"]
+                        - ["287.43","-63.85","N 6744","839","6","10.4"]
+                        - ["023.48","+30.66","N 598","-182","3","0.7"]
+
+                      
+                      
