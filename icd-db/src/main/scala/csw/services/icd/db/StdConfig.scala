@@ -1,12 +1,10 @@
 package csw.services.icd.db
 
-import java.io.{File, FileNotFoundException, InputStreamReader}
+import java.io.{File, FileNotFoundException}
 import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions, ConfigValueFactory}
 import csw.services.icd.{Problem, StdName}
 import csw.services.icd.StdName._
 import StdConfig.Resources
-
-import scala.io.Source
 
 object StdConfig {
 
@@ -23,10 +21,7 @@ object StdConfig {
   class FileResources(dirName: String) extends Resources {
     override def getResource(name: String): Option[String] = {
       try {
-        val source   = Source.fromFile(new File(dirName, new File(name).getName))
-        val contents = source.mkString
-        source.close()
-        Some(contents)
+        Some(getFileContents(new File(dirName, new File(name).getName)))
       }
       catch {
         case _: FileNotFoundException => None

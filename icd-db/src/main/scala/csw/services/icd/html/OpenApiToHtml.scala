@@ -1,11 +1,11 @@
 package csw.services.icd.html
 
+import csw.services.icd.db.getFileContents
 import icd.web.shared.IcdModels.ServicePath
 import play.api.libs.json.{Json, Reads}
 
 import java.io.File
 import java.nio.file.Files
-import scala.io.Source
 import scala.reflect.io.Directory
 import scala.util.{Failure, Success, Try}
 import sys.process._
@@ -111,10 +111,7 @@ object OpenApiToHtml {
         case Success(_) =>
           val indexFile = new File(s"$tempDir/index.html")
           val html = if (indexFile.exists()) {
-            val source = Source.fromFile(indexFile)
-            val s      = source.mkString
-            source.close()
-            s
+            getFileContents(indexFile)
           }
           else {
             errorDiv(s"$indexFile was not generated")

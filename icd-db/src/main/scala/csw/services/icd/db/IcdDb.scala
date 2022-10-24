@@ -491,7 +491,7 @@ case class IcdDb(
     // Uploads from web app have an extra temp directory at root
     val dmsDictDir1 = new File(s"$dir/FITS-Dictionary")
     val dmsDictDir2 = new File(s"$dir/DMS-Model-Files/FITS-Dictionary")
-    val dmsDictDir = if (dmsDictDir1.isDirectory) dmsDictDir1 else dmsDictDir2
+    val dmsDictDir  = if (dmsDictDir1.isDirectory) dmsDictDir1 else dmsDictDir2
     if (dmsDictDir.isDirectory) {
       val icdFits         = new IcdFits(this)
       val fitsKeywordFile = new File(dmsDictDir, "FITS-Dictionary.json")
@@ -562,34 +562,40 @@ case class IcdDb(
    */
   def ingestConfig(stdConfig: StdConfig): List[Problem] = {
     // Ingest a single OpenApi file
-    def ingestOpenApiFile(collectionName: String, fileName: String): Unit = {
+    def ingestOpenApiFile(collectionName: String, fileName: String): List[Problem] = {
+      import scala.jdk.CollectionConverters._
       val parseOptions = new ParseOptions()
       parseOptions.setResolve(true)
       parseOptions.setResolveFully(true)
-      val tmpName = s"$collectionName${IcdDbDefaults.tmpCollSuffix}"
-      val openAPI = new OpenAPIV3Parser().read(fileName, null, parseOptions)
-      // Convert YAML to JSON if needed
-      val jsonStr =
-        if (fileName.endsWith(".yml") || fileName.endsWith(".yaml")) {
-          val yaml = io.swagger.util.Yaml.pretty().writeValueAsString(openAPI)
-          DeserializationUtils.deserializeIntoTree(yaml, fileName).toPrettyString
-        }
-        else {
-          io.swagger.util.Json.pretty().writeValueAsString(openAPI)
-        }
-      // Ingest into db
-      val jsObj = Json.parse(jsonStr).as[JsObject]
-      manager.ingest(collectionName, tmpName, jsObj)
+      val tmpName     = s"$collectionName${IcdDbDefaults.tmpCollSuffix}"
+      val parseResult = new OpenAPIV3Parser().readLocation(fileName, null, parseOptions)
+      val problems    = parseResult.getMessages.asScala.toList.map(Problem("error", _))
+      if (problems.nonEmpty) problems
+      else {
+        val openAPI = parseResult.getOpenAPI
+        // Convert YAML to JSON if needed
+        val jsonStr =
+          if (fileName.endsWith(".yml") || fileName.endsWith(".yaml")) {
+            DeserializationUtils.deserializeIntoTree(getFileContents(fileName), fileName).toPrettyString
+          }
+          else {
+            io.swagger.util.Json.pretty().writeValueAsString(openAPI)
+          }
+        // Ingest into db
+        val jsObj = Json.parse(jsonStr).as[JsObject]
+        manager.ingest(collectionName, tmpName, jsObj)
+        Nil
+      }
     }
 
     // If this is for a service-model.conf file, also ingest the OpenApi files into the database
-    def ingestOpenApiFiles(collectionName: String): Unit = {
+    def ingestOpenApiFiles(collectionName: String): List[Problem] = {
       if (stdConfig.stdName.isServiceModel) {
         val serviceModel = ServiceModelParser(stdConfig.config)
         val dirName      = new File(stdConfig.fileName).getParent
         serviceModel.provides
-          .foreach(p => ingestOpenApiFile(s"$collectionName.${p.name}", s"$dirName/${p.openApi}"))
-      }
+          .flatMap(p => ingestOpenApiFile(s"$collectionName.${p.name}", s"$dirName/${p.openApi}"))
+      } else Nil
     }
 
     try {
@@ -597,7 +603,6 @@ case class IcdDb(
       val tmpName = s"$coll${IcdDbDefaults.tmpCollSuffix}"
       ingestConfig(coll, tmpName, stdConfig.config)
       ingestOpenApiFiles(coll)
-      Nil
     }
     catch {
       case t: Throwable => List(Problem("error", s"Internal error: $t"))
