@@ -487,7 +487,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * @param includeOnly if not empty, include only the named models in the result ("subsystemModel", "publishModel", etc.)
    * @return a list of IcdModels for the given version of the subsystem or component
    */
-  private[db] def getModels(
+  def getModels(
       sv: SubsystemWithVersion,
       maybePdfOptions: Option[PdfOptions] = None,
       fitsKeyMap: FitsKeyMap = Map.empty,

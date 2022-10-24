@@ -61,6 +61,7 @@ object Dependencies {
   val bootstrap      = "org.webjars.npm"             % "bootstrap"        % BootstrapVersion
   val bootstrapTable = "org.webjars.npm"             % "bootstrap-table"  % BootstrapTableVersion
   val bootstrapIcons = "org.webjars.npm"             % "bootstrap-icons"  % BootstrapIconsVersion
+  val swaggerUi      = "org.webjars"                 % "swagger-ui"       % "4.15.0"
 
   // ScalaJS web client scala dependencies
   val clientDeps = Def.setting(

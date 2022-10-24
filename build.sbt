@@ -84,7 +84,7 @@ lazy val icdWebServer = (project in file("icd-web-server"))
     // triggers scalaJSPipeline when using compile or continuous compilation
     Compile / compile := ((Compile / compile) dependsOn scalaJSPipeline).value,
     libraryDependencies ++=
-      compileScope(filters, guice, playJson, jqueryUi, webjarsPlay, bootstrap, bootstrapTable, bootstrapIcons) ++
+      compileScope(filters, guice, playJson, jqueryUi, webjarsPlay, bootstrap, bootstrapTable, bootstrapIcons, swaggerUi) ++
         testScope(specs2)
   )
   .enablePlugins(PlayScala, SbtWeb, DockerPlugin)

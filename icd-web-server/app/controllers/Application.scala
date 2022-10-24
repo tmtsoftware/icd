@@ -810,4 +810,28 @@ class Application @Inject() (
       resp.map(info => Ok(Json.toJson(info)))
     }
 
+  /**
+   * Query the database for the contents of the OpenApi JSON description for the given HTTP service.
+   *
+   * @param subsystem the subsystem that provides the service
+   * @param component the component name
+   * @param service the service name
+   * @param version optional version for the subsystem
+   *
+   * @return the OpenAPI JSON string for the service
+   */
+  def openApi(
+      subsystem: String,
+      component: String,
+      service: String,
+      version: Option[String]
+  ) =
+    authAction.async {
+      val resp: Future[Option[String]] = appActor ? (GetOpenApi(subsystem, component, service, version, _))
+      resp.map {
+        case Some(openApi) => Ok(Json.parse(openApi))
+        case None => NotFound
+      }
+    }
+
 }

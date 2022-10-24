@@ -137,6 +137,13 @@ object ApplicationActor extends ActorModule {
       maybeComponent: Option[String],
       replyTo: ActorRef[FitsDictionary]
   ) extends Messages
+  final case class GetOpenApi(
+      subsystem: String,
+      component: String,
+      service: String,
+      version: Option[String],
+      replyTo: ActorRef[Option[String]]
+  ) extends Messages
 
   // -------------------------------------------------------------------
 
@@ -330,6 +337,9 @@ object ApplicationActor extends ActorModule {
           Behaviors.same
         case GetFitsDictionary(maybeSubsystem, maybeComponent, replyTo) =>
           replyTo ! app.getFitsDictionary(maybeSubsystem, maybeComponent)
+          Behaviors.same
+        case GetOpenApi(subsystem, component, service, maybeVersion, replyTo) =>
+          replyTo ! app.getOpenApi(subsystem, component, service, maybeVersion)
           Behaviors.same
       }
     }

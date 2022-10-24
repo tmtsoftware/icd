@@ -5,7 +5,18 @@ import controllers.ApplicationData.maybeCache
 import csw.services.icd.IcdToPdf
 import csw.services.icd.codegen.{JavaCodeGenerator, PythonCodeGenerator, ScalaCodeGenerator, TypescriptCodeGenerator}
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
-import csw.services.icd.db.{ArchivedItemsReport, CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, IcdDbPrinter, IcdDbQuery, IcdVersionManager, getFileContents}
+import csw.services.icd.db.{
+  ArchivedItemsReport,
+  CachedIcdDbQuery,
+  CachedIcdVersionManager,
+  ComponentInfoHelper,
+  IcdComponentInfo,
+  IcdDb,
+  IcdDbPrinter,
+  IcdDbQuery,
+  IcdVersionManager,
+  getFileContents
+}
 import csw.services.icd.fits.{IcdFits, IcdFitsPrinter}
 import csw.services.icd.github.IcdGitManager
 import csw.services.icd.html.OpenApiToHtml
@@ -13,7 +24,24 @@ import csw.services.icd.viz.IcdVizManager
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.AllEventList.EventsForSubsystem
 import icd.web.shared.IcdModels.IcdModel
-import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, FitsDictionary, IcdName, IcdVersion, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, SubsystemWithVersion, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
+import icd.web.shared.{
+  ApiVersionInfo,
+  ComponentInfo,
+  DiffInfo,
+  FitsDictionary,
+  IcdName,
+  IcdVersion,
+  IcdVersionInfo,
+  IcdVizOptions,
+  PdfOptions,
+  PublishApiInfo,
+  PublishIcdInfo,
+  SubsystemInfo,
+  SubsystemWithVersion,
+  UnpublishApiInfo,
+  UnpublishIcdInfo,
+  VersionInfo
+}
 import play.api.libs.json.Json
 
 import scala.util.Try
@@ -75,8 +103,13 @@ class ApplicationImpl(db: IcdDb) {
     val fitsKeyMap          = IcdFits(db).getFitsKeyMap()
     val query               = new CachedIcdDbQuery(db.db, db.admin, subsystems, None, fitsKeyMap)
     val versionManager      = new CachedIcdVersionManager(query)
-    new ComponentInfoHelper(versionManager, displayWarnings = searchAllSubsystems, clientApi = clientApi, maybeStaticHtml = Some(false))
-      .getComponentInfoList(sv, None, fitsKeyMap)
+    new ComponentInfoHelper(
+      versionManager,
+      displayWarnings = searchAllSubsystems,
+      clientApi = clientApi,
+//      maybeStaticHtml = Some(false)
+      maybeStaticHtml = None // XXX TODO FIXME: Changed to use swagger-ui and serve OpenApi content
+    ).getComponentInfoList(sv, None, fitsKeyMap)
   }
 
   /**
@@ -230,7 +263,8 @@ class ApplicationImpl(db: IcdDb) {
       pdfOptions: PdfOptions
   ): Option[Array[Byte]] = {
     val maybeTag = if (tag == "All") None else Some(tag)
-    val fitsDictionary = IcdFits(db).getFitsDictionary(maybeSubsystem = None, maybeTag = maybeTag, maybePdfOptions = Some(pdfOptions))
+    val fitsDictionary =
+      IcdFits(db).getFitsDictionary(maybeSubsystem = None, maybeTag = maybeTag, maybePdfOptions = Some(pdfOptions))
     IcdFitsPrinter(fitsDictionary).saveAsPdf(maybeTag, pdfOptions)
   }
 
@@ -459,13 +493,6 @@ class ApplicationImpl(db: IcdDb) {
   }
 
   /**
-   * Converts OpenApi JSON to HTML
-   */
-  def openApiToDynamicHtml(openApiJson: String): Try[String] = {
-    Try(OpenApiToHtml.getHtml(openApiJson, staticHtml = false))
-  }
-
-  /**
    * Gets optional information about the ICD between two subsystems
    * (from the <subsystem>-icd-model.conf files)
    *
@@ -572,5 +599,17 @@ class ApplicationImpl(db: IcdDb) {
 
   def getFitsDictionary(maybeSubsystem: Option[String], maybeComponent: Option[String]): FitsDictionary = {
     IcdFits(db).getFitsDictionary(maybeSubsystem, maybeComponent)
+  }
+
+  def getOpenApi(subsystem: String, component: String, service: String, maybeVersion: Option[String]): Option[String] = {
+    val sv = SubsystemWithVersion(subsystem, maybeVersion, Some(component))
+    db.versionManager
+      .getModels(sv, includeOnly = Set("serviceModel"))
+      .head
+      .serviceModel
+      .toList
+      .flatMap(_.provides.find(_.name == service))
+      .map(_.openApi)
+      .headOption
   }
 }

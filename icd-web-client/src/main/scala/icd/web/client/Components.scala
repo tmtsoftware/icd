@@ -5,8 +5,8 @@ import icd.web.shared.IcdModels._
 import icd.web.shared._
 import org.scalajs.dom
 import org.scalajs.dom.{HTMLButtonElement, HTMLDivElement, HTMLElement, HTMLTableRowElement, document}
-
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
+
 import scala.concurrent.Future
 import Components._
 import org.scalajs.dom.html.{Anchor, Div, Element}
@@ -1088,14 +1088,15 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           }
           else span
           val openInNewTab = () => {
-            val newTab = dom.window.open()
-            newTab.document.write(s.html)
+            // Need to serve OpenAPI file
+            val openApiUrl = s"/openApi/${component.subsystem}/${component.component}/${s.serviceModelProvider.name}"
+            dom.window.open(s"assets/openapi/index.html?url=$openApiUrl")
           }
           div(cls := "nopagebreak")(
             h5(s"HTTP Service: ", a(id := idStr, name := idStr)(m.name)),
             if (clientApi) p(consumerInfo) else div(),
             div(
-              p(a(onclick := openInNewTab, title := s"Open ${m.name} API in new tab.")(s"Open ${m.name} API in new tab."))
+              p(a(onclick := openInNewTab, title := s"Open ${m.name} API in new tab.")(s"Open ${m.name} API in new tab.")),
             )
           )
         }
