@@ -126,7 +126,7 @@ object IcdVizManager {
 
     val subsystems = components.map(c => SubsystemWithVersion(c.subsystem, c.maybeVersion, None)).distinct
     val componentInfoHelper =
-      new ComponentInfoHelper(versionManager, displayWarnings = false, clientApi = true, maybeStaticHtml = None, subsystems)
+      new ComponentInfoHelper(versionManager, displayWarnings = false, clientApi = true, subsystems)
     val componentInfoList =
       components.flatMap(sv => componentInfoHelper.getComponentInfo(sv, noMarkdownOpt, Map.empty))
 

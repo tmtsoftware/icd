@@ -177,9 +177,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   ): Future[List[ComponentInfo]] = {
     Fetch
       .get(ClientRoutes.icdComponentInfo(sv, maybeTargetSv, searchAllSubsystems, clientApi))
-      .map { text =>
-        val list = Json.fromJson[Array[ComponentInfo]](Json.parse(text)).map(_.toList).getOrElse(Nil)
-        if (maybeTargetSv.isDefined) list.map(ComponentInfo.applyIcdFilter).filter(ComponentInfo.nonEmpty) else list
+      .map { jsonStr =>
+        Json.fromJson[Array[ComponentInfo]](Json.parse(jsonStr)).map(_.toList).getOrElse(Nil)
       }
   }
 
@@ -290,7 +289,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       mainContent.appendElement(div(Styles.component, id := "Summary")(raw(summaryTable)).render)
       if (!isIcd && fitsDict.fitsKeys.nonEmpty) mainContent.appendElement(makeFitsKeyTable(fitsDict).render)
       infoList.foreach(i => displayComponentInfo(i, !isIcd, clientApi))
-      if (isIcd) targetInfoList.foreach(i => displayComponentInfo(i, forApi = false, clientApi))
+      if (isIcd)
+        targetInfoList.foreach(i => displayComponentInfo(i, forApi = false, clientApi))
       infoList ++ targetInfoList
     }
     f.onComplete {
@@ -314,7 +314,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    *
    * @param info contains the information to display
    */
-  private def displayComponentInfo(info: ComponentInfo, forApi: Boolean, clientApi: Boolean): Unit = {
+  private def displayComponentInfo(
+      info: ComponentInfo,
+      forApi: Boolean,
+      clientApi: Boolean
+  ): Unit = {
     if (
       forApi || (info.publishes.isDefined && info.publishes.get.nonEmpty
       || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
@@ -775,7 +779,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
 
     def subscribeListMarkup(pubType: String, subscribeList: List[DetailedSubscribeInfo]) = {
-      // Warn if no publisher found for subscibed item
+      // Warn if no publisher found for subscribed item
       def getWarning(info: DetailedSubscribeInfo) =
         info.warning.map(msg => makeErrorDiv(s" Warning: $msg"))
 
@@ -1044,18 +1048,42 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       div(
         h4(servicesRequiredTitle(compName)),
         for (s <- info) yield {
+          val idStr = idFor(
+            compName,
+            "requires",
+            "Service",
+            s.serviceModelClient.subsystem,
+            s.serviceModelClient.component,
+            s.serviceModelClient.name
+          )
           val m = s.serviceModelClient
+          // XXX TODO FIXME: Add table, similar to events
           val providerInfo =
-            span(strong(s"Provider: "), makeLinkForComponent(s.serviceModelClient.subsystem, s.serviceModelClient.component))
+            span(
+              id := idStr,
+              name := idStr,
+              strong(s"Provider: "),
+              makeLinkForComponent(s.serviceModelClient.subsystem, s.serviceModelClient.component)
+            )
           val openInNewTab = () => {
-            val newTab = dom.window.open()
-            newTab.document.write(s.maybeHtml.get)
+            // Need to serve OpenAPI file
+            if (s.maybeServiceModelProvider.isDefined) {
+              val openApiUrl =
+                ClientRoutes.openApi(
+                  s.serviceModelClient.subsystem,
+                  s.serviceModelClient.component,
+                  s.serviceModelClient.name,
+                  s.provider.flatMap(_.maybeSubsystemVersion)
+                )
+              dom.window.open(s"assets/openapi/index.html?url=$openApiUrl")
+            }
           }
+
           div(cls := "nopagebreak")(
             h5(s"HTTP Service: ${m.name}"),
             p(providerInfo),
-            p("Note: Only the routes required by the client are listed here."),
-            if (s.maybeHtml.nonEmpty)
+//            p("Note: Only the routes required by the client are listed here."),
+            if (s.maybeServiceModelProvider.isDefined)
               div(
                 a(onclick := openInNewTab, title := s"Open ${m.name} API in new tab.")(s"Open ${m.name} API in new tab.")
               )
@@ -1080,8 +1108,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       div(
         h4(servicesProvidedTitle(compName)),
         for (s <- info) yield {
-          val idStr      = idFor(compName, "provides", "Service", component.subsystem, compName, s.serviceModelProvider.name)
-          val m = s.serviceModelProvider
+          val idStr = idFor(compName, "provides", "Service", component.subsystem, compName, s.serviceModelProvider.name)
+          val m     = s.serviceModelProvider
           val consumerInfo = if (clientApi) {
             val consumers = s.requiredBy.distinct.map(s => makeLinkForComponent(s.subsystem, s.component))
             span(strong(s"Consumers: "), if (consumers.isEmpty) "none" else span(consumers))
@@ -1089,14 +1117,20 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           else span
           val openInNewTab = () => {
             // Need to serve OpenAPI file
-            val openApiUrl = s"/openApi/${component.subsystem}/${component.component}/${s.serviceModelProvider.name}"
+            val openApiUrl =
+              ClientRoutes.openApi(
+                component.subsystem,
+                component.component,
+                s.serviceModelProvider.name,
+                component.maybeSubsystemVersion
+              )
             dom.window.open(s"assets/openapi/index.html?url=$openApiUrl")
           }
           div(cls := "nopagebreak")(
             h5(s"HTTP Service: ", a(id := idStr, name := idStr)(m.name)),
             if (clientApi) p(consumerInfo) else div(),
             div(
-              p(a(onclick := openInNewTab, title := s"Open ${m.name} API in new tab.")(s"Open ${m.name} API in new tab.")),
+              p(a(onclick := openInNewTab, title := s"Open ${m.name} API in new tab.")(s"Open ${m.name} API in new tab."))
             )
           )
         }
@@ -1174,7 +1208,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Generates the HTML markup to display the component information
-  private def markupForComponent(info: ComponentInfo, forApi: Boolean, clientApi: Boolean): TypedTag[Div] = {
+  private def markupForComponent(
+      info: ComponentInfo,
+      forApi: Boolean,
+      clientApi: Boolean
+  ): TypedTag[Div] = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 

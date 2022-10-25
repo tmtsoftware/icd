@@ -408,5 +408,10 @@ object ClientRoutes {
   /**
    * Post the OpenApi JSON and get the HTML to display
    */
-  val openApiToDynamicHtml = "/openApiToHtml"
+  def openApi(subsystem: String, component: String, service: String, maybeVersion: Option[String]): String = {
+    maybeVersion match {
+      case Some(version) => s"/openApi/$subsystem/$component/$service?version=$version"
+      case None => s"/openApi/$subsystem/$component/$service"
+    }
+  }
 }

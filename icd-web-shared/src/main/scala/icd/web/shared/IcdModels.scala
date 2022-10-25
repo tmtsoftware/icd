@@ -328,7 +328,8 @@ object IcdModels {
       title: String,
       description: String,
       modelVersion: String,
-      wbsId: String
+      wbsId: String,
+      maybeSubsystemVersion: Option[String] = None
   ) {
     // Changed to enforce prefix = subsystem.component as in CSW
     val prefix = s"$subsystem.$component"

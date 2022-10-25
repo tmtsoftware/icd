@@ -26,7 +26,7 @@ class ArchivedItemsTest extends AnyFunSuite {
     // ingest examples/TEST into the DB
     testHelper.ingestDir(getTestDir(s"$examplesDir/TEST"))
 
-    new ComponentInfoHelper(db.versionManager, displayWarnings = false, clientApi = false, maybeStaticHtml = None)
+    new ComponentInfoHelper(db.versionManager, displayWarnings = false, clientApi = false)
       .getComponentInfo(SubsystemWithVersion("TEST", None, Some("lgsWfs")), None, Map.empty)
       .foreach { info =>
         assert(info.componentModel.component == "lgsWfs")

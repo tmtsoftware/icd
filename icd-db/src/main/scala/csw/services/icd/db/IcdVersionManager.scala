@@ -528,7 +528,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
 
       val componentModel: Option[IcdModels.ComponentModel] =
         if (includeOnly.isEmpty || includeOnly.contains("componentModel"))
-          entry.component.flatMap(coll => ComponentModelBsonParser(getDocVersion(coll), maybePdfOptions))
+          entry.component.flatMap(coll => ComponentModelBsonParser(getDocVersion(coll), maybePdfOptions, sv.maybeVersion))
         else None
 
       val serviceModel: Option[IcdModels.ServiceModel] =

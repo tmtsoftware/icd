@@ -276,14 +276,12 @@ case class Commands(description: String, commandsReceived: List[ReceivedCommandI
  * @param serviceModelClient  describes the client's use of the service
  * @param maybeServiceModelProvider  describes the service provided, if known
  * @param provider  the component that should define the service, if known
- * @param maybeHtml  the generated HTML for the service, if known
  * @param warnings  true if service providergetServicesProvided not found
  */
 case class ServicesRequiredInfo(
     serviceModelClient: ServiceModelClient,
     maybeServiceModelProvider: Option[ServiceModelProvider],
     provider: Option[ComponentModel],
-    maybeHtml: Option[String],
     warnings: Boolean = true
 ) {
 
@@ -304,9 +302,8 @@ case class ServicesRequiredInfo(
  *
  * @param serviceModelProvider the basic model for the service
  * @param requiredBy           list of components that use/require the service
- * @param html                 holds the HTML generated from serviceModelProvider.openApi
  */
-case class ServiceProvidedInfo(serviceModelProvider: ServiceModelProvider, requiredBy: List[ComponentModel], html: String)
+case class ServiceProvidedInfo(serviceModelProvider: ServiceModelProvider, requiredBy: List[ComponentModel])
 
 /**
  * Describes services the component uses and provides

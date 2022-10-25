@@ -13,9 +13,6 @@ import icd.web.shared._
  * @param versionManager used to access the database
  * @param displayWarnings if true warn when no publishers are found for a subscribed event etc.
  * @param clientApi if true include subscribed events and sent commands
- * @param maybeStaticHtml  for services documented by OpenApi JSON, determines the type of HTML generated
- *                       (static (true) is plain HTML, non-static (false) includes JavaScript)
- *                       A value of None means don't generate the HTML at all.
  * @param subsystemsWithVersion a list of subsystems for the queries that have non-default versions
  */
 //noinspection DuplicatedCode
@@ -23,7 +20,6 @@ class ComponentInfoHelper(
     versionManager: IcdVersionManager,
     displayWarnings: Boolean,
     clientApi: Boolean,
-    maybeStaticHtml: Option[Boolean],
     subsystemsWithVersion: List[SubsystemWithVersion] = Nil
 ) {
 
@@ -308,8 +304,7 @@ class ComponentInfoHelper(
             subsystemsWithVersion
           )
         else Nil
-      val html = maybeStaticHtml.map(staticHtml => OpenApiToHtml.getHtml(provides.openApi, staticHtml)).getOrElse("<div/>")
-      ServiceProvidedInfo(provides, clientComponents, html)
+      ServiceProvidedInfo(provides, clientComponents)
     }
   }
 
@@ -334,16 +329,11 @@ class ComponentInfoHelper(
           subsystemsWithVersion
         )
       val maybeServiceModelProvider = maybeServiceModel.flatMap(_.provides.find(_.name == serviceModelClient.name))
-      val maybeHtml = for {
-        p          <- maybeServiceModelProvider
-        staticHtml <- maybeStaticHtml
-      } yield OpenApiToHtml.getHtml(OpenApiToHtml.filterOpenApiJson(p.openApi, serviceModelClient.paths), staticHtml)
       ServicesRequiredInfo(
         serviceModelClient,
         maybeServiceModelProvider,
         versionManager
           .getComponentModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions, subsystemsWithVersion),
-        maybeHtml,
         displayWarnings
       )
     }

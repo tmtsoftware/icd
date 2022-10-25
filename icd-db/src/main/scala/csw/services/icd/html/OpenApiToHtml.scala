@@ -18,9 +18,8 @@ object OpenApiToHtml {
 
   // Gets the directory containing the swagger-codegen templates
   // (Need to pass this directory as an option to the swagger-codegen command to customize the HTML)
-  // The layout is different for static and dynamic HTML (static is for PDF, dynamic for web).
-  private def getTemplateDir(staticHtml: Boolean): Option[File] = {
-    val name        = if (staticHtml) "htmlDocs" else "htmlDocs2"
+  private def getTemplateDir: Option[File] = {
+    val name        = "htmlDocs"
     val classDir    = new File(getClass.getProtectionDomain.getCodeSource.getLocation.getPath).getParentFile.getParentFile
     val templateDir = new File(classDir, s"conf/handlebars/$name")
     val devDir      = new File(classDir.getParentFile, s"src/universal/conf/handlebars/$name")
@@ -96,9 +95,15 @@ object OpenApiToHtml {
     }
   }
 
-  def getHtml(openApi: String, staticHtml: Boolean): String = {
-    val maybeDir = getTemplateDir(staticHtml)
-    val format   = if (staticHtml) "html" else "html2"
+  /**
+   * Converts the given OpenAPI JSON string to static HTML (for use in generating a PDF)
+   * @param openApi JSON formatted OpenApi string
+   * @return static HTML string
+   */
+  def getHtml(openApi: String): String = {
+    // XXX TODO FIXME: Add args to filter OpenApi based on declared method usage?
+    val maybeDir = getTemplateDir
+    val format   = "html"
     val maybeHtml = maybeDir.map { templateDir =>
       val openApiFile = saveOpenApiJson(openApi)
       val tempDir     = Files.createTempDirectory("openApi").toFile

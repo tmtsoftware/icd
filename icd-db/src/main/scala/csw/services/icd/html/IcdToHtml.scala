@@ -8,7 +8,7 @@ import HtmlMarkup.yesNo
 import icd.web.shared.IcdModels.{AlarmModel, ComponentModel, EventModel, MetadataModel, ParameterModel}
 
 /**
- * Handles converting ICD API from GFM to HTML
+ * Handles converting model files to static HTML for use in generating a PDF
  */
 //noinspection DuplicatedCode
 object IcdToHtml {
@@ -458,7 +458,8 @@ object IcdToHtml {
       div(
         nh.H4(servicesRequiredTitle(compName)),
         for (s <- info) yield {
-          val m = s.serviceModelClient
+          val maybeOpenApi = s.maybeServiceModelProvider.map(_.openApi)
+          val m            = s.serviceModelClient
           val providerInfo = {
             val provider = s"${s.serviceModelClient.subsystem}.${s.serviceModelClient.component}"
             span(strong(s"Provider: "), provider)
@@ -466,13 +467,14 @@ object IcdToHtml {
           div(cls := "nopagebreak")(
             nh.H5(s"HTTP Service: ${m.name}"),
             p(providerInfo),
-            p("Note: Only the routes required by the client are listed here."),
-            if (s.maybeHtml.nonEmpty) {
-              div(
-                raw(s.maybeHtml.get)
-              )
+//            p("Note: Only the routes required by the client are listed here."),
+            maybeOpenApi match {
+              case Some(openApi) =>
+                div(
+                  raw(OpenApiToHtml.getHtml(openApi))
+                )
+              case None => div()
             }
-            else div()
           )
         }
       )
@@ -510,7 +512,7 @@ object IcdToHtml {
             if (clientApi) p(consumerInfo, ", ", providerInfo) else p(providerInfo),
             if (showDetails) {
               div(
-                raw(s.html)
+                raw(OpenApiToHtml.getHtml(m.openApi))
               )
             }
             else

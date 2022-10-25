@@ -190,7 +190,7 @@ class PythonCodeGenerator(db: IcdDb) {
     val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem)), None, Map.empty)
     val versionManager = new CachedIcdVersionManager(query)
     val subsystemModel = db.versionManager.getSubsystemModel(sv, None)
-    val infoList = new ComponentInfoHelper(versionManager, false, false, maybeStaticHtml = Some(true))
+    val infoList = new ComponentInfoHelper(versionManager, false, false)
       .getComponentInfoList(sv, None, Map.empty)
     val defs      = infoList.map(sourceForComponent)
     val className = sourceFile.getName.stripSuffix(".py")

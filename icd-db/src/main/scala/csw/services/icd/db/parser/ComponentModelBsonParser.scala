@@ -10,11 +10,15 @@ import reactivemongo.api.bson._
  */
 object ComponentModelBsonParser {
 
-  def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): Option[ComponentModel] = {
+  def apply(
+      doc: BSONDocument,
+      maybePdfOptions: Option[PdfOptions] = None,
+      maybeSubsystemVersion: Option[String] = None
+  ): Option[ComponentModel] = {
     if (doc.isEmpty) None
     else {
-      val subsystem      = doc.getAsOpt[String](BaseModelBsonParser.subsystemKey).get
-      val component      = doc.getAsOpt[String](BaseModelBsonParser.componentKey).get
+      val subsystem = doc.getAsOpt[String](BaseModelBsonParser.subsystemKey).get
+      val component = doc.getAsOpt[String](BaseModelBsonParser.componentKey).get
       Some(
         ComponentModel(
           componentType = doc.getAsOpt[String]("componentType").get,
@@ -23,7 +27,8 @@ object ComponentModelBsonParser {
           title = doc.getAsOpt[String]("title").get,
           description = HtmlMarkup.gfmToHtml(doc.getAsOpt[String]("description").get, maybePdfOptions),
           modelVersion = doc.getAsOpt[String]("modelVersion").get,
-          wbsId = doc.getAsOpt[String]("wbsId").getOrElse("")
+          wbsId = doc.getAsOpt[String]("wbsId").getOrElse(""),
+          maybeSubsystemVersion = maybeSubsystemVersion
         )
       )
     }

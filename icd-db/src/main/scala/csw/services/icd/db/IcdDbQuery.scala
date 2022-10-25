@@ -247,7 +247,7 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
   }
 
   /**
-   * Returns a list of component model objects, one for each component ICD matching the given condition in the database
+   * Returns a list of component model objects, one for each component matching the given condition in the database
    *
    * @param query restricts the components returned (a MongoDBObject, for example)
    */

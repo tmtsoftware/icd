@@ -69,9 +69,9 @@ case class IcdDbPrinter(
   ): List[ComponentInfo] = {
     maybeTargetSv match {
       case Some(targetSv) =>
-        IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, maybePdfOptions, staticHtml = true, fitsKeyMap)
+        IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, maybePdfOptions, fitsKeyMap)
       case None =>
-        new ComponentInfoHelper(versionManager, searchAllSubsystems, clientApi, maybeStaticHtml = Some(true))
+        new ComponentInfoHelper(versionManager, searchAllSubsystems, clientApi)
           .getComponentInfoList(sv, maybePdfOptions, fitsKeyMap)
     }
   }

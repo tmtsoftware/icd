@@ -19,7 +19,6 @@ import csw.services.icd.db.{
 }
 import csw.services.icd.fits.{IcdFits, IcdFitsPrinter}
 import csw.services.icd.github.IcdGitManager
-import csw.services.icd.html.OpenApiToHtml
 import csw.services.icd.viz.IcdVizManager
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.AllEventList.EventsForSubsystem
@@ -106,9 +105,7 @@ class ApplicationImpl(db: IcdDb) {
     new ComponentInfoHelper(
       versionManager,
       displayWarnings = searchAllSubsystems,
-      clientApi = clientApi,
-//      maybeStaticHtml = Some(false)
-      maybeStaticHtml = None // XXX TODO FIXME: Changed to use swagger-ui and serve OpenApi content
+      clientApi = clientApi
     ).getComponentInfoList(sv, None, fitsKeyMap)
   }
 
@@ -156,7 +153,7 @@ class ApplicationImpl(db: IcdDb) {
     val fitsKeyMap     = IcdFits(db).getFitsKeyMap()
     val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), None, fitsKeyMap)
     val versionManager = new CachedIcdVersionManager(query)
-    IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, None, staticHtml = false, fitsKeyMap)
+    IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, None, fitsKeyMap)
   }
 
   // Returns the selected subsystem, target subsystem and optional ICD version
@@ -591,7 +588,7 @@ class ApplicationImpl(db: IcdDb) {
           maybePackageName
         )
         readAndDeleteFile()
-      case x =>
+      case _ =>
         println(s"Unsupported language fo code generation: $lang")
         None
     }
