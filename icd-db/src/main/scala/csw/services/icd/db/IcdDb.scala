@@ -576,7 +576,9 @@ case class IcdDb(
         // Convert YAML to JSON if needed
         val jsonStr =
           if (fileName.endsWith(".yml") || fileName.endsWith(".yaml")) {
-            DeserializationUtils.deserializeIntoTree(getFileContents(fileName), fileName).toPrettyString
+            val yaml = io.swagger.util.Yaml.pretty().writeValueAsString(openAPI)
+            DeserializationUtils.deserializeIntoTree(yaml, fileName).toPrettyString
+            //            DeserializationUtils.deserializeIntoTree(getFileContents(fileName), fileName).toPrettyString
           }
           else {
             io.swagger.util.Json.pretty().writeValueAsString(openAPI)
