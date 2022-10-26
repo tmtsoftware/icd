@@ -291,8 +291,7 @@ object SummaryTable {
       } yield {
         val nameDesc = new NameDesc {
           override val name: String = service.serviceModelProvider.name
-          // XXX TODO FIXME
-          override val description: String = "An HTTP service (TODO: get title from OpenApi JSON doc))"
+          override val description: String = service.serviceModelProvider.description
         }
         PublishedItem(info.componentModel, nameDesc, service.requiredBy.distinct)
       }

@@ -65,6 +65,7 @@ object ServiceModelBsonParser {
         Some(
           ServiceModelProvider(
             name = doc.getAsOpt[String]("name").get,
+            description = doc.getAsOpt[String]("description").get,
             openApi = Json.toJson(openApiDoc).toString()
           )
         )

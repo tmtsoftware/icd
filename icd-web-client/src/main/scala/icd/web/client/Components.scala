@@ -499,7 +499,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     val compName = component.component
 
-    // Returns a table row displaying more details for the given event
+    // Returns a div displaying more details for the given event
     def makeEventDetailsRow(eventInfo: EventInfo, showArchiveInfo: Boolean = true, maybeEventId: Option[String] = None) = {
       val eventModel = eventInfo.eventModel
       val totalArchiveSpacePerYear =
@@ -530,7 +530,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       )
     }
 
-    // Returns a table row displaying more details for the given image
+    // Returns a div displaying more details for the given image
     def makeImageDetailsRow(imageInfo: ImageInfo, maybeImageId: Option[String] = None) = {
       val imageModel = imageInfo.imageModel
       div(
@@ -639,7 +639,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         )
     }
 
-    // Returns a table row displaying more details for the given alarm
+    // Returns a div displaying more details for the given alarm
     def makeAlarmDetailsRow(m: AlarmModel) = {
       val headings = List("Severity Levels", "Location", "Alarm Type", "Auto Ack", "Latched")
       val rowList = List(
@@ -728,7 +728,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     val compName = component.component
 
-    // Returns a table row displaying more details for the given subscription
+    // Returns a div displaying more details for the given subscription
     def makeDetailsRow(si: DetailedSubscribeInfo) = {
       val sInfo = si.subscribeModelInfo
       if (si.imageModel.nonEmpty) {
@@ -856,7 +856,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
-  // Returns a table row displaying more details for the given command
+  // Returns a div displaying more details for the given command
   private def makeReceivedCommandDetailsRow(m: ReceiveCommandModel) = {
     import scalatags.JsDom.all._
     div(
@@ -1009,9 +1009,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
-  private def servicesProvidedTitle(compName: String): String = s"HTTP Services provided by $compName"
-  private def servicesRequiredTitle(compName: String): String = s"HTTP Services required by $compName"
-
   // Generates the markup for the services section (description plus provides and requires)
   private def servicesMarkup(
       component: ComponentModel,
@@ -1041,57 +1038,79 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       info: List[ServicesRequiredInfo]
   ) = {
     import scalatags.JsDom.all._
-
+    import scalacss.ScalatagsCss._
     val compName = component.component
     if (info.isEmpty) div()
     else {
       div(
-        h4(servicesRequiredTitle(compName)),
-        for (s <- info) yield {
-          val idStr = idFor(
-            compName,
-            "requires",
-            "Service",
-            s.serviceModelClient.subsystem,
-            s.serviceModelClient.component,
-            s.serviceModelClient.name
-          )
-          val m = s.serviceModelClient
-          // XXX TODO FIXME: Add table, similar to events
-          val providerInfo =
-            span(
-              id := idStr,
-              name := idStr,
-              strong(s"Provider: "),
-              makeLinkForComponent(s.serviceModelClient.subsystem, s.serviceModelClient.component)
+        Styles.componentSection,
+        h4(s"HTTP Services required by $compName"),
+        table(
+          Styles.componentTable,
+          attr("data-bs-toggle") := "table",
+          thead(
+            tr(
+              th("Name"),
+              th("Description"),
+              th("Provider")
             )
-          val openInNewTab = () => {
-            // Need to serve OpenAPI file
-            if (s.maybeServiceModelProvider.isDefined) {
-              val openApiUrl =
-                ClientRoutes.openApi(
-                  s.serviceModelClient.subsystem,
-                  s.serviceModelClient.component,
-                  s.serviceModelClient.name,
-                  s.provider.flatMap(_.maybeSubsystemVersion)
-                )
-              dom.window.open(s"assets/openapi/index.html?url=$openApiUrl")
-            }
-          }
-
-          div(cls := "nopagebreak")(
-            h5(s"HTTP Service: ${m.name}"),
-            p(providerInfo),
-//            p("Note: Only the routes required by the client are listed here."),
-            if (s.maybeServiceModelProvider.isDefined)
-              div(
-                a(onclick := openInNewTab, title := s"Open ${m.name} API in new tab.")(s"Open ${m.name} API in new tab.")
+          ),
+          tbody(
+            for (s <- info) yield {
+              // Need to serve OpenAPI file
+              val openApiUrl = ClientRoutes.openApi(
+                s.serviceModelClient.subsystem,
+                s.serviceModelClient.component,
+                s.serviceModelClient.name,
+                s.provider.flatMap(_.maybeSubsystemVersion)
               )
-            else div()
+              val url = s"assets/openapi/index.html?url=$openApiUrl"
+              val openInNewTab = () => {
+                dom.window.open(url)
+              }
+              val idStr = idFor(
+                compName,
+                "requires",
+                "Service",
+                s.serviceModelClient.subsystem,
+                s.serviceModelClient.component,
+                s.serviceModelClient.name
+              )
+              val m          = s.serviceModelClient
+              val (btn, row) = hiddenRowMarkup(idStr, makeProvidedServiceDetailsRow(url), 3)
+              val desc = s.maybeServiceModelProvider.map(_.description).getOrElse(s"OpenApi description of HTTP Service: ${m.name}")
+              List(
+                tr(
+                  td(
+                    Styles.attributeCell,
+                    p(
+                      btn,
+                      a(id := idStr, name := idStr, onclick := openInNewTab, title := s"Open ${m.name} API in new tab.")(m.name)
+                    )
+                  ),
+                  td(p(desc)),
+                  td(s.provider.map(makeLinkForComponent))
+                ),
+                row
+              )
+            }
           )
-        }
+        )
       )
     }
+  }
+
+  // Returns a div displaying the swagger-ui HTML for the given OpenAPI service
+  private def makeProvidedServiceDetailsRow(url: String) = {
+    import scalatags.JsDom.all._
+    div(id := "swagger-ui")(
+      embed(
+        `type` := "text/html",
+        src := url,
+        width := "1000px",
+        height := "800px"
+      )
+    )
   }
 
   // Generates the HTML markup to display the HTTP services a component provides
@@ -1101,39 +1120,57 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       clientApi: Boolean
   ) = {
     import scalatags.JsDom.all._
+    import scalacss.ScalatagsCss._
 
     val compName = component.component
     if (info.isEmpty) div()
     else {
       div(
-        h4(servicesProvidedTitle(compName)),
-        for (s <- info) yield {
-          val idStr = idFor(compName, "provides", "Service", component.subsystem, compName, s.serviceModelProvider.name)
-          val m     = s.serviceModelProvider
-          val consumerInfo = if (clientApi) {
-            val consumers = s.requiredBy.distinct.map(s => makeLinkForComponent(s.subsystem, s.component))
-            span(strong(s"Consumers: "), if (consumers.isEmpty) "none" else span(consumers))
-          }
-          else span
-          val openInNewTab = () => {
-            // Need to serve OpenAPI file
-            val openApiUrl =
-              ClientRoutes.openApi(
+        Styles.componentSection,
+        h4(s"HTTP Services provided by $compName"),
+        table(
+          Styles.componentTable,
+          attr("data-bs-toggle") := "table",
+          thead(
+            tr(
+              th("Name"),
+              th("Description"),
+              if (clientApi) th("Users") else span
+            )
+          ),
+          tbody(
+            for (s <- info) yield {
+              // Need to serve OpenAPI file
+              val openApiUrl = ClientRoutes.openApi(
                 component.subsystem,
                 component.component,
                 s.serviceModelProvider.name,
                 component.maybeSubsystemVersion
               )
-            dom.window.open(s"assets/openapi/index.html?url=$openApiUrl")
-          }
-          div(cls := "nopagebreak")(
-            h5(s"HTTP Service: ", a(id := idStr, name := idStr)(m.name)),
-            if (clientApi) p(consumerInfo) else div(),
-            div(
-              p(a(onclick := openInNewTab, title := s"Open ${m.name} API in new tab.")(s"Open ${m.name} API in new tab."))
-            )
+              val url = s"assets/openapi/index.html?url=$openApiUrl"
+              val openInNewTab = () => {
+                dom.window.open(url)
+              }
+              val idStr      = idFor(compName, "provides", "Service", component.subsystem, compName, s.serviceModelProvider.name)
+              val m          = s.serviceModelProvider
+              val (btn, row) = hiddenRowMarkup(idStr, makeProvidedServiceDetailsRow(url), 3)
+              List(
+                tr(
+                  td(
+                    Styles.attributeCell,
+                    p(
+                      btn,
+                      a(id := idStr, name := idStr, onclick := openInNewTab, title := s"Open ${m.name} API in new tab.")(m.name)
+                    )
+                  ),
+                  td(m.description),
+                  if (clientApi) td(s.requiredBy.distinct.map(makeLinkForComponent)) else span
+                ),
+                row
+              )
+            }
           )
-        }
+        )
       )
     }
   }
@@ -1169,7 +1206,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Generates table with related FITS key information
-  // XXX TODO FIXME: Add tags
   private def makeFitsKeyTable(fitsDict: FitsDictionary) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
@@ -1193,7 +1229,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             val iList = fitsKey.channels.indices.toList
             val zList = fitsKey.channels.zip(iList)
 
-            // XXX TODO FIXME - add tag column if no tag selected (All tgs)
             tr(
               td(a(id := fitsKey.name, name := fitsKey.name)(fitsKey.name)),
               td(raw(fitsKey.description)),

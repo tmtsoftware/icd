@@ -14,6 +14,7 @@ object ServiceModelParser {
     def apply(configObject: ConfigObject): ServiceModelProvider = {
       ServiceModelProvider(
         name = configObject.get("name").unwrapped().toString,
+        description = configObject.get("description").unwrapped().toString,
         openApi = configObject.get("openApi").unwrapped().toString
       )
     }
