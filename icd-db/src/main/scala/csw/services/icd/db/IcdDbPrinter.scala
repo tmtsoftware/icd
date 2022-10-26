@@ -95,7 +95,7 @@ case class IcdDbPrinter(
       subsystemInfo <- getSubsystemInfo(sv)
     } yield {
       val infoList = getComponentInfo(versionManager, sv, None, fitsKeyMap)
-      IcdToHtml.getApiAsHtml(Some(subsystemInfo), infoList, pdfOptions, clientApi, fitsDictionary)
+      IcdToHtml.getApiAsHtml(subsystemInfo, infoList, pdfOptions, clientApi, fitsDictionary)
     }
     markup.map(_.render)
   }

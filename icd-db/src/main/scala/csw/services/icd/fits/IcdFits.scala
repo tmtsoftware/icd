@@ -365,7 +365,6 @@ case class IcdFits(db: IcdDb) {
         }
         def clean(s: String) = s.replace("<p>", "").replace("</p>", "").replace(MyFormat.delimiter, '/')
         val writer           = CSVWriter.open(file)
-        // XXX TODO FIXME - add tag column if no tag selected (All tgs)
         writer.writeRow(List("Name", "Description", "Type", "Units", "Source"))
         fitsKeyList.foreach { k =>
           writer.writeRow(

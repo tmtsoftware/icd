@@ -135,7 +135,7 @@ object IcdToHtml {
   /**
    * Returns HTML describing the given components in the given subsystem.
    *
-   * @param maybeSubsystemInfo contains info about the subsystem, if known
+   * @param subsystemInfo      contains info about the subsystem
    * @param infoList           details about each component and what it publishes, subscribes to, etc.
    * @param pdfOptions         options for pdf generation
    * @param clientApi          if true, include subscribed events, sent commands
@@ -143,7 +143,7 @@ object IcdToHtml {
    * @return the html tags
    */
   def getApiAsHtml(
-      maybeSubsystemInfo: Option[SubsystemInfo],
+      subsystemInfo: SubsystemInfo,
       infoList: List[ComponentInfo],
       pdfOptions: PdfOptions,
       clientApi: Boolean,
@@ -151,32 +151,13 @@ object IcdToHtml {
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
-    val nh = new NumberedHeadings
-    val (titleInfo, summaryTable) =
-      if (maybeSubsystemInfo.isDefined) {
-        val si = maybeSubsystemInfo.get
-        val ti = TitleInfo(si, None, None)
-        (ti, SummaryTable.displaySummary(si, None, infoList, nh, clientApi))
-      }
-      else if (infoList.size == 1) {
-        // XXX TODO FIXME: When is this block called?
-        val componentModel = infoList.head.componentModel
-        val subsys         = componentModel.subsystem
-        val comp           = componentModel.component
-        val desc           = componentModel.description
-        val ti             = TitleInfo(s"API for $subsys.$comp", None, Some(desc))
-        val sv             = SubsystemWithVersion(subsys, None, Some(comp))
-        val si             = SubsystemInfo(sv, "", "")
-        (ti, SummaryTable.displaySummary(si, None, infoList, nh, clientApi))
-      }
-      else {
-        (TitleInfo("", None, None), div())
-      }
+    val nh           = new NumberedHeadings
+    val titleInfo    = TitleInfo(subsystemInfo, None, None)
+    val summaryTable = SummaryTable.displaySummary(subsystemInfo, None, infoList, nh, clientApi)
 
     val mainContent = div(
       style := "width: 100%;",
       summaryTable,
-//      if (fitsDictionary.fitsKeys.nonEmpty) makeFitsKeyTable(None, fitsDictionary, nh) else div(),
       displayDetails(infoList, nh, forApi = true, pdfOptions, clientApi)
     )
     val toc   = nh.mkToc()
