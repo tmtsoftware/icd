@@ -482,18 +482,20 @@ object IcdToHtml {
         for (s <- info) yield {
           val m = s.serviceModelProvider
           val consumerInfo = if (clientApi) {
-            val consumers = s.requiredBy.distinct.map(s => s"${s.subsystem}.${s.component}").mkString(", ")
+            val consumers = s.requiredBy.distinct.map(s => s"${s.component.subsystem}.${s.component.component}").mkString(", ")
             span(strong(s"Consumers: "), if (consumers.isEmpty) "none" else consumers)
           }
           else span
           val linkId      = idFor(compName, "provides", "Services", component.subsystem, compName, m.name)
           val showDetails = pdfOptions.details || pdfOptions.expandedIds.contains(linkId)
+          val paths = s.requiredBy.flatMap(_.paths).distinct
+          val filteredOpenApi = OpenApiToHtml.filterOpenApiJson(m.openApi, paths)
           div(cls := "nopagebreak")(
             nh.H5(s"HTTP Service: ${m.name}", linkId),
             if (clientApi) p(consumerInfo, ", ", providerInfo) else p(providerInfo),
             if (showDetails) {
               div(
-                raw(OpenApiToHtml.getHtml(m.openApi))
+                raw(OpenApiToHtml.getHtml(filteredOpenApi))
               )
             }
             else

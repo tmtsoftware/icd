@@ -5,42 +5,15 @@ import controllers.ApplicationData.maybeCache
 import csw.services.icd.IcdToPdf
 import csw.services.icd.codegen.{JavaCodeGenerator, PythonCodeGenerator, ScalaCodeGenerator, TypescriptCodeGenerator}
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
-import csw.services.icd.db.{
-  ArchivedItemsReport,
-  CachedIcdDbQuery,
-  CachedIcdVersionManager,
-  ComponentInfoHelper,
-  IcdComponentInfo,
-  IcdDb,
-  IcdDbPrinter,
-  IcdDbQuery,
-  IcdVersionManager,
-  getFileContents
-}
+import csw.services.icd.db.{ArchivedItemsReport, CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, IcdDbPrinter, IcdDbQuery, IcdVersionManager, getFileContents}
 import csw.services.icd.fits.{IcdFits, IcdFitsPrinter}
 import csw.services.icd.github.IcdGitManager
+import csw.services.icd.html.OpenApiToHtml
 import csw.services.icd.viz.IcdVizManager
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.AllEventList.EventsForSubsystem
-import icd.web.shared.IcdModels.IcdModel
-import icd.web.shared.{
-  ApiVersionInfo,
-  ComponentInfo,
-  DiffInfo,
-  FitsDictionary,
-  IcdName,
-  IcdVersion,
-  IcdVersionInfo,
-  IcdVizOptions,
-  PdfOptions,
-  PublishApiInfo,
-  PublishIcdInfo,
-  SubsystemInfo,
-  SubsystemWithVersion,
-  UnpublishApiInfo,
-  UnpublishIcdInfo,
-  VersionInfo
-}
+import icd.web.shared.IcdModels.{IcdModel, ServicePath}
+import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, FitsDictionary, IcdName, IcdVersion, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, SubsystemWithVersion, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
 import play.api.libs.json.Json
 
 import scala.util.Try
@@ -598,7 +571,13 @@ class ApplicationImpl(db: IcdDb) {
     IcdFits(db).getFitsDictionary(maybeSubsystem, maybeComponent)
   }
 
-  def getOpenApi(subsystem: String, component: String, service: String, maybeVersion: Option[String]): Option[String] = {
+  def getOpenApi(
+      subsystem: String,
+      component: String,
+      service: String,
+      maybeVersion: Option[String],
+      paths: List[ServicePath]
+  ): Option[String] = {
     val sv = SubsystemWithVersion(subsystem, maybeVersion, Some(component))
     db.versionManager
       .getModels(sv, includeOnly = Set("serviceModel"))
@@ -606,7 +585,7 @@ class ApplicationImpl(db: IcdDb) {
       .serviceModel
       .toList
       .flatMap(_.provides.find(_.name == service))
-      .map(_.openApi)
+      .map(p => OpenApiToHtml.filterOpenApiJson(p.openApi, paths))
       .headOption
   }
 }

@@ -1062,7 +1062,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                 s.serviceModelClient.subsystem,
                 s.serviceModelClient.component,
                 s.serviceModelClient.name,
-                s.provider.flatMap(_.maybeSubsystemVersion)
+                s.provider.flatMap(_.maybeSubsystemVersion),
+                s.serviceModelClient.paths
               )
               val url = s"assets/openapi/index.html?url=$openApiUrl"
               val openInNewTab = () => {
@@ -1100,7 +1101,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     }
   }
 
-  // Returns a div displaying the swagger-ui HTML for the given OpenAPI service
+  // Returns a div displaying the swagger-ui HTML for the given OpenAPI service.
+  // The given url serves the OpenApi file from the play server to the embedded swagger-ui web app.
   private def makeProvidedServiceDetailsRow(url: String) = {
     import scalatags.JsDom.all._
     div(id := "swagger-ui")(
@@ -1140,12 +1142,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           ),
           tbody(
             for (s <- info) yield {
+              val paths = s.requiredBy.flatMap(_.paths).distinct
               // Need to serve OpenAPI file
               val openApiUrl = ClientRoutes.openApi(
                 component.subsystem,
                 component.component,
                 s.serviceModelProvider.name,
-                component.maybeSubsystemVersion
+                component.maybeSubsystemVersion,
+                paths
               )
               val url = s"assets/openapi/index.html?url=$openApiUrl"
               val openInNewTab = () => {
@@ -1164,7 +1168,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                     )
                   ),
                   td(m.description),
-                  if (clientApi) td(s.requiredBy.distinct.map(makeLinkForComponent)) else span
+                  if (clientApi) td(s.requiredBy.map(_.component).distinct.map(makeLinkForComponent)) else span
                 ),
                 row
               )

@@ -301,9 +301,9 @@ case class ServicesRequiredInfo(
  * Describes a service provided by this component
  *
  * @param serviceModelProvider the basic model for the service
- * @param requiredBy           list of components that use/require the service
+ * @param requiredBy           list of components that use/require the service along with the paths used
  */
-case class ServiceProvidedInfo(serviceModelProvider: ServiceModelProvider, requiredBy: List[ComponentModel])
+case class ServiceProvidedInfo(serviceModelProvider: ServiceModelProvider, requiredBy: List[ServiceModelClientComponent])
 
 /**
  * Describes services the component uses and provides

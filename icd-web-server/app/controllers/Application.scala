@@ -18,8 +18,9 @@ import play.api.mvc._
 import play.api.{Configuration, Environment, Mode}
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.util.Timeout
-import icd.web.shared.IcdModels.IcdModel
+import icd.web.shared.IcdModels.{IcdModel, ServicePath}
 
+import java.net.URLDecoder
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.concurrent.Future
@@ -817,6 +818,7 @@ class Application @Inject() (
    * @param component the component name
    * @param service the service name
    * @param version optional version for the subsystem
+   * @param paths optional paths to include in the OpenApi result (in the format: method:path,method:path,...)
    *
    * @return the OpenAPI JSON string for the service
    */
@@ -824,13 +826,23 @@ class Application @Inject() (
       subsystem: String,
       component: String,
       service: String,
-      version: Option[String]
+      version: Option[String],
+      paths: Option[String]
   ) =
     authAction.async {
-      val resp: Future[Option[String]] = appActor ? (GetOpenApi(subsystem, component, service, version, _))
+      val pathList = paths
+        .map(URLDecoder.decode(_, "UTF-8"))
+        .map(_.split(',').toList.flatMap { s =>
+          s.split(':') match {
+            case Array(method, path) => Some(ServicePath(method, path))
+            case _                   => None
+          }
+        })
+        .getOrElse(Nil)
+      val resp: Future[Option[String]] = appActor ? (GetOpenApi(subsystem, component, service, version, pathList, _))
       resp.map {
         case Some(openApi) => Ok(Json.parse(openApi))
-        case None => NotFound
+        case None          => NotFound
       }
     }
 

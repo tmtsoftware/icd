@@ -5,26 +5,8 @@ import play.api.libs.concurrent.ActorModule
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
-import icd.web.shared.IcdModels.{EventModel, IcdModel}
-import icd.web.shared.{
-  AllEventList,
-  ApiVersionInfo,
-  ComponentInfo,
-  DiffInfo,
-  FitsDictionary,
-  FitsKeyInfo,
-  FitsTags,
-  IcdName,
-  IcdVersionInfo,
-  IcdVizOptions,
-  PdfOptions,
-  PublishApiInfo,
-  PublishIcdInfo,
-  SubsystemInfo,
-  UnpublishApiInfo,
-  UnpublishIcdInfo,
-  VersionInfo
-}
+import icd.web.shared.IcdModels.{EventModel, IcdModel, ServicePath}
+import icd.web.shared.{AllEventList, ApiVersionInfo, ComponentInfo, DiffInfo, FitsDictionary, FitsKeyInfo, FitsTags, IcdName, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
 
 import scala.util.Try
 
@@ -142,6 +124,7 @@ object ApplicationActor extends ActorModule {
       component: String,
       service: String,
       version: Option[String],
+      paths: List[ServicePath],
       replyTo: ActorRef[Option[String]]
   ) extends Messages
 
@@ -338,8 +321,8 @@ object ApplicationActor extends ActorModule {
         case GetFitsDictionary(maybeSubsystem, maybeComponent, replyTo) =>
           replyTo ! app.getFitsDictionary(maybeSubsystem, maybeComponent)
           Behaviors.same
-        case GetOpenApi(subsystem, component, service, maybeVersion, replyTo) =>
-          replyTo ! app.getOpenApi(subsystem, component, service, maybeVersion)
+        case GetOpenApi(subsystem, component, service, maybeVersion, paths, replyTo) =>
+          replyTo ! app.getOpenApi(subsystem, component, service, maybeVersion, paths)
           Behaviors.same
       }
     }

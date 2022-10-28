@@ -1,7 +1,6 @@
 package csw.services.icd.db
 
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
-import csw.services.icd.html.OpenApiToHtml
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels._
 import icd.web.shared._
@@ -304,7 +303,7 @@ class ComponentInfoHelper(
             subsystemsWithVersion
           )
         else Nil
-      ServiceProvidedInfo(provides, clientComponents)
+      ServiceProvidedInfo(provides, clientComponents.map(c => ServiceModelClientComponent(c, Nil)))
     }
   }
 

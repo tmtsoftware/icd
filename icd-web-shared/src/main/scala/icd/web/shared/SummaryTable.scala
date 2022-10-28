@@ -293,7 +293,7 @@ object SummaryTable {
           override val name: String = service.serviceModelProvider.name
           override val description: String = service.serviceModelProvider.description
         }
-        PublishedItem(info.componentModel, nameDesc, service.requiredBy.distinct)
+        PublishedItem(info.componentModel, nameDesc, service.requiredBy.map(_.component).distinct)
       }
 
       div(

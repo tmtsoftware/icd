@@ -81,7 +81,7 @@ object IcdComponentInfo {
       versionManager: IcdVersionManager,
       models: Option[IcdModels],
       targetModelsList: List[IcdModels],
-      maybePdfOptions: Option[PdfOptions],
+      maybePdfOptions: Option[PdfOptions]
   ): Option[ComponentInfo] = {
     models.flatMap { icdModels =>
       val componentModel = icdModels.componentModel
@@ -379,6 +379,7 @@ object IcdComponentInfo {
 
   /**
    * Returns a list of components that require the given service from the given component/subsystem
+   * and the paths used in the service by the component
    *
    * @param subsystem   the service provider subsystem
    * @param component   the service provider component
@@ -390,14 +391,15 @@ object IcdComponentInfo {
       component: String,
       serviceName: String,
       targetModelsList: List[IcdModels]
-  ): List[ComponentModel] = {
+  ): List[ServiceModelClientComponent] = {
     for {
       icdModels      <- targetModelsList
       componentModel <- icdModels.componentModel
       serviceModel   <- icdModels.serviceModel
-      if serviceModel.requires.exists(s => s.subsystem == subsystem && s.component == component && s.name == serviceName)
+      serviceModelClient <-
+        serviceModel.requires.find(s => s.subsystem == subsystem && s.component == component && s.name == serviceName)
     } yield {
-      componentModel
+      ServiceModelClientComponent(componentModel, serviceModelClient.paths)
     }
   }
 
@@ -415,8 +417,8 @@ object IcdComponentInfo {
       serviceModel <- models.serviceModel.toList
       provides     <- serviceModel.provides
     } yield {
-      val clientComponents = getServiceClients(serviceModel.subsystem, serviceModel.component, provides.name, targetModelsList)
-      ServiceProvidedInfo(provides, clientComponents)
+      val clientComponentInfo = getServiceClients(serviceModel.subsystem, serviceModel.component, provides.name, targetModelsList)
+      ServiceProvidedInfo(provides, clientComponentInfo)
     }
   }
 

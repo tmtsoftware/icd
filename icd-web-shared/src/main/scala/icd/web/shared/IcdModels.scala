@@ -433,6 +433,13 @@ object IcdModels {
   case class ServiceModelClient(subsystem: String, component: String, name: String, paths: List[ServicePath])
 
   /**
+   * Contains a client component model and the list of service paths used
+   * @param component the component using the service
+   * @param paths the paths of the service used by the component (if empty, assume all paths)
+   */
+  case class ServiceModelClientComponent(component: ComponentModel, paths: List[ServicePath] )
+
+  /**
    * Lists the HTTP services provided or required by the subsystem component
    *
    * @param subsystem this subsystem

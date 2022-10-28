@@ -1,6 +1,9 @@
 package icd.web.client
 
+import icd.web.shared.IcdModels.ServicePath
 import icd.web.shared.{IcdName, IcdVizOptions, PdfOptions, SubsystemWithVersion}
+
+import java.net.URLEncoder
 
 /**
  * Defines URI routes to access the server API
@@ -222,10 +225,11 @@ object ClientRoutes {
   def fitsDictionary(maybeSv: Option[SubsystemWithVersion]): String = {
     if (maybeSv.isDefined) {
       val subsystemAttr = s"subsystem=${maybeSv.get.subsystem}"
-      val componentAttr       = maybeSv.get.maybeComponent.map(c => s"&component=$c").getOrElse("")
-      val attrs = s"?${subsystemAttr}$componentAttr"
+      val componentAttr = maybeSv.get.maybeComponent.map(c => s"&component=$c").getOrElse("")
+      val attrs         = s"?${subsystemAttr}$componentAttr"
       s"/fitsDictionary$attrs"
-    } else {
+    }
+    else {
       s"/fitsDictionary"
     }
   }
@@ -407,11 +411,27 @@ object ClientRoutes {
 
   /**
    * Post the OpenApi JSON and get the HTML to display
+   *
+   * @param subsystem the subsystem providing the service
+   * @param component the component provideing the service
+   * @param service the name of the service
+   * @param maybeVersion optional version of the subsystem
+   * @param paths list of methods/paths to include in the OpenApi file
+   * @return a URL that will return the OpenApi file
    */
-  def openApi(subsystem: String, component: String, service: String, maybeVersion: Option[String]): String = {
-    maybeVersion match {
-      case Some(version) => s"/openApi/$subsystem/$component/$service?version=$version"
-      case None => s"/openApi/$subsystem/$component/$service"
-    }
+  def openApi(
+      subsystem: String,
+      component: String,
+      service: String,
+      maybeVersion: Option[String],
+      paths: List[ServicePath]
+  ): String = {
+    val baseUrl = s"/openApi/$subsystem/$component/$service"
+    val versionArg = maybeVersion.map(v => s"version=$v")
+    val pathsStr = paths.map(p => s"${p.method}:${p.path}").mkString(",")
+    val pathsArg = if (paths.nonEmpty) Some(s"paths=$pathsStr") else None
+    val args = List(versionArg, pathsArg).flatten.mkString("&")
+    val url = if (args.isEmpty) baseUrl else s"$baseUrl?$args"
+    URLEncoder.encode(url, "UTF-8")
   }
 }
