@@ -7,6 +7,8 @@ window.onload = function() {
     queryConfigEnabled: true,
     dom_id: '#swagger-ui',
     deepLinking: true,
+    tryItOutEnabled: false,
+    supportedSubmitMethods: [],
     presets: [
       SwaggerUIBundle.presets.apis,
       SwaggerUIStandalonePreset
@@ -14,7 +16,8 @@ window.onload = function() {
     plugins: [
       SwaggerUIBundle.plugins.DownloadUrl
     ],
-    layout: "StandaloneLayout"
+    // layout: "StandaloneLayout"
+    layout: "BaseLayout"
   });
 
   //</editor-fold>

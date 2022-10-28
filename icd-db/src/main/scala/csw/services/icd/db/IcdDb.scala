@@ -23,6 +23,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
+// Static defs
 object IcdDbDefaults {
   val conf: Config          = ConfigFactory.load
   val defaultPort: Int      = conf.getInt("icd.db.port")
@@ -69,6 +70,7 @@ object IcdDbDefaults {
 
 }
 
+// This is the command line app icd-db
 //noinspection DuplicatedCode
 object IcdDb extends App {
   import IcdDbDefaults._
@@ -578,7 +580,6 @@ case class IcdDb(
           if (fileName.endsWith(".yml") || fileName.endsWith(".yaml")) {
             val yaml = io.swagger.util.Yaml.pretty().writeValueAsString(openAPI)
             DeserializationUtils.deserializeIntoTree(yaml, fileName).toPrettyString
-            //            DeserializationUtils.deserializeIntoTree(getFileContents(fileName), fileName).toPrettyString
           }
           else {
             io.swagger.util.Json.pretty().writeValueAsString(openAPI)
@@ -597,7 +598,8 @@ case class IcdDb(
         val dirName      = new File(stdConfig.fileName).getParent
         serviceModel.provides
           .flatMap(p => ingestOpenApiFile(s"$collectionName.${p.name}", s"$dirName/${p.openApi}"))
-      } else Nil
+      }
+      else Nil
     }
 
     try {

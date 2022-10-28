@@ -1107,7 +1107,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       embed(
         `type` := "text/html",
         src := url,
-        width := "1000px",
+        width := "100%",
         height := "800px"
       )
     )
