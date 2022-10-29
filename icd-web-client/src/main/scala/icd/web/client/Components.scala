@@ -283,10 +283,29 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       }
       // XXX TODO FIXME: Hyperlinks to other subsystems can't be made in the summary table,
       // since the code is shared with non-javascript code on the server side.
-      val summaryTable =
-        SummaryTable.displaySummary(subsystemInfo, maybeTargetSubsystem, infoList, new HtmlHeadings, clientApi).render
+      val summaryTable1 =
+        SummaryTable
+          .displaySummary(subsystemInfo, maybeTargetSubsystem, infoList, new HtmlHeadings, clientApi, displayTitle = true)
+          .render
+      val summaryTable2 =
+        if (isIcd)
+          Some(
+            SummaryTable
+              .displaySummary(
+                maybeTargetSubsystemInfo.get,
+                Some(sv),
+                targetInfoList,
+                new HtmlHeadings,
+                clientApi,
+                displayTitle = false
+              )
+              .render
+          )
+        else None
 
-      mainContent.appendElement(div(Styles.component, id := "Summary")(raw(summaryTable)).render)
+      mainContent.appendElement(
+        div(Styles.component, id := "Summary")(raw(summaryTable1), summaryTable2.map(raw).getOrElse(span())).render
+      )
       if (!isIcd && fitsDict.fitsKeys.nonEmpty) mainContent.appendElement(makeFitsKeyTable(fitsDict).render)
       infoList.foreach(i => displayComponentInfo(i, !isIcd, clientApi))
       if (isIcd)
@@ -1079,7 +1098,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               )
               val m          = s.serviceModelClient
               val (btn, row) = hiddenRowMarkup(idStr, makeProvidedServiceDetailsRow(url), 3)
-              val desc = s.maybeServiceModelProvider.map(_.description).getOrElse(s"OpenApi description of HTTP Service: ${m.name}")
+              val desc =
+                s.maybeServiceModelProvider.map(_.description).getOrElse(s"OpenApi description of HTTP Service: ${m.name}")
               List(
                 tr(
                   td(

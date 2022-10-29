@@ -2,7 +2,6 @@ package csw.services.icd.db
 
 import csw.services.icd.db.IcdDbQuery.Subscribed
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
-import csw.services.icd.html.OpenApiToHtml
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels._
 import icd.web.shared._

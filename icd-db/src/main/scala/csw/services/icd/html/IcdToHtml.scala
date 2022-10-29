@@ -153,7 +153,7 @@ object IcdToHtml {
 
     val nh           = new NumberedHeadings
     val titleInfo    = TitleInfo(subsystemInfo, None, None)
-    val summaryTable = SummaryTable.displaySummary(subsystemInfo, None, infoList, nh, clientApi)
+    val summaryTable = SummaryTable.displaySummary(subsystemInfo, None, infoList, nh, clientApi, displayTitle = true)
 
     val mainContent = div(
       style := "width: 100%;",
@@ -486,9 +486,9 @@ object IcdToHtml {
             span(strong(s"Consumers: "), if (consumers.isEmpty) "none" else consumers)
           }
           else span
-          val linkId      = idFor(compName, "provides", "Services", component.subsystem, compName, m.name)
-          val showDetails = pdfOptions.details || pdfOptions.expandedIds.contains(linkId)
-          val paths = s.requiredBy.flatMap(_.paths).distinct
+          val linkId          = idFor(compName, "provides", "Services", component.subsystem, compName, m.name)
+          val showDetails     = pdfOptions.details || pdfOptions.expandedIds.contains(linkId)
+          val paths           = s.requiredBy.flatMap(_.paths).distinct
           val filteredOpenApi = OpenApiToHtml.filterOpenApiJson(m.openApi, paths)
           div(cls := "nopagebreak")(
             nh.H5(s"HTTP Service: ${m.name}", linkId),
