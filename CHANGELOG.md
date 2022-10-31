@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
-## [ICD v2.2.0] - 
+## [ICD v2.2.0] - 2022-11-01
 
 - Added options to icd-db command line app to generate code containing the event, command and parameter keys. (currently Scala, Java, Typescript and Python are supported)
 - Added a new modelVersion "3.0", which defines the allowed parameter "units" matching the ones defined in the CSW framework and adds the parameter types "taiTime" and "utcTime" (same as taiDate and utcDate, which are still allowed: taiTime and utcTime should be preferred, matching the CSW names).
@@ -20,8 +20,11 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Removed dependency on "less" and converted/renamed icd.less to icd.css
 - Updated list of allowed CSW Units
 - Updated all dependencies to the latest versions, including Bootstrap-5.2.0 and support for MongoDB-6.0
+- Added support for documenting published and subscribed images (TMT VIZ)
 - Added support for a FITS keyword dictionary, and the icd-fits command line app, FITS Dictionary tab (FITS Keywords will be automatically imported once the DMS subsystem model files have been published. For now, you can use `icd-fits -i examples/3.0/FITS-Dictionary.json --ingestTags examples/3.0/FITS-Tags.conf`) or manually upload/ingest the [DMS-Model-Files](https://github.com/tmt-icd/DMS-Model-Files) GitHub repo in the icd web app.
 - Updated to Play-Framework-2.9.0-M2, which means icd can now be compiled and run with Java-17 (as well as Java-11).
+- Fixed issues in the handling of older subsystem versions when generating graphs
+- Fixed issues dealing with "refs"
 
 ## [ICD v2.1.2] - 2021-05-25
 

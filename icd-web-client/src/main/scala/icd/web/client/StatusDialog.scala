@@ -37,7 +37,7 @@ object StatusDialog {
         " and the ",
         a(
           target := "_blank",
-          href := "https://docushare.tmt.org/docushare/dsweb/Get/Version-131293/OSW%20TN018-ICDDatabaseUserManual_REL08.pdf"
+          href := "https://docushare.tmt.org/docushare/dsweb/Get/Version-133105/OSW%20TN018-ICDDatabaseUserManual_REL08.pdf"
         )(
           "IDBS user manual"
         ),

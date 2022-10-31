@@ -34,7 +34,7 @@ if hash nodejs 2>/dev/null ; then
 elif hash node 2>/dev/null ; then
     NODEJS=`hash -t node`
 else
-    echo >&2 "Please install node.js first.  Aborting."
+    echo >&2 "Please install nodejs first.  Aborting."
     exit 1
 fi
 
