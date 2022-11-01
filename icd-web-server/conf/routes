@@ -15,7 +15,7 @@ GET         /eventList                                  controllers.Application.
 #GET         /eventInfo/:subsystem/:component/:event     controllers.Application.eventInfo(subsystem, component, event)
 
 # Gets top level information about a given version of the given subsystem
-GET         /subsystemInfo/:subsystem                   controllers.Application.subsystemInfo(subsystem, version: Option[String])
+GET         /subsystemInfo/:subsystem                   controllers.Application.subsystemInfo(subsystem, version: Option[String], component: Option[String])
 
 # Gets a list of components belonging to the given version of the given subsystem
 GET         /components/:subsystem                      controllers.Application.components(subsystem, version: Option[String])

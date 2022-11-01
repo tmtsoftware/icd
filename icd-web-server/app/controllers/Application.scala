@@ -88,9 +88,9 @@ class Application @Inject() (
   /**
    * Gets information about a named subsystem
    */
-  def subsystemInfo(subsystem: String, maybeVersion: Option[String]) =
+  def subsystemInfo(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String]) =
     authAction.async {
-      val resp: Future[Option[SubsystemInfo]] = appActor ? (GetSubsystemInfo(subsystem, maybeVersion, _))
+      val resp: Future[Option[SubsystemInfo]] = appActor ? (GetSubsystemInfo(subsystem, maybeVersion, maybeComponent, _))
       resp.map {
         case Some(info) => Ok(Json.toJson(info))
         case None       => NotFound

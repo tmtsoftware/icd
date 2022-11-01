@@ -201,7 +201,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   // Gets top level subsystem info from the server
   private def getSubsystemInfo(sv: SubsystemWithVersion): Future[SubsystemInfo] = {
-    val path = ClientRoutes.subsystemInfo(sv.subsystem, sv.maybeVersion)
+    val path = ClientRoutes.subsystemInfo(sv.subsystem, sv.maybeVersion, sv.maybeComponent)
     Fetch.get(path).map { text =>
       val subsystemInfo = Json.fromJson[SubsystemInfo](Json.parse(text)).get
       subsystemInfo.copy(sv = sv) // include the component, if specified
@@ -275,8 +275,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             Styles.component,
             p(strong(s"${subsystemInfo.sv.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
             raw(subsystemInfo.description),
-            p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
-            raw(targetSubsystemInfo.description),
+            if (subsystemInfo.sv == targetSubsystemInfo.sv) div()
+            else
+              div(
+                p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
+                raw(targetSubsystemInfo.description)
+              ),
             icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description)))
           ).render
         )
@@ -288,7 +292,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           .displaySummary(subsystemInfo, maybeTargetSubsystem, infoList, new HtmlHeadings, clientApi, displayTitle = true)
           .render
       val summaryTable2 =
-        if (isIcd)
+        if (isIcd && subsystemInfo.sv != maybeTargetSubsystemInfo.get.sv)
           Some(
             SummaryTable
               .displaySummary(
@@ -308,7 +312,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       )
       if (!isIcd && fitsDict.fitsKeys.nonEmpty) mainContent.appendElement(makeFitsKeyTable(fitsDict).render)
       infoList.foreach(i => displayComponentInfo(i, !isIcd, clientApi))
-      if (isIcd)
+      if (isIcd && subsystemInfo.sv != maybeTargetSubsystemInfo.get.sv)
         targetInfoList.foreach(i => displayComponentInfo(i, forApi = false, clientApi))
       infoList ++ targetInfoList
     }

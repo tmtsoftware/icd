@@ -5,7 +5,18 @@ import controllers.ApplicationData.maybeCache
 import csw.services.icd.IcdToPdf
 import csw.services.icd.codegen.{JavaCodeGenerator, PythonCodeGenerator, ScalaCodeGenerator, TypescriptCodeGenerator}
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
-import csw.services.icd.db.{ArchivedItemsReport, CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, IcdDbPrinter, IcdDbQuery, IcdVersionManager, getFileContents}
+import csw.services.icd.db.{
+  ArchivedItemsReport,
+  CachedIcdDbQuery,
+  CachedIcdVersionManager,
+  ComponentInfoHelper,
+  IcdComponentInfo,
+  IcdDb,
+  IcdDbPrinter,
+  IcdDbQuery,
+  IcdVersionManager,
+  getFileContents
+}
 import csw.services.icd.fits.{IcdFits, IcdFitsPrinter}
 import csw.services.icd.github.IcdGitManager
 import csw.services.icd.html.OpenApiToHtml
@@ -13,7 +24,24 @@ import csw.services.icd.viz.IcdVizManager
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.AllEventList.EventsForSubsystem
 import icd.web.shared.IcdModels.{IcdModel, ServicePath}
-import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, FitsDictionary, IcdName, IcdVersion, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, SubsystemWithVersion, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
+import icd.web.shared.{
+  ApiVersionInfo,
+  ComponentInfo,
+  DiffInfo,
+  FitsDictionary,
+  IcdName,
+  IcdVersion,
+  IcdVersionInfo,
+  IcdVizOptions,
+  PdfOptions,
+  PublishApiInfo,
+  PublishIcdInfo,
+  SubsystemInfo,
+  SubsystemWithVersion,
+  UnpublishApiInfo,
+  UnpublishIcdInfo,
+  VersionInfo
+}
 import play.api.libs.json.Json
 
 import scala.util.Try
@@ -38,10 +66,19 @@ class ApplicationImpl(db: IcdDb) {
   /**
    * Gets information about a named subsystem
    */
-  def getSubsystemInfo(subsystem: String, maybeVersion: Option[String]): Option[SubsystemInfo] = {
-    // Get the subsystem info from the database, or if not found, look in the published GitHub repo
-    val sv = SubsystemWithVersion(subsystem, maybeVersion, None)
-    db.versionManager.getSubsystemModel(sv, None).map(model => SubsystemInfo(sv, model.title, model.description))
+  def getSubsystemInfo(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String]): Option[SubsystemInfo] = {
+    val sv = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
+    if (sv.maybeComponent.isDefined) {
+      db.versionManager
+        .getComponentModel(sv, None)
+        .map(m => SubsystemInfo(sv, m.title, m.description))
+
+    }
+    else {
+      db.versionManager
+        .getSubsystemModel(sv, None)
+        .map(m => SubsystemInfo(sv, m.title, m.description))
+    }
   }
 
   /**

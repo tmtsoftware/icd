@@ -83,13 +83,13 @@ case class IcdDbPrinter(
    * @param pdfOptions options for PDF generation
    */
   def getApiAsHtml(sv: SubsystemWithVersion, pdfOptions: PdfOptions): Option[String] = {
-    val fitsDictionary = IcdFits(db).getFitsDictionary(Some(sv.subsystem), sv.maybeComponent, None, Some(pdfOptions))
+    val fitsDictionary  = IcdFits(db).getFitsDictionary(Some(sv.subsystem), sv.maybeComponent, None, Some(pdfOptions))
     val fitsKeyMap      = IcdFitsDefs.getFitsKeyMap(fitsDictionary.fitsKeys)
     val maybeSubsystems = if (searchAllSubsystems) None else Some(List(sv.subsystem))
     // Use caching, since we need to look at all the components multiple times, in order to determine who
     // subscribes, who calls commands, etc.
-    val query           = new CachedIcdDbQuery(db.db, db.admin, maybeSubsystems, Some(pdfOptions), fitsKeyMap)
-    val versionManager  = new CachedIcdVersionManager(query)
+    val query          = new CachedIcdDbQuery(db.db, db.admin, maybeSubsystems, Some(pdfOptions), fitsKeyMap)
+    val versionManager = new CachedIcdVersionManager(query)
 
     val markup = for {
       subsystemInfo <- getSubsystemInfo(sv)
@@ -144,15 +144,27 @@ case class IcdDbPrinter(
         style := "width: 100%;",
         p(strong(s"${subsystemInfo.sv.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
         raw(subsystemInfo.description),
-        p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
-        raw(targetSubsystemInfo.description),
-        icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description))),
-        SummaryTable.displaySummary(subsystemInfo, Some(targetSv), infoList, nh, clientApi, displayTitle = true),
-        SummaryTable.displaySummary(targetSubsystemInfo, Some(sv), infoList2, nh, clientApi, displayTitle = false),
-        makeIntro(titleInfo1),
-        displayDetails(infoList, nh, forApi = false, pdfOptions, clientApi = clientApi),
-        makeIntro(titleInfo2),
-        displayDetails(infoList2, nh, forApi = false, pdfOptions, clientApi = clientApi)
+        if (subsystemInfo.sv == targetSubsystemInfo.sv) {
+          div(
+            icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description))),
+            SummaryTable.displaySummary(subsystemInfo, Some(targetSv), infoList, nh, clientApi, displayTitle = true),
+            makeIntro(titleInfo1),
+            displayDetails(infoList, nh, forApi = false, pdfOptions, clientApi = clientApi)
+          )
+        }
+        else {
+          div(
+            p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
+            raw(targetSubsystemInfo.description),
+            icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description))),
+            SummaryTable.displaySummary(subsystemInfo, Some(targetSv), infoList, nh, clientApi, displayTitle = true),
+            SummaryTable.displaySummary(targetSubsystemInfo, Some(sv), infoList2, nh, clientApi, displayTitle = false),
+            makeIntro(titleInfo1),
+            displayDetails(infoList, nh, forApi = false, pdfOptions, clientApi = clientApi),
+            makeIntro(titleInfo2),
+            displayDetails(infoList2, nh, forApi = false, pdfOptions, clientApi = clientApi)
+          )
+        }
       )
       val toc = nh.mkToc()
 

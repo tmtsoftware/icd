@@ -17,7 +17,7 @@ object ApplicationActor extends ActorModule {
   type Message = Messages
   sealed trait Messages
   final case class GetSubsystemNames(replyTo: ActorRef[List[String]]) extends Messages
-  final case class GetSubsystemInfo(subsystem: String, maybeVersion: Option[String], replyTo: ActorRef[Option[SubsystemInfo]])
+  final case class GetSubsystemInfo(subsystem: String, maybeVersion: Option[String], component: Option[String], replyTo: ActorRef[Option[SubsystemInfo]])
       extends Messages
   final case class GetComponents(subsystem: String, maybeVersion: Option[String], replyTo: ActorRef[List[String]])
       extends Messages
@@ -137,8 +137,8 @@ object ApplicationActor extends ActorModule {
         case GetSubsystemNames(replyTo) =>
           replyTo ! app.getSubsystemNames
           Behaviors.same
-        case GetSubsystemInfo(subsystem, maybeVersion, replyTo) =>
-          replyTo ! app.getSubsystemInfo(subsystem, maybeVersion)
+        case GetSubsystemInfo(subsystem, maybeVersion, maybeComponent, replyTo) =>
+          replyTo ! app.getSubsystemInfo(subsystem, maybeVersion, maybeComponent)
           Behaviors.same
         case GetComponents(subsystem, maybeVersion, replyTo) =>
           replyTo ! app.getComponents(subsystem, maybeVersion)

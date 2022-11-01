@@ -86,11 +86,16 @@ object ClientRoutes {
   /**
    * Gets top level information about a given version of the given subsystem
    */
-  def subsystemInfo(subsystem: String, maybeVersion: Option[String]): String =
-    maybeVersion match {
-      case Some("*") | None => s"/subsystemInfo/$subsystem"
-      case Some(version)    => s"/subsystemInfo/$subsystem?version=$version"
+  def subsystemInfo(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String]): String = {
+    val baseUri  = s"/subsystemInfo/$subsystem"
+    val versAttr = maybeVersion.filter(_ != "*").map(s => s"version=$s")
+    val compAttr = maybeComponent.map(s => s"component=$s")
+    val attrs    = List(versAttr, compAttr).flatten
+    attrs match {
+      case Nil => baseUri
+      case _   => s"$baseUri?${attrs.mkString("&")}"
     }
+  }
 
   /**
    * Gets a list of components belonging to the given version of the given subsystem
@@ -226,7 +231,7 @@ object ClientRoutes {
     if (maybeSv.isDefined) {
       val subsystemAttr = s"subsystem=${maybeSv.get.subsystem}"
       val componentAttr = maybeSv.get.maybeComponent.map(c => s"&component=$c").getOrElse("")
-      val attrs         = s"?${subsystemAttr}$componentAttr"
+      val attrs         = s"?$subsystemAttr$componentAttr"
       s"/fitsDictionary$attrs"
     }
     else {
@@ -426,12 +431,12 @@ object ClientRoutes {
       maybeVersion: Option[String],
       paths: List[ServicePath]
   ): String = {
-    val baseUrl = s"/openApi/$subsystem/$component/$service"
+    val baseUrl    = s"/openApi/$subsystem/$component/$service"
     val versionArg = maybeVersion.map(v => s"version=$v")
-    val pathsStr = paths.map(p => s"${p.method}:${p.path}").mkString(",")
-    val pathsArg = if (paths.nonEmpty) Some(s"paths=$pathsStr") else None
-    val args = List(versionArg, pathsArg).flatten.mkString("&")
-    val url = if (args.isEmpty) baseUrl else s"$baseUrl?$args"
+    val pathsStr   = paths.map(p => s"${p.method}:${p.path}").mkString(",")
+    val pathsArg   = if (paths.nonEmpty) Some(s"paths=$pathsStr") else None
+    val args       = List(versionArg, pathsArg).flatten.mkString("&")
+    val url        = if (args.isEmpty) baseUrl else s"$baseUrl?$args"
     URLEncoder.encode(url, "UTF-8")
   }
 }
