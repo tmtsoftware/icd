@@ -25,6 +25,7 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Updated to Play-Framework-2.9.0-M2, which means icd can now be compiled and run with Java-17 (as well as Java-11).
 - Fixed issues in the handling of older subsystem versions when generating graphs
 - Fixed issues dealing with "refs"
+- Improved the title and description display for inner-subsystem ICDs (changed to avoid duplicating information, use component description where applicable).
 
 ## [ICD v2.1.2] - 2021-05-25
 
