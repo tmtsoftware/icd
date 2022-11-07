@@ -9,7 +9,6 @@ import java.nio.file.Files
 
 class FileUploadController @Inject() (components: ControllerComponents) extends AbstractController(components) {
 
-  private val log     = play.Logger.of("application")
   private lazy val db = ApplicationData.tryDb.get
 
   /**

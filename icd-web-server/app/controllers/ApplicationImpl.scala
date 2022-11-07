@@ -5,18 +5,7 @@ import controllers.ApplicationData.maybeCache
 import csw.services.icd.IcdToPdf
 import csw.services.icd.codegen.{JavaCodeGenerator, PythonCodeGenerator, ScalaCodeGenerator, TypescriptCodeGenerator}
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
-import csw.services.icd.db.{
-  ArchivedItemsReport,
-  CachedIcdDbQuery,
-  CachedIcdVersionManager,
-  ComponentInfoHelper,
-  IcdComponentInfo,
-  IcdDb,
-  IcdDbPrinter,
-  IcdDbQuery,
-  IcdVersionManager,
-  getFileContents
-}
+import csw.services.icd.db.{ArchivedItemsReport, CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, IcdDbPrinter, IcdDbQuery, IcdVersionManager, getFileContents}
 import csw.services.icd.fits.{IcdFits, IcdFitsPrinter}
 import csw.services.icd.github.IcdGitManager
 import csw.services.icd.html.OpenApiToHtml
@@ -24,31 +13,24 @@ import csw.services.icd.viz.IcdVizManager
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.AllEventList.EventsForSubsystem
 import icd.web.shared.IcdModels.{IcdModel, ServicePath}
-import icd.web.shared.{
-  ApiVersionInfo,
-  ComponentInfo,
-  DiffInfo,
-  FitsDictionary,
-  IcdName,
-  IcdVersion,
-  IcdVersionInfo,
-  IcdVizOptions,
-  PdfOptions,
-  PublishApiInfo,
-  PublishIcdInfo,
-  SubsystemInfo,
-  SubsystemWithVersion,
-  UnpublishApiInfo,
-  UnpublishIcdInfo,
-  VersionInfo
-}
+import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, FitsDictionary, FitsTags, IcdName, IcdVersion, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, SubsystemWithVersion, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
 import play.api.libs.json.Json
 
 import scala.util.Try
 
 class ApplicationImpl(db: IcdDb) {
+  private val log     = play.Logger.of("ApplicationImpl")
+
   // Cache of API and ICD versions published on GitHub (cached for better performance)
-  var (allApiVersions, allIcdVersions) = IcdGitManager.ingestMissing(db)
+  var (allApiVersions, allIcdVersions) =
+    try {
+      IcdGitManager.ingestMissing(db)
+    } catch {
+      case ex: Exception =>
+        // XXX TODO FIXME: How to handle this unlikely error at startup? Exit? Retry?
+        log.error("Failed to fetch API and ICD versions from tmt-icd repo on GitHub", ex)
+        (Nil, Nil)
+    }
 
   // Update the database and cache after a new API or ICD was published (or in case one was published)
   private def updateAfterPublish(): Unit = {
@@ -57,10 +39,19 @@ class ApplicationImpl(db: IcdDb) {
     allIcdVersions = pair._2
   }
 
+  // Note: Using try/catch below to prevent an exception from killing the application actor,
+  // which is not automatically restarted
+
   def getSubsystemNames: List[String] = {
-    val subsystemsInDb          = db.query.getSubsystemNames
-    val publishedSubsystemNames = allApiVersions.map(_.subsystem)
-    (publishedSubsystemNames ++ subsystemsInDb).distinct.sorted
+    try {
+      val subsystemsInDb = db.query.getSubsystemNames
+      val publishedSubsystemNames = allApiVersions.map(_.subsystem)
+      (publishedSubsystemNames ++ subsystemsInDb).distinct.sorted
+    } catch {
+      case ex: Exception =>
+        log.error("Failed to get subsystem names", ex)
+        Nil
+    }
   }
 
   /**
@@ -68,16 +59,22 @@ class ApplicationImpl(db: IcdDb) {
    */
   def getSubsystemInfo(subsystem: String, maybeVersion: Option[String], maybeComponent: Option[String]): Option[SubsystemInfo] = {
     val sv = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-    if (sv.maybeComponent.isDefined) {
-      db.versionManager
-        .getComponentModel(sv, None)
-        .map(m => SubsystemInfo(sv, m.title, m.description))
+    try {
+      if (sv.maybeComponent.isDefined) {
+        db.versionManager
+          .getComponentModel(sv, None)
+          .map(m => SubsystemInfo(sv, m.title, m.description))
 
-    }
-    else {
-      db.versionManager
-        .getSubsystemModel(sv, None)
-        .map(m => SubsystemInfo(sv, m.title, m.description))
+      }
+      else {
+        db.versionManager
+          .getSubsystemModel(sv, None)
+          .map(m => SubsystemInfo(sv, m.title, m.description))
+      }
+    } catch {
+      case ex: Exception =>
+        log.error(s"Failed to get subsystem info for $sv", ex)
+        None
     }
   }
 
@@ -86,7 +83,13 @@ class ApplicationImpl(db: IcdDb) {
    */
   def getComponents(subsystem: String, maybeVersion: Option[String]): List[String] = {
     val sv = SubsystemWithVersion(subsystem, maybeVersion, None)
-    db.versionManager.getComponentNames(sv)
+    try {
+      db.versionManager.getComponentNames(sv)
+    } catch {
+      case ex: Exception =>
+        log.error(s"Could not get list of components for $sv", ex)
+        Nil
+    }
   }
 
   /**
@@ -109,14 +112,20 @@ class ApplicationImpl(db: IcdDb) {
     val clientApi           = clientApiOpt.getOrElse(false)
     val searchAllSubsystems = clientApi && searchAll.getOrElse(false)
     val subsystems          = if (searchAllSubsystems) None else Some(List(sv.subsystem))
-    val fitsKeyMap          = IcdFits(db).getFitsKeyMap()
-    val query               = new CachedIcdDbQuery(db.db, db.admin, subsystems, None, fitsKeyMap)
-    val versionManager      = new CachedIcdVersionManager(query)
-    new ComponentInfoHelper(
-      versionManager,
-      displayWarnings = searchAllSubsystems,
-      clientApi = clientApi
-    ).getComponentInfoList(sv, None, fitsKeyMap)
+    try {
+      val fitsKeyMap = IcdFits(db).getFitsKeyMap()
+      val query = new CachedIcdDbQuery(db.db, db.admin, subsystems, None, fitsKeyMap)
+      val versionManager = new CachedIcdVersionManager(query)
+      new ComponentInfoHelper(
+        versionManager,
+        displayWarnings = searchAllSubsystems,
+        clientApi = clientApi
+      ).getComponentInfoList(sv, None, fitsKeyMap)
+    } catch {
+      case ex: Exception =>
+        log.error(s"Could not get component info for $sv", ex)
+        Nil
+    }
   }
 
   /**
@@ -124,9 +133,15 @@ class ApplicationImpl(db: IcdDb) {
    * (assumes latest versions of all subsystems).
    */
   def getEventList: List[EventsForSubsystem] = {
-    val fitsKeyMap = IcdFits(db).getFitsKeyMap()
-    val query      = new CachedIcdDbQuery(db.db, db.admin, None, None, fitsKeyMap)
-    query.getEventList(fitsKeyMap)
+    try {
+      val fitsKeyMap = IcdFits(db).getFitsKeyMap()
+      val query = new CachedIcdDbQuery(db.db, db.admin, None, None, fitsKeyMap)
+      query.getEventList(fitsKeyMap)
+    } catch {
+      case ex: Exception =>
+        log.error("Failed to get list of events", ex)
+        Nil
+    }
   }
 
 //  /**
@@ -160,13 +175,21 @@ class ApplicationImpl(db: IcdDb) {
   ): List[ComponentInfo] = {
     val sv             = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     val targetSv       = SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
-    val fitsKeyMap     = IcdFits(db).getFitsKeyMap()
-    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), None, fitsKeyMap)
-    val versionManager = new CachedIcdVersionManager(query)
-    IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, None, fitsKeyMap)
+    try {
+      val fitsKeyMap = IcdFits(db).getFitsKeyMap()
+      val query = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), None, fitsKeyMap)
+      val versionManager = new CachedIcdVersionManager(query)
+      IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, None, fitsKeyMap)
+    } catch {
+      case ex: Exception =>
+        log.error(s"Failed to get ICD component info for ICD between $sv and $targetSv", ex)
+        Nil
+    }
   }
 
   // Returns the selected subsystem, target subsystem and optional ICD version
+  // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
+  // if only the subsystem or target versions were given, use those (default to latest versions)
   private def getSelectedSubsystems(
       subsystem: String,
       maybeVersion: Option[String],
@@ -176,10 +199,7 @@ class ApplicationImpl(db: IcdDb) {
       maybeTargetComponent: Option[String],
       maybeIcdVersion: Option[String]
   ): (SubsystemWithVersion, SubsystemWithVersion, Option[IcdVersion]) = {
-    // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
-    // if only the subsystem or target versions were given, use those (default to latest versions)
     val v = maybeIcdVersion.getOrElse("*")
-
     val versions = db.versionManager.getIcdVersions(subsystem, target)
     val iv       = versions.find(_.icdVersion.icdVersion == v).map(_.icdVersion)
     if (iv.isDefined) {
@@ -221,17 +241,26 @@ class ApplicationImpl(db: IcdDb) {
       maybeIcdVersion: Option[String],
       pdfOptions: PdfOptions
   ): Option[Array[Byte]] = {
-    val (sv, targetSv, iv) = getSelectedSubsystems(
-      subsystem,
-      maybeVersion,
-      maybeComponent,
-      target,
-      maybeTargetVersion,
-      maybeTargetComponent,
-      maybeIcdVersion
-    )
-    val icdPrinter = IcdDbPrinter(db, searchAllSubsystems = false, clientApi = true, maybeCache, Some(pdfOptions))
-    icdPrinter.saveIcdAsPdf(sv, targetSv, iv, pdfOptions)
+    try {
+      val (sv, targetSv, iv) = getSelectedSubsystems(
+        subsystem,
+        maybeVersion,
+        maybeComponent,
+        target,
+        maybeTargetVersion,
+        maybeTargetComponent,
+        maybeIcdVersion
+      )
+      val icdPrinter = IcdDbPrinter(db, searchAllSubsystems = false, clientApi = true, maybeCache, Some(pdfOptions))
+      icdPrinter.saveIcdAsPdf(sv, targetSv, iv, pdfOptions)
+    } catch {
+      case ex: Exception =>
+        val sv = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
+        val targetSv = SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
+        val v = maybeIcdVersion.getOrElse("*")
+        log.error(s"Failed to generate PDF for ICD (version: $v) between $sv and $targetSv", ex)
+        None
+    }
   }
 
   /**
@@ -256,7 +285,13 @@ class ApplicationImpl(db: IcdDb) {
     val clientApi           = clientApiOpt.getOrElse(false)
     val searchAllSubsystems = clientApi && searchAll.getOrElse(false)
     val icdPrinter          = IcdDbPrinter(db, searchAllSubsystems, clientApi, maybeCache, Some(pdfOptions))
-    icdPrinter.saveApiAsPdf(sv, pdfOptions)
+    try {
+      icdPrinter.saveApiAsPdf(sv, pdfOptions)
+    } catch {
+      case ex: Exception =>
+        log.error(s"Failed to generate PDF for API for $sv", ex)
+        None
+    }
   }
 
   /**
@@ -270,9 +305,15 @@ class ApplicationImpl(db: IcdDb) {
       pdfOptions: PdfOptions
   ): Option[Array[Byte]] = {
     val maybeTag = if (tag == "All") None else Some(tag)
-    val fitsDictionary =
-      IcdFits(db).getFitsDictionary(maybeSubsystem = None, maybeTag = maybeTag, maybePdfOptions = Some(pdfOptions))
-    IcdFitsPrinter(fitsDictionary).saveAsPdf(maybeTag, pdfOptions)
+    try {
+      val fitsDictionary =
+        IcdFits(db).getFitsDictionary(maybeSubsystem = None, maybeTag = maybeTag, maybePdfOptions = Some(pdfOptions))
+      IcdFitsPrinter(fitsDictionary).saveAsPdf(maybeTag, pdfOptions)
+    } catch {
+      case ex: Exception =>
+        log.error(s"Failed to get FITS dictionary for tag $tag", ex)
+        None
+    }
   }
 
   /**
@@ -291,9 +332,15 @@ class ApplicationImpl(db: IcdDb) {
   ): Option[Array[Byte]] = {
     val out  = new ByteArrayOutputStream()
     val sv   = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-    val html = ArchivedItemsReport(db, Some(sv), Some(pdfOptions)).makeReport(pdfOptions)
-    IcdToPdf.saveAsPdf(out, html, showLogo = false, pdfOptions)
-    Some(out.toByteArray)
+    try {
+      val html = ArchivedItemsReport(db, Some(sv), Some(pdfOptions)).makeReport(pdfOptions)
+      IcdToPdf.saveAsPdf(out, html, showLogo = false, pdfOptions)
+      Some(out.toByteArray)
+    } catch {
+      case ex: Exception =>
+        log.error(s"Failed to get archived items report for $sv", ex)
+        None
+    }
   }
 
   /**
@@ -304,9 +351,15 @@ class ApplicationImpl(db: IcdDb) {
       pdfOptions: PdfOptions
   ): Option[Array[Byte]] = {
     val out  = new ByteArrayOutputStream()
-    val html = ArchivedItemsReport(db, None, Some(pdfOptions)).makeReport(pdfOptions)
-    IcdToPdf.saveAsPdf(out, html, showLogo = false, pdfOptions)
-    Some(out.toByteArray)
+    try {
+      val html = ArchivedItemsReport(db, None, Some(pdfOptions)).makeReport(pdfOptions)
+      IcdToPdf.saveAsPdf(out, html, showLogo = false, pdfOptions)
+      Some(out.toByteArray)
+    } catch {
+      case ex: Exception =>
+        log.error("Failed to get full archived items report", ex)
+        None
+    }
   }
 
   /**
@@ -331,28 +384,37 @@ class ApplicationImpl(db: IcdDb) {
       maybeIcdVersion: Option[String],
       options: IcdVizOptions
   ): Option[Array[Byte]] = {
-    val selectedSv = maybeTarget match {
-      case Some(target) =>
-        val (sv, targetSv, _) = getSelectedSubsystems(
-          subsystem,
-          maybeVersion,
-          maybeComponent,
-          target,
-          maybeTargetVersion,
-          maybeTargetComponent,
-          maybeIcdVersion
-        )
-        List(sv, targetSv)
-      case None =>
-        List(SubsystemWithVersion(subsystem, maybeVersion, maybeComponent))
+    try {
+      val selectedSv = maybeTarget match {
+        case Some(target) =>
+          val (sv, targetSv, _) = getSelectedSubsystems(
+            subsystem,
+            maybeVersion,
+            maybeComponent,
+            target,
+            maybeTargetVersion,
+            maybeTargetComponent,
+            maybeIcdVersion
+          )
+          List(sv, targetSv)
+        case None =>
+          List(SubsystemWithVersion(subsystem, maybeVersion, maybeComponent))
+      }
+      val subsystems = selectedSv.filter(_.maybeComponent.isEmpty)
+      val components = selectedSv.filter(_.maybeComponent.nonEmpty)
+      val newOptions =
+        options.copy(subsystems = subsystems, components = components, showPlot = false, imageFile = None, dotFile = None)
+      val out = new ByteArrayOutputStream()
+      IcdVizManager.showRelationships(db, newOptions, Some(out))
+      Some(out.toByteArray)
+    } catch {
+      case ex: Exception =>
+        val sv = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
+        val targetSv = maybeTarget.map(target => SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent))
+        val v = maybeIcdVersion.getOrElse("*")
+        log.error(s"Failed to make graph for subsystem1 = $sv, subsystem2 = $targetSv, icd version - $v", ex)
+        None
     }
-    val subsystems = selectedSv.filter(_.maybeComponent.isEmpty)
-    val components = selectedSv.filter(_.maybeComponent.nonEmpty)
-    val newOptions =
-      options.copy(subsystems = subsystems, components = components, showPlot = false, imageFile = None, dotFile = None)
-    val out = new ByteArrayOutputStream()
-    IcdVizManager.showRelationships(db, newOptions, Some(out))
-    Some(out.toByteArray)
   }
 
   /**
@@ -407,13 +469,19 @@ class ApplicationImpl(db: IcdDb) {
    * Gets the difference between two subsystem versions
    */
   def getDiff(subsystem: String, versionsStr: String): List[DiffInfo] = {
-    val versions = versionsStr.split(',')
-    val v1       = versions.head
-    val v2       = versions.tail.head
-    val v1Opt    = if (v1.nonEmpty) Some(v1) else None
-    val v2Opt    = if (v2.nonEmpty) Some(v2) else None
-    // convert list to use shared IcdVersion class
-    db.versionManager.diff(subsystem, v1Opt, v2Opt).map(getDiffInfo)
+    try {
+      val versions = versionsStr.split(',')
+      val v1 = versions.head
+      val v2 = versions.tail.head
+      val v1Opt = if (v1.nonEmpty) Some(v1) else None
+      val v2Opt = if (v2.nonEmpty) Some(v2) else None
+      // convert list to use shared IcdVersion class
+      db.versionManager.diff(subsystem, v1Opt, v2Opt).map(getDiffInfo)
+    } catch {
+      case ex: Exception =>
+        log.error(s"Failed to get diff for $subsystem versions $versionsStr", ex)
+        Nil
+    }
   }
 
   /**
@@ -496,7 +564,12 @@ class ApplicationImpl(db: IcdDb) {
    * Updates the cache of published APIs and ICDs (in case new ones were published)
    */
   def updatePublished(): Unit = {
-    updateAfterPublish()
+    try {
+      updateAfterPublish()
+    } catch {
+      case ex: Exception =>
+        log.error("Failed to update cache of published APIs and ICDs", ex)
+    }
   }
 
   /**
@@ -519,7 +592,13 @@ class ApplicationImpl(db: IcdDb) {
 
     val query          = new IcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)))
     val versionManager = new IcdVersionManager(query)
-    versionManager.getIcdModels(sv, targetSv, None)
+    try {
+      versionManager.getIcdModels(sv, targetSv, None)
+    } catch {
+      case ex: Exception =>
+        log.error(s"Failed to get ICD models for ICD between $sv and $targetSv", ex)
+        Nil
+    }
   }
 
   /**
@@ -561,51 +640,64 @@ class ApplicationImpl(db: IcdDb) {
           None
       }
     }
-    suffix match {
-      case "scala" =>
-        new ScalaCodeGenerator(db).generate(
-          subsysVers,
-          maybeComponent,
-          sourceFile,
-          tempFile,
-          maybePackageName
-        )
-        readAndDeleteFile()
-      case "java" =>
-        new JavaCodeGenerator(db).generate(
-          subsysVers,
-          maybeComponent,
-          sourceFile,
-          tempFile,
-          maybePackageName
-        )
-        readAndDeleteFile()
-      case "ts" =>
-        new TypescriptCodeGenerator(db).generate(
-          subsysVers,
-          maybeComponent,
-          sourceFile,
-          tempFile,
-          maybePackageName
-        )
-        readAndDeleteFile()
-      case "py" =>
-        new PythonCodeGenerator(db).generate(
-          subsysVers,
-          maybeComponent,
-          sourceFile,
-          tempFile,
-          maybePackageName
-        )
-        readAndDeleteFile()
-      case _ =>
-        println(s"Unsupported language fo code generation: $lang")
+    try {
+      suffix match {
+        case "scala" =>
+          new ScalaCodeGenerator(db).generate(
+            subsysVers,
+            maybeComponent,
+            sourceFile,
+            tempFile,
+            maybePackageName
+          )
+          readAndDeleteFile()
+        case "java" =>
+          new JavaCodeGenerator(db).generate(
+            subsysVers,
+            maybeComponent,
+            sourceFile,
+            tempFile,
+            maybePackageName
+          )
+          readAndDeleteFile()
+        case "ts" =>
+          new TypescriptCodeGenerator(db).generate(
+            subsysVers,
+            maybeComponent,
+            sourceFile,
+            tempFile,
+            maybePackageName
+          )
+          readAndDeleteFile()
+        case "py" =>
+          new PythonCodeGenerator(db).generate(
+            subsysVers,
+            maybeComponent,
+            sourceFile,
+            tempFile,
+            maybePackageName
+          )
+          readAndDeleteFile()
+        case _ =>
+          println(s"Unsupported language fo code generation: $lang")
+          None
+      }
+    } catch {
+      case ex: Exception =>
+        log.error(s"Failed to generate $sourceFile for $subsysVers", ex)
         None
     }
   }
 
   def getFitsDictionary(maybeSubsystem: Option[String], maybeComponent: Option[String]): FitsDictionary = {
-    IcdFits(db).getFitsDictionary(maybeSubsystem, maybeComponent)
+    try {
+      IcdFits(db).getFitsDictionary(maybeSubsystem, maybeComponent)
+    } catch {
+      case ex: Exception =>
+        val maybeSv = maybeSubsystem.map(subsystem => SubsystemWithVersion(subsystem, None, maybeComponent))
+        log.error(s"Failed to get FITS dictionary for $maybeSv", ex)
+        FitsDictionary(Nil, FitsTags(Map.empty))
+    }
   }
 
   def getOpenApi(
@@ -616,13 +708,19 @@ class ApplicationImpl(db: IcdDb) {
       paths: List[ServicePath]
   ): Option[String] = {
     val sv = SubsystemWithVersion(subsystem, maybeVersion, Some(component))
-    db.versionManager
-      .getModels(sv, includeOnly = Set("serviceModel"))
-      .head
-      .serviceModel
-      .toList
-      .flatMap(_.provides.find(_.name == service))
-      .map(p => OpenApiToHtml.filterOpenApiJson(p.openApi, paths))
-      .headOption
+    try {
+      db.versionManager
+        .getModels(sv, includeOnly = Set("serviceModel"))
+        .head
+        .serviceModel
+        .toList
+        .flatMap(_.provides.find(_.name == service))
+        .map(p => OpenApiToHtml.filterOpenApiJson(p.openApi, paths))
+        .headOption
+    } catch {
+      case ex: Exception =>
+        log.error(s"Failed to get OpenApi JSON for $sv, service: $service, paths: $paths", ex)
+        None
+    }
   }
 }

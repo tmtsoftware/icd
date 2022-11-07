@@ -225,7 +225,7 @@ object ClientRoutes {
   }
 
   /**
-   * Returns a FitsTags object containing a map of tags to list of FITS keywords
+   * Returns a FitsDictionary object
    */
   def fitsDictionary(maybeSv: Option[SubsystemWithVersion]): String = {
     if (maybeSv.isDefined) {
