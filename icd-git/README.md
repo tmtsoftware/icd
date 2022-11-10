@@ -47,7 +47,7 @@ Add the `-i` or `--interactive` option to enter the required options interactive
 a list of possible subsystems and versions.
 
 ```
-icd-git 2.2.0
+icd-git 2.2.1
 Usage: icd-git [options]
 
   -l, --list               Prints the list of API or ICD versions defined on GitHub for the given subsystem options

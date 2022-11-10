@@ -24,7 +24,7 @@ Example files that can be ingested into the database for testing can be found
 in the [examples/3.0](../examples/3.0) directory.
 
 ```
-icd-db 2.2.0
+icd-db 2.2.1
 Usage: icd-db [options]
 
   --db <name>              The name of the database to use (default: icds4)

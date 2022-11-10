@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
+## [ICD v2.2.1] - 2022-11-
+
+* Fixed an issue where published images were not included in the generated documentation if no events were published.
+* Minor performance improvements
+
 ## [ICD v2.2.0] - 2022-11-01
 
 - Added options to icd-db command line app to generate code containing the event, command and parameter keys. (currently Scala, Java, Typescript and Python are supported)
