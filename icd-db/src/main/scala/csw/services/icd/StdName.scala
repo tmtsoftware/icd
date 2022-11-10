@@ -54,9 +54,9 @@ case class StdName private (name: String, schema: String) {
    */
   val modelBaseName: String = name.substring(0, name.length - 11)
 
-  val isSubsystemModel: Boolean = modelBaseName == "subsystem"
-
+  val isSubsystemModel: Boolean          = modelBaseName == "subsystem"
   val isIcdModel: Boolean                = modelBaseName.endsWith("-icd")
+  val hasComponent: Boolean              = !(isSubsystemModel || isIcdModel)
   val isServiceModel: Boolean            = modelBaseName == "service"
   val icdTargetSubsystem: Option[String] = if (isIcdModel) Some(name.split('-').head) else None
 

@@ -575,7 +575,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       fitsKeyMap: FitsKeyMap
   ): List[IcdModels] = {
     sv.maybeComponent match {
-      case None           => allModelsList
+      case None => allModelsList
       case Some(compName) =>
         allModelsList.filter(x => x.componentModel.exists(_.component == compName))
     }
@@ -647,7 +647,25 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * @return the subsystem model
    */
   def getComponentModel(sv: SubsystemWithVersion, maybePdfOptions: Option[PdfOptions]): Option[ComponentModel] = {
-    getModels(sv, maybePdfOptions = maybePdfOptions, includeOnly = Set("componentModel")).headOption.flatMap(_.componentModel)
+    val componentModel = getModels(sv, maybePdfOptions = maybePdfOptions, includeOnly = Set("componentModel")).headOption
+      .flatMap(_.componentModel)
+    if (componentModel.isEmpty && sv.maybeComponent.isDefined) {
+      // Add a dummy component description if none was found
+      // XXX TODO FIXME: Add validation warning for case where component-model.conf file is missing or contains the wrong component name
+      val name = sv.maybeComponent.get
+      Some(
+        ComponentModel(
+          "?",
+          sv.subsystem,
+          name,
+          s"$name: Missing component title",
+          s"$name: Missing component description",
+          IcdValidator.currentSchemaVersion,
+          ""
+        )
+      )
+    }
+    else componentModel
   }
 
   /**

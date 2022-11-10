@@ -442,14 +442,30 @@ case class IcdDb(
 
   // Check for duplicate component names
   def checkForDuplicateComponentNames(list: List[StdConfig]): List[String] = {
-    val componentModels = list.flatMap {
+    val components = list.flatMap {
       case x if x.stdName.isComponentModel =>
         val subsystem = x.config.getString("subsystem")
         val component = x.config.getString("component")
         Some(s"$subsystem.$component")
       case _ => None
     }
-    componentModels.groupBy(identity).collect { case (x, List(_, _, _*)) => x }.toList
+    components.groupBy(identity).collect { case (x, List(_, _, _*)) => x }.toList
+  }
+
+  // Check for misspelled subsystem or component names
+  def checkForWrongComponentNames(list: List[StdConfig]): List[String] = {
+    // get pairs of (dir -> subsystem.component) and check if there are directories that contain
+    // multiple different values (should all be the same)
+    val pairs = list.flatMap {
+      case x if x.stdName.hasComponent =>
+        val dir = new File(x.fileName).getParent
+        val subsystem = x.config.getString("subsystem")
+        val component = x.config.getString("component")
+        Some(dir -> s"$subsystem.$component")
+      case _ => None
+    }
+    val map = pairs.groupBy(_._1).map { case (k,v) => (k,v.map(_._2))}
+    map.values.toList.map(_.distinct).filter(_.size != 1).map(_.mkString(" != "))
   }
 
   /**
@@ -469,12 +485,16 @@ case class IcdDb(
     // Check for duplicate subsystem-model.conf file (found one in TCS)
     val duplicateSubsystems = subsystemList.diff(subsystemList.toSet.toList)
     val duplicateComponents = checkForDuplicateComponentNames(configs)
+    val wrongComponents = checkForWrongComponentNames(configs)
+
     if (duplicateSubsystems.nonEmpty) {
       val dupFileList = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.fileName).mkString(", ")
       Problem("error", s"Duplicate subsystem-model.conf found: $dupFileList") :: problems
     }
     else if (duplicateComponents.nonEmpty) {
       Problem("error", s"Duplicate component names found: ${duplicateComponents.mkString(", ")}") :: problems
+    } else if (wrongComponents.nonEmpty) {
+      Problem("error", s"Conflicting component names found: ${wrongComponents.mkString(", ")}") :: problems
     }
     else {
       if (subsystemList.isEmpty)
@@ -520,7 +540,7 @@ case class IcdDb(
    */
   def ingest(dir: File = new File(".")): (List[StdConfig], List[Problem]) = {
     val validateProblems = IcdValidator.validateDirRecursive(dir)
-    val problems =
+    val result1 =
       if (validateProblems.nonEmpty)
         (Nil, validateProblems)
       else {
@@ -528,9 +548,9 @@ case class IcdDb(
         (listOfPairs.flatMap(_._1), listOfPairs.flatMap(_._2))
       }
 
-    if (problems._2.nonEmpty)
-      problems
-    else (Nil, ingestFitsDictionary(dir))
+    if (result1._2.nonEmpty)
+      result1
+    else (result1._1, ingestFitsDictionary(dir))
   }
 
   /**
