@@ -119,7 +119,7 @@ object IcdComponentInfo {
         val imageList = m.imageList.map { t =>
           ImageInfo(t, getSubscribers(m.subsystem, component, prefix, t.name, t.description, Images, targetModelsList))
         }
-        if (eventList.nonEmpty || observeEventList.nonEmpty)
+        if (eventList.nonEmpty || observeEventList.nonEmpty || currentStateList.nonEmpty || imageList.nonEmpty)
           Some(Publishes(m.description, eventList, observeEventList, currentStateList, imageList, Nil))
         else None
     }
