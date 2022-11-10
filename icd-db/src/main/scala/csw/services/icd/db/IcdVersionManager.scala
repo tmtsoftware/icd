@@ -577,9 +577,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
     sv.maybeComponent match {
       case None           => allModelsList
       case Some(compName) =>
-        // XXX TODO FIXME: return filtered allModelsList?
-        val compSv = SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(compName))
-        getModels(compSv, maybePdfOptions, fitsKeyMap)
+        allModelsList.filter(x => x.componentModel.exists(_.component == compName))
     }
   }
 
