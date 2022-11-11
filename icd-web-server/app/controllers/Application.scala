@@ -184,6 +184,7 @@ class Application @Inject() (
    * @param maybeLineHeight     line-height for HTML
    * @param maybePaperSize      Letter, Legal, A4, A3, default: Letter
    * @param maybeDetails        If true, the PDF lists all detailed info, otherwise only the expanded rows in web app
+   * @param documentNumber      optional document number to include in PDF under subtitle
    */
   def icdAsPdf(
       subsystem: String,
@@ -197,7 +198,8 @@ class Application @Inject() (
       maybeFontSize: Option[Int],
       maybeLineHeight: Option[String],
       maybePaperSize: Option[String],
-      maybeDetails: Option[Boolean]
+      maybeDetails: Option[Boolean],
+      documentNumber: Option[String]
   ): Action[AnyContent] =
     Action.async { implicit request =>
       val expandedIds =
@@ -214,7 +216,15 @@ class Application @Inject() (
           maybeTargetVersion,
           maybeTargetComponent,
           maybeIcdVersion,
-          PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedIds),
+          PdfOptions(
+            maybeOrientation,
+            maybeFontSize,
+            maybeLineHeight,
+            maybePaperSize,
+            maybeDetails,
+            expandedIds,
+            documentNumber = documentNumber.getOrElse("")
+          ),
           _
         )
       )
@@ -239,6 +249,7 @@ class Application @Inject() (
    * @param maybeLineHeight  line-height for HTML
    * @param maybePaperSize   Letter, Legal, A4, A3, default: Letter
    * @param maybeDetails     If true, the PDF lists all detailed info, otherwise only the expanded rows in web app
+   * @param documentNumber      optional document number to include in PDF under subtitle
    */
   def apiAsPdf(
       subsystem: String,
@@ -250,7 +261,8 @@ class Application @Inject() (
       maybeFontSize: Option[Int],
       maybeLineHeight: Option[String],
       maybePaperSize: Option[String],
-      maybeDetails: Option[Boolean]
+      maybeDetails: Option[Boolean],
+      documentNumber: Option[String]
   ) =
     Action.async { implicit request =>
       val expandedIds =
@@ -264,7 +276,15 @@ class Application @Inject() (
           maybeComponent,
           searchAll,
           clientApi,
-          PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize, maybeDetails, expandedIds),
+          PdfOptions(
+            maybeOrientation,
+            maybeFontSize,
+            maybeLineHeight,
+            maybePaperSize,
+            maybeDetails,
+            expandedIds,
+            documentNumber = documentNumber.getOrElse("")
+          ),
           _
         )
       )

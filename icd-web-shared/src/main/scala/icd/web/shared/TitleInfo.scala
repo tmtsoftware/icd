@@ -6,8 +6,14 @@ package icd.web.shared
  * @param title            the title
  * @param maybeSubtitle    optional subtitle
  * @param maybeDescription optional description
+ * @param maybeDocumentNumber optional document number to include in PDF
  */
-case class TitleInfo(title: String, maybeSubtitle: Option[String], maybeDescription: Option[String])
+case class TitleInfo(
+    title: String,
+    maybeSubtitle: Option[String],
+    maybeDescription: Option[String],
+    maybeDocumentNumber: Option[String]
+)
 
 object TitleInfo {
 
@@ -30,19 +36,22 @@ object TitleInfo {
    * @param subsystemInfo   describes the source subsystem
    * @param maybeTargetSv  optional target subsystem and version
    * @param maybeIcd        optional ICD related information
-   * @param part            Optional string inserted before the title
+   * @param part            optional string inserted before the title
+   * @param documentNumber  optional document number to include in PDF
    * @return the title related information
    */
   def apply(
       subsystemInfo: SubsystemInfo,
       maybeTargetSv: Option[SubsystemWithVersion],
       maybeIcd: Option[IcdVersion],
-      part: String = ""
+      part: String = "",
+      documentNumber: String = ""
   ): TitleInfo = {
     val sv                  = subsystemInfo.sv
     val targetName          = maybeTargetSv.map(_.subsystem).getOrElse("")
     val componentPart       = subsystemInfo.sv.maybeComponent.map("." + _).getOrElse("")
     val targetComponentPart = maybeTargetSv.flatMap(_.maybeComponent).map("." + _).getOrElse("")
+    val maybeDocumentNumber = if (documentNumber.nonEmpty) Some(documentNumber) else None
     if (maybeIcd.isDefined) {
       val icd = maybeIcd.get
       val title =
@@ -51,17 +60,20 @@ object TitleInfo {
         else
           s"ICD SDB ${sv.subsystem}$componentPart / $targetName$targetComponentPart (version ${icd.icdVersion})"
       val subtitle = getSubtitle(sv, maybeTargetSv)
-      TitleInfo(title, Some(subtitle), None)
-    } else {
+      TitleInfo(title, Some(subtitle), None, maybeDocumentNumber)
+    }
+    else {
       if (maybeTargetSv.isDefined) {
         val title    = s"ICD SDB $part ${sv.subsystem}$componentPart -> $targetName$targetComponentPart $unpublished"
         val subtitle = getSubtitle(sv, maybeTargetSv)
-        TitleInfo(title, Some(subtitle), None)
-      } else {
+        TitleInfo(title, Some(subtitle), None, maybeDocumentNumber)
+      }
+      else {
         TitleInfo(
           s"API SDB for ${sv.subsystem}$componentPart ${sv.maybeVersion.getOrElse(unpublished)}",
           Some(subsystemInfo.title),
-          Some(subsystemInfo.description)
+          Some(subsystemInfo.description),
+          maybeDocumentNumber
         )
       }
     }

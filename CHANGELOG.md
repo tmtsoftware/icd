@@ -10,6 +10,8 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
   database. Also added a check for cases found in already published APIs.
 - Minor performance improvements
 - Added details table for published images to generated PDFs and changed the format used for the web version
+- Added --documentNumber option to icd-db (and text field to web app's PDF options popup). If given, the text is
+  displayed under the subtitle in the generated PDF
 
 ## [ICD v2.2.0] - 2022-11-01
 

@@ -182,6 +182,10 @@ object IcdDb extends App {
       c.copy(paperSize = Some(x))
     } text "For PDF output: The paper size (default: Letter)"
 
+    opt[String]("documentNumber") valueName "text" action { (x, c) =>
+      c.copy(documentNumber = Some(x))
+    } text "For PDF output: An optional document number to display after the title/subtitle"
+
     opt[String]("package") valueName "package.name" action { (x, c) =>
       c.copy(packageName = Some(x))
     } text "Package name for generated Scala files (default: no package)"
@@ -229,7 +233,8 @@ object IcdDb extends App {
       options.lineHeight,
       options.paperSize,
       Some(true),
-      Nil
+      Nil,
+      documentNumber = options.documentNumber.getOrElse("")
     )
 
     options.ingest.map { dir =>

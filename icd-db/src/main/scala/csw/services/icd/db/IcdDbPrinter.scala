@@ -133,7 +133,7 @@ case class IcdDbPrinter(
     } yield {
       import scalatags.Text.all._
       val infoList               = getComponentInfo(versionManager, sv, Some(targetSv), fitsKeyMap)
-      val titleInfo              = TitleInfo(subsystemInfo, Some(targetSv), maybeIcdVersion)
+      val titleInfo              = TitleInfo(subsystemInfo, Some(targetSv), maybeIcdVersion, documentNumber = pdfOptions.documentNumber)
       val titleInfo1             = TitleInfo(subsystemInfo, Some(targetSv), maybeIcdVersion, "(Part 1)")
       val infoList2              = getComponentInfo(versionManager, targetSv, Some(sv), fitsKeyMap)
       val titleInfo2             = TitleInfo(targetSubsystemInfo, Some(sv), maybeIcdVersion, "(Part 2)")

@@ -68,8 +68,10 @@ object NavbarItem {
  * @param labelStr the label to display
  * @param tip the tool tip to display when hovering over the item
  * @param listener called when the item is clicked with (orientation, fontSize)
+ * @param showDocumentNumber if true, show the  Document Number field
  */
-case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => Unit) extends Displayable {
+case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => Unit, showDocumentNumber: Boolean)
+    extends Displayable {
   private def pdfModalListener(): Unit = {
     val orientation = document
       .querySelectorAll(s"input[name='orientation$labelStr']:checked")
@@ -98,9 +100,28 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
       .toList
       .head
       .toBoolean
+    val documentNumber =
+      if (showDocumentNumber)
+        document
+          .querySelectorAll(s"input[name='documentNumber$labelStr']")
+          .map(elem => elem.asInstanceOf[HTMLInputElement].value)
+          .toList
+          .head
+      else ""
 
     val expandedLinkIds = if (details) Nil else getExpandedIds
-    listener(PdfOptions(orientation, fontSize, lineHeight, paperSize, details, expandedLinkIds, processMarkdown = true))
+    listener(
+      PdfOptions(
+        orientation,
+        fontSize,
+        lineHeight,
+        paperSize,
+        details,
+        expandedLinkIds,
+        processMarkdown = true,
+        documentNumber = documentNumber
+      )
+    )
   }
 
   // Finds all button items with aria-expanded=true, then gets the "name" attr of the following "a" element.
@@ -121,6 +142,7 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
   // Makes the popup with options for generating the PDF
   private def makePdfModal(): JsDom.TypedTag[Div] = {
     import scalatags.JsDom.all._
+    val docNumCls = if (showDocumentNumber) "docNum" else "d-none"
     div(cls := "modal fade", id := s"pdfModal$labelStr", tabindex := "-1", role := "dialog", style := "padding-top: 130px")(
       div(cls := "modal-dialog")(
         div(cls := "modal-content")(
@@ -158,7 +180,11 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
                 cls := "form-check",
                 input(`type` := "radio", cls := "form-check-input", name := s"details$labelStr", value := "false"),
                 label(cls := "form-check-label", "Include only the details that are expanded in the HTML view")
-              )
+              ),
+              hr(cls := docNumCls),
+              p(cls := docNumCls),
+              h5(cls := docNumCls, s"Document Number:"),
+              input(cls := docNumCls, id := s"documentNumber$labelStr", name := s"documentNumber$labelStr")
             )
           ),
           div(cls := "modal-footer")(

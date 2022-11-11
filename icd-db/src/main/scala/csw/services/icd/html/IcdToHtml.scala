@@ -152,7 +152,7 @@ object IcdToHtml {
     import scalatags.Text.all._
 
     val nh           = new NumberedHeadings
-    val titleInfo    = TitleInfo(subsystemInfo, None, None)
+    val titleInfo    = TitleInfo(subsystemInfo, None, None, documentNumber = pdfOptions.documentNumber)
     val summaryTable = SummaryTable.displaySummary(subsystemInfo, None, infoList, nh, clientApi, displayTitle = true)
 
     val mainContent = div(
@@ -184,9 +184,25 @@ object IcdToHtml {
     import scalatags.Text.all._
     titleInfo.maybeSubtitle match {
       case Some(subtitle) =>
-        h3(a(name := titleId), cls := "page-header")(titleInfo.title, br, small(cls := "text-secondary")(subtitle))
+        titleInfo.maybeDocumentNumber match {
+          case Some(documentNumber) =>
+            h3(a(name := titleId), cls := "page-header")(
+              titleInfo.title,
+              br,
+              small(cls := "text-secondary")(subtitle),
+              br,
+              small(cls := "text-secondary")(documentNumber)
+            )
+          case None =>
+            h3(a(name := titleId), cls := "page-header")(titleInfo.title, br, small(cls := "text-secondary")(subtitle))
+        }
       case None =>
-        h3(a(name := titleId), cls := "page-header")(titleInfo.title)
+        titleInfo.maybeDocumentNumber match {
+          case Some(documentNumber) =>
+            h3(a(name := titleId), cls := "page-header")(titleInfo.title, br, small(cls := "text-secondary")(documentNumber))
+          case None =>
+            h3(a(name := titleId), cls := "page-header")(titleInfo.title)
+        }
     }
   }
 

@@ -181,7 +181,7 @@ class PdfCache(cacheDir: File) {
           lineHeights.foreach { lh =>
             paperSizes.foreach { ps =>
               List(true, false).foreach { clientApi =>
-                val pdfOptions = PdfOptions(orient, fs, lh, ps, details = true, Nil, processMarkdown = false)
+                val pdfOptions = PdfOptions(orient, fs, lh, ps, details = true, Nil, processMarkdown = false, documentNumber = "")
                 val file       = getFile(sv, pdfOptions)
                 if (file.exists())
                   file.delete()
@@ -204,7 +204,7 @@ class PdfCache(cacheDir: File) {
         fontSizes.foreach { fs =>
           lineHeights.foreach { lh =>
             paperSizes.foreach { ps =>
-              val pdfOptions = PdfOptions(orient, fs, lh, ps, details = true, Nil, processMarkdown = false)
+              val pdfOptions = PdfOptions(orient, fs, lh, ps, details = true, Nil, processMarkdown = false, documentNumber = "")
               val file       = getFile(sv, targetSv, pdfOptions)
               if (file.exists())
                 file.delete()

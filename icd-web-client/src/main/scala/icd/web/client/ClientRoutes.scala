@@ -45,7 +45,8 @@ object ClientRoutes {
         s"fontSize=${o.fontSize}",
         s"lineHeight=${o.lineHeight}",
         s"paperSize=${o.paperSize}",
-        s"details=${o.details}"
+        s"details=${o.details}",
+        s"documentNumber=${o.documentNumber}",
       ).mkString("&")
     )
     val graphAttrs = maybeGraphOptions.map(o =>

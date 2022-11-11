@@ -46,7 +46,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val fitsDictionaryItem =
     NavbarItem("FITS Dictionary", "Display information about all FITS keywords", showFitsDictionary())
 
-  private val pdfItem = NavbarPdfItem("PDF", "Generate and display a PDF for the API or ICD", makePdf)
+  private val pdfItem = NavbarPdfItem("PDF", "Generate and display a PDF for the API or ICD", makePdf, showDocumentNumber = true)
   pdfItem.setEnabled(false)
 
   private val generateItem = NavbarDropDownItem(
@@ -64,7 +64,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val archiveItem = NavbarPdfItem(
     "Archive",
     "Generate and display an 'Archived Items' report for the selected subsystem (or all subsystems)",
-    makeArchivedItemsReport
+    makeArchivedItemsReport,
+    showDocumentNumber = false
   )
 
   private val navbar = Navbar()
@@ -557,11 +558,12 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     import icd.web.shared.JsonSupport._
     setSidebarVisible(false)
     val f = for {
-      fitsDict <- Fetch
-        .get(ClientRoutes.fitsDictionary(None))
-        .map { text =>
-          Json.fromJson[FitsDictionary](Json.parse(text)).get
-        }
+      fitsDict <-
+        Fetch
+          .get(ClientRoutes.fitsDictionary(None))
+          .map { text =>
+            Json.fromJson[FitsDictionary](Json.parse(text)).get
+          }
     } yield {
       val fitsKeywordDialog = FitsKeywordDialog(fitsDict, ComponentLinkSelectionHandler)
       mainContent.setContent(fitsKeywordDialog, "FITS Dictionary")
