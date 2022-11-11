@@ -52,7 +52,8 @@ class PdfCache(cacheDir: File) {
     sv.maybeComponent.isEmpty &&
     !clientApi &&
     !searchAllSubsystems &&
-    pdfOptions.details
+    pdfOptions.details &&
+    pdfOptions.documentNumber.isEmpty
   }
 
   // Gets the file used to store the ICD between the two subsystem versions
