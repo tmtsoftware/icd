@@ -39,9 +39,6 @@ object Components {
     def componentSelected(link: ComponentLink): Future[Unit]
   }
 
-  // Displayed version for unpublished APIs
-  val unpublished = "(unpublished)"
-
   def yesNo(b: Boolean): String = if (b) "yes" else "no"
 
   /**
@@ -556,7 +553,25 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     // Returns a div displaying more details for the given image
     def makeImageDetailsRow(imageInfo: ImageInfo, maybeImageId: Option[String] = None) = {
       val imageModel = imageInfo.imageModel
+      val imageSize = imageModel.size match {
+        case (0, 0) => ""
+        case (w, h) => s"$w x $h"
+      }
+      val headings =
+        List("Channel", "Format", "Size", "Pixel Size", "Max Rate")
+      val rowList =
+        List(
+          List(
+            imageModel.channel,
+            imageModel.format,
+            imageSize,
+            imageModel.pixelSize.toString,
+            formatRate(imageModel.maybeMaxRate)
+          )
+        )
+
       div(
+        mkTable(headings, rowList),
         imageMetadataListMarkup(imageModel.name, imageModel.metadataList, maybeImageId)
       )
     }
@@ -616,11 +631,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               tr(
                 th("Name"),
                 th("Description"),
-                th("Channel"),
-                th("Format"),
-                th("Size"),
-                th("Pixel Size"),
-                th("Max Rate"),
                 if (clientApi) th("Subscribers") else span
               )
             ),
@@ -628,11 +638,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               for (t <- imageList) yield {
                 val idStr      = idFor(compName, "publishes", pubType, component.subsystem, compName, t.imageModel.name)
                 val (btn, row) = hiddenRowMarkup(idStr, makeImageDetailsRow(t, Some(idStr)), 3)
-                val imageSize = t.imageModel.size match {
-                  case (0, 0) => ""
-                  case (w, h) => s"$w x $h"
-                }
-                val maxRate = t.imageModel.maybeMaxRate.map(_.toString).getOrElse("")
                 List(
                   tr(
                     td(
@@ -645,11 +650,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                       )
                     ),
                     td(raw(t.imageModel.description)),
-                    td(t.imageModel.channel),
-                    td(t.imageModel.format),
-                    td(imageSize),
-                    td(t.imageModel.pixelSize.toString),
-                    td(maxRate),
                     if (clientApi)
                       td(p(t.subscribers.map(_.componentModel).distinct.map(makeLinkForComponent)))
                     else span
@@ -754,7 +754,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     // Returns a div displaying more details for the given subscription
     def makeDetailsRow(si: DetailedSubscribeInfo) = {
       val sInfo = si.subscribeModelInfo
-      if (si.imageModel.nonEmpty) {
+
+      def getImageDetailsTable = {
         // Layout for image subscriber details taken from image publisher
         val imageModel = si.imageModel.get
         val maxRate    = imageModel.maybeMaxRate
@@ -778,7 +779,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           imageMetadataTable
         )
       }
-      else {
+
+      def getEventDetailsTable = {
         // Layout for event subscriber details taken from event publisher
         val maxRate = si.eventModel.flatMap(_.maybeMaxRate)
         val headings =
@@ -799,6 +801,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           attrTable
         )
       }
+
+      if (si.imageModel.nonEmpty) getImageDetailsTable
+      else if (si.eventModel.nonEmpty) getEventDetailsTable
+      else div()
     }
 
     def subscribeListMarkup(pubType: String, subscribeList: List[DetailedSubscribeInfo]) = {
@@ -1036,7 +1042,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def servicesMarkup(
       component: ComponentModel,
       maybeServices: Option[Services],
-      forApi: Boolean,
       clientApi: Boolean
   ) = {
     import scalatags.JsDom.all._
@@ -1288,7 +1293,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       publishMarkup(info.componentModel, info.publishes, forApi, clientApi),
       if (clientApi) subscribeMarkup(info.componentModel, info.subscribes) else span,
       commandsMarkup(info.componentModel, info.commands, clientApi),
-      servicesMarkup(info.componentModel, info.services, forApi, clientApi)
+      servicesMarkup(info.componentModel, info.services, clientApi)
     )
   }
 

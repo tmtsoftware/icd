@@ -3,12 +3,13 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
-## [ICD v2.2.1] - 2022-11-10
+## [ICD v2.2.1] - 2022-11-11
 
 - Fixed an issue where published images were not included in the generated documentation if no events were published.
 - Added a validation check for conflicting component names when manually ingesting or uploading model files into the icd
   database. Also added a check for cases found in already published APIs.
 - Minor performance improvements
+- Added details table for published images to generated PDFs and changed the format used for the web version
 
 ## [ICD v2.2.0] - 2022-11-01
 

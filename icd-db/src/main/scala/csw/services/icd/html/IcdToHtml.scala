@@ -576,7 +576,8 @@ object IcdToHtml {
 
       def subscribeDetailsMarkup(si: DetailedSubscribeInfo) = {
         val sInfo = si.subscribeModelInfo
-        if (si.imageModel.nonEmpty) {
+
+        def getImageDetailsTable = {
           // Markup for subscribed image
           val imageModel = si.imageModel.get
           val maxRate    = imageModel.maybeMaxRate
@@ -608,9 +609,9 @@ object IcdToHtml {
             ),
             si.imageModel.map(t => imageMetadataListMarkup(t.name, t.metadataList))
           )
-
         }
-        else {
+
+        def getEventDetailsTable = {
           // Markup for subscribed event
           val maxRate = si.eventModel.flatMap(_.maybeMaxRate)
           div(
@@ -638,6 +639,12 @@ object IcdToHtml {
             si.eventModel.map(t => attributeListMarkup(t.name, t.parameterList))
           )
         }
+
+        if (si.imageModel.nonEmpty)
+          getImageDetailsTable
+        else if (si.eventModel.nonEmpty)
+          getEventDetailsTable
+        else div()
       }
 
       if (subscribeList.isEmpty) div()
@@ -751,6 +758,7 @@ object IcdToHtml {
 
     val compName      = component.component
     val publisherInfo = span(strong("Publisher: "), s"${component.subsystem}.$compName")
+
     def publishEventListMarkup(pubType: String, eventList: List[EventInfo]): Text.TypedTag[String] = {
       if (eventList.isEmpty) div()
       else {
@@ -871,6 +879,24 @@ object IcdToHtml {
                   )
                 )
               else span
+
+            val imageSize = imageModel.size match {
+              case (0, 0) => ""
+              case (w, h) => s"$w x $h"
+            }
+            val headings =
+              List("Channel", "Format", "Size", "Pixel Size", "Max Rate")
+            val rowList =
+              List(
+                List(
+                  imageModel.channel,
+                  imageModel.format,
+                  imageSize,
+                  imageModel.pixelSize.toString,
+                  HtmlMarkup.formatRate(imageModel.maybeMaxRate).render
+                )
+              )
+
             div(cls := "nopagebreak")(
               nh.H4(
                 s"${singlePubType(pubType)}: ${imageModel.name}",
@@ -879,6 +905,7 @@ object IcdToHtml {
               if (showDetails) {
                 div(
                   if (clientApi) p(publisherInfo, ", ", subscriberInfo) else p(publisherInfo),
+                  HtmlMarkup.mkTable(headings, rowList),
                   raw(imageModel.description),
                   subscriberUsage,
                   imageMetadataListMarkup(imageModel.name, imageModel.metadataList, Some(linkId)),
@@ -888,6 +915,7 @@ object IcdToHtml {
               else
                 div(
                   if (clientApi) p(publisherInfo, ", ", subscriberInfo) else p(publisherInfo),
+                  HtmlMarkup.mkTable(headings, rowList),
                   raw(imageModel.description),
                   subscriberUsage
                 )
