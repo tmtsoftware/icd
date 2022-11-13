@@ -74,21 +74,10 @@ object IcdGitManager {
   }
 
   // Gets the API entry for the master branch of the given subsystem, if not empty
+  // (Want to add master branch as pseudo version)
   private def getMasterApiVersion(subsystem: String): Option[ApiVersions.ApiEntry] = {
-    /*
-    import org.eclipse.jgit.internal.storage.file.FileRepository
-    import org.eclipse.jgit.lib.Repository
-    import org.eclipse.jgit.revwalk.RevCommit
-    val repository: Repository = new FileRepository("/path/to/repository/.git")
-    val treeName: String = "refs/heads/master"// tag or branch
-    import scala.collection.JavaConversions._
-    for (commit <- git.log.add(repository.resolve(treeName)).call)  { System.out.println(commit.getName) }
-     */
-
-    // Add master branch as pseudo version
     val info = getSubsystemGitInfo(subsystem)
     if (!info.isEmpty) {
-      // XXX TODO FIXME: Do a shallow clone and use above code?
       val date    = DateTime.now().withZone(DateTimeZone.UTC).toString()
       val user    = ""
       val comment = ""
