@@ -101,7 +101,6 @@ object OpenApiToHtml {
    * @return static HTML string
    */
   def getHtml(openApi: String): String = {
-    // XXX TODO FIXME: Add args to filter OpenApi based on declared method usage?
     val maybeDir = getTemplateDir
     val format   = "html"
     val maybeHtml = maybeDir.map { templateDir =>
