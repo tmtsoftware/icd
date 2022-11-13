@@ -1,10 +1,12 @@
 html {
   overflow: hidden;
-  /* To match Bootstrap 3 setting! */
+  /* To match Bootstrap 3 setting (since defaults fonts changed in later versions) */
   font-size: 14px;
 }
 body {
   overflow: visible;
+  /* Otherwise scrollbar becomes too thin or invisible */
+  margin: revert;
 }
 img {
   vertical-align: middle;
