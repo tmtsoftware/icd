@@ -464,13 +464,15 @@ object IcdToHtml {
           div(cls := "nopagebreak")(
             nh.H5(s"HTTP Service: ${m.name}"),
             p(providerInfo),
-//            p("Note: Only the routes required by the client are listed here."),
             maybeOpenApi match {
               case Some(openApi) =>
+                val filteredOpenApi = OpenApiToHtml.filterOpenApiJson(openApi, s.serviceModelClient.paths)
                 div(
-                  raw(OpenApiToHtml.getHtml(openApi))
+                  p("Note: Only the routes required by the client are listed here."),
+                  raw(OpenApiToHtml.getHtml(filteredOpenApi))
                 )
-              case None => div()
+              case None =>
+                div()
             }
           )
         }

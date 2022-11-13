@@ -651,7 +651,6 @@ case class IcdVersionManager(query: IcdDbQuery) {
       .flatMap(_.componentModel)
     if (componentModel.isEmpty && sv.maybeComponent.isDefined) {
       // Add a dummy component description if none was found
-      // XXX TODO FIXME: Add validation warning for case where component-model.conf file is missing or contains the wrong component name
       val name = sv.maybeComponent.get
       Some(
         ComponentModel(
