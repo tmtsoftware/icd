@@ -147,7 +147,7 @@ case class IcdDbPrinter(
         if (subsystemInfo.sv == targetSubsystemInfo.sv) {
           div(
             icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description))),
-            SummaryTable.displaySummary(subsystemInfo, Some(targetSv), infoList, nh, clientApi, displayTitle = true),
+            SummaryTable.displaySummary(subsystemInfo, Some(targetSv), infoList, nh, clientApi=false, displayTitle = true),
             makeIntro(titleInfo1),
             displayDetails(infoList, nh, forApi = false, pdfOptions, clientApi = clientApi)
           )
@@ -157,8 +157,8 @@ case class IcdDbPrinter(
             p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
             raw(targetSubsystemInfo.description),
             icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description))),
-            SummaryTable.displaySummary(subsystemInfo, Some(targetSv), infoList, nh, clientApi, displayTitle = true),
-            SummaryTable.displaySummary(targetSubsystemInfo, Some(sv), infoList2, nh, clientApi, displayTitle = false),
+            SummaryTable.displaySummary(subsystemInfo, Some(targetSv), infoList, nh, clientApi=false, displayTitle = true),
+            SummaryTable.displaySummary(targetSubsystemInfo, Some(sv), infoList2, nh, clientApi=false, displayTitle = false),
             makeIntro(titleInfo1),
             displayDetails(infoList, nh, forApi = false, pdfOptions, clientApi = clientApi),
             makeIntro(titleInfo2),

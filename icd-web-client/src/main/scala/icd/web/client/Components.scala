@@ -286,7 +286,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       // since the code is shared with non-javascript code on the server side.
       val summaryTable1 =
         SummaryTable
-          .displaySummary(subsystemInfo, maybeTargetSubsystem, infoList, new HtmlHeadings, clientApi, displayTitle = true)
+          .displaySummary(subsystemInfo, maybeTargetSubsystem, infoList, new HtmlHeadings, clientApi && !isIcd, displayTitle = true)
           .render
       val summaryTable2 =
         if (isIcd && subsystemInfo.sv != maybeTargetSubsystemInfo.get.sv)
@@ -297,7 +297,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                 Some(sv),
                 targetInfoList,
                 new HtmlHeadings,
-                clientApi,
+                clientApi = false,
                 displayTitle = false
               )
               .render

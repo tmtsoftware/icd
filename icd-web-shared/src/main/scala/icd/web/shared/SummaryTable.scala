@@ -128,59 +128,6 @@ object SummaryTable {
         prep: String
     ): Text.TypedTag[String] = {
 
-      // For ICDs, display subscribed items from the publisher's point of view
-      def publisherView(): Text.TypedTag[String] = {
-        val (action, publisher, subscriber) = heading.toLowerCase() match {
-          case "published by" => ("publishes", "Publisher", "Subscribers")
-          case "received by"  => ("receives", "Receiver", "Senders")
-          case "provided by"  => ("provides", "Provider", "Consumers")
-        }
-
-        val target = maybeTargetSv.get.subsystem
-
-        div(
-          nh.H3(s"$itemType $heading $target$targetComponentPart $prep $sourceStr"),
-          table(
-            thead(
-              tr(
-                th(publisher),
-                th(subscriber),
-                th("Prefix"),
-                th("Name"),
-                th("Description")
-              )
-            ),
-            tbody(
-              for {
-                info <- list
-              } yield {
-                val prefix     = wrap(s"${info.publisherSubsystem}.${info.publisherComponent}")
-                val prefixItem = span(prefix)
-                val description = info.maybeWarning match {
-                  case Some(msg) => p(em("Warning: ", msg))
-                  case None      => raw(firstParagraph(info.item.description))
-                }
-
-                // ICDs contain both subsystems, so we can link to them
-                tr(
-                  td(p(a(href := s"#${info.publisherComponent}")(wrap(info.publisherComponent)))),
-                  td(p(a(href := s"#${info.subscriber.component}")(wrap(info.subscriber.component)))),
-                  td(p(a(href := s"#${info.publisherComponent}")(prefixItem))),
-                  td(
-                    p(
-                      a(
-                        href := s"#${idFor(info.publisherComponent, action, itemType, info.publisherSubsystem, info.publisherComponent, info.item.name)}"
-                      )(wrap(info.item.name))
-                    )
-                  ),
-                  td(description)
-                )
-              }
-            )
-          )
-        )
-      }
-
       // For APIs, display the list of subscribed items
       def subscriberView(): Text.TypedTag[String] = {
         val (subscribes, subscriber, publisher) = heading.toLowerCase() match {
@@ -244,8 +191,6 @@ object SummaryTable {
 
       if (list.isEmpty)
         div()
-      else if (isIcd)
-        publisherView()
       else subscriberView()
     }
 
@@ -292,7 +237,7 @@ object SummaryTable {
         service  <- services.servicesProvided
       } yield {
         val nameDesc = new NameDesc {
-          override val name: String = service.serviceModelProvider.name
+          override val name: String        = service.serviceModelProvider.name
           override val description: String = service.serviceModelProvider.description
         }
         PublishedItem(info.componentModel, nameDesc, service.requiredBy.map(_.component).distinct)
@@ -309,93 +254,81 @@ object SummaryTable {
       )
     }
 
-//    def subscribedSummary(): Text.TypedTag[String] = {
-//      // For subscribed items and sent commands, the info from the other subsystem might not be available
-//      val allSubscribed = for {
-//        info  <- infoList
-//        sub   <- info.subscribes.toList
-//        event <- sub.subscribeInfo
-//      } yield (
-//        event.itemType,
-//        SubscribedItem(
-//          event.subscribeModelInfo.subsystem,
-//          event.subscribeModelInfo.component,
-//          event.publisher,
-//          event.warning,
-//          info.componentModel,
-//          OptionalNameDesc(event.subscribeModelInfo.name, event.eventModel.orElse(event.imageModel))
-//        )
-//      )
-//      val subscribedEvents        = allSubscribed.filter(_._1 == Events).map(_._2)
-//      val subscribedObserveEvents = allSubscribed.filter(_._1 == ObserveEvents).map(_._2)
-//      val subscribedCurrentStates = allSubscribed.filter(_._1 == CurrentStates).map(_._2)
-//      val subscribedImages        = allSubscribed.filter(_._1 == Images).map(_._2)
-//      val subscribedAlarms        = allSubscribed.filter(_._1 == Alarms).map(_._2)
-//
-//      val sentCommands = for {
-//        info     <- infoList
-//        commands <- info.commands.toList
-//        command  <- commands.commandsSent
-//      } yield SubscribedItem(
-//        command.subsystem,
-//        command.component,
-//        command.receiver,
-//        command.warning,
-//        info.componentModel,
-//        OptionalNameDesc(command.name, command.receiveCommandModel)
-//      )
-//
-//      val requiredServices = for {
-//        info     <- infoList
-//        services <- info.services.toList
-//        service  <- services.servicesRequired
-//      } yield {
-//        val nameDesc = new NameDesc {
-//          override val name: String = service.serviceModelClient.name
-//          // XXX TODO FIXME
-//          override val description: String = "An HTTP service (TODO: get title from OpenApi JSON doc))"
-//        }
-//        SubscribedItem(
-//          service.serviceModelClient.subsystem,
-//          service.serviceModelClient.component,
-//          service.provider,
-//          None,
-//          info.componentModel,
-//          OptionalNameDesc(nameDesc.name, Some(nameDesc))
-//        )
-//      }
-//
-//      div(
-//        if (isIcd)
-//          div(
-//            subscribedSummaryMarkup("Events", subscribedEvents, "Published by", "for"),
-//            subscribedSummaryMarkup("Observe Events", subscribedObserveEvents, "Published by", "for"),
-//            subscribedSummaryMarkup("Current States", subscribedCurrentStates, "Published by", "for"),
-//            subscribedSummaryMarkup("Images", subscribedImages, "Published by", "for"),
-//            subscribedSummaryMarkup("Alarms", subscribedAlarms, "Published by", "for"),
-//            subscribedSummaryMarkup("Commands", sentCommands, "Received by", "from"),
-//            subscribedSummaryMarkup("Services", requiredServices, "Provided by", "for")
-//          )
-//        else
-//          div(
-//            subscribedSummaryMarkup("Events", subscribedEvents, "Subscribed to by", "from"),
-//            subscribedSummaryMarkup("Observe Events", subscribedObserveEvents, "Subscribed to by", "from"),
-//            subscribedSummaryMarkup("Current States", subscribedCurrentStates, "Subscribed to by", "from"),
-//            subscribedSummaryMarkup("Images", subscribedImages, "Subscribed to by", "from"),
-//            subscribedSummaryMarkup("Alarms", subscribedAlarms, "Subscribed to by", "from"),
-//            subscribedSummaryMarkup("Commands", sentCommands, "Sent by", "to"),
-//            subscribedSummaryMarkup("Services", requiredServices, "Required by", "from")
-//          )
-//      )
-//    }
+    def subscribedSummary(): Text.TypedTag[String] = {
+      // For subscribed items and sent commands, the info from the other subsystem might not be available
+      val allSubscribed = for {
+        info  <- infoList
+        sub   <- info.subscribes.toList
+        event <- sub.subscribeInfo
+      } yield (
+        event.itemType,
+        SubscribedItem(
+          event.subscribeModelInfo.subsystem,
+          event.subscribeModelInfo.component,
+          event.publisher,
+          event.warning,
+          info.componentModel,
+          OptionalNameDesc(event.subscribeModelInfo.name, event.eventModel.orElse(event.imageModel))
+        )
+      )
+
+      val `subscribedEvents`      = allSubscribed.filter(_._1 == Events).map(_._2)
+      val subscribedObserveEvents = allSubscribed.filter(_._1 == ObserveEvents).map(_._2)
+      val subscribedCurrentStates = allSubscribed.filter(_._1 == CurrentStates).map(_._2)
+      val subscribedImages        = allSubscribed.filter(_._1 == Images).map(_._2)
+      val subscribedAlarms        = allSubscribed.filter(_._1 == Alarms).map(_._2)
+
+      val sentCommands = for {
+        info     <- infoList
+        commands <- info.commands.toList
+        command  <- commands.commandsSent
+      } yield SubscribedItem(
+        command.subsystem,
+        command.component,
+        command.receiver,
+        command.warning,
+        info.componentModel,
+        OptionalNameDesc(command.name, command.receiveCommandModel)
+      )
+
+      val requiredServices = for {
+        info     <- infoList
+        services <- info.services.toList
+        service  <- services.servicesRequired
+      } yield {
+        val nameDesc = new NameDesc {
+          override val name: String        = service.serviceModelClient.name
+          override val description: String = service.maybeServiceModelProvider.map(_.description).getOrElse("")
+        }
+        SubscribedItem(
+          service.serviceModelClient.subsystem,
+          service.serviceModelClient.component,
+          service.provider,
+          None,
+          info.componentModel,
+          OptionalNameDesc(nameDesc.name, Some(nameDesc))
+        )
+      }
+
+      div(
+        subscribedSummaryMarkup("Events", subscribedEvents, "Subscribed to by", "from"),
+        subscribedSummaryMarkup("Observe Events", subscribedObserveEvents, "Subscribed to by", "from"),
+        subscribedSummaryMarkup("Current States", subscribedCurrentStates, "Subscribed to by", "from"),
+        subscribedSummaryMarkup("Images", subscribedImages, "Subscribed to by", "from"),
+        subscribedSummaryMarkup("Alarms", subscribedAlarms, "Subscribed to by", "from"),
+        subscribedSummaryMarkup("Commands", sentCommands, "Sent by", "to"),
+        subscribedSummaryMarkup("Services", requiredServices, "Required by", "from")
+      )
+    }
 
     try {
       div(
         if (displayTitle) nh.H2("Summary") else span(),
         publishedSummary(),
-//        if (clientApi) subscribedSummary() else span()
+        if (clientApi) subscribedSummary() else span()
       )
-    } catch {
+    }
+    catch {
       case ex: Exception =>
         ex.printStackTrace()
         div(p(s"Summary Table: Internal error: ${ex.toString}"))
