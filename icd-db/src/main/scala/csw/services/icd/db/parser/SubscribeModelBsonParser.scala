@@ -16,7 +16,7 @@ object SubscribeModelBsonParser {
       Some {
         val subscribeDoc = doc.getAsOpt[BSONDocument]("subscribe").get
 
-        def getItems[A](name: String): List[SubscribeModelInfo] =
+        def getItems(name: String): List[SubscribeModelInfo] =
           for (subDoc <- subscribeDoc.getAsOpt[Array[BSONDocument]](name).map(_.toList).getOrElse(Nil))
             yield SubscribeInfoBsonParser(subDoc, maybePdfOptions)
 

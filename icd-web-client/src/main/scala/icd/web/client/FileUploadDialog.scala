@@ -48,7 +48,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   }
 
   // True if the file is one of the standard ICD files (or supported resources)
-  private def isStdFile(file: dom.File): Boolean = {
+  private def isStdFile(file: WebkitFile): Boolean = {
     stdList.contains(basename(file)) || file.name.endsWith("-icd-model.conf") || file.name.endsWith(".json") || file.name
       .endsWith(".yml") || file.name.endsWith(".yaml") || file.name.endsWith(".jsonnet") || file.name.endsWith(
       ".libsonnet") || file.name.endsWith(".txt") || file.name.endsWith("FITS-Tags.conf")
@@ -90,7 +90,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   }
 
   // Returns true if the file is a valid ICD file name
-  private def isValidFile(file: dom.File): Boolean = isStdFile(file)
+  private def isValidFile(file: WebkitFile): Boolean = isStdFile(file)
 
   // Returns a pair of lists containing the valid and invalid ICD files
   private def getIcdFiles(e: dom.Event): (Seq[WebkitFile], Seq[WebkitFile]) = {
@@ -117,6 +117,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
 
   private def busyStatusItem = document.querySelector("#busyStatus")
 
+  //noinspection ScalaUnusedSymbol
   // Called when user clicks on input item.
   // Reset the value (Otherwise you can't upload the same file twice,
   // since it won't fire the change event)
@@ -172,6 +173,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
       setProgressBar(pc)
     }
 
+    //noinspection ScalaUnusedSymbol
     // Displays status after upload complete
     def onloadListener(e: dom.Event) = {
       busyStatusItem.classList.add("d-none")

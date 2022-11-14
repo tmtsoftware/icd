@@ -1,6 +1,7 @@
 package icd.web.client
 
 import org.scalajs.dom
+import org.scalajs.dom.Blob
 
 import scala.scalajs.js
 
@@ -12,7 +13,7 @@ object FileUtils {
   import scala.language.implicitConversions
 
   // Check if file is one of the standard ICD files
-  def basename(file: dom.File): String =
+  def basename(file: WebkitFile): String =
     if (file.name.contains('/'))
       file.name.substring(file.name.lastIndexOf('/') + 1)
     else file.name
@@ -28,7 +29,7 @@ object FileUtils {
 
   @js.native
   trait EventExt extends dom.Event {
-    var dataTransfer: dom.DataTransfer = js.native
+//    var dataTransfer: dom.DataTransfer = js.native
     var loaded: Int                    = js.native
     var total: Int                     = js.native
   }
@@ -38,7 +39,8 @@ object FileUtils {
   // Add unsupported method: File.webkitRelativePath
   // Note that this only works on webkit browsers: Safari, Chrome.
   @js.native
-  trait WebkitFile extends dom.File {
+  trait WebkitFile extends Blob {
+    def name: String = js.native
     def webkitRelativePath: String = js.native
   }
 

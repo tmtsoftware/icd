@@ -13,7 +13,6 @@ import csw.services.icd.db.parser.{
   SubsystemModelBsonParser
 }
 import icd.web.shared.ComponentInfo._
-import icd.web.shared.AllEventList.{Event, EventsForComponent, EventsForSubsystem}
 import icd.web.shared.{IcdModels, PdfOptions, SubsystemWithVersion}
 import icd.web.shared.IcdModels._
 import play.api.libs.json.JsObject
@@ -744,22 +743,22 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
 //    } yield s
 //  }
 
-  /**
-   * Gets a list of system events for the given subsystem
-   */
-  def getEventsForSubsystem(subsystem: String, fitsKeyMap: FitsKeyMap): EventsForSubsystem = {
-    val eventsForComponent = getPublishInfo(subsystem, None, fitsKeyMap).map { info =>
-      // XXX TODO: Add p.description?
-      EventsForComponent(info.componentName, info.publishes.filter(_.publishType == Events).map(p => Event(p.name)))
-    }
-    EventsForSubsystem(subsystem, eventsForComponent.filter(_.events.nonEmpty))
-  }
+//  /**
+//   * Gets a list of system events for the given subsystem
+//   */
+//  def getEventsForSubsystem(subsystem: String, fitsKeyMap: FitsKeyMap): EventsForSubsystem = {
+//    val eventsForComponent = getPublishInfo(subsystem, None, fitsKeyMap).map { info =>
+//      // XXX TODO: Add p.description?
+//      EventsForComponent(info.componentName, info.publishes.filter(_.publishType == Events).map(p => Event(p.name)))
+//    }
+//    EventsForSubsystem(subsystem, eventsForComponent.filter(_.events.nonEmpty))
+//  }
 
-  /**
-   * Gets a list of all published system events by subsystem/component.
-   */
-  def getEventList(fitsKeyMap: FitsKeyMap): List[EventsForSubsystem] = {
-    getSubsystemNames.map(s => getEventsForSubsystem(s, fitsKeyMap)).filter(_.components.nonEmpty)
-  }
+//  /**
+//   * Gets a list of all published system events by subsystem/component.
+//   */
+//  def getEventList(fitsKeyMap: FitsKeyMap): List[EventsForSubsystem] = {
+//    getSubsystemNames.map(s => getEventsForSubsystem(s, fitsKeyMap)).filter(_.components.nonEmpty)
+//  }
 
 }

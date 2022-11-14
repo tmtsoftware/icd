@@ -10,7 +10,7 @@ object IcdModels {
   val doubleSize = 8
 
   // Used in case no array dimensions were specified
-  val defaultArrayDims = List(4)
+  val defaultArrayDims: List[Int] = List(4)
 
   // Can't know string size. Make a guess at the average size...
   val defaultStringSize = 80

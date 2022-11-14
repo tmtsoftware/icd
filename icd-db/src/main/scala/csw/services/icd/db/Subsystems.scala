@@ -24,6 +24,6 @@ object Subsystems {
    * Sorts the list of subsystems according to the order in subsystems.conf
    */
   def sorted(subsystems: List[String]): List[String] = {
-    subsystems.sortWith((s1, s2) => allSubsystems.indexOf(s1) < (allSubsystems.indexOf(s2)))
+    subsystems.sortWith((s1, s2) => allSubsystems.indexOf(s1) < allSubsystems.indexOf(s2))
   }
 }

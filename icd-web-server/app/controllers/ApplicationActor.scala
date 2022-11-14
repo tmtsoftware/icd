@@ -4,9 +4,23 @@ import csw.services.icd.db.IcdDb
 import play.api.libs.concurrent.ActorModule
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
-import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
-import icd.web.shared.IcdModels.{EventModel, IcdModel, ServicePath}
-import icd.web.shared.{AllEventList, ApiVersionInfo, ComponentInfo, DiffInfo, FitsDictionary, FitsKeyInfo, FitsTags, IcdName, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
+import icd.web.shared.IcdModels.{IcdModel, ServicePath}
+import icd.web.shared.{
+  ApiVersionInfo,
+  ComponentInfo,
+  DiffInfo,
+  FitsDictionary,
+  IcdName,
+  IcdVersionInfo,
+  IcdVizOptions,
+  PdfOptions,
+  PublishApiInfo,
+  PublishIcdInfo,
+  SubsystemInfo,
+  UnpublishApiInfo,
+  UnpublishIcdInfo,
+  VersionInfo
+}
 
 import scala.util.Try
 
@@ -14,11 +28,15 @@ import scala.util.Try
  * Use an actor to manage concurrent access to mutable cached data
  */
 object ApplicationActor extends ActorModule {
-  type Message = Messages
+//  type Message = Messages
   sealed trait Messages
   final case class GetSubsystemNames(replyTo: ActorRef[List[String]]) extends Messages
-  final case class GetSubsystemInfo(subsystem: String, maybeVersion: Option[String], component: Option[String], replyTo: ActorRef[Option[SubsystemInfo]])
-      extends Messages
+  final case class GetSubsystemInfo(
+      subsystem: String,
+      maybeVersion: Option[String],
+      component: Option[String],
+      replyTo: ActorRef[Option[SubsystemInfo]]
+  ) extends Messages
   final case class GetComponents(subsystem: String, maybeVersion: Option[String], replyTo: ActorRef[List[String]])
       extends Messages
   final case class GetComponentInfo(
@@ -29,7 +47,7 @@ object ApplicationActor extends ActorModule {
       clientApi: Option[Boolean],
       replyTo: ActorRef[List[ComponentInfo]]
   ) extends Messages
-  final case class GetEventList(replyTo: ActorRef[List[AllEventList.EventsForSubsystem]]) extends Messages
+//  final case class GetEventList(replyTo: ActorRef[List[AllEventList.EventsForSubsystem]]) extends Messages
   final case class GetIcdComponentInfo(
       subsystem: String,
       maybeVersion: Option[String],
@@ -146,9 +164,9 @@ object ApplicationActor extends ActorModule {
         case GetComponentInfo(subsystem, maybeVersion, maybeComponent, searchAll, clientApi, replyTo) =>
           replyTo ! app.getComponentInfo(subsystem, maybeVersion, maybeComponent, searchAll, clientApi)
           Behaviors.same
-        case GetEventList(replyTo) =>
-          replyTo ! app.getEventList
-          Behaviors.same
+//        case GetEventList(replyTo) =>
+//          replyTo ! app.getEventList
+//          Behaviors.same
         case GetIcdComponentInfo(
               subsystem,
               maybeVersion,

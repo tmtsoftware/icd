@@ -73,6 +73,7 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
     subsystemSelected(getSelectedSubsystem)
   }
 
+  //noinspection ScalaUnusedSymbol
   // called when a subsystem is selected
   private def onSubsystemSelected(e: dom.Event): Future[Unit] = {
     applySettings()

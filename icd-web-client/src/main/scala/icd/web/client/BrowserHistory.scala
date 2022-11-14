@@ -96,9 +96,9 @@ case class BrowserHistory(
     dom.window.history.pushState(json, dom.document.title, dom.document.documentURI)
   }
 
-  // Replaces the current application history state (Note that the title is ignored in some browsers)
-  def replaceState(): Unit = {
-    val json = Json.toJson(this).toString()
-    dom.window.history.replaceState(json, dom.document.title, dom.document.documentURI)
-  }
+//  // Replaces the current application history state (Note that the title is ignored in some browsers)
+//  def replaceState(): Unit = {
+//    val json = Json.toJson(this).toString()
+//    dom.window.history.replaceState(json, dom.document.title, dom.document.documentURI)
+//  }
 }

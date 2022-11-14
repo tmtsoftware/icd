@@ -91,6 +91,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
     input(`type` := "checkbox", cls := "form-check-input", disabled := true, onchange := clientApiCheckboxChanged() _).render
   }
 
+  //noinspection ScalaUnusedSymbol
   private def clientApiCheckboxChanged()(e: dom.Event): Unit = {
     val maybeTargetSv = targetSubsystem.getSubsystemWithVersion()
     searchAllCheckbox.disabled = maybeTargetSv.isDefined || !clientApi()
@@ -227,6 +228,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   }
 
   // Called when the Apply button is pressed
+  //noinspection ScalaUnusedSymbol
   private def apply()(e: dom.Event): Unit = applySettings()
 
   override def markup(): Element = {

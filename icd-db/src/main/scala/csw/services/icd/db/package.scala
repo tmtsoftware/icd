@@ -4,8 +4,8 @@ import java.io.File
 import scala.io.Source
 
 package object db {
-  // Make a prefix from a component
-  def makePrefix(subsystem: String, component: String): String = s"$subsystem.$component"
+//  // Make a prefix from a component
+//  def makePrefix(subsystem: String, component: String): String = s"$subsystem.$component"
 
   // Gets the contents of the file as a String
   def getFileContents(path: String): String = {

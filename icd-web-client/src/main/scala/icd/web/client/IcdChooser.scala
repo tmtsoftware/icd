@@ -72,12 +72,14 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
    */
   def isDefault: Boolean = icdItem.selectedIndex == 0
 
+  //noinspection ScalaUnusedSymbol
   // called when an ICD is selected
   private def icdSelected(e: dom.Event): Unit = {
     for (_ <- updateIcdVersionOptions())
       listener.icdSelected(getSelectedIcdVersion)
   }
 
+  //noinspection ScalaUnusedSymbol
   // called when an ICD version is selected
   private def icdVersionSelected(e: dom.Event): Unit = {
     listener.icdSelected(getSelectedIcdVersion)
@@ -108,7 +110,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
           }
         }
         catch {
-          case ex: Exception =>
+          case _: Exception =>
             None
         }
     }

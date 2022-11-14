@@ -1,18 +1,12 @@
-import com.typesafe.sbt.SbtNativePackager._
-import com.typesafe.sbt.jse.JsEngineImport.JsEngineKeys
 import com.typesafe.sbt.packager.Keys._
 import sbt.Keys._
 import sbt._
-
-//import scalariform.formatter.preferences._
-import com.typesafe.sbt.packager.docker._
 
 //noinspection TypeAnnotation
 // Defines the global build settings so they don't need to be edited everywhere
 object Settings {
 
   val commonSettings = Seq(
-//    organization := "org.tmt",
     organization := "com.github.tmtsoftware.icd",
     organizationName := "TMT",
     organizationHomepage := Some(url("http://www.tmt.org")),

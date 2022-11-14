@@ -27,7 +27,6 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
 
   // HTML for component
   private def componentLink(compName: String) = {
-    val compId = Components.getComponentInfoId(compName)
     a(
       cls := "list-group-item list-group-item-action",
       title := s"Scroll to $compName",

@@ -571,8 +571,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
   private def getModelsForComponents(
       allModelsList: List[IcdModels],
       sv: SubsystemWithVersion,
-      maybePdfOptions: Option[PdfOptions],
-      fitsKeyMap: FitsKeyMap
+      maybePdfOptions: Option[PdfOptions]
   ): List[IcdModels] = {
     sv.maybeComponent match {
       case None => allModelsList
@@ -603,7 +602,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
         fitsKeyMap
       )
     )
-    val icdModels = getModelsForComponents(allIcdModels, sv, maybePdfOptions, fitsKeyMap)
+    val icdModels = getModelsForComponents(allIcdModels, sv, maybePdfOptions)
     Resolver(allIcdModels).resolve(icdModels)
   }
 

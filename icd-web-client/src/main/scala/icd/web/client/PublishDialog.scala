@@ -444,6 +444,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
 
   // Called when the Publish (or Unpublish) button is pressed.
   // Here we just update some labels. The actual publishing is done after confirmation.
+  //noinspection ScalaUnusedSymbol
   private def publishButtonClicked(unpublish: Boolean)(e: dom.Event): Unit = {
     val checked = document.querySelectorAll("input[name='api']:checked")
     val enabled = checked.length == 1 || checked.length == 2
@@ -467,6 +468,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
   }
 
   // Called when the confirmation modal popup's Publish (Unpublish) button is pressed
+  //noinspection ScalaUnusedSymbol
   private def publishHandler(unpublish: Boolean)(e: dom.Event): Unit = {
     setPublishStatus("")
     val checked = document.querySelectorAll("input[name='api']:checked")
@@ -492,6 +494,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
   }
 
   // Called when the PublishApi button is pressed in the table for a given subsystem
+  //noinspection ScalaUnusedSymbol
   private def readyToPublishHandler(publishInfo: PublishInfo)(e: dom.Event): Unit = {
     // Check the subsystem checkbox, if not already
     val checkbox = document.querySelector(s"#${publishInfo.subsystem}Checkbox").asInstanceOf[Input]
@@ -618,6 +621,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
     )
   }
 
+  //noinspection ScalaUnusedSymbol
   private def checkGitHubCredentials(e: dom.Event): Unit = {
     val gitHubCredentials = GitHubCredentials(usernameBox.value, passwordBox.value)
     val f =

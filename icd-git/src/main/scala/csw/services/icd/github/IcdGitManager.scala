@@ -7,7 +7,6 @@ import csw.services.icd.{IcdValidator, PdfCache, Problem}
 import csw.services.icd.db.ApiVersions.ApiEntry
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.db.{ApiVersions, IcdDb, IcdDbDefaults, IcdVersionManager, IcdVersions, Subsystems}
-import csw.services.icd.fits.IcdFits
 import icd.web.shared.{ApiVersionInfo, GitHubCredentials, IcdVersion, IcdVersionInfo, PublishInfo, SubsystemWithVersion}
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib.ObjectId
@@ -689,7 +688,7 @@ object IcdGitManager {
     // For ingesting subsystems into the db, make ESW is first,
     // since it contains the predefined observe events that others depend on
     subsystems
-      .sortWith((x, y) => x.subsystem == "ESW")
+      .sortWith((x, _) => x.subsystem == "ESW")
       .foreach(ingest(db, _, feedback, allApiVersions))
     importIcdFiles(db, subsystems, feedback, allIcdVersions)
   }

@@ -20,7 +20,7 @@ object IcdToPdf {
   // Adds page number to al the pages except the first.
   private case class PageStamper(showLogo: Boolean) extends IEventHandler {
 
-    def addLogo(pageSize: Rectangle, pdfCanvas: PdfCanvas, pdfDocument: PdfDocument): Unit = {
+    def addLogo(pageSize: Rectangle, pdfCanvas: PdfCanvas): Unit = {
       val url   = getClass.getClassLoader.getResource("tmt.png")
       val image = new Image(ImageDataFactory.create(url))
       val x     = pageSize.getLeft + pageSize.getWidth / 2 - image.getImageWidth / 2
@@ -46,7 +46,7 @@ object IcdToPdf {
 
         // Add the TMT logo on the first pageOFF
         if (showLogo && pageNumber == 1) {
-          addLogo(pageSize, pdfCanvas, pdfDocument)
+          addLogo(pageSize, pdfCanvas)
         }
       } catch {
         case e: Throwable => e.printStackTrace()

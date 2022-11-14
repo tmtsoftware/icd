@@ -5,22 +5,22 @@ import IcdVizOptions._
 
 object IcdVizOptions {
   // Allowed/default values for options
-  val allowedOmitTypes       = List("None", "HCD", "Assembly", "Sequencer", "Application")
-  val defaultOmit            = "None"
-  val graphLayouts           = List("dot", "fdp", "sfdp", "twopi", "neato", "circo", "patchwork")
-  val defaultLayout          = "dot"
-  val imageFormats           = List("PDF", "PNG", "SVG", "EPS")
-  val defaultImageFormat     = "PDF"
-  val overlapValues          = List("true", "false", "scale")
-  val defaultOverlap         = "scale"
-  val defaultShowPlot        = true
-  val defaultRatio           = 0.5
-  val defaultMissingEvents   = true
-  val defaultMissingCommands = false
-  val defaultEventLabels     = true
-  val defaultCommandLabels   = false
-  val defaultGroupSubsystems = true
-  val defaultUseSplines      = true
+  val allowedOmitTypes: List[String] = List("None", "HCD", "Assembly", "Sequencer", "Application")
+  val defaultOmit                    = "None"
+  val graphLayouts: List[String]     = List("dot", "fdp", "sfdp", "twopi", "neato", "circo", "patchwork")
+  val defaultLayout                  = "dot"
+  val imageFormats: List[String]     = List("PDF", "PNG", "SVG", "EPS")
+  val defaultImageFormat             = "PDF"
+  val overlapValues: List[String]    = List("true", "false", "scale")
+  val defaultOverlap                 = "scale"
+  val defaultShowPlot                = true
+  val defaultRatio                   = 0.5
+  val defaultMissingEvents           = true
+  val defaultMissingCommands         = false
+  val defaultEventLabels             = true
+  val defaultCommandLabels           = false
+  val defaultGroupSubsystems         = true
+  val defaultUseSplines              = true
 }
 
 /**

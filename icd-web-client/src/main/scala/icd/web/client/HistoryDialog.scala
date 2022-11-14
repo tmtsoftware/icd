@@ -59,6 +59,7 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
   // Displays the diff of two versions
   private val diffDiv = div(id := "versionDiff", style := "padding-bottom: 20px").render
 
+  //noinspection ScalaUnusedSymbol
   // Called when the Compare button is pressed
   private def compareHandler(subsystem: String)(e: dom.Event): Unit = {
     val checked = document.querySelectorAll("input[name='version']:checked").toList
@@ -146,6 +147,7 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
     ).render
   }
 
+  //noinspection ScalaUnusedSymbol
   // Called when one of the version checkboxes is clicked to update the enabled state of the compare
   // button when exactly two items are selected
   private def checkboxListener(compButton: Button)(e: dom.Event): Unit = {

@@ -48,7 +48,7 @@ object IcdViz extends App {
 
     opt[Double]("ratio") valueName "<ratio>" action { (x, c) =>
       c.copy(ratio = x)
-    } text s"Image aspect ratio (y/x) (default=${defaultRatio})"
+    } text s"Image aspect ratio (y/x) (default=$defaultRatio)"
 
     opt[Boolean]("missingevents") action { (x, c) =>
       c.copy(missingEvents = x)
@@ -56,11 +56,11 @@ object IcdViz extends App {
 
     opt[Boolean]("missingcommands") action { (x, c) =>
       c.copy(missingCommands = x)
-    } text s"Plot missing commands (default=${defaultMissingCommands})"
+    } text s"Plot missing commands (default=$defaultMissingCommands)"
 
     opt[Boolean]("commandlabels") action { (x, c) =>
       c.copy(commandLabels = x)
-    } text s"Plot command labels (default=${defaultCommandLabels})"
+    } text s"Plot command labels (default=$defaultCommandLabels)"
 
     opt[Boolean]("eventlabels") action { (x, c) =>
       c.copy(eventLabels = x)
@@ -76,11 +76,11 @@ object IcdViz extends App {
 
     opt[String]("overlap") valueName s"one of ${overlapValues.mkString(", ")}" action { (x, c) =>
       c.copy(overlap = x)
-    } text s"Node overlap handling (default=${defaultOverlap})"
+    } text s"Node overlap handling (default=$defaultOverlap)"
 
     opt[Boolean]("splines") action { (x, c) =>
       c.copy(splines = x)
-    } text s"Use splines for edges? (default=${defaultUseSplines})"
+    } text s"Use splines for edges? (default=$defaultUseSplines)"
 
     opt[String]("omittypes") action { (x, c) =>
       c.copy(omitTypes = x.split(',').toList .filter(_ != "None"))

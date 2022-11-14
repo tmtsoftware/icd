@@ -9,7 +9,7 @@ GET         /                                           controllers.Application.
 GET         /subsystems                                 controllers.Application.subsystemNames
 
 # Gets a list of all system events by subsystem/component (for latest subsystem versions)
-GET         /eventList                                  controllers.Application.eventList()
+#GET         /eventList                                  controllers.Application.eventList()
 
 # Gets information about the given event
 #GET         /eventInfo/:subsystem/:component/:event     controllers.Application.eventInfo(subsystem, component, event)

@@ -68,7 +68,7 @@ class ArchivedItemsTest extends AnyFunSuite {
               assert(m.totalSizeInBytes == 237)
               assert(!m.archive)
               assert(m.totalArchiveSpacePerYear.isEmpty)
-            case x =>
+            case _ =>
           }
         }
       }

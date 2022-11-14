@@ -46,6 +46,7 @@ object HtmlMarkup extends Extensions {
     s.stripMargin.linesIterator.toList.map(_.trim).mkString("\n")
   }
 
+  //noinspection ScalaUnusedSymbol
   // Returns an HTML image tag for the given latex formula
   // TODO: Could cache image string, but needs to take pdfOptions into account
   private def renderFormula(latex: String, inline: Boolean, maybePdfOptions: Option[PdfOptions]): String = {
@@ -178,24 +179,24 @@ object HtmlMarkup extends Extensions {
       }
   }
 
-  /**
-   * Returns an HTML paragraph for the text (assumes markdown content was already converted to HTML)
-   */
-  def mkParagraph(text: String) = div(raw(text))
-
-  /**
-   * Returns an HTML paragraph containing the markup
-   */
-  def mkParagraph(markup: TypedTag[String]) = p(markup)
-
-  /**
-   * Returns an HTML paragraph for the given markup and text
-   */
-  def mkParagraph(markup: TypedTag[String], text: String) = div(markup, text)
-
-  def bold(text: String) = strong(text)
-
-  def italic(text: String) = em(text)
+//  /**
+//   * Returns an HTML paragraph for the text (assumes markdown content was already converted to HTML)
+//   */
+//  def mkParagraph(text: String) = div(raw(text))
+//
+//  /**
+//   * Returns an HTML paragraph containing the markup
+//   */
+//  def mkParagraph(markup: TypedTag[String]) = p(markup)
+//
+//  /**
+//   * Returns an HTML paragraph for the given markup and text
+//   */
+//  def mkParagraph(markup: TypedTag[String], text: String) = div(markup, text)
+//
+//  def bold(text: String) = strong(text)
+//
+//  def italic(text: String) = em(text)
 
   def yesNo(b: Boolean): String = if (b) "yes" else "no"
 
@@ -253,8 +254,8 @@ object HtmlMarkup extends Extensions {
     }
   }
 
-  /**
-   * Returns an HTML list of items
-   */
-  def mkList(list: List[String]) = ul(list.map(li(_)))
+//  /**
+//   * Returns an HTML list of items
+//   */
+//  def mkList(list: List[String]) = ul(list.map(li(_)))
 }

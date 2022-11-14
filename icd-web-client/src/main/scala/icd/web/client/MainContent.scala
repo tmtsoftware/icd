@@ -57,16 +57,16 @@ case class MainContent() extends Displayable {
     setDescription(maybeDescription.getOrElse(""))
   }
 
-  /**
-   * Gets the title of the page (excluding the subtitle, if there is one)
-   */
-  def getTitle: String = {
-    val s = contentTitle.innerHTML
-    s.indexOf("<br>") match {
-      case -1 => s
-      case n  => s.substring(0, n)
-    }
-  }
+//  /**
+//   * Gets the title of the page (excluding the subtitle, if there is one)
+//   */
+//  def getTitle: String = {
+//    val s = contentTitle.innerHTML
+//    s.indexOf("<br>") match {
+//      case -1 => s
+//      case n  => s.substring(0, n)
+//    }
+//  }
 
   /**
    * Sets the optional description text below the title
@@ -75,10 +75,10 @@ case class MainContent() extends Displayable {
     contentDescription.innerHTML = s
   }
 
-  /**
-   * Gets the description being displayed
-   */
-  def getDescription: String = contentDescription.innerHTML
+//  /**
+//   * Gets the description being displayed
+//   */
+//  def getDescription: String = contentDescription.innerHTML
 
   /**
    * Clear out the title and content
@@ -90,10 +90,10 @@ case class MainContent() extends Displayable {
    */
   def appendElement(element: Element): Unit = contentDiv.appendChild(element)
 
-  /**
-   * Removes the element from the content
-   */
-  def removeElement(element: Element): Unit = contentDiv.removeChild(element)
+//  /**
+//   * Removes the element from the content
+//   */
+//  def removeElement(element: Element): Unit = contentDiv.removeChild(element)
 
   /**
    * Replace the old element with the new one
@@ -104,6 +104,7 @@ case class MainContent() extends Displayable {
    * Displays an error message for the exception
    */
   def displayInternalError(ex: Throwable): Unit = {
+    ex.printStackTrace()
     setContent(errorDiv("Internal error: See server log file for more information."), "Internal Error")
   }
 
@@ -114,12 +115,12 @@ case class MainContent() extends Displayable {
     setContent(errorDiv(s"Internal error. $s"), "Internal Error")
   }
 
-  /**
-   * Scroll the title to the top
-   */
-  def scrollToTop(): Unit = {
-    contentTitle.scrollTop = 0
-  }
+//  /**
+//   * Scroll the title to the top
+//   */
+//  def scrollToTop(): Unit = {
+//    contentTitle.scrollTop = 0
+//  }
 
   override def markup(): Element = {
     import scalacss.ScalatagsCss._

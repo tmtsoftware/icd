@@ -324,7 +324,7 @@ case class IcdDbPrinter(
         val out = new ByteArrayOutputStream()
         IcdToPdf.saveAsPdf(out, html, showLogo = true, pdfOptions)
         val bytes = out.toByteArray
-        maybeCache.foreach(_.saveIcd(sv, targetSv, pdfOptions, searchAllSubsystems, bytes))
+        maybeCache.foreach(_.saveIcd(sv, targetSv, pdfOptions, bytes))
         bytes
       }
   }

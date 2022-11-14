@@ -132,12 +132,11 @@ class PdfCache(cacheDir: File) {
     else None
   }
 
-  // Saves the PDF data for the ICD between the given subsyetem versions
+  // Saves the PDF data for the ICD between the given subsystem versions
   def saveIcd(
       sv: SubsystemWithVersion,
       targetSv: SubsystemWithVersion,
       pdfOptions: PdfOptions,
-      searchAllSubsystems: Boolean,
       data: Array[Byte]
   ): Unit = {
     if (useCache(sv, targetSv, pdfOptions)) {
@@ -167,7 +166,7 @@ class PdfCache(cacheDir: File) {
     if (doIt) {
       val data = Files.readAllBytes(file.toPath)
       if (maybeTargetSv.isDefined)
-        saveIcd(sv, maybeTargetSv.get, pdfOptions, searchAllSubsystems, data)
+        saveIcd(sv, maybeTargetSv.get, pdfOptions, data)
       else
         saveApi(sv, pdfOptions, searchAllSubsystems, clientApi, data)
     }
@@ -181,12 +180,10 @@ class PdfCache(cacheDir: File) {
         fontSizes.foreach { fs =>
           lineHeights.foreach { lh =>
             paperSizes.foreach { ps =>
-              List(true, false).foreach { clientApi =>
-                val pdfOptions = PdfOptions(orient, fs, lh, ps, details = true, Nil, processMarkdown = false, documentNumber = "")
-                val file       = getFile(sv, pdfOptions)
-                if (file.exists())
-                  file.delete()
-              }
+              val pdfOptions = PdfOptions(orient, fs, lh, ps, details = true, Nil, processMarkdown = false, documentNumber = "")
+              val file       = getFile(sv, pdfOptions)
+              if (file.exists())
+                file.delete()
             }
           }
         }

@@ -91,12 +91,14 @@ case class Subsystem(
     componentItem.disabled = !enabled
   }
 
+  //noinspection ScalaUnusedSymbol
   // called when a subsystem is selected
   private def subsystemSelected(e: dom.Event): Unit = {
     for (_ <- updateSubsystemVersionOptions())
       listener.subsystemSelected(getSubsystemWithVersion(subsystemOnly = true))
   }
 
+  //noinspection ScalaUnusedSymbol
   // called when a subsystem version is selected
   private def subsystemVersionSelected(e: dom.Event): Unit = {
     listener.subsystemSelected(getSubsystemWithVersion())
@@ -141,12 +143,12 @@ case class Subsystem(
     items.drop(1).map(_.value)
   }
 
-  /**
-   * Gets the list of component names being displayed
-   */
-  def getComponents: List[String] = {
-    componentItem.options.toList.drop(1).map(_.value)
-  }
+//  /**
+//   * Gets the list of component names being displayed
+//   */
+//  def getComponents: List[String] = {
+//    componentItem.options.toList.drop(1).map(_.value)
+//  }
 
   /**
    * Gets the currently selected subsystem version (None for latest version)
@@ -235,26 +237,26 @@ case class Subsystem(
     }
   }
 
-  /**
-   * Sets the selected subsystem version.
-   *
-   * @return a future indicating when any event handlers have completed
-   */
-  def setSelectedSubsystemVersion(
-      maybeVersion: Option[String]
-  ): Future[Unit] = {
-    if (maybeVersion == getSelectedSubsystemVersion) {
-      Future.successful(())
-    } else {
-      maybeVersion match {
-        case Some(s) =>
-          versionItem.value = s
-        case None    =>
-          versionItem.value = unpublishedVersion
-      }
-      listener.subsystemSelected(getSubsystemWithVersion(), findMatchingIcd = false)
-    }
-  }
+//  /**
+//   * Sets the selected subsystem version.
+//   *
+//   * @return a future indicating when any event handlers have completed
+//   */
+//  def setSelectedSubsystemVersion(
+//      maybeVersion: Option[String]
+//  ): Future[Unit] = {
+//    if (maybeVersion == getSelectedSubsystemVersion) {
+//      Future.successful(())
+//    } else {
+//      maybeVersion match {
+//        case Some(s) =>
+//          versionItem.value = s
+//        case None    =>
+//          versionItem.value = unpublishedVersion
+//      }
+//      listener.subsystemSelected(getSubsystemWithVersion(), findMatchingIcd = false)
+//    }
+//  }
 
   /**
    * Sets the selected subsystem component.

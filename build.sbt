@@ -9,6 +9,7 @@ def toPathMapping(f: File): (File, String)       = f          -> f.getName
 // SCALAJS_PROD is set in install.sh to enable fully optimized JavaScript
 val optStage = if (sys.env.contains("SCALAJS_PROD")) FullOptStage else FastOptStage
 
+//noinspection ScalaUnusedSymbol
 // Root of the multi-project build
 lazy val root = (project in file("."))
   .aggregate(icdWebSharedJvm, `icd-db`, `icd-git`, `icd-viz`, icdWebServer, icdWebSharedJvm)
@@ -24,6 +25,7 @@ lazy val `icd-db` = project
         akkaActorTyped,
         akkaActor,
         akkaStream,
+        akkaSerializationJackson,
         jacksonModuleScala,
         reactivemongo,
         sjsonnet,

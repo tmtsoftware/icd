@@ -11,7 +11,6 @@ import csw.services.icd.github.IcdGitManager
 import csw.services.icd.html.OpenApiToHtml
 import csw.services.icd.viz.IcdVizManager
 import diffson.playJson.DiffsonProtocol
-import icd.web.shared.AllEventList.EventsForSubsystem
 import icd.web.shared.IcdModels.{IcdModel, ServicePath}
 import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, FitsDictionary, FitsTags, IcdName, IcdVersion, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, SubsystemWithVersion, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
 import play.api.libs.json.Json
@@ -128,21 +127,21 @@ class ApplicationImpl(db: IcdDb) {
     }
   }
 
-  /**
-   * Gets a list of all published events by subsystem/component
-   * (assumes latest versions of all subsystems).
-   */
-  def getEventList: List[EventsForSubsystem] = {
-    try {
-      val fitsKeyMap = IcdFits(db).getFitsKeyMap()
-      val query = new CachedIcdDbQuery(db.db, db.admin, None, None, fitsKeyMap)
-      query.getEventList(fitsKeyMap)
-    } catch {
-      case ex: Exception =>
-        log.error("Failed to get list of events", ex)
-        Nil
-    }
-  }
+//  /**
+//   * Gets a list of all published events by subsystem/component
+//   * (assumes latest versions of all subsystems).
+//   */
+//  def getEventList: List[EventsForSubsystem] = {
+//    try {
+//      val fitsKeyMap = IcdFits(db).getFitsKeyMap()
+//      val query = new CachedIcdDbQuery(db.db, db.admin, None, None, fitsKeyMap)
+//      query.getEventList(fitsKeyMap)
+//    } catch {
+//      case ex: Exception =>
+//        log.error("Failed to get list of events", ex)
+//        Nil
+//    }
+//  }
 
 //  /**
 //   * Gets information about the given event in the given subsystem/component

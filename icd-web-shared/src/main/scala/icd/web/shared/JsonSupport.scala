@@ -1,7 +1,6 @@
 package icd.web.shared
 
 import icd.web.shared.ComponentInfo._
-import icd.web.shared.AllEventList.{Event, EventsForComponent, EventsForSubsystem}
 import icd.web.shared.IcdModels.{IcdModel, _}
 import icd.web.shared.SharedUtils.Credentials
 import play.api.libs.json._
@@ -82,9 +81,6 @@ object JsonSupport {
   implicit val publishIcdInfoFormat        = Json.format[PublishIcdInfo]
   implicit val unpublishApiInfoFormat      = Json.format[UnpublishApiInfo]
   implicit val unpublishIcdInfoFormat      = Json.format[UnpublishIcdInfo]
-  implicit val eventFormat                 = Json.format[Event]
-  implicit val eventsForComponentFormat    = Json.format[EventsForComponent]
-  implicit val eventsForSubsystemFormat    = Json.format[EventsForSubsystem]
   implicit val icdModelFormat              = Json.format[IcdModel]
   implicit val servicePathFormat           = Json.format[ServicePath]
   implicit val serviceModelClientFormat    = Json.format[ServiceModelClient]

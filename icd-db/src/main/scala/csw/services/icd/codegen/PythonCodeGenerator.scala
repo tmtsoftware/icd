@@ -150,7 +150,7 @@ class PythonCodeGenerator(db: IcdDb) {
       .replace("TEST2", "CSW")
       .replace("TEST", "CSW")},
       '${info.componentModel.component.replace("-", "_")}')"""
-    val prefix = s"${indent2}prefix = ${prefixArg}"
+    val prefix = s"${indent2}prefix = $prefixArg"
     val eventKeys = info.publishes.toList.flatMap { p =>
       val events        = p.eventList.map(e => eventsDefs(e, "Event", prefixArg))
       val currentStates = p.currentStateList.map(e => eventsDefs(e, "CurrentState", prefixArg))
@@ -221,7 +221,7 @@ class PythonCodeGenerator(db: IcdDb) {
       s"black ${maybeFile.getOrElse(sourceFile)}".!
     }
     catch {
-      case ex: Exception => println("Warning: Python formatting failed: Make sure you have 'black' installed.")
+      case _: Exception => println("Warning: Python formatting failed: Make sure you have 'black' installed.")
     }
 
   }

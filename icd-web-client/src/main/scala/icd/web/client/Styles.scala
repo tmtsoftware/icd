@@ -69,17 +69,17 @@ object Styles extends StyleSheet.Inline {
     margin(1 em, 0 em)
   )
 
-  val versionHistory = style(
-    position.absolute,
-    overflowY.auto,
-    left(0 px),
-    bottom(0 px),
-    width(100 %%),
-    height(15 %%),
-    backgroundColor(c"#f5f5f5"),
-    padding(5 px, 10 px, 0 px, 10 px),
-    borderTop(1 px, solid, gray)
-  )
+//  val versionHistory = style(
+//    position.absolute,
+//    overflowY.auto,
+//    left(0 px),
+//    bottom(0 px),
+//    width(100 %%),
+//    height(15 %%),
+//    backgroundColor(c"#f5f5f5"),
+//    padding(5 px, 10 px, 0 px, 10 px),
+//    borderTop(1 px, solid, gray)
+//  )
 
   val component = style(
     addClassName("container-fluid"),
