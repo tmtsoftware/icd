@@ -939,7 +939,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                       a(id := idStr, name := idStr)(rc.name)
                     )
                   ),
-                  // XXX TODO: Make link to command description page with details
                   td(raw(rc.description)),
                   if (clientApi) td(p(r.senders.distinct.map(makeLinkForComponent))) else span
                 ),
@@ -980,7 +979,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                 Styles.attributeCell,
                 p(btn, a(id := idStr, name := idStr)(s.name))
               ),
-              // XXX TODO: Make link to command description page with details
               td(raw(r.description)),
               td(p(s.receiver.map(makeLinkForComponent)))
             ),

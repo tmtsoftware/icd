@@ -333,11 +333,6 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
       .map { text =>
         Json.fromJson[Array[IcdVersionInfo]](Json.parse(text)).map(_.toList).getOrElse(Nil)
       }
-      //      .recover {
-      //        case ex =>
-      //          ex.printStackTrace() // XXX TODO
-      //          Nil
-      //      }
       .map(list => list.map(_.icdVersion))
   }
 
