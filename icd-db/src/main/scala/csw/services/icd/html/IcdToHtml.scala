@@ -518,8 +518,7 @@ object IcdToHtml {
             }
             else
               div(
-                // XXX TODO: Need an extra description field?
-                p(s"Details of the ${m.name} HTTP service are not included.")
+                p(m.description)
               )
           )
         }
