@@ -127,16 +127,22 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
   // Finds all button items with aria-expanded=true, then gets the "name" attr of the following "a" element.
   // Returns list of ids for expanded rows.
   private def getExpandedIds: List[String] = {
-    Array
-      .from(document.querySelectorAll("[aria-expanded]"))
-      .flatMap { el =>
-        val attr = el.attributes.getNamedItem("aria-expanded")
-        if (attr.value == "true" && el.nodeName.equalsIgnoreCase("button")) {
-          Some(el.parentNode.lastChild.attributes.getNamedItem("name").value)
+    try {
+      Array
+        .from(document.querySelectorAll("[aria-expanded]"))
+        .flatMap { el =>
+          val attr = el.attributes.getNamedItem("aria-expanded")
+          if (attr.value == "true" && el.nodeName.equalsIgnoreCase("button")) {
+            Some(el.parentNode.lastChild.attributes.getNamedItem("id").value)
+          }
+          else None
         }
-        else None
-      }
-      .toList
+        .toList
+    } catch {
+      case ex: Exception =>
+        ex.printStackTrace()
+        Nil
+    }
   }
 
   // Makes the popup with options for generating the PDF
