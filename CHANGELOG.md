@@ -7,6 +7,7 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 
 - Fixed scrollbar display in web app (was too thin or not visible)
 - Fixed issue generating PDFs with the option selected: "Include only the details that are expanded in the HTML view"
+- Display subscriber info in summary table if option "Include client API information" is selected, but not for ICDs
 - Updated dependencies, code cleanup
 
 ## [ICD v2.2.1] - 2022-11-11
