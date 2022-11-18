@@ -12,7 +12,7 @@ See also the [Graphviz](https://graphviz.org/doc/info/attrs.html) documentation 
 ## Usage
 
 ```
-icd-viz 2.2.1
+icd-viz 2.2.2
 Usage: icd-viz [options]
 
   -d, --db <name>          The name of the database to use (default: icds4)

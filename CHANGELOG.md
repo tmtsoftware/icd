@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
-## [ICD v2.2.2] - 2022-
+## [ICD v2.2.2] - 2022-11-18
 
 - Fixed scrollbar display in web app (was too thin or not visible)
 - Fixed issue generating PDFs with the option selected: "Include only the details that are expanded in the HTML view"
