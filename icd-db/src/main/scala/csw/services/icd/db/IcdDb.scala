@@ -9,6 +9,7 @@ import csw.services.icd.db.ComponentDataReporter._
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.fits.IcdFits
 import diffson.playJson.DiffsonProtocol
+import icd.web.shared.IcdModels.{EventModel, ImageModel, ReceiveCommandModel}
 import icd.web.shared.{BuildInfo, PdfOptions, SubsystemWithVersion}
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
@@ -445,8 +446,11 @@ case class IcdDb(
   val versionManager: IcdVersionManager = IcdVersionManager(query)
   val manager: IcdDbManager             = IcdDbManager(db, versionManager)
 
+  // Returns list of duplicates in given list
+  private def getDuplicates(list: List[String]) = list.groupBy(identity).collect { case (x, List(_, _, _*)) => x }.toList
+
   // Check for duplicate component names
-  def checkForDuplicateComponentNames(list: List[StdConfig]): List[String] = {
+  private def checkForDuplicateComponentNames(list: List[StdConfig]): List[String] = {
     val components = list.flatMap {
       case x if x.stdName.isComponentModel =>
         val subsystem = x.config.getString("subsystem")
@@ -454,23 +458,71 @@ case class IcdDb(
         Some(s"$subsystem.$component")
       case _ => None
     }
-    components.groupBy(identity).collect { case (x, List(_, _, _*)) => x }.toList
+    getDuplicates(components)
   }
 
   // Check for misspelled subsystem or component names
-  def checkForWrongComponentNames(list: List[StdConfig]): List[String] = {
+  private def checkForWrongComponentNames(list: List[StdConfig]): List[String] = {
     // get pairs of (dir -> subsystem.component) and check if there are directories that contain
     // multiple different values (should all be the same)
     val pairs = list.flatMap {
       case x if x.stdName.hasComponent =>
-        val dir = new File(x.fileName).getParent
+        val dir       = new File(x.fileName).getParent
         val subsystem = x.config.getString("subsystem")
         val component = x.config.getString("component")
         Some(dir -> s"$subsystem.$component")
       case _ => None
     }
-    val map = pairs.groupBy(_._1).map { case (k,v) => (k,v.map(_._2))}
+    val map = pairs.groupBy(_._1).map { case (k, v) => (k, v.map(_._2)) }
     map.values.toList.map(_.distinct).filter(_.size != 1).map(_.mkString(" != "))
+  }
+
+  // Check for obvious errors, such as duplicate event or parameter names after ingesting model files for subsystem
+  private def checkPostIngest(subsystem: String): List[Problem] = {
+    def getEventProblems(prefix: String, events: List[EventModel], name: String): List[Problem] = {
+      val p1 = getDuplicates(events.map(_.name)).map(s => Problem("error", s"Duplicate $name name: '$s''"))
+      val p2 = events.flatMap(event =>
+        getDuplicates(event.parameterList.map(_.name))
+          .map(s => Problem("error", s"Duplicate parameter name '$s' in $name '$prefix.${event.name}''"))
+      )
+      p1 ::: p2
+    }
+
+    def getImageProblems(prefix: String, images: List[ImageModel]): List[Problem] = {
+      val p1 = getDuplicates(images.map(_.name)).map(s => Problem("error", s"Duplicate image name: '$s''"))
+      val p2 = images.flatMap(image =>
+        getDuplicates(image.metadataList.map(_.name))
+          .map(s => Problem("error", s"Duplicate metadata name '$s' in image: '$prefix.${image.name}''"))
+      )
+      p1 ::: p2
+    }
+
+    def getCommandProblems(prefix: String, commands: List[ReceiveCommandModel]): List[Problem] = {
+      val p1 = getDuplicates(commands.map(_.name)).map(s => Problem("error", s"Duplicate command name: '$s''"))
+      val p2 = commands.flatMap(command =>
+        getDuplicates(command.parameters.map(_.name))
+          .map(s => Problem("error", s"Duplicate parameter name '$s' in command '$prefix.${command.name}''"))
+      )
+      p1 ::: p2
+    }
+
+    val sv = SubsystemWithVersion(subsystem, None, None)
+    versionManager
+      .getResolvedModels(sv, None, Map.empty)
+      .flatMap { icdModels =>
+        val publishProblems = icdModels.publishModel.toList.flatMap { publishModel =>
+          val prefix = s"${publishModel.subsystem}.${publishModel.component}"
+          getEventProblems(prefix, publishModel.eventList, "event") :::
+          getEventProblems(prefix, publishModel.currentStateList, "current state") :::
+          getImageProblems(prefix, publishModel.imageList)
+        }
+        val commandProblems = icdModels.commandModel.toList.flatMap { commandModel =>
+        val prefix = s"${commandModel.subsystem}.${commandModel.component}"
+          getCommandProblems(prefix, commandModel.receive)
+        }
+        publishProblems ::: commandProblems
+      }
+
   }
 
   /**
@@ -484,29 +536,37 @@ case class IcdDb(
    * @return a pair of two lists: 1: A list of the configs in the directories, 2: A list describing any problems that occurred
    */
   def ingestAndCleanup(dir: File = new File(".")): List[Problem] = {
-    val (configs, problems) = ingest(dir)
-    val subsystemList       = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.config.getString("subsystem"))
+    val (configs, ingestProblems) = ingest(dir)
+    val subsystemList             = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.config.getString("subsystem"))
 
     // Check for duplicate subsystem-model.conf file (found one in TCS)
     val duplicateSubsystems = subsystemList.diff(subsystemList.toSet.toList)
     val duplicateComponents = checkForDuplicateComponentNames(configs)
-    val wrongComponents = checkForWrongComponentNames(configs)
+    val wrongComponents     = checkForWrongComponentNames(configs)
+    val duplicateSubsystemProblems =
+      if (duplicateSubsystems.nonEmpty)
+        List(Problem("error", s"Duplicate subsystem-model.conf found: ${duplicateSubsystems.mkString(", ")}"))
+      else Nil
 
-    if (duplicateSubsystems.nonEmpty) {
-      val dupFileList = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.fileName).mkString(", ")
-      Problem("error", s"Duplicate subsystem-model.conf found: $dupFileList") :: problems
-    }
-    else if (duplicateComponents.nonEmpty) {
-      Problem("error", s"Duplicate component names found: ${duplicateComponents.mkString(", ")}") :: problems
-    } else if (wrongComponents.nonEmpty) {
-      Problem("error", s"Conflicting component names found: ${wrongComponents.mkString(", ")}") :: problems
-    }
-    else {
-      if (subsystemList.isEmpty)
-        query.afterIngestFiles(problems, dbName)
-      else subsystemList.foreach(query.afterIngestSubsystem(_, problems, dbName))
-      problems
-    }
+    val duplicateComponentProblems =
+      if (duplicateComponents.nonEmpty)
+        List(Problem("error", s"Duplicate component names found: ${duplicateComponents.mkString(", ")}"))
+      else Nil
+
+    val wrongComponentProblems =
+      if (wrongComponents.nonEmpty)
+        List(Problem("error", s"Conflicting component names found: ${wrongComponents.mkString(", ")}"))
+      else Nil
+
+    val allProblems = ingestProblems ::: duplicateSubsystemProblems ::: duplicateComponentProblems ::: wrongComponentProblems
+
+    if (subsystemList.isEmpty)
+      query.afterIngestFiles(allProblems, dbName)
+    else subsystemList.foreach(query.afterIngestSubsystem(_, allProblems, dbName))
+
+    val postIngestProblems = subsystemList.flatMap(checkPostIngest)
+
+    allProblems ::: postIngestProblems
   }
 
   /**

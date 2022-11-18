@@ -3,12 +3,14 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
-## [ICD v2.2.2] - 2022-11-
+## [ICD v2.2.2] - 2022-
 
 - Fixed scrollbar display in web app (was too thin or not visible)
 - Fixed issue generating PDFs with the option selected: "Include only the details that are expanded in the HTML view"
 - Display subscriber info in summary table if option "Include client API information" is selected, but not for ICDs
 - Updated dependencies, code cleanup
+- Added additional validation checks for duplicate or incorrect component, event or command names when manually
+  ingesting subsystem model files
 
 ## [ICD v2.2.1] - 2022-11-11
 

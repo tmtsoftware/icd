@@ -185,7 +185,6 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       sv2 <- targetSubsystem.getSubsystemWithVersion()
       sv1 <- subsystem.getSubsystemWithVersion()
     } {
-      // XXX TODO FIXME: Use of futures...
       icdChooser.selectMatchingIcd(sv2, Some(sv1))
       val selectedSubsystemComponent       = subsystem.getSelectedComponent
       val selectedTargetSubsystemComponent = targetSubsystem.getSelectedComponent
