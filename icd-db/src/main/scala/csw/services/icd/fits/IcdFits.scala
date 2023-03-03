@@ -1,6 +1,6 @@
 package csw.services.icd.fits
 
-import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
+import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import csw.services.icd.db.{IcdDb, IcdDbDefaults}
 import icd.web.shared.{BuildInfo, FitsDictionary, FitsKeyInfo, FitsKeyInfoList, FitsSource, FitsTags, PdfOptions}
 import reactivemongo.api.bson.collection.BSONCollection
@@ -15,6 +15,8 @@ import json2bson._
 import java.io.{File, FileInputStream, FileOutputStream}
 import play.api.libs.json._
 import reactivemongo.api.bson.BSONDocument
+
+import scala.util.Try
 
 object IcdFitsDefs {
   val fitsKeyCollectionName = "fits.keys"
@@ -101,7 +103,7 @@ object IcdFits extends App {
       c.copy(list = true)
     } text "Prints the list of known FITS keywords"
 
-    opt[File]( "validate") valueName "<file>" action { (x, c) =>
+    opt[File]("validate") valueName "<file>" action { (x, c) =>
       c.copy(validate = Some(x))
     } text "Validates a JSON formatted file containing the FITS Keyword dictionary and prints out any errors"
 
@@ -183,8 +185,8 @@ object IcdFits extends App {
     if (options.list) icdFits.list(options.subsystem, options.component, options.tag, pdfOptions)
 
     options.validate.foreach(file => icdFits.validate(file).foreach(println))
-    options.ingestTags.foreach(icdFits.ingestTags)
-    options.ingest.foreach(icdFits.ingest)
+    options.ingestTags.foreach(file => icdFits.ingestTags(file).foreach(println))
+    options.ingest.foreach(file => icdFits.ingest(file).foreach(println))
 
     if (options.outputFile.nonEmpty) {
       icdFits.output(options.outputFile.get, options.subsystem, options.component, options.tag, pdfOptions)
@@ -202,13 +204,34 @@ case class IcdFits(db: IcdDb) {
   private val fitsKeyCollection = db.db.collection[BSONCollection](fitsKeyCollectionName)
   private val fitsTagCollection = db.db.collection[BSONCollection](fitsTagCollectionName)
 
-  def ingestTags(file: File): Unit = {
-    // XXX TODO: validate first?
-    val config = ConfigFactory.parseFile(file)
-    val jsObj  = Json.parse(IcdValidator.toJson(config)).as[JsObject]
-    fitsTagCollection.drop().await
-    fitsTagCollection.create().await
-    fitsTagCollection.insert.one(jsObj).await
+  def ingestTags(file: File): List[Problem] = {
+    // Check for duplicate keywords (duplicates must have different channels)
+    // Return an error for each duplicate
+    def checkDups(config: Config): List[Problem] = {
+      import scala.jdk.CollectionConverters._
+      val tags = config.root().entrySet().asScala.toList.map(_.getKey)
+      val keywords = tags.flatMap { tag =>
+        config.getStringList(s"$tag.keywords").asScala.toList
+      }
+      keywords.groupBy(identity)
+        .collect {
+          case (x, List(_, _, _*)) => x
+        }
+        .toList
+        .sorted
+        .map(k => Problem("error", s"Duplicate FITS keyword/channel combination: keyword: $k"))
+    }
+
+    val config   = ConfigFactory.parseFile(file)
+    val problems = Try(checkDups(config)).getOrElse(List(Problem("error", s"Error checking <tag>.keywords in $file")))
+    if (problems.nonEmpty) problems
+    else {
+      val jsObj = Json.parse(IcdValidator.toJson(config)).as[JsObject]
+      fitsTagCollection.drop().await
+      fitsTagCollection.create().await
+      fitsTagCollection.insert.one(jsObj).await
+      Nil
+    }
   }
 
   /**
@@ -217,7 +240,7 @@ case class IcdFits(db: IcdDb) {
   def validate(file: File): List[Problem] = {
     val inputStream = new FileInputStream(file)
     val jsObj       = Json.parse(inputStream).asInstanceOf[JsObject]
-    val problems = IcdValidator.validateFitsDictionary(jsObj.toString())
+    val problems    = IcdValidator.validateFitsDictionary(jsObj.toString())
     inputStream.close()
     problems
   }
@@ -246,7 +269,7 @@ case class IcdFits(db: IcdDb) {
     maybeFitsTags.getOrElse(FitsTags(Map.empty))
   }
 
-  def getFitsKeyInfo(maybePdfOptions: Option[PdfOptions] = None): List[FitsKeyInfo] = {
+  private def getFitsKeyInfo(maybePdfOptions: Option[PdfOptions] = None): List[FitsKeyInfo] = {
     val maybeFitsKeyDoc  = fitsKeyCollection.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await
     val maybeFitsKeyList = maybeFitsKeyDoc.map(FitsKeyInfoListBsonParser(_, maybePdfOptions))
     maybeFitsKeyList.getOrElse(Nil)
@@ -271,28 +294,32 @@ case class IcdFits(db: IcdDb) {
         )
       }
     }
+    val noTag = maybeTag.isEmpty || !fitsTags.tags.contains(maybeTag.get)
+
     // filter key list by tag
     val l2 =
-      if (maybeTag.isEmpty || !fitsTags.tags.contains(maybeTag.get))
-        l1
+      if (noTag) l1
       else {
         val tag = maybeTag.get
         l1.filter { fitsKey =>
           fitsKey.channels.map(_.name) match {
-            case List("") => fitsTags.tags(tag).contains(fitsKey.name)
-            case channels  => channels.exists(c => fitsTags.tags(tag).contains(s"${fitsKey.name}/$c"))
+            case List("") =>
+              fitsTags.tags(tag).exists(_.keyword == fitsKey.name)
+            case channels =>
+              channels.exists(c => fitsTags.tags(tag).exists(k => k.keyword == fitsKey.name && k.channel.contains(c)))
           }
         }
       }
 
     // remove any channels that do not match the selected tag's channel
     val l3 =
-      if (maybeTag.isEmpty || !fitsTags.tags.contains(maybeTag.get))
-        l2
+      if (noTag) l2
       else {
         val tag = maybeTag.get
         l2.map { fitsKey =>
-          val channels = fitsKey.channels.filter(c => c.name.isEmpty || fitsTags.tags(tag).contains(s"${fitsKey.name}/${c.name}"))
+          val channels = fitsKey.channels.filter(c =>
+            c.name.isEmpty || fitsTags.tags(tag).exists(k => k.keyword == fitsKey.name && k.channel.contains(c.name))
+          )
           fitsKey.copy(channels = channels)
         }
       }
@@ -332,28 +359,28 @@ case class IcdFits(db: IcdDb) {
   ): Unit = {
     import icd.web.shared.JsonSupport._
     val fitsDictionary = getFitsDictionary(maybeSubsystem, maybeComponent, maybeTag, Some(pdfOptions))
-    val fitsKeyList = fitsDictionary.fitsKeys
+    val fitsKeyList    = fitsDictionary.fitsKeys
     if (fitsKeyList.isEmpty) {
       println("No FITS keywords found")
     }
     else {
-      val fname           = file.getName.toLowerCase()
+      val fname = file.getName.toLowerCase()
       if (fname.endsWith(".html") || fname.endsWith(".pdf")) {
         IcdFitsPrinter(fitsDictionary).saveToFile(maybeTag, pdfOptions, file)
       }
       else if (fname.endsWith(".json")) {
         val fitsKeyInfoList = FitsKeyInfoList(fitsKeyList)
-        val out  = new FileOutputStream(file)
-        val json = Json.toJson(fitsKeyInfoList)
+        val out             = new FileOutputStream(file)
+        val json            = Json.toJson(fitsKeyInfoList)
         out.write(Json.prettyPrint(json).getBytes)
         out.close()
       }
       else if (fname.endsWith(".conf")) {
         val fitsKeyInfoList = FitsKeyInfoList(fitsKeyList)
-        val out     = new FileOutputStream(file)
-        val jsonStr = Json.prettyPrint(Json.toJson(fitsKeyInfoList))
-        val config  = ConfigFactory.parseString(jsonStr)
-        val opts    = ConfigRenderOptions.defaults().setComments(false).setOriginComments(false)
+        val out             = new FileOutputStream(file)
+        val jsonStr         = Json.prettyPrint(Json.toJson(fitsKeyInfoList))
+        val config          = ConfigFactory.parseString(jsonStr)
+        val opts            = ConfigRenderOptions.defaults().setComments(false).setOriginComments(false)
         out.write(config.root().render(opts).getBytes)
         out.close()
       }

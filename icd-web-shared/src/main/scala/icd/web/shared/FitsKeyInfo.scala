@@ -1,7 +1,19 @@
 package icd.web.shared
 
-// Holds a map from tag to list of FITS keywords
-case class FitsTags(tags: Map[String, List[String]])
+
+case class FitsKeywordAndChannel(keyword: String, channel: Option[String])
+object FitsKeywordAndChannel {
+  implicit def orderingByName[A <: FitsKeywordAndChannel]: Ordering[A] = Ordering.by(e => e.keyword + e.channel)
+}
+
+case class FitsKeyword(keyword: String, tag: String, channel: Option[String])
+object FitsKeyword {
+  implicit def orderingByName[A <: FitsKeyword]: Ordering[A] = Ordering.by(e => e.keyword + e.tag)
+}
+
+// tags: A map from tag to list of FITS keywords (or keyword/channel)
+//case class FitsTags(tags: Map[String, List[String]])
+case class FitsTags(tags: Map[String, List[FitsKeyword]])
 
 // Source parameter of the FITS keyword
 case class FitsSource(

@@ -587,10 +587,10 @@ case class IcdDb(
       }
       else Nil
       val fitsTagFile = new File(dmsDictDir, "FITS-Tags.conf")
-      if (fitsTagFile.exists()) {
+      val tagProblems = if (fitsTagFile.exists()) {
         icdFits.ingestTags(fitsTagFile)
-      }
-      fitsProblems
+      } else Nil
+      fitsProblems ::: tagProblems
     }
     else Nil
   }

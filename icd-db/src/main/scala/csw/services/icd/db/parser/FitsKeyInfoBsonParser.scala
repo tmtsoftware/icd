@@ -1,13 +1,53 @@
 package csw.services.icd.db.parser
 
 import csw.services.icd.html.HtmlMarkup
-import icd.web.shared.{FitsChannel, FitsKeyInfo, FitsSource, FitsTags, PdfOptions}
+import icd.web.shared.{FitsChannel, FitsKeyInfo, FitsKeyword, FitsSource, FitsTags, PdfOptions}
 import reactivemongo.api.bson._
 
+// keywords: A list of FITS keywords (or keyword/channel)
+// inherit: A list of tags whose keywords should also be included
+private case class FitsTagEntry(inherit: List[String], keywords: List[String])
+
+// Parses the value of one tag in FITS-Tags.conf
+private object FitsTagEntryBsonParser {
+  def apply(doc: BSONDocument): FitsTagEntry = {
+    val inherit  = doc.getAsOpt[Array[String]]("inherit").map(_.toList).getOrElse(Nil)
+    val keywords = doc.getAsOpt[Array[String]]("keywords").map(_.toList).getOrElse(Nil)
+    FitsTagEntry(inherit, keywords)
+  }
+}
+
+// Parses FITS-Tags.conf
 object FitsTagsBsonParser {
+  // For a key in the format key/channel or just key, return the key and optional channel
+  private def getKeyChannel(s: String): (String, Option[String]) = {
+    if (s.contains("/")) {
+      val a = s.split("/")
+      (a.head, Some(a.tail.head))
+    }
+    else (s, None)
+  }
+
   def apply(doc: BSONDocument): FitsTags = {
-    val map = doc.toMap.view.mapValues(_.asOpt[List[String]].getOrElse(Nil)).filterKeys(_ != "_id").toMap
-    FitsTags(map)
+    val docMap   = doc.toMap.view.filterKeys(_ != "_id").mapValues(_.asOpt[BSONDocument].get).toMap
+    val entryMap = docMap.map(p => (p._1, FitsTagEntryBsonParser(p._2)))
+    val tags = entryMap.view.map { pair =>
+      val tag   = pair._1
+      val entry = pair._2
+      //FitsKeyword
+      val inheritList = entry.inherit.flatMap { inheritTag =>
+        entryMap.get(inheritTag).toList.flatMap(_.keywords).map { s =>
+          val (key, maybeChannel) = getKeyChannel(s)
+          FitsKeyword(key, inheritTag, maybeChannel)
+        }
+      }
+      val keyList = entry.keywords.map { s =>
+        val (key, maybeChannel) = getKeyChannel(s)
+        FitsKeyword(key, tag, maybeChannel)
+      }
+      (tag, (inheritList ++ keyList).sorted)
+    }
+    FitsTags(tags.toMap)
   }
 }
 
@@ -36,7 +76,7 @@ object FitsChannelBsonParser {
 }
 
 object FitsKeyInfoBsonParser {
-  def getChannels(doc: BSONDocument): List[FitsChannel] = {
+  private def getChannels(doc: BSONDocument): List[FitsChannel] = {
     for (subDoc <- doc.getAsOpt[Array[BSONDocument]]("channel").map(_.toList).getOrElse(Nil))
       yield FitsChannelBsonParser(subDoc)
   }
@@ -45,7 +85,8 @@ object FitsKeyInfoBsonParser {
     // XXX TODO FIXME: Enforce non-null source or channel in json-schema and validate when importing
     val channels = {
       if (doc.contains("channel")) getChannels(doc)
-      else if (doc.contains("source")) List(FitsChannel(source = doc.getAsOpt[BSONDocument]("source").map(FitsSourceBsonParser(_)).get))
+      else if (doc.contains("source"))
+        List(FitsChannel(source = doc.getAsOpt[BSONDocument]("source").map(FitsSourceBsonParser(_)).get))
       else Nil
     }
     FitsKeyInfo(

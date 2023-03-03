@@ -286,7 +286,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       // since the code is shared with non-javascript code on the server side.
       val summaryTable1 =
         SummaryTable
-          .displaySummary(subsystemInfo, maybeTargetSubsystem, infoList, new HtmlHeadings, clientApi && !isIcd, displayTitle = true)
+          .displaySummary(
+            subsystemInfo,
+            maybeTargetSubsystem,
+            infoList,
+            new HtmlHeadings,
+            clientApi && !isIcd,
+            displayTitle = true
+          )
           .render
       val summaryTable2 =
         if (isIcd && subsystemInfo.sv != maybeTargetSubsystemInfo.get.sv)
@@ -307,7 +314,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       mainContent.appendElement(
         div(Styles.component, id := "Summary")(raw(summaryTable1), summaryTable2.map(raw).getOrElse(span())).render
       )
-      if (!isIcd && fitsDict.fitsKeys.nonEmpty) mainContent.appendElement(makeFitsKeyTable(fitsDict).render)
+      if (!isIcd && fitsDict.fitsKeys.nonEmpty) mainContent.appendElement(makeFitsKeyTable(fitsDict, sv).render)
       infoList.foreach(i => displayComponentInfo(i, !isIcd, clientApi))
       if (isIcd && subsystemInfo.sv != maybeTargetSubsystemInfo.get.sv)
         targetInfoList.foreach(i => displayComponentInfo(i, forApi = false, clientApi))
@@ -1237,7 +1244,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Generates table with related FITS key information
-  private def makeFitsKeyTable(fitsDict: FitsDictionary) = {
+  private def makeFitsKeyTable(fitsDict: FitsDictionary, sv: SubsystemWithVersion) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
     val fitsKeys = fitsDict.fitsKeys
@@ -1257,9 +1264,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         ),
         tbody(
           fitsKeys.map { fitsKey =>
-            val iList = fitsKey.channels.indices.toList
-            val zList = fitsKey.channels.zip(iList)
-
+            val channels = fitsKey.channels
+              .filter(c =>
+                sv.subsystem == c.source.subsystem && (sv.maybeComponent.isEmpty ||
+                  sv.maybeComponent.contains(c.source.componentName))
+              )
+            val iList = channels.indices.toList
+            val zList = channels.zip(iList)
             tr(
               td(a(id := fitsKey.name, name := fitsKey.name)(fitsKey.name)),
               td(raw(fitsKey.description)),

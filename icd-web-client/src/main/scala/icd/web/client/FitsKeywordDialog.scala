@@ -1,7 +1,7 @@
 package icd.web.client
 
 import icd.web.client.Components.ComponentListener
-import icd.web.shared.{FitsChannel, FitsDictionary, FitsKeyInfo, FitsSource}
+import icd.web.shared.{FitsChannel, FitsDictionary, FitsKeyInfo, FitsKeyword, FitsKeywordAndChannel, FitsSource}
 import org.scalajs.dom
 import org.scalajs.dom.{Element, HTMLInputElement, document}
 import scalatags.JsDom.all._
@@ -34,13 +34,14 @@ object FitsKeywordDialog {
 
 case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListener) extends Displayable {
   import FitsKeywordDialog._
-  import icd.web.shared.SharedUtils.MapInverter
 
   private val fitsTags = fitsDict.fitsTags
   private val fitsKeys = fitsDict.fitsKeys
 
-  // Map from FITS keyword to list of tags for that keyword
-  private val tagMap = fitsDict.fitsTags.tags.invert
+  // Map from FITS keyword and channel to the tag for that keyword/channel
+  private val tagMap = fitsDict.fitsTags.tags.view.values
+    .flatMap(_.map(f => (FitsKeywordAndChannel(f.keyword, f.channel), f.tag)))
+    .toMap
 
   // Action when user clicks on a component link
   private def clickedOnFitsSource(fitsSource: FitsSource)(e: dom.Event): Unit = {
@@ -56,13 +57,8 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
-    val maybeTag =
-      if (fitsChannel.name.isEmpty) {
-        tagMap.get(fitsKey.name)
-      }
-      else {
-        tagMap.get(s"${fitsKey.name}/${fitsChannel.name}")
-      }
+    val channel  = if (fitsChannel.name.isEmpty) None else Some(fitsChannel.name)
+    val maybeTag = tagMap.get(FitsKeywordAndChannel(fitsKey.name, channel))
 
     div(
       if (index != 0) hr(cls := fitsTagNameCls) else span(),
@@ -82,13 +78,6 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
   private def radioButtonListener(e: dom.Event): Unit = {
     val tag = getFitsTag
 
-    // Only show tag names if All is selected
-    val tagNameElems = document.querySelectorAll(s".$fitsTagNameCls")
-    if (tag == allTags)
-      tagNameElems.toList.foreach(showElement)
-    else
-      tagNameElems.toList.foreach(hideElement)
-
     // Set which rows are visible based on the selected tag
     fitsKeys.foreach { fitsKey =>
       val elem = document.querySelector(s"#${fitsKey.name}")
@@ -107,7 +96,7 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
           // Set which source links are visible based on the channel
           val channels = fitsKey.channels.map(_.name).filter(_.nonEmpty)
           channels.foreach { c =>
-            val showSource = fitsTags.tags(tag).contains(s"${fitsKey.name}/$c")
+            val showSource = fitsTags.tags(tag).contains(FitsKeyword(fitsKey.name, tag, Some(c)))
             val sourceElem = document.querySelector(s"#${fitsKey.name}-$c-source")
             if (showSource)
               showElement(sourceElem)
@@ -149,12 +138,17 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
   }
 
   // Gets the tags for the given FITS keyword
-  // XXX TODO FIXME: Use tagMap?
   private def getTags(fitsKey: FitsKeyInfo): List[String] = {
     fitsTags.tags.keys.toList.filter { tag =>
       fitsKey.channels.map(_.name) match {
-        case List("") => fitsTags.tags(tag).contains(fitsKey.name)
-        case channels => channels.exists(c => fitsTags.tags(tag).contains(s"${fitsKey.name}/$c"))
+        case List("") =>
+          fitsTags.tags(tag).exists(_.keyword == fitsKey.name)
+        case channels =>
+          channels.exists(c =>
+            fitsTags
+              .tags(tag)
+              .contains(FitsKeyword(fitsKey.name, tag, Some(c)))
+          )
       }
     }
   }

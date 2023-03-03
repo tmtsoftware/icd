@@ -49,18 +49,13 @@ object IcdToHtml {
       fitsChannel: FitsChannel,
       index: Int,
       withLinks: Boolean,
-      tagMap: Map[String, String]
+      tagMap: Map[FitsKeywordAndChannel, String]
   ) = {
     import scalatags.Text.all._
     val fitsSource = fitsChannel.source
+    val channel    = if (fitsChannel.name.nonEmpty) Some(fitsChannel.name) else None
     // Get tag for key
-    val maybeTag =
-      if (fitsChannel.name.isEmpty) {
-        tagMap.get(fitsKey.name)
-      }
-      else {
-        tagMap.get(s"${fitsKey.name}/${fitsChannel.name}")
-      }
+    val maybeTag = tagMap.get(FitsKeywordAndChannel(fitsKey.name, channel))
 
     div(
       if (index != 0) hr else span(),
@@ -98,10 +93,11 @@ object IcdToHtml {
       withLinks: Boolean = true
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
-    import icd.web.shared.SharedUtils.MapInverter
 
-    // Map from FITS keyword to list of tags for that keyword
-    val tagMap = if (maybeTag.isEmpty) fitsDictionary.fitsTags.tags.invert else Map.empty[String, String]
+    // Map from FITS keyword and channel to the tag for that keyword/channel
+    val tagMap = fitsDictionary.fitsTags.tags.view.values
+      .flatMap(_.map(f => (FitsKeywordAndChannel(f.keyword, f.channel), f.tag)))
+      .toMap
 
     def makeFitsTableRows() = {
       fitsDictionary.fitsKeys.map { fitsKey =>
