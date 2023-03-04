@@ -366,7 +366,7 @@ case class IcdFits(db: IcdDb) {
     else {
       val fname = file.getName.toLowerCase()
       if (fname.endsWith(".html") || fname.endsWith(".pdf")) {
-        IcdFitsPrinter(fitsDictionary).saveToFile(maybeTag, pdfOptions, file)
+        IcdFitsPrinter(fitsDictionary, maybeSubsystem, maybeComponent).saveToFile(maybeTag, pdfOptions, file)
       }
       else if (fname.endsWith(".json")) {
         val fitsKeyInfoList = FitsKeyInfoList(fitsKeyList)

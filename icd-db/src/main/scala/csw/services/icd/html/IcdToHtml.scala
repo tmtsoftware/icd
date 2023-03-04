@@ -84,13 +84,19 @@ object IcdToHtml {
    * @param maybeTag if defined, list is restricted to tag
    * @param fitsDictionary fits keywords and tags
    * @param nh used for headings
+   * @param titleStr title for table
    * @param withLinks if true, include links to event parameters for key sources
+   * @param maybeSubsystem optional subsystem (restrict channels)
+   * @param maybeComponent optional component (restrict channels)
    */
   def makeFitsKeyTable(
       maybeTag: Option[String],
       fitsDictionary: FitsDictionary,
       nh: Headings,
-      withLinks: Boolean = true
+      titleStr: String,
+      withLinks: Boolean = true,
+      maybeSubsystem: Option[String] = None,
+      maybeComponent: Option[String] = None
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
 
@@ -101,8 +107,16 @@ object IcdToHtml {
 
     def makeFitsTableRows() = {
       fitsDictionary.fitsKeys.map { fitsKey =>
-        val iList = fitsKey.channels.indices.toList
-        val zList = fitsKey.channels.zip(iList)
+        // If a subsystem and optional component are given, restrict channels to those
+        val channels =
+          if (maybeSubsystem.isEmpty) fitsKey.channels
+          else
+            fitsKey.channels.filter(c =>
+              maybeSubsystem.contains(c.source.subsystem) && (maybeComponent.isEmpty ||
+                maybeComponent.contains(c.source.componentName))
+            )
+        val iList = channels.indices.toList
+        val zList = channels.zip(iList)
         tr(
           td(if (withLinks) a(id := fitsKey.name, name := fitsKey.name)(fitsKey.name) else fitsKey.name),
           td(raw(fitsKey.description)),
@@ -113,9 +127,8 @@ object IcdToHtml {
       }
     }
 
-    val s = maybeTag.map(t => s" (tag: $t)").getOrElse("")
     div(id := "FITS-Keys")(
-      nh.H3(s"FITS Dictionary$s", "FITS-Keys"),
+      nh.H3(titleStr, "FITS-Keys"),
       table(
         attr("data-bs-toggle") := "table",
         thead(

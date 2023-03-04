@@ -1264,6 +1264,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         ),
         tbody(
           fitsKeys.map { fitsKey =>
+            // If a subsystem and optional component are given, restrict channels to those
             val channels = fitsKey.channels
               .filter(c =>
                 sv.subsystem == c.source.subsystem && (sv.maybeComponent.isEmpty ||

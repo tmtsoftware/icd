@@ -6,21 +6,31 @@ import icd.web.shared.{FitsDictionary, HtmlHeadings, PdfOptions}
 
 import java.io.{ByteArrayOutputStream, File, FileOutputStream}
 
-case class IcdFitsPrinter(fitsDict: FitsDictionary) {
+case class IcdFitsPrinter(
+    fitsDict: FitsDictionary,
+    maybeSubsystem: Option[String] = None,
+    maybeComponent: Option[String] = None
+) {
 
   private def getAsHtml(maybeTag: Option[String], pdfOptions: PdfOptions): Option[String] = {
     import scalatags.Text.all._
-    val s = maybeTag.map(t => s" (tag: $t)").getOrElse("")
     if (fitsDict.fitsKeys.isEmpty) None
     else {
+      val str = List(
+        maybeTag.map(t => s"tag: $t"),
+        maybeSubsystem.map(s => s"subsystem: $s"),
+        maybeComponent.map(c => s"component: $c")
+      ).flatten.mkString(", ")
+      val s = if (str.isEmpty) "" else s" ($str)"
+      val titleStr = s"Fits Dictionary$s"
       val nh = new HtmlHeadings
       val markup = html(
         head(
-          scalatags.Text.tags2.title(s"FITS Dictionary$s"),
+          scalatags.Text.tags2.title(titleStr),
           scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss(pdfOptions)))
         ),
         body(
-          IcdToHtml.makeFitsKeyTable(maybeTag, fitsDict, nh, withLinks = false),
+          IcdToHtml.makeFitsKeyTable(maybeTag, fitsDict, nh, titleStr, withLinks = false, maybeSubsystem, maybeComponent),
           maybeTag.map(_ => span()).getOrElse(p(i("* Tags: DL = Diffraction-limited, SL = Seeing-limited")))
         )
       )
