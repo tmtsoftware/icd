@@ -249,7 +249,7 @@ class TypescriptCodeGenerator(db: IcdDb) {
       s"prettier -w --config $prettierConf ${maybeFile.getOrElse(sourceFile)}".!
     }
     catch {
-      case _: Exception => println("Error: Typescript formatting failed: Make sure you have 'prettier' installed.")
+      case _: Exception => println("Error: Typescript formatting failed: Make sure you have 'prettier' installed (npm install -g prettier).")
     }
     finally {
       prettierConf.delete()

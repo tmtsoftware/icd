@@ -221,7 +221,7 @@ class PythonCodeGenerator(db: IcdDb) {
       s"black ${maybeFile.getOrElse(sourceFile)}".!
     }
     catch {
-      case _: Exception => println("Warning: Python formatting failed: Make sure you have 'black' installed.")
+      case _: Exception => println("Warning: Python formatting failed: Make sure you have 'black' installed (pip3 install black).")
     }
 
   }
