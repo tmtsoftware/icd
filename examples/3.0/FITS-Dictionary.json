@@ -145,7 +145,7 @@
       "type": "string",
       "units": "NoUnits",
       "source": {}
-      },
+    },
     {
       "name": "EQUINOX",
       "description": "The value field shall contain a floating point number giving the equinox in years for the celestial coordinate system in which positions are expressed. The interpretation of epoch depends upon the value of RADESYSa if present: Besselian if the value is FK4 or FK4-NO-E, Julian if the value is FK5; not applicable if the value is ICRS or GAPPT.",
@@ -313,7 +313,7 @@
       "name": "PNTGST",
       "description": "Current state of the pointing system as enum [SLEWING,TRACKING,INPOSITION].",
       "type": "string",
-      "units": "null",
+      "units": "NoUnits",
       "source": {
         "subsystem": "TCS",
         "componentName": "pk",
