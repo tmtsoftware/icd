@@ -17,6 +17,10 @@ class FitsKeyInfoTest extends AnyFunSuite {
     if (dir.exists()) dir else new File(s"../$path")
   }
 
+  def containsList[A](list: List[A], sublist: List[A]): Boolean = {
+    sublist.forall(list.contains)
+  }
+
   test("Test FITS tag access") {
     val db = IcdDb(dbName)
     db.dropDatabase() // start with a clean db for test
@@ -29,6 +33,15 @@ class FitsKeyInfoTest extends AnyFunSuite {
     assert(fitsTags.tags.contains("DL"))
     assert(fitsTags.tags("SL").nonEmpty)
     assert(fitsTags.tags("DL").nonEmpty)
+    val dlKeywords = fitsTags.tags("DL")
+    val slKeywords = fitsTags.tags("SL")
+    val wfosKeywords = fitsTags.tags("WFOS")
+    val irisKeywords = fitsTags.tags("IRIS")
+    val modhisKeywords = fitsTags.tags("MODHIS")
+    assert(containsList(irisKeywords, dlKeywords))
+    assert(containsList(modhisKeywords, dlKeywords))
+    assert(!containsList(irisKeywords, slKeywords))
+    assert(containsList(wfosKeywords, slKeywords))
   }
 
   test("Test FITS keyword access") {
