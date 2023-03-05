@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
+## [ICD v2.2.3] - 2023-03-05
+
+- Changed the format of the FITS-Tags.conf file to allow one tag to inherit keywords from another. For example, the IRIS and MODHIS tags now "inherit" the keywords from the "DL" (diffraction-limited) tag, so these are automatically displayed when the IRIS or MODHIS tags are selected in the web app.
+
 ## [ICD v2.2.2] - 2022-11-18
 
 - Fixed scrollbar display in web app (was too thin or not visible)
