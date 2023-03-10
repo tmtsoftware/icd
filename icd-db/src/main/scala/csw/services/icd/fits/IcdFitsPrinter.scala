@@ -30,7 +30,7 @@ case class IcdFitsPrinter(
           scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss(pdfOptions)))
         ),
         body(
-          IcdToHtml.makeFitsKeyTable(maybeTag, fitsDict, nh, titleStr, withLinks = false, maybeSubsystem, maybeComponent),
+          IcdToHtml.makeFitsKeyTable(fitsDict, nh, titleStr, includeTags = true, withLinks = false, maybeSubsystem, maybeComponent),
           maybeTag.map(_ => span()).getOrElse(p(i("* Tags: DL = Diffraction-limited, SL = Seeing-limited")))
         )
       )

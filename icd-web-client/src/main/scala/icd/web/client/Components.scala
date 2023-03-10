@@ -1249,7 +1249,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalacss.ScalatagsCss._
     val fitsKeys = fitsDict.fitsKeys
     div(Styles.component, id := "FITS-Keys")(
-      h3(a(name := "FITS-Keys")("FITS Dictionary")),
+      h3(a(name := "FITS-Keys")("FITS Keywords")),
       table(
         Styles.componentTable,
         attr("data-bs-toggle") := "table",

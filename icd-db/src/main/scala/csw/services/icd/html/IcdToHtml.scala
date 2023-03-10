@@ -81,19 +81,19 @@ object IcdToHtml {
 
   /**
    * Generates table with related FITS key information
-   * @param maybeTag if defined, list is restricted to tag
    * @param fitsDictionary fits keywords and tags
    * @param nh used for headings
    * @param titleStr title for table
+   * @param includeTags if true, include tag in keyword source/channel column
    * @param withLinks if true, include links to event parameters for key sources
    * @param maybeSubsystem optional subsystem (restrict channels)
    * @param maybeComponent optional component (restrict channels)
    */
   def makeFitsKeyTable(
-      maybeTag: Option[String],
       fitsDictionary: FitsDictionary,
       nh: Headings,
-      titleStr: String,
+      titleStr: String = "FITS Dictionary",
+      includeTags: Boolean,
       withLinks: Boolean = true,
       maybeSubsystem: Option[String] = None,
       maybeComponent: Option[String] = None
@@ -101,9 +101,12 @@ object IcdToHtml {
     import scalatags.Text.all._
 
     // Map from FITS keyword and channel to the tag for that keyword/channel
-    val tagMap = fitsDictionary.fitsTags.tags.view.values
-      .flatMap(_.map(f => (FitsKeywordAndChannel(f.keyword, f.channel), f.tag)))
-      .toMap
+    val tagMap: Map[FitsKeywordAndChannel, String] =
+      if (includeTags)
+        fitsDictionary.fitsTags.tags.view.values
+          .flatMap(_.map(f => (FitsKeywordAndChannel(f.keyword, f.channel), f.tag)))
+          .toMap
+      else Map.empty
 
     def makeFitsTableRows() = {
       fitsDictionary.fitsKeys.map { fitsKey =>
@@ -163,10 +166,22 @@ object IcdToHtml {
     val nh           = new NumberedHeadings
     val titleInfo    = TitleInfo(subsystemInfo, None, None, documentNumber = pdfOptions.documentNumber)
     val summaryTable = SummaryTable.displaySummary(subsystemInfo, None, infoList, nh, clientApi, displayTitle = true)
+    val fitsTable =
+      if (fitsDictionary.fitsKeys.nonEmpty)
+        makeFitsKeyTable(
+          fitsDictionary,
+          nh,
+          "FITS Keywords",
+          includeTags = false,
+          maybeSubsystem = Some(subsystemInfo.sv.subsystem),
+          maybeComponent = subsystemInfo.sv.maybeComponent
+        )
+      else div()
 
     val mainContent = div(
       style := "width: 100%;",
       summaryTable,
+      fitsTable,
       displayDetails(infoList, nh, forApi = true, pdfOptions, clientApi)
     )
     val toc   = nh.mkToc()
