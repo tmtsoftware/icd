@@ -127,6 +127,7 @@ Known Issues
   These limits negatively impact MongoDB operation. 
   See [UNIX ulimit Settings](https://docs.mongodb.com/manual/reference/ulimit/) for more information.
   csh/tcsh users should run the command `unlimit` before starting `mongod`.
+* For MacOS, it can be a bit more complicated: See [here](MacOs-Max-Files-Limit.md) for more info.
 
 * Including a comma in an unquoted string in an ICD model file can cause a NullPointerException.
 For example, don't do this: 
