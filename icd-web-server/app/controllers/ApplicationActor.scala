@@ -93,6 +93,20 @@ object ApplicationActor extends ActorModule {
       pdfOptions: PdfOptions,
       replyTo: ActorRef[Option[Array[Byte]]]
   ) extends Messages
+  final case class GetMissingItemsReport(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      maybeTarget: Option[String],
+      maybeTargetVersion: Option[String],
+      maybeTargetComponent: Option[String],
+      pdfOptions: PdfOptions,
+      replyTo: ActorRef[Option[Array[Byte]]]
+  ) extends Messages
+  final case class GetMissingItemsReportFull(
+      pdfOptions: PdfOptions,
+      replyTo: ActorRef[Option[Array[Byte]]]
+  ) extends Messages
   final case class MakeGraph(
       subsystem: String,
       maybeVersion: Option[String],
@@ -251,6 +265,29 @@ object ApplicationActor extends ActorModule {
           Behaviors.same
         case GetArchivedItemsReportFull(pdfOptions, replyTo) =>
           replyTo ! app.getArchivedItemsReportFull(pdfOptions)
+          Behaviors.same
+        case GetMissingItemsReport(
+              subsystem,
+              maybeVersion,
+              maybeComponent,
+              maybeTarget,
+              maybeTargetVersion,
+              maybeTargetComponent,
+              pdfOptions,
+              replyTo
+            ) =>
+          replyTo ! app.getMissingItemsReport(
+            subsystem,
+            maybeVersion,
+            maybeComponent,
+            maybeTarget,
+            maybeTargetVersion,
+            maybeTargetComponent,
+            pdfOptions
+          )
+          Behaviors.same
+        case GetMissingItemsReportFull(pdfOptions, replyTo) =>
+          replyTo ! app.getMissingItemsReportFull(pdfOptions)
           Behaviors.same
         case MakeGraph(
               subsystem,

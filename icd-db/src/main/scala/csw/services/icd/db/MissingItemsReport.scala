@@ -1,10 +1,9 @@
 package csw.services.icd.db
 
-import java.io._
-
+import java.io.*
 import csw.services.icd.IcdToPdf
-import csw.services.icd.html.IcdToHtml
-import icd.web.shared.IcdModels._
+import csw.services.icd.html.{IcdToHtml, NumberedHeadings}
+import icd.web.shared.IcdModels.*
 import icd.web.shared.{PdfOptions, SubsystemWithVersion}
 import scalatags.Text
 
@@ -13,11 +12,11 @@ import scalatags.Text
  */
 object MissingItemsReport {
 
-  case class PublishedItemInfo(publisherSubsystem: String, publisherComponent: String, prefix: String, name: String) {
+  private case class PublishedItemInfo(publisherSubsystem: String, publisherComponent: String, prefix: String, name: String) {
     val key = s"$prefix.$name"
   }
 
-  case class SubscribedItemInfo(
+  private case class SubscribedItemInfo(
       subscriberSubsystem: String,
       subscriberComponent: String,
       publisherSubsystem: String,
@@ -28,7 +27,7 @@ object MissingItemsReport {
     val key = s"$prefix.$name"
   }
 
-  case class Items(
+  private case class Items(
       publishedEvents: List[PublishedItemInfo],
       publishedObserveEvents: List[PublishedItemInfo],
       publishedCurrentStates: List[PublishedItemInfo],
@@ -61,31 +60,25 @@ object MissingItemsReport {
  * Supports generating a "Missing Items" report.
  *
  * @param db      the database to use
- * @param options command line options used to narrow the scope of the report to given subsystems and components
+ * @param subsystems used to narrow the scope of the report to given subsystems and components
  * @param pdfOptions PDF generation options
  */
 //noinspection DuplicatedCode
-case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfOptions) {
-  import MissingItemsReport._
+case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion], pdfOptions: PdfOptions) {
+  import MissingItemsReport.*
 
-  private val selectedSubsystemsWithVersions = List(options.subsystem, options.target).flatten
-    .map(IcdVersionManager.SubsystemAndVersion(_))
-    .map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, None))
+  private val selectedSubsystemNames = subsystems.map(_.subsystem)
+  private val maybeSubsystems        = if (selectedSubsystemNames.size == 1) Some(selectedSubsystemNames) else None
 
-  private val selectedSubsystemNames = selectedSubsystemsWithVersions.map(_.subsystem)
-
-  // Note: Need to search entire database in order to find the missing items
-  private val query          = new CachedIcdDbQuery(db.db, db.admin, None, None, Map.empty)
+  // Note: If one subsystem was specified, search entire database in order to find the missing items,
+  // otherwise only search the given subsystems
+  private val query          = new CachedIcdDbQuery(db.db, db.admin, maybeSubsystems, None, Map.empty)
   private val versionManager = new CachedIcdVersionManager(query)
 
   // s"$subsystem.$component" for all components in all subsystems (latest versions)
   private val allComponents = query
     .getComponents(None)
     .map(c => s"${c.subsystem}.${c.component}")
-
-  // Need to search all subsystems for subscribers, etc.
-  private val subsystemsWithVersions =
-    query.getSubsystemNames.map(SubsystemWithVersion(_, None, None))
 
   // Returns a list of items missing a publisher, subscriber, sender or receiver
   private def getMissingItems: Items = {
@@ -101,7 +94,10 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfO
           c.component,
           p.subsystem,
           p.component,
-          query.getComponentModel(p.subsystem, p.component, None).map(_.prefix).getOrElse(""),
+          query
+            .getComponentModel(p.subsystem, p.component, None)
+            .map(_.prefix)
+            .getOrElse(s"${p.subsystem}.${p.component}"),
           p.name
         )
       )
@@ -109,7 +105,7 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfO
 
     def getItems: List[Items] = {
       for {
-        sv        <- subsystemsWithVersions
+        sv        <- subsystems
         models    <- versionManager.getModels(sv, Some(pdfOptions))
         component <- models.componentModel
       } yield {
@@ -166,12 +162,15 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfO
 
     def pubFilter(p: PublishedItemInfo): Boolean =
       selectedSubsystemNames.isEmpty || selectedSubsystemNames.contains(p.publisherSubsystem)
+
     def subFilter(p: SubscribedItemInfo): Boolean =
       selectedSubsystemNames.isEmpty || selectedSubsystemNames.contains(p.subscriberSubsystem)
 
-    // Return list of published items with no subscribers
+    // Return list of published items with no subscribers (Only if searching all subsystems against a single subsystem)
     def getPubNoSub(published: List[PublishedItemInfo], subscribed: Map[String, SubscribedItemInfo]): List[PublishedItemInfo] = {
-      published.filter(p => pubFilter(p) && !subscribed.contains(p.key))
+      if (subsystems.length != 1) Nil
+      else
+        published.filter(p => pubFilter(p) && !subscribed.contains(p.key))
     }
 
     // Return list of subscribed items with no publisher
@@ -207,12 +206,12 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfO
     val publishedEventsWithNoSubscribers        = getPubNoSub(publishedEvents, subscribedEventsMap)
     val publishedObserveEventsWithNoSubscribers = getPubNoSub(publishedObserveEvents, subscribedObserveEventsMap)
     val publishedCurrentStatesWithNoSubscribers = getPubNoSub(publishedCurrentStates, subscribedCurrentStatesMap)
-    val publishedImagesWithNoSubscribers = getPubNoSub(publishedImages, subscribedImagesMap)
+    val publishedImagesWithNoSubscribers        = getPubNoSub(publishedImages, subscribedImagesMap)
 
     val subscribedEventsWithNoPublisher        = getSubNoPub(subscribedEvents, publishedEventsMap)
     val subscribedObserveEventsWithNoPublisher = getSubNoPub(subscribedObserveEvents, publishedObserveEventsMap)
     val subscribedCurrentStatesWithNoPublisher = getSubNoPub(subscribedCurrentStates, publishedCurrentStatesMap)
-    val subscribedImagesWithNoPublisher = getSubNoPub(subscribedImages, publishedImagesMap)
+    val subscribedImagesWithNoPublisher        = getSubNoPub(subscribedImages, publishedImagesMap)
 
     val receivedCommandsWithNoSenders = getPubNoSub(receivedCommands, sentCommandsMap)
     val sentCommandsWithNoReceivers   = getSubNoPub(sentCommands, receivedCommandMap)
@@ -235,14 +234,16 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfO
   }
 
   // Generates the HTML for the report
-  private def makeReport(): String = {
-    import scalatags.Text.all._
+  def makeReport(): String = {
+    import scalatags.Text.all.*
+
+    val nh = new NumberedHeadings
 
     def missingPubItemMarkup(title: String, info: List[PublishedItemInfo]): Text.TypedTag[String] = {
       if (info.isEmpty) div()
       else
         div(
-          h3(title),
+          nh.H3(title),
           div(
             table(
               thead(
@@ -274,7 +275,7 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfO
       if (info.isEmpty) div()
       else
         div(
-          h3(title),
+          nh.H3(title),
           div(
             table(
               thead(
@@ -307,29 +308,63 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfO
     }
 
     val missingItems = getMissingItems
-    val markup = html(
-      head(
-        scalatags.Text.tags2.title("Missing Items"),
-        scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss(pdfOptions)))
-      ),
-      body(
-        h2("Missing Items"),
-        missingPubItemMarkup("Published Events with no Subscribers", missingItems.publishedEvents),
-        missingPubItemMarkup("Published Observe Events with no Subscribers", missingItems.publishedObserveEvents),
-        missingPubItemMarkup("Published Current States with no Subscribers", missingItems.publishedCurrentStates),
-        missingPubItemMarkup("Published Images with no Subscribers", missingItems.publishedImages),
-        missingSubItemMarkup("Subscribed Events that are not Published Anywhere", missingItems.subscribedEvents),
-        missingSubItemMarkup("Subscribed Observe Events that are not Published Anywhere", missingItems.subscribedObserveEvents),
-        missingSubItemMarkup("Subscribed CurrentStates that are not Published Anywhere", missingItems.subscribedCurrentStates),
-        missingSubItemMarkup("Subscribed Images that are not Published Anywhere", missingItems.subscribedImages),
-        missingPubItemMarkup("Received Commands with no Senders", missingItems.receivedCommands),
-        missingSubItemMarkup("Sent Commands that are not Defined Anywhere", missingItems.sentCommands, "Receiver", "Sender"),
+    val mainDiv = div(
+      nh.H2("Missing Items"),
+      missingPubItemMarkup("Published Events with no Subscribers", missingItems.publishedEvents),
+      missingPubItemMarkup("Published Observe Events with no Subscribers", missingItems.publishedObserveEvents),
+      missingPubItemMarkup("Published Current States with no Subscribers", missingItems.publishedCurrentStates),
+      missingPubItemMarkup("Published Images with no Subscribers", missingItems.publishedImages),
+      missingSubItemMarkup("Subscribed Events that are not Published Anywhere", missingItems.subscribedEvents),
+      missingSubItemMarkup("Subscribed Observe Events that are not Published Anywhere", missingItems.subscribedObserveEvents),
+      missingSubItemMarkup("Subscribed CurrentStates that are not Published Anywhere", missingItems.subscribedCurrentStates),
+      missingSubItemMarkup("Subscribed Images that are not Published Anywhere", missingItems.subscribedImages),
+      missingPubItemMarkup("Received Commands with no Senders", missingItems.receivedCommands),
+      missingSubItemMarkup("Sent Commands that are not Defined Anywhere", missingItems.sentCommands, "Receiver", "Sender"),
+      if (missingItems.badComponentNames.isEmpty) div()
+      else
         div(
-          h3("Component names that were Referenced but not Defined Anywhere"),
+          nh.H3("Component names that were Referenced but not Defined Anywhere"),
           ul(
             missingItems.badComponentNames.toList.map(s => li(s))
           )
         )
+    )
+    val titleStr = s"Missing Items Report for ${subsystems.map(_.toStringWithVersion).mkString(", ")}"
+    val markup = html(
+      head(
+        scalatags.Text.tags2.title(titleStr),
+        scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss(pdfOptions)))
+      ),
+      body(
+        div(
+          h3(cls := "page-header", titleStr),
+          if (subsystems.isEmpty) {
+            p(s"""
+                 |No subsystems were selected. Please select at least one subsystem in the Select tab first.
+                 |""".stripMargin)
+          }
+          else if (subsystems.size == 1) {
+            p(s"""
+                 |This report takes the list of published and subscribed events, received and sent commands for
+                 |${subsystems.head.toStringWithVersion} and looks for matches in the latest versions of
+                 |all the other subsystems.
+                 |The tables below list the names of the events and commands for which no matches were found.
+                 |Note that this could be due to changes in the latest versions of the other subsystems.
+                 |To avoid this issue, specify a list of subsystems with versions (if using the icd-db -m command line
+                 |option), or select two subsystems with versions or a published ICD in the icd web app.
+                 |""".stripMargin)
+          }
+          else
+            (s"""
+                 |This report takes the list of published and subscribed events, received and sent commands defined for
+                 |${subsystems.map(_.toStringWithVersion).mkString(" and ")} and looks for matches
+                 |in the same group of subsystems.
+                 |The tables below list the names of the events and commands for which no matches were found.
+                 |""".stripMargin),
+          h2("Table of Contents"),
+          nh.mkToc()
+        ),
+        mainDiv
       )
     )
     markup.render
@@ -337,7 +372,7 @@ case class MissingItemsReport(db: IcdDb, options: IcdDbOptions, pdfOptions: PdfO
 
   // Generates the text/CSV formatted report
   private def makeCsvReport(dir: File): Unit = {
-    import com.github.tototoshi.csv._
+    import com.github.tototoshi.csv.*
 
     implicit object MyFormat extends DefaultCSVFormat {
       override val lineTerminator = "\n"

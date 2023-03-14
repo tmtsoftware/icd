@@ -365,7 +365,16 @@ object IcdDb extends App {
 
     // --missing option
     def missingItemsReport(file: File): Unit = {
-      MissingItemsReport(db, options, pdfOptions).saveToFile(file, pdfOptions)
+      val maybeSv = options.subsystem
+        .map(SubsystemAndVersion(_))
+        .map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, options.component))
+      val maybeTargetSv = options.target
+        .map(SubsystemAndVersion(_))
+        .map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, options.targetComponent))
+      val list = List(maybeSv, maybeTargetSv).flatten
+      if (list.isEmpty)
+        error("Please specify at least one subsystem (or subsystem:version) using the -s and -t options")
+      MissingItemsReport(db, list, pdfOptions).saveToFile(file, pdfOptions)
     }
 
     // --archive option
@@ -647,7 +656,7 @@ case class IcdDb(
    * @param stdConfig ICD model file packaged as a StdConfig object
    * @return a list describing the problems, if any
    */
-  def ingestConfig(stdConfig: StdConfig): List[Problem] = {
+  private def ingestConfig(stdConfig: StdConfig): List[Problem] = {
     // Ingest a single OpenApi file
     def ingestOpenApiFile(collectionName: String, fileName: String): List[Problem] = {
       import scala.jdk.CollectionConverters._

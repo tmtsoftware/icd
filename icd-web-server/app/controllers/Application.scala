@@ -394,6 +394,77 @@ class Application @Inject() (
     }
 
   /**
+   * Returns a missing items report (PDF) for the given subsystem/component API
+   *
+   * @param subsystem      the source subsystem
+   * @param maybeVersion   the source subsystem's version (default: current)
+   * @param maybeComponent optional component (default: all in subsystem)
+   * @param maybeTarget    optional target subsystem
+   * @param maybeTargetVersion optional target subsystem's version (default: current)
+   * @param maybeTargetComponent optional target component name (default: all in target subsystem)
+   * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
+   * @param maybeFontSize base font size for body text (default: 10)
+   */
+  def missingItemsReport(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      maybeTarget: Option[String],
+      maybeTargetVersion: Option[String],
+      maybeTargetComponent: Option[String],
+      maybeOrientation: Option[String],
+      maybeFontSize: Option[Int],
+      maybeLineHeight: Option[String],
+      maybePaperSize: Option[String]
+  ) =
+    authAction.async {
+      val resp: Future[Option[Array[Byte]]] = appActor ? (
+        GetMissingItemsReport(
+          subsystem,
+          maybeVersion,
+          maybeComponent,
+          maybeTarget,
+          maybeTargetVersion,
+          maybeTargetComponent,
+          PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize),
+          _
+        )
+      )
+      resp.map {
+        case Some(bytes) =>
+          Ok(bytes).as("application/pdf")
+        case None =>
+          NotFound
+      }
+    }
+
+  /**
+   * Returns a missing items report (PDF) for all current subsystems
+   * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
+   * @param maybeFontSize base font size for body text (default: 10)
+   */
+  def missingItemsReportFull(
+      maybeOrientation: Option[String],
+      maybeFontSize: Option[Int],
+      maybeLineHeight: Option[String],
+      maybePaperSize: Option[String]
+  ) =
+    authAction.async {
+      val resp: Future[Option[Array[Byte]]] = appActor ? (
+        GetMissingItemsReportFull(
+          PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize),
+          _
+        )
+      )
+      resp.map {
+        case Some(bytes) =>
+          Ok(bytes).as("application/pdf")
+        case None =>
+          NotFound
+      }
+    }
+
+  /**
    * Returns the PDF for the given ICD
    *
    * @param subsystem          the source subsystem

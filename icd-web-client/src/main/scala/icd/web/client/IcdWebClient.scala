@@ -63,8 +63,15 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   private val archiveItem = NavbarPdfItem(
     "Archive",
-    "Generate and display an 'Archived Items' report for the selected subsystem (or all subsystems)",
+    "Generate and display an 'Archived Items' report for the selected subsystem/component (or all subsystems)",
     makeArchivedItemsReport,
+    showDocumentNumber = false
+  )
+
+  private val missingItem = NavbarPdfItem(
+    "Missing",
+    "Generate and display a 'Missing Items' report for the selected subsystem (or all subsystems)",
+    makeMissingItemsReport,
     showDocumentNumber = false
   )
 
@@ -157,6 +164,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     navbar.addItem(generateItem)
     navbar.addItem(graphItem)
     navbar.addItem(archiveItem)
+    navbar.addItem(missingItem)
     navbar.addItem(fitsDictionaryItem)
     navbar.addItem(publishItem)
     navbar.addItem(reloadButton)
@@ -288,7 +296,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
    * If the linked subsystem is the source or target subsystem, use the component from the
    * selected version of the subsystem, otherwise use the latest version.
    */
-  object ComponentLinkSelectionHandler extends ComponentListener {
+  private object ComponentLinkSelectionHandler extends ComponentListener {
     def componentSelected(link: ComponentLink): Future[Unit] = {
       val maybeSv              = selectDialog.subsystem.getSubsystemWithVersion()
       val maybeTargetSv        = selectDialog.targetSubsystem.getSubsystemWithVersion()
@@ -668,7 +676,24 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     dom.window.open(uri) // opens in new window or tab
   }
 
-  case class ReloadButton() extends Displayable {
+  // Gets a PDF with a Missing Items report for the currently selected subsystem API
+  private def makeMissingItemsReport(options: PdfOptions): Unit = {
+    val maybeSv =
+      if (currentView == StatusView)
+        statusDialog.getSubsystemWithVersion
+      else selectDialog.subsystem.getSubsystemWithVersion()
+
+    val uri =
+      if (maybeSv.isDefined) {
+        val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion()
+        ClientRoutes.missingItemsReport(maybeSv.get, maybeTargetSv, options)
+      } else {
+        ClientRoutes.missingItemsReportFull(options)
+      }
+    dom.window.open(uri) // opens in new window or tab
+  }
+
+  private case class ReloadButton() extends Displayable {
     private def reloadPage(): Unit = {
       val main = document.getElementById("mainContent")
       val y    = main.scrollTop

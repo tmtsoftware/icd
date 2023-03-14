@@ -47,4 +47,9 @@ case class SubsystemWithVersion(subsystem: String, maybeVersion: Option[String],
     val versionStr = maybeVersion.map(v => s"-$v").getOrElse("")
     s"$prefix$versionStr"
   }
+
+  def toStringWithVersion: String = {
+    val versionStr = maybeVersion.map(v => s"-$v").getOrElse("-latest")
+    s"$prefix$versionStr"
+  }
 }

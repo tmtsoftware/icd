@@ -46,7 +46,7 @@ object ClientRoutes {
         s"lineHeight=${o.lineHeight}",
         s"paperSize=${o.paperSize}",
         s"details=${o.details}",
-        s"documentNumber=${o.documentNumber}",
+        s"documentNumber=${o.documentNumber}"
       ).mkString("&")
     )
     val graphAttrs = maybeGraphOptions.map(o =>
@@ -267,6 +267,47 @@ object ClientRoutes {
       maybePdfOptions = Some(options)
     )
     s"/archivedItemsReportFull$attrs"
+  }
+
+  /**
+   * Returns the route to use to get a missing items report for the given Subsystem with selected components.
+   *
+   * @param sv the subsystem
+   * @return the URL path to use
+   */
+  def missingItemsReport(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion], options: PdfOptions): String = {
+    val attrs = maybeTargetSv match {
+      case None =>
+        getAttrs(
+          sv.maybeVersion,
+          sv.maybeComponent,
+          maybePdfOptions = Some(options)
+        )
+      case Some(targetSv) =>
+        getAttrs(
+          sv.maybeVersion,
+          sv.maybeComponent,
+          maybeTargetVersion = targetSv.maybeVersion,
+          maybeTargetCompName = targetSv.maybeComponent,
+          maybeTarget = maybeTargetSv.map(_.subsystem),
+          maybePdfOptions = Some(options)
+        )
+    }
+    s"/missingItemsReport/${sv.subsystem}$attrs"
+  }
+
+  /**
+   * Returns the route to use to get a missing items report for all subsystems
+   *
+   * @return the URL path to use
+   */
+  def missingItemsReportFull(options: PdfOptions): String = {
+    val attrs = getAttrs(
+      None,
+      None,
+      maybePdfOptions = Some(options)
+    )
+    s"/missingItemsReportFull$attrs"
   }
 
   /**

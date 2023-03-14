@@ -21,6 +21,7 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Updated dependencies, code cleanup
 - Added additional validation checks for duplicate or incorrect component, event or command names when manually
   ingesting subsystem model files
+- Incremented major version to 3.0.0
 
 ## [ICD v2.2.1] - 2022-11-11
 
