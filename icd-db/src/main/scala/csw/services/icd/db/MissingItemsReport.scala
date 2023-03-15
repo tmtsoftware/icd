@@ -68,17 +68,27 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
   import MissingItemsReport.*
 
   private val selectedSubsystemNames = subsystems.map(_.subsystem)
-  private val maybeSubsystems        = if (selectedSubsystemNames.size == 1) Some(selectedSubsystemNames) else None
 
   // Note: If one subsystem was specified, search entire database in order to find the missing items,
   // otherwise only search the given subsystems
-  private val query          = new CachedIcdDbQuery(db.db, db.admin, maybeSubsystems, None, Map.empty)
-  private val versionManager = new CachedIcdVersionManager(query)
+  private val maybeSubsystems = if (subsystems.size <= 1) None else Some(selectedSubsystemNames)
+  private val query           = new CachedIcdDbQuery(db.db, db.admin, maybeSubsystems, None, Map.empty)
+  private val versionManager  = new CachedIcdVersionManager(query)
+  private val otherSv =
+    if (subsystems.size <= 1)
+      query.getSubsystemNames.filter(s => !selectedSubsystemNames.contains(s)).map(SubsystemWithVersion(_, None, None))
+    else Nil
 
-  // s"$subsystem.$component" for all components in all subsystems (latest versions)
-  private val allComponents = query
-    .getComponents(None)
-    .map(c => s"${c.subsystem}.${c.component}")
+  // s"$subsystem.$component" for all components in all subsystems (latest versions or specified version)
+  private val allComponents = {
+    val currentComps = query
+      .getComponents(None)
+      .filter(cm => !subsystems.exists(s => s.subsystem == cm.subsystem))
+      .map(c => s"${c.subsystem}.${c.component}")
+    val specifiedVersionComps = subsystems
+      .flatMap(sv => versionManager.getComponentNames(sv).map(c => s"${sv.subsystem}.${c}"))
+    specifiedVersionComps ::: currentComps
+  }
 
   // Returns a list of items missing a publisher, subscriber, sender or receiver
   private def getMissingItems: Items = {
@@ -94,10 +104,7 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
           c.component,
           p.subsystem,
           p.component,
-          query
-            .getComponentModel(p.subsystem, p.component, None)
-            .map(_.prefix)
-            .getOrElse(s"${p.subsystem}.${p.component}"),
+          s"${p.subsystem}.${p.component}",
           p.name
         )
       )
@@ -105,8 +112,8 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
 
     def getItems: List[Items] = {
       for {
-        sv        <- subsystems
-        models    <- versionManager.getModels(sv, Some(pdfOptions))
+        sv        <- subsystems ::: otherSv
+        models    <- versionManager.getModels(sv.copy(maybeComponent = None), Some(pdfOptions))
         component <- models.componentModel
       } yield {
         val publishModel           = models.publishModel
@@ -142,7 +149,7 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
             receivedCommands.filter(pubFilter).map(getPubComp) ++
             sentCommands.filter(subFilter).map(getSubPubComp) ++ sentCommands.map(getSubComp)
         val compSet           = allComponents.toSet
-        val badComponentNames = compRefs.filter(!compSet.contains(_)).toSet
+        val badComponentNames = compRefs.toSet.filter(!compSet.contains(_))
 
         Items(
           publishedEvents,
@@ -160,17 +167,42 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
       }
     }
 
-    def pubFilter(p: PublishedItemInfo): Boolean =
-      selectedSubsystemNames.isEmpty || selectedSubsystemNames.contains(p.publisherSubsystem)
+    def pubFilter(p: PublishedItemInfo): Boolean = {
+      subsystems.size match {
+        case 0 => true
+        case _ =>
+          selectedSubsystemNames.contains(p.publisherSubsystem) &&
+            subsystems.exists(s =>
+              s.subsystem == p.publisherSubsystem && (s.maybeComponent.isEmpty || s.maybeComponent.contains(p.publisherComponent))
+            )
+      }
+    }
 
-    def subFilter(p: SubscribedItemInfo): Boolean =
-      selectedSubsystemNames.isEmpty || selectedSubsystemNames.contains(p.subscriberSubsystem)
+    def subFilter(p: SubscribedItemInfo): Boolean = {
+      subsystems.size match {
+        case 0 => true
+        case 1 =>
+          (selectedSubsystemNames.contains(p.subscriberSubsystem) || selectedSubsystemNames.contains(p.publisherSubsystem)) &&
+            subsystems.exists(s =>
+              (s.subsystem == p.subscriberSubsystem && (s.maybeComponent.isEmpty || s.maybeComponent
+                .contains(p.subscriberComponent))) ||
+                (s.subsystem == p.publisherSubsystem && (s.maybeComponent.isEmpty || s.maybeComponent
+                  .contains(p.publisherComponent)))
+            )
+        case _ =>
+          selectedSubsystemNames.contains(p.subscriberSubsystem) && selectedSubsystemNames.contains(p.publisherSubsystem) &&
+            subsystems.exists(s =>
+              s.subsystem == p.subscriberSubsystem && (s.maybeComponent.isEmpty || s.maybeComponent
+                .contains(p.subscriberComponent))
+            )
+      }
+    }
 
-    // Return list of published items with no subscribers (Only if searching all subsystems against a single subsystem)
+    // Return list of published items with no subscribers (Only if searching all subsystems)
     def getPubNoSub(published: List[PublishedItemInfo], subscribed: Map[String, SubscribedItemInfo]): List[PublishedItemInfo] = {
-      if (subsystems.length != 1) Nil
-      else
+      if (subsystems.size <= 1)
         published.filter(p => pubFilter(p) && !subscribed.contains(p.key))
+      else Nil
     }
 
     // Return list of subscribed items with no publisher
@@ -339,8 +371,14 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
         div(
           h3(cls := "page-header", titleStr),
           if (subsystems.isEmpty) {
-            p(s"""
-                 |No subsystems were selected. Please select at least one subsystem in the Select tab first.
+            p(
+              s"""
+                 |This report takes the list of published and subscribed events, received and sent commands for
+                 |all subsystems and looks for matches in the latest versions of all the other subsystems.
+                 |The tables below list the names of the events and commands for which no matches were found.
+                 |Note that this could be due to changes in the latest versions of the other subsystems.
+                 |To avoid this issue, specify a list of subsystems with versions (if using the icd-db -m command line
+                 |option), or select two subsystems with versions or a published ICD in the icd web app.
                  |""".stripMargin)
           }
           else if (subsystems.size == 1) {

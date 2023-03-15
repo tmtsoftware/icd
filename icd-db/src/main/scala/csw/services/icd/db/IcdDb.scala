@@ -372,8 +372,8 @@ object IcdDb extends App {
         .map(SubsystemAndVersion(_))
         .map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, options.targetComponent))
       val list = List(maybeSv, maybeTargetSv).flatten
-      if (list.isEmpty)
-        error("Please specify at least one subsystem (or subsystem:version) using the -s and -t options")
+//      if (list.isEmpty)
+//        error("Please specify at least one subsystem (or subsystem:version) using the -s and -t options")
       MissingItemsReport(db, list, pdfOptions).saveToFile(file, pdfOptions)
     }
 

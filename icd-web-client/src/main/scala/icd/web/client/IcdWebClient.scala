@@ -70,7 +70,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   private val missingItem = NavbarPdfItem(
     "Missing",
-    "Generate and display a 'Missing Items' report for the selected subsystem (or all subsystems)",
+    "Generate and display a 'Missing Items' report for the selected subsystems/components (or all subsystems)",
     makeMissingItemsReport,
     showDocumentNumber = false
   )
