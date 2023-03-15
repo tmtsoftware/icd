@@ -8,6 +8,7 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Added "subsystem" constant in generated source files with subsystem name and version: For example: subsystem = "APS-1.4" (See Generate menu item in icd web app).
 - Added file [MacOs-Max-Files-Limit.md](MacOs-Max-Files-Limit.md) describing how to increase the max-files limit on recent MacOS versions (This is required in order to run MongoDB when running the ICD web server locally, since the default setting is too low).
 - Include FITS keyword table in PDFs for APIs (was previously only displayed in web app)
+- Added a new toolbar item: "Missing" that generates a PDF containing a list of subscribed events with no publisher, sent commands with no receiver, and referenced components that are not defined
 
 ## [ICD v2.2.3] - 2023-03-05
 
