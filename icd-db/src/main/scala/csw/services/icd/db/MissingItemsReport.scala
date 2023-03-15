@@ -86,7 +86,7 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
       .filter(cm => !subsystems.exists(s => s.subsystem == cm.subsystem))
       .map(c => s"${c.subsystem}.${c.component}")
     val specifiedVersionComps = subsystems
-      .flatMap(sv => versionManager.getComponentNames(sv).map(c => s"${sv.subsystem}.${c}"))
+      .flatMap(sv => versionManager.getComponentNames(sv).map(c => s"${sv.subsystem}.$c"))
     specifiedVersionComps ::: currentComps
   }
 
@@ -200,9 +200,11 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
 
     // Return list of published items with no subscribers (Only if searching all subsystems)
     def getPubNoSub(published: List[PublishedItemInfo], subscribed: Map[String, SubscribedItemInfo]): List[PublishedItemInfo] = {
-      if (subsystems.size <= 1)
-        published.filter(p => pubFilter(p) && !subscribed.contains(p.key))
-      else Nil
+//      if (subsystems.size <= 1)
+//        published.filter(p => pubFilter(p) && !subscribed.contains(p.key))
+//       else
+      // XXX For now, don't show this, since it seems less important than subscribed items that are not defined anywhere
+      Nil
     }
 
     // Return list of subscribed items with no publisher
@@ -371,8 +373,7 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
         div(
           h3(cls := "page-header", titleStr),
           if (subsystems.isEmpty) {
-            p(
-              s"""
+            p(s"""
                  |This report takes the list of published and subscribed events, received and sent commands for
                  |all subsystems and looks for matches in the latest versions of all the other subsystems.
                  |The tables below list the names of the events and commands for which no matches were found.
@@ -393,12 +394,12 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
                  |""".stripMargin)
           }
           else
-            (s"""
+            s"""
                  |This report takes the list of published and subscribed events, received and sent commands defined for
                  |${subsystems.map(_.toStringWithVersion).mkString(" and ")} and looks for matches
                  |in the same group of subsystems.
                  |The tables below list the names of the events and commands for which no matches were found.
-                 |""".stripMargin),
+                 |""".stripMargin,
           h2("Table of Contents"),
           nh.mkToc()
         ),

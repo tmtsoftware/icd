@@ -65,14 +65,16 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     "Archive",
     "Generate and display an 'Archived Items' report for the selected subsystem/component (or all subsystems)",
     makeArchivedItemsReport,
-    showDocumentNumber = false
+    showDocumentNumber = false,
+    showDetailButtons = false
   )
 
   private val missingItem = NavbarPdfItem(
     "Missing",
     "Generate and display a 'Missing Items' report for the selected subsystems/components (or all subsystems)",
     makeMissingItemsReport,
-    showDocumentNumber = false
+    showDocumentNumber = false,
+    showDetailButtons = false
   )
 
   private val navbar = Navbar()

@@ -34,9 +34,9 @@ class ArchivedItemsTest extends AnyFunSuite {
         assert(info.publishes.get.eventList.nonEmpty)
         info.publishes.get.eventList.foreach { pubInfo =>
           val m = pubInfo.eventModel
-          println(
-            s"XXX Event ${m.name} size = ${m.totalSizeInBytes}, archive = ${m.archive},  yearly: ${m.totalArchiveSpacePerYear}"
-          )
+//          println(
+//            s"XXX Event ${m.name} size = ${m.totalSizeInBytes}, archive = ${m.archive},  yearly: ${m.totalArchiveSpacePerYear}"
+//          )
           m.name match {
             case "engMode" =>
               assert(m.totalSizeInBytes == 339)

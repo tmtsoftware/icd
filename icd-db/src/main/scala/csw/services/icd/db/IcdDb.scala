@@ -365,6 +365,13 @@ object IcdDb extends App {
 
     // --missing option
     def missingItemsReport(file: File): Unit = {
+      file.getName.split('.').drop(1).lastOption match {
+        case Some("html") | Some("pdf") =>
+        case _ =>
+          if (!file.isDirectory)
+            error(s"$file is not a directory (Expected a directory to hold the generated csv files)")
+      }
+
       val maybeSv = options.subsystem
         .map(SubsystemAndVersion(_))
         .map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, options.component))
@@ -372,8 +379,6 @@ object IcdDb extends App {
         .map(SubsystemAndVersion(_))
         .map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, options.targetComponent))
       val list = List(maybeSv, maybeTargetSv).flatten
-//      if (list.isEmpty)
-//        error("Please specify at least one subsystem (or subsystem:version) using the -s and -t options")
       MissingItemsReport(db, list, pdfOptions).saveToFile(file, pdfOptions)
     }
 
@@ -526,7 +531,7 @@ case class IcdDb(
           getImageProblems(prefix, publishModel.imageList)
         }
         val commandProblems = icdModels.commandModel.toList.flatMap { commandModel =>
-        val prefix = s"${commandModel.subsystem}.${commandModel.component}"
+          val prefix = s"${commandModel.subsystem}.${commandModel.component}"
           getCommandProblems(prefix, commandModel.receive)
         }
         publishProblems ::: commandProblems
@@ -598,7 +603,8 @@ case class IcdDb(
       val fitsTagFile = new File(dmsDictDir, "FITS-Tags.conf")
       val tagProblems = if (fitsTagFile.exists()) {
         icdFits.ingestTags(fitsTagFile)
-      } else Nil
+      }
+      else Nil
       fitsProblems ::: tagProblems
     }
     else Nil

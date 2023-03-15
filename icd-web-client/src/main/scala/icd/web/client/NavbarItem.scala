@@ -69,8 +69,10 @@ object NavbarItem {
  * @param tip the tool tip to display when hovering over the item
  * @param listener called when the item is clicked with (orientation, fontSize)
  * @param showDocumentNumber if true, show the  Document Number field
+ * @param showDetailButtons if true, show the event details radio buttons
  */
-case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => Unit, showDocumentNumber: Boolean)
+case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => Unit,
+                         showDocumentNumber: Boolean, showDetailButtons: Boolean = true)
     extends Displayable {
   private def pdfModalListener(): Unit = {
     val orientation = document
@@ -149,6 +151,7 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
   private def makePdfModal(): JsDom.TypedTag[Div] = {
     import scalatags.JsDom.all._
     val docNumCls = if (showDocumentNumber) "docNum" else "d-none"
+    val eventDetailsCls = if (showDetailButtons) "eventDetails" else "d-none"
     div(cls := "modal fade", id := s"pdfModal$labelStr", tabindex := "-1", role := "dialog", style := "padding-top: 130px")(
       div(cls := "modal-dialog")(
         div(cls := "modal-content")(
@@ -176,14 +179,14 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
               PdfOptions.paperSizes.map(x => makeRadioButton(s"paperSize$labelStr", x, PdfOptions.defaultPaperSize)),
               hr,
               p(),
-              h5(s"Details:"),
+              h5(cls := eventDetailsCls, "Details:"),
               div(
-                cls := "form-check",
+                cls := s"form-check $eventDetailsCls",
                 input(`type` := "radio", cls := "form-check-input", name := s"details$labelStr", value := "true", checked),
                 label(cls := "form-check-label", "Show the details for all events, commands, alarms (default)")
               ),
               div(
-                cls := "form-check",
+                cls := s"form-check $eventDetailsCls",
                 input(`type` := "radio", cls := "form-check-input", name := s"details$labelStr", value := "false"),
                 label(cls := "form-check-label", "Include only the details that are expanded in the HTML view")
               ),
