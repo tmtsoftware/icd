@@ -72,7 +72,7 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
   // Note: If one subsystem was specified, search entire database in order to find the missing items,
   // otherwise only search the given subsystems
   private val maybeSubsystems = if (subsystems.size <= 1) None else Some(selectedSubsystemNames)
-  private val query           = new CachedIcdDbQuery(db.db, db.admin, maybeSubsystems, None, Map.empty)
+  private val query           = new CachedIcdDbQuery(db.db, db.admin, maybeSubsystems, None)
   private val versionManager  = new CachedIcdVersionManager(query)
   private val otherSv =
     if (subsystems.size <= 1)

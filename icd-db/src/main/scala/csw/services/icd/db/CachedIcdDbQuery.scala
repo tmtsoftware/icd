@@ -2,7 +2,6 @@ package csw.services.icd.db
 
 import icd.web.shared.IcdModels.{AlarmsModel, CommandModel, ComponentModel, PublishModel, SubscribeModel}
 import csw.services.icd._
-import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import icd.web.shared.PdfOptions
 import reactivemongo.api.DB
 
@@ -20,7 +19,6 @@ class CachedIcdDbQuery(
     admin: DB,
     maybeSubsystems: Option[List[String]],
     maybePdfOptions: Option[PdfOptions],
-    fitsKeyMap: FitsKeyMap
 ) extends IcdDbQuery(db, admin, maybeSubsystems) {
   import IcdDbQuery._
 
@@ -52,7 +50,7 @@ class CachedIcdDbQuery(
    * Returns a map from subsystem name to list of PublishInfo for the subsystem
    */
   private def getPublishInfoMap: Map[String, List[PublishInfo]] = {
-    val list = for (s <- subsystemNames) yield s -> super.getPublishInfo(s, maybePdfOptions, fitsKeyMap)
+    val list = for (s <- subsystemNames) yield s -> super.getPublishInfo(s, maybePdfOptions)
     list.toMap
   }
 
@@ -77,7 +75,7 @@ class CachedIcdDbQuery(
   private def getPublishModelMap(components: List[ComponentModel]): Map[Component, PublishModel] = {
     val list = for {
       componentModel <- components
-      publishModel   <- super.getPublishModel(componentModel, maybePdfOptions, fitsKeyMap)
+      publishModel   <- super.getPublishModel(componentModel, maybePdfOptions)
     } yield Component(componentModel.subsystem, componentModel.component) -> publishModel
     list.toMap
   }
@@ -119,13 +117,12 @@ class CachedIcdDbQuery(
 
   override def getComponents(maybePdfOptions: Option[PdfOptions]): List[ComponentModel] = components
 
-  override def getPublishInfo(subsystem: String, maybePdfOptions: Option[PdfOptions], fitsKeyMap: FitsKeyMap): List[PublishInfo] =
+  override def getPublishInfo(subsystem: String, maybePdfOptions: Option[PdfOptions]): List[PublishInfo] =
     publishInfoMap.getOrElse(subsystem, Nil)
 
   override def getPublishModel(
       component: ComponentModel,
-      maybePdfOptions: Option[PdfOptions],
-      fitsKeyMap: FitsKeyMap
+      maybePdfOptions: Option[PdfOptions]
   ): Option[PublishModel] =
     publishModelMap.get(Component(component.subsystem, component.component))
 

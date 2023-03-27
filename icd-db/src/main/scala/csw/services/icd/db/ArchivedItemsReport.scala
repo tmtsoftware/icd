@@ -33,7 +33,7 @@ object ArchivedItemsReport {
  * @param maybeSv if defined, restrict report to this subsystem, version, component (otherwise: all current subsystems)
  */
 case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion], maybePdfOptions: Option[PdfOptions]) {
-  private val query          = new CachedIcdDbQuery(db.db, db.admin, maybeSv.map(sv => List(sv.subsystem)), maybePdfOptions, Map.empty)
+  private val query          = new CachedIcdDbQuery(db.db, db.admin, maybeSv.map(sv => List(sv.subsystem)), maybePdfOptions)
   private val versionManager = new CachedIcdVersionManager(query)
 
   // Returns true if the given subsystem should be included in the report
@@ -61,7 +61,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
       // Use given subsystem version and component, if defined
       val sv = maybeSv.get
       for {
-        models         <- versionManager.getResolvedModels(sv, maybePdfOptions, Map.empty)
+        models         <- versionManager.getResolvedModels(sv, maybePdfOptions)
         componentModel <- models.componentModel
         if sv.maybeComponent.isEmpty || sv.maybeComponent.get == componentModel.component
         publishModel <- models.publishModel
@@ -74,7 +74,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
       for {
         componentModel <- query.getComponents(maybePdfOptions)
         if subsystemFilter(componentModel.subsystem)
-        publishModel <- query.getPublishModel(componentModel, maybePdfOptions, Map.empty)
+        publishModel <- query.getPublishModel(componentModel, maybePdfOptions)
       } yield {
         getItems(componentModel, "Events", publishModel.eventList) ++
         getItems(componentModel, "ObserveEvents", publishModel.observeEventList)

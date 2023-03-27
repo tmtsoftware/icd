@@ -1,8 +1,8 @@
 package csw.services.icd.db.parser
 
 import csw.services.icd.html.HtmlMarkup
-import icd.web.shared.{FitsChannel, FitsKeyInfo, FitsKeyword, FitsSource, FitsTags, PdfOptions}
-import reactivemongo.api.bson._
+import icd.web.shared.{AvailableChannels, FitsChannel, FitsKeyInfo, FitsKeyword, FitsSource, FitsTags, PdfOptions}
+import reactivemongo.api.bson.*
 
 // keywords: A list of FITS keywords (or keyword/channel)
 // inherit: A list of tags whose keywords should also be included
@@ -74,6 +74,30 @@ object FitsChannelBsonParser {
     )
   }
 }
+
+object AvailableChannelsBsonParser {
+  def apply(doc: BSONDocument): AvailableChannels = {
+    AvailableChannels(
+      subsystem = doc.getAsOpt[String]("subsystem").get,
+      channels = doc.getAsOpt[Array[String]]("channels").map(_.toList).getOrElse(Nil)
+    )
+  }
+}
+
+/**
+ * See resources/<version>/fits-channels-schema.conf
+ */
+object AvailableChannelsListBsonParser {
+  def apply(doc: BSONDocument): List[AvailableChannels] = {
+    if (doc.isEmpty) Nil
+    else {
+      def getItems[A](name: String, f: BSONDocument => A): List[A] =
+        for (subDoc <- doc.getAsOpt[Array[BSONDocument]](name).map(_.toList).getOrElse(Nil)) yield f(subDoc)
+      getItems("availableChannels", AvailableChannelsBsonParser.apply)
+    }
+  }
+}
+
 
 object FitsKeyInfoBsonParser {
   private def getChannels(doc: BSONDocument): List[FitsChannel] = {

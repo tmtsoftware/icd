@@ -17,5 +17,6 @@ class TestHelper(db: IcdDb) {
     val problems = db.ingestAndCleanup(dir)
     for (p <- problems) println(p)
     db.query.afterIngestFiles(problems, db.dbName)
+//    assert(!problems.exists(_.severity == "error"))
   }
 }

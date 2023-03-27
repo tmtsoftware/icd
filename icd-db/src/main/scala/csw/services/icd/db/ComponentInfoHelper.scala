@@ -30,10 +30,9 @@ class ComponentInfoHelper(
    */
   def getComponentInfoList(
       sv: SubsystemWithVersion,
-      maybePdfOptions: Option[PdfOptions],
-      fitsKeyMap: FitsKeyMap
+      maybePdfOptions: Option[PdfOptions]
   ): List[ComponentInfo] = {
-    val resolvedIcdModels = versionManager.getResolvedModels(sv, maybePdfOptions, fitsKeyMap)
+    val resolvedIcdModels = versionManager.getResolvedModels(sv, maybePdfOptions)
     resolvedIcdModels.flatMap(m => getComponentInfoFromModels(Some(m), maybePdfOptions))
   }
 
@@ -46,10 +45,9 @@ class ComponentInfoHelper(
   def getComponentInfo(
       sv: SubsystemWithVersion,
       maybePdfOptions: Option[PdfOptions],
-      fitsKeyMap: FitsKeyMap
   ): Option[ComponentInfo] = {
     // get the models for this component
-    val resolvedIcdModels = versionManager.getResolvedModels(sv, maybePdfOptions, fitsKeyMap)
+    val resolvedIcdModels = versionManager.getResolvedModels(sv, maybePdfOptions)
     getComponentInfoFromModels(resolvedIcdModels.headOption, maybePdfOptions)
   }
 
@@ -155,8 +153,7 @@ class ComponentInfoHelper(
       val x = for {
         t <- versionManager.getModels(
           makeSubsystemWithVersion(si.subsystem, Some(si.component)),
-          maybePdfOptions,
-          Map.empty
+          maybePdfOptions
         )
         // need to resolve any "refs" in the publisher's publish model
         resolvedPublishModel <- t.publishModel.map(p => Resolver(List(t)).resolvePublishModel(p))
@@ -229,8 +226,7 @@ class ComponentInfoHelper(
       // Need to resolve any refs in the receiver's model
       val allModels = versionManager.getModels(
         makeSubsystemWithVersion(sent.subsystem, Some(sent.component)),
-        maybePdfOptions,
-        Map.empty
+        maybePdfOptions
       )
       val targetComponentModel = allModels.flatMap(_.componentModel).headOption
       val targetCmdModel = allModels

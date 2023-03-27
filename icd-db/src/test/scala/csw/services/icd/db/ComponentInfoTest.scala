@@ -146,23 +146,23 @@ class ComponentInfoTest extends AnyFunSuite {
     testHelper.ingestDir(getTestDir(s"$examplesDir/TEST2"))
 
     new ComponentInfoHelper(db.versionManager, displayWarnings = false, clientApi = true)
-      .getComponentInfo(SubsystemWithVersion("TEST", None, Some("lgsWfs")), None, Map.empty)
+      .getComponentInfo(SubsystemWithVersion("TEST", None, Some("lgsWfs")), None)
       .foreach(checkInfo(_, clientApi = true))
 
     new ComponentInfoHelper(db.versionManager, displayWarnings = false, clientApi = false)
-      .getComponentInfo(SubsystemWithVersion("TEST", None, Some("lgsWfs")), None, Map.empty)
+      .getComponentInfo(SubsystemWithVersion("TEST", None, Some("lgsWfs")), None)
       .foreach(checkInfo(_, clientApi = false))
 
     new ComponentInfoHelper(db.versionManager, displayWarnings = false, clientApi = true)
-      .getComponentInfo(SubsystemWithVersion("TEST", None, None), None, Map.empty)
+      .getComponentInfo(SubsystemWithVersion("TEST", None, None), None)
       .foreach(checkInfo2(_, clientApi = true))
 
     new ComponentInfoHelper(db.versionManager, displayWarnings = false, clientApi = true)
-      .getComponentInfo(SubsystemWithVersion("TEST2", None, Some("test2Pk")), None, Map.empty)
+      .getComponentInfo(SubsystemWithVersion("TEST2", None, Some("test2Pk")), None)
       .foreach(checkInfo3(_, clientApi = true))
 
     new ComponentInfoHelper(db.versionManager, displayWarnings = false, clientApi = false)
-      .getComponentInfo(SubsystemWithVersion("TEST2", None, Some("test2Pk")), None, Map.empty)
+      .getComponentInfo(SubsystemWithVersion("TEST2", None, Some("test2Pk")), None)
       .foreach(checkInfo3(_, clientApi = false))
   }
 }

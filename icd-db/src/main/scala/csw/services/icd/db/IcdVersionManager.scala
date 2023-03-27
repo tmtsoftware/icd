@@ -23,7 +23,6 @@ import reactivemongo.api.{Cursor, WriteConcern}
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.play.json.compat._
 import bson2json._
-import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import icd.web.shared.ComponentInfo.PublishType
 import lax._
 import json2bson._
@@ -483,14 +482,12 @@ case class IcdVersionManager(query: IcdDbQuery) {
    *
    * @param sv            the subsystem
    * @param maybePdfOptions options for generating HTML for PDF doc
-   * @param fitsKeyMap FITS key info, if needed
    * @param includeOnly if not empty, include only the named models in the result ("subsystemModel", "publishModel", etc.)
    * @return a list of IcdModels for the given version of the subsystem or component
    */
   def getModels(
       sv: SubsystemWithVersion,
       maybePdfOptions: Option[PdfOptions] = None,
-      fitsKeyMap: FitsKeyMap = Map.empty,
       includeOnly: Set[String] = Set.empty
   ): List[IcdModels] = {
 
@@ -509,9 +506,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
             PublishModelBsonParser(
               getDocVersion(coll),
               maybePdfOptions,
-              query.getAllObserveEvents(maybePdfOptions),
-              fitsKeyMap,
-              Some(sv)
+              query.getAllObserveEvents(maybePdfOptions)
             )
           )
         else None
@@ -591,15 +586,13 @@ case class IcdVersionManager(query: IcdDbQuery) {
   def getResolvedModels(
       sv: SubsystemWithVersion,
       maybePdfOptions: Option[PdfOptions],
-      fitsKeyMap: FitsKeyMap
   ): List[IcdModels] = {
     val allComponentNames = getComponentNames(SubsystemWithVersion(sv.subsystem, sv.maybeVersion, None))
     val allComponentSvs   = allComponentNames.map(component => SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component)))
     val allIcdModels = allComponentSvs.flatMap(compSv =>
       getModels(
         compSv,
-        maybePdfOptions,
-        fitsKeyMap
+        maybePdfOptions
       )
     )
     val icdModels = getModelsForComponents(allIcdModels, sv, maybePdfOptions)
@@ -617,7 +610,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       sv: SubsystemWithVersion,
       maybePdfOptions: Option[PdfOptions]
   ): Option[SubsystemModel] = {
-    getModels(sv, maybePdfOptions, Map.empty, Set("subsystemModel")).headOption.flatMap(_.subsystemModel)
+    getModels(sv, maybePdfOptions, Set("subsystemModel")).headOption.flatMap(_.subsystemModel)
   }
 
   /**

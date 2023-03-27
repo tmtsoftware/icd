@@ -4,10 +4,9 @@ import java.io.{ByteArrayOutputStream, File, FileOutputStream}
 import csw.services.icd.{IcdToPdf, PdfCache}
 import csw.services.icd.html.{IcdToHtml, NumberedHeadings}
 import icd.web.shared.TitleInfo.unpublished
-import icd.web.shared.{SubsystemWithVersion, _}
-import IcdToHtml._
-import csw.services.icd.fits.{IcdFits, IcdFitsDefs}
-import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
+import icd.web.shared.*
+import IcdToHtml.*
+import csw.services.icd.fits.IcdFits
 import icd.web.shared.IcdModels.IcdModel
 
 /**
@@ -65,14 +64,13 @@ case class IcdDbPrinter(
       versionManager: IcdVersionManager,
       sv: SubsystemWithVersion,
       maybeTargetSv: Option[SubsystemWithVersion],
-      fitsKeyMap: FitsKeyMap
   ): List[ComponentInfo] = {
     maybeTargetSv match {
       case Some(targetSv) =>
-        IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, maybePdfOptions, fitsKeyMap)
+        IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, maybePdfOptions)
       case None =>
         new ComponentInfoHelper(versionManager, searchAllSubsystems, clientApi)
-          .getComponentInfoList(sv, maybePdfOptions, fitsKeyMap)
+          .getComponentInfoList(sv, maybePdfOptions)
     }
   }
 
@@ -84,17 +82,16 @@ case class IcdDbPrinter(
    */
   def getApiAsHtml(sv: SubsystemWithVersion, pdfOptions: PdfOptions): Option[String] = {
     val fitsDictionary  = IcdFits(db).getFitsDictionary(Some(sv.subsystem), sv.maybeComponent, None, Some(pdfOptions))
-    val fitsKeyMap      = IcdFitsDefs.getFitsKeyMap(fitsDictionary.fitsKeys)
     val maybeSubsystems = if (searchAllSubsystems) None else Some(List(sv.subsystem))
     // Use caching, since we need to look at all the components multiple times, in order to determine who
     // subscribes, who calls commands, etc.
-    val query          = new CachedIcdDbQuery(db.db, db.admin, maybeSubsystems, Some(pdfOptions), fitsKeyMap)
+    val query          = new CachedIcdDbQuery(db.db, db.admin, maybeSubsystems, Some(pdfOptions))
     val versionManager = new CachedIcdVersionManager(query)
 
     val markup = for {
       subsystemInfo <- getSubsystemInfo(sv)
     } yield {
-      val infoList = getComponentInfo(versionManager, sv, None, fitsKeyMap)
+      val infoList = getComponentInfo(versionManager, sv, None)
       IcdToHtml.getApiAsHtml(subsystemInfo, infoList, pdfOptions, clientApi, fitsDictionary)
     }
     markup.map(_.render)
@@ -123,8 +120,7 @@ case class IcdDbPrinter(
 
     // Use caching, since we need to look at all the components multiple times, in order to determine who
     // subscribes, who calls commands, etc.
-    val fitsKeyMap     = IcdFits(db).getFitsKeyMap(maybePdfOptions)
-    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), Some(pdfOptions), fitsKeyMap)
+    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), Some(pdfOptions))
     val versionManager = new CachedIcdVersionManager(query)
     val icdInfoList    = getIcdModelList(sv, targetSv)
     val markup = for {
@@ -132,10 +128,10 @@ case class IcdDbPrinter(
       targetSubsystemInfo <- getSubsystemInfo(targetSv)
     } yield {
       import scalatags.Text.all._
-      val infoList               = getComponentInfo(versionManager, sv, Some(targetSv), fitsKeyMap)
+      val infoList               = getComponentInfo(versionManager, sv, Some(targetSv))
       val titleInfo              = TitleInfo(subsystemInfo, Some(targetSv), maybeIcdVersion, documentNumber = pdfOptions.documentNumber)
       val titleInfo1             = TitleInfo(subsystemInfo, Some(targetSv), maybeIcdVersion, "(Part 1)")
-      val infoList2              = getComponentInfo(versionManager, targetSv, Some(sv), fitsKeyMap)
+      val infoList2              = getComponentInfo(versionManager, targetSv, Some(sv))
       val titleInfo2             = TitleInfo(targetSubsystemInfo, Some(sv), maybeIcdVersion, "(Part 2)")
       val nh                     = new NumberedHeadings
       val subsystemVersion       = subsystemInfo.sv.maybeVersion.getOrElse(unpublished)

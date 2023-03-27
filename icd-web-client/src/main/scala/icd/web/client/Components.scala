@@ -327,15 +327,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     f
   }
 
-//  // Removes the component display
-//  def removeComponentInfo(compName: String): Unit = {
-//    val elem = $id(getComponentInfoId(compName))
-//    if (elem != null) {
-//      // remove inner content so we can reuse the div and keep the position on the page
-//      elem.innerHTML = ""
-//    }
-//  }
-
   /**
    * Displays the information for a component, appending to the other selected components, if any.
    *

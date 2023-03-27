@@ -1,9 +1,8 @@
 package csw.services.icd.db.parser
 
-import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.EventModel
-import icd.web.shared.{PdfOptions, SubsystemWithVersion}
+import icd.web.shared.PdfOptions
 import reactivemongo.api.bson._
 
 /**
@@ -14,8 +13,6 @@ object EventModelBsonParser {
   def apply(
       doc: BSONDocument,
       maybePdfOptions: Option[PdfOptions],
-      fitsKeyMap: FitsKeyMap,
-      maybeSv: Option[SubsystemWithVersion]
   ): EventModel = {
     // For backward compatibility, allow "attributes" or "parameters"
     val attrKey = if (doc.contains("parameters")) "parameters" else "attributes"
@@ -31,7 +28,7 @@ object EventModelBsonParser {
       archiveDuration = doc.getAsOpt[String]("archiveDuration").getOrElse(""),
       parameterList =
         for (subDoc <- doc.getAsOpt[Array[BSONDocument]](attrKey).map(_.toList).getOrElse(Nil))
-          yield ParameterModelBsonParser(subDoc, maybePdfOptions, fitsKeyMap, maybeSv, Some(name))
+          yield ParameterModelBsonParser(subDoc, maybePdfOptions)
     )
   }
 }

@@ -1,9 +1,8 @@
 package csw.services.icd.db.parser
 
-import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.{EventModel, PublishModel}
-import icd.web.shared.{PdfOptions, SubsystemWithVersion}
+import icd.web.shared.PdfOptions
 import reactivemongo.api.bson._
 
 /**
@@ -14,9 +13,7 @@ object PublishModelBsonParser {
   def apply(
       doc: BSONDocument,
       maybePdfOptions: Option[PdfOptions],
-      observeEventMap: Map[String, EventModel],
-      fitsKeyMap: FitsKeyMap,
-      maybeSv: Option[SubsystemWithVersion]
+      observeEventMap: Map[String, EventModel]
   ): Option[PublishModel] = {
     if (doc.isEmpty) None
     else
@@ -30,17 +27,17 @@ object PublishModelBsonParser {
           for (eventName <- publishDoc.getAsOpt[Array[String]](name).map(_.toList).getOrElse(Nil)) yield f(eventName)
 
         // For backward compatibility
-        val oldEvents = getItems("telemetry", EventModelBsonParser(_, maybePdfOptions, fitsKeyMap, maybeSv)) ++
-          getItems("eventStreams", EventModelBsonParser(_, maybePdfOptions, fitsKeyMap, maybeSv))
+        val oldEvents = getItems("telemetry", EventModelBsonParser(_, maybePdfOptions)) ++
+          getItems("eventStreams", EventModelBsonParser(_, maybePdfOptions))
 
         PublishModel(
           subsystem = doc.getAsOpt[String](BaseModelBsonParser.subsystemKey).get,
           component = doc.getAsOpt[String](BaseModelBsonParser.componentKey).get,
           description =
             publishDoc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
-          eventList = oldEvents ++ getItems("events", EventModelBsonParser(_, maybePdfOptions, fitsKeyMap, maybeSv)),
+          eventList = oldEvents ++ getItems("events", EventModelBsonParser(_, maybePdfOptions)),
           observeEventList = getObserveEventItems("observeEvents", observeEventMap(_)),
-          currentStateList = getItems("currentStates", EventModelBsonParser(_, maybePdfOptions, fitsKeyMap, maybeSv)),
+          currentStateList = getItems("currentStates", EventModelBsonParser(_, maybePdfOptions)),
           imageList = getItems("images", ImageModelBsonParser(_, maybePdfOptions)),
           alarmList = getItems("alarms", AlarmModelBsonParser(_, maybePdfOptions))
         )

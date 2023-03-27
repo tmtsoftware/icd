@@ -103,7 +103,7 @@ object IcdModels {
    * Description of an alarm
    *
    * @param name             alarm name
-   * @param description      alarm descrption
+   * @param description      alarm description
    * @param requirements     list of requirements that flow to this alarm
    * @param severityLevels   Severity levels that the alarm can have (besides Disconnected, Indeterminate, Okay)
    * @param location         A text description of where the alarming condition is located
@@ -148,7 +148,9 @@ object IcdModels {
    * @param exclusiveMaximum true if the max value in exclusive
    * @param defaultValue     default value (as a string, which may be empty)
    * @param typeStr          a generated text description of the type
-   * @param fitsKeys         a list of FITS keywords for which this parameter is the source
+   * @param fitsKeys         a list of FITS keyword info for FITS keywords where this parameter is the source
+   *                         (This will normally be just the keyword name, but could in some cases be more complicated,
+   *                         containing the channel or index into the parameter value, in the case of arrays.)
    */
   case class ParameterModel(
       name: String,
@@ -171,7 +173,7 @@ object IcdModels {
       allowNaN: Boolean,
       defaultValue: String,
       typeStr: String,
-      fitsKeys: List[String]
+      fitsKeys: List[EventParameterFitsKeyInfo]
   ) extends NameDesc {
 
     // Estimate size required to archive the value(s) for this parameter
@@ -545,7 +547,7 @@ object IcdModels {
    * @param description event description
    * @param channel the image channel name
    * @param format format (For example: "FITS")
-   * @param size image dimemsions
+   * @param size image dimensions
    * @param pixelSize bytes per pixel
    * @param maybeMaxRate maximum rate the image is published
    * @param metadataList list of image metadata (FITS keywords)

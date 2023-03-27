@@ -2,25 +2,26 @@ package csw.services.icd.fits
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import csw.services.icd.db.{IcdDb, IcdDbDefaults}
-import icd.web.shared.{BuildInfo, FitsDictionary, FitsKeyInfo, FitsKeyInfoList, FitsSource, FitsTags, PdfOptions}
+import icd.web.shared.{AvailableChannels, BuildInfo, FitsDictionary, FitsKeyInfo, FitsKeyInfoList, FitsSource, FitsTags, PdfOptions}
 import reactivemongo.api.bson.collection.BSONCollection
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import csw.services.icd._
-import reactivemongo.play.json.compat._
-import csw.services.icd.db.parser.{FitsKeyInfoListBsonParser, FitsTagsBsonParser}
-import lax._
-import json2bson._
+import csw.services.icd.*
+import reactivemongo.play.json.compat.*
+import csw.services.icd.db.parser.{AvailableChannelsListBsonParser, FitsChannelBsonParser, FitsKeyInfoListBsonParser, FitsTagsBsonParser}
+import lax.*
+import json2bson.*
 
 import java.io.{File, FileInputStream, FileOutputStream}
-import play.api.libs.json._
+import play.api.libs.json.*
 import reactivemongo.api.bson.BSONDocument
 
 import scala.util.Try
 
 object IcdFitsDefs {
-  val fitsKeyCollectionName = "fits.keys"
-  val fitsTagCollectionName = "fits.tags"
+  val fitsKeyCollectionName     = "fits.keys"
+  val fitsTagCollectionName     = "fits.tags"
+  val fitsChannelCollectionName = "fits.channels"
 
   type FitsKeyMap = Map[FitsSource, List[String]]
 
@@ -62,8 +63,9 @@ object IcdFits extends App {
       list: Boolean = false,
       outputFile: Option[File] = None,
       ingest: Option[File] = None,
-      validate: Option[File] = None,
       ingestTags: Option[File] = None,
+      ingestChannels: Option[File] = None,
+      validate: Option[File] = None,
       orientation: Option[String] = None,
       fontSize: Option[Int] = None,
       lineHeight: Option[String] = None,
@@ -114,6 +116,10 @@ object IcdFits extends App {
     opt[File]("ingestTags") valueName "<file>" action { (x, c) =>
       c.copy(ingestTags = Some(x))
     } text "Ingest a JSON or HOCON formatted file defining tags for the FITS dictionary into the icd database"
+
+    opt[File]("ingestChannels") valueName "<file>" action { (x, c) =>
+      c.copy(ingestChannels = Some(x))
+    } text "Ingest a JSON or HOCON formatted file defining the available FITS channels for each subsystem into the icd database"
 
     opt[File]('o', "out") valueName "<outputFile>" action { (x, c) =>
       c.copy(outputFile = Some(x))
@@ -184,8 +190,9 @@ object IcdFits extends App {
 
     if (options.list) icdFits.list(options.subsystem, options.component, options.tag, pdfOptions)
 
-    options.validate.foreach(file => icdFits.validate(file).foreach(println))
+    options.validate.foreach(file => icdFits.validateFitsDictionary(file).foreach(println))
     options.ingestTags.foreach(file => icdFits.ingestTags(file).foreach(println))
+    options.ingestChannels.foreach(file => icdFits.ingestChannels(file).foreach(println))
     options.ingest.foreach(file => icdFits.ingest(file).foreach(println))
 
     if (options.outputFile.nonEmpty) {
@@ -201,8 +208,9 @@ object IcdFits extends App {
 //noinspection SpellCheckingInspection
 case class IcdFits(db: IcdDb) {
   import IcdFitsDefs._
-  private val fitsKeyCollection = db.db.collection[BSONCollection](fitsKeyCollectionName)
-  private val fitsTagCollection = db.db.collection[BSONCollection](fitsTagCollectionName)
+  private val fitsKeyCollection     = db.db.collection[BSONCollection](fitsKeyCollectionName)
+  private val fitsTagCollection     = db.db.collection[BSONCollection](fitsTagCollectionName)
+  private val fitsChannelCollection = db.db.collection[BSONCollection](fitsChannelCollectionName)
 
   def ingestTags(file: File): List[Problem] = {
     // Check for duplicate keywords (duplicates must have different channels)
@@ -213,7 +221,8 @@ case class IcdFits(db: IcdDb) {
       val keywords = tags.flatMap { tag =>
         config.getStringList(s"$tag.keywords").asScala.toList
       }
-      keywords.groupBy(identity)
+      keywords
+        .groupBy(identity)
         .collect {
           case (x, List(_, _, _*)) => x
         }
@@ -234,10 +243,22 @@ case class IcdFits(db: IcdDb) {
     }
   }
 
+  def ingestChannels(file: File): List[Problem] = {
+    val config   = ConfigFactory.parseFile(file)
+    val jsObj    = Json.parse(IcdValidator.toJson(config)).as[JsObject]
+    val problems = IcdValidator.validateFitsChannels(jsObj.toString())
+    if (problems.isEmpty) {
+      fitsChannelCollection.drop().await
+      fitsChannelCollection.create().await
+      fitsChannelCollection.insert.one(jsObj).await
+    }
+    problems
+  }
+
   /**
    * Validate the FITS-Dictionary.json file and return a list of problems, if found
    */
-  def validate(file: File): List[Problem] = {
+  def validateFitsDictionary(file: File): List[Problem] = {
     val inputStream = new FileInputStream(file)
     val jsObj       = Json.parse(inputStream).asInstanceOf[JsObject]
     val problems    = IcdValidator.validateFitsDictionary(jsObj.toString())
@@ -269,7 +290,20 @@ case class IcdFits(db: IcdDb) {
     maybeFitsTags.getOrElse(FitsTags(Map.empty))
   }
 
-  private def getFitsKeyInfo(maybePdfOptions: Option[PdfOptions] = None): List[FitsKeyInfo] = {
+  // Contents of FITS-Channels.conf: List of available FITS keyword channel names for each subsystem referenced in
+  // FITS-Dictionary.json.
+  def getFitsChannels: List[AvailableChannels] = {
+    val maybeFitsChannelsDoc = fitsChannelCollection.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await
+    val maybeFitsChannels   = maybeFitsChannelsDoc.map(AvailableChannelsListBsonParser(_))
+    maybeFitsChannels.getOrElse(Nil)
+  }
+
+  // Map from subsystem name to FITS channel
+  def getFitsChannelMap: Map[String, Set[String]] = {
+    getFitsChannels.map(c => c.subsystem -> c.channels.toSet).toMap
+  }
+
+  def getFitsKeyInfo(maybePdfOptions: Option[PdfOptions] = None): List[FitsKeyInfo] = {
     val maybeFitsKeyDoc  = fitsKeyCollection.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await
     val maybeFitsKeyList = maybeFitsKeyDoc.map(FitsKeyInfoListBsonParser(_, maybePdfOptions))
     maybeFitsKeyList.getOrElse(Nil)

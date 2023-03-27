@@ -1,6 +1,5 @@
 package icd.web.shared
 
-
 case class FitsKeywordAndChannel(keyword: String, channel: Option[String])
 object FitsKeywordAndChannel {
   implicit def orderingByName[A <: FitsKeywordAndChannel]: Ordering[A] = Ordering.by(e => e.keyword + e.channel)
@@ -55,6 +54,26 @@ case class FitsChannel(source: FitsSource, name: String = "", comment: String = 
 object FitsKeyInfo {
   implicit def orderingByName[A <: FitsKeyInfo]: Ordering[A] = Ordering.by(e => e.name)
 }
+
+// Available channels for a given subsystem
+// (Channel names that may be used in publish-model.conf file to specify the FITS keyword channel
+// for values coming from an event parameter)
+case class AvailableChannels(
+    subsystem: String,
+    channels: List[String]
+)
+
+// FITS key information supplied as part of an event parameter description (in publish-model.conf)
+case class EventParameterFitsKeyInfo(
+    // FITS Key name
+    name: String,
+    // Optional channel name (if the same keyword has multiple source parameters)
+    channel: Option[String] = None,
+    // Optional index into array (if parameter value is an array)
+    index: Option[Int] = None,
+    // Optional row index, if parameter is a matrix/2d array
+    rowIndex: Option[Int] = None
+)
 
 // Information about one FITS keyword
 case class FitsKeyInfo(

@@ -2,15 +2,15 @@ package csw.services.icd.db
 
 import java.io.File
 import com.typesafe.config.{Config, ConfigFactory}
-import csw.services.icd._
+import csw.services.icd.*
 import csw.services.icd.codegen.{JavaCodeGenerator, PythonCodeGenerator, ScalaCodeGenerator, TypescriptCodeGenerator}
 import csw.services.icd.db.parser.{BaseModelParser, IcdModelParser, ServiceModelParser, SubsystemModelParser}
-import csw.services.icd.db.ComponentDataReporter._
+import csw.services.icd.db.ComponentDataReporter.*
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.fits.IcdFits
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.IcdModels.{EventModel, ImageModel, ReceiveCommandModel}
-import icd.web.shared.{BuildInfo, PdfOptions, SubsystemWithVersion}
+import icd.web.shared.{AvailableChannels, BuildInfo, FitsKeyInfo, PdfOptions, SubsystemWithVersion}
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
 import io.swagger.v3.parser.util.DeserializationUtils
@@ -493,6 +493,7 @@ case class IcdDb(
 
   // Check for obvious errors, such as duplicate event or parameter names after ingesting model files for subsystem
   private def checkPostIngest(subsystem: String): List[Problem] = {
+
     def getEventProblems(prefix: String, events: List[EventModel], name: String): List[Problem] = {
       val p1 = getDuplicates(events.map(_.name)).map(s => Problem("error", s"Duplicate $name name: '$s''"))
       val p2 = events.flatMap(event =>
@@ -520,13 +521,47 @@ case class IcdDb(
       p1 ::: p2
     }
 
-    val sv = SubsystemWithVersion(subsystem, None, None)
+    def getFitsKeywordProblems(
+        prefix: String,
+        events: List[EventModel],
+        allowedFitsKeyNames: Set[String],
+        allowedChannels: Set[String]
+    ): List[Problem] = {
+      if (allowedFitsKeyNames.isEmpty) Nil
+      else {
+        val result = for {
+          event <- events
+          p     <- event.parameterList
+          k     <- p.fitsKeys
+        } yield {
+          val keyNameProblems =
+            if (allowedFitsKeyNames.contains(k.name)) None
+            else Some(Problem("error", s"${prefix}.${event.name}: ${k.name} is not in the FITS dictionary"))
+          val channelNameProblems =
+            if (k.channel.isEmpty || allowedChannels.contains(k.channel.get)) None
+            else {
+              val msg1 = s"Event: ${prefix}.${event.name}, FITS keyword: ${k.name}: channel ${k.channel.get} is not defined. "
+              val msg2 = if (allowedChannels.nonEmpty) s"Should be one of: ${allowedChannels.mkString(", ")}" else ""
+              Some(Problem("error", msg1 + msg2))
+            }
+          keyNameProblems.toList ::: channelNameProblems.toList
+        }
+        result.flatten
+      }
+    }
+
+    val icdFits                  = IcdFits(this)
+    val allowedFitsKeyNames      = icdFits.getFitsKeyInfo(None).map(_.name).toSet
+    val availableFitsKeyChannels = icdFits.getFitsChannels.map(c => c.subsystem -> c.channels).toMap
+    val sv                       = SubsystemWithVersion(subsystem, None, None)
     versionManager
-      .getResolvedModels(sv, None, Map.empty)
+      .getResolvedModels(sv, None)
       .flatMap { icdModels =>
         val publishProblems = icdModels.publishModel.toList.flatMap { publishModel =>
-          val prefix = s"${publishModel.subsystem}.${publishModel.component}"
+          val prefix          = s"${publishModel.subsystem}.${publishModel.component}"
+          val allowedChannels = availableFitsKeyChannels.get(publishModel.subsystem).toList.flatten.toSet
           getEventProblems(prefix, publishModel.eventList, "event") :::
+          getFitsKeywordProblems(prefix, publishModel.eventList, allowedFitsKeyNames, allowedChannels) :::
           getEventProblems(prefix, publishModel.currentStateList, "current state") :::
           getImageProblems(prefix, publishModel.imageList)
         }
@@ -536,24 +571,10 @@ case class IcdDb(
         }
         publishProblems ::: commandProblems
       }
-
   }
 
-  /**
-   * Ingests all the files with the standard names (stdNames) in the given directory and recursively
-   * in its subdirectories into the database.
-   * If a subsystem-model.conf was ingested, the previous data for that subsystem is removed first
-   * (to make sure renamed or removed components actually are gone).
-   *
-   * @param dir the top level directory containing one or more of the the standard set of ICD files
-   *            and any number of subdirectories containing ICD files
-   * @return a pair of two lists: 1: A list of the configs in the directories, 2: A list describing any problems that occurred
-   */
-  def ingestAndCleanup(dir: File = new File(".")): List[Problem] = {
-    val (configs, ingestProblems) = ingest(dir)
-    val subsystemList             = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.config.getString("subsystem"))
-
-    // Check for duplicate subsystem-model.conf file (found one in TCS)
+  // Check for duplicate subsystem-model.conf file (found one in TCS) and component names
+  private def checkComponents(configs: List[StdConfig], subsystemList: List[String]): List[Problem] = {
     val duplicateSubsystems = subsystemList.diff(subsystemList.toSet.toList)
     val duplicateComponents = checkForDuplicateComponentNames(configs)
     val wrongComponents     = checkForWrongComponentNames(configs)
@@ -572,7 +593,25 @@ case class IcdDb(
         List(Problem("error", s"Conflicting component names found: ${wrongComponents.mkString(", ")}"))
       else Nil
 
-    val allProblems = ingestProblems ::: duplicateSubsystemProblems ::: duplicateComponentProblems ::: wrongComponentProblems
+    duplicateSubsystemProblems ::: duplicateComponentProblems ::: wrongComponentProblems
+  }
+
+  /**
+   * Ingests all the files with the standard names (stdNames) in the given directory and recursively
+   * in its subdirectories into the database.
+   * If a subsystem-model.conf was ingested, the previous data for that subsystem is removed first
+   * (to make sure renamed or removed components actually are gone).
+   *
+   * @param dir the top level directory containing one or more of the the standard set of ICD files
+   *            and any number of subdirectories containing ICD files
+   * @return a pair of two lists: 1: A list of the configs in the directories, 2: A list describing any problems that occurred
+   */
+  def ingestAndCleanup(dir: File = new File(".")): List[Problem] = {
+    val (configs, ingestProblems) = ingest(dir)
+    val subsystemList             = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.config.getString("subsystem"))
+
+    val componentProblems = checkComponents(configs, subsystemList)
+    val allProblems       = ingestProblems ::: componentProblems
 
     if (subsystemList.isEmpty)
       query.afterIngestFiles(allProblems, dbName)
@@ -605,7 +644,12 @@ case class IcdDb(
         icdFits.ingestTags(fitsTagFile)
       }
       else Nil
-      fitsProblems ::: tagProblems
+      val fitsChannelFile = new File(dmsDictDir, "FITS-Channels.conf")
+      val channelProblems = if (fitsChannelFile.exists()) {
+        icdFits.ingestChannels(fitsChannelFile)
+      }
+      else Nil
+      fitsProblems ::: tagProblems ::: channelProblems
     }
     else Nil
   }

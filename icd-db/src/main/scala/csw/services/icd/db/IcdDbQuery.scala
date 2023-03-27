@@ -13,7 +13,7 @@ import csw.services.icd.db.parser.{
   SubsystemModelBsonParser
 }
 import icd.web.shared.ComponentInfo._
-import icd.web.shared.{IcdModels, PdfOptions, SubsystemWithVersion}
+import icd.web.shared.{IcdModels, PdfOptions}
 import icd.web.shared.IcdModels._
 import play.api.libs.json.JsObject
 import reactivemongo.api.DB
@@ -21,7 +21,6 @@ import reactivemongo.api.bson.BSONDocument
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.play.json.compat._
 import bson2json._
-import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import lax._
 import json2bson._
 
@@ -188,7 +187,7 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
     getAllCollectionNames
       .filter(s => s.startsWith("ESW.") && s.endsWith("Lib.publish"))
       .flatMap(collName =>
-        collectionHead(db(collName)).flatMap(PublishModelBsonParser(_, maybePdfOptions, Map.empty, Map.empty, None))
+        collectionHead(db(collName)).flatMap(PublishModelBsonParser(_, maybePdfOptions, Map.empty))
       )
       .flatMap(publishModel => publishModel.eventList)
       .map(eventModel => eventModel.name -> eventModel)
@@ -389,14 +388,12 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
   def getPublishModel(
       component: ComponentModel,
       maybePdfOptions: Option[PdfOptions],
-      fitsKeyMap: FitsKeyMap
   ): Option[PublishModel] = {
     val collName = getPublishCollectionName(component.subsystem, component.component)
     if (collectionExists(collName)) {
       val coll = db.collection[BSONCollection](collName)
-      val sv   = SubsystemWithVersion(component.subsystem, None, Some(component.component))
       collectionHead(coll).flatMap(
-        PublishModelBsonParser(_, maybePdfOptions, getAllObserveEvents(maybePdfOptions), fitsKeyMap, Some(sv))
+        PublishModelBsonParser(_, maybePdfOptions, getAllObserveEvents(maybePdfOptions))
       )
     }
     else None
@@ -531,7 +528,6 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
       subsystem: String,
       component: Option[String] = None,
       maybePdfOptions: Option[PdfOptions],
-      fitsKeyMap: FitsKeyMap
   ): List[IcdModels] = {
 
     // Holds all the model classes associated with a single API.
@@ -545,8 +541,6 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
               _,
               maybePdfOptions,
               getAllObserveEvents(maybePdfOptions),
-              fitsKeyMap,
-              Some(SubsystemWithVersion(subsystem, None, component))
             )
           )
         )
@@ -662,8 +656,8 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
    *
    * @param component the component's model
    */
-  def getPublished(component: ComponentModel, maybePdfOptions: Option[PdfOptions], fitsKeyMap: FitsKeyMap): List[Published] = {
-    val maybePublishModel = getPublishModel(component, maybePdfOptions, fitsKeyMap)
+  def getPublished(component: ComponentModel, maybePdfOptions: Option[PdfOptions]): List[Published] = {
+    val maybePublishModel = getPublishModel(component, maybePdfOptions)
     val maybeAlarmsModel  = getAlarmsModel(component, maybePdfOptions)
     // TODO: Ignore alarms in publish-model.conf if alarm-model.conf is present? Or merge any alarms found?
 //    val alarmList = maybeAlarmsModel.map(_.alarmList).getOrElse(maybePublishModel.map(_.alarmList).getOrElse(Nil))
@@ -683,9 +677,9 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
   /**
    * Returns a list describing what each component publishes
    */
-  def getPublishInfo(subsystem: String, maybePdfOptions: Option[PdfOptions], fitsKeyMap: FitsKeyMap): List[PublishInfo] = {
+  def getPublishInfo(subsystem: String, maybePdfOptions: Option[PdfOptions]): List[PublishInfo] = {
     def getPublishInfo(c: ComponentModel): PublishInfo =
-      PublishInfo(c.component, c.prefix, getPublished(c, maybePdfOptions, fitsKeyMap))
+      PublishInfo(c.component, c.prefix, getPublished(c, maybePdfOptions))
 
     getComponents(maybePdfOptions).filter(m => m.subsystem == subsystem).map(c => getPublishInfo(c))
   }
@@ -729,36 +723,4 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
   def getSubscribeInfo(maybePdfOptions: Option[PdfOptions]): List[SubscribeInfo] = {
     getComponents(maybePdfOptions).map(c => getSubscribeInfo(c, maybePdfOptions))
   }
-
-//  /**
-//   * Returns a list describing the components that subscribe to the given value.
-//   *
-//   * @param path          full path name of value (prefix + name)
-//   * @param subscribeType events, alarm, etc...
-//   */
-//  def subscribes(path: String, subscribeType: PublishType, maybePdfOptions: Option[PdfOptions]): List[Subscribed] = {
-//    for {
-//      i <- getSubscribeInfo(maybePdfOptions)
-//      s <- i.subscribesTo.filter(sub => sub.path == path && sub.subscribeType == subscribeType)
-//    } yield s
-//  }
-
-//  /**
-//   * Gets a list of system events for the given subsystem
-//   */
-//  def getEventsForSubsystem(subsystem: String, fitsKeyMap: FitsKeyMap): EventsForSubsystem = {
-//    val eventsForComponent = getPublishInfo(subsystem, None, fitsKeyMap).map { info =>
-//      // XXX TODO: Add p.description?
-//      EventsForComponent(info.componentName, info.publishes.filter(_.publishType == Events).map(p => Event(p.name)))
-//    }
-//    EventsForSubsystem(subsystem, eventsForComponent.filter(_.events.nonEmpty))
-//  }
-
-//  /**
-//   * Gets a list of all published system events by subsystem/component.
-//   */
-//  def getEventList(fitsKeyMap: FitsKeyMap): List[EventsForSubsystem] = {
-//    getSubsystemNames.map(s => getEventsForSubsystem(s, fitsKeyMap)).filter(_.components.nonEmpty)
-//  }
-
 }

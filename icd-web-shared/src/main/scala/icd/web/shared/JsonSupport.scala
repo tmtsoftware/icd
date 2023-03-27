@@ -47,6 +47,7 @@ object JsonSupport {
   }
 
   implicit val componentModelFormat        = Json.format[ComponentModel]
+  implicit val EventParameterFitsKeyInfo   = Json.format[EventParameterFitsKeyInfo]
   implicit val parameterModelFormat        = Json.format[ParameterModel]
   implicit val eventModelFormat            = Json.format[EventModel]
   implicit val metadataModelFormat         = Json.format[MetadataModel]
@@ -97,5 +98,6 @@ object JsonSupport {
   implicit val fitsKeyInfoListFormat       = Json.format[FitsKeyInfoList]
   implicit val fitsKeywordFormat           = Json.format[FitsKeyword]
   implicit val fitsTagsFormat              = Json.format[FitsTags]
+  implicit val availableChannelsFormat     = Json.format[AvailableChannels]
   implicit val fitsDictionaryFormat        = Json.format[FitsDictionary]
 }

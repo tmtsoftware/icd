@@ -146,14 +146,13 @@ class ApplicationImpl(db: IcdDb) {
     val searchAllSubsystems = clientApi && searchAll.getOrElse(false)
     val subsystems          = if (searchAllSubsystems) None else Some(List(sv.subsystem))
     try {
-      val fitsKeyMap     = IcdFits(db).getFitsKeyMap()
-      val query          = new CachedIcdDbQuery(db.db, db.admin, subsystems, None, fitsKeyMap)
+      val query          = new CachedIcdDbQuery(db.db, db.admin, subsystems, None)
       val versionManager = new CachedIcdVersionManager(query)
       new ComponentInfoHelper(
         versionManager,
         displayWarnings = searchAllSubsystems,
         clientApi = clientApi
-      ).getComponentInfoList(sv, None, fitsKeyMap)
+      ).getComponentInfoList(sv, None)
     }
     catch {
       case ex: Exception =>
@@ -161,33 +160,6 @@ class ApplicationImpl(db: IcdDb) {
         Nil
     }
   }
-
-//  /**
-//   * Gets a list of all published events by subsystem/component
-//   * (assumes latest versions of all subsystems).
-//   */
-//  def getEventList: List[EventsForSubsystem] = {
-//    try {
-//      val fitsKeyMap = IcdFits(db).getFitsKeyMap()
-//      val query = new CachedIcdDbQuery(db.db, db.admin, None, None, fitsKeyMap)
-//      query.getEventList(fitsKeyMap)
-//    } catch {
-//      case ex: Exception =>
-//        log.error("Failed to get list of events", ex)
-//        Nil
-//    }
-//  }
-
-//  /**
-//   * Gets information about the given event in the given subsystem/component
-//   * (assumes latest versions of all subsystems).
-//   */
-//  def getEventInfo(subsystem: String, component: String, event: String, fitsKeyMap: FitsKeyMap): Option[EventModel] = {
-//    val componentModel = db.query.getComponentModel(subsystem, component, None)
-//    componentModel
-//      .flatMap(db.query.getPublishModel(_, None, fitsKeyMap))
-//      .flatMap(_.eventList.find(_.name == event))
-//  }
 
   /**
    * Query the database for information about the given components in an ICD
@@ -210,10 +182,9 @@ class ApplicationImpl(db: IcdDb) {
     val sv       = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     val targetSv = SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
     try {
-      val fitsKeyMap     = IcdFits(db).getFitsKeyMap()
-      val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), None, fitsKeyMap)
+      val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), None)
       val versionManager = new CachedIcdVersionManager(query)
-      IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, None, fitsKeyMap)
+      IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, None)
     }
     catch {
       case ex: Exception =>

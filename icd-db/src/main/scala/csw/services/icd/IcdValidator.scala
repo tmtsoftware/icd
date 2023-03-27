@@ -189,6 +189,26 @@ object IcdValidator {
   }
 
   /**
+   * Validates the FITS-Channels.conf file
+   * @param jsonStr the contents of the file
+   * @return a list of validation errors, if any were found
+   */
+  def validateFitsChannels(jsonStr: String): List[Problem] = {
+    val schemaPath   = s"$currentSchemaVersion/fits-channels-schema.conf"
+    val schemaConfig = ConfigFactory.parseResources(schemaPath)
+    val jsonSchema = new JSONObject(toJson(schemaConfig))
+    val schemaLoader = SchemaLoader
+      .builder()
+      .schemaClient(HoconSchemaClient)
+      .schemaJson(jsonSchema)
+      .resolutionScope("classpath:/")
+      .build()
+    val schema    = schemaLoader.load().build().asInstanceOf[Schema]
+    val jsonInput = new JSONObject(jsonStr)
+    validateJson(schema, jsonInput, "FITS-Channels.conf")
+  }
+
+  /**
    * Validates the FITS-Dictionary.json file
    * @param jsonStr the contents of the file
    * @return a list of validation errors, if any were found

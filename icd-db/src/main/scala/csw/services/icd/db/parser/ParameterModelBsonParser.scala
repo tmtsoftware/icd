@@ -1,10 +1,9 @@
 package csw.services.icd.db.parser
 
-import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.ParameterModel
-import icd.web.shared.{FitsSource, PdfOptions, SubsystemWithVersion}
-import reactivemongo.api.bson._
+import icd.web.shared.{EventParameterFitsKeyInfo, PdfOptions}
+import reactivemongo.api.bson.*
 
 /**
  * This model is a value that is based on the json-schema "ref": "resource:/json-schema.json".
@@ -22,12 +21,19 @@ object ParameterModelBsonParser {
       case x              => x.toString // should not happen
     }
 
+  private object EventParameterFitsKeyInfoParser {
+    def apply(doc: BSONDocument): EventParameterFitsKeyInfo = {
+      val name     = doc.getAsOpt[String]("keyword").get
+      val channel  = doc.getAsOpt[String]("channel")
+      val index    = doc.getAsOpt[Int]("index")
+      val rowIndex = doc.getAsOpt[Int]("rowIndex")
+      EventParameterFitsKeyInfo(name, channel, index, rowIndex)
+    }
+  }
+
   def apply(
       doc: BSONDocument,
-      maybePdfOptions: Option[PdfOptions],
-      fitsKeyMap: FitsKeyMap = Map.empty,
-      maybeSv: Option[SubsystemWithVersion] = None,
-      maybeEventName: Option[String] = None
+      maybePdfOptions: Option[PdfOptions]
   ): ParameterModel = {
     val name        = doc.getAsOpt[String]("name").getOrElse("")
     val ref         = doc.getAsOpt[String]("ref").getOrElse("")
@@ -43,6 +49,13 @@ object ParameterModelBsonParser {
     val maybeDimensions = doc.getAsOpt[Array[Int]]("dimensions").map(_.toList)
     val itemsDoc        = doc.get("items").map(_.asInstanceOf[BSONDocument])
     val maybeArrayType  = itemsDoc.flatMap(_.get("type").map(bsonValueToString))
+
+    val maybeKeyword = doc.getAsOpt[String]("keyword")
+    val maybeChannel = doc.getAsOpt[String]("channel")
+    val keywords0 = maybeKeyword.toList.map(EventParameterFitsKeyInfo(_, maybeChannel))
+    def getItems[A](name: String, f: BSONDocument => A): List[A] =
+      for (subDoc <- doc.getAsOpt[Array[BSONDocument]](name).map(_.toList).getOrElse(Nil)) yield f(subDoc)
+    val keywords = keywords0 ::: getItems("keywords", EventParameterFitsKeyInfoParser(_))
 
     // --- Old json-schema uses Boolean for exclusive* keys, new one uses Number! ---
     val exclusiveMinimumStr = doc
@@ -146,14 +159,6 @@ object ParameterModelBsonParser {
 
     val typeStr = parseTypeStr(doc, doc.getAsOpt[String]("type"))
 
-    // only need FITS keys for events
-    val fitsKeys =
-      if (fitsKeyMap.nonEmpty && maybeEventName.isDefined && maybeSv.isDefined) {
-        val sv = maybeSv.get
-        fitsKeyMap.getOrElse(FitsSource(sv.subsystem, sv.maybeComponent.get, maybeEventName.get, name, None, None), Nil)
-      }
-      else Nil
-
     ParameterModel(
       name,
       ref,
@@ -175,7 +180,7 @@ object ParameterModelBsonParser {
       allowNaN,
       defaultValue,
       typeStr,
-      fitsKeys
+      keywords
     )
   }
 }

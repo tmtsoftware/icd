@@ -3,15 +3,13 @@ package csw.services.icd.db
 import icd.web.shared.IcdModels
 import icd.web.shared.IcdModels.EventModel
 
-import collection.immutable.Set
-
 object ComponentDataReporter {
   def printAllUsedUnits(db: IcdDb): Unit = {
     var units      = Set[String]()
     val components = db.query.getComponents(None)
     components.foreach { componentModel =>
       println(s"--------- Component ${componentModel.component} --------")
-      val publishModel = db.query.getPublishModel(componentModel, None, Map.empty)
+      val publishModel = db.query.getPublishModel(componentModel, None)
       publishModel.foreach { model =>
         model.eventList.foreach { item =>
           println(s"----- Item ${item.name}")
@@ -44,12 +42,12 @@ object ComponentDataReporter {
   }
 
   def listData(db: IcdDb, subsystem: String): Unit = {
-    val publishInfo = db.query.getPublishInfo(subsystem, None, Map.empty)
+    val publishInfo = db.query.getPublishInfo(subsystem, None)
     publishInfo.foreach { componentPublishInfo =>
       println(s" ----  ${componentPublishInfo.componentName} ----- ")
       val componentModel = db.query.getComponentModel(subsystem, componentPublishInfo.componentName, None)
       val totals = componentModel.flatMap { cm =>
-        db.query.getPublishModel(cm, None, Map.empty).map { cpm =>
+        db.query.getPublishModel(cm, None).map { cpm =>
           val totalEventData = if (cpm.eventList.nonEmpty) {
             println("--- Event Data")
             listEventData(cpm.eventList)
@@ -73,7 +71,7 @@ object ComponentDataReporter {
     }
   }
 
-  def listEventData(events: List[EventModel]): Long = {
+  private def listEventData(events: List[EventModel]): Long = {
     val totals = events.map { event =>
       val (maxRate, defaultMaxRateUsed) = EventModel.getMaxRate(event.maybeMaxRate)
       println(s"Item Name: ${event.name}, max rate=$maxRate, archive=${event.archive}")
