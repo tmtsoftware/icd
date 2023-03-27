@@ -1,6 +1,7 @@
 package csw.services.icd.db
 
 import csw.services.icd.db.IcdDbQuery.Subscribed
+import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels._
 import icd.web.shared._
@@ -26,10 +27,11 @@ object IcdComponentInfo {
       sv: SubsystemWithVersion,
       targetSv: SubsystemWithVersion,
       maybePdfOptions: Option[PdfOptions],
+      fitsKeyMap: FitsKeyMap
   ): List[ComponentInfo] = {
 
-    val resolvedModelsList       = versionManager.getResolvedModels(sv, maybePdfOptions)
-    val resolvedTargetModelsList = versionManager.getResolvedModels(targetSv, maybePdfOptions)
+    val resolvedModelsList       = versionManager.getResolvedModels(sv, maybePdfOptions, fitsKeyMap)
+    val resolvedTargetModelsList = versionManager.getResolvedModels(targetSv, maybePdfOptions, fitsKeyMap)
 
     resolvedModelsList
       .flatMap(m =>

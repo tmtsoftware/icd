@@ -54,7 +54,7 @@ class IcdDbTests extends AnyFunSuite {
     assert(commands.receive.tail.head.name == "ENVIRONMENTAL_CONTROL_STOP")
     assert(commands.receive.tail.head.requirements.head == "INT-TEST-AOESW-0405")
 
-    val publish   = db.query.getPublishModel(envCtrl, None).get
+    val publish   = db.query.getPublishModel(envCtrl, None, Map.empty).get
     val eventList = publish.eventList
     assert(eventList.size == 2)
     val logging = eventList.head
@@ -92,7 +92,7 @@ class IcdDbTests extends AnyFunSuite {
     assert(temp_nacq.units == "<p>kelvin</p>")
 
     // Test publish queries
-    val published = db.query.getPublished(envCtrl, None).filter(p => p.name == "sensors" && p.publishType == CurrentStates)
+    val published = db.query.getPublished(envCtrl, None, Map.empty).filter(p => p.name == "sensors" && p.publishType == CurrentStates)
     assert(published.size == 1)
     assert(published.head.publishType == CurrentStates)
 
@@ -117,7 +117,7 @@ class IcdDbTests extends AnyFunSuite {
 
   // XXX TODO: Turn this into a test
   def testModels(db: IcdDb): Unit = {
-    val modelsList = db.query.getModels("TEST", None, None)
+    val modelsList = db.query.getModels("TEST", None, None, Map.empty)
     val publishInfo = for (models <- modelsList) yield {
       models.publishModel.foreach { publishModel =>
         publishModel.eventList.foreach { eventModel =>

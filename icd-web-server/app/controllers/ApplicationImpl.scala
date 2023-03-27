@@ -146,13 +146,14 @@ class ApplicationImpl(db: IcdDb) {
     val searchAllSubsystems = clientApi && searchAll.getOrElse(false)
     val subsystems          = if (searchAllSubsystems) None else Some(List(sv.subsystem))
     try {
-      val query          = new CachedIcdDbQuery(db.db, db.admin, subsystems, None)
+      val fitsKeyMap     = IcdFits(db).getFitsKeyMap()
+      val query          = new CachedIcdDbQuery(db.db, db.admin, subsystems, None, fitsKeyMap)
       val versionManager = new CachedIcdVersionManager(query)
       new ComponentInfoHelper(
         versionManager,
         displayWarnings = searchAllSubsystems,
         clientApi = clientApi
-      ).getComponentInfoList(sv, None)
+      ).getComponentInfoList(sv, None, fitsKeyMap)
     }
     catch {
       case ex: Exception =>
@@ -182,9 +183,10 @@ class ApplicationImpl(db: IcdDb) {
     val sv       = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     val targetSv = SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
     try {
-      val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), None)
+      val fitsKeyMap     = IcdFits(db).getFitsKeyMap()
+      val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), None, fitsKeyMap)
       val versionManager = new CachedIcdVersionManager(query)
-      IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, None)
+      IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, None, fitsKeyMap)
     }
     catch {
       case ex: Exception =>

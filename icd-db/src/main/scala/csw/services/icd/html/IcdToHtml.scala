@@ -564,6 +564,7 @@ object IcdToHtml {
     }
   }
 
+  // Used for command parameters
   private def parameterListMarkup(
       nameStr: String,
       parameterList: List[ParameterModel],
@@ -740,6 +741,7 @@ object IcdToHtml {
     )
   }
 
+  // Used for event parameters
   private def attributeListMarkup(
       nameStr: String,
       parameterList: List[ParameterModel],
@@ -753,7 +755,7 @@ object IcdToHtml {
         for (a <- parameterList) yield {
           val paramId          = linkId.map(s => s"$s.${a.name}")
           val nameAnchor       = paramId.map(p => s"<a id='$p' name='$p'>${a.name}</a>").getOrElse(a.name)
-          val fitsKeywordLinks = a.fitsKeys.map(k => s"<a href=#$k>$k</a>").mkString(", ")
+          val fitsKeywordLinks = a.getFitsKeys.map(k => s"<a href=#$k>$k</a>").mkString(", ")
           List(nameAnchor, a.description, a.typeStr, a.units, a.defaultValue, fitsKeywordLinks)
         }
       div(cls := "nopagebreak")(

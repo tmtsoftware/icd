@@ -192,11 +192,11 @@ class JavaCodeGenerator(db: IcdDb) {
     val s              = IcdVersionManager.SubsystemAndVersion(subsystemStr)
     val versionDef     = s"public final String versionDef = \"$s\";"
     val sv             = SubsystemWithVersion(s.subsystem, s.maybeVersion, maybeComponent)
-    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem)), None)
+    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem)), None, Map.empty)
     val versionManager = new CachedIcdVersionManager(query)
     val subsystemModel = db.versionManager.getSubsystemModel(sv, None)
     val infoList = new ComponentInfoHelper(versionManager, false, false)
-      .getComponentInfoList(sv, None)
+      .getComponentInfoList(sv, None, Map.empty)
     val defs       = infoList.map(sourceForComponent)
     val className  = sourceFile.getName.stripSuffix(".java")
     val packageDef = maybePackage.map(p => s"package $p;").getOrElse("")

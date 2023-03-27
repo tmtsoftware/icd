@@ -148,9 +148,12 @@ object IcdModels {
    * @param exclusiveMaximum true if the max value in exclusive
    * @param defaultValue     default value (as a string, which may be empty)
    * @param typeStr          a generated text description of the type
-   * @param fitsKeys         a list of FITS keyword info for FITS keywords where this parameter is the source
+   * @param keywords         a list of FITS keyword info from the publish-model.conf file for FITS keywords where this
+   *                         parameter is the source
    *                         (This will normally be just the keyword name, but could in some cases be more complicated,
    *                         containing the channel or index into the parameter value, in the case of arrays.)
+   * @param fitsKeys         a list of FITS keywords (from the FITS-Dictionary.json file) for which this parameter is the source
+   *                         (only used if  keywords is empty)
    */
   case class ParameterModel(
       name: String,
@@ -173,8 +176,17 @@ object IcdModels {
       allowNaN: Boolean,
       defaultValue: String,
       typeStr: String,
-      fitsKeys: List[EventParameterFitsKeyInfo]
+      keywords: List[EventParameterFitsKeyInfo],
+      fitsKeys: List[String]
   ) extends NameDesc {
+
+    /**
+     * If keywords is defined (comes from publish-model.conf), return the key names,
+     * otherwise the return fitsKeys (comes from the FITS Dictionary)
+     */
+    def getFitsKeys: List[String] = {
+      if (keywords.nonEmpty) keywords.map(_.name) else fitsKeys
+    }
 
     // Estimate size required to archive the value(s) for this parameter
     private def getTypeSize(typeName: String): Int = {
@@ -439,7 +451,7 @@ object IcdModels {
    * @param component the component using the service
    * @param paths the paths of the service used by the component (if empty, assume all paths)
    */
-  case class ServiceModelClientComponent(component: ComponentModel, paths: List[ServicePath] )
+  case class ServiceModelClientComponent(component: ComponentModel, paths: List[ServicePath])
 
   /**
    * Lists the HTTP services provided or required by the subsystem component
@@ -553,14 +565,14 @@ object IcdModels {
    * @param metadataList list of image metadata (FITS keywords)
    */
   case class ImageModel(
-                         name: String,
-                         description: String,
-                         channel: String,
-                         format: String,
-                         size: (Int, Int),
-                         pixelSize: Int,
-                         maybeMaxRate: Option[Double],
-                         metadataList: List[MetadataModel]
+      name: String,
+      description: String,
+      channel: String,
+      format: String,
+      size: (Int, Int),
+      pixelSize: Int,
+      maybeMaxRate: Option[Double],
+      metadataList: List[MetadataModel]
   ) extends NameDesc
 }
 

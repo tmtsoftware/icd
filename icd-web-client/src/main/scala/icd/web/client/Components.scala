@@ -357,7 +357,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
-   * Returns a table of attributes
+   * Returns a table of attributes (parameters for an event)
    *
    * @param parameterList list of attributes to display
    * @return
@@ -374,7 +374,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         for (a <- parameterList) yield {
           val paramId          = maybeEventId.map(s => s"$s.${a.name}")
           val nameAnchor       = paramId.map(p => s"<a id='$p' name='$p'>${a.name}</a>").getOrElse(a.name)
-          val fitsKeywordLinks = a.fitsKeys.map(k => s"<a href=#$k>$k</a>").mkString(", ")
+          val fitsKeywordLinks = a.getFitsKeys.map(k => s"<a href=#$k>$k</a>").mkString(", ")
           List(nameAnchor, a.description, a.typeStr, a.units, a.defaultValue, fitsKeywordLinks)
         }
       div(
@@ -411,7 +411,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
-   * Returns a table of parameters
+   * Returns a table of parameters (for commands)
    *
    * @param parameterList list of attributes to display
    * @param requiredArgs   a list of required arguments

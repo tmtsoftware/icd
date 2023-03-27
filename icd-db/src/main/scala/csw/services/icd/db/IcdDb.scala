@@ -2,15 +2,15 @@ package csw.services.icd.db
 
 import java.io.File
 import com.typesafe.config.{Config, ConfigFactory}
-import csw.services.icd.*
+import csw.services.icd._
 import csw.services.icd.codegen.{JavaCodeGenerator, PythonCodeGenerator, ScalaCodeGenerator, TypescriptCodeGenerator}
 import csw.services.icd.db.parser.{BaseModelParser, IcdModelParser, ServiceModelParser, SubsystemModelParser}
-import csw.services.icd.db.ComponentDataReporter.*
+import csw.services.icd.db.ComponentDataReporter._
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.fits.IcdFits
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.IcdModels.{EventModel, ImageModel, ReceiveCommandModel}
-import icd.web.shared.{AvailableChannels, BuildInfo, FitsKeyInfo, PdfOptions, SubsystemWithVersion}
+import icd.web.shared.{BuildInfo, PdfOptions, SubsystemWithVersion}
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
 import io.swagger.v3.parser.util.DeserializationUtils
@@ -532,7 +532,7 @@ case class IcdDb(
         val result = for {
           event <- events
           p     <- event.parameterList
-          k     <- p.fitsKeys
+          k     <- p.keywords
         } yield {
           val keyNameProblems =
             if (allowedFitsKeyNames.contains(k.name)) None
@@ -549,13 +549,12 @@ case class IcdDb(
         result.flatten
       }
     }
-
     val icdFits                  = IcdFits(this)
     val allowedFitsKeyNames      = icdFits.getFitsKeyInfo(None).map(_.name).toSet
     val availableFitsKeyChannels = icdFits.getFitsChannels.map(c => c.subsystem -> c.channels).toMap
     val sv                       = SubsystemWithVersion(subsystem, None, None)
     versionManager
-      .getResolvedModels(sv, None)
+      .getResolvedModels(sv, None, Map.empty)
       .flatMap { icdModels =>
         val publishProblems = icdModels.publishModel.toList.flatMap { publishModel =>
           val prefix          = s"${publishModel.subsystem}.${publishModel.component}"

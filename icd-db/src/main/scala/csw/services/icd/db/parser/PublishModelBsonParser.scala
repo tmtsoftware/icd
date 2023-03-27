@@ -1,8 +1,9 @@
 package csw.services.icd.db.parser
 
+import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.{EventModel, PublishModel}
-import icd.web.shared.PdfOptions
+import icd.web.shared.{PdfOptions, SubsystemWithVersion}
 import reactivemongo.api.bson._
 
 /**
@@ -13,7 +14,9 @@ object PublishModelBsonParser {
   def apply(
       doc: BSONDocument,
       maybePdfOptions: Option[PdfOptions],
-      observeEventMap: Map[String, EventModel]
+      observeEventMap: Map[String, EventModel],
+      fitsKeyMap: FitsKeyMap,
+      maybeSv: Option[SubsystemWithVersion]
   ): Option[PublishModel] = {
     if (doc.isEmpty) None
     else

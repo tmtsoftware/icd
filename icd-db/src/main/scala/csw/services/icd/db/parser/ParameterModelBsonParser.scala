@@ -1,8 +1,9 @@
 package csw.services.icd.db.parser
 
+import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.ParameterModel
-import icd.web.shared.{EventParameterFitsKeyInfo, PdfOptions}
+import icd.web.shared.{FitsSource, EventParameterFitsKeyInfo, PdfOptions, SubsystemWithVersion}
 import reactivemongo.api.bson.*
 
 /**
@@ -33,7 +34,10 @@ object ParameterModelBsonParser {
 
   def apply(
       doc: BSONDocument,
-      maybePdfOptions: Option[PdfOptions]
+      maybePdfOptions: Option[PdfOptions],
+      fitsKeyMap: FitsKeyMap = Map.empty,
+      maybeSv: Option[SubsystemWithVersion] = None,
+      maybeEventName: Option[String] = None
   ): ParameterModel = {
     val name        = doc.getAsOpt[String]("name").getOrElse("")
     val ref         = doc.getAsOpt[String]("ref").getOrElse("")
@@ -50,6 +54,7 @@ object ParameterModelBsonParser {
     val itemsDoc        = doc.get("items").map(_.asInstanceOf[BSONDocument])
     val maybeArrayType  = itemsDoc.flatMap(_.get("type").map(bsonValueToString))
 
+    // FITS keyword(s) from publish-model.conf
     val maybeKeyword = doc.getAsOpt[String]("keyword")
     val maybeChannel = doc.getAsOpt[String]("channel")
     val keywords0 = maybeKeyword.toList.map(EventParameterFitsKeyInfo(_, maybeChannel))
@@ -159,6 +164,14 @@ object ParameterModelBsonParser {
 
     val typeStr = parseTypeStr(doc, doc.getAsOpt[String]("type"))
 
+    // only need FITS keys for events
+    val fitsKeys =
+      if (fitsKeyMap.nonEmpty && maybeEventName.isDefined && maybeSv.isDefined) {
+        val sv = maybeSv.get
+        fitsKeyMap.getOrElse(FitsSource(sv.subsystem, sv.maybeComponent.get, maybeEventName.get, name, None, None), Nil)
+      }
+      else Nil
+
     ParameterModel(
       name,
       ref,
@@ -180,7 +193,8 @@ object ParameterModelBsonParser {
       allowNaN,
       defaultValue,
       typeStr,
-      keywords
+      keywords,
+      fitsKeys
     )
   }
 }

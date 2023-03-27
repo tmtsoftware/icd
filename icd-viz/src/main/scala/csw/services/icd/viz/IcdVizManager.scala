@@ -99,7 +99,7 @@ object IcdVizManager {
    * @param maybeOut optional output stream to hold the generated image
    */
   def showRelationships(db: IcdDb, options: IcdVizOptions, maybeOut: Option[OutputStream] = None): Unit = {
-    val query          = new CachedIcdDbQuery(db.db, db.admin, None, None)
+    val query          = new CachedIcdDbQuery(db.db, db.admin, None, None, Map.empty)
     val versionManager = new CachedIcdVersionManager(query)
 
     // Add components from user-specified subsystems
@@ -128,7 +128,7 @@ object IcdVizManager {
     val componentInfoHelper =
       new ComponentInfoHelper(versionManager, displayWarnings = false, clientApi = true, subsystems)
     val componentInfoList =
-      components.flatMap(sv => componentInfoHelper.getComponentInfo(sv, noMarkdownOpt))
+      components.flatMap(sv => componentInfoHelper.getComponentInfo(sv, noMarkdownOpt, Map.empty))
 
     def componentNameFromPrefix(prefix: String): String = {
       val sv = SubsystemWithVersion(prefix)

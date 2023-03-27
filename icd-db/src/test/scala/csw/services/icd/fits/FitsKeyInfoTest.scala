@@ -67,7 +67,6 @@ class FitsKeyInfoTest extends AnyFunSuite {
     assert(map("MODHIS") == Set("MODHIS"));
   }
 
-  // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   test("Test FITS keywords in model files") {
     val db = IcdDb(dbName)
     db.dropDatabase() // start with a clean db for test
