@@ -2,13 +2,29 @@ package csw.services.icd.fits
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import csw.services.icd.db.{IcdDb, IcdDbDefaults}
-import icd.web.shared.{AvailableChannels, BuildInfo, FitsDictionary, FitsKeyInfo, FitsKeyInfoList, FitsSource, FitsTags, PdfOptions}
+import icd.web.shared.JsonSupport._
+import icd.web.shared.{
+  AvailableChannels,
+  BuildInfo,
+  FitsDictionary,
+  FitsKeyInfo,
+  FitsKeyInfoList,
+  FitsSource,
+  FitsTags,
+  PdfOptions,
+  SubsystemWithVersion
+}
 import reactivemongo.api.bson.collection.BSONCollection
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import csw.services.icd.*
+import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import reactivemongo.play.json.compat.*
-import csw.services.icd.db.parser.{AvailableChannelsListBsonParser, FitsChannelBsonParser, FitsKeyInfoListBsonParser, FitsTagsBsonParser}
+import csw.services.icd.db.parser.{
+  AvailableChannelsListBsonParser,
+  FitsKeyInfoListBsonParser,
+  FitsTagsBsonParser
+}
 import lax.*
 import json2bson.*
 
@@ -23,6 +39,7 @@ object IcdFitsDefs {
   val fitsTagCollectionName     = "fits.tags"
   val fitsChannelCollectionName = "fits.channels"
 
+  // Map from FITS source parameter to list of FITS keywords whose values come from that parameter
   type FitsKeyMap = Map[FitsSource, List[String]]
 
   /**
@@ -51,7 +68,7 @@ object IcdFitsDefs {
 object IcdFits extends App {
 
   /**
-   * Command line options ("icd-git --help" prints a usage message with descriptions of all the options)
+   * Command line options ("icd-fits --help" prints a usage message with descriptions of all the options)
    */
   private case class Options(
       dbName: String = IcdDbDefaults.defaultDbName,
@@ -66,6 +83,7 @@ object IcdFits extends App {
       ingestTags: Option[File] = None,
       ingestChannels: Option[File] = None,
       validate: Option[File] = None,
+      generate: Option[File] = None,
       orientation: Option[String] = None,
       fontSize: Option[Int] = None,
       lineHeight: Option[String] = None,
@@ -93,9 +111,9 @@ object IcdFits extends App {
       c.copy(component = Some(x))
     } text "Specifies the component to be used by any following options (subsystem must also be specified)"
 
-    opt[String]('s', "subsystem") valueName "<subsystem>" action { (x, c) =>
+    opt[String]('s', "subsystem") valueName "<subsystem>[:version]" action { (x, c) =>
       c.copy(subsystem = Some(x))
-    } text "Specifies the subsystem to be used by any following options"
+    } text "Specifies the subsystem (and optional version) to be used by any following options"
 
     opt[String]('t', "tag") valueName "<tag>" action { (x, c) =>
       c.copy(tag = Some(x))
@@ -108,6 +126,13 @@ object IcdFits extends App {
     opt[File]("validate") valueName "<file>" action { (x, c) =>
       c.copy(validate = Some(x))
     } text "Validates a JSON formatted file containing the FITS Keyword dictionary and prints out any errors"
+
+    opt[File]('g', "generate") valueName "<file>" action { (x, c) =>
+      c.copy(generate = Some(x))
+    } text "Generates an updated FITS dictionary JSON file by merging the one currently in the icd database " +
+      "with the FITS keyword information defined for event parameters in the publish model files. " +
+      "If a subsystem (or subsystem and component) are specified, with optional version, the merging is limited " +
+      "to that subsystem/component."
 
     opt[File]('i', "ingest") valueName "<file>" action { (x, c) =>
       c.copy(ingest = Some(x))
@@ -188,17 +213,18 @@ object IcdFits extends App {
       Nil
     )
 
-    if (options.list) icdFits.list(options.subsystem, options.component, options.tag, pdfOptions)
+    val maybeSv = options.subsystem
+      .map(SubsystemAndVersion(_))
+      .map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, options.component))
+
+    if (options.list) icdFits.list(maybeSv.map(_.subsystem), maybeSv.flatMap(_.maybeComponent), options.tag, pdfOptions)
 
     options.validate.foreach(file => icdFits.validateFitsDictionary(file).foreach(println))
+    options.generate.foreach(file => icdFits.generateFitsDictionary(file, maybeSv).foreach(println))
     options.ingestTags.foreach(file => icdFits.ingestTags(file).foreach(println))
     options.ingestChannels.foreach(file => icdFits.ingestChannels(file).foreach(println))
     options.ingest.foreach(file => icdFits.ingest(file).foreach(println))
-
-    if (options.outputFile.nonEmpty) {
-      icdFits.output(options.outputFile.get, options.subsystem, options.component, options.tag, pdfOptions)
-    }
-
+    options.outputFile.foreach(file => icdFits.output(file, maybeSv.map(_.subsystem), maybeSv.flatMap(_.maybeComponent), options.tag, pdfOptions))
     db.close()
     System.exit(0)
   }
@@ -267,6 +293,35 @@ case class IcdFits(db: IcdDb) {
   }
 
   /**
+   * Generates the FITS-Dictionary.json file by merging the dictionary in the icd database with the
+   * keyword info from the events and return a list of problems, if found.
+   * If a subsystem/component is specified, restrict the merging to that subsystem/component.
+   */
+  def generateFitsDictionary(file: File, maybeSv: Option[SubsystemWithVersion]): List[Problem] = {
+    val fitsDictionary = getFitsDictionary(None)
+    val fitsKeyList    = fitsDictionary.fitsKeys
+    if (fitsKeyList.isEmpty) {
+      List(Problem("error", "No FITS keywords found"))
+    }
+    else {
+      val fname = file.getName.toLowerCase()
+      if (!fname.endsWith(".json")) {
+        List(Problem("error", "Output file should have the .json suffix (Usually FITS-Dictionary.json)"))
+      }
+      else  {
+        val fitsGen = IcdFitsGenerate(db)
+        val newFitsKeyList = fitsGen.generate(maybeSv, fitsKeyList)
+        val fitsKeyInfoList = FitsKeyInfoList(newFitsKeyList)
+        val out             = new FileOutputStream(file)
+        val json            = Json.toJson(fitsKeyInfoList)
+        out.write(Json.prettyPrint(json).getBytes)
+        out.close()
+      }
+      Nil
+    }
+  }
+
+  /**
    * Ingest the FITS-Dictionary.json file into the icd db
    */
   def ingest(file: File): List[Problem] = {
@@ -294,7 +349,7 @@ case class IcdFits(db: IcdDb) {
   // FITS-Dictionary.json.
   def getFitsChannels: List[AvailableChannels] = {
     val maybeFitsChannelsDoc = fitsChannelCollection.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await
-    val maybeFitsChannels   = maybeFitsChannelsDoc.map(AvailableChannelsListBsonParser(_))
+    val maybeFitsChannels    = maybeFitsChannelsDoc.map(AvailableChannelsListBsonParser(_))
     maybeFitsChannels.getOrElse(Nil)
   }
 
@@ -391,7 +446,6 @@ case class IcdFits(db: IcdDb) {
       maybeTag: Option[String],
       pdfOptions: PdfOptions
   ): Unit = {
-    import icd.web.shared.JsonSupport._
     val fitsDictionary = getFitsDictionary(maybeSubsystem, maybeComponent, maybeTag, Some(pdfOptions))
     val fitsKeyList    = fitsDictionary.fitsKeys
     if (fitsKeyList.isEmpty) {

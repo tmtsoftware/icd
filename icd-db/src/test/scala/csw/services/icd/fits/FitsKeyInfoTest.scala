@@ -2,7 +2,7 @@ package csw.services.icd.fits
 
 import csw.services.icd.IcdValidator
 import csw.services.icd.db.{IcdDb, TestHelper}
-import icd.web.shared.{FitsSource, PdfOptions}
+import icd.web.shared.{FitsSource, PdfOptions, SubsystemWithVersion}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.File
@@ -79,5 +79,8 @@ class FitsKeyInfoTest extends AnyFunSuite {
     testHelper.ingestESW()
     // ingest examples/TEST into the DB
     testHelper.ingestDir(getTestDir(s"$examplesDir/TEST2"))
+    val problems = icdFits.generateFitsDictionary(new File("XXX.json"), Some(SubsystemWithVersion("TEST2")))
+    problems.foreach(println)
+    assert(problems.isEmpty)
   }
 }

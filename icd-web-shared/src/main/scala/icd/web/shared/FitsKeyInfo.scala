@@ -80,8 +80,8 @@ case class FitsKeyInfo(
     name: String,
     description: String,
     typ: String,
-    units: Option[String] = None,
-    channels: List[FitsChannel] = Nil
+    units: Option[String],
+    channels: List[FitsChannel]
 )
 
 case class FitsKeyInfoList(fitsKeyInfo: List[FitsKeyInfo])

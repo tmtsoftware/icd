@@ -4,6 +4,7 @@ import icd.web.shared.ComponentInfo._
 import icd.web.shared.IcdModels.{IcdModel, _}
 import icd.web.shared.SharedUtils.Credentials
 import play.api.libs.json._
+import play.api.libs.functional.syntax._
 
 //noinspection TypeAnnotation
 object JsonSupport {
@@ -94,10 +95,36 @@ object JsonSupport {
   implicit val componentInfoFormat         = Json.format[ComponentInfo]
   implicit val fitsSourceFormat            = Json.format[FitsSource]
   implicit val fitsChannelFormat           = Json.format[FitsChannel]
-  implicit val fitsKeyInfoFormat           = Json.format[FitsKeyInfo]
-  implicit val fitsKeyInfoListFormat       = Json.format[FitsKeyInfoList]
-  implicit val fitsKeywordFormat           = Json.format[FitsKeyword]
-  implicit val fitsTagsFormat              = Json.format[FitsTags]
-  implicit val availableChannelsFormat     = Json.format[AvailableChannels]
-  implicit val fitsDictionaryFormat        = Json.format[FitsDictionary]
+
+  // To make it easier to read/edit, use the abbrieviated "source" syntax if there is only a default channel
+  implicit val fitsKeyInfoWrites = new Writes[FitsKeyInfo] {
+    def writes(fitsKeyInfo: FitsKeyInfo): JsValue = {
+      if (fitsKeyInfo.channels.size == 1 && fitsKeyInfo.channels.head.name.isEmpty)
+        Json.obj(
+          "name"        -> fitsKeyInfo.name,
+          "description" -> fitsKeyInfo.description,
+          "typ"         -> fitsKeyInfo.typ,
+          "units"       -> fitsKeyInfo.units,
+          "source"      -> fitsSourceFormat.writes(fitsKeyInfo.channels.head.source)
+        )
+      else
+        Json.obj(
+          "name"        -> fitsKeyInfo.name,
+          "description" -> fitsKeyInfo.description,
+          "typ"         -> fitsKeyInfo.typ,
+          "units"       -> fitsKeyInfo.units,
+          "channels"    -> fitsKeyInfo.channels.map(c => fitsChannelFormat.writes(c))
+        )
+    }
+  }
+
+  implicit val fitsKeyInfoReads = Json.reads[FitsKeyInfo]
+  implicit val fitsKeyInfoFormat: Format[FitsKeyInfo] =
+    Format(fitsKeyInfoReads, fitsKeyInfoWrites)
+
+  implicit val fitsKeyInfoListFormat   = Json.format[FitsKeyInfoList]
+  implicit val fitsKeywordFormat       = Json.format[FitsKeyword]
+  implicit val fitsTagsFormat          = Json.format[FitsTags]
+  implicit val availableChannelsFormat = Json.format[AvailableChannels]
+  implicit val fitsDictionaryFormat    = Json.format[FitsDictionary]
 }
