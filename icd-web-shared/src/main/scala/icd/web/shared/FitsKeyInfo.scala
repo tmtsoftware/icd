@@ -53,6 +53,21 @@ case class FitsChannel(source: FitsSource, name: String = "", comment: String = 
 
 object FitsKeyInfo {
   implicit def orderingByName[A <: FitsKeyInfo]: Ordering[A] = Ordering.by(e => e.name)
+
+  // Called when reading abbreviated json FITS dictionary entry with only one source
+  def fromSourceOrChannel(
+      name: String,
+      description: String,
+      `type`: String,
+      units: Option[String],
+      maybeSource: Option[FitsSource],
+      maybeChannels: Option[List[FitsChannel]]
+  ): FitsKeyInfo = {
+    if (maybeChannels.isDefined)
+      FitsKeyInfo(name, description, `type`, units, maybeChannels.get)
+    else
+      FitsKeyInfo(name, description, `type`, units, List(FitsChannel(maybeSource.get)))
+  }
 }
 
 // Available channels for a given subsystem

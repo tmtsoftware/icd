@@ -96,29 +96,43 @@ object JsonSupport {
   implicit val fitsSourceFormat            = Json.format[FitsSource]
   implicit val fitsChannelFormat           = Json.format[FitsChannel]
 
-  // To make it easier to read/edit, use the abbrieviated "source" syntax if there is only a default channel
-  implicit val fitsKeyInfoWrites = new Writes[FitsKeyInfo] {
+  // This version is used for exchanging data between the web app and server
+//  implicit val fitsKeyInfoFormat           = Json.format[FitsKeyInfo]
+
+  // This version is used only when writing to the human editable FITS-Dictionary.json file:
+  // To make it easier to read/edit, uses the abbrieviated "source" syntax if there is only a default channel.
+  val fitsKeyInfoWrites = new Writes[FitsKeyInfo] {
     def writes(fitsKeyInfo: FitsKeyInfo): JsValue = {
       if (fitsKeyInfo.channels.size == 1 && fitsKeyInfo.channels.head.name.isEmpty)
         Json.obj(
           "name"        -> fitsKeyInfo.name,
           "description" -> fitsKeyInfo.description,
-          "type"         -> fitsKeyInfo.`type`,
+          "type"        -> fitsKeyInfo.`type`,
           "units"       -> fitsKeyInfo.units,
-          "source"      -> fitsSourceFormat.writes(fitsKeyInfo.channels.head.source)
+//          "source"      -> fitsSourceFormat.writes(fitsKeyInfo.channels.head.source)
+          "source"      -> fitsKeyInfo.channels.head.source
         )
       else
         Json.obj(
           "name"        -> fitsKeyInfo.name,
           "description" -> fitsKeyInfo.description,
-          "type"         -> fitsKeyInfo.`type`,
+          "type"        -> fitsKeyInfo.`type`,
           "units"       -> fitsKeyInfo.units,
-          "channel"    -> fitsKeyInfo.channels.map(c => fitsChannelFormat.writes(c))
+//          "channel"     -> fitsKeyInfo.channels.map(c => fitsChannelFormat.writes(c))
+          "channel"     -> fitsKeyInfo.channels
         )
     }
   }
 
-  implicit val fitsKeyInfoReads = Json.reads[FitsKeyInfo]
+  implicit val fitsKeyInfoReads = (
+    (JsPath \ "name").read[String] and
+      (JsPath \ "description").read[String] and
+      (JsPath \ "type").read[String] and
+      (JsPath \ "units").readNullable[String] and
+      (JsPath \ "source").readNullable[FitsSource] and
+      (JsPath \ "channel").readNullable[List[FitsChannel]]
+  )(FitsKeyInfo.fromSourceOrChannel _)
+
   implicit val fitsKeyInfoFormat: Format[FitsKeyInfo] =
     Format(fitsKeyInfoReads, fitsKeyInfoWrites)
 

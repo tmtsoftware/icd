@@ -30,17 +30,17 @@ object PublishModelBsonParser {
           for (eventName <- publishDoc.getAsOpt[Array[String]](name).map(_.toList).getOrElse(Nil)) yield f(eventName)
 
         // For backward compatibility
-        val oldEvents = getItems("telemetry", EventModelBsonParser(_, maybePdfOptions)) ++
-          getItems("eventStreams", EventModelBsonParser(_, maybePdfOptions))
+        val oldEvents = getItems("telemetry", EventModelBsonParser(_, maybePdfOptions, fitsKeyMap, maybeSv)) ++
+          getItems("eventStreams", EventModelBsonParser(_, maybePdfOptions, fitsKeyMap, maybeSv))
 
         PublishModel(
           subsystem = doc.getAsOpt[String](BaseModelBsonParser.subsystemKey).get,
           component = doc.getAsOpt[String](BaseModelBsonParser.componentKey).get,
           description =
             publishDoc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
-          eventList = oldEvents ++ getItems("events", EventModelBsonParser(_, maybePdfOptions)),
+          eventList = oldEvents ++ getItems("events", EventModelBsonParser(_, maybePdfOptions, fitsKeyMap, maybeSv)),
           observeEventList = getObserveEventItems("observeEvents", observeEventMap(_)),
-          currentStateList = getItems("currentStates", EventModelBsonParser(_, maybePdfOptions)),
+          currentStateList = getItems("currentStates", EventModelBsonParser(_, maybePdfOptions, Map.empty, None)),
           imageList = getItems("images", ImageModelBsonParser(_, maybePdfOptions)),
           alarmList = getItems("alarms", AlarmModelBsonParser(_, maybePdfOptions))
         )
