@@ -2,15 +2,15 @@ package csw.services.icd.db
 
 import java.io.File
 import com.typesafe.config.{Config, ConfigFactory}
-import csw.services.icd._
+import csw.services.icd.*
 import csw.services.icd.codegen.{JavaCodeGenerator, PythonCodeGenerator, ScalaCodeGenerator, TypescriptCodeGenerator}
 import csw.services.icd.db.parser.{BaseModelParser, IcdModelParser, ServiceModelParser, SubsystemModelParser}
-import csw.services.icd.db.ComponentDataReporter._
+import csw.services.icd.db.ComponentDataReporter.*
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.fits.IcdFits
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.IcdModels.{EventModel, ImageModel, ReceiveCommandModel}
-import icd.web.shared.{BuildInfo, PdfOptions, SubsystemWithVersion}
+import icd.web.shared.{BuildInfo, IcdModels, PdfOptions, SubsystemWithVersion}
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
 import io.swagger.v3.parser.util.DeserializationUtils
@@ -521,6 +521,29 @@ case class IcdDb(
       p1 ::: p2
     }
 
+    def checkDuplicateKeywordChannelPair(models: List[IcdModels]): List[Problem] = {
+      val keywordChannelList = for {
+        icdModels    <- models
+        publishModel <- icdModels.publishModel.toList
+        events       <- publishModel.eventList
+        params       <- events.parameterList
+        keyword      <- params.keywords
+      } yield {
+        (keyword.name, keyword.channel.getOrElse(""))
+      }
+      // Check fro duplicates
+      keywordChannelList
+        .groupBy(identity)
+        .collect { case (x, List(_, _, _*)) => x }
+        .toList
+        .map(p =>
+          if (p._2.isEmpty)
+            Problem("error", s"Duplicate FITS keyword: ${p._1}")
+          else
+            Problem("error", s"Duplicate FITS keyword, channel pair: keyword: ${p._1}, channel: ${p._2}")
+        )
+    }
+
     def getFitsKeywordProblems(
         prefix: String,
         events: List[EventModel],
@@ -549,27 +572,29 @@ case class IcdDb(
         result.flatten
       }
     }
-    val icdFits                  = IcdFits(this)
-    val allowedFitsKeyNames      = icdFits.getFitsKeyInfo(None).map(_.name).toSet
-    val availableFitsKeyChannels = icdFits.getFitsChannels.map(c => c.subsystem -> c.channels).toMap
-    val sv                       = SubsystemWithVersion(subsystem, None, None)
-    versionManager
-      .getResolvedModels(sv, None, Map.empty)
-      .flatMap { icdModels =>
-        val publishProblems = icdModels.publishModel.toList.flatMap { publishModel =>
-          val prefix          = s"${publishModel.subsystem}.${publishModel.component}"
-          val allowedChannels = availableFitsKeyChannels.get(publishModel.subsystem).toList.flatten.toSet
-          getEventProblems(prefix, publishModel.eventList, "event") :::
-          getFitsKeywordProblems(prefix, publishModel.eventList, allowedFitsKeyNames, allowedChannels) :::
-          getEventProblems(prefix, publishModel.currentStateList, "current state") :::
-          getImageProblems(prefix, publishModel.imageList)
-        }
-        val commandProblems = icdModels.commandModel.toList.flatMap { commandModel =>
-          val prefix = s"${commandModel.subsystem}.${commandModel.component}"
-          getCommandProblems(prefix, commandModel.receive)
-        }
-        publishProblems ::: commandProblems
+
+    val icdFits                         = IcdFits(this)
+    val allowedFitsKeyNames             = icdFits.getFitsKeyInfo(None).map(_.name).toSet
+    val availableFitsKeyChannels        = icdFits.getFitsChannels.map(c => c.subsystem -> c.channels).toMap
+    val sv                              = SubsystemWithVersion(subsystem, None, None)
+    val models                          = versionManager.getResolvedModels(sv, None, Map.empty)
+    val duplicateKeywordChannelProblems = checkDuplicateKeywordChannelPair(models)
+    val problems = models.flatMap { icdModels =>
+      val publishProblems = icdModels.publishModel.toList.flatMap { publishModel =>
+        val prefix          = s"${publishModel.subsystem}.${publishModel.component}"
+        val allowedChannels = availableFitsKeyChannels.get(publishModel.subsystem).toList.flatten.toSet
+        getEventProblems(prefix, publishModel.eventList, "event") :::
+        getFitsKeywordProblems(prefix, publishModel.eventList, allowedFitsKeyNames, allowedChannels) :::
+        getEventProblems(prefix, publishModel.currentStateList, "current state") :::
+        getImageProblems(prefix, publishModel.imageList)
       }
+      val commandProblems = icdModels.commandModel.toList.flatMap { commandModel =>
+        val prefix = s"${commandModel.subsystem}.${commandModel.component}"
+        getCommandProblems(prefix, commandModel.receive)
+      }
+      publishProblems ::: commandProblems
+    }
+    duplicateKeywordChannelProblems ::: problems
   }
 
   // Check for duplicate subsystem-model.conf file (found one in TCS) and component names
