@@ -165,7 +165,7 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
         tr(id := fitsKey.name)(
           td(fitsKey.name),
           td(raw(fitsKey.description)),
-          td(fitsKey.typ),
+          td(fitsKey.`type`),
           td(fitsKey.units),
           td(zList.map(p => makeLinkForFitsKeySource(fitsKey, p._1, p._2)))
         )

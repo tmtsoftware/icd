@@ -79,8 +79,44 @@ class FitsKeyInfoTest extends AnyFunSuite {
     testHelper.ingestESW()
     // ingest examples/TEST into the DB
     testHelper.ingestDir(getTestDir(s"$examplesDir/TEST2"))
-    val problems = icdFits.generateFitsDictionary(new File("XXX.json"), Some(SubsystemWithVersion("TEST2")))
+    val tempFitsDict = new File("XXX.json")
+    val problems     = icdFits.generateFitsDictionary(tempFitsDict, Some(SubsystemWithVersion("TEST2")))
     problems.foreach(println)
     assert(problems.isEmpty)
+    val problems2 = icdFits.ingest(tempFitsDict)
+    problems2.foreach(println)
+    assert(problems2.isEmpty)
+    val fitsKeyMap = icdFits.getFitsKeyMap()
+
+    /**
+     * subsystem: String,
+     * componentName: String,
+     * eventName: String,
+     * parameterName: String,
+     * index: Option[Int],
+     * rowIndex: Option[Int]
+     *
+     * "source" : {
+     * "subsystem" : "TEST2",
+     * "componentName" : "cmTEST",
+     * "eventName" : "imgAtmDispersion",
+     * "parameterName" : "wavelength"
+     * },
+     *
+     */
+    assert(
+      fitsKeyMap
+        .get(FitsSource("TEST2", "cmTEST", "imgAtmDispersion", "wavelength", None, None))
+        .contains(List("IMGDISWV"))
+    )
+    assert(
+      icdFits
+        .getFitsKeyInfo()
+        .exists(i =>
+          i.name == "IMGDISWV" &&
+            i.channels.exists(_.name == "IMG-ATM") &&
+            i.channels.exists(_.name == "ATM")
+        )
+    )
   }
 }

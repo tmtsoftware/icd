@@ -79,7 +79,7 @@ case class EventParameterFitsKeyInfo(
 case class FitsKeyInfo(
     name: String,
     description: String,
-    typ: String,
+    `type`: String,
     units: Option[String],
     channels: List[FitsChannel]
 )

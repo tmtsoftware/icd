@@ -1266,7 +1266,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             tr(
               td(a(id := fitsKey.name, name := fitsKey.name)(fitsKey.name)),
               td(raw(fitsKey.description)),
-              td(fitsKey.typ),
+              td(fitsKey.`type`),
               td(fitsKey.units),
               td(zList.map(p => makeLinkForFitsKeySource(p._1, p._2)))
             )

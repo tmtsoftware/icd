@@ -103,7 +103,7 @@ object JsonSupport {
         Json.obj(
           "name"        -> fitsKeyInfo.name,
           "description" -> fitsKeyInfo.description,
-          "typ"         -> fitsKeyInfo.typ,
+          "type"         -> fitsKeyInfo.`type`,
           "units"       -> fitsKeyInfo.units,
           "source"      -> fitsSourceFormat.writes(fitsKeyInfo.channels.head.source)
         )
@@ -111,9 +111,9 @@ object JsonSupport {
         Json.obj(
           "name"        -> fitsKeyInfo.name,
           "description" -> fitsKeyInfo.description,
-          "typ"         -> fitsKeyInfo.typ,
+          "type"         -> fitsKeyInfo.`type`,
           "units"       -> fitsKeyInfo.units,
-          "channels"    -> fitsKeyInfo.channels.map(c => fitsChannelFormat.writes(c))
+          "channel"    -> fitsKeyInfo.channels.map(c => fitsChannelFormat.writes(c))
         )
     }
   }

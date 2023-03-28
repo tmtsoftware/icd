@@ -123,7 +123,7 @@ object IcdToHtml {
         tr(
           td(if (withLinks) a(id := fitsKey.name, name := fitsKey.name)(fitsKey.name) else fitsKey.name),
           td(raw(fitsKey.description)),
-          td(fitsKey.typ),
+          td(fitsKey.`type`),
           td(fitsKey.units),
           td(zList.map(p => makeLinkForFitsKeySource(fitsKey, p._1, p._2, withLinks, tagMap)))
         )

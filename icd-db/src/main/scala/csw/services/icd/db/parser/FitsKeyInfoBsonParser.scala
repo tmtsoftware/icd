@@ -116,7 +116,7 @@ object FitsKeyInfoBsonParser {
     FitsKeyInfo(
       name = doc.getAsOpt[String]("name").get,
       description = doc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
-      typ = doc.getAsOpt[String]("type").get,
+      `type` = doc.getAsOpt[String]("type").get,
       units = doc.getAsOpt[String]("units"),
       channels = channels
     )
