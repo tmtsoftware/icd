@@ -1,7 +1,7 @@
 ICD Database
 ============
 
-This project provides the ICD database interface and command line application, based on MongoDB.
+This project provides the ICD database interface and two command line applications, based on MongoDB.
 It is assumed that the MongoDB server is running on the given (or default) host and port.
 
 To start the MongoDB server, you can run a command like this:
@@ -98,10 +98,44 @@ icd-db -s TCS -c MCSAssembly --package tcs.mcsAssembly.api -o TcsMcsAssemblyApi.
 The generated Scala file contains definitions for all of the event, command and parameter keys.
 The first command generates keys for all TCS components. The second one only for the MCS Assembly.
 
+
+icd-fits Command
+--------------
+
+The icd-fits command supports working with the FITS Dictionary:
+
+```
+icd-fits 3.0.0
+Usage: icd-fits [options]
+
+  -d, --db <name>          The name of the database to use (for the --ingest option, default: icds4)
+  --host <hostname>        The host name where the database is running (for the --ingest option, default: localhost)
+  --port <number>          The port number to use for the database (for the --ingest option, default: 27017)
+  -c, --component <name>   Specifies the component to be used by any following options (subsystem must also be specified)
+  -s, --subsystem <subsystem>[:version]
+                           Specifies the subsystem (and optional version) to be used by any following options
+  -t, --tag <tag>          Filters the list of FITS keywords to those with the given tag
+  -l, --list               Prints the list of known FITS keywords
+  --validate <file>        Validates a JSON formatted file containing the FITS Keyword dictionary and prints out any errors
+  -g, --generate <file>    Generates an updated FITS dictionary JSON file by merging the one currently in the icd database with the FITS keyword information defined for event parameters in the publish model files. If a subsystem (or subsystem and component) are specified, with optional version, the merging is limited to that subsystem/component.
+  -i, --ingest <file>      Ingest a JSON formatted file containing a FITS Keyword dictionary into the icd database
+  --ingestTags <file>      Ingest a JSON or HOCON formatted file defining tags for the FITS dictionary into the icd database
+  --ingestChannels <file>  Ingest a JSON or HOCON formatted file defining the available FITS channels for each subsystem into the icd database
+  -o, --out <outputFile>   Generates a document containing a table of FITS keyword information in a format based on the file's suffix (html, pdf, json, csv, conf (HOCON))
+  --orientation [portrait|landscape]
+                           For PDF output: The page orientation (default: landscape)
+  --fontSize <size>        For PDF or HTML file output: The base font size in px for body text (default: 10)
+  --lineHeight <height>    For PDF or HTML file output: The line height (default: 1.6)
+  --paperSize [Letter|Legal|A4|A3]
+                           For PDF output: The paper size (default: Letter)
+  --help
+  --version
+```
+
 Implementation
 --------------
 
-Each JSON file is stored in its own MongoDB collection.
+Each model file is stored in its own MongoDB collection.
 Here is a listing of the collections present after running this ingest command:
 
 

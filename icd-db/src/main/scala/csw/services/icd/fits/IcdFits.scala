@@ -93,7 +93,7 @@ object IcdFits extends App {
   // Parser for the command line options
   private val parser = new scopt.OptionParser[Options]("icd-fits") {
     import csw.services.icd.db.IcdDbDefaults.{defaultDbName, defaultHost, defaultPort}
-    head("icd-git", BuildInfo.version)
+    head("icd-fits", BuildInfo.version)
 
     opt[String]('d', "db") valueName "<name>" action { (x, c) =>
       c.copy(dbName = x)
