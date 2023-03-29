@@ -7,10 +7,10 @@ case class IcdFitsGenerate(db: IcdDb) {
 
   /**
    * Generates FITS dictionary entries from the published event parameters in the
-   * icd database. If a subsystem:version/component is specified, the result
-   * is restricted to that subsystem:version/component.
+   * icd database. If a subsystem:version is specified, the result
+   * is restricted to that subsystem:version.
    *
-   * @param maybeSv optional subsystem:version and optional component
+   * @param maybeSv optional subsystem:version to use
    * @param fitsKeyList current FITS dictionary entries
    * @return list of objects that can be merged with the existing FITS dictionary entries
    *         and then used to write the FITS-Dictionary.json file
@@ -51,7 +51,7 @@ case class IcdFitsGenerate(db: IcdDb) {
 
   /**
    * Merge the contents of the FITS dictionary currently in the icd db with the keyword info
-   * loaded from the model files for the given subsystem[:version]/component (or all current subsystems)
+   * loaded from the model files for the given subsystem[:version] (or all current subsystems)
    * and return a list of objects describing the new contents of the FITS dictionary.
    *
    * @param l1 list of objects from the FITS dictionary

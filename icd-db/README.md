@@ -117,7 +117,7 @@ Usage: icd-fits [options]
   -t, --tag <tag>          Filters the list of FITS keywords to those with the given tag
   -l, --list               Prints the list of known FITS keywords
   --validate <file>        Validates a JSON formatted file containing the FITS Keyword dictionary and prints out any errors
-  -g, --generate <file>    Generates an updated FITS dictionary JSON file by merging the one currently in the icd database with the FITS keyword information defined for event parameters in the publish model files. If a subsystem (or subsystem and component) are specified, with optional version, the merging is limited to that subsystem/component.
+  -g, --generate <file>    Generates an updated FITS dictionary JSON file by merging the one currently in the icd database with the FITS keyword information defined for event parameters in the publish model files. If a subsystem is specified (with optional version), the merging is limited to that subsystem.
   -i, --ingest <file>      Ingest a JSON formatted file containing a FITS Keyword dictionary into the icd database
   --ingestTags <file>      Ingest a JSON or HOCON formatted file defining tags for the FITS dictionary into the icd database
   --ingestChannels <file>  Ingest a JSON or HOCON formatted file defining the available FITS channels for each subsystem into the icd database

@@ -174,6 +174,12 @@ the information in the existing FITS dictionary:
     icd-fits --subsystem IRIS --generate FITS-Dictionary.json
 ```
 
+Or using the short form options and with a subsystem version: 
+
+```
+    icd-fits -s IRIS:1.7 -g FITS-Dictionary.json
+```
+
 The generated FITS dictionary JSON file can then be copied to the [DMS-Model-Files](https://github.com/tmt-icd/DMS-Model-Files/tree/master/FITS-Dictionary)
 repository and published, so that it will be automatically used by the icd web app and command line apps.
 You can also manually load the new FITS dictionary into your local icd database using the command line:

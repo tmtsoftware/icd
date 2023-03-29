@@ -131,8 +131,7 @@ object IcdFits extends App {
       c.copy(generate = Some(x))
     } text "Generates an updated FITS dictionary JSON file by merging the one currently in the icd database " +
       "with the FITS keyword information defined for event parameters in the publish model files. " +
-      "If a subsystem (or subsystem and component) are specified, with optional version, the merging is limited " +
-      "to that subsystem/component."
+      "If a subsystem is specified (with optional version), the merging is limited to that subsystem."
 
     opt[File]('i', "ingest") valueName "<file>" action { (x, c) =>
       c.copy(ingest = Some(x))
@@ -295,7 +294,7 @@ case class IcdFits(db: IcdDb) {
   /**
    * Generates the FITS-Dictionary.json file by merging the dictionary in the icd database with the
    * keyword info from the events and return a list of problems, if found.
-   * If a subsystem/component is specified, restrict the merging to that subsystem/component.
+   * If a subsystem (with optional version) is specified, restrict the merging to that subsystem.
    */
   def generateFitsDictionary(file: File, maybeSv: Option[SubsystemWithVersion]): List[Problem] = {
     val fitsDictionary = getFitsDictionary(None)
