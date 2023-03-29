@@ -112,13 +112,76 @@ FITS Keywords
 -------------
 
 The generated APIs and ICDs contain infomation about FITS keywords that are based on event parameters.
-The information is stored in two files under [DMS-Model-Files](https://github.com/tmt-icd/DMS-Model-Files/tree/master/FITS-Dictionary)
+The information is stored in three files under [DMS-Model-Files](https://github.com/tmt-icd/DMS-Model-Files/tree/master/FITS-Dictionary)
 on GitHub. Once DMS is published, the file should be automatically loaded by the `icdwebserver` or `icd-git --ingest` commands.
-Until then, the FITS keywords and `tags` can be manually loaded into the icd database once by running (from this directory):
+Until then, the FITS keywords, `channels` and `tags` can be manually loaded into the icd database once by running (from this directory):
 
 ```
-icd-fits -i examples/3.0/FITS-Dictionary.json --ingestTags examples/3.0/FITS-Tags.conf
+icd-fits -i examples/3.0/FITS-Dictionary.json --ingestChannels examples/3.0/FITS-Channels.conf --ingestTags examples/3.0/FITS-Tags.conf
 ```
+
+Alternatively you can check out and manually ingest [DMS-Model-Files](https://github.com/tmt-icd/DMS-Model-Files/tree/master/FITS-Dictionary)
+into the local icd database by using the `Upload` feature in the icd web app or with the command line:
+
+```
+    icd-db -i DMS-Model-Files
+```
+
+The contents of the files are as follows:
+
+* FITS-Dictionary.json - This is the FITS dictionary and contains an entry for each FITS keyword, mapping it to `source` event parameters. If a keyword has multiple sources, named `channels` are used, each containing one source.
+* FITS-Channels.conf - This defines which channels are available for each subsystem (Channels are used when a FITS keyword has multiple source event parameters)
+* FITS-Tags.conf - assigns tags to FITS keywords, which can be used in the web app to filter and display the FITS keyword information.
+
+Besides the three above files, FITS keyword information can be defined in the publish-model.conf files for each subsystem component. 
+Event parameters can define the associated keyword as follows:
+
+```
+        keyword = IMGDISWV
+```
+
+If the keyword has multiple source parameters, you can specify the channel:
+
+```
+        keyword = IMGDISWV
+        channel = ATM
+```
+
+In some more complicated cases, you can also specify multiple keywords whose values are taken from an `index` (or `rowIndex` for 2d arrays) in the parameter's array values:
+
+```
+          keywords: [
+            {
+              keyword = OIWFS1PS
+              rowIndex = 0
+            }
+            {
+              keyword = OIWFS2PS
+              rowIndex = 1
+            }
+            {
+              keyword = OIWFS3PS
+              rowIndex = 2
+            }
+          ]
+```
+
+The FITS keyword definitions in a subsystem's model files can be used to generate a new FITS dictionary by merging the existing 
+FITS dictionary with the definitions in the publish model files. In this case the information from the published events overrides 
+the information in the existing FITS dictionary:
+
+```
+    icd-fits --subsystem IRIS --generate FITS-Dictionary.json
+```
+
+The generated FITS dictionary JSON file can then be copied to the [DMS-Model-Files](https://github.com/tmt-icd/DMS-Model-Files/tree/master/FITS-Dictionary)
+repository and published, so that it will be automatically used by the icd web app and command line apps.
+You can also manually load the new FITS dictionary into your local icd database using the command line:
+
+```
+    icd-fits -i FITS-Dictionary.json
+```
+
 
 Known Issues
 ------------
