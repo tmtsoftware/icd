@@ -2,7 +2,7 @@
 
 This project contains support for creating, validating and viewing TMT subsystem APIs and ICDs (Interface Control Document between two TMT subsystems).
 
-*You can find a detailed description of the IDBS software [here](https://docushare.tmt.org/docushare/dsweb/Get/Version-133105/OSW%20TN018-ICDDatabaseUserManual_REL08.pdf).*
+*You can find a detailed description of the IDBS software [here](https://docushare.tmt.org/docushare/dsweb/Get/Version-136502/OSW%20TN018-ICDDatabaseUserManual_REL09.pdf).*
 
 Subsystem APIs are described in model files. The model files are validated using [JSON Schema](http://json-schema.org/),
 however the schema descriptions as well as the model files are normally written in
@@ -111,8 +111,9 @@ files are checked out and ingested into the database automatically as needed the
 FITS Keywords
 -------------
 
-The generated APIs and ICDs contain infomation about FITS keywords that are based on event parameters.
-The information is stored in three files under [DMS-Model-Files](https://github.com/tmt-icd/DMS-Model-Files/tree/master/FITS-Dictionary)
+The generated subsystem APIs contain infomation about FITS keywords whose values come from event parameters.
+That is, an event's parameter value is the `source` of the FITS keyword's value.
+FITS keyword data is stored in three files under [DMS-Model-Files](https://github.com/tmt-icd/DMS-Model-Files/tree/master/FITS-Dictionary)
 on GitHub. Once DMS is published, the file should be automatically loaded by the `icdwebserver` or `icd-git --ingest` commands.
 Until then, the FITS keywords, `channels` and `tags` can be manually loaded into the icd database once by running (from this directory):
 
@@ -147,7 +148,7 @@ If the keyword has multiple source parameters, you can specify the channel:
         channel = ATM
 ```
 
-In some more complicated cases, you can also specify multiple keywords whose values are taken from an `index` (or `rowIndex` for 2d arrays) in the parameter's array values:
+In some more complicated cases, you can also specify multiple keywords whose values are taken from an `index` (or `rowIndex` for matrix/2d arrays) in the parameter's array values:
 
 ```
           keywords: [
