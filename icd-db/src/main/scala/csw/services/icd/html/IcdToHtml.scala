@@ -294,7 +294,7 @@ object IcdToHtml {
       componentInfoTableMarkup(info),
       raw(info.componentModel.description),
       publishMarkup(info.componentModel, info.publishes, nh, forApi, pdfOptions, clientApi),
-      if (forApi && clientApi) subscribeMarkup(info.componentModel, info.subscribes, nh, pdfOptions) else div(),
+      if (forApi && clientApi) subscribeMarkup(info.componentModel, info.subscribes, nh, forApi, pdfOptions) else div(),
       commandsMarkup(info.componentModel, info.commands, nh, forApi, pdfOptions, clientApi),
       servicesMarkup(info.componentModel, info.services, nh, forApi, pdfOptions, clientApi)
     )
@@ -601,6 +601,7 @@ object IcdToHtml {
       component: ComponentModel,
       maybeSubscribes: Option[Subscribes],
       nh: NumberedHeadings,
+      forApi: Boolean,
       pdfOptions: PdfOptions
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
@@ -678,7 +679,7 @@ object IcdToHtml {
               )
             ),
             if (maxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.") else span(),
-            si.eventModel.map(t => attributeListMarkup(t.name, t.parameterList))
+            si.eventModel.map(t => eventParameterListListMarkup(t.name, t.parameterList, forApi))
           )
         }
 
@@ -742,9 +743,10 @@ object IcdToHtml {
   }
 
   // Used for event parameters
-  private def attributeListMarkup(
+  private def eventParameterListListMarkup(
       nameStr: String,
       parameterList: List[ParameterModel],
+      forApi: Boolean,
       linkId: Option[String] = None
   ): Text.TypedTag[String] = {
     import scalatags.Text.all._
@@ -753,9 +755,13 @@ object IcdToHtml {
       val headings = List("Name", "Description", "Type", "Units", "Default", "FITS Keywords")
       val rowList =
         for (a <- parameterList) yield {
-          val paramId          = linkId.map(s => s"$s.${a.name}")
-          val nameAnchor       = paramId.map(p => s"<a id='$p' name='$p'>${a.name}</a>").getOrElse(a.name)
-          val fitsKeywordLinks = a.getFitsKeys.map(k => s"<a href=#$k>$k</a>").mkString(", ")
+          val paramId    = linkId.map(s => s"$s.${a.name}")
+          val nameAnchor = paramId.map(p => s"<a id='$p' name='$p'>${a.name}</a>").getOrElse(a.name)
+          val fitsKeywordLinks =
+            if (forApi)
+              a.getFitsKeys.map(k => s"<a href=#$k>$k</a>").mkString(", ")
+            else
+              a.getFitsKeys.mkString(", ")
           List(nameAnchor, a.description, a.typeStr, a.units, a.defaultValue, fitsKeywordLinks)
         }
       div(cls := "nopagebreak")(
@@ -875,7 +881,7 @@ object IcdToHtml {
                   if (eventModel.refError.startsWith("Error:")) makeErrorDiv(eventModel.refError) else div(),
                   subscriberUsage,
                   if (showArchiveInfo) HtmlMarkup.mkTable(headings, rowList) else div(),
-                  attributeListMarkup(eventModel.name, eventModel.parameterList, Some(linkId)),
+                  eventParameterListListMarkup(eventModel.name, eventModel.parameterList, forApi, Some(linkId)),
                   hr
                 )
               }

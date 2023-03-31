@@ -362,8 +362,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    * @param parameterList list of attributes to display
    * @return
    */
-  private def parameterListMarkup(
+  private def eventParameterListMarkup(
       parameterList: List[ParameterModel],
+      forApi: Boolean,
       maybeEventId: Option[String] = None
   ): TypedTag[HTMLDivElement] = {
     import scalatags.JsDom.all._
@@ -372,9 +373,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       val headings = List("Name", "Description", "Type", "Units", "Default", "FITS Keywords")
       val rowList =
         for (a <- parameterList) yield {
-          val paramId          = maybeEventId.map(s => s"$s.${a.name}")
-          val nameAnchor       = paramId.map(p => s"<a id='$p' name='$p'>${a.name}</a>").getOrElse(a.name)
-          val fitsKeywordLinks = a.getFitsKeys.map(k => s"<a href=#$k>$k</a>").mkString(", ")
+          val paramId    = maybeEventId.map(s => s"$s.${a.name}")
+          val nameAnchor = paramId.map(p => s"<a id='$p' name='$p'>${a.name}</a>").getOrElse(a.name)
+          // For now, only including FITS keyword table in APIs, not ICDs
+          val fitsKeywordLinks =
+            if (forApi)
+              a.getFitsKeys.map(k => s"<a href=#$k>$k</a>").mkString(", ")
+            else a.getFitsKeys.mkString(", ")
           List(nameAnchor, a.description, a.typeStr, a.units, a.defaultValue, fitsKeywordLinks)
         }
       div(
@@ -416,7 +421,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    * @param parameterList list of attributes to display
    * @param requiredArgs   a list of required arguments
    */
-  private def parameterListMarkup(
+  private def commandParameterListMarkup(
       parameterList: List[ParameterModel],
       requiredArgs: List[String]
   ): TypedTag[HTMLDivElement] = {
@@ -544,7 +549,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         else p(strong("Requirements: "), eventModel.requirements.mkString(", ")),
         if (showArchiveInfo) mkTable(headings, rowList) else div(),
         if (showArchiveInfo && eventModel.maybeMaxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.") else span(),
-        parameterListMarkup(eventModel.parameterList, maybeEventId)
+        eventParameterListMarkup(eventModel.parameterList, forApi, maybeEventId)
       )
     }
 
@@ -743,7 +748,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   // Generates the HTML markup to display the component's subscribe information
-  private def subscribeMarkup(component: ComponentModel, maybeSubscribes: Option[Subscribes]) = {
+  private def subscribeMarkup(component: ComponentModel, maybeSubscribes: Option[Subscribes], forApi: Boolean) = {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
@@ -792,7 +797,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             formatRate(maxRate)
           )
         )
-        val attrTable = si.eventModel.map(t => parameterListMarkup(t.parameterList)).getOrElse(div())
+        val attrTable = si.eventModel.map(t => eventParameterListMarkup(t.parameterList, forApi)).getOrElse(div())
         div(
           mkTable(headings, rowList),
           if (maxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.") else span(),
@@ -891,7 +896,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
       if (m.preconditions.isEmpty) div() else div(p(strong("Preconditions: "), ol(m.preconditions.map(pc => li(raw(pc)))))),
       if (m.postconditions.isEmpty) div() else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
-      parameterListMarkup(m.parameters, m.requiredArgs),
+      commandParameterListMarkup(m.parameters, m.requiredArgs),
       p(strong("Completion Type: "), m.completionType),
       resultTypeMarkup(m.resultType),
       if (m.completionConditions.isEmpty) div()
@@ -1292,7 +1297,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       componentInfoTableMarkup(info),
       raw(info.componentModel.description),
       publishMarkup(info.componentModel, info.publishes, forApi, clientApi),
-      if (clientApi) subscribeMarkup(info.componentModel, info.subscribes) else span,
+      if (clientApi) subscribeMarkup(info.componentModel, info.subscribes, forApi) else span,
       commandsMarkup(info.componentModel, info.commands, clientApi),
       servicesMarkup(info.componentModel, info.services, clientApi)
     )
