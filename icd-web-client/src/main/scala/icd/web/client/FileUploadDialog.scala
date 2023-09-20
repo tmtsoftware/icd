@@ -51,7 +51,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   private def isStdFile(file: WebkitFile): Boolean = {
     stdList.contains(basename(file)) || file.name.endsWith("-icd-model.conf") || file.name.endsWith(".json") || file.name
       .endsWith(".yml") || file.name.endsWith(".yaml") || file.name.endsWith(".jsonnet") || file.name.endsWith(
-      ".libsonnet") || file.name.endsWith(".txt") || file.name.endsWith("FITS-Tags.conf")
+      ".libsonnet") || file.name.endsWith(".txt") || file.name.endsWith("FITS-Tags.conf") || file.name.endsWith("FITS-Channels.conf")
   }
 
   // HTML item displaying error messages

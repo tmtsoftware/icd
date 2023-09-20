@@ -531,7 +531,7 @@ case class IcdDb(
       } yield {
         (keyword.name, keyword.channel.getOrElse(""))
       }
-      // Check fro duplicates
+      // Check for duplicates
       keywordChannelList
         .groupBy(identity)
         .collect { case (x, List(_, _, _*)) => x }
@@ -563,7 +563,7 @@ case class IcdDb(
           val channelNameProblems =
             if (k.channel.isEmpty || allowedChannels.contains(k.channel.get)) None
             else {
-              val msg1 = s"Event: ${prefix}.${event.name}, FITS keyword: ${k.name}: channel ${k.channel.get} is not defined. "
+              val msg1 = s"Event: ${prefix}.${event.name}, parameter: ${p.name}, FITS keyword: ${k.name}: Channel ${k.channel.get} is not defined.  "
               val msg2 = if (allowedChannels.nonEmpty) s"Should be one of: ${allowedChannels.mkString(", ")}" else ""
               Some(Problem("error", msg1 + msg2))
             }
@@ -653,10 +653,14 @@ case class IcdDb(
    */
   private def ingestFitsDictionary(dir: File): List[Problem] = {
     // Uploads from web app have an extra temp directory at root
-    val dmsDictDir1 = new File(s"$dir/FITS-Dictionary")
-    val dmsDictDir2 = new File(s"$dir/DMS-Model-Files/FITS-Dictionary")
-    val dmsDictDir  = if (dmsDictDir1.isDirectory) dmsDictDir1 else dmsDictDir2
-    if (dmsDictDir.isDirectory) {
+    val dmsDictDirs = List(
+      new File(s"$dir/DMS-Model-Files/FITS-Dictionary"),
+      new File(s"$dir/FITS-Dictionary"),
+      new File(s"$dir")
+    )
+    val maybeDmsDictDir = dmsDictDirs.find(_.isDirectory)
+    if (maybeDmsDictDir.nonEmpty) {
+      val dmsDictDir = maybeDmsDictDir.get
       val icdFits         = new IcdFits(this)
       val fitsKeywordFile = new File(dmsDictDir, "FITS-Dictionary.json")
       val fitsProblems = if (fitsKeywordFile.exists()) {

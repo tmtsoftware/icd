@@ -430,6 +430,26 @@
             "eventName": "atmDispersion",
             "parameterName": "wavelength"
           }
+        },
+        {
+          "name": "IMG-ATM-TEST",
+          "comment": "",
+          "source": {
+            "subsystem": "TEST2",
+            "componentName": "cmTEST",
+            "eventName": "imgAtmDispersion",
+            "parameterName": "wavelength"
+          }
+        },
+        {
+          "name": "ATM-TEST",
+          "comment": "",
+          "source": {
+            "subsystem": "TEST2",
+            "componentName": "cmTEST2",
+            "eventName": "atmDispersion",
+            "parameterName": "wavelength"
+          }
         }
       ]
     },
