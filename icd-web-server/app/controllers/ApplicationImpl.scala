@@ -5,44 +5,14 @@ import controllers.ApplicationData.maybeCache
 import csw.services.icd.IcdToPdf
 import csw.services.icd.codegen.{JavaCodeGenerator, PythonCodeGenerator, ScalaCodeGenerator, TypescriptCodeGenerator}
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
-import csw.services.icd.db.{
-  ArchivedItemsReport,
-  CachedIcdDbQuery,
-  CachedIcdVersionManager,
-  ComponentInfoHelper,
-  IcdComponentInfo,
-  IcdDb,
-  IcdDbPrinter,
-  IcdDbQuery,
-  IcdVersionManager,
-  MissingItemsReport,
-  getFileContents
-}
+import csw.services.icd.db.{ArchivedItemsReport, CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, IcdDbPrinter, IcdDbQuery, IcdVersionManager, MissingItemsReport, getFileContents}
 import csw.services.icd.fits.{IcdFits, IcdFitsPrinter}
 import csw.services.icd.github.IcdGitManager
 import csw.services.icd.html.OpenApiToHtml
 import csw.services.icd.viz.IcdVizManager
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.IcdModels.{IcdModel, ServicePath}
-import icd.web.shared.{
-  ApiVersionInfo,
-  ComponentInfo,
-  DiffInfo,
-  FitsDictionary,
-  FitsTags,
-  IcdName,
-  IcdVersion,
-  IcdVersionInfo,
-  IcdVizOptions,
-  PdfOptions,
-  PublishApiInfo,
-  PublishIcdInfo,
-  SubsystemInfo,
-  SubsystemWithVersion,
-  UnpublishApiInfo,
-  UnpublishIcdInfo,
-  VersionInfo
-}
+import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, FitsDictionary, FitsTags, HtmlHeadings, IcdName, IcdVersion, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, SubsystemWithVersion, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
 import play.api.libs.json.Json
 
 import scala.util.Try
@@ -344,7 +314,7 @@ class ApplicationImpl(db: IcdDb) {
     val out = new ByteArrayOutputStream()
     val sv  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     try {
-      val html = ArchivedItemsReport(db, Some(sv), Some(pdfOptions)).makeReport(pdfOptions)
+      val html = ArchivedItemsReport(db, Some(sv), Some(pdfOptions), new HtmlHeadings).makeReport(pdfOptions)
       IcdToPdf.saveAsPdf(out, html, showLogo = false, pdfOptions)
       Some(out.toByteArray)
     }
@@ -364,7 +334,7 @@ class ApplicationImpl(db: IcdDb) {
   ): Option[Array[Byte]] = {
     val out = new ByteArrayOutputStream()
     try {
-      val html = ArchivedItemsReport(db, None, Some(pdfOptions)).makeReport(pdfOptions)
+      val html = ArchivedItemsReport(db, None, Some(pdfOptions), new HtmlHeadings).makeReport(pdfOptions)
       IcdToPdf.saveAsPdf(out, html, showLogo = false, pdfOptions)
       Some(out.toByteArray)
     }

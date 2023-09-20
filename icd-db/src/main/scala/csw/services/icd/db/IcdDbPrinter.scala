@@ -4,8 +4,8 @@ import java.io.{ByteArrayOutputStream, File, FileOutputStream}
 import csw.services.icd.{IcdToPdf, PdfCache}
 import csw.services.icd.html.{IcdToHtml, NumberedHeadings}
 import icd.web.shared.TitleInfo.unpublished
-import icd.web.shared.{SubsystemWithVersion, _}
-import IcdToHtml._
+import icd.web.shared.*
+import IcdToHtml.*
 import csw.services.icd.fits.{IcdFits, IcdFitsDefs}
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import icd.web.shared.IcdModels.IcdModel
@@ -82,7 +82,7 @@ case class IcdDbPrinter(
    * @param sv the selected subsystem and version
    * @param pdfOptions options for PDF generation
    */
-  def getApiAsHtml(sv: SubsystemWithVersion, pdfOptions: PdfOptions): Option[String] = {
+  private def getApiAsHtml(sv: SubsystemWithVersion, pdfOptions: PdfOptions): Option[String] = {
     val fitsDictionary  = IcdFits(db).getFitsDictionary(Some(sv.subsystem), sv.maybeComponent, None, Some(pdfOptions))
     val fitsKeyMap      = IcdFitsDefs.getFitsKeyMap(fitsDictionary.fitsKeys)
     val maybeSubsystems = if (searchAllSubsystems) None else Some(List(sv.subsystem))
@@ -114,7 +114,7 @@ case class IcdDbPrinter(
    * @param pdfOptions      options for generating HTML/PDF
    *
    */
-  def getIcdAsHtml(
+  private def getIcdAsHtml(
       sv: SubsystemWithVersion,
       targetSv: SubsystemWithVersion,
       maybeIcdVersion: Option[IcdVersion],
@@ -123,15 +123,16 @@ case class IcdDbPrinter(
 
     // Use caching, since we need to look at all the components multiple times, in order to determine who
     // subscribes, who calls commands, etc.
-    val fitsKeyMap     = IcdFits(db).getFitsKeyMap(maybePdfOptions)
-    val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), Some(pdfOptions), fitsKeyMap)
+    val fitsKeyMap = IcdFits(db).getFitsKeyMap(maybePdfOptions)
+    val query =
+      new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), Some(pdfOptions), fitsKeyMap)
     val versionManager = new CachedIcdVersionManager(query)
     val icdInfoList    = getIcdModelList(sv, targetSv)
     val markup = for {
       subsystemInfo       <- getSubsystemInfo(sv)
       targetSubsystemInfo <- getSubsystemInfo(targetSv)
     } yield {
-      import scalatags.Text.all._
+      import scalatags.Text.all.*
       val infoList               = getComponentInfo(versionManager, sv, Some(targetSv), fitsKeyMap)
       val titleInfo              = TitleInfo(subsystemInfo, Some(targetSv), maybeIcdVersion, documentNumber = pdfOptions.documentNumber)
       val titleInfo1             = TitleInfo(subsystemInfo, Some(targetSv), maybeIcdVersion, "(Part 1)")
@@ -145,20 +146,36 @@ case class IcdDbPrinter(
         p(strong(s"${subsystemInfo.sv.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
         raw(subsystemInfo.description),
         if (subsystemInfo.sv == targetSubsystemInfo.sv) {
+          // Two components in same subsystem
           div(
             icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description))),
-            SummaryTable.displaySummary(subsystemInfo, Some(targetSv), infoList, nh, clientApi=false, displayTitle = true),
+            SummaryTable.displaySummary(subsystemInfo, Some(targetSv), infoList, nh, clientApi = false, displayTitle = true),
             makeIntro(titleInfo1),
             displayDetails(infoList, nh, forApi = false, pdfOptions, clientApi = clientApi)
           )
         }
+        else if (sv.subsystem == "DMS" && targetSv.subsystem != "DMS" || targetSv.subsystem == "DMS" && sv.subsystem != "DMS") {
+          // Special case: When DMS is involved, ICD consists of "Archived Items Report" with an ICD header
+          // page (DEOPSICDDB-138)
+          val sv2 = if (sv.subsystem == "DMS") targetSv else sv
+          val subsystemInfo2 = if (sv.subsystem == "DMS") targetSubsystemInfo else subsystemInfo
+          val subsystemVersion2 = subsystemInfo2.sv.maybeVersion.getOrElse(unpublished)
+          div (
+            p(strong(s"${subsystemInfo2.sv.subsystem}: ${subsystemInfo2.title} $subsystemVersion2")),
+            raw(subsystemInfo2.description),
+            icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description))),
+            ArchivedItemsReport(db, Some(sv2), maybePdfOptions, nh)
+              .makeReportMarkup(s"Archived Items for ${subsystemInfo2.sv.subsystem}")
+          )
+        }
         else {
+          // Two subsystems
           div(
             p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
             raw(targetSubsystemInfo.description),
             icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description))),
-            SummaryTable.displaySummary(subsystemInfo, Some(targetSv), infoList, nh, clientApi=false, displayTitle = true),
-            SummaryTable.displaySummary(targetSubsystemInfo, Some(sv), infoList2, nh, clientApi=false, displayTitle = false),
+            SummaryTable.displaySummary(subsystemInfo, Some(targetSv), infoList, nh, clientApi = false, displayTitle = true),
+            SummaryTable.displaySummary(targetSubsystemInfo, Some(sv), infoList2, nh, clientApi = false, displayTitle = false),
             makeIntro(titleInfo1),
             displayDetails(infoList, nh, forApi = false, pdfOptions, clientApi = clientApi),
             makeIntro(titleInfo2),

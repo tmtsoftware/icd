@@ -10,7 +10,7 @@ import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.fits.IcdFits
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.IcdModels.{EventModel, ImageModel, ReceiveCommandModel}
-import icd.web.shared.{BuildInfo, IcdModels, PdfOptions, SubsystemWithVersion}
+import icd.web.shared.{BuildInfo, HtmlHeadings, IcdModels, PdfOptions, SubsystemWithVersion}
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
 import io.swagger.v3.parser.util.DeserializationUtils
@@ -387,7 +387,7 @@ object IcdDb extends App {
       val maybeSv = options.subsystem
         .map(SubsystemAndVersion(_))
         .map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, options.component))
-      ArchivedItemsReport(db, maybeSv, maybePdfOptions).saveToFile(file, pdfOptions)
+      ArchivedItemsReport(db, maybeSv, maybePdfOptions, new HtmlHeadings).saveToFile(file, pdfOptions)
     }
 
     // --generate code in the given file

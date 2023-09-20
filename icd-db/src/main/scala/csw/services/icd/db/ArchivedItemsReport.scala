@@ -1,17 +1,16 @@
 package csw.services.icd.db
 
 import java.io.{File, FileOutputStream}
-
 import csw.services.icd.IcdToPdf
-import csw.services.icd.db.ArchivedItemsReport._
+import csw.services.icd.db.ArchivedItemsReport.*
 import csw.services.icd.html.IcdToHtml
 import icd.web.shared.IcdModels.{ComponentModel, EventModel}
-import icd.web.shared.{PdfOptions, SubsystemWithVersion}
+import icd.web.shared.{Headings, PdfOptions, SubsystemWithVersion}
 import scalatags.Text
 
 object ArchivedItemsReport {
 
-  case class ArchiveInfo(
+  private case class ArchiveInfo(
       subsystem: String,
       component: String,
       prefix: String,
@@ -30,9 +29,12 @@ object ArchivedItemsReport {
 /**
  * Generates an "Archived Items" report for the given subsystem (or all subsystems)
  * @param db the icd database
+ * @param maybePdfOptions used in creating PDF
  * @param maybeSv if defined, restrict report to this subsystem, version, component (otherwise: all current subsystems)
+ * @param headings used for HTML headings (use for TOC)
  */
-case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion], maybePdfOptions: Option[PdfOptions]) {
+case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
+                               maybePdfOptions: Option[PdfOptions], headings: Headings) {
   private val query          = new CachedIcdDbQuery(db.db, db.admin, maybeSv.map(sv => List(sv.subsystem)), maybePdfOptions, Map.empty)
   private val versionManager = new CachedIcdVersionManager(query)
 
@@ -84,7 +86,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
   }
 
   private def totalsTable(archivedItems: List[ArchiveInfo]): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
     val subsystems = archivedItems.map(_.subsystem).distinct
     table(
       style := "width:100%;",
@@ -111,81 +113,89 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
 
   // Generates the HTML for the report
   def makeReport(pdfOptions: PdfOptions): String = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
+
+    val titleExt = maybeSv.map(sv => s" for $sv").getOrElse("")
+    val titleStr    = s"Archived Items Report$titleExt"
+    val markup =
+      html(
+        head(
+          scalatags.Text.tags2.title(titleStr),
+          scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss(pdfOptions)))
+        ),
+        body(
+          makeReportMarkup(titleStr)
+        )
+      )
+    markup.render
+  }
+
+  // Generates the HTML markup for the report
+  def makeReportMarkup(titleStr: String): Text.TypedTag[String] = {
+    import scalatags.Text.all.*
 
     def firstParagraph(s: String): String = {
       val i = s.indexOf("</p>")
       if (i == -1) s else s.substring(0, i + 4)
     }
 
-    val titleExt                         = maybeSv.map(sv => s" for $sv").getOrElse("")
-    val title                            = s"Archived Items Report$titleExt"
     val archivedItems: List[ArchiveInfo] = getArchivedItems
     val averageEventSize                 = if (archivedItems.isEmpty) 0 else archivedItems.map(_.sizeInBytes).sum / archivedItems.size
-    val markup = html(
-      head(
-        scalatags.Text.tags2.title(title),
-        scalatags.Text.tags2.style(scalatags.Text.RawFrag(IcdToHtml.getCss(pdfOptions)))
-      ),
-      body(
-        h2(title),
-        div(
-          table(
-            thead(
-              tr(
-                th("Component"),
-                th("Prefix"),
-                th("Type"),
-                th("Name"),
-                th("Max", br, "Rate Hz"),
-                th("Size", br, "Bytes"),
-                th("Hourly", br, "Accum."),
-                th("Yearly", br, "Accum."),
-                th("Description")
-              )
-            ),
-            tbody(
-              for {
-                item <- archivedItems
-              } yield {
-                val (maxRate, defaultMaxRateUsed) = EventModel.getMaxRate(item.maybeMaxRate)
-                tr(
-                  td(p(item.component)),
-                  td(p(raw(item.prefix.replace(".", ".<br/>")))),
-                  td(p(item.eventType)),
-                  td(p(item.name)),
-                  td(
-                    p(if (defaultMaxRateUsed) em(maxRate.toString + "*") else span(maxRate.toString))
-                  ),
-                  td(p(item.sizeInBytes)),
-                  td(p(if (defaultMaxRateUsed) em(item.hourlyAccumulation + "*") else span(item.hourlyAccumulation))),
-                  td(p(if (defaultMaxRateUsed) em(item.yearlyAccumulation + "*") else span(item.yearlyAccumulation))),
-                  td(raw(firstParagraph(item.description)))
-                )
-              }
+    div(
+      headings.H2(titleStr),
+      table(
+        thead(
+          tr(
+            th("Component"),
+            th("Prefix"),
+            th("Type"),
+            th("Name"),
+            th("Max", br, "Rate Hz"),
+            th("Size", br, "Bytes"),
+            th("Hourly", br, "Accum."),
+            th("Yearly", br, "Accum."),
+            th("Description")
+          )
+        ),
+        tbody(
+          for {
+            item <- archivedItems
+          } yield {
+            val (maxRate, defaultMaxRateUsed) = EventModel.getMaxRate(item.maybeMaxRate)
+            tr(
+              td(p(item.component)),
+              td(p(raw(item.prefix.replace(".", ".<br/>")))),
+              td(p(item.eventType)),
+              td(p(item.name)),
+              td(
+                p(if (defaultMaxRateUsed) em(maxRate.toString + "*") else span(maxRate.toString))
+              ),
+              td(p(item.sizeInBytes)),
+              td(p(if (defaultMaxRateUsed) em(item.hourlyAccumulation + "*") else span(item.hourlyAccumulation))),
+              td(p(if (defaultMaxRateUsed) em(item.yearlyAccumulation + "*") else span(item.yearlyAccumulation))),
+              td(raw(firstParagraph(item.description)))
             )
-          ),
-          span("* Assumes 1 Hz if maxRate is not specified or is 0."),
-          h3("Totals for Subsystems"),
-          totalsTable(archivedItems),
-          if (maybeSv.isEmpty)
-            strong(
-              p(
-                "Total archive space required for one year: "
-                  + EventModel.getTotalArchiveSpace(archivedItems.map(_.eventModel))
-                  + s". Average event size: $averageEventSize bytes"
-              )
-            )
-          else span()
+          }
         )
-      )
+      ),
+      span("* Assumes 1 Hz if maxRate is not specified or is 0."),
+      headings.H3(s"Totals for Subsystem${if (maybeSv.isEmpty) "s" else ""}"),
+      totalsTable(archivedItems),
+      if (maybeSv.isEmpty)
+        strong(
+          p(
+            "Total archive space required for one year: "
+              + EventModel.getTotalArchiveSpace(archivedItems.map(_.eventModel))
+              + s". Average event size: $averageEventSize bytes"
+          )
+        )
+      else span()
     )
-    markup.render
   }
 
   // Generates the text/CSV formatted report
   private def makeCsvReport(file: File): Unit = {
-    import com.github.tototoshi.csv._
+    import com.github.tototoshi.csv.*
 
     implicit object MyFormat extends DefaultCSVFormat {
       override val lineTerminator = "\n"
