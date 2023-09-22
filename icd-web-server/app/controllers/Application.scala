@@ -368,6 +368,35 @@ class Application @Inject() (
     }
 
   /**
+   * Returns the archived items report (HTML) for the given subsystem API
+   *
+   * @param subsystem      the source subsystem
+   * @param maybeVersion   the source subsystem's version (default: current)
+   * @param maybeComponent optional component (default: all in subsystem)
+   */
+  def archivedItemsReportHtml(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String]
+  ) =
+    authAction.async {
+      val resp: Future[Option[String]] = appActor ? (
+        GetArchivedItemsReportHtml(
+          subsystem,
+          maybeVersion,
+          maybeComponent,
+          _
+        )
+      )
+      resp.map {
+        case Some(html) =>
+          Ok(html).as("text/html")
+        case None =>
+          NotFound
+      }
+    }
+
+  /**
    * Returns the archived items report (PDF) for all current subsystems
    * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
    * @param maybeFontSize base font size for body text (default: 10)

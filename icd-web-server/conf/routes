@@ -47,6 +47,9 @@ GET         /archivedItemsReport/:subsystem             controllers.Application.
 # Gets an archived items report (PDF) for the given subsystem API (and component)
 GET         /archivedItemsReportFull                    controllers.Application.archivedItemsReportFull(orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])
 
+# Gets an archived items report (HTML) for the given subsystem API (and component)
+GET         /archivedItemsReportHtml/:subsystem         controllers.Application.archivedItemsReportHtml(subsystem, version: Option[String], component: Option[String])
+
 # Gets a missing items report (PDF) for the given subsystem API (and component) and optional target subsystem/component
 GET         /missingItemsReport/:subsystem             controllers.Application.missingItemsReport(subsystem, version: Option[String], component: Option[String], target: Option[String], targetVersion: Option[String], targetComponent: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])
 

@@ -1,20 +1,21 @@
 package icd.web.client
 
-import icd.web.shared.ComponentInfo._
-import icd.web.shared.IcdModels._
-import icd.web.shared._
+import icd.web.shared.ComponentInfo.*
+import icd.web.shared.IcdModels.*
+import icd.web.shared.*
 import org.scalajs.dom
 import org.scalajs.dom.{HTMLButtonElement, HTMLDivElement, HTMLElement, HTMLTableRowElement, document}
-import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
 
 import scala.concurrent.Future
-import Components._
+import Components.*
 import org.scalajs.dom.html.{Anchor, Div, Element}
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.util.Failure
 import scalatags.JsDom.TypedTag
 import Headings.idFor
+import icd.web.shared.TitleInfo.unpublished
 
 object Components {
 
@@ -180,6 +181,16 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
+   * Gets an Archived Items Report in HTML
+   *
+   * @param sv            the subsystem
+   * @return future HTML string for the report
+   */
+  private def getArchivedItemsReportHtml(sv: SubsystemWithVersion): Future[String] = {
+    Fetch.get(ClientRoutes.archivedItemsReportHtml(sv))
+  }
+
+  /**
    * Gets the list of components for the given subsystem and then gets the information for them
    */
   private def getComponentInfo(
@@ -228,6 +239,146 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
+   * Adds components from two subsystems to the display (for an ICD).
+   *
+   * @param sv                   the selected subsystem, version and optional single component
+   * @param targetSv             target subsystem, version, optional component
+   * @param maybeIcd             optional icd version
+   * @param searchAllSubsystems  if true, search all subsystems for API dependencies
+   * @param clientApi            if true include subscribed events and sent commands in API
+   * @return a future list of ComponentInfo (one entry for each component in the result)
+   */
+  def addComponentsForIcd(
+      sv: SubsystemWithVersion,
+      targetSv: SubsystemWithVersion,
+      maybeIcd: Option[IcdVersion],
+      searchAllSubsystems: Boolean,
+      clientApi: Boolean
+  ): Future[List[ComponentInfo]] = {
+    val f = for {
+      subsystemInfo       <- getSubsystemInfo(sv)
+      targetSubsystemInfo <- getSubsystemInfo(targetSv)
+      icdInfoList         <- getIcdModelList(sv, targetSv)
+      infoList            <- getComponentInfo(sv, Some(targetSv), searchAllSubsystems, clientApi)
+      targetInfoList      <- getComponentInfo(targetSv, Some(sv), searchAllSubsystems, clientApi)
+    } yield {
+      import scalatags.JsDom.all._
+      import scalacss.ScalatagsCss._
+      val titleInfo              = TitleInfo(subsystemInfo, Some(targetSv), maybeIcd)
+      val subsystemVersion       = sv.maybeVersion.getOrElse(TitleInfo.unpublished)
+      val targetSubsystemVersion = targetSv.maybeVersion.getOrElse(TitleInfo.unpublished)
+      mainContent.clearContent()
+      mainContent.setTitle(titleInfo.title, titleInfo.maybeSubtitle, titleInfo.maybeDescription)
+      mainContent.appendElement(
+        div(
+          Styles.component,
+          p(strong(s"${subsystemInfo.sv.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
+          raw(subsystemInfo.description),
+          if (subsystemInfo.sv == targetSubsystemInfo.sv) div()
+          else
+            div(
+              p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
+              raw(targetSubsystemInfo.description)
+            ),
+          icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description)))
+        ).render
+      )
+      // XXX TODO FIXME: Hyperlinks to other subsystems can't be made in the summary table,
+      // since the code is shared with non-javascript code on the server side.
+      val summaryTable1 =
+        SummaryTable
+          .displaySummary(
+            subsystemInfo,
+            Some(targetSv),
+            infoList,
+            new HtmlHeadings,
+            clientApi = false,
+            displayTitle = true
+          )
+          .render
+      val summaryTable2 =
+        if (subsystemInfo.sv != targetSubsystemInfo.sv)
+          Some(
+            SummaryTable
+              .displaySummary(
+                targetSubsystemInfo,
+                Some(sv),
+                targetInfoList,
+                new HtmlHeadings,
+                clientApi = false,
+                displayTitle = false
+              )
+              .render
+          )
+        else None
+
+      mainContent.appendElement(
+        div(Styles.component, id := "Summary")(raw(summaryTable1), summaryTable2.map(raw).getOrElse(span())).render
+      )
+      infoList.foreach(i => displayComponentInfo(i, forApi = false, clientApi = clientApi))
+      if (subsystemInfo.sv != targetSubsystemInfo.sv)
+        targetInfoList.foreach(i => displayComponentInfo(i, forApi = false, clientApi))
+      infoList ++ targetInfoList
+    }
+
+    f.onComplete {
+      case Failure(ex) => mainContent.displayInternalError(ex)
+      case _           =>
+    }
+    f
+  }
+
+  /**
+   * Adds components for an ICD with DMS (Just a header and Archived Items table).
+   *
+   * @param sv                   the selected subsystem, version and optional single component
+   * @param targetSv             target subsystem, version, optional component
+   * @param maybeIcd             optional icd version
+   * @return an empty future list of ComponentInfo (Since we are not displaying that)
+   */
+  def addComponentsForDmsIcd(
+      sv: SubsystemWithVersion,
+      targetSv: SubsystemWithVersion,
+      maybeIcd: Option[IcdVersion]
+  ): Future[List[ComponentInfo]] = {
+    // Special case: When DMS is involved, ICD consists of "Archived Items Report" with an ICD header
+    // page (DEOPSICDDB-138)
+    val sv2 = if (sv.subsystem == "DMS") targetSv else sv
+
+    val f = for {
+      subsystemInfo       <- getSubsystemInfo(sv)
+      targetSubsystemInfo <- getSubsystemInfo(targetSv)
+      icdInfoList         <- getIcdModelList(sv, targetSv)
+      archiveReportHtml   <- getArchivedItemsReportHtml(sv2)
+    } yield {
+      import scalatags.JsDom.all._
+      import scalacss.ScalatagsCss._
+      val titleInfo              = TitleInfo(subsystemInfo, Some(targetSv), maybeIcd)
+      val subsystemVersion       = sv.maybeVersion.getOrElse(TitleInfo.unpublished)
+      val targetSubsystemVersion = targetSv.maybeVersion.getOrElse(TitleInfo.unpublished)
+      mainContent.clearContent()
+      mainContent.setTitle(titleInfo.title, titleInfo.maybeSubtitle, titleInfo.maybeDescription)
+      mainContent.appendElement(
+        div(
+          Styles.component,
+          p(strong(s"${subsystemInfo.sv.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
+          raw(subsystemInfo.description),
+          p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
+          raw(targetSubsystemInfo.description),
+          icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description))),
+          raw(archiveReportHtml)
+        ).render
+      )
+      Nil // Don't display component info?
+    }
+    f.onComplete {
+      case Failure(ex) => mainContent.displayInternalError(ex)
+      case _           =>
+    }
+    f
+  }
+
+  /**
    * Adds components to the display.
    *
    * @param sv                   the selected subsystem, version and optional single component
@@ -247,84 +398,51 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalatags.JsDom.all._
     import scalacss.ScalatagsCss._
 
-    val isIcd = maybeTargetSubsystem.isDefined
-    val f = for {
-      subsystemInfo <- getSubsystemInfo(sv)
-      maybeTargetSubsystemInfo <-
-        maybeTargetSubsystem
-          .map(getSubsystemInfo(_).map(i => Some(i)))
-          .getOrElse(Future.successful(None))
-      icdInfoList    <- if (isIcd) getIcdModelList(sv, maybeTargetSubsystem.get) else Future.successful(Nil)
-      infoList       <- getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems, clientApi)
-      targetInfoList <- getComponentInfo(maybeTargetSubsystem, Some(sv), searchAllSubsystems, clientApi)
-      fitsDict       <- getFitsDictionary(sv)
-    } yield {
-      val titleInfo        = TitleInfo(subsystemInfo, maybeTargetSubsystem, maybeIcd)
-      val subsystemVersion = sv.maybeVersion.getOrElse(TitleInfo.unpublished)
-      mainContent.clearContent()
-      mainContent.setTitle(titleInfo.title, titleInfo.maybeSubtitle, titleInfo.maybeDescription)
-      // For ICDs, add the descriptions of the two subsystems at top
-      if (isIcd) {
-        val targetSubsystemInfo    = maybeTargetSubsystemInfo.get
-        val targetSubsystemVersion = maybeTargetSubsystem.flatMap(_.maybeVersion).getOrElse(TitleInfo.unpublished)
-        mainContent.appendElement(
-          div(
-            Styles.component,
-            p(strong(s"${subsystemInfo.sv.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
-            raw(subsystemInfo.description),
-            if (subsystemInfo.sv == targetSubsystemInfo.sv) div()
-            else
-              div(
-                p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
-                raw(targetSubsystemInfo.description)
-              ),
-            icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description)))
-          ).render
-        )
+    if (maybeTargetSubsystem.isDefined) {
+      val targetSv = maybeTargetSubsystem.get
+      if (sv.subsystem == "DMS" && targetSv.subsystem != "DMS" || targetSv.subsystem == "DMS" && sv.subsystem != "DMS") {
+        addComponentsForDmsIcd(sv, targetSv, maybeIcd)
       }
-      // XXX TODO FIXME: Hyperlinks to other subsystems can't be made in the summary table,
-      // since the code is shared with non-javascript code on the server side.
-      val summaryTable1 =
-        SummaryTable
-          .displaySummary(
-            subsystemInfo,
-            maybeTargetSubsystem,
-            infoList,
-            new HtmlHeadings,
-            clientApi && !isIcd,
-            displayTitle = true
-          )
-          .render
-      val summaryTable2 =
-        if (isIcd && subsystemInfo.sv != maybeTargetSubsystemInfo.get.sv)
-          Some(
-            SummaryTable
-              .displaySummary(
-                maybeTargetSubsystemInfo.get,
-                Some(sv),
-                targetInfoList,
-                new HtmlHeadings,
-                clientApi = false,
-                displayTitle = false
-              )
-              .render
-          )
-        else None
+      else {
+        addComponentsForIcd(sv, targetSv, maybeIcd, searchAllSubsystems, clientApi)
+      }
+    }
+    else {
+      val f = for {
+        subsystemInfo <- getSubsystemInfo(sv)
+        infoList      <- getComponentInfo(sv, maybeTargetSubsystem, searchAllSubsystems, clientApi)
+        fitsDict      <- getFitsDictionary(sv)
+      } yield {
+        val titleInfo = TitleInfo(subsystemInfo, maybeTargetSubsystem, maybeIcd)
+        mainContent.clearContent()
+        mainContent.setTitle(titleInfo.title, titleInfo.maybeSubtitle, titleInfo.maybeDescription)
+        // XXX TODO FIXME: Hyperlinks to other subsystems can't be made in the summary table,
+        // since the code is shared with non-javascript code on the server side.
+        val summaryTable =
+          SummaryTable
+            .displaySummary(
+              subsystemInfo,
+              maybeTargetSubsystem,
+              infoList,
+              new HtmlHeadings,
+              clientApi,
+              displayTitle = true
+            )
+            .render
 
-      mainContent.appendElement(
-        div(Styles.component, id := "Summary")(raw(summaryTable1), summaryTable2.map(raw).getOrElse(span())).render
-      )
-      if (!isIcd && fitsDict.fitsKeys.nonEmpty) mainContent.appendElement(makeFitsKeyTable(fitsDict, sv).render)
-      infoList.foreach(i => displayComponentInfo(i, !isIcd, clientApi))
-      if (isIcd && subsystemInfo.sv != maybeTargetSubsystemInfo.get.sv)
-        targetInfoList.foreach(i => displayComponentInfo(i, forApi = false, clientApi))
-      infoList ++ targetInfoList
+        mainContent.appendElement(
+          div(Styles.component, id := "Summary")(raw(summaryTable)).render
+        )
+        if (fitsDict.fitsKeys.nonEmpty) mainContent.appendElement(makeFitsKeyTable(fitsDict, sv).render)
+        infoList.foreach(i => displayComponentInfo(i, forApi = true, clientApi = clientApi))
+        infoList
+      }
+      f.onComplete {
+        case Failure(ex) => mainContent.displayInternalError(ex)
+        case _           =>
+      }
+      f
     }
-    f.onComplete {
-      case Failure(ex) => mainContent.displayInternalError(ex)
-      case _           =>
-    }
-    f
   }
 
   /**

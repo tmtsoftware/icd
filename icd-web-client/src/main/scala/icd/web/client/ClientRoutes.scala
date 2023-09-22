@@ -256,6 +256,20 @@ object ClientRoutes {
   }
 
   /**
+   * Returns the route to use to get an archived items report for the given Subsystem with selected components.
+   *
+   * @param sv       the subsystem
+   * @return the URL path to use
+   */
+  def archivedItemsReportHtml(sv: SubsystemWithVersion): String = {
+    val attrs = getAttrs(
+      sv.maybeVersion,
+      sv.maybeComponent
+    )
+    s"/archivedItemsReportHtml/${sv.subsystem}$attrs"
+  }
+
+  /**
    * Returns the route to use to get an archived items report for all subsystems
    *
    * @return the URL path to use

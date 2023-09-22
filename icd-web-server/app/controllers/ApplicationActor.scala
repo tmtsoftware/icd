@@ -89,6 +89,12 @@ object ApplicationActor extends ActorModule {
       pdfOptions: PdfOptions,
       replyTo: ActorRef[Option[Array[Byte]]]
   ) extends Messages
+  final case class GetArchivedItemsReportHtml(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      replyTo: ActorRef[Option[String]]
+  ) extends Messages
   final case class GetArchivedItemsReportFull(
       pdfOptions: PdfOptions,
       replyTo: ActorRef[Option[Array[Byte]]]
@@ -261,6 +267,18 @@ object ApplicationActor extends ActorModule {
             maybeVersion,
             maybeComponent,
             pdfOptions
+          )
+          Behaviors.same
+        case GetArchivedItemsReportHtml(
+              subsystem,
+              maybeVersion,
+              maybeComponent,
+              replyTo
+            ) =>
+          replyTo ! app.getArchivedItemsReportHtml(
+            subsystem,
+            maybeVersion,
+            maybeComponent
           )
           Behaviors.same
         case GetArchivedItemsReportFull(pdfOptions, replyTo) =>

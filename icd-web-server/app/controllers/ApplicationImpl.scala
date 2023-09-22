@@ -326,6 +326,30 @@ class ApplicationImpl(db: IcdDb) {
   }
 
   /**
+   * Returns the archived items report (HTML) for the given subsystem API
+   *
+   * @param subsystem      the source subsystem
+   * @param maybeVersion   the source subsystem's version (default: current)
+   * @param maybeComponent optional component (default: all in subsystem)
+   */
+  def getArchivedItemsReportHtml(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String]
+  ): Option[String] = {
+    val sv  = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
+    try {
+      Some(ArchivedItemsReport(db, Some(sv), None, new HtmlHeadings)
+        .makeReportMarkup(s"Archived Items for ${sv.subsystem}").render)
+    }
+    catch {
+      case ex: Exception =>
+        log.error(s"Failed to get archived items report for $sv", ex)
+        None
+    }
+  }
+
+  /**
    * Returns the archived items report (PDF) for all current subsystems
    * @param pdfOptions         options for PDF generation
    */

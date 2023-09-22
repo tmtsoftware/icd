@@ -154,18 +154,16 @@ case class IcdDbPrinter(
             displayDetails(infoList, nh, forApi = false, pdfOptions, clientApi = clientApi)
           )
         }
-        else if (sv.subsystem == "DMS" && targetSv.subsystem != "DMS" || targetSv.subsystem == "DMS" && sv.subsystem != "DMS") {
+        else if (sv.subsystem == "DMS" || targetSv.subsystem == "DMS") {
           // Special case: When DMS is involved, ICD consists of "Archived Items Report" with an ICD header
           // page (DEOPSICDDB-138)
           val sv2 = if (sv.subsystem == "DMS") targetSv else sv
-          val subsystemInfo2 = if (sv.subsystem == "DMS") targetSubsystemInfo else subsystemInfo
-          val subsystemVersion2 = subsystemInfo2.sv.maybeVersion.getOrElse(unpublished)
           div (
-            p(strong(s"${subsystemInfo2.sv.subsystem}: ${subsystemInfo2.title} $subsystemVersion2")),
-            raw(subsystemInfo2.description),
+            p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
+            raw(targetSubsystemInfo.description),
             icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description))),
             ArchivedItemsReport(db, Some(sv2), maybePdfOptions, nh)
-              .makeReportMarkup(s"Archived Items for ${subsystemInfo2.sv.subsystem}")
+              .makeReportMarkup(s"Archived Items for ${sv2.subsystem}")
           )
         }
         else {
