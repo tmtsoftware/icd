@@ -8,8 +8,8 @@ import play.api.libs.functional.syntax._
 
 //noinspection TypeAnnotation
 object JsonSupport {
-  implicit val publishTypeWrites = new Writes[PublishType] {
-    def writes(v: PublishType) =
+  implicit val publishTypeWrites: Writes[PublishType] = new Writes[PublishType] {
+    def writes(v: PublishType): JsValue =
       JsString(v match {
         case Events        => "Events"
         case ObserveEvents => "ObserveEvents"
@@ -47,61 +47,61 @@ object JsonSupport {
     case x => throw new RuntimeException(s"JSon parse error: $x")
   }
 
-  implicit val componentModelFormat        = Json.format[ComponentModel]
-  implicit val EventParameterFitsKeyInfo   = Json.format[EventParameterFitsKeyInfo]
-  implicit val parameterModelFormat        = Json.format[ParameterModel]
-  implicit val eventModelFormat            = Json.format[EventModel]
-  implicit val metadataModelFormat         = Json.format[MetadataModel]
-  implicit val imageModelFormat            = Json.format[ImageModel]
-  implicit val subscribeModelInfoFormat    = Json.format[SubscribeModelInfo]
-  implicit val subscribeInfoFormat         = Json.format[SubscribeInfo]
-  implicit val eventInfoFormat             = Json.format[EventInfo]
-  implicit val imageInfoFormat             = Json.format[ImageInfo]
-  implicit val alarmModelFormat            = Json.format[AlarmModel]
-  implicit val detailedSubscribeInfoFormat = Json.format[DetailedSubscribeInfo]
-  implicit val publishesFormat             = Json.format[Publishes]
-  implicit val subscribesFormat            = Json.format[Subscribes]
-  implicit val otherComponentFormat        = Json.format[OtherComponent]
-  implicit val receiveCommandModelFormat   = Json.format[ReceiveCommandModel]
-  implicit val sentCommandInfoFormat       = Json.format[SentCommandInfo]
-  implicit val receivedCommandInfoFormat   = Json.format[ReceivedCommandInfo]
-  implicit val commandsFormat              = Json.format[Commands]
-  implicit val subsystemWithVersionFormat  = Json.format[SubsystemWithVersion]
-  implicit val subsystemInfoFormat         = Json.format[SubsystemInfo]
-  implicit val icdVersionFormat            = Json.format[IcdVersion]
-  implicit val icdNameFormat               = Json.format[IcdName]
-  implicit val diffFormat                  = Json.format[Diff]
-  implicit val diffItemFormat              = Json.format[DiffItem]
-  implicit val diffInfoFormat              = Json.format[DiffInfo]
-  implicit val versionInfoFormat           = Json.format[VersionInfo]
-  implicit val icdVersionInfoFormat        = Json.format[IcdVersionInfo]
-  implicit val apiVersionInfoFormat        = Json.format[ApiVersionInfo]
-  implicit val publishInfoFormat           = Json.format[PublishInfo]
-  implicit val gitHubCredentialsFormat     = Json.format[GitHubCredentials]
-  implicit val credentialsFormat           = Json.format[Credentials]
-  implicit val publishApiInfoFormat        = Json.format[PublishApiInfo]
-  implicit val publishIcdInfoFormat        = Json.format[PublishIcdInfo]
-  implicit val unpublishApiInfoFormat      = Json.format[UnpublishApiInfo]
-  implicit val unpublishIcdInfoFormat      = Json.format[UnpublishIcdInfo]
-  implicit val icdModelFormat              = Json.format[IcdModel]
-  implicit val servicePathFormat           = Json.format[ServicePath]
-  implicit val serviceModelClientFormat    = Json.format[ServiceModelClient]
-  implicit val serviceModelProviderFormat  = Json.format[ServiceModelProvider]
-  implicit val serviceModelClientComponent = Json.format[ServiceModelClientComponent]
-  implicit val serviceModelFormat          = Json.format[ServiceModel]
-  implicit val serviceProvidedInfoFormat   = Json.format[ServiceProvidedInfo]
-  implicit val servicesRequiredInfoFormat  = Json.format[ServicesRequiredInfo]
-  implicit val servicesFormat              = Json.format[Services]
-  implicit val componentInfoFormat         = Json.format[ComponentInfo]
-  implicit val fitsSourceFormat            = Json.format[FitsSource]
-  implicit val fitsChannelFormat           = Json.format[FitsChannel]
+  implicit val componentModelFormat: OFormat[ComponentModel] = Json.format[ComponentModel]
+  implicit val EventParameterFitsKeyInfo: OFormat[EventParameterFitsKeyInfo] = Json.format[EventParameterFitsKeyInfo]
+  implicit val parameterModelFormat: OFormat[ParameterModel] = Json.format[ParameterModel]
+  implicit val eventModelFormat: OFormat[EventModel] = Json.format[EventModel]
+  implicit val metadataModelFormat: OFormat[MetadataModel] = Json.format[MetadataModel]
+  implicit val imageModelFormat: OFormat[ImageModel] = Json.format[ImageModel]
+  implicit val subscribeModelInfoFormat: OFormat[SubscribeModelInfo] = Json.format[SubscribeModelInfo]
+  implicit val subscribeInfoFormat: OFormat[SubscribeInfo] = Json.format[SubscribeInfo]
+  implicit val eventInfoFormat: OFormat[EventInfo] = Json.format[EventInfo]
+  implicit val imageInfoFormat: OFormat[ImageInfo] = Json.format[ImageInfo]
+  implicit val alarmModelFormat: OFormat[AlarmModel] = Json.format[AlarmModel]
+  implicit val detailedSubscribeInfoFormat: OFormat[DetailedSubscribeInfo] = Json.format[DetailedSubscribeInfo]
+  implicit val publishesFormat: OFormat[Publishes] = Json.format[Publishes]
+  implicit val subscribesFormat: OFormat[Subscribes] = Json.format[Subscribes]
+  implicit val otherComponentFormat: OFormat[OtherComponent] = Json.format[OtherComponent]
+  implicit val receiveCommandModelFormat: OFormat[ReceiveCommandModel] = Json.format[ReceiveCommandModel]
+  implicit val sentCommandInfoFormat: OFormat[SentCommandInfo] = Json.format[SentCommandInfo]
+  implicit val receivedCommandInfoFormat: OFormat[ReceivedCommandInfo] = Json.format[ReceivedCommandInfo]
+  implicit val commandsFormat: OFormat[Commands] = Json.format[Commands]
+  implicit val subsystemWithVersionFormat: OFormat[SubsystemWithVersion] = Json.format[SubsystemWithVersion]
+  implicit val subsystemInfoFormat: OFormat[SubsystemInfo] = Json.format[SubsystemInfo]
+  implicit val icdVersionFormat: OFormat[IcdVersion] = Json.format[IcdVersion]
+  implicit val icdNameFormat: OFormat[IcdName] = Json.format[IcdName]
+  implicit val diffFormat: OFormat[Diff] = Json.format[Diff]
+  implicit val diffItemFormat: OFormat[DiffItem] = Json.format[DiffItem]
+  implicit val diffInfoFormat: OFormat[DiffInfo] = Json.format[DiffInfo]
+  implicit val versionInfoFormat: OFormat[VersionInfo] = Json.format[VersionInfo]
+  implicit val icdVersionInfoFormat: OFormat[IcdVersionInfo] = Json.format[IcdVersionInfo]
+  implicit val apiVersionInfoFormat: OFormat[ApiVersionInfo] = Json.format[ApiVersionInfo]
+  implicit val publishInfoFormat: OFormat[PublishInfo] = Json.format[PublishInfo]
+  implicit val gitHubCredentialsFormat: OFormat[GitHubCredentials] = Json.format[GitHubCredentials]
+  implicit val credentialsFormat: OFormat[Credentials] = Json.format[Credentials]
+  implicit val publishApiInfoFormat: OFormat[PublishApiInfo] = Json.format[PublishApiInfo]
+  implicit val publishIcdInfoFormat: OFormat[PublishIcdInfo] = Json.format[PublishIcdInfo]
+  implicit val unpublishApiInfoFormat: OFormat[UnpublishApiInfo] = Json.format[UnpublishApiInfo]
+  implicit val unpublishIcdInfoFormat: OFormat[UnpublishIcdInfo] = Json.format[UnpublishIcdInfo]
+  implicit val icdModelFormat: OFormat[IcdModel] = Json.format[IcdModel]
+  implicit val servicePathFormat: OFormat[ServicePath] = Json.format[ServicePath]
+  implicit val serviceModelClientFormat: OFormat[ServiceModelClient] = Json.format[ServiceModelClient]
+  implicit val serviceModelProviderFormat: OFormat[ServiceModelProvider] = Json.format[ServiceModelProvider]
+  implicit val serviceModelClientComponent: OFormat[ServiceModelClientComponent] = Json.format[ServiceModelClientComponent]
+  implicit val serviceModelFormat: OFormat[ServiceModel] = Json.format[ServiceModel]
+  implicit val serviceProvidedInfoFormat: OFormat[ServiceProvidedInfo] = Json.format[ServiceProvidedInfo]
+  implicit val servicesRequiredInfoFormat: OFormat[ServicesRequiredInfo] = Json.format[ServicesRequiredInfo]
+  implicit val servicesFormat: OFormat[Services] = Json.format[Services]
+  implicit val componentInfoFormat: OFormat[ComponentInfo] = Json.format[ComponentInfo]
+  implicit val fitsSourceFormat: OFormat[FitsSource] = Json.format[FitsSource]
+  implicit val fitsChannelFormat: OFormat[FitsChannel] = Json.format[FitsChannel]
 
   // This version is used for exchanging data between the web app and server
 //  implicit val fitsKeyInfoFormat           = Json.format[FitsKeyInfo]
 
   // This version is used only when writing to the human editable FITS-Dictionary.json file:
   // To make it easier to read/edit, uses the abbrieviated "source" syntax if there is only a default channel.
-  val fitsKeyInfoWrites = new Writes[FitsKeyInfo] {
+  val fitsKeyInfoWrites: Writes[FitsKeyInfo] = new Writes[FitsKeyInfo] {
     def writes(fitsKeyInfo: FitsKeyInfo): JsValue = {
       if (fitsKeyInfo.channels.size == 1 && fitsKeyInfo.channels.head.name.isEmpty)
         Json.obj(
@@ -124,7 +124,7 @@ object JsonSupport {
     }
   }
 
-  implicit val fitsKeyInfoReads = (
+  implicit val fitsKeyInfoReads: Reads[FitsKeyInfo] = (
     (JsPath \ "name").read[String] and
       (JsPath \ "description").read[String] and
       (JsPath \ "type").read[String] and
@@ -136,9 +136,9 @@ object JsonSupport {
   implicit val fitsKeyInfoFormat: Format[FitsKeyInfo] =
     Format(fitsKeyInfoReads, fitsKeyInfoWrites)
 
-  implicit val fitsKeyInfoListFormat   = Json.format[FitsKeyInfoList]
-  implicit val fitsKeywordFormat       = Json.format[FitsKeyword]
-  implicit val fitsTagsFormat          = Json.format[FitsTags]
-  implicit val availableChannelsFormat = Json.format[AvailableChannels]
-  implicit val fitsDictionaryFormat    = Json.format[FitsDictionary]
+  implicit val fitsKeyInfoListFormat: OFormat[FitsKeyInfoList] = Json.format[FitsKeyInfoList]
+  implicit val fitsKeywordFormat: OFormat[FitsKeyword] = Json.format[FitsKeyword]
+  implicit val fitsTagsFormat: OFormat[FitsTags] = Json.format[FitsTags]
+  implicit val availableChannelsFormat: OFormat[AvailableChannels] = Json.format[AvailableChannels]
+  implicit val fitsDictionaryFormat: OFormat[FitsDictionary] = Json.format[FitsDictionary]
 }

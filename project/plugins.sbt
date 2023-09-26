@@ -7,13 +7,13 @@
 //)
 
 // Sbt plugins
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.9.0-M2")
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.11.0")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.9.0-RC2")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.14.0")
 addSbtPlugin("com.vmunier" % "sbt-web-scalajs" % "1.2.0")
 addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.2")
 addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.1.4")
-addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.2.0")
-addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.11")
+addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.2")
+addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.16")
 addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.6.4")
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.11.0")
 addSbtPlugin("org.scala-js" % "sbt-jsdependencies" % "1.0.2")

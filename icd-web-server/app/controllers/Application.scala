@@ -1,28 +1,28 @@
 package controllers
 
-import javax.inject._
+import javax.inject.*
 import java.security.MessageDigest
-import akka.actor.typed.scaladsl.adapter._
-import akka.actor.typed.ActorRef
+import akka.actor.typed.scaladsl.adapter.*
+import akka.actor.typed.{ActorRef, ActorSystem}
 import controllers.ApplicationData.AuthAction
-import csw.services.icd.db._
+import csw.services.icd.db.*
 import csw.services.icd.github.IcdGitManager
 import icd.web.shared.SharedUtils.Credentials
-import icd.web.shared._
+import icd.web.shared.*
 import org.eclipse.jgit.api.errors.TransportException
-import org.webjars.play._
+import org.webjars.play.*
 import play.api.libs.json.Json
 import play.api.mvc.Cookie.SameSite.Strict
 import play.filters.csrf.{CSRF, CSRFAddToken}
-import play.api.mvc._
+import play.api.mvc.*
 import play.api.{Configuration, Environment, Mode}
-import akka.actor.typed.scaladsl.AskPattern._
+import akka.actor.typed.scaladsl.AskPattern.*
 import akka.util.Timeout
 import icd.web.shared.IcdModels.{IcdModel, ServicePath}
 
 import java.net.URLDecoder
 import scala.collection.mutable
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
@@ -47,8 +47,8 @@ class Application @Inject() (
   import JsonSupport._
   import ApplicationActor._
 
-  implicit val timeout          = Timeout(1000.seconds)
-  implicit val typedActorSystem = actorSystem.toTyped
+  implicit val timeout: Timeout = Timeout(1000.seconds)
+  implicit val typedActorSystem: ActorSystem[Nothing] = actorSystem.toTyped
   import actorSystem._
 
   if (!tryDb.isSuccess) {

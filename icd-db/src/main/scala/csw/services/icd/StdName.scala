@@ -47,7 +47,7 @@ object StdName {
 /**
  * Holds name of input file and matching schema
  */
-case class StdName private (name: String, schema: String) {
+case class StdName(name: String, schema: String) {
 
   /**
    * Base name: For example icd, component, publish, etc.
