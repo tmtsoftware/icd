@@ -34,8 +34,8 @@ object Dependencies {
 
   val sjsonnet = "com.databricks" %% "sjsonnet" % "0.4.7"
 
-  val itext7Core  = "com.itextpdf"       % "itext7-core"  % "7.2.5" pomOnly () // XXX TODO update to 8.0.1
-  val html2pdf    = "com.itextpdf"       % "html2pdf"     % "4.0.5" // XXX TODO update to 5.0.1
+  val itext7Core  = "com.itextpdf"       % "itext7-core"  % "8.0.1" pomOnly ()
+  val html2pdf    = "com.itextpdf"       % "html2pdf"     % "5.0.1"
   val jlatexmath  = "org.scilab.forge"   % "jlatexmath"   % "1.0.7"
   val commonsIo   = "commons-io"         % "commons-io"   % "2.13.0"
   val commonsText = "org.apache.commons" % "commons-text" % "1.10.0"
