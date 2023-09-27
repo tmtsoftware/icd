@@ -10,7 +10,7 @@ import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
 object FitsKeywordDialog {
   private val allTags = "All"
 
-  private val fitsTagNameCls = "fitsTagName"
+  private val fitsTagDividerCls = "fitsTagDivider"
 
   private def hideElement(e: Element): Unit = {
     e.classList.add("d-none")
@@ -61,10 +61,10 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
     val maybeTag = tagMap.get(FitsKeywordAndChannel(fitsKey.name, channel))
 
     div(
-      if (index != 0) hr(cls := fitsTagNameCls) else span(),
+      if (index != 0) hr(cls := fitsTagDividerCls) else span(),
       id := s"${fitsKey.name}-${fitsChannel.name}-source",
       // Show the tag name
-      maybeTag.map(tag => span(cls := fitsTagNameCls, tag, ": ")),
+      maybeTag.map(tag => span(tag, ": ")),
       a(
         title := s"Go to event parameter that is the source of this FITS keyword",
         s"${fitsChannel.source.toLongString} ",
@@ -78,6 +78,14 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
   private def radioButtonListener(e: dom.Event): Unit = {
     val tag                 = getFitsTag
     val fitsKeywordsWithTag = fitsTags.tags.get(tag).toList.flatten
+
+    // Show the tag dividers only when "All" is selected
+    document.querySelectorAll(s".$fitsTagDividerCls").toList.foreach { hrElem =>
+      if (tag == allTags)
+        showElement(hrElem)
+      else {
+        hideElement(hrElem)
+      }
 
     // Set which rows are visible based on the selected tag
     fitsKeys.foreach { fitsKey =>
@@ -112,6 +120,7 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
         else
           hideElement(elem)
       }
+    }
     }
   }
 
@@ -172,7 +181,7 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
             th("Description"),
             th("Type"),
             th("Units"),
-            th(span(cls := fitsTagNameCls, "Tag: "), a(href := "#")("Source"))
+            th(span("Tag: "), a(href := "#")("Source"))
           )
         ),
         tbody(

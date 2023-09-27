@@ -102,10 +102,16 @@ object Components {
       fitsSource.componentName,
       fitsSource.eventName
     )
-    val hiddenRowId = makeHiddenRowId(idStr)
-    Option(document.getElementById(hiddenRowId).classList).foreach(_.remove("collapse"))
-    val paramId = s"$idStr.${fitsSource.parameterName}"
-    document.getElementById(paramId).scrollIntoView()
+    val hiddenRowId   = makeHiddenRowId(idStr)
+    val hiddenRowElem = document.getElementById(hiddenRowId)
+    if (hiddenRowElem != null) {
+      // Open up the hidden parameter row, so that the parameters are displayed
+      hiddenRowElem.classList.remove("collapse")
+      val paramId   = s"$idStr.${fitsSource.parameterName}"
+      val paramElem = document.getElementById(paramId)
+      if (paramElem != null)
+        paramElem.scrollIntoView()
+    }
   }
 }
 
