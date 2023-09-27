@@ -103,7 +103,7 @@ object Components {
       fitsSource.eventName
     )
     val hiddenRowId = makeHiddenRowId(idStr)
-    document.getElementById(hiddenRowId).classList.remove("collapse")
+    Option(document.getElementById(hiddenRowId).classList).foreach(_.remove("collapse"))
     val paramId = s"$idStr.${fitsSource.parameterName}"
     document.getElementById(paramId).scrollIntoView()
   }

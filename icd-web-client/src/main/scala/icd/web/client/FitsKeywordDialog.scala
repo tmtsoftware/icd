@@ -1,7 +1,7 @@
 package icd.web.client
 
 import icd.web.client.Components.ComponentListener
-import icd.web.shared.{FitsChannel, FitsDictionary, FitsKeyInfo, FitsKeyword, FitsKeywordAndChannel, FitsSource}
+import icd.web.shared.{FitsChannel, FitsDictionary, FitsKeyInfo, FitsKeywordAndChannel, FitsSource}
 import org.scalajs.dom
 import org.scalajs.dom.{Element, HTMLInputElement, document}
 import scalatags.JsDom.all._
@@ -76,7 +76,8 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
 
   //noinspection ScalaUnusedSymbol
   private def radioButtonListener(e: dom.Event): Unit = {
-    val tag = getFitsTag
+    val tag                 = getFitsTag
+    val fitsKeywordsWithTag = fitsTags.tags.get(tag).toList.flatten
 
     // Set which rows are visible based on the selected tag
     fitsKeys.foreach { fitsKey =>
@@ -90,13 +91,17 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
         }
       }
       else {
-        val tags = getTags(fitsKey)
-        if (tags.contains(tag)) {
+        if (fitsKeywordsWithTag.exists(_.keyword == fitsKey.name)) {
           showElement(elem)
           // Set which source links are visible based on the channel
           val channels = fitsKey.channels.map(_.name).filter(_.nonEmpty)
           channels.foreach { c =>
-            val showSource = fitsTags.tags(tag).contains(FitsKeyword(fitsKey.name, tag, Some(c)))
+            val showSource = fitsTags
+              .tags(tag)
+              .exists(k =>
+                k.keyword == fitsKey.name
+                  && k.channel.contains(c)
+              )
             val sourceElem = document.querySelector(s"#${fitsKey.name}-$c-source")
             if (showSource)
               showElement(sourceElem)
@@ -135,22 +140,6 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
         )
       }
     )
-  }
-
-  // Gets the tags for the given FITS keyword
-  private def getTags(fitsKey: FitsKeyInfo): List[String] = {
-    fitsTags.tags.keys.toList.filter { tag =>
-      fitsKey.channels.map(_.name) match {
-        case List("") =>
-          fitsTags.tags(tag).exists(_.keyword == fitsKey.name)
-        case channels =>
-          channels.exists(c =>
-            fitsTags
-              .tags(tag)
-              .contains(FitsKeyword(fitsKey.name, tag, Some(c)))
-          )
-      }
-    }
   }
 
   // Generates table with related FITS key information
