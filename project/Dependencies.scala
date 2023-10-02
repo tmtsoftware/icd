@@ -3,11 +3,12 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 
 object Dependencies {
   val Version               = "3.0.0"
-  val ScalaVersion          = "2.13.12"
+  val ScalaVersion          = "3.3.1"
   val AkkaVersion           = "2.6.21"
   val PlayJsonVersion       = "2.10.1"
-  val ScalaTagsVersion      = "0.11.0" // XXX Can't update to 0.12 due to scalacss not being up to date: Force update?
-  val ScalaJsDomVersion     = "2.2.0"
+//  val ScalaTagsVersion      = "0.11.1" // XXX Can't update to 0.12 due to scalacss not being up to date: Force update?
+  val ScalaTagsVersion      = "0.12.0"
+  val ScalaJsDomVersion     = "2.8.0"
   val ScalaCssVersion       = "1.0.0"
   val BootstrapVersion      = "5.3.2"
   val JQueryVersion         = "3.6.1"
@@ -32,7 +33,7 @@ object Dependencies {
   val flexmarkAll = "com.vladsch.flexmark"  % "flexmark-all" % "0.64.8"
   val scalaCsv    = "com.github.tototoshi" %% "scala-csv"    % "1.3.10"
 
-  val sjsonnet = "com.databricks" %% "sjsonnet" % "0.4.7"
+  val sjsonnet = ("com.databricks" %% "sjsonnet" % "0.4.7").cross(CrossVersion.for3Use2_13)
 
   val itext7Core  = "com.itextpdf"       % "itext7-core"  % "8.0.1" pomOnly ()
   val html2pdf    = "com.itextpdf"       % "html2pdf"     % "5.0.1"
@@ -71,8 +72,8 @@ object Dependencies {
       "com.lihaoyi"                  %%% "scalatags"                   % ScalaTagsVersion,
       "com.typesafe.play"            %%% "play-json"                   % PlayJsonVersion,
       "com.github.japgolly.scalacss" %%% "core"                        % ScalaCssVersion,
-      "com.github.japgolly.scalacss" %%% "ext-scalatags"               % ScalaCssVersion,
-      "org.scala-js"                 %%% "scala-js-macrotask-executor" % "1.1.0"
+//      ("com.github.japgolly.scalacss" %%% "ext-scalatags"               % ScalaCssVersion).cross(CrossVersion.for3Use2_13),
+      "org.scala-js"                 %%% "scala-js-macrotask-executor" % "1.1.1"
     )
   )
 
