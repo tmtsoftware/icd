@@ -49,7 +49,7 @@ class Application @Inject() (
   import JsonSupport._
   import ApplicationActor._
 
-  implicit val timeout: Timeout = Timeout(1000.seconds)
+  implicit val timeout: Timeout                       = Timeout(1000.seconds)
   implicit val typedActorSystem: ActorSystem[Nothing] = actorSystem.toTyped
   import actorSystem._
 
@@ -961,8 +961,10 @@ class Application @Inject() (
           }
         })
         .getOrElse(Nil)
-      val decodedServiceName = service.replace('+', ' ') // XXX TODO check this
-      val resp: Future[Option[String]] = appActor ? (GetOpenApi(subsystem, component, decodedServiceName, version, pathList, _))
+      val decodedComponentName = URLDecoder.decode(component, "UTF-8")
+      val decodedServiceName   = URLDecoder.decode(service, "UTF-8")
+      val resp: Future[Option[String]] =
+        appActor ? (GetOpenApi(subsystem, decodedComponentName, decodedServiceName, version, pathList, _))
       resp.map {
         case Some(openApi) => Ok(Json.parse(openApi))
         case None          => NotFound
