@@ -19,8 +19,10 @@ import play.api.{Configuration, Environment, Mode}
 import akka.actor.typed.scaladsl.AskPattern.*
 import akka.util.Timeout
 import icd.web.shared.IcdModels.{IcdModel, ServicePath}
+import play.utils.UriEncoding
 
 import java.net.URLDecoder
+import java.nio.charset.Charset
 import scala.collection.mutable
 import scala.concurrent.duration.*
 import scala.concurrent.Future
@@ -959,7 +961,8 @@ class Application @Inject() (
           }
         })
         .getOrElse(Nil)
-      val resp: Future[Option[String]] = appActor ? (GetOpenApi(subsystem, component, service, version, pathList, _))
+      val decodedServiceName = service.replace('+', ' ') // XXX TODO check this
+      val resp: Future[Option[String]] = appActor ? (GetOpenApi(subsystem, component, decodedServiceName, version, pathList, _))
       resp.map {
         case Some(openApi) => Ok(Json.parse(openApi))
         case None          => NotFound
