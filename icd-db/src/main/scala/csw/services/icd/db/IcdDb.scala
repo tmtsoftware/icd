@@ -74,7 +74,7 @@ object IcdDbDefaults {
 // This is the command line app icd-db
 //noinspection DuplicatedCode
 object IcdDb extends App {
-  import IcdDbDefaults._
+  import IcdDbDefaults.*
 
   // Cache of PDF files for published API and ICD versions
   val maybeCache: Option[PdfCache] =
@@ -341,7 +341,7 @@ object IcdDb extends App {
 
     // --diff option: Compare versions option. Argument format: <subsystem>:v1[,v2]
     def diffVersions(arg: String): Unit = {
-      import DiffsonProtocol._
+      import DiffsonProtocol.*
 
       val msg = "Expected argument format: <subsystemName>:v1[,v2]"
       if (!arg.contains(":") || arg.endsWith(":") || arg.endsWith(",")) error(msg)
@@ -493,6 +493,51 @@ case class IcdDb(
 
   // Check for obvious errors, such as duplicate event or parameter names after ingesting model files for subsystem
   private def checkPostIngest(subsystem: String): List[Problem] = {
+    // Check for min > max in parameter fields and return list of error messages for the parameter list
+    def getParamMinMaxProblems(parameterList: List[IcdModels.ParameterModel]): List[String] = {
+      def strToDouble(s: String): Double = {
+        s match {
+          case "inf" | "Inf"   => Double.MaxValue
+          case "-inf" | "-Inf" => Double.MinValue
+          case _               => s.toDoubleOption.getOrElse(0.0)
+        }
+      }
+      val list = parameterList.flatMap { p =>
+        val a =
+          if (
+            p.maximum.isDefined && p.minimum.isDefined
+            && strToDouble(p.maximum.get) < strToDouble(p.minimum.get)
+          )
+            Some(s"In parameter ${p.name}, maximum (${p.maximum.get}) < minimum (${p.minimum.get})")
+          else None
+        val b =
+          if (p.maxLength.isDefined && p.minLength.isDefined && p.maxLength.get < p.minLength.get)
+            Some(s"In parameter ${p.name}, maxLength (${p.maxLength.get}) < minLength (${p.minLength.get})")
+          else None
+        val c =
+          if (p.maxItems.isDefined && p.minItems.isDefined && p.maxItems.get < p.minItems.get)
+            Some(s"In parameter ${p.name}, maxItems (${p.maxItems.get}) < minItems (${p.minItems.get})")
+          else None
+        List(a, b, c)
+      }
+      list.flatten
+    }
+
+    // Check for min > max in event parameter fields
+    def getMinMaxEventProblems(prefix: String, events: List[EventModel], name: String): List[Problem] = {
+      events.flatMap(event =>
+        getParamMinMaxProblems(event.parameterList)
+          .map(s => Problem("error", s"'$s' in $name '$prefix.${event.name}''"))
+      )
+    }
+
+    // Check for min > max in command parameter fields
+    def getMinMaxCommandProblems(prefix: String, commands: List[ReceiveCommandModel]): List[Problem] = {
+      commands.flatMap(command =>
+        getParamMinMaxProblems(command.parameters)
+          .map(s => Problem("error", s"'$s' in command '$prefix.${command.name}''"))
+      )
+    }
 
     def getEventProblems(prefix: String, events: List[EventModel], name: String): List[Problem] = {
       val p1 = getDuplicates(events.map(_.name)).map(s => Problem("error", s"Duplicate $name name: '$s''"))
@@ -563,7 +608,8 @@ case class IcdDb(
           val channelNameProblems =
             if (k.channel.isEmpty || allowedChannels.contains(k.channel.get)) None
             else {
-              val msg1 = s"Event: ${prefix}.${event.name}, parameter: ${p.name}, FITS keyword: ${k.name}: Channel ${k.channel.get} is not defined.  "
+              val msg1 =
+                s"Event: ${prefix}.${event.name}, parameter: ${p.name}, FITS keyword: ${k.name}: Channel ${k.channel.get} is not defined.  "
               val msg2 = if (allowedChannels.nonEmpty) s"Should be one of: ${allowedChannels.mkString(", ")}" else ""
               Some(Problem("error", msg1 + msg2))
             }
@@ -583,6 +629,8 @@ case class IcdDb(
       val publishProblems = icdModels.publishModel.toList.flatMap { publishModel =>
         val prefix          = s"${publishModel.subsystem}.${publishModel.component}"
         val allowedChannels = availableFitsKeyChannels.get(publishModel.subsystem).toList.flatten.toSet
+        getMinMaxEventProblems(prefix, publishModel.eventList, "event") :::
+        getMinMaxEventProblems(prefix, publishModel.currentStateList, "current state") :::
         getEventProblems(prefix, publishModel.eventList, "event") :::
         getFitsKeywordProblems(prefix, publishModel.eventList, allowedFitsKeyNames, allowedChannels) :::
         getEventProblems(prefix, publishModel.currentStateList, "current state") :::
@@ -590,6 +638,7 @@ case class IcdDb(
       }
       val commandProblems = icdModels.commandModel.toList.flatMap { commandModel =>
         val prefix = s"${commandModel.subsystem}.${commandModel.component}"
+        getMinMaxCommandProblems(prefix, commandModel.receive) :::
         getCommandProblems(prefix, commandModel.receive)
       }
       publishProblems ::: commandProblems
@@ -660,7 +709,7 @@ case class IcdDb(
     )
     val maybeDmsDictDir = dmsDictDirs.find(_.isDirectory)
     if (maybeDmsDictDir.nonEmpty) {
-      val dmsDictDir = maybeDmsDictDir.get
+      val dmsDictDir      = maybeDmsDictDir.get
       val icdFits         = new IcdFits(this)
       val fitsKeywordFile = new File(dmsDictDir, "FITS-Dictionary.json")
       val fitsProblems = if (fitsKeywordFile.exists()) {
