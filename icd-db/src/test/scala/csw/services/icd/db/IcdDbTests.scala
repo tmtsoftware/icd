@@ -14,13 +14,7 @@ class IcdDbTests extends AnyFunSuite {
   val examplesDir = s"examples/${IcdValidator.currentSchemaVersion}"
   val dbName      = "test"
 
-  // The relative location of the the examples directory can change depending on how the test is run
-  def getTestDir(path: String): File = {
-    val dir = new File(path)
-    if (dir.exists()) dir else new File(s"../$path")
-  }
-
-  test("Ingest example ICD into database, then query the DB") {
+  test("Ingest TEST example subsystem into database, then query the DB") {
     val db = IcdDb(dbName)
     db.dropDatabase() // start with a clean db for test
 
@@ -28,7 +22,7 @@ class IcdDbTests extends AnyFunSuite {
     // Need ESW for ObserveEvents
     testHelper.ingestESW()
     // ingest examples/TEST into the DB
-    testHelper.ingestDir(getTestDir(s"$examplesDir/TEST"))
+    testHelper.ingestDir(TestHelper.getTestDir(s"$examplesDir/TEST"))
 
     // query the DB
     assert(db.query.getComponentNames(Some("TEST")) == List("env.ctrl", "jsonnet.example", "lgsWfs", "nacqNhrwfs", "ndme", "rtc"))
@@ -97,7 +91,7 @@ class IcdDbTests extends AnyFunSuite {
     assert(published.head.publishType == CurrentStates)
 
     // Ingest TEST2 subsystem
-    testHelper.ingestDir(getTestDir(s"$examplesDir/TEST2"))
+    testHelper.ingestDir(TestHelper.getTestDir(s"$examplesDir/TEST2"))
 
     // Test icd-models
     val icdModels = db.versionManager.getIcdModels(SubsystemWithVersion("TEST"), SubsystemWithVersion("TEST2"), None)

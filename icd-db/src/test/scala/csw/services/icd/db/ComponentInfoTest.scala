@@ -1,6 +1,5 @@
 package csw.services.icd.db
 
-import java.io.File
 import csw.services.icd.IcdValidator
 import csw.services.icd.html.OpenApiToHtml
 import icd.web.shared.{ComponentInfo, SubsystemWithVersion}
@@ -10,12 +9,6 @@ class ComponentInfoTest extends AnyFunSuite {
   Resolver.loggingEnabled = false
   private val examplesDir = s"examples/${IcdValidator.currentSchemaVersion}"
   private val dbName      = "test"
-
-  // The relative location of the the examples directory can change depending on how the test is run
-  private def getTestDir(path: String): File = {
-    val dir = new File(path)
-    if (dir.exists()) dir else new File(s"../$path")
-  }
 
   private def checkRefs(info: ComponentInfo): Unit = {
     val eventList = info.publishes.get.eventList
@@ -142,8 +135,8 @@ class ComponentInfoTest extends AnyFunSuite {
     // Need ESW for ObserveEvents
     testHelper.ingestESW()
     // ingest examples/TEST into the DB
-    testHelper.ingestDir(getTestDir(s"$examplesDir/TEST"))
-    testHelper.ingestDir(getTestDir(s"$examplesDir/TEST2"))
+    testHelper.ingestDir(TestHelper.getTestDir(s"$examplesDir/TEST"))
+    testHelper.ingestDir(TestHelper.getTestDir(s"$examplesDir/TEST2"))
 
     new ComponentInfoHelper(db.versionManager, displayWarnings = false, clientApi = true)
       .getComponentInfo(SubsystemWithVersion("TEST", None, Some("lgsWfs")), None, Map.empty)

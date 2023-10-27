@@ -11,12 +11,6 @@ class ArchivedItemsTest extends AnyFunSuite {
   val examplesDir = s"examples/${IcdValidator.currentSchemaVersion}"
   val dbName      = "test"
 
-  // The relative location of the the examples directory can change depending on how the test is run
-  def getTestDir(path: String): File = {
-    val dir = new File(path)
-    if (dir.exists()) dir else new File(s"../$path")
-  }
-
   test("Test event size calculations") {
     val db = IcdDb(dbName)
     db.dropDatabase() // start with a clean db for test
@@ -24,7 +18,7 @@ class ArchivedItemsTest extends AnyFunSuite {
     // Need ESW for ObserveEvents
     testHelper.ingestESW()
     // ingest examples/TEST into the DB
-    testHelper.ingestDir(getTestDir(s"$examplesDir/TEST"))
+    testHelper.ingestDir(TestHelper.getTestDir(s"$examplesDir/TEST"))
 
     new ComponentInfoHelper(db.versionManager, displayWarnings = false, clientApi = false)
       .getComponentInfo(SubsystemWithVersion("TEST", None, Some("lgsWfs")), None, Map.empty)
