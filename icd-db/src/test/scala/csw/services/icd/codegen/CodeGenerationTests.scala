@@ -9,6 +9,14 @@ import java.io.File
 import java.nio.file.Files
 import sys.process.*
 
+/**
+ * This class generates and runs scala, java, python and typescript test projects to test code
+ * generated from icd model files.
+ *
+ * Note: This class assumes that the necessary versions of java, python, pipenv, npm are installed.
+ * These are used in the scripts under icd-db/src/test/codegen.
+ * If one of these are missing or have the wrong version, the tests will fail.
+ */
 class CodeGenerationTests extends AnyFunSuite with BeforeAndAfterAll with BeforeAndAfterEach {
   private val examplesDir = s"examples/${IcdValidator.currentSchemaVersion}"
   private val dbName      = "test"
@@ -60,4 +68,13 @@ class CodeGenerationTests extends AnyFunSuite with BeforeAndAfterAll with Before
     val result = s"bash $testCodegenDir/testPython.sh $tempDir".!
     assert(result == 0)
   }
+
+  test("Generate Typescript code from the example/TEST subsystem and test it") {
+    val testFile = new File(tempDir, "Test.ts")
+    new TypescriptCodeGenerator(db).generate("TEST", None, testFile, None, Some("test"))
+    println(s"generated $testFile")
+    val result = s"bash $testCodegenDir/testTypescript.sh $tempDir".!
+    assert(result == 0)
+  }
+
 }
