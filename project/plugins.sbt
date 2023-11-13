@@ -7,7 +7,7 @@
 //)
 
 // Sbt plugins
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.9.0-RC2")
+addSbtPlugin("org.playframework" % "sbt-plugin" % "3.0.0")
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.14.0")
 addSbtPlugin("com.vmunier" % "sbt-web-scalajs" % "1.2.0")
 addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.2")

@@ -11,7 +11,7 @@ object Settings {
     organizationName := "TMT",
     organizationHomepage := Some(url("http://www.tmt.org")),
     version := Dependencies.Version,
-    scalacOptions ++= Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-unchecked", "-Xsource:3"),
+    scalacOptions ++= Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-unchecked"),
     scalaVersion := Dependencies.ScalaVersion
   )
 
@@ -35,6 +35,6 @@ object Settings {
   lazy val dockerSettings = Seq(
     maintainer := "TMT Software",
     dockerExposedPorts := Seq(9000),
-    dockerBaseImage := "java:11"
+    dockerBaseImage := "java:17"
   )
 }
