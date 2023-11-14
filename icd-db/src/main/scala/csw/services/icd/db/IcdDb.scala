@@ -1,5 +1,8 @@
 package csw.services.icd.db
 
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+
 import java.io.File
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd.*
@@ -11,6 +14,7 @@ import csw.services.icd.fits.IcdFits
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.IcdModels.{EventModel, ImageModel, ReceiveCommandModel}
 import icd.web.shared.{BuildInfo, HtmlHeadings, IcdModels, PdfOptions, SubsystemWithVersion}
+import io.swagger.util.Yaml
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
 import io.swagger.v3.parser.util.DeserializationUtils
@@ -446,8 +450,8 @@ case class IcdDb(
     port: Int = IcdDbDefaults.defaultPort
 ) {
   // Cleanup databases from earlier releases
-  IcdDbDefaults.deleteDatabase(host, port, "icds")
-  IcdDbDefaults.deleteDatabase(host, port, "icds2")
+//  IcdDbDefaults.deleteDatabase(host, port, "icds")
+//  IcdDbDefaults.deleteDatabase(host, port, "icds2")
   IcdDbDefaults.deleteDatabase(host, port, "icds3")
 
   val db: DB    = IcdDbDefaults.connectToDatabase(host, port, dbName)
@@ -604,7 +608,7 @@ case class IcdDb(
         } yield {
           val keyNameProblems =
             if (allowedFitsKeyNames.contains(k.name)) None
-            else Some(Problem("error", s"${prefix}.${event.name}: ${k.name} is not in the FITS dictionary"))
+            else Some(Problem("error", s"$prefix.${event.name}: ${k.name} is not in the FITS dictionary"))
           val channelNameProblems =
             if (k.channel.isEmpty || allowedChannels.contains(k.channel.get)) None
             else {
@@ -799,7 +803,11 @@ case class IcdDb(
         // Convert YAML to JSON if needed
         val jsonStr =
           if (fileName.endsWith(".yml") || fileName.endsWith(".yaml")) {
-            val yaml = io.swagger.util.Yaml.pretty().writeValueAsString(openAPI)
+            val mapper = Yaml.mapper()
+            // See https://stackoverflow.com/questions/67874510/spring-boot-2-5-0-and-invaliddefinitionexception-java-8-date-time-type-java-ti
+            mapper.registerModule(new JavaTimeModule())
+            val writer = mapper.writer(new DefaultPrettyPrinter())
+            val yaml = writer.writeValueAsString(openAPI)
             DeserializationUtils.deserializeIntoTree(yaml, fileName).toPrettyString
           }
           else {
@@ -830,7 +838,9 @@ case class IcdDb(
       ingestOpenApiFiles(coll)
     }
     catch {
-      case t: Throwable => List(Problem("error", s"Internal error: $t"))
+      case t: Throwable =>
+        t.printStackTrace()
+        List(Problem("error", s"Internal error: $t"))
     }
   }
 

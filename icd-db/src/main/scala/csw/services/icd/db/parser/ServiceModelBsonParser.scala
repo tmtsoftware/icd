@@ -15,7 +15,6 @@ import json2bson._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-
 /*
  * See resources/<version>/service-schema.conf
  */
@@ -58,17 +57,20 @@ object ServiceModelBsonParser {
       if (doc.isEmpty) None
       else {
         // When reading from the database replace the openApi file name with the contents that were ingested for that file
-        val name     = doc.getAsOpt[String]("name").get
-        val collName = s"$subsystem.$component.service.$name"
-        val coll = db.collection[BSONCollection](collName)
-        val openApiDoc  = coll.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await.get
-        Some(
+        val name            = doc.getAsOpt[String]("name").get
+        val collName        = s"$subsystem.$component.service.$name"
+        val coll            = db.collection[BSONCollection](collName)
+        val maybeOpenApiDoc = coll.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await
+        if (maybeOpenApiDoc.isEmpty) {
+          println(s"ServiceModelProviderBsonParser: Can't locate MongoDB collection: $collName")
+        }
+        maybeOpenApiDoc.map { openApiDoc =>
           ServiceModelProvider(
             name = doc.getAsOpt[String]("name").get,
             description = doc.getAsOpt[String]("description").get,
             openApi = Json.toJson(openApiDoc).toString()
           )
-        )
+        }
       }
     }
   }
