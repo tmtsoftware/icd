@@ -798,8 +798,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
       div(
         if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
-        p(strong("Probable Cause: "), raw(m.probableCause)),
-        p(strong("Operator Response: "), raw(m.operatorResponse)),
+        if (m.probableCause.isEmpty) div() else p(strong("Probable Cause: "), raw(m.probableCause)),
+        if (m.operatorResponse.isEmpty) div() else p(strong("Operator Response: "), raw(m.operatorResponse)),
         mkTable(headings, rowList)
       )
     }
