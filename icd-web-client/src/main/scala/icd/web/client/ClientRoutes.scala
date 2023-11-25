@@ -284,6 +284,35 @@ object ClientRoutes {
   }
 
   /**
+   * Returns the route to use to get an alarms report for the given Subsystem with selected components.
+   *
+   * @param sv the subsystem
+   * @return the URL path to use
+   */
+  def alarmsReport(sv: SubsystemWithVersion, options: PdfOptions): String = {
+    val attrs = getAttrs(
+      sv.maybeVersion,
+      sv.maybeComponent,
+      maybePdfOptions = Some(options)
+    )
+    s"/alarmsReport/${sv.subsystem}$attrs"
+  }
+
+  /**
+   * Returns the route to use to get an alarms report for all subsystems
+   *
+   * @return the URL path to use
+   */
+  def alarmsReportFull(options: PdfOptions): String = {
+    val attrs = getAttrs(
+      None,
+      None,
+      maybePdfOptions = Some(options)
+    )
+    s"/alarmsReportFull$attrs"
+  }
+
+  /**
    * Returns the route to use to get a missing items report for the given Subsystem with selected components.
    *
    * @param sv the subsystem

@@ -99,6 +99,17 @@ object ApplicationActor extends ActorModule {
       pdfOptions: PdfOptions,
       replyTo: ActorRef[Option[Array[Byte]]]
   ) extends Messages
+  final case class GetAlarmsReport(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      pdfOptions: PdfOptions,
+      replyTo: ActorRef[Option[Array[Byte]]]
+  ) extends Messages
+  final case class GetAlarmsReportFull(
+      pdfOptions: PdfOptions,
+      replyTo: ActorRef[Option[Array[Byte]]]
+  ) extends Messages
   final case class GetMissingItemsReport(
       subsystem: String,
       maybeVersion: Option[String],
@@ -283,6 +294,23 @@ object ApplicationActor extends ActorModule {
           Behaviors.same
         case GetArchivedItemsReportFull(pdfOptions, replyTo) =>
           replyTo ! app.getArchivedItemsReportFull(pdfOptions)
+          Behaviors.same
+        case GetAlarmsReport(
+              subsystem,
+              maybeVersion,
+              maybeComponent,
+              pdfOptions,
+              replyTo
+            ) =>
+          replyTo ! app.getAlarmsReport(
+            subsystem,
+            maybeVersion,
+            maybeComponent,
+            pdfOptions
+          )
+          Behaviors.same
+        case GetAlarmsReportFull(pdfOptions, replyTo) =>
+          replyTo ! app.getAlarmsReportFull(pdfOptions)
           Behaviors.same
         case GetMissingItemsReport(
               subsystem,

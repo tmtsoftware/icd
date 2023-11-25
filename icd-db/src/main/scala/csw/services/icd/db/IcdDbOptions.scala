@@ -24,6 +24,7 @@ case class IcdDbOptions(
     diff: Option[String] = None,
     missing: Option[File] = None,
     archived: Option[File] = None,
+    alarms: Option[File] = None,
     listData: Option[String] = None,
     allUnits: Option[Unit] = None,
     allSubsystems: Option[Unit] = None,

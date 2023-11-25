@@ -69,6 +69,14 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     showDetailButtons = false
   )
 
+  private val alarmsItem = NavbarPdfItem(
+    "Alarms",
+    "Generate and display an 'Alarms' report for the selected subsystem/component (or all subsystems)",
+    makeAlarmsReport,
+    showDocumentNumber = false,
+    showDetailButtons = false
+  )
+
   private val missingItem = NavbarPdfItem(
     "Missing",
     "Generate and display a 'Missing Items' report for the selected subsystems/components (or all subsystems)",
@@ -166,6 +174,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     navbar.addItem(generateItem)
     navbar.addItem(graphItem)
     navbar.addItem(archiveItem)
+    navbar.addItem(alarmsItem)
     navbar.addItem(missingItem)
     navbar.addItem(fitsDictionaryItem)
     navbar.addItem(publishItem)
@@ -536,7 +545,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   private def addLinkHandlers(): Unit = {
     val links = document.getElementsByTagName("a")
-    links.toArray.foreach(x => x.addEventListener("click", linkListener))
+    links.toArray.foreach(x => x.addEventListener("click", linkListener(_)))
   }
 
   // Called when the "History" item is selected
@@ -675,6 +684,21 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         ClientRoutes.archivedItemsReport(maybeSv.get, options)
       else
         ClientRoutes.archivedItemsReportFull(options)
+    dom.window.open(uri) // opens in new window or tab
+  }
+
+  // Gets a PDF with an Alarms report for the currently selected subsystem API
+  private def makeAlarmsReport(options: PdfOptions): Unit = {
+    val maybeSv =
+      if (currentView == StatusView)
+        statusDialog.getSubsystemWithVersion
+      else selectDialog.subsystem.getSubsystemWithVersion()
+
+    val uri =
+      if (maybeSv.isDefined)
+        ClientRoutes.alarmsReport(maybeSv.get, options)
+      else
+        ClientRoutes.alarmsReportFull(options)
     dom.window.open(uri) // opens in new window or tab
   }
 

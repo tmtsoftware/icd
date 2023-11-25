@@ -163,6 +163,10 @@ object IcdDb extends App {
       c.copy(archived = Some(x))
     } text "Generates an 'Archived Items' report for all subsystems (or the given one) to the given file in a format based on the file's suffix (html, pdf, csv)"
 
+    opt[File]( "alarms") valueName "<outputFile>" action { (x, c) =>
+      c.copy(alarms = Some(x))
+    } text "Generates an 'Alarms' report for all subsystems (or the given one) to the given file in a format based on the file's suffix (html, pdf, csv)"
+
     opt[Unit]("allSubsystems") action { (_, c) =>
       c.copy(allSubsystems = Some(()))
     } text "Include all subsystems in searches for publishers, subscribers, etc. while generating API doc (Default: only consider the one subsystem)"
@@ -258,6 +262,7 @@ object IcdDb extends App {
     options.diff.foreach(diffVersions)
     options.missing.foreach(missingItemsReport)
     options.archived.foreach(file => archivedItemsReport(file, Some(pdfOptions)))
+    options.alarms.foreach(file => alarmsReport(file, Some(pdfOptions)))
     options.listData.foreach(s => listData(db, s))
     options.allUnits.foreach(_ => printAllUsedUnits(db))
 
@@ -392,6 +397,14 @@ object IcdDb extends App {
         .map(SubsystemAndVersion(_))
         .map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, options.component))
       ArchivedItemsReport(db, maybeSv, maybePdfOptions, new HtmlHeadings).saveToFile(file, pdfOptions)
+    }
+
+    // --alarms option
+    def alarmsReport(file: File, maybePdfOptions: Option[PdfOptions]): Unit = {
+      val maybeSv = options.subsystem
+        .map(SubsystemAndVersion(_))
+        .map(s => SubsystemWithVersion(s.subsystem, s.maybeVersion, options.component))
+      AlarmsReport(db, maybeSv, maybePdfOptions, new HtmlHeadings).saveToFile(file, pdfOptions)
     }
 
     // --generate code in the given file
