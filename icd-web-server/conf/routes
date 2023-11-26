@@ -57,7 +57,7 @@ GET         /missingItemsReport/:subsystem             controllers.Application.m
 GET         /missingItemsReportFull                    controllers.Application.missingItemsReportFull(orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])
 
 # Generates a graph of selected component relationships
-GET         /makeGraph/:subsystem                       controllers.Application.makeGraph(subsystem, version: Option[String], component: Option[String], target: Option[String], targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String], ratio: Option[Double], missingEvents: Option[Boolean], missingCommands: Option[Boolean], commandLabels: Option[Boolean], eventLabels: Option[Boolean], groupSubsystems: Option[Boolean], layout: Option[String], overlap: Option[String], splines: Option[Boolean], omitTypes: Option[String], imageFormat: Option[String])
+GET         /makeGraph/:subsystem                       controllers.Application.makeGraph(subsystem, version: Option[String], component: Option[String], target: Option[String], targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String], ratio: Option[Double], missingEvents: Option[Boolean], missingCommands: Option[Boolean], commandLabels: Option[Boolean], eventLabels: Option[Boolean], groupSubsystems: Option[Boolean], onlySubsystems: Option[Boolean], layout: Option[String], overlap: Option[String], splines: Option[Boolean], omitTypes: Option[String], imageFormat: Option[String])
 
 # Gets the detailed information about the versions of a component or subsystem
 GET         /versions/:name                             controllers.Application.getVersions(name)

@@ -57,6 +57,7 @@ object ClientRoutes {
         s"commandLabels=${o.commandLabels}",
         s"eventLabels=${o.eventLabels}",
         s"groupSubsystems=${o.groupSubsystems}",
+        s"onlySubsystems=${o.onlySubsystems}",
         s"layout=${o.layout}",
         s"overlap=${o.overlap}",
         s"splines=${o.splines}",

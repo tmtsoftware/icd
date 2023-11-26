@@ -70,6 +70,10 @@ object IcdViz extends App {
       c.copy(groupSubsystems = x)
     } text s"Group components from same subsystem together (default=$defaultGroupSubsystems)"
 
+    opt[Boolean]("onlysubsystems") action { (x, c) =>
+      c.copy(onlySubsystems = x, groupSubsystems = false)
+    } text s"Only display subsystems, not components (implies --groupsubsystems false, default=$defaultOnlySubsystems)"
+
     opt[String]("layout") valueName s"one of: ${graphLayouts.mkString(", ")}" action { (x, c) =>
       c.copy(layout = x)
     } text s"Dot layout engine (default=$defaultLayout)"

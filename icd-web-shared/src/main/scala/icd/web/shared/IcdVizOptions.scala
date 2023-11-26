@@ -20,6 +20,7 @@ object IcdVizOptions {
   val defaultEventLabels             = true
   val defaultCommandLabels           = false
   val defaultGroupSubsystems         = true
+  val defaultOnlySubsystems          = false
   val defaultUseSplines              = true
 }
 
@@ -53,7 +54,9 @@ case class IcdVizOptions(
     eventLabels: Boolean = defaultEventLabels,
     // Group components from same subsystem together
     groupSubsystems: Boolean = defaultGroupSubsystems,
-    // Dot layout engine: One of {dot,fdp,sfdp,twopi,neato,circo,patchwork}
+    // Only display subsystems, not components
+    onlySubsystems: Boolean = defaultOnlySubsystems,
+      // Dot layout engine: One of {dot,fdp,sfdp,twopi,neato,circo,patchwork}
     layout: String = defaultLayout,
     // Node overlap handling: {true,false,scale}
     overlap: String = defaultOverlap,
