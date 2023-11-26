@@ -134,11 +134,6 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
   def makeReportMarkup(titleStr: String): Text.TypedTag[String] = {
     import scalatags.Text.all.*
 
-    def firstParagraph(s: String): String = {
-      val i = s.indexOf("</p>")
-      if (i == -1) s else s.substring(0, i + 4)
-    }
-
     val archivedItems: List[ArchiveInfo] = getArchivedItems
     val averageEventSize                 = if (archivedItems.isEmpty) 0 else archivedItems.map(_.sizeInBytes).sum / archivedItems.size
     div(
@@ -215,7 +210,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
           maxRate,
           i.sizeInBytes,
           i.yearlyAccumulation,
-          i.description
+          firstParagraphPlainText(i.description)
         )
       )
     }

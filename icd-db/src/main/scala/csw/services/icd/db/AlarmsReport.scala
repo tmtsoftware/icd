@@ -106,11 +106,6 @@ case class AlarmsReport(
   def makeReportMarkup(titleStr: String): Text.TypedTag[String] = {
     import scalatags.Text.all.*
 
-    def firstParagraph(s: String): String = {
-      val i = s.indexOf("</p>")
-      if (i == -1) s else s.substring(0, i + 4)
-    }
-
     val alarms: List[AlarmInfo] = getAlarms
     div(
       headings.H2(titleStr),
@@ -165,7 +160,7 @@ case class AlarmsReport(
           i.alarmModel.severityLevels.mkString(":"),
           i.alarmModel.autoAck,
           i.alarmModel.latched,
-          i.alarmModel.description
+          firstParagraphPlainText(i.alarmModel.description)
         )
       )
     }

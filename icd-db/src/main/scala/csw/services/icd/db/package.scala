@@ -22,4 +22,17 @@ package object db {
     source.close()
     s
   }
+
+  def firstParagraph(s: String): String = {
+    val i = s.indexOf("</p>")
+    if (i == -1) s else s.substring(0, i + 4)
+  }
+
+  def firstParagraphPlainText(s: String): String = {
+    val s2 = firstParagraph(s)
+    if (s2.startsWith("<p>") && s2.endsWith("</p>"))
+      s2.substring(3, s2.length - 5)
+    else
+      s2
+  }
 }

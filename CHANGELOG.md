@@ -11,6 +11,8 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Added a new toolbar item: "Missing" that generates a PDF containing a list of subscribed events with no publisher, sent commands with no receiver, and referenced components that are not defined. The table refers to the selected subsystem(s) or all subsystems, if none were selected (in the Select tab).
 - Added ability to specify FITS keywords in publish model event parameter descriptions. The keywords (and optional channels) must already be in the FITS dictionary.
 - Added a command line option to icd-fits to generate a FITS dictionary JSON file by merging the one currently in the icd database with the FITS keywords defined for the event parameters in specified subsystems. This can be used to update the FITS dictionary to match the entries in the model files for a given subsystem (or all subsystems).
+- Added "Alarms" toolbar item, to generate a PDF listing the alarms for the selected subsystem/component or all subsystems.
+- Changed the web and PDF displays to include information about alarms in all ICDs with ESW.
 
 ## [ICD v2.2.3] - 2023-03-05
 
