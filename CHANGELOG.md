@@ -13,6 +13,7 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Added a command line option to icd-fits to generate a FITS dictionary JSON file by merging the one currently in the icd database with the FITS keywords defined for the event parameters in specified subsystems. This can be used to update the FITS dictionary to match the entries in the model files for a given subsystem (or all subsystems).
 - Added "Alarms" toolbar item, to generate a PDF listing the alarms for the selected subsystem/component or all subsystems.
 - Changed the web and PDF displays to include information about alarms in all ICDs with ESW.
+- For graphs, added the option to display only subsystems (instead of the subsystem components). Added a new command line option for this to the icd-viz app and a new checkbox in the web app's graph options popup. 
 
 ## [ICD v2.2.3] - 2023-03-05
 
