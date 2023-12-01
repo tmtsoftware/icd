@@ -14,6 +14,7 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Added "Alarms" toolbar item, to generate a PDF listing the alarms for the selected subsystem/component or all subsystems.
 - Changed the web and PDF displays to include information about alarms in all ICDs with ESW.
 - For graphs, added the option to display only subsystems (instead of the subsystem components). Added a new command line option for this to the icd-viz app and a new checkbox in the web app's graph options popup. 
+- Added new optional "category" field for events with possible values: [DEMAND, CONTROL, EVENT, STATUS] (See "Event Categories" at end of [README.md](README.md))
 
 ## [ICD v2.2.3] - 2023-03-05
 

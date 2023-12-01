@@ -21,6 +21,7 @@
   // Defines a function to generate a common event model based on the given arguments
   commonEventFunc(eventName, paramName, typeName):: {
     name: eventName,
+    category: 'CONTROL',
     description: eventName + ' description.',
     archive: false,
     parameters: [

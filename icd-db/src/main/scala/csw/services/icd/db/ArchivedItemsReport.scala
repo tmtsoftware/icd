@@ -18,6 +18,7 @@ object ArchivedItemsReport {
       eventModel: EventModel
   ) {
     val name: String                 = eventModel.name
+    val category: String             = eventModel.getCategory
     val maybeMaxRate: Option[Double] = eventModel.maybeMaxRate
     val sizeInBytes: Int             = eventModel.totalSizeInBytes
     val hourlyAccumulation: String   = eventModel.totalArchiveSpacePerHour
@@ -145,6 +146,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
             th("Prefix"),
             th("Type"),
             th("Name"),
+            th("Category"),
             th("Max", br, "Rate Hz"),
             th("Size", br, "Bytes"),
             th("Hourly", br, "Accum."),
@@ -162,6 +164,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
               td(p(raw(item.prefix.replace(".", ".<br/>")))),
               td(p(item.eventType)),
               td(p(item.name)),
+              td(p(item.category)),
               td(
                 p(if (defaultMaxRateUsed) em(maxRate.toString + "*") else span(maxRate.toString))
               ),
@@ -198,7 +201,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
 
     val archivedItems: List[ArchiveInfo] = getArchivedItems
     val writer                           = CSVWriter.open(file)
-    writer.writeRow(List("Component", "Prefix", "Type", "Name", "Max Rate Hz", "Size Bytes", "Yearly Accum.", "Description"))
+    writer.writeRow(List("Component", "Prefix", "Type", "Name", "Category", "Max Rate Hz", "Size Bytes", "Yearly Accum.", "Description"))
     archivedItems.foreach { i =>
       val (maxRate, _) = EventModel.getMaxRate(i.maybeMaxRate)
       writer.writeRow(
@@ -207,6 +210,7 @@ case class ArchivedItemsReport(db: IcdDb, maybeSv: Option[SubsystemWithVersion],
           i.prefix.filter(_ != '\n'),
           i.eventType,
           i.name,
+          i.category,
           maxRate,
           i.sizeInBytes,
           i.yearlyAccumulation,

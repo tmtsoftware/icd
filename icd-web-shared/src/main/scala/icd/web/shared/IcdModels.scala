@@ -487,6 +487,8 @@ object IcdModels {
   object EventModel {
     // Use 1hz if maxRate is not defined and display the result in italics
     val defaultMaxRate = 1.0
+    val eventCategories = List("DEMAND", "CONTROL", "EVENT", "STATUS")
+    val defaultEventCategory = "STATUS"
 
     // Returns a pair of (maxRate, defaultUsed), where defaultUsed is true if maxRate is None or 0
     def getMaxRate(rate: Option[Double]): (Double, Boolean) = {
@@ -509,6 +511,7 @@ object IcdModels {
    * Models the event published by a component
    *
    * @param name event name
+   * @param category event category (one of DEMAND, CONTROL, EVENT, STATUS, default STATUS)
    * @param ref if not empty, a reference to another event model in the
    *            form component/events/name, component/observeEvents/name, etc (may be abbreviated if in same component/section)
    * @param refError contains an error message if ref is invalid (not stored in the db)
@@ -521,6 +524,7 @@ object IcdModels {
    */
   case class EventModel(
       name: String,
+      category: String,
       ref: String,
       refError: String,
       description: String,
@@ -531,6 +535,8 @@ object IcdModels {
       parameterList: List[ParameterModel]
   ) extends NameDesc {
     import EventModel._
+
+    def getCategory: String = if (category.isEmpty) defaultEventCategory else category
 
     // Estimate of overhead size for any csw event (without the paramset)
     def eventOverhead: Int = 167 + name.length

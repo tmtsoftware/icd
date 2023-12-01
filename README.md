@@ -319,3 +319,16 @@ Note that if there is an error in the reference, the error message is displayed 
 Note: An earlier version of this software used the terms "attributes" for events parameters and "args" for command parameters. 
 These have been renamed to "parameters" for compatibility with CSW, however for backward compatibility
 the previous names are also allowed in refs.
+
+Event Categories
+================
+
+Events have an optional "category" field, which can have one of the following values:
+
+* DEMAND - an event that is used to transmit a desired position. These events are high frequency/periodic and should not be archived long-term or should be seriously curated into a smaller representative collection.
+
+* CONTROL - similar to a DEMAND, but probably not periodic and considerably less frequent. CONTROL events are events driving other devices, but may be internal to a system. These also may be curated.
+
+* EVENT - an event is used to indicate that something has happened.  Observe Events are one EVENT type.
+
+* STATUS - a STATUS  event is used primarily to update a user interface.  These events are archived.  They are not high frequency and are not periodic.

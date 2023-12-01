@@ -809,6 +809,9 @@ object IcdToHtml {
     val publisherInfo = span(strong("Publisher: "), s"${component.subsystem}.$compName")
 
     def publishEventListMarkup(pubType: String, eventList: List[EventInfo]): Text.TypedTag[String] = {
+      def categoryItem(eventModel: EventModel) = {
+        if (pubType == "Events") span(strong("Category: "), eventModel.getCategory) else span()
+      }
       if (eventList.isEmpty) div()
       else {
         val showArchiveInfo = pubType != "Observe Events"
@@ -877,6 +880,7 @@ object IcdToHtml {
                   if (eventModel.requirements.isEmpty) div()
                   else p(strong("Requirements: "), eventModel.requirements.mkString(", ")),
                   if (clientApi) p(publisherInfo, ", ", subscriberInfo) else p(publisherInfo),
+                  categoryItem(eventModel),
                   raw(eventModel.description),
                   if (eventModel.refError.startsWith("Error:")) makeErrorDiv(eventModel.refError) else div(),
                   subscriberUsage,
@@ -888,6 +892,7 @@ object IcdToHtml {
               else
                 div(
                   if (clientApi) p(publisherInfo, ", ", subscriberInfo) else p(publisherInfo),
+                  categoryItem(eventModel),
                   raw(eventModel.description),
                   subscriberUsage
                 )
