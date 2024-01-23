@@ -31,7 +31,7 @@ package object db {
   def firstParagraphPlainText(s: String): String = {
     val s2 = firstParagraph(s)
     if (s2.startsWith("<p>") && s2.endsWith("</p>"))
-      s2.substring(3, s2.length - 5)
+      s2.substring(3, s2.length - 4)
     else
       s2
   }
