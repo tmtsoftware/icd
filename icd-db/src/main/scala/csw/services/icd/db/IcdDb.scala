@@ -163,7 +163,7 @@ object IcdDb extends App {
       c.copy(archived = Some(x))
     } text "Generates an 'Archived Items' report for all subsystems (or the given one) to the given file in a format based on the file's suffix (html, pdf, csv)"
 
-    opt[File]( "alarms") valueName "<outputFile>" action { (x, c) =>
+    opt[File]("alarms") valueName "<outputFile>" action { (x, c) =>
       c.copy(alarms = Some(x))
     } text "Generates an 'Alarms' report for all subsystems (or the given one) to the given file in a format based on the file's suffix (html, pdf, csv)"
 
@@ -510,7 +510,7 @@ case class IcdDb(
 
   // Check for obvious errors, such as duplicate event or parameter names after ingesting model files for subsystem
   private def checkPostIngest(subsystem: String): List[Problem] = {
-    // Check for min > max in parameter fields and return list of error messages for the parameter list
+    // Check for min > max and defaultValue in parameter fields and return list of error messages for the parameter list
     def getParamMinMaxProblems(parameterList: List[IcdModels.ParameterModel]): List[String] = {
       def strToDouble(s: String): Double = {
         s match {
@@ -519,6 +519,71 @@ case class IcdDb(
           case _               => s.toDoubleOption.getOrElse(0.0)
         }
       }
+
+      // Check that default parameter value is valid for declared type
+      def checkDefaultParamValue(p: IcdModels.ParameterModel): Option[String] = {
+        if (p.defaultValue.isEmpty)
+          None
+        else {
+          if (p.maybeEnum.isDefined) {
+            if (p.maybeEnum.get.contains(p.defaultValue))
+              None
+            else {
+              val choices = p.maybeEnum.get.mkString(", ")
+              Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be one of: $choices)")
+            }
+          }
+          else if (p.maybeType.isDefined) {
+            p.maybeType.get match {
+              case "boolean" =>
+                if (p.defaultValue.toBooleanOption.nonEmpty)
+                  None
+                else
+                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be one of: true, false)")
+              case "integer" =>
+                None
+                if (p.defaultValue.toIntOption.nonEmpty)
+                  None
+                else
+                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be an integer value)")
+              case "byte" =>
+                None
+                if (p.defaultValue.toByteOption.nonEmpty)
+                  None
+                else
+                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be a byte value)")
+              case "short" =>
+                None
+                if (p.defaultValue.toShortOption.nonEmpty)
+                  None
+                else
+                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be a short value)")
+              case "long" =>
+                None
+                if (p.defaultValue.toLongOption.nonEmpty)
+                  None
+                else
+                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be a long value)")
+              case "float" =>
+                None
+                if (p.defaultValue.toFloatOption.nonEmpty)
+                  None
+                else
+                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be a float value)")
+              case "double" =>
+                None
+                if (p.defaultValue.toDoubleOption.nonEmpty)
+                  None
+                else
+                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be a double value)")
+              case _ => None
+            }
+          }
+          else // if (p.maybeArrayType.isDefined) {
+            None
+        }
+      }
+
       val list = parameterList.flatMap { p =>
         val a =
           if (
@@ -535,7 +600,8 @@ case class IcdDb(
           if (p.maxItems.isDefined && p.minItems.isDefined && p.maxItems.get < p.minItems.get)
             Some(s"In parameter ${p.name}, maxItems (${p.maxItems.get}) < minItems (${p.minItems.get})")
           else None
-        List(a, b, c)
+        val d = checkDefaultParamValue(p)
+        List(a, b, c, d)
       }
       list.flatten
     }
@@ -626,7 +692,7 @@ case class IcdDb(
             if (k.channel.isEmpty || allowedChannels.contains(k.channel.get)) None
             else {
               val msg1 =
-                s"Event: ${prefix}.${event.name}, parameter: ${p.name}, FITS keyword: ${k.name}: Channel ${k.channel.get} is not defined.  "
+                s"Event: $prefix.${event.name}, parameter: ${p.name}, FITS keyword: ${k.name}: Channel ${k.channel.get} is not defined.  "
               val msg2 = if (allowedChannels.nonEmpty) s"Should be one of: ${allowedChannels.mkString(", ")}" else ""
               Some(Problem("error", msg1 + msg2))
             }
@@ -803,7 +869,7 @@ case class IcdDb(
   private def ingestConfig(stdConfig: StdConfig): List[Problem] = {
     // Ingest a single OpenApi file
     def ingestOpenApiFile(collectionName: String, fileName: String): List[Problem] = {
-      import scala.jdk.CollectionConverters._
+      import scala.jdk.CollectionConverters.*
       val parseOptions = new ParseOptions()
       parseOptions.setResolve(true)
       parseOptions.setResolveFully(true)
@@ -820,7 +886,7 @@ case class IcdDb(
             // See https://stackoverflow.com/questions/67874510/spring-boot-2-5-0-and-invaliddefinitionexception-java-8-date-time-type-java-ti
             mapper.registerModule(new JavaTimeModule())
             val writer = mapper.writer(new DefaultPrettyPrinter())
-            val yaml = writer.writeValueAsString(openAPI)
+            val yaml   = writer.writeValueAsString(openAPI)
             DeserializationUtils.deserializeIntoTree(yaml, fileName).toPrettyString
           }
           else {
@@ -866,7 +932,7 @@ case class IcdDb(
    */
   //noinspection SameParameterValue
   private def ingestConfig(name: String, tmpName: String, config: Config): Unit = {
-    import play.api.libs.json.Reads._
+    import play.api.libs.json.Reads.*
 
     val jsObj = Json.parse(IcdValidator.toJson(config)).as[JsObject]
 
