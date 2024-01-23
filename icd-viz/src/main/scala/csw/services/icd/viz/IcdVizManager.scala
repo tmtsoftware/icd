@@ -6,27 +6,17 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd.IcdValidator
-import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdDb, Subsystems}
+import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, Subsystems}
 import csw.services.icd.viz.IcdVizManager.EdgeType.EdgeType
 import csw.services.icd.viz.IcdVizManager.MissingType.MissingType
-import icd.web.shared.{
-  ComponentInfo,
-  DetailedSubscribeInfo,
-  EventOrImageInfo,
-  IcdVizOptions,
-  PdfOptions,
-  ReceivedCommandInfo,
-  SentCommandInfo,
-  SubscribeInfo,
-  SubsystemWithVersion
-}
+import icd.web.shared.{ComponentInfo, DetailedSubscribeInfo, EventOrImageInfo, IcdVizOptions, PdfOptions, ReceivedCommandInfo, SentCommandInfo, SubscribeInfo, SubsystemWithVersion}
 import scalax.collection.Graph
-import scalax.collection.io.dot._
-import scalax.collection.io.dot.implicits._
+import scalax.collection.io.dot.*
+import scalax.collection.io.dot.implicits.*
 
 import language.implicitConversions
 import scalax.collection.edge.LkDiEdge
-import scalax.collection.edge.Implicits._
+import scalax.collection.edge.Implicits.*
 import icd.web.shared.IcdModels.{ComponentModel, SubscribeModelInfo}
 import net.sourceforge.plantuml.{FileFormat, FileFormatOption, SourceStringReader}
 import scalax.collection.config.CoreConfig
@@ -125,15 +115,26 @@ object IcdVizManager {
     val noMarkdownOpt = Some(PdfOptions(processMarkdown = false))
 
     val subsystems = components.map(c => SubsystemWithVersion(c.subsystem, c.maybeVersion, None)).distinct
-    val componentInfoHelper =
-      new ComponentInfoHelper(versionManager, displayWarnings = false, clientApi = true, subsystems)
-    val componentInfoList =
+
+    // For ICDs, only display the info related to the two subsystems/components
+    val isIcd = options.subsystems.length + options.components.length == 2
+
+    val componentInfoList = if (isIcd) {
+      val svList = options.subsystems ::: options.components
+      val sv1 = svList.head
+      val sv2  = svList.tail.head
+      val sv1List = components.filter(_.subsystem == sv1.subsystem)
+      sv1List.flatMap(sv => IcdComponentInfo.getComponentInfo(versionManager, sv, sv2, noMarkdownOpt))
+    } else {
+      val componentInfoHelper =
+        new ComponentInfoHelper(versionManager, displayWarnings = false, clientApi = true, subsystems)
       components.flatMap(sv => componentInfoHelper.getComponentInfo(sv, noMarkdownOpt, Map.empty))
+    }
 
     def getSubsystemFromPrefix(prefix: String): String = {
       prefix.indexOf(".") match {
         case -1 => prefix
-        case i => prefix.substring(0, i)
+        case i  => prefix.substring(0, i)
       }
     }
 

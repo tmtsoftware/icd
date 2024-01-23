@@ -56,7 +56,7 @@ case class IcdVizOptions(
     groupSubsystems: Boolean = defaultGroupSubsystems,
     // Only display subsystems, not components
     onlySubsystems: Boolean = defaultOnlySubsystems,
-      // Dot layout engine: One of {dot,fdp,sfdp,twopi,neato,circo,patchwork}
+    // Dot layout engine: One of {dot,fdp,sfdp,twopi,neato,circo,patchwork}
     layout: String = defaultLayout,
     // Node overlap handling: {true,false,scale}
     overlap: String = defaultOverlap,
