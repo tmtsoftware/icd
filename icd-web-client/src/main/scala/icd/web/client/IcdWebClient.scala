@@ -247,7 +247,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private def showPasswordDialog()(): Unit = {
     setSidebarVisible(false)
     setNavbarVisible(false)
-    val title = "TMT Interface Database System"
+    val title = "TIO Software Interface Database System"
     mainContent.setContent(passwordDialog, s"$title ${BuildInfo.version}")
   }
 
@@ -255,7 +255,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private def showStatus(maybeSubsystem: Option[String] = None, saveHistory: Boolean = true)(): Unit = {
     setSidebarVisible(false)
     currentView = StatusView
-    val title = "TMT Interface Database System"
+    val title = "TIO Software Interface Database System"
     if (saveHistory) {
       mainContent.setContent(statusDialog, s"$title ${BuildInfo.version}")
       pushState(viewType = StatusView, maybeSourceSubsystem = maybeSubsystem.map(SubsystemWithVersion(_, None, None)))

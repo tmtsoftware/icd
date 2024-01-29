@@ -1,6 +1,15 @@
-# TMT Interface Database System (IDBS)
+# TIO Software Interface Database System
 
-This project contains support for creating, validating and viewing TMT subsystem APIs and ICDs (Interface Control Document between two TMT subsystems).
+Acronyms: 
+* TMT: Thirty Meter Telescope
+* TIO: TMT International Observatory
+* ICD: Interface Control Document (between two TIO subsystems)
+* API: Application Programming Interface
+* IDBS: Interface Database System
+* JSON: JavaScript Object Notation
+* HOCON: Human-Optimized Config Object Notation (simplified JSON)
+
+This project contains support for creating, validating and viewing TIO subsystem APIs and ICDs.
 
 *You can find a detailed description of the IDBS software [here](https://docushare.tmt.org/docushare/dsweb/Get/Version-136502/OSW%20TN018-ICDDatabaseUserManual_REL09.pdf).*
 
@@ -55,7 +64,7 @@ There are currently these ICD subprojects:
 
 Build and Install
 -----------------
-*Note that this project has been tested with java-11 and java-17.
+*Note that this project has been tested with java-17.
 
 Note: The build requires that [node.js](https://nodejs.org/en/) be installed on the system.
 This is checked in the install.sh script, which automatically sets the SBT_OPTS environment variable if node.js is found 

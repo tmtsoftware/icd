@@ -518,7 +518,7 @@ object IcdGitManager {
     pw.print("""
         |# Release History
         |
-        |This file lists the published versions of TMT subsystem APIs and ICDs between subsystems
+        |This file lists the published versions of TIO subsystem APIs and ICDs between subsystems
         |and is automatically generated from the JSON files in the apis and icds subdirectories.
         |
         |## Subsystem API Release History

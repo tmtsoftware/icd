@@ -30,7 +30,7 @@ object StatusDialog {
       p(
         "The Interface Database System (IDBS) was created to help component builders and system engineering",
         br,
-        "understand the programming interfaces of software components created with the TMT Common Software.",
+        "understand the programming interfaces of software components created with the TIO Common Software.",
         br,
         "See the GitHub ",
         a(target := "_blank", href := "https://github.com/tmtsoftware/icd")("source"),
