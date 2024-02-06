@@ -28,7 +28,7 @@ lazy val `icd-db` = project
         pekkoSerializationJackson,
         jacksonModuleScala,
         reactivemongo,
-        sjsonnet, pprint, fastparse, osLib, `scala-collection-compat`, // XXX Temp
+        sjsonnet, // pprint, fastparse, osLib, `scala-collection-compat`, // XXX Temp
         reactivemongoPlayJsonCompat,
         scalaCsv,
         playJson,
