@@ -222,8 +222,8 @@ object SummaryTable {
       val publishedAlarms = for {
         info  <- infoList
         pub   <- info.publishes.toList
-        event <- pub.alarmList
-      } yield PublishedItem(info.componentModel, event, Nil)
+        alarm <- pub.alarmList
+      } yield PublishedItem(info.componentModel, alarm, Nil)
 
       val receivedCommands = for {
         info     <- infoList

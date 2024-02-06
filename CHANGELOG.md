@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
-## [ICD v3.0] - 2023-
+## [ICD v3.0] - 2024-02-04
 
 - Added "subsystem" constant in generated source files with subsystem name and version: For example: subsystem = "APS-1.4" (See Generate menu item in icd web app).
 - Added file [MacOs-Max-Files-Limit.md](MacOs-Max-Files-Limit.md) describing how to increase the max-files limit on recent MacOS versions (This is required in order to run MongoDB when running the ICD web server locally, since the default setting is too low).
@@ -11,6 +11,13 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Added a new toolbar item: "Missing" that generates a PDF containing a list of subscribed events with no publisher, sent commands with no receiver, and referenced components that are not defined. The table refers to the selected subsystem(s) or all subsystems, if none were selected (in the Select tab).
 - Added ability to specify FITS keywords in publish model event parameter descriptions. The keywords (and optional channels) must already be in the FITS dictionary.
 - Added a command line option to icd-fits to generate a FITS dictionary JSON file by merging the one currently in the icd database with the FITS keywords defined for the event parameters in specified subsystems. This can be used to update the FITS dictionary to match the entries in the model files for a given subsystem (or all subsystems).
+- Added "Alarms" toolbar item, to generate a PDF listing the alarms for the selected subsystem/component or all subsystems.
+- Changed the web and PDF displays to include information about alarms in all ICDs with ESW.
+- For graphs, added the option to display only subsystems (instead of the subsystem components). Added a new command line option for this to the icd-viz app and a new checkbox in the web app's graph options popup. 
+- For graphs: The graph generated for ICDs (two subsystems/components) now only includes connections between the two (previously connections to other subsystems were also included).
+- Added new optional "category" field for events with possible values: [DEMAND, CONTROL, EVENT, STATUS] (See "Event Categories" at end of [README.md](README.md))
+- Replaced general usage of "TMT" with "TIO" (TMT International Observatory) in web app and docs.
+- Added validation check for parameters that the "defaultValue" is valid for the declared type (for primitive types)
 
 ## [ICD v2.2.3] - 2023-03-05
 

@@ -647,7 +647,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     val compName = component.component
 
     // Returns a div displaying more details for the given event
-    def makeEventDetailsRow(eventInfo: EventInfo, showArchiveInfo: Boolean = true, maybeEventId: Option[String] = None) = {
+    def makeEventDetailsRow(eventInfo: EventInfo, pubType: String, maybeEventId: Option[String] = None) = {
+      val showArchiveInfo = pubType != "Observe Events"
       val eventModel = eventInfo.eventModel
       val totalArchiveSpacePerYear =
         if (eventModel.totalArchiveSpacePerYear.isEmpty) ""
@@ -673,7 +674,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         else p(strong("Requirements: "), eventModel.requirements.mkString(", ")),
         if (showArchiveInfo) mkTable(headings, rowList) else div(),
         if (showArchiveInfo && eventModel.maybeMaxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.") else span(),
-        eventParameterListMarkup(eventModel.parameterList, forApi, maybeEventId)
+        eventParameterListMarkup(eventModel.parameterList, forApi, maybeEventId),
+        if (pubType == "Events") p(strong("Category: "), eventModel.getCategory) else span(),
       )
     }
 
@@ -721,7 +723,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             tbody(
               for (t <- eventList) yield {
                 val idStr      = idFor(compName, "publishes", pubType, component.subsystem, compName, t.eventModel.name)
-                val (btn, row) = hiddenRowMarkup(idStr, makeEventDetailsRow(t, pubType != "Observe Events", Some(idStr)), 3)
+                val (btn, row) = hiddenRowMarkup(idStr, makeEventDetailsRow(t, pubType, Some(idStr)), 3)
                 List(
                   tr(
                     td(
@@ -798,8 +800,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
       div(
         if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
-        p(strong("Probable Cause: "), raw(m.probableCause)),
-        p(strong("Operator Response: "), raw(m.operatorResponse)),
+        if (m.probableCause.isEmpty) div() else p(strong("Probable Cause: "), raw(m.probableCause)),
+        if (m.operatorResponse.isEmpty) div() else p(strong("Operator Response: "), raw(m.operatorResponse)),
         mkTable(headings, rowList)
       )
     }

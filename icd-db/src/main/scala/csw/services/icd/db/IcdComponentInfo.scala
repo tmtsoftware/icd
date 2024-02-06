@@ -82,9 +82,10 @@ object IcdComponentInfo {
       targetModelsList: List[IcdModels],
       maybePdfOptions: Option[PdfOptions]
   ): Option[ComponentInfo] = {
+    val includeAlarms = targetModelsList.exists(_.componentModel.exists(_.subsystem == "ESW"))
     models.flatMap { icdModels =>
       val componentModel = icdModels.componentModel
-      val publishes      = getPublishes(icdModels, targetModelsList)
+      val publishes      = getPublishes(icdModels, targetModelsList, includeAlarms)
       val subscribes     = getSubscribes(icdModels, targetModelsList)
       val commands       = getCommands(versionManager.query, icdModels, targetModelsList, maybePdfOptions)
       val services       = getServices(versionManager.query, icdModels, targetModelsList, maybePdfOptions)
@@ -100,8 +101,9 @@ object IcdComponentInfo {
    *
    * @param models           the model objects for the component
    * @param targetModelsList the target model objects
+   * @param includeAlarms    if true, include alarms in the result
    */
-  private def getPublishes(models: IcdModels, targetModelsList: List[IcdModels]): Option[Publishes] = {
+  private def getPublishes(models: IcdModels, targetModelsList: List[IcdModels], includeAlarms: Boolean): Option[Publishes] = {
     models.publishModel match {
       case None => None
       case Some(m) =>
@@ -119,8 +121,13 @@ object IcdComponentInfo {
         val imageList = m.imageList.map { t =>
           ImageInfo(t, getSubscribers(m.subsystem, component, prefix, t.name, t.description, Images, targetModelsList))
         }
-        if (eventList.nonEmpty || observeEventList.nonEmpty || currentStateList.nonEmpty || imageList.nonEmpty)
-          Some(Publishes(m.description, eventList, observeEventList, currentStateList, imageList, Nil))
+        val alarmList = if (includeAlarms) models.alarmsModel.toList.flatMap(_.alarmList) ++ m.alarmList else Nil
+
+        if (
+          m.description.nonEmpty || eventList.nonEmpty || observeEventList.nonEmpty || currentStateList.nonEmpty
+          || imageList.nonEmpty || alarmList.nonEmpty
+        )
+          Some(Publishes(m.description, eventList, observeEventList, currentStateList, imageList, alarmList))
         else None
     }
   }

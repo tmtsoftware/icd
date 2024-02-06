@@ -16,7 +16,7 @@ case class Navbar() extends Displayable {
     import scalatags.JsDom.tags2._
       nav(cls := "navbar navbar-expand-lg bg-light fixed-top border-bottom")(
         div(cls := "container-fluid")(
-          a(cls := "navbar-brand", href := "/")("TMT Interface Database System"),
+          a(cls := "navbar-brand", href := "/")("TIO Software Interface Database System"),
           button(
             cls := "navbar-toggler",
             `type` := "button",

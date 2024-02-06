@@ -6,27 +6,17 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.services.icd.IcdValidator
-import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdDb, Subsystems}
+import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, Subsystems}
 import csw.services.icd.viz.IcdVizManager.EdgeType.EdgeType
 import csw.services.icd.viz.IcdVizManager.MissingType.MissingType
-import icd.web.shared.{
-  ComponentInfo,
-  DetailedSubscribeInfo,
-  EventOrImageInfo,
-  IcdVizOptions,
-  PdfOptions,
-  ReceivedCommandInfo,
-  SentCommandInfo,
-  SubscribeInfo,
-  SubsystemWithVersion
-}
+import icd.web.shared.{ComponentInfo, DetailedSubscribeInfo, EventOrImageInfo, IcdVizOptions, PdfOptions, ReceivedCommandInfo, SentCommandInfo, SubscribeInfo, SubsystemWithVersion}
 import scalax.collection.Graph
-import scalax.collection.io.dot._
-import scalax.collection.io.dot.implicits._
+import scalax.collection.io.dot.*
+import scalax.collection.io.dot.implicits.*
 
 import language.implicitConversions
 import scalax.collection.edge.LkDiEdge
-import scalax.collection.edge.Implicits._
+import scalax.collection.edge.Implicits.*
 import icd.web.shared.IcdModels.{ComponentModel, SubscribeModelInfo}
 import net.sourceforge.plantuml.{FileFormat, FileFormatOption, SourceStringReader}
 import scalax.collection.config.CoreConfig
@@ -125,10 +115,35 @@ object IcdVizManager {
     val noMarkdownOpt = Some(PdfOptions(processMarkdown = false))
 
     val subsystems = components.map(c => SubsystemWithVersion(c.subsystem, c.maybeVersion, None)).distinct
-    val componentInfoHelper =
-      new ComponentInfoHelper(versionManager, displayWarnings = false, clientApi = true, subsystems)
-    val componentInfoList =
+
+    // For ICDs, only display the info related to the two subsystems/components
+    val isIcd = options.subsystems.length + options.components.length == 2
+
+    val componentInfoList = if (isIcd) {
+      val svList = options.subsystems ::: options.components
+      val sv1 = svList.head
+      val sv2  = svList.tail.head
+      val sv1List = components.filter(_.subsystem == sv1.subsystem)
+      sv1List.flatMap(sv => IcdComponentInfo.getComponentInfo(versionManager, sv, sv2, noMarkdownOpt))
+    } else {
+      val componentInfoHelper =
+        new ComponentInfoHelper(versionManager, displayWarnings = false, clientApi = true, subsystems)
       components.flatMap(sv => componentInfoHelper.getComponentInfo(sv, noMarkdownOpt, Map.empty))
+    }
+
+    def getSubsystemFromPrefix(prefix: String): String = {
+      prefix.indexOf(".") match {
+        case -1 => prefix
+        case i  => prefix.substring(0, i)
+      }
+    }
+
+    def makeComponentPair(from: String, to: String): ComponentPair = {
+      if (options.onlySubsystems)
+        ComponentPair(getSubsystemFromPrefix(from), getSubsystemFromPrefix(to))
+      else
+        ComponentPair(from, to)
+    }
 
     def componentNameFromPrefix(prefix: String): String = {
       val sv = SubsystemWithVersion(prefix)
@@ -417,7 +432,7 @@ object IcdVizManager {
           if (missing) Some(if (images) MissingType.missingImagePublisher else MissingType.missingEventPublisher) else None
         publishers.map(c =>
           EdgeModel(
-            ComponentPair(c.prefix, info.componentModel.prefix),
+            makeComponentPair(c.prefix, info.componentModel.prefix),
             EdgeLabel(subscribedEventMap(c.prefix), if (images) EdgeType.images else EdgeType.events, missingType)
           )
         )
@@ -439,7 +454,7 @@ object IcdVizManager {
           if (missing) Some(if (images) MissingType.noImageSubscribers else MissingType.noEventSubscribers) else None
         subscribers.map(c =>
           EdgeModel(
-            ComponentPair(info.componentModel.prefix, c.prefix),
+            makeComponentPair(info.componentModel.prefix, c.prefix),
             EdgeLabel(publishedEventMap(c.prefix), if (images) EdgeType.images else EdgeType.events, missingType)
           )
         )
@@ -458,7 +473,7 @@ object IcdVizManager {
         val missingType = if (missing) Some(MissingType.missingReceiver) else None
         receivierComponents.map(c =>
           EdgeModel(
-            ComponentPair(info.componentModel.prefix, c.prefix),
+            makeComponentPair(info.componentModel.prefix, c.prefix),
             EdgeLabel(sentCmdMap(c.prefix), EdgeType.commands, missingType)
           )
         )
@@ -477,7 +492,7 @@ object IcdVizManager {
         val missingType = if (missing) Some(MissingType.noSenders) else None
         senderComponents.map(c =>
           EdgeModel(
-            ComponentPair(c.prefix, info.componentModel.prefix),
+            makeComponentPair(c.prefix, info.componentModel.prefix),
             EdgeLabel(recvCmdmdMap(c.prefix), EdgeType.commands, missingType)
           )
         )

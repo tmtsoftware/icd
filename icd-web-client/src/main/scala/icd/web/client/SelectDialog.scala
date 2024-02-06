@@ -249,7 +249,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       div(
         cls := "form-check",
         searchAllCheckbox,
-        label(cls := "form-check-label", "Search all TMT subsystems for API dependencies")
+        label(cls := "form-check-label", "Search all TIO subsystems for API dependencies")
       ),
       div(Styles.selectDialogApplyButton, applyButton)
     ).render

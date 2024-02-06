@@ -302,6 +302,7 @@ case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOption
     val plotEventLabels     = document.getElementById("plotEventLabels").asInstanceOf[HTMLInputElement].checked
     val plotCommandLabels   = document.getElementById("plotCommandLabels").asInstanceOf[HTMLInputElement].checked
     val groupSubsystems     = document.getElementById("groupSubsystems").asInstanceOf[HTMLInputElement].checked
+    val onlySubsystems     = document.getElementById("onlySubsystems").asInstanceOf[HTMLInputElement].checked
     val graphLayout = document
       .querySelectorAll(s"input[name='graphLayout']:checked")
       .map(elem => elem.asInstanceOf[HTMLInputElement].value)
@@ -331,7 +332,8 @@ case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOption
         missingCommands = plotMissingCommands,
         commandLabels = plotCommandLabels,
         eventLabels = plotEventLabels,
-        groupSubsystems = groupSubsystems,
+        groupSubsystems = groupSubsystems && !onlySubsystems,
+        onlySubsystems = onlySubsystems,
         layout = graphLayout,
         overlap = graphOverlap,
         splines = useSplines,
@@ -362,6 +364,11 @@ case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOption
                 "groupSubsystems",
                 "Group components from same subsystem together",
                 isSelected = defaultGroupSubsystems
+              ),
+              makeCheckbox(
+                "onlySubsystems",
+                "Only display subsystems, not components",
+                isSelected = defaultOnlySubsystems
               ),
               makeCheckbox("useSplines", "Use splines for edges?", isSelected = defaultUseSplines),
               hr,

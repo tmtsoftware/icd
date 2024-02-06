@@ -582,6 +582,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
 
   /**
    * Query the database for information about all the subsystem's components
+   * (Or the given component)
    * and return the icd models, resolving any refs.
    *
    * @param sv the subsystem
@@ -593,8 +594,10 @@ case class IcdVersionManager(query: IcdDbQuery) {
       maybePdfOptions: Option[PdfOptions],
       fitsKeyMap: FitsKeyMap
   ): List[IcdModels] = {
-    val allComponentNames = getComponentNames(SubsystemWithVersion(sv.subsystem, sv.maybeVersion, None))
-    val allComponentSvs   = allComponentNames.map(component => SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component)))
+    val allComponentNames =
+      if (sv.maybeComponent.nonEmpty) sv.maybeComponent.toList
+      else getComponentNames(SubsystemWithVersion(sv.subsystem, sv.maybeVersion, None))
+    val allComponentSvs = allComponentNames.map(component => SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component)))
     val allIcdModels = allComponentSvs.flatMap(compSv =>
       getModels(
         compSv,

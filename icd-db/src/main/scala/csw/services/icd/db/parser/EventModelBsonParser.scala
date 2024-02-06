@@ -22,6 +22,7 @@ object EventModelBsonParser {
     val name    = doc.getAsOpt[String]("name").get
     EventModel(
       name = name,
+      category = doc.getAsOpt[String]("category").getOrElse(""),
       ref = doc.getAsOpt[String]("ref").getOrElse(""),
       refError = "",
       description = doc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),

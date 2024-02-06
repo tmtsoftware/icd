@@ -334,6 +334,7 @@ case class Resolver(allModels: List[IcdModels]) {
       case Success(refEventModel) =>
         EventModel(
           name = eventModel.name,
+          category = if (eventModel.category.nonEmpty) eventModel.category else refEventModel.category,
           ref = "",
           refError = "",
           description = if (eventModel.description.nonEmpty) eventModel.description else refEventModel.description,

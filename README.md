@@ -1,8 +1,17 @@
-# TMT Interface Database System (IDBS)
+# TIO Software Interface Database System
 
-This project contains support for creating, validating and viewing TMT subsystem APIs and ICDs (Interface Control Document between two TMT subsystems).
+Acronyms: 
+* TMT: Thirty Meter Telescope
+* TIO: TMT International Observatory
+* ICD: Interface Control Document (between two TIO subsystems)
+* API: Application Programming Interface
+* IDBS: Interface Database System
+* JSON: JavaScript Object Notation
+* HOCON: Human-Optimized Config Object Notation (simplified JSON)
 
-*You can find a detailed description of the IDBS software [here](https://docushare.tmt.org/docushare/dsweb/Get/Version-136502/OSW%20TN018-ICDDatabaseUserManual_REL09.pdf).*
+This project contains support for creating, validating and viewing TIO subsystem APIs and ICDs.
+
+*You can find a detailed description of the IDBS software [here](https://docushare.tmt.org/docushare/dsweb/Get/Version-144317/OSW%20TN018-ICDDatabaseUserManual_REL09.pdf).*
 
 Subsystem APIs are described in model files. The model files are validated using [JSON Schema](http://json-schema.org/),
 however the schema descriptions as well as the model files are normally written in
@@ -55,15 +64,15 @@ There are currently these ICD subprojects:
 
 Build and Install
 -----------------
-*Note that this project has been tested with java-11 and java-17.
+*Note that this project has been tested with java-17.
 
 Note: The build requires that [node.js](https://nodejs.org/en/) be installed on the system.
 This is checked in the install.sh script, which automatically sets the SBT_OPTS environment variable if node.js is found 
 and gives an error otherwise. 
 
 Note: 
-- The [Graphviz](https://graphviz.org/download/) apps needs to be installed in order to use the UML or icd-viz features.
-- The [swagger-codegen](https://swagger.io/tools/swagger-codegen/) command line app (at least version 3.0.35) needs to be installed in order to generate the documentation for components that provide or use HTTP services and declare them in the `service-model.conf` model file. You can install `swagger-codegen` with this command: `cs install --contrib swagger-codegen`.
+- The [Graphviz](https://graphviz.org/download/) apps needs to be installed in order to use the UML or icd-viz features (Tested with version 2.43.0).
+- The [swagger-codegen](https://swagger.io/tools/swagger-codegen/) command line app needs to be installed in order to generate the documentation for components that provide or use HTTP services and declare them in the `service-model.conf` model file. You can install `swagger-codegen` with this command: `cs install --contrib swagger-codegen`. This icd release was tested with version swagger-codegen-3.0.36.
 
 An install.sh script is provided that builds and installs all of the subprojects into the __../install_icd__ directory.
 This is basically just the command `sbt stage` in each project followed by copying the products to the
@@ -319,3 +328,16 @@ Note that if there is an error in the reference, the error message is displayed 
 Note: An earlier version of this software used the terms "attributes" for events parameters and "args" for command parameters. 
 These have been renamed to "parameters" for compatibility with CSW, however for backward compatibility
 the previous names are also allowed in refs.
+
+Event Categories
+================
+
+Events have an optional "category" field, which can have one of the following values:
+
+* DEMAND - an event that is used to transmit a desired position. These events are high frequency/periodic and should not be archived long-term or should be seriously curated into a smaller representative collection.
+
+* CONTROL - similar to a DEMAND, but probably not periodic and considerably less frequent. CONTROL events are events driving other devices, but may be internal to a system. These also may be curated.
+
+* EVENT - an event is used to indicate that something has happened.  Observe Events are one EVENT type.
+
+* STATUS - a STATUS  event is used primarily to update a user interface.  These events are archived.  They are not high frequency and are not periodic.
