@@ -19,6 +19,7 @@ object ParameterModelBsonParser {
       case d: BSONInteger => d.value.toString
       case d: BSONLong    => d.value.toString
       case d: BSONBoolean => d.value.toString
+      case d: BSONArray   => s"[${d.values.map(bsonValueToString).mkString(", ")}]"
       case x              => x.toString // should not happen
     }
 
@@ -57,7 +58,7 @@ object ParameterModelBsonParser {
     // FITS keyword(s) from publish-model.conf
     val maybeKeyword = doc.getAsOpt[String]("keyword")
     val maybeChannel = doc.getAsOpt[String]("channel")
-    val keywords0 = maybeKeyword.toList.map(EventParameterFitsKeyInfo(_, maybeChannel))
+    val keywords0    = maybeKeyword.toList.map(EventParameterFitsKeyInfo(_, maybeChannel))
     def getItems[A](name: String, f: BSONDocument => A): List[A] =
       for (subDoc <- doc.getAsOpt[Array[BSONDocument]](name).map(_.toList).getOrElse(Nil)) yield f(subDoc)
     val keywords = keywords0 ::: getItems("keywords", EventParameterFitsKeyInfoParser(_))
