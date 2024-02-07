@@ -1,6 +1,6 @@
 package csw.services.icd
 
-import java.io._
+import java.io.*
 import java.net.URI
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions, ConfigResolveOptions}
 import csw.services.icd.db.StdConfig.FileResources
@@ -14,7 +14,7 @@ import org.everit.json.schema.{Schema, ValidationException}
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 /**
  * An ICD API validator
@@ -104,7 +104,7 @@ object IcdValidator {
    * @param dir the directory containing the standard set of ICD files (default: current dir)
    */
   def validateOneDir(dir: File = new File(".")): List[Problem] = {
-    import StdName._
+    import StdName.*
     if (!dir.isDirectory) {
       List(Problem("error", s"$dir does not exist or is not a directory"))
     }

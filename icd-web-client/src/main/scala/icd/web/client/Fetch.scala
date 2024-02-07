@@ -2,7 +2,7 @@ package icd.web.client
 
 import org.scalajs.dom
 import org.scalajs.dom.{HttpMethod, RequestInit}
-import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
 
 import scala.concurrent.Future
 import scala.scalajs.js

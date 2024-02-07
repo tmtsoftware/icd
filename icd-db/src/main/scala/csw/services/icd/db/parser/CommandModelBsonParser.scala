@@ -3,7 +3,7 @@ package csw.services.icd.db.parser
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.{CommandModel, ReceiveCommandModel, SendCommandModel}
 import icd.web.shared.PdfOptions
-import reactivemongo.api.bson._
+import reactivemongo.api.bson.*
 
 /**
  * Model for commands received: See resources/<version>/command-schema.conf

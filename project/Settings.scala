@@ -1,6 +1,6 @@
-import com.typesafe.sbt.packager.Keys._
-import sbt.Keys._
-import sbt._
+import com.typesafe.sbt.packager.Keys.*
+import sbt.Keys.*
+import sbt.*
 
 //noinspection TypeAnnotation
 // Defines the global build settings so they don't need to be edited everywhere

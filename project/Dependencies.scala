@@ -1,5 +1,5 @@
-import sbt._
-import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
+import sbt.*
+import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport.*
 
 object Dependencies {
   val Version               = "3.0.0"

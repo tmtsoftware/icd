@@ -534,7 +534,7 @@ object IcdModels {
       archiveDuration: String,
       parameterList: List[ParameterModel]
   ) extends NameDesc {
-    import EventModel._
+    import EventModel.*
 
     def getCategory: String = if (category.isEmpty) defaultEventCategory else category
 
@@ -582,7 +582,7 @@ object IcdModels {
   ) extends NameDesc
 }
 
-import IcdModels._
+import IcdModels.*
 
 /**
  * Holds the set of models associated with the set of standard ICD files

@@ -2,12 +2,12 @@ package icd.web.client
 
 import icd.web.shared.{IcdVersion, SubsystemWithVersion}
 import org.scalajs.dom
-import org.scalajs.dom._
-import play.api.libs.json._
-import BrowserHistory._
+import org.scalajs.dom.*
+import play.api.libs.json.*
+import BrowserHistory.*
 
 object BrowserHistory {
-  import icd.web.shared.JsonSupport._
+  import icd.web.shared.JsonSupport.*
 
   implicit val viewTypeWrites: Writes[ViewType] =
     (v: ViewType) =>

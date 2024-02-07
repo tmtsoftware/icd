@@ -11,8 +11,8 @@ case class ExpandToggler() extends Displayable {
    * Returns the initial HTML markup for the item
    */
   override def markup(): Element = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
     li(
       a(
         button(

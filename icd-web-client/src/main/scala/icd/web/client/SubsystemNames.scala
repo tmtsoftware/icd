@@ -1,10 +1,10 @@
 package icd.web.client
 
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.concurrent.Future
-import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
-import SubsystemNames._
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
+import SubsystemNames.*
 
 object SubsystemNames {
   // Type of a listener for changes in the list of subsystem names

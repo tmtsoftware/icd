@@ -1,6 +1,6 @@
-//import org.junit.runner._
-//import org.specs2.runner._
-//import play.api.test._
+//import org.junit.runner.*
+//import org.specs2.runner.*
+//import play.api.test.*
 //
 ///**
 // * Add your spec here.

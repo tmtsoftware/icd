@@ -1,19 +1,19 @@
 package icd.web.client
 
 import org.scalajs.dom.Element
-import scalatags.JsDom.all._
+import scalatags.JsDom.all.*
 
 /**
- * Manages the navbar
+ * Manages the main navbar (at top)
  */
-case class Navbar() extends Displayable {
+case class MainNavbar() extends Displayable {
 
   private val leftNavbar  = ul(cls := "navbar-nav").render
   private val rightNavbar = ul(cls := "navbar-nav ms-auto mb-2 mb-lg-0").render
 
   def markup(): Element = {
-    import scalacss.ScalatagsCss._
-    import scalatags.JsDom.tags2._
+    import scalacss.ScalatagsCss.*
+    import scalatags.JsDom.tags2.*
       nav(cls := "navbar navbar-expand-lg bg-light fixed-top border-bottom")(
         div(cls := "container-fluid")(
           a(cls := "navbar-brand", href := "/")("TIO Software Interface Database System"),

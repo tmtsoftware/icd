@@ -1,6 +1,6 @@
-//import org.junit.runner._
-//import org.specs2.mutable._
-//import org.specs2.runner._
+//import org.junit.runner.*
+//import org.specs2.mutable.*
+//import org.specs2.runner.*
 //
 ///**
 // * add your integration spec here.

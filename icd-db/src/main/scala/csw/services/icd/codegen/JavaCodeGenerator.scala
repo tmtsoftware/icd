@@ -2,7 +2,7 @@ package csw.services.icd.codegen
 
 import com.typesafe.config.ConfigFactory
 import csw.services.icd.IcdValidator
-import csw.services.icd.db._
+import csw.services.icd.db.*
 import icd.web.shared.IcdModels.ParameterModel
 import icd.web.shared.{ComponentInfo, EventInfo, ReceivedCommandInfo, SubsystemWithVersion}
 
@@ -10,7 +10,7 @@ import java.io.{File, PrintWriter}
 
 object JavaCodeGenerator {
   val allUnits: Set[String] = {
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.*
     val config = ConfigFactory.parseResources(s"${IcdValidator.currentSchemaVersion}/units.conf")
     config.getStringList("enum").asScala.toSet
   }
@@ -20,7 +20,7 @@ object JavaCodeGenerator {
  * Generates Java code for a subsystem from the icd database.
  */
 class JavaCodeGenerator(db: IcdDb) {
-  import JavaCodeGenerator._
+  import JavaCodeGenerator.*
 
   private def warning(s: String): Unit = {
     println(s"Warning: $s")
@@ -188,7 +188,7 @@ class JavaCodeGenerator(db: IcdDb) {
       maybeFile: Option[File],
       maybePackage: Option[String]
   ): Unit = {
-    import sys.process._
+    import sys.process.*
     val s              = IcdVersionManager.SubsystemAndVersion(subsystemStr)
     val versionDef     = s"public static final String subsystem = \"$s\";"
     val sv             = SubsystemWithVersion(s.subsystem, s.maybeVersion, maybeComponent)

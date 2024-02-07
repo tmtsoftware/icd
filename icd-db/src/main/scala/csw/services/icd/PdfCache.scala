@@ -22,7 +22,7 @@ class PdfCache(cacheDir: File) {
       sv: SubsystemWithVersion,
       pdfOptions: PdfOptions
   ): File = {
-    import pdfOptions._
+    import pdfOptions.*
     val name = s"${sv.subsystem}-${sv.maybeVersion.get}-$orientation-$fontSize-$lineHeight-$paperSize.pdf"
     new File(dir, name)
   }
@@ -62,7 +62,7 @@ class PdfCache(cacheDir: File) {
       targetSv: SubsystemWithVersion,
       pdfOptions: PdfOptions
   ): File = {
-    import pdfOptions._
+    import pdfOptions.*
     val name =
       s"${sv.subsystem}-${sv.maybeVersion.get}--${targetSv.subsystem}-${targetSv.maybeVersion.get}-$orientation-$fontSize-$lineHeight-$paperSize.pdf"
     new File(dir, name)
@@ -174,7 +174,7 @@ class PdfCache(cacheDir: File) {
 
   // Deletes the cached PDF file (or files) for the given API
   def deleteApi(sv: SubsystemWithVersion): Unit = {
-    import PdfOptions._
+    import PdfOptions.*
     if (sv.maybeVersion.isDefined && sv.maybeComponent.isEmpty) {
       orientations.foreach { orient =>
         fontSizes.foreach { fs =>
@@ -193,7 +193,7 @@ class PdfCache(cacheDir: File) {
 
   // Deletes the cached PDF file (or files) for the ICD between the given APIs
   def deleteIcd(sv: SubsystemWithVersion, targetSv: SubsystemWithVersion): Unit = {
-    import PdfOptions._
+    import PdfOptions.*
     if (
       sv.maybeVersion.isDefined && sv.maybeComponent.isEmpty
       && targetSv.maybeVersion.isDefined && targetSv.maybeComponent.isEmpty

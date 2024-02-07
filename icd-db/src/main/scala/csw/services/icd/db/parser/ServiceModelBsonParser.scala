@@ -5,13 +5,13 @@ import icd.web.shared.IcdModels.{ServiceModel, ServiceModelClient, ServiceModelP
 import icd.web.shared.PdfOptions
 import play.api.libs.json.{JsObject, Json}
 import reactivemongo.api.DB
-import reactivemongo.api.bson._
+import reactivemongo.api.bson.*
 import reactivemongo.api.bson.collection.BSONCollection
-import csw.services.icd._
-import reactivemongo.play.json.compat._
-import bson2json._
-import lax._
-import json2bson._
+import csw.services.icd.*
+import reactivemongo.play.json.compat.*
+import bson2json.*
+import lax.*
+import json2bson.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
 

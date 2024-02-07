@@ -1,10 +1,10 @@
 package icd.web.client
 
-import icd.web.client.FileUtils._
+import icd.web.client.FileUtils.*
 import org.scalajs.dom
-import org.scalajs.dom._
+import org.scalajs.dom.*
 import org.scalajs.dom.HTMLDivElement
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.language.implicitConversions
 
@@ -36,7 +36,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
 
   // Displays upload button
   private val inputItem = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     input(
       `type` := "file",
       name := "files[]",
@@ -56,8 +56,8 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
 
   // HTML item displaying error messages
   private val messagesItem = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
     div(Styles.fileUploadMessages).render
   }
 
@@ -206,7 +206,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
 
   // Produce the HTML to display for the upload screen
   override def markup(): Element = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
 
     val dirMsg = "Here you can select the top level directory containing the subsystem or component files to upload."
     val dirLabel =

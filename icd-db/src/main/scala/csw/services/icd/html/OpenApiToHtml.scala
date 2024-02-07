@@ -8,7 +8,7 @@ import java.io.File
 import java.nio.file.Files
 import scala.reflect.io.Directory
 import scala.util.{Failure, Success, Try}
-import sys.process._
+import sys.process.*
 
 object OpenApiToHtml {
   // Return this HTML if there is an error
@@ -47,7 +47,7 @@ object OpenApiToHtml {
     if (paths.isEmpty)
       jsonStr
     else {
-      import play.api.libs.json._
+      import play.api.libs.json.*
       val allPaths  = paths.map(_.path)
       val methodMap = paths.map(p => p.path -> p.method).toMap
 

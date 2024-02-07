@@ -5,7 +5,7 @@ import icd.web.shared.IcdModels.{ParameterModel, CommandModel, EventModel, Publi
 
 import scala.util.{Failure, Success, Try}
 import com.typesafe.scalalogging.Logger
-import Resolver._
+import Resolver.*
 
 object Resolver {
   private lazy val log: Logger = Logger("csw.services.icd.db.Resolver")

@@ -1,7 +1,7 @@
 package csw.services.icd.db
 
 import java.io.File
-import sys.process._
+import sys.process.*
 
 object TestHelper {
   // The relative location of the the examples directory can change depending on how the test is run

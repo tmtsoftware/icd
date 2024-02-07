@@ -1,8 +1,8 @@
 package controllers
 
 import javax.inject.Inject
-import play.api.mvc._
-import play.api.libs.json._
+import play.api.mvc.*
+import play.api.libs.json.*
 
 import java.io.File
 import java.nio.file.Files

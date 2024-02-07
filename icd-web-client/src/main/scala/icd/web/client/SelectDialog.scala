@@ -2,16 +2,18 @@ package icd.web.client
 
 import icd.web.client.IcdChooser.IcdListener
 import icd.web.client.Subsystem.SubsystemListener
-import icd.web.shared.{IcdVersion, SubsystemWithVersion}
+import icd.web.shared.{IcdName, IcdVersion, IcdVizOptions, PdfOptions, SubsystemWithVersion}
 import org.scalajs.dom
-import play.api.libs.json._
+import play.api.libs.json.*
 import org.scalajs.dom.html.{Button, Input}
-import SelectDialog._
-import org.scalajs.dom.Element
-import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
+import SelectDialog.*
+import icd.web.client.BrowserHistory.VersionView
+import org.scalajs.dom.{Element, HTMLAnchorElement, document}
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
 
 import scala.concurrent.Future
 import scala.language.implicitConversions
+import scala.scalajs.js.URIUtils
 
 /**
  *
@@ -55,22 +57,71 @@ object SelectDialog {
  * Displays the page for selecting the icds, subsystem APIs, components and versions to display
  * @param mainContent used to display errors
  * @param listener called for actions
- * @param items items to enable/disable
  */
 //noinspection DuplicatedCode
-case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener, items: List[Displayable]) extends Displayable {
+case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener) extends Displayable {
+
+//  private val historyItem   = NavbarItem("History", "Display the version history for an API or ICD", showVersionHistory())
+  private val historyDialog = HistoryDialog(mainContent)
+//  private val pdfItem       = NavbarPdfItem("PDF", "Generate and display a PDF for the API or ICD", makePdf, showDocumentNumber = true)
+//  pdfItem.setEnabled(false)
+//
+//  private val generateItem = NavbarDropDownItem(
+//    "Generate",
+//    "Generate code for the selected API/component",
+//    List("Scala", "Java", "TypeScript", "Python"),
+//    generateCode
+//  )
+//  generateItem.setEnabled(false)
+//
+//  private val graphItem =
+//    NavbarGraphItem("Graph", "Generate and display a graph of relationships for the selected components", makeGraph)
+//  graphItem.setEnabled(false)
+//
+//  private val archiveItem = NavbarPdfItem(
+//    "Archive",
+//    "Generate and display an 'Archived Items' report for the selected subsystem/component (or all subsystems)",
+//    makeArchivedItemsReport,
+//    showDocumentNumber = false,
+//    showDetailButtons = false
+//  )
+//
+//  private val alarmsItem = NavbarPdfItem(
+//    "Alarms",
+//    "Generate and display an 'Alarms' report for the selected subsystem/component (or all subsystems)",
+//    makeAlarmsReport,
+//    showDocumentNumber = false,
+//    showDetailButtons = false
+//  )
+//
+//  private val missingItem = NavbarPdfItem(
+//    "Missing",
+//    "Generate and display a 'Missing Items' report for the selected subsystems/components (or all subsystems)",
+//    makeMissingItemsReport,
+//    showDocumentNumber = false,
+//    showDetailButtons = false
+//  )
+
+//  private val navbar = SelectNavbar()
+//  navbar.addItem(historyItem)
+//  navbar.addItem(pdfItem)
+//  navbar.addItem(generateItem)
+//  navbar.addItem(graphItem)
+//  navbar.addItem(archiveItem)
+//  navbar.addItem(alarmsItem)
+//  navbar.addItem(missingItem)
 
   val subsystem: Subsystem = Subsystem(SourceSubsystemListener)
   val targetSubsystem: Subsystem = Subsystem(
     TargetSubsystemListener,
     placeholderMsg = "Select Subsystem"
   )
-  val subsystemSwapper: SubsystemSwapper = SubsystemSwapper(swapSubsystems)
-  val icdChooser: IcdChooser             = IcdChooser(IcdChooserListener)
+  private val subsystemSwapper: SubsystemSwapper = SubsystemSwapper(swapSubsystems)
+  val icdChooser: IcdChooser                     = IcdChooser(IcdChooserListener)
 
   // Displays the Apply button
   private val applyButton: Button = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     button(
       `type` := "submit",
       cls := "btn btn-primary",
@@ -79,15 +130,37 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
     )("Apply").render
   }
 
+  private val historyButton: Button = {
+    import scalatags.JsDom.all.*
+    button(
+      `type` := "button",
+      cls := "btn btn-primary",
+      title := "Display the version history for an API or ICD",
+      onclick := showVersionHistory() _
+    )("History").render
+  }
+
+  //  private val pdfItem       = NavbarPdfItem("PDF", "Generate and display a PDF for the API or ICD", makePdf, showDocumentNumber = true)
+  //  pdfItem.setEnabled(false)
+  private val pdfButton: Button = {
+    import scalatags.JsDom.all.*
+    button(
+      `type` := "button",
+      cls := "btn btn-primary",
+      title := "Generate and display a PDF for the API or ICD",
+      onclick := makePdf() _
+    )("PDF").render
+  }
+
   // Displays a checkbox for the "search all subsystems for API dependencies" option
   private val searchAllCheckbox: Input = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     input(`type` := "checkbox", cls := "form-check-input", disabled := true).render
   }
 
   // Displays a checkbox for the "include client API" option
   private val clientApiCheckbox: Input = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     input(`type` := "checkbox", cls := "form-check-input", disabled := true, onchange := clientApiCheckboxChanged() _).render
   }
 
@@ -134,6 +207,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
         maybeSv: Option[SubsystemWithVersion],
         findMatchingIcd: Boolean
     ): Future[Unit] = {
+      val items = List(pdfItem, generateItem, graphItem)
       items.foreach(_.setEnabled(true))
       val maybeTargetSv = targetSubsystem.getSubsystemWithVersion()
       targetSubsystem.setEnabled(maybeSv.isDefined)
@@ -231,11 +305,12 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   private def apply()(e: dom.Event): Unit = applySettings()
 
   override def markup(): Element = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
     div(
       cls := "container",
       div(Styles.selectDialogSubsystemRow, p(msg)),
+//      navbar.markup(),
       div(Styles.selectDialogIcdRow, icdChooser.markup()),
       p(strong("Or")),
       div(Styles.selectDialogSubsystemRow, subsystem.markup()),
@@ -251,7 +326,129 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
         searchAllCheckbox,
         label(cls := "form-check-label", "Search all TIO subsystems for API dependencies")
       ),
-      div(Styles.selectDialogApplyButton, applyButton)
+      div(
+        Styles.selectDialogApplyButton,
+        cls := "btn-group",
+        applyButton, historyButton)
     ).render
+  }
+
+  // Called when the "History" item is selected
+  def showVersionHistory(saveHistory: Boolean = true)(): Unit = {
+    def showApiVersionHistory(subsystem: String): Unit = {
+      historyDialog.setSubsystem(subsystem)
+      setSidebarVisible(false)
+      mainContent.setContent(historyDialog, s"Subsystem API Version History: $subsystem")
+      if (saveHistory) pushState(viewType = VersionView)
+    }
+    def showIcdVersionHistory(icdName: IcdName): Unit = {
+      historyDialog.setIcd(icdName)
+      setSidebarVisible(false)
+      mainContent.setContent(historyDialog, s"ICD Version History: ${icdName.subsystem} to ${icdName.target}")
+      if (saveHistory) pushState(viewType = VersionView)
+    }
+    icdChooser.getSelectedIcd match {
+      case Some(icdName) =>
+        showIcdVersionHistory(icdName)
+      case None =>
+        subsystem.getSelectedSubsystem.foreach(showApiVersionHistory)
+    }
+  }
+
+  // Gets a PDF of the currently selected ICD or subsystem API
+  private def makePdf(pdfOptions: PdfOptions): Unit = {
+    import scalatags.JsDom.all.*
+
+    val maybeSv = subsystem.getSubsystemWithVersion()
+    maybeSv.foreach { sv =>
+      val maybeTargetSv   = targetSubsystem.getSubsystemWithVersion()
+      val maybeIcdVersion = icdChooser.getSelectedIcdVersion.map(_.icdVersion)
+      val searchAll       = searchAllSubsystems()
+      val isClientApi     = clientApi()
+      val uri             = ClientRoutes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll, isClientApi, pdfOptions)
+
+      if (!pdfOptions.details && pdfOptions.expandedIds.nonEmpty) {
+        // We need to do a POST in case expandedIds are passed, which can be very long, so create a temp form
+        val formId = "tmpPdfForm"
+        val tmpForm = form(id := formId, method := "POST", action := uri, target := "_blank")(
+          input(`type` := "hidden", name := "expandedIds", value := pdfOptions.expandedIds.mkString(","))
+        ).render
+        document.body.appendChild(tmpForm)
+        tmpForm.submit()
+        document.body.removeChild(tmpForm)
+      }
+      else {
+        dom.window.open(uri) // opens in new window or tab
+      }
+    }
+  }
+
+  private def generateCode(language: String): Unit = {
+    import scalatags.JsDom.all.*
+    val maybeSv = subsystem.getSubsystemWithVersion()
+    maybeSv.foreach { sv =>
+      val className   = s"${sv.subsystem.toLowerCase().capitalize}Api"
+      val packageName = s"${sv.subsystem.toLowerCase()}.api"
+      val suffix = language
+        .toLowerCase()
+        .replace("typescript", "ts")
+        .replace("python", "py")
+      val sourceFile = s"$className.$suffix"
+      val uri        = ClientRoutes.generate(sv, language, className, packageName)
+      val f = Fetch.get(uri).map { text =>
+        val link = document.createElement("a").asInstanceOf[HTMLAnchorElement]
+        link.setAttribute("download", sourceFile)
+        link.href = "data:," + URIUtils.encodeURIComponent(text)
+        link.click();
+      }
+      showBusyCursorWhile(f)
+    }
+  }
+
+  // Generates a graph of relationships for the currently selected components
+  private def makeGraph(options: IcdVizOptions): Unit = {
+    val maybeSv = subsystem.getSubsystemWithVersion()
+    maybeSv.foreach { sv =>
+      val maybeTargetSv   = targetSubsystem.getSubsystemWithVersion()
+      val maybeIcdVersion = icdChooser.getSelectedIcdVersion.map(_.icdVersion)
+      val uri             = ClientRoutes.makeGraph(sv, maybeTargetSv, maybeIcdVersion, options)
+      dom.window.open(uri) // opens in new window or tab
+    }
+  }
+
+  // Gets a PDF with an Archived Items report for the currently selected subsystem API
+  private def makeArchivedItemsReport(options: PdfOptions): Unit = {
+    val maybeSv = subsystem.getSubsystemWithVersion()
+    val uri =
+      if (maybeSv.isDefined)
+        ClientRoutes.archivedItemsReport(maybeSv.get, options)
+      else
+        ClientRoutes.archivedItemsReportFull(options)
+    dom.window.open(uri) // opens in new window or tab
+  }
+
+  // Gets a PDF with an Alarms report for the currently selected subsystem API
+  private def makeAlarmsReport(options: PdfOptions): Unit = {
+    val maybeSv = subsystem.getSubsystemWithVersion()
+    val uri =
+      if (maybeSv.isDefined)
+        ClientRoutes.alarmsReport(maybeSv.get, options)
+      else
+        ClientRoutes.alarmsReportFull(options)
+    dom.window.open(uri) // opens in new window or tab
+  }
+
+  // Gets a PDF with a Missing Items report for the currently selected subsystem API
+  private def makeMissingItemsReport(options: PdfOptions): Unit = {
+    val maybeSv = subsystem.getSubsystemWithVersion()
+    val uri =
+      if (maybeSv.isDefined) {
+        val maybeTargetSv = targetSubsystem.getSubsystemWithVersion()
+        ClientRoutes.missingItemsReport(maybeSv.get, maybeTargetSv, options)
+      }
+      else {
+        ClientRoutes.missingItemsReportFull(options)
+      }
+    dom.window.open(uri) // opens in new window or tab
   }
 }

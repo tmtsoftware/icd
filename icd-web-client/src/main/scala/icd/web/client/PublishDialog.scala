@@ -1,16 +1,16 @@
 package icd.web.client
 
 import icd.web.client.PublishDialog.PublishDialogListener
-import icd.web.shared._
+import icd.web.shared.*
 import org.scalajs.dom
-import play.api.libs.json._
+import play.api.libs.json.*
 
-import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
 import org.scalajs.dom.{Element, document}
 import org.scalajs.dom.html.{Button, Div, Input}
 import org.scalajs.dom.HTMLInputElement
 import scalatags.JsDom
-import scalatags.JsDom.all._
+import scalatags.JsDom.all.*
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
@@ -30,7 +30,7 @@ object PublishDialog {
  */
 case class PublishDialog(mainContent: MainContent, publishChangeListener: PublishDialogListener) extends Displayable {
 
-  import icd.web.shared.JsonSupport._
+  import icd.web.shared.JsonSupport.*
 
   // Main version div
   private val contentDiv = div(id := "publishDialog").render
@@ -641,7 +641,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
 
   // Returns the markup for getting the GitHub credentials
   private def markupGitHubCredentials(): Div = {
-    import scalacss.ScalatagsCss._
+    import scalacss.ScalatagsCss.*
     usernameChanged()
     passwordChanged()
     div(
@@ -664,7 +664,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
 
   // Returns the markup for displaying a table of subsystems
   private def markupSubsystemTable(publishInfoList: List[PublishInfo]): Div = {
-    import scalacss.ScalatagsCss._
+    import scalacss.ScalatagsCss.*
     val publishLabel  = label(id := "publishLabel", publishLabelMsg)
     val publishStatus = label(id := "publishStatus", "")
     div(

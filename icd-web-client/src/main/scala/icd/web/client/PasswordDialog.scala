@@ -7,11 +7,11 @@ import org.scalajs.dom.Element
 import play.api.libs.json.Json
 
 import scala.util.Failure
-import scalatags.JsDom.all._
-import scalacss.ScalatagsCss._
+import scalatags.JsDom.all.*
+import scalacss.ScalatagsCss.*
 
 import scala.concurrent.Future
-import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
 
 object PasswordDialog {
 
@@ -29,7 +29,7 @@ object PasswordDialog {
  * @param mainContent used to display errors
  */
 case class PasswordDialog(mainContent: MainContent, listener: PasswordDialogListener) extends Displayable {
-  import icd.web.shared.JsonSupport._
+  import icd.web.shared.JsonSupport.*
 
   // Publish user name field
   private val usernameBox = {
@@ -123,7 +123,7 @@ case class PasswordDialog(mainContent: MainContent, listener: PasswordDialogList
   }
 
   override def markup(): Element = {
-    import scalacss.ScalatagsCss._
+    import scalacss.ScalatagsCss.*
     usernameChanged()
     passwordChanged()
     div(

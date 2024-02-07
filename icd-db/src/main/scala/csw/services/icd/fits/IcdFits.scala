@@ -2,7 +2,7 @@ package csw.services.icd.fits
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import csw.services.icd.db.{IcdDb, IcdDbDefaults}
-import icd.web.shared.JsonSupport._
+import icd.web.shared.JsonSupport.*
 import icd.web.shared.{
   AvailableChannels,
   BuildInfo,
@@ -232,7 +232,7 @@ object IcdFits extends App {
 
 //noinspection SpellCheckingInspection
 case class IcdFits(db: IcdDb) {
-  import IcdFitsDefs._
+  import IcdFitsDefs.*
   private val fitsKeyCollection     = db.db.collection[BSONCollection](fitsKeyCollectionName)
   private val fitsTagCollection     = db.db.collection[BSONCollection](fitsTagCollectionName)
   private val fitsChannelCollection = db.db.collection[BSONCollection](fitsChannelCollectionName)
@@ -241,7 +241,7 @@ case class IcdFits(db: IcdDb) {
     // Check for duplicate keywords (duplicates must have different channels)
     // Return an error for each duplicate
     def checkDups(config: Config): List[Problem] = {
-      import scala.jdk.CollectionConverters._
+      import scala.jdk.CollectionConverters.*
       val tags = config.root().entrySet().asScala.toList.map(_.getKey)
       val keywords = tags.flatMap { tag =>
         config.getStringList(s"$tag.keywords").asScala.toList
@@ -470,7 +470,7 @@ case class IcdFits(db: IcdDb) {
         out.close()
       }
       else if (fname.endsWith(".csv")) {
-        import com.github.tototoshi.csv._
+        import com.github.tototoshi.csv.*
         implicit object MyFormat extends DefaultCSVFormat {
           override val lineTerminator = "\n"
           override val delimiter      = '|'

@@ -1,9 +1,9 @@
 package csw.services.icd.db
 
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
-import icd.web.shared.ComponentInfo._
-import icd.web.shared.IcdModels._
-import icd.web.shared._
+import icd.web.shared.ComponentInfo.*
+import icd.web.shared.IcdModels.*
+import icd.web.shared.*
 
 /**
  * Support for creating instances of the shared (scala/scala.js) ComponentInfo class.

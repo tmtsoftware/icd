@@ -4,10 +4,10 @@ import icd.web.shared.{IcdName, IcdVersion, IcdVersionInfo, SubsystemWithVersion
 import org.scalajs.dom
 
 import scala.concurrent.Future
-import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
-import IcdChooser._
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
+import IcdChooser.*
 import org.scalajs.dom.Element
-import play.api.libs.json._
+import play.api.libs.json.*
 
 /**
  * Manages the ICD and related ICD version comboboxes
@@ -40,11 +40,11 @@ object IcdChooser {
 //noinspection DuplicatedCode
 case class IcdChooser(listener: IcdListener) extends Displayable {
 
-  import icd.web.shared.JsonSupport._
+  import icd.web.shared.JsonSupport.*
 
   // The ICD combobox
   private val icdItem = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     select(cls := "form-select", onchange := icdSelected _)(
       option(value := emptyOptionMsg)(emptyOptionMsg)
     ).render
@@ -52,7 +52,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
 
   // The ICD version combobox
   private val versionItem = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     select(cls := "form-select", onchange := icdVersionSelected _).render
   }
 
@@ -87,8 +87,8 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
 
   // HTML markup displaying the ICD and version comboboxes
   override def markup(): Element = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
     div(cls := "row")(
       div(Styles.selectDialogLabel)(label("ICD")),
       div(Styles.selectDialogSubsystem)(icdItem),
@@ -243,7 +243,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   // Update the ICD combobox options
   private def updateIcdOptions(icdNames: List[IcdName]): Future[Unit] = {
 
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
 
     val maybeIcdVersion = getSelectedIcdVersion
     while (icdItem.options.length != 0) {
@@ -315,7 +315,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   // Updates the ICD version combobox with the given list of available versions for the selected ICD
   private def updateIcdVersionOptions(versions: List[IcdVersion]): Future[Unit] = {
 
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     while (versionItem.options.length != 0) {
       versionItem.remove(0)
     }

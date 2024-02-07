@@ -1,7 +1,7 @@
 package icd.web.shared
 
 import icd.web.shared.ComponentInfo.PublishType
-import icd.web.shared.IcdModels._
+import icd.web.shared.IcdModels.*
 
 object ComponentInfo {
 

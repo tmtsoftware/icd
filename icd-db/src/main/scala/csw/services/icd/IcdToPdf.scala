@@ -77,7 +77,7 @@ object IcdToPdf {
    * @param pdfOptions       options for PDF generation
    */
   def saveAsPdf(out: OutputStream, html: String, showLogo: Boolean, pdfOptions: PdfOptions): Unit = {
-    import pdfOptions._
+    import pdfOptions.*
 
     val basePageSize = paperSize match {
       case "Legal" => PageSize.LEGAL

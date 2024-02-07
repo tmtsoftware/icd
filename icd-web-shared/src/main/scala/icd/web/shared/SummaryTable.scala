@@ -1,7 +1,7 @@
 package icd.web.shared
 
 import scalatags.Text
-import scalatags.Text.all._
+import scalatags.Text.all.*
 import icd.web.shared.ComponentInfo.{Alarms, CurrentStates, Events, Images, ObserveEvents}
 import icd.web.shared.IcdModels.{ComponentModel, EventModel, NameDesc}
 import Headings.idFor
@@ -31,7 +31,7 @@ object SummaryTable {
       clientApi: Boolean,
       displayTitle: Boolean
   ): Text.TypedTag[String] = {
-    import SummaryInfo._
+    import SummaryInfo.*
 
     val isIcd               = maybeTargetSv.isDefined
     val componentPart       = subsystemInfo.sv.maybeComponent.map("." + _).getOrElse("")

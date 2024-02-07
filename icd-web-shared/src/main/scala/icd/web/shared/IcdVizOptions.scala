@@ -1,7 +1,7 @@
 package icd.web.shared
 
 import java.io.File
-import IcdVizOptions._
+import IcdVizOptions.*
 
 object IcdVizOptions {
   // Allowed/default values for options

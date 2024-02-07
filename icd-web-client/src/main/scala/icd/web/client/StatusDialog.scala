@@ -5,11 +5,11 @@ import icd.web.shared.{ApiVersionInfo, IcdVersion, IcdVersionInfo, PublishInfo, 
 import org.scalajs.dom
 import org.scalajs.dom.Element
 import org.scalajs.dom.html.{Div, Table}
-import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
 
 import scala.util.{Failure, Success}
-import scalatags.JsDom.all._
-import scalacss.ScalatagsCss._
+import scalatags.JsDom.all.*
+import scalacss.ScalatagsCss.*
 import scalatags.JsDom
 
 import scala.concurrent.Future
@@ -52,10 +52,9 @@ object StatusDialog {
  * Displays the current published status of a selected subsystem.
  * @param mainContent used to display errors
  * @param listener called for actions
- * @param items items to enable/disable
  */
-case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener, items: List[Displayable]) extends Displayable {
-  import StatusDialog._
+case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener) extends Displayable {
+  import StatusDialog.*
 
   // The subsystem combobox
   private val subsystemItem = {
@@ -83,7 +82,6 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
   private def subsystemSelected(maybeSubsystem: Option[String]): Future[Unit] = {
     detailsDiv.innerHTML = ""
     val result = maybeSubsystem.map { subsystem =>
-      items.foreach(_.setEnabled(true))
       detailsDiv.appendChild(p(em(s"Getting $subsystem related information...")).render)
       val f = IcdUtil.getPublishInfo(maybeSubsystem, mainContent)
       f.onComplete {

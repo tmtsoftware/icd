@@ -12,7 +12,7 @@ import icd.web.shared.IcdModels.EventModel
 import icd.web.shared.PdfOptions
 import net.sourceforge.plantuml.{FileFormat, FileFormatOption, SourceStringReader}
 import org.jsoup.Jsoup
-import scalatags.Text.all._
+import scalatags.Text.all.*
 import scalatags.Text.TypedTag
 import org.jsoup.nodes.Document.OutputSettings.Syntax.xml
 

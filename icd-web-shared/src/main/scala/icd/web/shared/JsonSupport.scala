@@ -1,10 +1,10 @@
 package icd.web.shared
 
-import icd.web.shared.ComponentInfo._
+import icd.web.shared.ComponentInfo.*
 import icd.web.shared.IcdModels.{IcdModel, _}
 import icd.web.shared.SharedUtils.Credentials
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
+import play.api.libs.json.*
+import play.api.libs.functional.syntax.*
 
 //noinspection TypeAnnotation
 object JsonSupport {

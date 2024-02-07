@@ -2,11 +2,11 @@ package icd.web.client
 
 import icd.web.shared.{IcdVizOptions, PdfOptions}
 import org.scalajs.dom
-import org.scalajs.dom._
+import org.scalajs.dom.*
 import org.scalajs.dom.html.{Div, Input}
 import org.scalajs.dom.HTMLInputElement
 import scalatags.JsDom
-import NavbarItem._
+import NavbarItem.*
 
 /**
  * A simple navbar item with the given label.
@@ -16,7 +16,7 @@ import NavbarItem._
  * @param listener called when the item is clicked
  */
 case class NavbarItem(labelStr: String, tip: String, listener: () => Unit) extends Displayable {
-  import scalatags.JsDom.all._
+  import scalatags.JsDom.all.*
   private val item = li(cls := "nav-item", a(cls := "nav-link", onclick := listener, title := tip)(labelStr)).render
 
   // Returns the HTML markup for the navbar item
@@ -32,7 +32,7 @@ object NavbarItem {
       defaultValue: String,
       units: Option[String] = None
   ): JsDom.TypedTag[Div] = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     val unitsStr   = units.map(" " + _).getOrElse("")
     val defaultStr = if (valueStr == defaultValue) " (default)" else ""
     val labelStr   = s"$valueStr$unitsStr$defaultStr"
@@ -46,7 +46,7 @@ object NavbarItem {
   }
 
   def makeCheckbox(nameStr: String, valueStr: String, isSelected: Boolean): JsDom.TypedTag[Div] = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     div(cls := "form-check")(
       if (isSelected)
         input(`type` := "checkbox", cls := "form-check-input", id := nameStr, name := nameStr, checked)
@@ -57,7 +57,7 @@ object NavbarItem {
   }
 
   def makeNumberEntry(nameStr: String, defaultValue: String): JsDom.TypedTag[Input] = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     input(id := nameStr, `type` := "number", min := 0, name := nameStr, value := defaultValue)
   }
 }
@@ -149,7 +149,7 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
 
   // Makes the popup with options for generating the PDF
   private def makePdfModal(): JsDom.TypedTag[Div] = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     val docNumCls = if (showDocumentNumber) "docNum" else "d-none"
     val eventDetailsCls = if (showDetailButtons) "eventDetails" else "d-none"
     div(cls := "modal fade", id := s"pdfModal$labelStr", tabindex := "-1", role := "dialog", style := "padding-top: 130px")(
@@ -211,7 +211,7 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
   }
 
   private val item = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     li(
       cls := "nav-item",
       makePdfModal(),
@@ -247,7 +247,7 @@ case class NavbarPdfItem(labelStr: String, tip: String, listener: PdfOptions => 
  * @param listener call this when an item is selected
  */
 case class NavbarDropDownItem(labelStr: String, tip: String, items: List[String], listener: String => Unit) extends Displayable {
-  import scalatags.JsDom.all._
+  import scalatags.JsDom.all.*
 
   // called when an item is selected
   private def itemSelected(item: String)(e: dom.Event): Unit = {
@@ -293,7 +293,7 @@ case class NavbarDropDownItem(labelStr: String, tip: String, items: List[String]
  * @param listener called when the item is clicked with (orientation, fontSize)
  */
 case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOptions => Unit) extends Displayable {
-  import IcdVizOptions._
+  import IcdVizOptions.*
   private def graphModalListener(): Unit = {
     val aspectRatio =
       Option(document.getElementById("aspectRatio").asInstanceOf[HTMLInputElement].valueAsNumber).getOrElse(defaultRatio)
@@ -345,7 +345,7 @@ case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOption
 
   // Makes the popup with options for generating the graph
   private def makeGraphModal(): JsDom.TypedTag[Div] = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     div(cls := "modal fade", id := s"graphModal", tabindex := "-1", role := "dialog", style := "padding-top: 130px")(
       div(cls := "modal-dialog")(
         div(cls := "modal-content")(
@@ -411,7 +411,7 @@ case class NavbarGraphItem(labelStr: String, tip: String, listener: IcdVizOption
   }
 
   private val item = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     li(
       cls := "nav-item",
       makeGraphModal(),

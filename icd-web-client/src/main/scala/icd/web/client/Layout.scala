@@ -1,9 +1,9 @@
 package icd.web.client
 
-import org.scalajs.dom._
+import org.scalajs.dom.*
 import org.scalajs.dom.html.Div
-import scalacss.ScalatagsCss._
-import scalatags.JsDom.all._
+import scalacss.ScalatagsCss.*
+import scalatags.JsDom.all.*
 
 /**
  * Manages the main layout (below the navbar)

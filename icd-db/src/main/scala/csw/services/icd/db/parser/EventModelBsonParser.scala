@@ -4,7 +4,7 @@ import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.EventModel
 import icd.web.shared.{PdfOptions, SubsystemWithVersion}
-import reactivemongo.api.bson._
+import reactivemongo.api.bson.*
 
 /**
  * See resources/<version>/event-schema.conf

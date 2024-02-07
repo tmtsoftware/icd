@@ -1,13 +1,13 @@
 package icd.web.client
 
 import icd.web.shared.PublishInfo
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.concurrent.Future
-import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
 
 object IcdUtil {
-  import icd.web.shared.JsonSupport._
+  import icd.web.shared.JsonSupport.*
 
   /**
    * Gets information about the published state of the given (or all of the) subsystems

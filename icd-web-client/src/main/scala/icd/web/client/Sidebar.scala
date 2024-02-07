@@ -4,7 +4,7 @@ import org.scalajs.dom
 import org.scalajs.dom.Node
 import org.scalajs.dom.Element
 import org.scalajs.dom.html.UList
-import scalatags.JsDom.all._
+import scalatags.JsDom.all.*
 
 trait SidebarListener {
 
@@ -67,7 +67,7 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
 
   // Markup for the sidebar
   override def markup(): Element = {
-    import scalacss.ScalatagsCss._
+    import scalacss.ScalatagsCss.*
 
     div(Styles.sidebar, id := "sidebar", cls := "d-none col-1 h-100")(
       sidebarList

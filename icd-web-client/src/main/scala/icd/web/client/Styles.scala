@@ -2,17 +2,17 @@ package icd.web.client
 
 import scalacss.internal.mutable.StyleSheet
 
-import scalacss.DevDefaults._
+import scalacss.DevDefaults.*
 
 //noinspection TypeAnnotation
 // CSS styles
 object Styles extends StyleSheet.Inline {
 
-  import dsl._
+  import dsl.*
   import language.postfixOps
 
   val mainContent = style(
-    padding(7 px, 0 px, 0 px, 15 px),
+    padding(14 px, 0 px, 0 px, 15 px),
   )
 
   val sidebar = style(
@@ -135,7 +135,7 @@ object Styles extends StyleSheet.Inline {
   )
 
   val selectDialogSubsystemRow = style(
-    padding(0 px, 0 px, 20 px, 0 px)
+    padding(0 px, 0 px, 5 px, 0 px)
   )
 
   val subsystemSwapper = style(

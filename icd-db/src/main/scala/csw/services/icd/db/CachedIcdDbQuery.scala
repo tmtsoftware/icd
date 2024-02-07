@@ -1,7 +1,7 @@
 package csw.services.icd.db
 
 import icd.web.shared.IcdModels.{AlarmsModel, CommandModel, ComponentModel, PublishModel, SubscribeModel}
-import csw.services.icd._
+import csw.services.icd.*
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import icd.web.shared.PdfOptions
 import reactivemongo.api.DB
@@ -22,7 +22,7 @@ class CachedIcdDbQuery(
     maybePdfOptions: Option[PdfOptions],
     fitsKeyMap: FitsKeyMap
 ) extends IcdDbQuery(db, admin, maybeSubsystems) {
-  import IcdDbQuery._
+  import IcdDbQuery.*
 
   // --- Cached values ---
   private val allCollectionNames = db.collectionNames.await

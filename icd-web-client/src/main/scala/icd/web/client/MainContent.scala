@@ -2,7 +2,7 @@ package icd.web.client
 
 import org.scalajs.dom.Element
 
-import scalatags.JsDom.all._
+import scalatags.JsDom.all.*
 
 /**
  * Manages the main content section, which displays information on the
@@ -17,7 +17,7 @@ case class MainContent() extends Displayable {
 
   // Holds the content to display
   private val contentDiv = {
-    import scalacss.ScalatagsCss._
+    import scalacss.ScalatagsCss.*
     div(Styles.contentDiv, id := "content").render
   }
 
@@ -123,7 +123,7 @@ case class MainContent() extends Displayable {
 //  }
 
   override def markup(): Element = {
-    import scalacss.ScalatagsCss._
+    import scalacss.ScalatagsCss.*
     div(Styles.mainContent, id := "mainContent", cls := "col overflow-auto h-100")(
       contentTitle, contentDescription, contentDiv
     ).render

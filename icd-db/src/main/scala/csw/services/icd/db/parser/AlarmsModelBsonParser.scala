@@ -3,7 +3,7 @@ package csw.services.icd.db.parser
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.AlarmsModel
 import icd.web.shared.PdfOptions
-import reactivemongo.api.bson._
+import reactivemongo.api.bson.*
 
 /**
  * See resources/<version>/alarms-schema.conf

@@ -15,7 +15,7 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.Json
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -260,7 +260,7 @@ object IcdGitManager {
       password: String,
       comment: String
   ): Option[IcdVersions.IcdEntry] = {
-    import IcdVersions._
+    import IcdVersions.*
     // sort by convention to avoid duplicates
     val (s, t) = if (Subsystems.compare(subsystem, target) > 0) (target, subsystem) else (subsystem, target)
     // Checkout the icds repo in a temp dir
@@ -318,7 +318,7 @@ object IcdGitManager {
       comment: String,
       updateTag: Boolean = true
   ): Option[ApiVersionInfo] = {
-    import ApiVersions._
+    import ApiVersions.*
 
     def unpublishRelatedIcds(gitWorkDir: File): Unit = {
       val (_, icds) = getAllVersions(gitWorkDir)
@@ -589,7 +589,7 @@ object IcdGitManager {
       password: String,
       comment: String
   ): IcdVersionInfo = {
-    import IcdVersions._
+    import IcdVersions.*
 
     val sorted   = subsystems.sorted
     val sv       = sorted.head

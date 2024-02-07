@@ -2,9 +2,9 @@ package csw.services.icd.db
 
 import csw.services.icd.db.IcdDbQuery.Subscribed
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
-import icd.web.shared.ComponentInfo._
-import icd.web.shared.IcdModels._
-import icd.web.shared._
+import icd.web.shared.ComponentInfo.*
+import icd.web.shared.IcdModels.*
+import icd.web.shared.*
 
 /**
  * Gathers information related to a component in a given version of an ICD.

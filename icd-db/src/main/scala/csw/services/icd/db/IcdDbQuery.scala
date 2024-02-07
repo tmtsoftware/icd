@@ -1,7 +1,7 @@
 package csw.services.icd.db
 
-import csw.services.icd._
-import csw.services.icd.StdName._
+import csw.services.icd.*
+import csw.services.icd.StdName.*
 import csw.services.icd.db.parser.{
   AlarmsModelBsonParser,
   CommandModelBsonParser,
@@ -12,18 +12,18 @@ import csw.services.icd.db.parser.{
   SubscribeModelBsonParser,
   SubsystemModelBsonParser
 }
-import icd.web.shared.ComponentInfo._
+import icd.web.shared.ComponentInfo.*
 import icd.web.shared.{IcdModels, PdfOptions, SubsystemWithVersion}
-import icd.web.shared.IcdModels._
+import icd.web.shared.IcdModels.*
 import play.api.libs.json.JsObject
 import reactivemongo.api.DB
 import reactivemongo.api.bson.BSONDocument
 import reactivemongo.api.bson.collection.BSONCollection
-import reactivemongo.play.json.compat._
-import bson2json._
+import reactivemongo.play.json.compat.*
+import bson2json.*
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
-import lax._
-import json2bson._
+import lax.*
+import json2bson.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
@@ -163,7 +163,7 @@ object IcdDbQuery {
  */
 //noinspection DuplicatedCode
 case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) {
-  import IcdDbQuery._
+  import IcdDbQuery.*
 
   // Search only the given subsystems, or all subsystems, if maybeSubsystems is empty
   private[db] def collectionNameFilter(collName: String): Boolean = {

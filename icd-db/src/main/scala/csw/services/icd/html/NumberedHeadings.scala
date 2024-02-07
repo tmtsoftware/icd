@@ -3,7 +3,7 @@ package csw.services.icd.html
 import icd.web.shared.Headings
 
 import scalatags.Text
-import scalatags.Text.all._
+import scalatags.Text.all.*
 
 /**
  * Adds automatic numbering to HTML headings and,

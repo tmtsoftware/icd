@@ -8,7 +8,7 @@ import org.scalajs.dom.Element
 case class SubsystemSwapper(listener: () => Unit) extends Displayable {
 
   private val swapperItem = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     button(
       tpe := "button",
       cls := "btn btn-secondary",
@@ -18,7 +18,7 @@ case class SubsystemSwapper(listener: () => Unit) extends Displayable {
   }
 
   override def markup(): Element = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     a(swapperItem).render
   }
 

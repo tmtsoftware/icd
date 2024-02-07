@@ -45,13 +45,13 @@ class Application @Inject() (
     authAction: AuthAction
 ) extends AbstractController(components) {
 
-  import ApplicationData._
-  import JsonSupport._
-  import ApplicationActor._
+  import ApplicationData.*
+  import JsonSupport.*
+  import ApplicationActor.*
 
   implicit val timeout: Timeout                       = Timeout(1000.seconds)
   implicit val typedActorSystem: ActorSystem[Nothing] = actorSystem.toTyped
-  import actorSystem._
+  import actorSystem.*
 
   if (!tryDb.isSuccess) {
     println("Error: Failed to connect to the icd database. Make sure mongod is running.")
@@ -600,7 +600,7 @@ class Application @Inject() (
       maybeOmitTypes: Option[String],
       maybeImageFormat: Option[String]
   ): Action[AnyContent] = {
-    import IcdVizOptions._
+    import IcdVizOptions.*
     Action.async { implicit request =>
       val resp: Future[Option[Array[Byte]]] = appActor ? (
         MakeGraph(

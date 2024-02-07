@@ -621,7 +621,7 @@ class ApplicationImpl(db: IcdDb) {
 
   // Packages the diff information for return to browser
   private def getDiffInfo(diff: VersionDiff): DiffInfo = {
-    import DiffsonProtocol._
+    import DiffsonProtocol.*
     val jsValue = Json.toJson(diff.patch)
     val s       = Json.prettyPrint(jsValue)
     DiffInfo(diff.path, s)

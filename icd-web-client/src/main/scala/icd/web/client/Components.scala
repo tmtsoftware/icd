@@ -55,8 +55,8 @@ object Components {
       rowList: List[List[String]],
       tableStyle: scalacss.StyleA = Styles.emptyStyle
   ): TypedTag[HTMLElement] = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
 
     // Returns a table cell markup, checking if the text is already in html format (after markdown processing)
     def mkTableCell(text: String) = {
@@ -124,8 +124,8 @@ object Components {
 //noinspection DuplicatedCode,SameParameterValue
 case class Components(mainContent: MainContent, listener: ComponentListener) {
 
-  import Components._
-  import icd.web.shared.JsonSupport._
+  import Components.*
+  import icd.web.shared.JsonSupport.*
 
   // Action when user clicks on a component link
   private def clickedOnComponent(subsystem: String, component: String)(e: dom.Event): Unit = {
@@ -135,7 +135,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   // Makes the link for a component in the table
   private def makeLinkForComponent(subsystem: String, component: String): TypedTag[Anchor] = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     a(
       title := s"Show API for $subsystem.$component",
       s"$subsystem.$component ",
@@ -151,7 +151,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   // Makes the link for a FITS keyword source to the event that is the source of the keyword
   private def makeLinkForFitsKeySource(fitsChannel: FitsChannel, index: Int) = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     val fitsSource = fitsChannel.source
     div(
       if (index != 0) hr else span(),
@@ -268,8 +268,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       infoList            <- getComponentInfo(sv, Some(targetSv), searchAllSubsystems, clientApi)
       targetInfoList      <- getComponentInfo(targetSv, Some(sv), searchAllSubsystems, clientApi)
     } yield {
-      import scalatags.JsDom.all._
-      import scalacss.ScalatagsCss._
+      import scalatags.JsDom.all.*
+      import scalacss.ScalatagsCss.*
       val titleInfo              = TitleInfo(subsystemInfo, Some(targetSv), maybeIcd)
       val subsystemVersion       = sv.maybeVersion.getOrElse(TitleInfo.unpublished)
       val targetSubsystemVersion = targetSv.maybeVersion.getOrElse(TitleInfo.unpublished)
@@ -357,8 +357,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       icdInfoList         <- getIcdModelList(sv, targetSv)
       archiveReportHtml   <- getArchivedItemsReportHtml(sv2)
     } yield {
-      import scalatags.JsDom.all._
-      import scalacss.ScalatagsCss._
+      import scalatags.JsDom.all.*
+      import scalacss.ScalatagsCss.*
       val titleInfo              = TitleInfo(subsystemInfo, Some(targetSv), maybeIcd)
       val subsystemVersion       = sv.maybeVersion.getOrElse(TitleInfo.unpublished)
       val targetSubsystemVersion = targetSv.maybeVersion.getOrElse(TitleInfo.unpublished)
@@ -401,8 +401,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       searchAllSubsystems: Boolean,
       clientApi: Boolean
   ): Future[List[ComponentInfo]] = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
 
     if (maybeTargetSubsystem.isDefined) {
       val targetSv = maybeTargetSubsystem.get
@@ -491,7 +491,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       forApi: Boolean,
       maybeEventId: Option[String] = None
   ): TypedTag[HTMLDivElement] = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     if (parameterList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default", "FITS Keywords")
@@ -522,7 +522,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       metadataList: List[MetadataModel],
       maybeImageId: Option[String] = None
   ): TypedTag[HTMLDivElement] = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     if (metadataList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Keyword")
@@ -549,7 +549,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       parameterList: List[ParameterModel],
       requiredArgs: List[String]
   ): TypedTag[HTMLDivElement] = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     if (parameterList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default", "Required")
@@ -577,7 +577,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    * @param parameterList list of attributes to display
    */
   private def resultTypeMarkup(parameterList: List[ParameterModel]): TypedTag[HTMLDivElement] = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     if (parameterList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units")
@@ -603,8 +603,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       item: TypedTag[HTMLDivElement],
       colSpan: Int
   ): (TypedTag[HTMLButtonElement], TypedTag[HTMLTableRowElement]) = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
     // button to toggle visibility
     val rowId    = makeHiddenRowId(targetId)
     val buttonId = s"button-$targetId"
@@ -625,14 +625,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   private def formatRate(maybeRate: Option[Double]) = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     val (maxRate, defaultMaxRateUsed) = EventModel.getMaxRate(maybeRate)
     val el                            = if (defaultMaxRateUsed) em(s"$maxRate Hz *") else span(s"$maxRate Hz")
     el.render.outerHTML
   }
 
   private def makeErrorDiv(msg: String): TypedTag[Div] = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     div(cls := "alert alert-warning", role := "alert")(
       span(i(cls := "bi bi-exclamation-triangle"), attr("aria-hidden") := "true"),
       span(em(s" $msg"))
@@ -641,8 +641,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   // Generates the HTML markup to display the component's publish information
   private def publishMarkup(component: ComponentModel, maybePublishes: Option[Publishes], forApi: Boolean, clientApi: Boolean) = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
 
     val compName = component.component
 
@@ -875,8 +875,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   // Generates the HTML markup to display the component's subscribe information
   private def subscribeMarkup(component: ComponentModel, maybeSubscribes: Option[Subscribes], forApi: Boolean) = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
 
     val compName = component.component
 
@@ -1016,7 +1016,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   // Returns a div displaying more details for the given command
   private def makeReceivedCommandDetailsRow(m: ReceiveCommandModel) = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     div(
       if (m.refError.startsWith("Error:")) makeErrorDiv(m.refError) else div(),
       if (m.requirements.isEmpty) div() else p(strong("Requirements: "), m.requirements.mkString(", ")),
@@ -1034,8 +1034,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   // Generates the HTML markup to display the commands a component receives
   private def receivedCommandsMarkup(component: ComponentModel, info: List[ReceivedCommandInfo], clientApi: Boolean) = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
 
     // Only display non-empty tables
     if (info.isEmpty) div()
@@ -1082,8 +1082,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   // Generates the HTML markup to display the commands a component sends
   private def sentCommandsMarkup(component: ComponentModel, info: List[SentCommandInfo]) = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
 
     val compName = component.component
 
@@ -1149,7 +1149,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   // Generates the markup for the commands section (description plus received and sent)
   private def commandsMarkup(component: ComponentModel, maybeCommands: Option[Commands], clientApi: Boolean) = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     val compName = component.component
     maybeCommands match {
       case None => div()
@@ -1171,7 +1171,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       maybeServices: Option[Services],
       clientApi: Boolean
   ) = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     maybeServices match {
       case None => div()
       case Some(services) =>
@@ -1192,8 +1192,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       component: ComponentModel,
       info: List[ServicesRequiredInfo]
   ) = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
     val compName = component.component
     if (info.isEmpty) div()
     else {
@@ -1260,7 +1260,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   // Returns a div displaying the swagger-ui HTML for the given OpenAPI service.
   // The given url serves the OpenApi file from the play server to the embedded swagger-ui web app.
   private def makeProvidedServiceDetailsRow(url: String) = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     div(id := "swagger-ui")(
       embed(
         `type` := "text/html",
@@ -1277,8 +1277,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       info: List[ServiceProvidedInfo],
       clientApi: Boolean
   ) = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
 
     val compName = component.component
     if (info.isEmpty) div()
@@ -1337,8 +1337,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   // Generates a one line table with basic component information
   private def componentInfoTableMarkup(info: ComponentInfo) = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
     div(
       table(
         Styles.componentTable,
@@ -1367,8 +1367,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   // Generates table with related FITS key information
   private def makeFitsKeyTable(fitsDict: FitsDictionary, sv: SubsystemWithVersion) = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
     val fitsKeys = fitsDict.fitsKeys
     div(Styles.component, id := "FITS-Keys")(
       h3(a(name := "FITS-Keys")("FITS Keywords")),
@@ -1413,8 +1413,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       forApi: Boolean,
       clientApi: Boolean
   ): TypedTag[Div] = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
 
     val idStr = getComponentInfoId(info.componentModel.component)
 

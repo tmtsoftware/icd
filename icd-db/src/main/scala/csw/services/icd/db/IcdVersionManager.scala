@@ -1,13 +1,13 @@
 package csw.services.icd.db
 
-import csw.services.icd._
+import csw.services.icd.*
 import icd.web.shared.IcdModels.{ComponentModel, IcdModel, ServiceModel, SubsystemModel}
 import icd.web.shared.{IcdModels, IcdVersion, IcdVersionInfo, PdfOptions, SubsystemWithVersion}
 import org.joda.time.{DateTime, DateTimeZone}
-import diffson.playJson._
-import diffson.lcs._
-import diffson.jsonpatch._
-import diffson.jsonpatch.lcsdiff.remembering._
+import diffson.playJson.*
+import diffson.lcs.*
+import diffson.jsonpatch.*
+import diffson.jsonpatch.lcsdiff.remembering.*
 import csw.services.icd.db.parser.{
   AlarmsModelBsonParser,
   ComponentModelBsonParser,
@@ -21,12 +21,12 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONInteger, BSONObjectID, BSONString}
 import reactivemongo.api.{Cursor, WriteConcern}
 import reactivemongo.api.bson.collection.BSONCollection
-import reactivemongo.play.json.compat._
-import bson2json._
+import reactivemongo.play.json.compat.*
+import bson2json.*
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import icd.web.shared.ComponentInfo.PublishType
-import lax._
-import json2bson._
+import lax.*
+import json2bson.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -107,7 +107,7 @@ object IcdVersionManager {
   object VersionInfo {
     // Creates a VersionInfo instance from an object in the database
     def apply(doc: BSONDocument): VersionInfo = {
-      import reactivemongo.api.bson._
+      import reactivemongo.api.bson.*
       val maybeVersion = doc.getAsOpt[String](versionStrKey)
       val user         = doc.getAsOpt[String](userKey).get
       val comment      = doc.getAsOpt[String](commentKey).get
@@ -208,8 +208,8 @@ object IcdVersionManager {
 //noinspection DuplicatedCode,SpellCheckingInspection
 case class IcdVersionManager(query: IcdDbQuery) {
 
-  import IcdVersionManager._
-  import IcdDbQuery._
+  import IcdVersionManager.*
+  import IcdDbQuery.*
 
   private val db = query.db
 
@@ -853,7 +853,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       }
       docs
         .map { doc =>
-          import reactivemongo.api.bson._
+          import reactivemongo.api.bson.*
           val icdVersion       = doc.getAsOpt[String](versionStrKey).get
           val subsystem        = doc.getAsOpt[String](subsystemKey).get
           val subsystemVersion = doc.getAsOpt[String](subsystemVersionKey).get

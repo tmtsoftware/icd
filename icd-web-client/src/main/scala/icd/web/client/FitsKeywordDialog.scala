@@ -4,8 +4,8 @@ import icd.web.client.Components.ComponentListener
 import icd.web.shared.{FitsChannel, FitsDictionary, FitsKeyInfo, FitsKeywordAndChannel, FitsSource}
 import org.scalajs.dom
 import org.scalajs.dom.{Element, HTMLInputElement, document}
-import scalatags.JsDom.all._
-import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
+import scalatags.JsDom.all.*
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
 
 object FitsKeywordDialog {
   private val allTags = "All"
@@ -33,7 +33,7 @@ object FitsKeywordDialog {
 }
 
 case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListener) extends Displayable {
-  import FitsKeywordDialog._
+  import FitsKeywordDialog.*
 
   private val fitsTags = fitsDict.fitsTags
   private val fitsKeys = fitsDict.fitsKeys
@@ -54,8 +54,8 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
 
   // Makes the link for a FITS keyword source to the event that is the source of the keyword
   private def makeLinkForFitsKeySource(fitsKey: FitsKeyInfo, fitsChannel: FitsChannel, index: Int) = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
 
     val channel  = if (fitsChannel.name.isEmpty) None else Some(fitsChannel.name)
     val maybeTag = tagMap.get(FitsKeywordAndChannel(fitsKey.name, channel))
@@ -125,8 +125,8 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
   }
 
   private def makeFitsTagPanel() = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
     div(Styles.fitsTags)(
       label(Styles.fitsTagsLabel, strong("Tags: ")),
       (allTags :: fitsTags.tags.keys.toList).map { key =>
@@ -153,8 +153,8 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
 
   // Generates table with related FITS key information
   private def makeFitsKeyTable() = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
 
     def makeFitsTableRows() = {
       fitsKeys.map { fitsKey =>

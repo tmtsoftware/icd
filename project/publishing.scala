@@ -1,6 +1,6 @@
 import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
-import sbt.Keys._
-import sbt._
+import sbt.Keys.*
+import sbt.*
 
 //noinspection ScalaFileName
 object DeployApp extends AutoPlugin {
