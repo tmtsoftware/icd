@@ -522,6 +522,7 @@ case class IcdDb(
 
       // Check that default parameter value is valid for declared type
       def checkDefaultParamValue(p: IcdModels.ParameterModel): Option[String] = {
+        lazy val msg = s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid"
         if (p.defaultValue.isEmpty)
           None
         else {
@@ -530,7 +531,7 @@ case class IcdDb(
               None
             else {
               val choices = p.maybeEnum.get.mkString(", ")
-              Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be one of: $choices)")
+              Some(s"$msg (Should be one of: $choices)")
             }
           }
           else if (p.maybeType.isDefined) {
@@ -539,43 +540,47 @@ case class IcdDb(
                 if (p.defaultValue.toBooleanOption.nonEmpty)
                   None
                 else
-                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be one of: true, false)")
+                  Some(s"$msg (Should be one of: true, false)")
               case "integer" =>
-                None
                 if (p.defaultValue.toIntOption.nonEmpty)
                   None
                 else
-                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be an integer value)")
+                  Some(s"$msg (Should be an integer value)")
               case "byte" =>
-                None
                 if (p.defaultValue.toByteOption.nonEmpty)
                   None
                 else
-                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be a byte value)")
+                  Some(s"$msg (Should be a byte value)")
               case "short" =>
-                None
                 if (p.defaultValue.toShortOption.nonEmpty)
                   None
                 else
-                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be a short value)")
+                  Some(s"$msg (Should be a short value)")
               case "long" =>
-                None
                 if (p.defaultValue.toLongOption.nonEmpty)
                   None
                 else
-                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be a long value)")
+                  Some(s"$msg (Should be a long value)")
               case "float" =>
-                None
                 if (p.defaultValue.toFloatOption.nonEmpty)
                   None
                 else
-                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be a float value)")
+                  Some(s"$msg (Should be a float value)")
               case "double" =>
-                None
                 if (p.defaultValue.toDoubleOption.nonEmpty)
                   None
                 else
-                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be a double value)")
+                  Some(s"$msg (Should be a double value)")
+              case "string" =>
+                val s = p.defaultValue
+                val minLen = p.minLength.getOrElse(0)
+                val maxLen = p.maxLength.getOrElse(Int.MaxValue)
+                if (s.length < minLen)
+                  Some(s"$msg (min length is $minLen)")
+                else if (s.length > maxLen)
+                  Some(s"$msg (max length is $maxLen)")
+                else
+                  None
               case _ => None
             }
           }
