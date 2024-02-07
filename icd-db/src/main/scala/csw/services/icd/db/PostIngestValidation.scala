@@ -121,17 +121,24 @@ class PostIngestValidation(db: IcdDb) {
 
     // Check default value element types for array and return Some error message if there is a problem
     def checkArrayType(itemType: String): Option[String] = {
-      def checkJsValue(jsValue: JsValue): Option[String] = jsValue match {
-        case JsNumber(value) =>
-          checkPrimitiveType(itemType, value.toString())
-        case JsArray(values) =>
-          values.flatMap(checkJsValue).headOption
-        case _ =>
-          None
-      }
+      def checkJsValue(jsValue: JsValue): Option[String] =
+        jsValue match {
+          case JsNumber(value) =>
+            checkPrimitiveType(itemType, value.toString())
+          case JsArray(values) =>
+            values.flatMap(checkJsValue).headOption
+          case _ =>
+            None
+        }
       if (p.defaultValue.startsWith("[")) {
-        val list = Json.parse(p.defaultValue).as[List[JsValue]].map(checkJsValue)
-        list.flatten.headOption
+        val jsValues = Json.parse(p.defaultValue).as[List[JsValue]]
+        if (p.maybeDimensions.isDefined && p.maybeDimensions.get.head != jsValues.length) {
+          Some(s"$msg: Wrong top level array dimensions: ${jsValues.length}, expected ${p.maybeDimensions.get.head}")
+        }
+        else {
+          val list = jsValues.map(checkJsValue)
+          list.flatten.headOption
+        }
       }
       else {
         Some(s"$msg: Default array value should start with '['")
