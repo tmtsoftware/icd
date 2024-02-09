@@ -36,6 +36,8 @@ object IcdDbDefaults {
 
   // Suffix used for temp collections while ingesting model files into the DB
   val tmpCollSuffix = ".tmp"
+  // Suffix used for backup collections while validating an ingested subsystem
+  val backupCollSuffix = ".backup"
 
   def connectToDatabase(host: String, port: Int, dbName: String): DB = {
     // Taken from https://stackoverflow.com/questions/54706942/mongoerror-no-primary-node-is-available
@@ -131,7 +133,7 @@ object IcdDb extends App {
 
     opt[String]("component2") valueName "<name>" action { (x, c) =>
       c.copy(targetComponent = Some(x))
-    } text "Specifies the subsytem2 component to be used by any following options (subsystem2 must also be specified)"
+    } text "Specifies the subsystem2 component to be used by any following options (subsystem2 must also be specified)"
 
     opt[String]("icdversion") valueName "<icd-version>" action { (x, c) =>
       c.copy(icdVersion = Some(x))
@@ -488,19 +490,53 @@ case class IcdDb(
    */
   def ingestAndCleanup(dir: File = new File(".")): List[Problem] = {
     val (configs, ingestProblems) = ingest(dir)
-    val subsystemList             = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.config.getString("subsystem"))
+    val subsystemList             = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.config.getString("subsystem")).distinct
+    val componentSubsystemList    = configs.filter(_.stdName == StdName.componentFileNames).map(_.config.getString("subsystem")).distinct
 
     val helper            = new PostIngestValidation(this)
     val componentProblems = helper.checkComponents(configs, subsystemList)
-    val allProblems       = ingestProblems ::: componentProblems
+    val problems          = ingestProblems ::: componentProblems
 
     if (subsystemList.isEmpty)
-      query.afterIngestFiles(allProblems, dbName)
-    else subsystemList.foreach(query.afterIngestSubsystem(_, allProblems, dbName))
+      query.afterIngestFiles(problems, dbName)
+    else
+      subsystemList.foreach(query.afterIngestSubsystem(_, problems, dbName))
 
-    val postIngestProblems = subsystemList.flatMap(helper.checkPostIngest)
+    val postIngestProblems = componentSubsystemList.flatMap(helper.checkPostIngest)
+    val allProblems        = problems ::: postIngestProblems
+    val fatalErrors        = allProblems.filter(_.severity != "warning")
 
-    allProblems ::: postIngestProblems
+    // If there were errors, restore from backup collections, otherwise delete the backup collections
+    if (subsystemList.isEmpty) {
+      val backupPaths = query.getCollectionNames
+        .filter(name => name.endsWith(IcdDbDefaults.backupCollSuffix))
+      if (fatalErrors.isEmpty) {
+        // If there were no errors, delete the backup collections
+        query.deleteCollections(backupPaths)
+      }
+      else {
+        // If there were errors, remove the ingested subsystem collections and restore the backup collections
+        query.renameCollections(backupPaths, IcdDbDefaults.backupCollSuffix, removeSuffix = true, dbName)
+      }
+    }
+    else {
+      subsystemList.foreach { subsystem =>
+        val paths = query.getSubsystemCollectionNames(subsystem)
+        val backupPaths = query.getCollectionNames
+          .filter(name => name.startsWith(s"$subsystem.") && name.endsWith(IcdDbDefaults.backupCollSuffix))
+        if (fatalErrors.isEmpty) {
+          // If there were no errors, delete the backup collections
+          query.deleteCollections(backupPaths)
+        }
+        else {
+          // If there were errors, remove the ingested subsystem collections and restore the backup collections
+          query.deleteCollections(paths)
+          query.renameCollections(backupPaths, IcdDbDefaults.backupCollSuffix, removeSuffix = true, dbName)
+        }
+      }
+    }
+
+    allProblems
   }
 
   /**

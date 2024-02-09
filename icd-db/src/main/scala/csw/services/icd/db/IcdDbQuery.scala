@@ -1,7 +1,7 @@
 package csw.services.icd.db
 
-import csw.services.icd._
-import csw.services.icd.StdName._
+import csw.services.icd.*
+import csw.services.icd.StdName.*
 import csw.services.icd.db.parser.{
   AlarmsModelBsonParser,
   CommandModelBsonParser,
@@ -12,18 +12,19 @@ import csw.services.icd.db.parser.{
   SubscribeModelBsonParser,
   SubsystemModelBsonParser
 }
-import icd.web.shared.ComponentInfo._
+import icd.web.shared.ComponentInfo.*
 import icd.web.shared.{IcdModels, PdfOptions, SubsystemWithVersion}
-import icd.web.shared.IcdModels._
+import icd.web.shared.IcdModels.*
 import play.api.libs.json.JsObject
 import reactivemongo.api.DB
 import reactivemongo.api.bson.BSONDocument
 import reactivemongo.api.bson.collection.BSONCollection
-import reactivemongo.play.json.compat._
-import bson2json._
+import reactivemongo.play.json.compat.*
+import bson2json.*
+import csw.services.icd.db.IcdDbDefaults.backupCollSuffix
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
-import lax._
-import json2bson._
+import lax.*
+import json2bson.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
@@ -559,24 +560,35 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
 
   private def baseName(s: String, suffix: String) = s.dropRight(suffix.length)
 
-  // Rename the given set of temp collections by removing the .tmp suffix.
-  // If there were fatal errors, delete the temp collections without renaming.
-  private def renameTmpCollections(
-      tmpPaths: Set[String],
-      problems: List[Problem],
+  // Rename the given set of collections by adding or removing the given suffix.
+  private[db] def renameCollections(
+      paths: Set[String],
+      suffix: String,
+      removeSuffix: Boolean,
       dbName: String
   ): Unit = {
-    val fatalErrors = problems.filter(_.severity != "warning")
-    tmpPaths.foreach { tmpCollName =>
-      if (fatalErrors.isEmpty) {
-        val collName = baseName(tmpCollName, IcdDbDefaults.tmpCollSuffix)
-        admin.renameCollection(dbName, tmpCollName, collName, dropExisting = true).await
-      }
-      else {
-        val coll = db.collection[BSONCollection](tmpCollName)
-        coll.drop(failIfNotFound = false).await
-      }
+    paths.foreach { path =>
+      val collName = if (removeSuffix) baseName(path, suffix) else s"$path$suffix"
+      admin.renameCollection(dbName, path, collName, dropExisting = true).await
     }
+  }
+
+  // Delete the given collections
+  private[db] def deleteCollections(paths: Set[String]): Unit = {
+    paths.foreach { path =>
+      val coll = db.collection[BSONCollection](path)
+      coll.drop(failIfNotFound = false).await
+    }
+  }
+
+  private[db] def getSubsystemCollectionNames(subsystem: String): Set[String] = {
+    getCollectionNames
+      .filter(name =>
+        name.startsWith(s"$subsystem.")
+          && !name.endsWith(IcdVersionManager.versionSuffix)
+          && !name.endsWith(IcdDbDefaults.tmpCollSuffix)
+          && !name.endsWith(IcdDbDefaults.backupCollSuffix)
+      )
   }
 
   /**
@@ -588,18 +600,30 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
     val tmpPaths = getCollectionNames
       .filter(name => name.startsWith(s"$subsystem.") && name.endsWith(IcdDbDefaults.tmpCollSuffix))
     if (tmpPaths.nonEmpty) {
-      val paths = getCollectionNames
-        .filter(name =>
-          name.startsWith(s"$subsystem.") && !name.endsWith(IcdVersionManager.versionSuffix) && !name
-            .endsWith(IcdDbDefaults.tmpCollSuffix)
-        )
-      val deleted = paths.diff(tmpPaths.map(path => baseName(path, IcdDbDefaults.tmpCollSuffix)))
-      deleted.foreach { collName =>
-        val coll = db.collection[BSONCollection](collName)
-        coll.drop(failIfNotFound = false).await
+      val paths = getSubsystemCollectionNames(subsystem)
+      val fatalErrors = problems.filter(_.severity != "warning")
+      if (fatalErrors.isEmpty) {
+        // Backup all current collections for subsystem, so we can restore them in case of error
+        paths.foreach{ path =>
+          admin.renameCollection(dbName, path, s"$path$backupCollSuffix", dropExisting = true).await
+        }
       }
-      renameTmpCollections(tmpPaths, problems, dbName)
+      // Rename the temp collection that were just ingested so that they are the current collections for the subsystem
+      if (fatalErrors.isEmpty)
+        renameCollections(tmpPaths, IcdDbDefaults.tmpCollSuffix, removeSuffix = true, dbName)
+      else
+        deleteCollections(tmpPaths)
     }
+  }
+
+  // Remove any backup collections after calling afterIngestSubsystem
+  // This is called from when ingesting published APIs from Git, since the extra validation checks are not
+  // done in that case - We don't want to fail to import an already published API because of a newer validation
+  // check.
+  def cleanupAfterIngest(subsystem: String): Unit = {
+    val backupPaths = getCollectionNames
+      .filter(name => name.startsWith(s"$subsystem.") && name.endsWith(IcdDbDefaults.backupCollSuffix))
+    deleteCollections(backupPaths)
   }
 
   /**
@@ -608,9 +632,19 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
    * Note: Since we don't know if an entire subsystem was ingested here, we can't delete any old, removed collections.
    */
   def afterIngestFiles(problems: List[Problem], dbName: String): Unit = {
-    val tmpPaths = getCollectionNames
+    val collectionNames = getCollectionNames
+    val tmpPaths = collectionNames
       .filter(_.endsWith(IcdDbDefaults.tmpCollSuffix))
-    renameTmpCollections(tmpPaths, problems, dbName)
+    val paths = tmpPaths.map(baseName(_, IcdDbDefaults.tmpCollSuffix)).intersect(collectionNames)
+    val fatalErrors = problems.filter(_.severity != "warning")
+    if (fatalErrors.isEmpty) {
+      // Make backup collection, then rename the new temp collection
+      renameCollections(paths, IcdDbDefaults.backupCollSuffix, removeSuffix = false, dbName)
+      renameCollections(tmpPaths, IcdDbDefaults.tmpCollSuffix, removeSuffix = true, dbName)
+    } else {
+      // Delete the new temp collection, since there were errors
+      deleteCollections(tmpPaths)
+    }
   }
 
   /**
