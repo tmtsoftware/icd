@@ -581,8 +581,8 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
     }
   }
 
-  private[db] def getSubsystemCollectionNames(subsystem: String): Set[String] = {
-    getCollectionNames
+  private[db] def getSubsystemCollectionNames(collectionNames: Set[String], subsystem: String): Set[String] = {
+    collectionNames
       .filter(name =>
         name.startsWith(s"$subsystem.")
           && !name.endsWith(IcdVersionManager.versionSuffix)
@@ -597,10 +597,11 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
    * If there were errors, delete the temp collections without renaming.
    */
   def afterIngestSubsystem(subsystem: String, errors: Boolean, dbName: String): Unit = {
-    val tmpPaths = getCollectionNames
+    val collectionNames = getCollectionNames
+    val tmpPaths = collectionNames
       .filter(name => name.startsWith(s"$subsystem.") && name.endsWith(IcdDbDefaults.tmpCollSuffix))
     if (tmpPaths.nonEmpty) {
-      val paths = getSubsystemCollectionNames(subsystem)
+      val paths = getSubsystemCollectionNames(collectionNames, subsystem)
       if (errors) {
         deleteCollections(tmpPaths)
       }

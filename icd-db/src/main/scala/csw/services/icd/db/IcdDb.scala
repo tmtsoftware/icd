@@ -523,11 +523,12 @@ case class IcdDb(
     val postIngestProblems = componentSubsystemList.flatMap(helper.checkPostIngest)
     val allProblems        = problems ::: postIngestProblems
     val errors             = allProblems.exists(_.severity != "warning")
+    val collectionNames = query.getCollectionNames
 
     // If there were errors, restore from backup collections, otherwise delete the backup collections
     if (subsystemList.isEmpty) {
       // No full subsystem was ingested
-      val backupPaths = query.getCollectionNames.filter(name => name.endsWith(IcdDbDefaults.backupCollSuffix))
+      val backupPaths = collectionNames.filter(name => name.endsWith(IcdDbDefaults.backupCollSuffix))
       if (errors) {
         // If there were errors, remove the ingested subsystem collections and restore the backup collections
         query.renameCollections(backupPaths, IcdDbDefaults.backupCollSuffix, removeSuffix = true, dbName)
@@ -540,8 +541,8 @@ case class IcdDb(
     else {
       // We know the full subsystems that were ingested
       subsystemList.foreach { subsystem =>
-        val paths = query.getSubsystemCollectionNames(subsystem)
-        val backupPaths = query.getCollectionNames
+        val paths = query.getSubsystemCollectionNames(collectionNames, subsystem)
+        val backupPaths = collectionNames
           .filter(name => name.startsWith(s"$subsystem.") && name.endsWith(IcdDbDefaults.backupCollSuffix))
         if (!errors) {
           // If there were no errors, delete the backup collections
