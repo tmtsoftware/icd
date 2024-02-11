@@ -527,7 +527,7 @@ case class IcdDb(
 
     // If there were errors, restore from backup collections, otherwise delete the backup collections
     if (subsystemList.isEmpty) {
-      // No full subsystem was ingested
+      // No full subsystem was ingested (maybe just a single component)
       val backupPaths = collectionNames.filter(name => name.endsWith(IcdDbDefaults.backupCollSuffix))
       if (errors) {
         // If there were errors, remove the ingested subsystem collections and restore the backup collections

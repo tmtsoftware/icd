@@ -640,6 +640,7 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
     }
     else {
       // Make backup collection, then rename the new temp collection
+      // Note: If the ingested component is new and an error is found post-ingest, it will not be deleted
       val paths = tmpPaths.map(baseName(_, IcdDbDefaults.tmpCollSuffix)).intersect(collectionNames)
       renameCollections(paths, IcdDbDefaults.backupCollSuffix, removeSuffix = false, dbName)
       renameCollections(tmpPaths, IcdDbDefaults.tmpCollSuffix, removeSuffix = true, dbName)
