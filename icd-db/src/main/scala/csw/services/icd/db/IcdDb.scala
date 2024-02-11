@@ -491,40 +491,59 @@ case class IcdDb(
   def ingestAndCleanup(dir: File = new File(".")): List[Problem] = {
     val (configs, ingestProblems) = ingest(dir)
     val subsystemList             = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.config.getString("subsystem")).distinct
-    val componentSubsystemList    = configs.filter(_.stdName == StdName.componentFileNames).map(_.config.getString("subsystem")).distinct
+    val componentSubsystemList =
+      configs.filter(_.stdName == StdName.componentFileNames).map(_.config.getString("subsystem")).distinct
 
-    val helper            = new PostIngestValidation(this)
-    val componentProblems = helper.checkComponents(configs, subsystemList)
+    val componentProblems = PostIngestValidation.checkComponents(configs, subsystemList)
     val problems          = ingestProblems ::: componentProblems
+    val errors            = problems.exists(_.severity != "warning")
 
     if (subsystemList.isEmpty)
-      query.afterIngestFiles(problems, dbName)
+      query.afterIngestFiles(errors, dbName)
     else
-      subsystemList.foreach(query.afterIngestSubsystem(_, problems, dbName))
+      subsystemList.foreach(query.afterIngestSubsystem(_, errors, dbName))
 
+    if (errors) {
+      // If there were errors, return them
+      problems
+    } else {
+      // otherwise do the extra post-ingest validation
+      validatePostIngest(problems, subsystemList, componentSubsystemList)
+    }
+  }
+
+  // Do some validation checks after ingesting the model files into the database.
+  // If errors are found, restore from backup collections.
+  private def validatePostIngest(
+      problems: List[Problem],
+      subsystemList: List[String],
+      componentSubsystemList: List[String]
+  ): List[Problem] = {
+    val helper             = new PostIngestValidation(this)
     val postIngestProblems = componentSubsystemList.flatMap(helper.checkPostIngest)
     val allProblems        = problems ::: postIngestProblems
-    val fatalErrors        = allProblems.filter(_.severity != "warning")
+    val errors             = allProblems.exists(_.severity != "warning")
 
     // If there were errors, restore from backup collections, otherwise delete the backup collections
     if (subsystemList.isEmpty) {
-      val backupPaths = query.getCollectionNames
-        .filter(name => name.endsWith(IcdDbDefaults.backupCollSuffix))
-      if (fatalErrors.isEmpty) {
-        // If there were no errors, delete the backup collections
-        query.deleteCollections(backupPaths)
-      }
-      else {
+      // No full subsystem was ingested
+      val backupPaths = query.getCollectionNames.filter(name => name.endsWith(IcdDbDefaults.backupCollSuffix))
+      if (errors) {
         // If there were errors, remove the ingested subsystem collections and restore the backup collections
         query.renameCollections(backupPaths, IcdDbDefaults.backupCollSuffix, removeSuffix = true, dbName)
       }
+      else {
+        // If there were no errors, delete the backup collections
+        query.deleteCollections(backupPaths)
+      }
     }
     else {
+      // We know the full subsystems that were ingested
       subsystemList.foreach { subsystem =>
         val paths = query.getSubsystemCollectionNames(subsystem)
         val backupPaths = query.getCollectionNames
           .filter(name => name.startsWith(s"$subsystem.") && name.endsWith(IcdDbDefaults.backupCollSuffix))
-        if (fatalErrors.isEmpty) {
+        if (!errors) {
           // If there were no errors, delete the backup collections
           query.deleteCollections(backupPaths)
         }
@@ -578,6 +597,8 @@ case class IcdDb(
   /**
    * Ingests all the files with the standard names (stdNames) in the given directory and recursively
    * in its subdirectories into the database.
+   * Note that new collection will be a temporary one (ends with .tmp), to be renamed later if there
+   * are no errors (such as validation errors done after ingesting).
    *
    * @param dir the top level directory containing one or more of the the standard set of ICD files
    *            and any number of subdirectories containing ICD files

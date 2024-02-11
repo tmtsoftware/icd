@@ -594,25 +594,24 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
   /**
    * Drop any mongodb collections for components in the given subsystem that are not found in the just ingested version,
    * then rename the temp collections by removing the .tmp suffix.
-   * If there were fatal errors, delete the temp collections without renaming.
+   * If there were errors, delete the temp collections without renaming.
    */
-  def afterIngestSubsystem(subsystem: String, problems: List[Problem], dbName: String): Unit = {
+  def afterIngestSubsystem(subsystem: String, errors: Boolean, dbName: String): Unit = {
     val tmpPaths = getCollectionNames
       .filter(name => name.startsWith(s"$subsystem.") && name.endsWith(IcdDbDefaults.tmpCollSuffix))
     if (tmpPaths.nonEmpty) {
       val paths = getSubsystemCollectionNames(subsystem)
-      val fatalErrors = problems.filter(_.severity != "warning")
-      if (fatalErrors.isEmpty) {
+      if (errors) {
+        deleteCollections(tmpPaths)
+      }
+      else {
         // Backup all current collections for subsystem, so we can restore them in case of error
-        paths.foreach{ path =>
+        paths.foreach { path =>
           admin.renameCollection(dbName, path, s"$path$backupCollSuffix", dropExisting = true).await
         }
-      }
-      // Rename the temp collection that were just ingested so that they are the current collections for the subsystem
-      if (fatalErrors.isEmpty)
+        // Rename the temp collection that were just ingested so that they are the current collections for the subsystem
         renameCollections(tmpPaths, IcdDbDefaults.tmpCollSuffix, removeSuffix = true, dbName)
-      else
-        deleteCollections(tmpPaths)
+      }
     }
   }
 
@@ -628,22 +627,21 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
 
   /**
    * Rename any temp collections that were just ingested.
-   * If there were fatal errors, delete the temp collections without renaming.
+   * If there were errors, delete the temp collections without renaming.
    * Note: Since we don't know if an entire subsystem was ingested here, we can't delete any old, removed collections.
    */
-  def afterIngestFiles(problems: List[Problem], dbName: String): Unit = {
+  private[db] def afterIngestFiles(errors: Boolean, dbName: String): Unit = {
     val collectionNames = getCollectionNames
-    val tmpPaths = collectionNames
-      .filter(_.endsWith(IcdDbDefaults.tmpCollSuffix))
-    val paths = tmpPaths.map(baseName(_, IcdDbDefaults.tmpCollSuffix)).intersect(collectionNames)
-    val fatalErrors = problems.filter(_.severity != "warning")
-    if (fatalErrors.isEmpty) {
-      // Make backup collection, then rename the new temp collection
-      renameCollections(paths, IcdDbDefaults.backupCollSuffix, removeSuffix = false, dbName)
-      renameCollections(tmpPaths, IcdDbDefaults.tmpCollSuffix, removeSuffix = true, dbName)
-    } else {
+    val tmpPaths        = collectionNames.filter(_.endsWith(IcdDbDefaults.tmpCollSuffix))
+    if (errors) {
       // Delete the new temp collection, since there were errors
       deleteCollections(tmpPaths)
+    }
+    else {
+      // Make backup collection, then rename the new temp collection
+      val paths = tmpPaths.map(baseName(_, IcdDbDefaults.tmpCollSuffix)).intersect(collectionNames)
+      renameCollections(paths, IcdDbDefaults.backupCollSuffix, removeSuffix = false, dbName)
+      renameCollections(tmpPaths, IcdDbDefaults.tmpCollSuffix, removeSuffix = true, dbName)
     }
   }
 

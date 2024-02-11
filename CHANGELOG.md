@@ -17,7 +17,7 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - For graphs: The graph generated for ICDs (two subsystems/components) now only includes connections between the two (previously connections to other subsystems were also included).
 - Added new optional "category" field for events with possible values: [DEMAND, CONTROL, EVENT, STATUS] (See "Event Categories" at end of [README.md](README.md))
 - Replaced general usage of "TMT" with "TIO" (TMT International Observatory) in web app and docs.
-- Added validation check for parameters that the "defaultValue" is valid for the declared type (for primitive types)
+- Added validation check for parameters that the "defaultValue" is valid for the declared type
 
 ## [ICD v2.2.3] - 2023-03-05
 

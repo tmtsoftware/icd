@@ -7,6 +7,7 @@ import icd.web.shared.{IcdModels, SubsystemWithVersion}
 import play.api.libs.json.{JsArray, JsNumber, JsValue, Json}
 
 import java.io.File
+import PostIngestValidation.*
 
 /**
  * Helper class used for additional validation checks made after ingesting icd model files into the database
@@ -14,37 +15,6 @@ import java.io.File
  */
 class PostIngestValidation(db: IcdDb) {
   private val versionManager = db.versionManager
-
-  // Returns list of duplicates in given list
-  private def getDuplicates(list: List[String]) = list.groupBy(identity).collect { case (x, List(_, _, _*)) => x }.toList
-
-  // Check for duplicate component names
-  private def checkForDuplicateComponentNames(list: List[StdConfig]): List[String] = {
-    val components = list.flatMap {
-      case x if x.stdName.isComponentModel =>
-        val subsystem = x.config.getString("subsystem")
-        val component = x.config.getString("component")
-        Some(s"$subsystem.$component")
-      case _ => None
-    }
-    getDuplicates(components)
-  }
-
-  // Check for misspelled subsystem or component names
-  private def checkForWrongComponentNames(list: List[StdConfig]): List[String] = {
-    // get pairs of (dir -> subsystem.component) and check if there are directories that contain
-    // multiple different values (should all be the same)
-    val pairs = list.flatMap {
-      case x if x.stdName.hasComponent =>
-        val dir       = new File(x.fileName).getParent
-        val subsystem = x.config.getString("subsystem")
-        val component = x.config.getString("component")
-        Some(dir -> s"$subsystem.$component")
-      case _ => None
-    }
-    val map = pairs.groupBy(_._1).map { case (k, v) => (k, v.map(_._2)) }
-    map.values.toList.map(_.distinct).filter(_.size != 1).map(_.mkString(" != "))
-  }
 
   // Check that default parameter value is valid for declared type
   // and return Some(errorMessage) if there is an error.
@@ -344,6 +314,39 @@ class PostIngestValidation(db: IcdDb) {
     }
     duplicateKeywordChannelProblems ::: problems
   }
+}
+
+object PostIngestValidation {
+  // Returns list of duplicates in given list
+  private def getDuplicates(list: List[String]) = list.groupBy(identity).collect { case (x, List(_, _, _*)) => x }.toList
+
+  // Check for duplicate component names
+  private def checkForDuplicateComponentNames(list: List[StdConfig]): List[String] = {
+    val components = list.flatMap {
+      case x if x.stdName.isComponentModel =>
+        val subsystem = x.config.getString("subsystem")
+        val component = x.config.getString("component")
+        Some(s"$subsystem.$component")
+      case _ => None
+    }
+    getDuplicates(components)
+  }
+
+  // Check for misspelled subsystem or component names
+  private def checkForWrongComponentNames(list: List[StdConfig]): List[String] = {
+    // get pairs of (dir -> subsystem.component) and check if there are directories that contain
+    // multiple different values (should all be the same)
+    val pairs = list.flatMap {
+      case x if x.stdName.hasComponent =>
+        val dir       = new File(x.fileName).getParent
+        val subsystem = x.config.getString("subsystem")
+        val component = x.config.getString("component")
+        Some(dir -> s"$subsystem.$component")
+      case _ => None
+    }
+    val map = pairs.groupBy(_._1).map { case (k, v) => (k, v.map(_._2)) }
+    map.values.toList.map(_.distinct).filter(_.size != 1).map(_.mkString(" != "))
+  }
 
   /**
    * Check for duplicate subsystem-model.conf file (found one in TCS) and component names
@@ -372,5 +375,4 @@ class PostIngestValidation(db: IcdDb) {
 
     duplicateSubsystemProblems ::: duplicateComponentProblems ::: wrongComponentProblems
   }
-
 }

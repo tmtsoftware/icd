@@ -11,21 +11,16 @@ import org.scalatest.funsuite.AnyFunSuite
  */
 //noinspection TypeAnnotation
 class DefaultValueTest extends AnyFunSuite {
-  val dbName = "test"
-
-  val testDir = {
-    val d1 = new File("src/test/resources/bad-test")
-    val d2 = new File("icd-db/src/test/resources/bad-test")
-    if (d1.exists) d1 else d2
-  }
-
   test("Ingest TEST example subsystem into database, then query the DB") {
+    val dbName = "test"
     val db = IcdDb(dbName)
     db.dropDatabase() // start with a clean db for test
 
-    val problems = db.ingestAndCleanup(testDir)
+    val testHelper = new TestHelper(db)
+    val dir = TestHelper.getTestDir("icd-db/src/test/resources/bad-test")
+    val problems = db.ingestAndCleanup(dir)
     val s        = problems.map(_.toString).mkString("\n")
-    println(s)
+//    println(s)
     val expected =
       """error: 'In parameter pipeline, defaultValue badValue is invalid (Should be one of: readout-imager, readout-ifs, online-imager, online-ifs, full-imager, full-ifs, all)' in command 'TEST.testComp.STOP''
         |error: 'In parameter rawPosition, defaultValue -1 is invalid: Value -1 is out of declared range for type integer (0 ≤ x)' in command 'TEST.testComp.testCommand''
