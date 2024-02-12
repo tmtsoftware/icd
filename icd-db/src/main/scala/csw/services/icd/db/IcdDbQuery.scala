@@ -164,7 +164,7 @@ object IcdDbQuery {
  */
 //noinspection DuplicatedCode
 case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) {
-  import IcdDbQuery._
+  import IcdDbQuery.*
 
   // Search only the given subsystems, or all subsystems, if maybeSubsystems is empty
   private[db] def collectionNameFilter(collName: String): Boolean = {
