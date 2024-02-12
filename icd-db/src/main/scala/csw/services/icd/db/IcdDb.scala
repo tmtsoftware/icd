@@ -9,11 +9,11 @@ import csw.services.icd.*
 import csw.services.icd.codegen.{JavaCodeGenerator, PythonCodeGenerator, ScalaCodeGenerator, TypescriptCodeGenerator}
 import csw.services.icd.db.parser.{BaseModelParser, IcdModelParser, ServiceModelParser, SubsystemModelParser}
 import csw.services.icd.db.ComponentDataReporter.*
+import csw.services.icd.db.IcdDbDefaults.{backupCollSuffix, tmpCollSuffix}
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.fits.IcdFits
 import diffson.playJson.DiffsonProtocol
-import icd.web.shared.IcdModels.{EventModel, ImageModel, ReceiveCommandModel}
-import icd.web.shared.{BuildInfo, HtmlHeadings, IcdModels, PdfOptions, SubsystemWithVersion}
+import icd.web.shared.{BuildInfo, HtmlHeadings, PdfOptions, SubsystemWithVersion}
 import io.swagger.util.Yaml
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
@@ -37,6 +37,8 @@ object IcdDbDefaults {
 
   // Suffix used for temp collections while ingesting model files into the DB
   val tmpCollSuffix = ".tmp"
+  // Suffix used for backup collections while validating an ingested subsystem
+  val backupCollSuffix = ".backup"
 
   def connectToDatabase(host: String, port: Int, dbName: String): DB = {
     // Taken from https://stackoverflow.com/questions/54706942/mongoerror-no-primary-node-is-available
@@ -132,7 +134,7 @@ object IcdDb extends App {
 
     opt[String]("component2") valueName "<name>" action { (x, c) =>
       c.copy(targetComponent = Some(x))
-    } text "Specifies the subsytem2 component to be used by any following options (subsystem2 must also be specified)"
+    } text "Specifies the subsystem2 component to be used by any following options (subsystem2 must also be specified)"
 
     opt[String]("icdversion") valueName "<icd-version>" action { (x, c) =>
       c.copy(icdVersion = Some(x))
@@ -475,282 +477,7 @@ case class IcdDb(
 
   val query: IcdDbQuery                 = IcdDbQuery(db, admin, None)
   val versionManager: IcdVersionManager = IcdVersionManager(query)
-  val manager: IcdDbManager             = IcdDbManager(db, versionManager)
-
-  // Returns list of duplicates in given list
-  private def getDuplicates(list: List[String]) = list.groupBy(identity).collect { case (x, List(_, _, _*)) => x }.toList
-
-  // Check for duplicate component names
-  private def checkForDuplicateComponentNames(list: List[StdConfig]): List[String] = {
-    val components = list.flatMap {
-      case x if x.stdName.isComponentModel =>
-        val subsystem = x.config.getString("subsystem")
-        val component = x.config.getString("component")
-        Some(s"$subsystem.$component")
-      case _ => None
-    }
-    getDuplicates(components)
-  }
-
-  // Check for misspelled subsystem or component names
-  private def checkForWrongComponentNames(list: List[StdConfig]): List[String] = {
-    // get pairs of (dir -> subsystem.component) and check if there are directories that contain
-    // multiple different values (should all be the same)
-    val pairs = list.flatMap {
-      case x if x.stdName.hasComponent =>
-        val dir       = new File(x.fileName).getParent
-        val subsystem = x.config.getString("subsystem")
-        val component = x.config.getString("component")
-        Some(dir -> s"$subsystem.$component")
-      case _ => None
-    }
-    val map = pairs.groupBy(_._1).map { case (k, v) => (k, v.map(_._2)) }
-    map.values.toList.map(_.distinct).filter(_.size != 1).map(_.mkString(" != "))
-  }
-
-  // Check for obvious errors, such as duplicate event or parameter names after ingesting model files for subsystem
-  private def checkPostIngest(subsystem: String): List[Problem] = {
-    // Check for min > max and defaultValue in parameter fields and return list of error messages for the parameter list
-    def getParamMinMaxProblems(parameterList: List[IcdModels.ParameterModel]): List[String] = {
-      def strToDouble(s: String): Double = {
-        s match {
-          case "inf" | "Inf"   => Double.MaxValue
-          case "-inf" | "-Inf" => Double.MinValue
-          case _               => s.toDoubleOption.getOrElse(0.0)
-        }
-      }
-
-      // Check that default parameter value is valid for declared type
-      def checkDefaultParamValue(p: IcdModels.ParameterModel): Option[String] = {
-        if (p.defaultValue.isEmpty)
-          None
-        else {
-          if (p.maybeEnum.isDefined) {
-            if (p.maybeEnum.get.contains(p.defaultValue))
-              None
-            else {
-              val choices = p.maybeEnum.get.mkString(", ")
-              Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be one of: $choices)")
-            }
-          }
-          else if (p.maybeType.isDefined) {
-            p.maybeType.get match {
-              case "boolean" =>
-                if (p.defaultValue.toBooleanOption.nonEmpty)
-                  None
-                else
-                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be one of: true, false)")
-              case "integer" =>
-                None
-                if (p.defaultValue.toIntOption.nonEmpty)
-                  None
-                else
-                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be an integer value)")
-              case "byte" =>
-                None
-                if (p.defaultValue.toByteOption.nonEmpty)
-                  None
-                else
-                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be a byte value)")
-              case "short" =>
-                None
-                if (p.defaultValue.toShortOption.nonEmpty)
-                  None
-                else
-                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be a short value)")
-              case "long" =>
-                None
-                if (p.defaultValue.toLongOption.nonEmpty)
-                  None
-                else
-                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be a long value)")
-              case "float" =>
-                None
-                if (p.defaultValue.toFloatOption.nonEmpty)
-                  None
-                else
-                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be a float value)")
-              case "double" =>
-                None
-                if (p.defaultValue.toDoubleOption.nonEmpty)
-                  None
-                else
-                  Some(s"In parameter ${p.name}, defaultValue ${p.defaultValue} is invalid (Should be a double value)")
-              case _ => None
-            }
-          }
-          else // if (p.maybeArrayType.isDefined) {
-            None
-        }
-      }
-
-      val list = parameterList.flatMap { p =>
-        val a =
-          if (
-            p.maximum.isDefined && p.minimum.isDefined
-            && strToDouble(p.maximum.get) < strToDouble(p.minimum.get)
-          )
-            Some(s"In parameter ${p.name}, maximum (${p.maximum.get}) < minimum (${p.minimum.get})")
-          else None
-        val b =
-          if (p.maxLength.isDefined && p.minLength.isDefined && p.maxLength.get < p.minLength.get)
-            Some(s"In parameter ${p.name}, maxLength (${p.maxLength.get}) < minLength (${p.minLength.get})")
-          else None
-        val c =
-          if (p.maxItems.isDefined && p.minItems.isDefined && p.maxItems.get < p.minItems.get)
-            Some(s"In parameter ${p.name}, maxItems (${p.maxItems.get}) < minItems (${p.minItems.get})")
-          else None
-        val d = checkDefaultParamValue(p)
-        List(a, b, c, d)
-      }
-      list.flatten
-    }
-
-    // Check for min > max in event parameter fields
-    def getMinMaxEventProblems(prefix: String, events: List[EventModel], name: String): List[Problem] = {
-      events.flatMap(event =>
-        getParamMinMaxProblems(event.parameterList)
-          .map(s => Problem("error", s"'$s' in $name '$prefix.${event.name}''"))
-      )
-    }
-
-    // Check for min > max in command parameter fields
-    def getMinMaxCommandProblems(prefix: String, commands: List[ReceiveCommandModel]): List[Problem] = {
-      commands.flatMap(command =>
-        getParamMinMaxProblems(command.parameters)
-          .map(s => Problem("error", s"'$s' in command '$prefix.${command.name}''"))
-      )
-    }
-
-    def getEventProblems(prefix: String, events: List[EventModel], name: String): List[Problem] = {
-      val p1 = getDuplicates(events.map(_.name)).map(s => Problem("error", s"Duplicate $name name: '$s''"))
-      val p2 = events.flatMap(event =>
-        getDuplicates(event.parameterList.map(_.name))
-          .map(s => Problem("error", s"Duplicate parameter name '$s' in $name '$prefix.${event.name}''"))
-      )
-      p1 ::: p2
-    }
-
-    def getImageProblems(prefix: String, images: List[ImageModel]): List[Problem] = {
-      val p1 = getDuplicates(images.map(_.name)).map(s => Problem("error", s"Duplicate image name: '$s''"))
-      val p2 = images.flatMap(image =>
-        getDuplicates(image.metadataList.map(_.name))
-          .map(s => Problem("error", s"Duplicate metadata name '$s' in image: '$prefix.${image.name}''"))
-      )
-      p1 ::: p2
-    }
-
-    def getCommandProblems(prefix: String, commands: List[ReceiveCommandModel]): List[Problem] = {
-      val p1 = getDuplicates(commands.map(_.name)).map(s => Problem("error", s"Duplicate command name: '$s''"))
-      val p2 = commands.flatMap(command =>
-        getDuplicates(command.parameters.map(_.name))
-          .map(s => Problem("error", s"Duplicate parameter name '$s' in command '$prefix.${command.name}''"))
-      )
-      p1 ::: p2
-    }
-
-    def checkDuplicateKeywordChannelPair(models: List[IcdModels]): List[Problem] = {
-      val keywordChannelList = for {
-        icdModels    <- models
-        publishModel <- icdModels.publishModel.toList
-        events       <- publishModel.eventList
-        params       <- events.parameterList
-        keyword      <- params.keywords
-      } yield {
-        (keyword.name, keyword.channel.getOrElse(""))
-      }
-      // Check for duplicates
-      keywordChannelList
-        .groupBy(identity)
-        .collect { case (x, List(_, _, _*)) => x }
-        .toList
-        .map(p =>
-          if (p._2.isEmpty)
-            Problem("error", s"Duplicate FITS keyword: ${p._1}")
-          else
-            Problem("error", s"Duplicate FITS keyword, channel pair: keyword: ${p._1}, channel: ${p._2}")
-        )
-    }
-
-    def getFitsKeywordProblems(
-        prefix: String,
-        events: List[EventModel],
-        allowedFitsKeyNames: Set[String],
-        allowedChannels: Set[String]
-    ): List[Problem] = {
-      if (allowedFitsKeyNames.isEmpty) Nil
-      else {
-        val result = for {
-          event <- events
-          p     <- event.parameterList
-          k     <- p.keywords
-        } yield {
-          val keyNameProblems =
-            if (allowedFitsKeyNames.contains(k.name)) None
-            else Some(Problem("error", s"$prefix.${event.name}: ${k.name} is not in the FITS dictionary"))
-          val channelNameProblems =
-            if (k.channel.isEmpty || allowedChannels.contains(k.channel.get)) None
-            else {
-              val msg1 =
-                s"Event: $prefix.${event.name}, parameter: ${p.name}, FITS keyword: ${k.name}: Channel ${k.channel.get} is not defined.  "
-              val msg2 = if (allowedChannels.nonEmpty) s"Should be one of: ${allowedChannels.mkString(", ")}" else ""
-              Some(Problem("error", msg1 + msg2))
-            }
-          keyNameProblems.toList ::: channelNameProblems.toList
-        }
-        result.flatten
-      }
-    }
-
-    val icdFits                         = IcdFits(this)
-    val allowedFitsKeyNames             = icdFits.getFitsKeyInfo(None).map(_.name).toSet
-    val availableFitsKeyChannels        = icdFits.getFitsChannels.map(c => c.subsystem -> c.channels).toMap
-    val sv                              = SubsystemWithVersion(subsystem, None, None)
-    val models                          = versionManager.getResolvedModels(sv, None, Map.empty)
-    val duplicateKeywordChannelProblems = checkDuplicateKeywordChannelPair(models)
-    val problems = models.flatMap { icdModels =>
-      val publishProblems = icdModels.publishModel.toList.flatMap { publishModel =>
-        val prefix          = s"${publishModel.subsystem}.${publishModel.component}"
-        val allowedChannels = availableFitsKeyChannels.get(publishModel.subsystem).toList.flatten.toSet
-        getMinMaxEventProblems(prefix, publishModel.eventList, "event") :::
-        getMinMaxEventProblems(prefix, publishModel.currentStateList, "current state") :::
-        getEventProblems(prefix, publishModel.eventList, "event") :::
-        getFitsKeywordProblems(prefix, publishModel.eventList, allowedFitsKeyNames, allowedChannels) :::
-        getEventProblems(prefix, publishModel.currentStateList, "current state") :::
-        getImageProblems(prefix, publishModel.imageList)
-      }
-      val commandProblems = icdModels.commandModel.toList.flatMap { commandModel =>
-        val prefix = s"${commandModel.subsystem}.${commandModel.component}"
-        getMinMaxCommandProblems(prefix, commandModel.receive) :::
-        getCommandProblems(prefix, commandModel.receive)
-      }
-      publishProblems ::: commandProblems
-    }
-    duplicateKeywordChannelProblems ::: problems
-  }
-
-  // Check for duplicate subsystem-model.conf file (found one in TCS) and component names
-  private def checkComponents(configs: List[StdConfig], subsystemList: List[String]): List[Problem] = {
-    val duplicateSubsystems = subsystemList.diff(subsystemList.toSet.toList)
-    val duplicateComponents = checkForDuplicateComponentNames(configs)
-    val wrongComponents     = checkForWrongComponentNames(configs)
-    val duplicateSubsystemProblems =
-      if (duplicateSubsystems.nonEmpty)
-        List(Problem("error", s"Duplicate subsystem-model.conf found: ${duplicateSubsystems.mkString(", ")}"))
-      else Nil
-
-    val duplicateComponentProblems =
-      if (duplicateComponents.nonEmpty)
-        List(Problem("error", s"Duplicate component names found: ${duplicateComponents.mkString(", ")}"))
-      else Nil
-
-    val wrongComponentProblems =
-      if (wrongComponents.nonEmpty)
-        List(Problem("error", s"Conflicting component names found: ${wrongComponents.mkString(", ")}"))
-      else Nil
-
-    duplicateSubsystemProblems ::: duplicateComponentProblems ::: wrongComponentProblems
-  }
+  private val manager: IcdDbManager     = IcdDbManager(db, versionManager)
 
   /**
    * Ingests all the files with the standard names (stdNames) in the given directory and recursively
@@ -764,18 +491,53 @@ case class IcdDb(
    */
   def ingestAndCleanup(dir: File = new File(".")): List[Problem] = {
     val (configs, ingestProblems) = ingest(dir)
-    val subsystemList             = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.config.getString("subsystem"))
+    val subsystemList             = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.config.getString("subsystem")).distinct
+    val componentSubsystemList =
+      configs.filter(_.stdName == StdName.componentFileNames).map(_.config.getString("subsystem")).distinct
 
-    val componentProblems = checkComponents(configs, subsystemList)
-    val allProblems       = ingestProblems ::: componentProblems
+    val componentProblems = PostIngestValidation.checkComponents(configs, subsystemList)
+    val problems          = ingestProblems ::: componentProblems
+    val errors            = problems.exists(_.severity != "warning")
 
-    if (subsystemList.isEmpty)
-      query.afterIngestFiles(allProblems, dbName)
-    else subsystemList.foreach(query.afterIngestSubsystem(_, allProblems, dbName))
+    val (newCollections, backupCollections) =
+      if (subsystemList.isEmpty) {
+        query.afterIngest(None, errors, dbName)
+      }
+      else {
+        val (a, b) = subsystemList.map(subsystem => query.afterIngest(Some(subsystem), errors, dbName)).unzip
+        (a.flatten.toSet, b.flatten.toSet)
+      }
 
-    val postIngestProblems = subsystemList.flatMap(checkPostIngest)
+    if (errors) {
+      // If there were errors, return them
+      problems
+    }
+    else {
+      // otherwise do the extra post-ingest validation
+      validatePostIngest(componentSubsystemList, newCollections, backupCollections)
+    }
+  }
 
-    allProblems ::: postIngestProblems
+  // Do some validation checks after ingesting the model files into the database.
+  // If errors are found, restore from backup collections.
+  private def validatePostIngest(
+      componentSubsystemList: List[String],
+      newCollections: Set[String],
+      backupCollections: Set[String]
+  ): List[Problem] = {
+    val helper   = new PostIngestValidation(this)
+    val problems = componentSubsystemList.flatMap(helper.checkPostIngest)
+    val errors   = problems.exists(_.severity != "warning")
+    if (errors) {
+      // If there were errors, remove the ingested subsystem collections and restore the backup collections
+      query.deleteCollections(newCollections)
+      query.renameCollections(backupCollections, backupCollSuffix, removeSuffix = true, dbName)
+    }
+    else {
+      // If there were no errors, delete the backup collections
+      query.deleteCollections(backupCollections)
+    }
+    problems
   }
 
   /**
@@ -817,6 +579,8 @@ case class IcdDb(
   /**
    * Ingests all the files with the standard names (stdNames) in the given directory and recursively
    * in its subdirectories into the database.
+   * Note that new collection will be a temporary one (ends with .tmp), to be renamed later if there
+   * are no errors (such as validation errors done after ingesting).
    *
    * @param dir the top level directory containing one or more of the the standard set of ICD files
    *            and any number of subdirectories containing ICD files
@@ -861,7 +625,7 @@ case class IcdDb(
 
   /**
    * Ingests the given ICD model objects into the db (based on the contents of one subsystem API directory).
-   * The collections created have the suffix IcdDbDefaults.tmpCollSuffix and must be renamed, if there are no errors.
+   * The collections created have the suffix tmpCollSuffix and must be renamed, if there are no errors.
    *
    * @param stdConfig ICD model file packaged as a StdConfig object
    * @return a list describing the problems, if any
@@ -873,7 +637,7 @@ case class IcdDb(
       val parseOptions = new ParseOptions()
       parseOptions.setResolve(true)
       parseOptions.setResolveFully(true)
-      val tmpName     = s"$collectionName${IcdDbDefaults.tmpCollSuffix}"
+      val tmpName     = s"$collectionName$tmpCollSuffix"
       val parseResult = new OpenAPIV3Parser().readLocation(fileName, null, parseOptions)
       val problems    = parseResult.getMessages.asScala.toList.map(Problem("error", _))
       if (problems.nonEmpty) problems
@@ -912,7 +676,7 @@ case class IcdDb(
 
     try {
       val coll    = getCollectionName(stdConfig)
-      val tmpName = s"$coll${IcdDbDefaults.tmpCollSuffix}"
+      val tmpName = s"$coll$tmpCollSuffix"
       ingestConfig(coll, tmpName, stdConfig.config)
       ingestOpenApiFiles(coll)
     }

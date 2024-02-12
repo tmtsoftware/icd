@@ -21,6 +21,7 @@ import reactivemongo.api.bson.BSONDocument
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.play.json.compat.*
 import bson2json.*
+import csw.services.icd.db.IcdDbDefaults.{backupCollSuffix, tmpCollSuffix}
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import lax.*
 import json2bson.*
@@ -163,7 +164,7 @@ object IcdDbQuery {
  */
 //noinspection DuplicatedCode
 case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) {
-  import IcdDbQuery.*
+  import IcdDbQuery._
 
   // Search only the given subsystems, or all subsystems, if maybeSubsystems is empty
   private[db] def collectionNameFilter(collName: String): Boolean = {
@@ -559,58 +560,78 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
 
   private def baseName(s: String, suffix: String) = s.dropRight(suffix.length)
 
-  // Rename the given set of temp collections by removing the .tmp suffix.
-  // If there were fatal errors, delete the temp collections without renaming.
-  private def renameTmpCollections(
-      tmpPaths: Set[String],
-      problems: List[Problem],
+  // Rename the given set of collections by adding or removing the given suffix.
+  private[db] def renameCollections(
+      paths: Set[String],
+      suffix: String,
+      removeSuffix: Boolean,
       dbName: String
-  ): Unit = {
-    val fatalErrors = problems.filter(_.severity != "warning")
-    tmpPaths.foreach { tmpCollName =>
-      if (fatalErrors.isEmpty) {
-        val collName = baseName(tmpCollName, IcdDbDefaults.tmpCollSuffix)
-        admin.renameCollection(dbName, tmpCollName, collName, dropExisting = true).await
+  ): Set[String] = {
+    paths.map { path =>
+      val collName = if (removeSuffix) baseName(path, suffix) else s"$path$suffix"
+      admin.renameCollection(dbName, path, collName, dropExisting = true).await
+      collName
+    }
+  }
+
+  // Delete the given collections
+  private[db] def deleteCollections(paths: Set[String]): Unit = {
+    paths.foreach { path =>
+      val coll = db.collection[BSONCollection](path)
+      coll.drop(failIfNotFound = false).await
+    }
+  }
+
+  private[db] def getSubsystemCollectionNames(collectionNames: Set[String], subsystem: String): Set[String] = {
+    collectionNames
+      .filter(name =>
+        name.startsWith(s"$subsystem.")
+          && !name.endsWith(IcdVersionManager.versionSuffix)
+          && !name.endsWith(tmpCollSuffix)
+          && !name.endsWith(backupCollSuffix)
+      )
+  }
+
+  /**
+   * If there were errors, delete the temp collections (that were created while ingesting the model files).
+   * Otherwise make backups of the existing collections before renaming the temp collections.
+   * Returns a pair of (newCollections, backupCollections) so that post-ingest validation can clean up
+   * on error.
+   */
+  def afterIngest(
+      maybeSubsystem: Option[String],
+      errors: Boolean,
+      dbName: String,
+      makeBackups: Boolean = true
+  ): (Set[String], Set[String]) = {
+    val collectionNames = getCollectionNames
+    val tmpPaths = maybeSubsystem match {
+      case Some(subsystem) => collectionNames.filter(name => name.startsWith(s"$subsystem.") && name.endsWith(tmpCollSuffix))
+      case None            => collectionNames.filter(_.endsWith(tmpCollSuffix))
+    }
+    if (tmpPaths.nonEmpty) {
+      if (errors) {
+        // Delete the ingested collections and quit
+        deleteCollections(tmpPaths)
+        (Set.empty, Set.empty)
       }
       else {
-        val coll = db.collection[BSONCollection](tmpCollName)
-        coll.drop(failIfNotFound = false).await
+        val paths = maybeSubsystem match {
+          case Some(subsystem) => getSubsystemCollectionNames(collectionNames, subsystem)
+          case None            => tmpPaths.map(baseName(_, tmpCollSuffix)).intersect(collectionNames)
+        }
+        // Backup all current collections for subsystem, so we can restore them in case of post-ingest validation error
+        val backupCollections =
+          if (makeBackups)
+            renameCollections(paths, backupCollSuffix, removeSuffix = false, dbName)
+          else Set.empty[String]
+        // Rename the temp collection that were just ingested so that they are the current collections for the subsystem
+        val newCollections = renameCollections(tmpPaths, tmpCollSuffix, removeSuffix = true, dbName)
+        (newCollections, backupCollections)
       }
     }
-  }
+    else (Set.empty, Set.empty)
 
-  /**
-   * Drop any mongodb collections for components in the given subsystem that are not found in the just ingested version,
-   * then rename the temp collections by removing the .tmp suffix.
-   * If there were fatal errors, delete the temp collections without renaming.
-   */
-  def afterIngestSubsystem(subsystem: String, problems: List[Problem], dbName: String): Unit = {
-    val tmpPaths = getCollectionNames
-      .filter(name => name.startsWith(s"$subsystem.") && name.endsWith(IcdDbDefaults.tmpCollSuffix))
-    if (tmpPaths.nonEmpty) {
-      val paths = getCollectionNames
-        .filter(name =>
-          name.startsWith(s"$subsystem.") && !name.endsWith(IcdVersionManager.versionSuffix) && !name
-            .endsWith(IcdDbDefaults.tmpCollSuffix)
-        )
-      val deleted = paths.diff(tmpPaths.map(path => baseName(path, IcdDbDefaults.tmpCollSuffix)))
-      deleted.foreach { collName =>
-        val coll = db.collection[BSONCollection](collName)
-        coll.drop(failIfNotFound = false).await
-      }
-      renameTmpCollections(tmpPaths, problems, dbName)
-    }
-  }
-
-  /**
-   * Rename any temp collections that were just ingested.
-   * If there were fatal errors, delete the temp collections without renaming.
-   * Note: Since we don't know if an entire subsystem was ingested here, we can't delete any old, removed collections.
-   */
-  def afterIngestFiles(problems: List[Problem], dbName: String): Unit = {
-    val tmpPaths = getCollectionNames
-      .filter(_.endsWith(IcdDbDefaults.tmpCollSuffix))
-    renameTmpCollections(tmpPaths, problems, dbName)
   }
 
   /**

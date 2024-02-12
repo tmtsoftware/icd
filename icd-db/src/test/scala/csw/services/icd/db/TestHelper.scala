@@ -17,14 +17,16 @@ class TestHelper(db: IcdDb) {
   def ingestESW(): Unit = {
     println("Ingesting https://github.com/tmt-icd/ESW-Model-Files (needed for ObserveEvent handling)")
     "git clone https://github.com/tmt-icd/ESW-Model-Files".!
-    ingestDir(new File("ESW-Model-Files/observe-events"))
-    "rm -rf ESW-Model-Files".!
+    try {
+      ingestDir(new File("ESW-Model-Files/observe-events"))
+    } finally {
+        "rm -rf ESW-Model-Files".!
+    }
   }
 
   def ingestDir(dir: File): Unit = {
     val problems = db.ingestAndCleanup(dir)
     for (p <- problems) println(p)
-    db.query.afterIngestFiles(problems, db.dbName)
     assert(!problems.exists(_.severity == "error"))
   }
 }

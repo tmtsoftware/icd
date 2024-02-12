@@ -742,12 +742,14 @@ object IcdGitManager {
             feedback(s"Ingesting $subsystem-${e.version}")
             val (_, problems) = db.ingest(gitWorkDir)
             problems.foreach(p => feedback(p.errorMessage()))
-            db.query.afterIngestSubsystem(subsystem, problems, db.dbName)
+            val errors = problems.exists(_.severity != "warning")
+            db.query.afterIngest(Some(subsystem), errors, db.dbName, makeBackups = false)
             if (!problems.exists(_.severity != "warning")) {
               val date = DateTime.parse(e.date)
               db.versionManager.publishApi(subsystem, Some(e.version), majorVersion = false, e.comment, e.user, date, e.commit)
             }
-          } catch {
+          }
+          catch {
             case ex: Exception =>
               ex.printStackTrace()
               warning(s"Failed to ingest $subsystem-${e.version} (commit: ${e.commit})")
