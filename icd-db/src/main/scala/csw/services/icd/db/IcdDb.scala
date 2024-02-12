@@ -9,6 +9,7 @@ import csw.services.icd.*
 import csw.services.icd.codegen.{JavaCodeGenerator, PythonCodeGenerator, ScalaCodeGenerator, TypescriptCodeGenerator}
 import csw.services.icd.db.parser.{BaseModelParser, IcdModelParser, ServiceModelParser, SubsystemModelParser}
 import csw.services.icd.db.ComponentDataReporter.*
+import csw.services.icd.db.IcdDbDefaults.{backupCollSuffix, tmpCollSuffix}
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.fits.IcdFits
 import diffson.playJson.DiffsonProtocol
@@ -498,65 +499,45 @@ case class IcdDb(
     val problems          = ingestProblems ::: componentProblems
     val errors            = problems.exists(_.severity != "warning")
 
-    if (subsystemList.isEmpty)
-      query.afterIngestFiles(errors, dbName)
-    else
-      subsystemList.foreach(query.afterIngestSubsystem(_, errors, dbName))
+    val (newCollections, backupCollections) =
+      if (subsystemList.isEmpty) {
+        query.afterIngest(None, errors, dbName)
+      }
+      else {
+        val (a, b) = subsystemList.map(subsystem => query.afterIngest(Some(subsystem), errors, dbName)).unzip
+        (a.flatten.toSet, b.flatten.toSet)
+      }
 
     if (errors) {
       // If there were errors, return them
       problems
-    } else {
+    }
+    else {
       // otherwise do the extra post-ingest validation
-      validatePostIngest(problems, subsystemList, componentSubsystemList)
+      validatePostIngest(componentSubsystemList, newCollections, backupCollections)
     }
   }
 
   // Do some validation checks after ingesting the model files into the database.
   // If errors are found, restore from backup collections.
   private def validatePostIngest(
-      problems: List[Problem],
-      subsystemList: List[String],
-      componentSubsystemList: List[String]
+      componentSubsystemList: List[String],
+      newCollections: Set[String],
+      backupCollections: Set[String]
   ): List[Problem] = {
-    val helper             = new PostIngestValidation(this)
-    val postIngestProblems = componentSubsystemList.flatMap(helper.checkPostIngest)
-    val allProblems        = problems ::: postIngestProblems
-    val errors             = allProblems.exists(_.severity != "warning")
-    val collectionNames = query.getCollectionNames
-
-    // If there were errors, restore from backup collections, otherwise delete the backup collections
-    if (subsystemList.isEmpty) {
-      // No full subsystem was ingested (maybe just a single component)
-      val backupPaths = collectionNames.filter(name => name.endsWith(IcdDbDefaults.backupCollSuffix))
-      if (errors) {
-        // If there were errors, remove the ingested subsystem collections and restore the backup collections
-        query.renameCollections(backupPaths, IcdDbDefaults.backupCollSuffix, removeSuffix = true, dbName)
-      }
-      else {
-        // If there were no errors, delete the backup collections
-        query.deleteCollections(backupPaths)
-      }
+    val helper   = new PostIngestValidation(this)
+    val problems = componentSubsystemList.flatMap(helper.checkPostIngest)
+    val errors   = problems.exists(_.severity != "warning")
+    if (errors) {
+      // If there were errors, remove the ingested subsystem collections and restore the backup collections
+      query.deleteCollections(newCollections)
+      query.renameCollections(backupCollections, backupCollSuffix, removeSuffix = true, dbName)
     }
     else {
-      // We know the full subsystems that were ingested
-      subsystemList.foreach { subsystem =>
-        val paths = query.getSubsystemCollectionNames(collectionNames, subsystem)
-        val backupPaths = collectionNames
-          .filter(name => name.startsWith(s"$subsystem.") && name.endsWith(IcdDbDefaults.backupCollSuffix))
-        if (!errors) {
-          // If there were no errors, delete the backup collections
-          query.deleteCollections(backupPaths)
-        }
-        else {
-          // If there were errors, remove the ingested subsystem collections and restore the backup collections
-          query.deleteCollections(paths)
-          query.renameCollections(backupPaths, IcdDbDefaults.backupCollSuffix, removeSuffix = true, dbName)
-        }
-      }
+      // If there were no errors, delete the backup collections
+      query.deleteCollections(backupCollections)
     }
-
-    allProblems
+    problems
   }
 
   /**
@@ -644,7 +625,7 @@ case class IcdDb(
 
   /**
    * Ingests the given ICD model objects into the db (based on the contents of one subsystem API directory).
-   * The collections created have the suffix IcdDbDefaults.tmpCollSuffix and must be renamed, if there are no errors.
+   * The collections created have the suffix tmpCollSuffix and must be renamed, if there are no errors.
    *
    * @param stdConfig ICD model file packaged as a StdConfig object
    * @return a list describing the problems, if any
@@ -656,7 +637,7 @@ case class IcdDb(
       val parseOptions = new ParseOptions()
       parseOptions.setResolve(true)
       parseOptions.setResolveFully(true)
-      val tmpName     = s"$collectionName${IcdDbDefaults.tmpCollSuffix}"
+      val tmpName     = s"$collectionName$tmpCollSuffix"
       val parseResult = new OpenAPIV3Parser().readLocation(fileName, null, parseOptions)
       val problems    = parseResult.getMessages.asScala.toList.map(Problem("error", _))
       if (problems.nonEmpty) problems
@@ -695,7 +676,7 @@ case class IcdDb(
 
     try {
       val coll    = getCollectionName(stdConfig)
-      val tmpName = s"$coll${IcdDbDefaults.tmpCollSuffix}"
+      val tmpName = s"$coll$tmpCollSuffix"
       ingestConfig(coll, tmpName, stdConfig.config)
       ingestOpenApiFiles(coll)
     }

@@ -21,7 +21,7 @@ import reactivemongo.api.bson.BSONDocument
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.play.json.compat.*
 import bson2json.*
-import csw.services.icd.db.IcdDbDefaults.backupCollSuffix
+import csw.services.icd.db.IcdDbDefaults.{backupCollSuffix, tmpCollSuffix}
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import lax.*
 import json2bson.*
@@ -566,10 +566,11 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
       suffix: String,
       removeSuffix: Boolean,
       dbName: String
-  ): Unit = {
-    paths.foreach { path =>
+  ): Set[String] = {
+    paths.map { path =>
       val collName = if (removeSuffix) baseName(path, suffix) else s"$path$suffix"
       admin.renameCollection(dbName, path, collName, dropExisting = true).await
+      collName
     }
   }
 
@@ -586,65 +587,51 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
       .filter(name =>
         name.startsWith(s"$subsystem.")
           && !name.endsWith(IcdVersionManager.versionSuffix)
-          && !name.endsWith(IcdDbDefaults.tmpCollSuffix)
-          && !name.endsWith(IcdDbDefaults.backupCollSuffix)
+          && !name.endsWith(tmpCollSuffix)
+          && !name.endsWith(backupCollSuffix)
       )
   }
 
   /**
-   * Drop any mongodb collections for components in the given subsystem that are not found in the just ingested version,
-   * then rename the temp collections by removing the .tmp suffix.
-   * If there were errors, delete the temp collections without renaming.
+   * If there were errors, delete the temp collections (that were created while ingesting the model files).
+   * Otherwise make backups of the existing collections before renaming the temp collections.
+   * Returns a pair of (newCollections, backupCollections) so that post-ingest validation can clean up
+   * on error.
    */
-  def afterIngestSubsystem(subsystem: String, errors: Boolean, dbName: String): Unit = {
+  def afterIngest(
+      maybeSubsystem: Option[String],
+      errors: Boolean,
+      dbName: String,
+      makeBackups: Boolean = true
+  ): (Set[String], Set[String]) = {
     val collectionNames = getCollectionNames
-    val tmpPaths = collectionNames
-      .filter(name => name.startsWith(s"$subsystem.") && name.endsWith(IcdDbDefaults.tmpCollSuffix))
+    val tmpPaths = maybeSubsystem match {
+      case Some(subsystem) => collectionNames.filter(name => name.startsWith(s"$subsystem.") && name.endsWith(tmpCollSuffix))
+      case None            => collectionNames.filter(_.endsWith(tmpCollSuffix))
+    }
     if (tmpPaths.nonEmpty) {
-      val paths = getSubsystemCollectionNames(collectionNames, subsystem)
       if (errors) {
+        // Delete the ingested collections and quit
         deleteCollections(tmpPaths)
+        (Set.empty, Set.empty)
       }
       else {
-        // Backup all current collections for subsystem, so we can restore them in case of error
-        paths.foreach { path =>
-          admin.renameCollection(dbName, path, s"$path$backupCollSuffix", dropExisting = true).await
+        val paths = maybeSubsystem match {
+          case Some(subsystem) => getSubsystemCollectionNames(collectionNames, subsystem)
+          case None            => tmpPaths.map(baseName(_, tmpCollSuffix)).intersect(collectionNames)
         }
+        // Backup all current collections for subsystem, so we can restore them in case of post-ingest validation error
+        val backupCollections =
+          if (makeBackups)
+            renameCollections(paths, backupCollSuffix, removeSuffix = false, dbName)
+          else Set.empty[String]
         // Rename the temp collection that were just ingested so that they are the current collections for the subsystem
-        renameCollections(tmpPaths, IcdDbDefaults.tmpCollSuffix, removeSuffix = true, dbName)
+        val newCollections = renameCollections(tmpPaths, tmpCollSuffix, removeSuffix = true, dbName)
+        (newCollections, backupCollections)
       }
     }
-  }
+    else (Set.empty, Set.empty)
 
-  // Remove any backup collections after calling afterIngestSubsystem
-  // This is called from when ingesting published APIs from Git, since the extra validation checks are not
-  // done in that case - We don't want to fail to import an already published API because of a newer validation
-  // check.
-  def cleanupAfterIngest(subsystem: String): Unit = {
-    val backupPaths = getCollectionNames
-      .filter(name => name.startsWith(s"$subsystem.") && name.endsWith(IcdDbDefaults.backupCollSuffix))
-    deleteCollections(backupPaths)
-  }
-
-  /**
-   * Rename any temp collections that were just ingested.
-   * If there were errors, delete the temp collections without renaming.
-   * Note: Since we don't know if an entire subsystem was ingested here, we can't delete any old, removed collections.
-   */
-  private[db] def afterIngestFiles(errors: Boolean, dbName: String): Unit = {
-    val collectionNames = getCollectionNames
-    val tmpPaths        = collectionNames.filter(_.endsWith(IcdDbDefaults.tmpCollSuffix))
-    if (errors) {
-      // Delete the new temp collection, since there were errors
-      deleteCollections(tmpPaths)
-    }
-    else {
-      // Make backup collection, then rename the new temp collection
-      // Note: If the ingested component is new and an error is found post-ingest, it will not be deleted
-      val paths = tmpPaths.map(baseName(_, IcdDbDefaults.tmpCollSuffix)).intersect(collectionNames)
-      renameCollections(paths, IcdDbDefaults.backupCollSuffix, removeSuffix = false, dbName)
-      renameCollections(tmpPaths, IcdDbDefaults.tmpCollSuffix, removeSuffix = true, dbName)
-    }
   }
 
   /**
