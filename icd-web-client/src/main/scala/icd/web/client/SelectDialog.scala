@@ -61,55 +61,50 @@ object SelectDialog {
 //noinspection DuplicatedCode
 case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener) extends Displayable {
 
-//  private val historyItem   = NavbarItem("History", "Display the version history for an API or ICD", showVersionHistory())
   private val historyDialog = HistoryDialog(mainContent)
-//  private val pdfItem       = NavbarPdfItem("PDF", "Generate and display a PDF for the API or ICD", makePdf, showDocumentNumber = true)
-//  pdfItem.setEnabled(false)
-//
-//  private val generateItem = NavbarDropDownItem(
-//    "Generate",
-//    "Generate code for the selected API/component",
-//    List("Scala", "Java", "TypeScript", "Python"),
-//    generateCode
-//  )
-//  generateItem.setEnabled(false)
-//
-//  private val graphItem =
-//    NavbarGraphItem("Graph", "Generate and display a graph of relationships for the selected components", makeGraph)
-//  graphItem.setEnabled(false)
-//
-//  private val archiveItem = NavbarPdfItem(
-//    "Archive",
-//    "Generate and display an 'Archived Items' report for the selected subsystem/component (or all subsystems)",
-//    makeArchivedItemsReport,
-//    showDocumentNumber = false,
-//    showDetailButtons = false
-//  )
-//
-//  private val alarmsItem = NavbarPdfItem(
-//    "Alarms",
-//    "Generate and display an 'Alarms' report for the selected subsystem/component (or all subsystems)",
-//    makeAlarmsReport,
-//    showDocumentNumber = false,
-//    showDetailButtons = false
-//  )
-//
-//  private val missingItem = NavbarPdfItem(
-//    "Missing",
-//    "Generate and display a 'Missing Items' report for the selected subsystems/components (or all subsystems)",
-//    makeMissingItemsReport,
-//    showDocumentNumber = false,
-//    showDetailButtons = false
-//  )
 
-//  private val navbar = SelectNavbar()
-//  navbar.addItem(historyItem)
-//  navbar.addItem(pdfItem)
-//  navbar.addItem(generateItem)
-//  navbar.addItem(graphItem)
-//  navbar.addItem(archiveItem)
-//  navbar.addItem(alarmsItem)
-//  navbar.addItem(missingItem)
+  private val pdfButton =
+    PdfButtonItem("PDF", "Generate and display a PDF for the API or ICD", makePdf, showDocumentNumber = true)
+  pdfButton.setEnabled(false)
+
+  private val generateButton = DropDownButtonItem(
+    "Generate",
+    "Generate code for the selected API/component",
+    List("Scala", "Java", "TypeScript", "Python"),
+    generateCode
+  )
+  generateButton.setEnabled(false)
+
+  private val graphButton =
+    GraphButtonItem("Graph", "Generate and display a graph of relationships for the selected components", makeGraph)
+  graphButton.setEnabled(false)
+
+  private val archiveButton =
+    PdfButtonItem(
+      "Archive",
+      "Generate and display an 'Archived Items' report for the selected subsystem/component (or all subsystems)",
+      makeArchivedItemsReport,
+      showDocumentNumber = false,
+      showDetailButtons = false
+    )
+
+  private val alarmsButton =
+    PdfButtonItem(
+      "Alarms",
+      "Generate and display an 'Alarms' report for the selected subsystem/component (or all subsystems)",
+      makeAlarmsReport,
+      showDocumentNumber = false,
+      showDetailButtons = false
+    )
+
+  private val missingButton =
+    PdfButtonItem(
+      "Missing",
+      "Generate and display a 'Missing Items' report for the selected subsystems/components (or all subsystems)",
+      makeMissingItemsReport,
+      showDocumentNumber = false,
+      showDetailButtons = false
+    )
 
   val subsystem: Subsystem = Subsystem(SourceSubsystemListener)
   val targetSubsystem: Subsystem = Subsystem(
@@ -122,34 +117,25 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   // Displays the Apply button
   private val applyButton: Button = {
     import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
     button(
-      `type` := "submit",
+      `type` := "button",
       cls := "btn btn-primary",
       title := "Display the selected API or ICD",
       onclick := apply() _
     )("Apply").render
   }
+  applyButton.disabled = true
 
   private val historyButton: Button = {
     import scalatags.JsDom.all.*
+    import scalacss.ScalatagsCss.*
     button(
       `type` := "button",
-      cls := "btn btn-primary",
+      cls := "btn btn-secondary",
       title := "Display the version history for an API or ICD",
       onclick := showVersionHistory() _
     )("History").render
-  }
-
-  //  private val pdfItem       = NavbarPdfItem("PDF", "Generate and display a PDF for the API or ICD", makePdf, showDocumentNumber = true)
-  //  pdfItem.setEnabled(false)
-  private val pdfButton: Button = {
-    import scalatags.JsDom.all.*
-    button(
-      `type` := "button",
-      cls := "btn btn-primary",
-      title := "Generate and display a PDF for the API or ICD",
-      onclick := makePdf() _
-    )("PDF").render
   }
 
   // Displays a checkbox for the "search all subsystems for API dependencies" option
@@ -173,7 +159,6 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   showBusyCursorWhile(icdChooser.updateIcdOptions())
   targetSubsystem.setEnabled(false)
   subsystemSwapper.setEnabled(false)
-  applyButton.disabled = true
 
   def searchAllSubsystems(): Boolean = {
     searchAllCheckbox.checked && clientApiCheckbox.checked
@@ -207,11 +192,13 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
         maybeSv: Option[SubsystemWithVersion],
         findMatchingIcd: Boolean
     ): Future[Unit] = {
-      val items = List(pdfItem, generateItem, graphItem)
-      items.foreach(_.setEnabled(true))
       val maybeTargetSv = targetSubsystem.getSubsystemWithVersion()
       targetSubsystem.setEnabled(maybeSv.isDefined)
       applyButton.disabled = maybeSv.isEmpty
+      historyButton.disabled = maybeSv.isEmpty
+      pdfButton.setEnabled(maybeSv.isDefined)
+      graphButton.setEnabled(maybeSv.isDefined)
+      generateButton.setEnabled(maybeSv.isDefined && maybeTargetSv.isEmpty)
       clientApiCheckbox.disabled = maybeTargetSv.isDefined || maybeSv.isEmpty
       searchAllCheckbox.disabled = maybeTargetSv.isDefined || maybeSv.isEmpty || !clientApi()
       maybeSv
@@ -236,6 +223,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
         findMatchingIcd: Boolean
     ): Future[Unit] = {
       val maybeSv = subsystem.getSubsystemWithVersion()
+      generateButton.setEnabled(maybeSv.isDefined && maybeTargetSv.isEmpty)
       clientApiCheckbox.disabled = maybeTargetSv.isDefined || maybeSv.isEmpty
       searchAllCheckbox.disabled = maybeTargetSv.isDefined || maybeSv.isEmpty || !clientApi()
       maybeSv
@@ -317,19 +305,28 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       div(Styles.subsystemSwapper, subsystemSwapper.markup()),
       div(Styles.selectDialogSubsystemRow, targetSubsystem.markup()),
       div(
+        style := "padding-top: 20px",
         cls := "form-check",
         clientApiCheckbox,
         label(cls := "form-check-label", "Include client API information (subscribed events, sent commands)")
       ),
       div(
+        style := "padding-top: 10px",
         cls := "form-check",
         searchAllCheckbox,
         label(cls := "form-check-label", "Search all TIO subsystems for API dependencies")
       ),
       div(
-        Styles.selectDialogApplyButton,
-        cls := "btn-group",
-        applyButton, historyButton)
+        style := "padding-top: 20px",
+        div(Styles.selectDialogButton, cls := "btn-group")(applyButton),
+        div(Styles.selectDialogButton, cls := "btn-group")(historyButton),
+        pdfButton.markup(),
+        generateButton.markup(),
+        graphButton.markup(),
+        archiveButton.markup(),
+        alarmsButton.markup(),
+        missingButton.markup(),
+      )
     ).render
   }
 

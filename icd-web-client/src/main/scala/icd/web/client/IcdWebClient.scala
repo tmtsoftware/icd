@@ -2,7 +2,7 @@ package icd.web.client
 
 import icd.web.shared.{BuildInfo, FitsDictionary, IcdVersion, SubsystemWithVersion}
 import org.scalajs.dom
-import org.scalajs.dom.{Element, HTMLStyleElement, PopStateEvent, document}
+import org.scalajs.dom.{HTMLStyleElement, PopStateEvent, document}
 
 import scala.concurrent.Future
 import scala.scalajs.js.annotation.JSExportTopLevel
@@ -16,8 +16,6 @@ import icd.web.client.PublishDialog.PublishDialogListener
 import icd.web.client.SelectDialog.SelectDialogListener
 import icd.web.client.StatusDialog.StatusDialogListener
 import play.api.libs.json.*
-
-import scala.util.Success
 
 /**
  * Main class for the ICD web app.
@@ -34,7 +32,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Page components
   private val expandToggler = ExpandToggler()
-  private val reloadButton  = ReloadButton()
   private val mainContent   = MainContent()
   private val components    = Components(mainContent, ComponentLinkSelectionHandler)
   private val sidebar       = Sidebar(LeftSidebarListener)
@@ -53,6 +50,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   private val selectItem   = NavbarItem("Select", "Select the API or ICD to display", selectSubsystems())
   private val selectDialog = SelectDialog(mainContent, Selector)
+  private val reloadButton  = ReloadButton(selectDialog)
 
   private val logoutItem = NavbarItem("Logout", "Log out of the icd web app", logout)
 
@@ -161,6 +159,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       saveHistory: Boolean = true
   )(): Unit = {
     setSidebarVisible(false)
+    reloadButton.setVisible(show = false)
+    expandToggler.setVisible(show = false)
     mainContent.setContent(selectDialog, "Select Subsystems and Components")
     if (saveHistory) {
       pushState(
@@ -183,6 +183,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private def showPasswordDialog()(): Unit = {
     setSidebarVisible(false)
     setNavbarVisible(false)
+    reloadButton.setVisible(show = false)
+    expandToggler.setVisible(show = false)
     val title = "TIO Software Interface Database System"
     mainContent.setContent(passwordDialog, s"$title ${BuildInfo.version}")
   }
@@ -190,6 +192,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Called when the Home/TMT ICD Database navbar item is selected (or through browser history)
   private def showStatus(maybeSubsystem: Option[String] = None, saveHistory: Boolean = true)(): Unit = {
     setSidebarVisible(false)
+    reloadButton.setVisible(show = false)
+    expandToggler.setVisible(show = false)
     val title = "TIO Software Interface Database System"
     if (saveHistory) {
       mainContent.setContent(statusDialog, s"$title ${BuildInfo.version}")
@@ -216,6 +220,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Called when the Upload item is selected
   private def showUploadDialog(saveHistory: Boolean = true)(): Unit = {
     setSidebarVisible(false)
+    reloadButton.setVisible(show = false)
+    expandToggler.setVisible(show = false)
     mainContent.setContent(fileUploadDialog, "Upload Subsystem Model Files")
     if (saveHistory) pushState(viewType = UploadView)
   }
@@ -223,6 +229,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Called when the Publish item is selected
   private def showPublishDialog(saveHistory: Boolean = true)(): Unit = {
     setSidebarVisible(false)
+    reloadButton.setVisible(show = false)
+    expandToggler.setVisible(show = false)
     val f = publishDialog.update()
     showBusyCursorWhile(f)
     mainContent.setContent(publishDialog, "Publish APIs and ICDs")
@@ -415,6 +423,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     sidebar.clearComponents()
     mainContent.clearContent()
     val f = if (maybeSv.isDefined) {
+      reloadButton.setVisible(show = true)
+      expandToggler.setVisible(show = true)
       showBusyCursorWhile {
         components
           .addComponents(maybeSv.get, maybeTargetSv, maybeIcd, searchAllSubsystems, clientApi)
@@ -424,7 +434,12 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
           }
       }
     }
-    else Future.successful(())
+    else {
+      // Should not get here?
+      reloadButton.setVisible(show = false)
+      expandToggler.setVisible(show = false)
+      Future.successful(())
+    }
     if (saveHistory) {
       pushState(
         viewType = SelectView,
@@ -460,6 +475,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private def showFitsDictionary(saveHistory: Boolean = true)(): Unit = {
     import icd.web.shared.JsonSupport.*
     setSidebarVisible(false)
+    reloadButton.setVisible(show = false)
+    expandToggler.setVisible(show = false)
     val f = for {
       fitsDict <-
         Fetch
@@ -474,35 +491,4 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     }
     showBusyCursorWhile(f.map(_ => ()))
   }
-
-  private case class ReloadButton() extends Displayable {
-    private def reloadPage(): Unit = {
-      val main = document.getElementById("mainContent")
-      val y    = main.scrollTop
-      val f = selectDialog.applySettings()
-      f.onComplete {
-        case Success(_) =>
-          main.scrollTop = y
-        case _ =>
-      }
-    }
-
-    override def markup(): Element = {
-      import scalatags.JsDom.all.*
-      import scalacss.ScalatagsCss.*
-      li(
-        a(
-          button(
-            cls := "btn btn-sm",
-            Styles.attributeBtn,
-            tpe := "button",
-            id := "reload",
-            title := "Reload the selected subsystem, API or ICD, refresh from icd database",
-            onclick := reloadPage _
-          )(i(Styles.navbarBtn, cls := "bi bi-arrow-clockwise"))
-        )
-      ).render
-    }
-  }
-
 }

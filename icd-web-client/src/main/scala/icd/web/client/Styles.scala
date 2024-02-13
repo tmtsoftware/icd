@@ -143,8 +143,8 @@ object Styles extends StyleSheet.Inline {
     fontSize(30 px)
   )
 
-  val selectDialogApplyButton = style(
-    padding(20 px, 0 px, 20 px, 0 px)
+  val selectDialogButton = style(
+    padding(0 px, 0 px, 0 px, 10 px)
   )
 
   val statusDialogSubsystemRow = style(
