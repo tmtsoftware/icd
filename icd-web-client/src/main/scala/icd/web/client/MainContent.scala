@@ -17,8 +17,8 @@ case class MainContent() extends Displayable {
 
   // Holds the content to display
   private val contentDiv = {
-    import scalacss.ScalatagsCss.*
-    div(Styles.contentDiv, id := "content").render
+
+    div(id := "content").render
   }
 
   /**
@@ -123,9 +123,10 @@ case class MainContent() extends Displayable {
 //  }
 
   override def markup(): Element = {
-    import scalacss.ScalatagsCss.*
-    div(Styles.mainContent, id := "mainContent", cls := "col overflow-auto h-100")(
-      contentTitle, contentDescription, contentDiv
+    div(id := "mainContent", cls := "col overflow-auto h-100")(
+      contentTitle,
+      contentDescription,
+      contentDiv
     ).render
   }
 }

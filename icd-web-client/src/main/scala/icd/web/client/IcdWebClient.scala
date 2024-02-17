@@ -7,7 +7,7 @@ import org.scalajs.dom.{HTMLStyleElement, PopStateEvent, document}
 import scala.concurrent.Future
 import scala.scalajs.js.annotation.JSExportTopLevel
 import scalatags.JsDom.TypedTag
-import scalacss.ScalatagsCss.*
+
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
 import BrowserHistory.*
 import Components.*
@@ -26,9 +26,6 @@ import play.api.libs.json.*
 //noinspection DuplicatedCode,ScalaUnusedSymbol,SpellCheckingInspection
 @JSExportTopLevel("IcdWebClient")
 case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
-
-  private val cssSettings = scalacss.devOrProdDefaults
-  import cssSettings.*
 
   // Page components
   private val expandToggler = ExpandToggler()
@@ -116,8 +113,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Layout the components on the page
   private def doLayout(): Unit = {
     import scalatags.JsDom.all.*
-    // Add CSS styles
-    document.head.appendChild(Styles.render[TypedTag[HTMLStyleElement]].render)
 
     navbar.addItem(statusItem)
     navbar.addItem(selectItem)

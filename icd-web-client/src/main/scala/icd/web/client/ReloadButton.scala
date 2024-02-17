@@ -19,15 +19,14 @@ case class ReloadButton(selectDialog: SelectDialog) extends Displayable {
 
   private val item = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
     button(
-      cls := "btn btn-sm d-none",
-      Styles.attributeBtn,
+      cls := "attributeBtn btn btn-sm d-none",
       tpe := "button",
       id := "reload",
       title := "Reload the selected subsystem, API or ICD, refresh from icd database",
       onclick := reloadPage _
-    )(i(Styles.navbarBtn, cls := "bi bi-arrow-clockwise")).render
+    )(i(cls := "navbarBtn bi bi-arrow-clockwise")).render
   }
 
   override def setEnabled(enabled: Boolean): Unit = {

@@ -107,12 +107,12 @@ case class Subsystem(
   // HTML markup displaying the subsystem and version comboboxes
   override def markup(): Element = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
     div(cls := "row")(
-      div(Styles.selectDialogLabel)(label(s"$labelStr")),
-      div(Styles.selectDialogSubsystem)(subsystemItem),
-      div(Styles.selectDialogVersion)(versionItem),
-      div(Styles.selectDialogComponent)(componentItem)
+      div(cls := "selectDialogLabel col-1")(label(s"$labelStr")),
+      div(cls := "selectDialogSubsystem col-2")(subsystemItem),
+      div(cls := "selectDialogVersion col-1")(versionItem),
+      div(cls := "selectDialogComponent col-4")(componentItem)
     ).render
   }
 

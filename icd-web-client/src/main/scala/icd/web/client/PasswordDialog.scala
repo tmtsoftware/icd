@@ -8,7 +8,7 @@ import play.api.libs.json.Json
 
 import scala.util.Failure
 import scalatags.JsDom.all.*
-import scalacss.ScalatagsCss.*
+
 
 import scala.concurrent.Future
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
@@ -123,14 +123,14 @@ case class PasswordDialog(mainContent: MainContent, listener: PasswordDialogList
   }
 
   override def markup(): Element = {
-    import scalacss.ScalatagsCss.*
+
     usernameChanged()
     passwordChanged()
     div(
       div(
         id := "Credentials",
-        div(Styles.commentBox, label("Username")("*", usernameBox, usernameMissing)),
-        div(Styles.commentBox, label("Password")("*", passwordBox, passwordMissing, passwordIncorrect)),
+        div(cls := "commentBox", label("Username")("*", usernameBox, usernameMissing)),
+        div(cls := "commentBox", label("Password")("*", passwordBox, passwordMissing, passwordIncorrect)),
         button(
           `type` := "submit",
           cls := "btn btn-primary",

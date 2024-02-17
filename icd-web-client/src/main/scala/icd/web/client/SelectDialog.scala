@@ -117,7 +117,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   // Displays the Apply button
   private val applyButton: Button = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
     button(
       `type` := "button",
       cls := "btn btn-primary",
@@ -129,7 +129,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
 
   private val historyButton: Button = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
     button(
       `type` := "button",
       cls := "btn btn-secondary",
@@ -137,6 +137,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       onclick := showVersionHistory() _
     )("History").render
   }
+  historyButton.disabled = true
 
   // Displays a checkbox for the "search all subsystems for API dependencies" option
   private val searchAllCheckbox: Input = {
@@ -195,10 +196,11 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       val maybeTargetSv = targetSubsystem.getSubsystemWithVersion()
       targetSubsystem.setEnabled(maybeSv.isDefined)
       applyButton.disabled = maybeSv.isEmpty
-      historyButton.disabled = maybeSv.isEmpty
       pdfButton.setEnabled(maybeSv.isDefined)
       graphButton.setEnabled(maybeSv.isDefined)
       generateButton.setEnabled(maybeSv.isDefined && maybeTargetSv.isEmpty)
+      archiveButton.setEnabled(maybeSv.isDefined && maybeTargetSv.isEmpty)
+      alarmsButton.setEnabled(maybeSv.isDefined && maybeTargetSv.isEmpty)
       clientApiCheckbox.disabled = maybeTargetSv.isDefined || maybeSv.isEmpty
       searchAllCheckbox.disabled = maybeTargetSv.isDefined || maybeSv.isEmpty || !clientApi()
       maybeSv
@@ -210,6 +212,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
             subsystem.updateComponentOptions(names)
             subsystem.setSelectedComponent(sv.maybeComponent)
             subsystemSwapper.setEnabled(maybeSv.isDefined && maybeTargetSv.isDefined)
+            historyButton.disabled = maybeSv.isEmpty || (maybeTargetSv.isDefined && icdChooser.getSelectedIcd.isEmpty)
           }
         }
         .getOrElse(Future.successful(()))
@@ -224,6 +227,8 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
     ): Future[Unit] = {
       val maybeSv = subsystem.getSubsystemWithVersion()
       generateButton.setEnabled(maybeSv.isDefined && maybeTargetSv.isEmpty)
+      archiveButton.setEnabled(maybeSv.isDefined && maybeTargetSv.isEmpty)
+      alarmsButton.setEnabled(maybeSv.isDefined && maybeTargetSv.isEmpty)
       clientApiCheckbox.disabled = maybeTargetSv.isDefined || maybeSv.isEmpty
       searchAllCheckbox.disabled = maybeTargetSv.isDefined || maybeSv.isEmpty || !clientApi()
       maybeSv
@@ -235,6 +240,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
             targetSubsystem.updateComponentOptions(names)
             maybeTargetSv.foreach(targetSv => targetSubsystem.setSelectedComponent(targetSv.maybeComponent))
             subsystemSwapper.setEnabled(maybeTargetSv.isDefined)
+            historyButton.disabled = maybeSv.isEmpty || (maybeTargetSv.isDefined && icdChooser.getSelectedIcd.isEmpty)
           }
         }
         .getOrElse(Future.successful(()))
@@ -268,10 +274,10 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
             _ <- subsystem.setSubsystemWithVersion(Some(sv), findMatchingIcd = false)
             _ <- targetSubsystem.setSubsystemWithVersion(Some(targetSv), findMatchingIcd = false)
           } yield {
-            val enabled = subsystem.getSelectedSubsystem.isDefined
-            targetSubsystem.setEnabled(enabled)
-            subsystemSwapper.setEnabled(enabled && targetSubsystem.getSelectedSubsystem.isDefined)
-            applyButton.disabled = !enabled
+            targetSubsystem.setEnabled(true)
+            subsystemSwapper.setEnabled(true)
+            applyButton.disabled = false
+            historyButton.disabled = false
           }
         case None => Future.successful(())
       }
@@ -294,16 +300,15 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
 
   override def markup(): Element = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
     div(
       cls := "container",
-      div(Styles.selectDialogSubsystemRow, p(msg)),
-//      navbar.markup(),
-      div(Styles.selectDialogIcdRow, icdChooser.markup()),
+      div(cls := "selectDialogSubsystemRow", p(msg)),
+      div(cls := "selectDialogIcdRow", icdChooser.markup()),
       p(strong("Or")),
-      div(Styles.selectDialogSubsystemRow, subsystem.markup()),
-      div(Styles.subsystemSwapper, subsystemSwapper.markup()),
-      div(Styles.selectDialogSubsystemRow, targetSubsystem.markup()),
+      div(cls := "selectDialogSubsystemRow", subsystem.markup()),
+      div(id := "subsystemSwapper", subsystemSwapper.markup()),
+      div(cls := "selectDialogSubsystemRow", targetSubsystem.markup()),
       div(
         style := "padding-top: 20px",
         cls := "form-check",
@@ -318,14 +323,14 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       ),
       div(
         style := "padding-top: 20px",
-        div(Styles.selectDialogButton, cls := "btn-group")(applyButton),
-        div(Styles.selectDialogButton, cls := "btn-group")(historyButton),
+        div(cls := "selectDialogButton btn-group")(applyButton),
+        div(cls := "selectDialogButton btn-group")(historyButton),
         pdfButton.markup(),
         generateButton.markup(),
         graphButton.markup(),
         archiveButton.markup(),
         alarmsButton.markup(),
-        missingButton.markup(),
+        missingButton.markup()
       )
     ).render
   }

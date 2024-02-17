@@ -154,8 +154,8 @@ case class GraphButtonItem(labelStr: String, tip: String, listener: IcdVizOption
 
   override def markup(): Element = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
-    div(Styles.selectDialogButton, cls := "btn-group", item, graphModal).render
+
+    div(cls := "selectDialogButton btn-group", item, graphModal).render
   }
 
 }

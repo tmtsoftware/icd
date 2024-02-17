@@ -11,7 +11,7 @@ case class SelectNavbar() extends Displayable {
   private val leftNavbar  = ul(cls := "navbar-nav").render
 
   def markup(): Element = {
-    import scalacss.ScalatagsCss.*
+
     import scalatags.JsDom.tags2.*
     nav(cls := "navbar navbar-expand-lg bg-light border-bottom")(
       div(cls := "container-fluid")(

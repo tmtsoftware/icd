@@ -55,7 +55,7 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
   // Makes the link for a FITS keyword source to the event that is the source of the keyword
   private def makeLinkForFitsKeySource(fitsKey: FitsKeyInfo, fitsChannel: FitsChannel, index: Int) = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
 
     val channel  = if (fitsChannel.name.isEmpty) None else Some(fitsChannel.name)
     val maybeTag = tagMap.get(FitsKeywordAndChannel(fitsKey.name, channel))
@@ -126,9 +126,9 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
 
   private def makeFitsTagPanel() = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
-    div(Styles.fitsTags)(
-      label(Styles.fitsTagsLabel, strong("Tags: ")),
+
+    div(id := "fitsTags")(
+      label(id := "fitsTagsLabel", strong("Tags: ")),
       (allTags :: fitsTags.tags.keys.toList).map { key =>
         val displayName = key match {
           case "DL" => "Diffraction-limited (DL)"
@@ -154,7 +154,7 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
   // Generates table with related FITS key information
   private def makeFitsKeyTable() = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
 
     def makeFitsTableRows() = {
       fitsKeys.map { fitsKey =>
@@ -170,10 +170,10 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
       }
     }
 
-    div(Styles.component, id := "FITS-Keys")(
+    div(cls := "component container-fluid", id := "FITS-Keys")(
       makeFitsTagPanel(),
       table(
-        Styles.fitsTable,
+        id := "fitsTable",
         attr("data-bs-toggle") := "table",
         thead(
           tr(

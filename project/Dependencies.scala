@@ -8,7 +8,6 @@ object Dependencies {
   val PlayJsonVersion       = "2.10.1"
   val ScalaTagsVersion      = "0.11.0" // XXX Can't update to 0.12 due to scalacss not being up to date: Force update?
   val ScalaJsDomVersion     = "2.2.0"
-  val ScalaCssVersion       = "1.0.0"
   val BootstrapVersion      = "5.3.2"
   val JQueryVersion         = "3.6.1"
   val JQueryUiVersion       = "1.13.2"
@@ -70,8 +69,6 @@ object Dependencies {
       "org.scala-js"                 %%% "scalajs-dom"                 % ScalaJsDomVersion,
       "com.lihaoyi"                  %%% "scalatags"                   % ScalaTagsVersion,
       "com.typesafe.play"            %%% "play-json"                   % PlayJsonVersion,
-      "com.github.japgolly.scalacss" %%% "core"                        % ScalaCssVersion,
-      "com.github.japgolly.scalacss" %%% "ext-scalatags"               % ScalaCssVersion,
       "org.scala-js"                 %%% "scala-js-macrotask-executor" % "1.1.0"
     )
   )

@@ -12,7 +12,7 @@ case class MainNavbar() extends Displayable {
   private val rightNavbar = ul(cls := "navbar-nav ms-auto mb-2 mb-lg-0").render
 
   def markup(): Element = {
-    import scalacss.ScalatagsCss.*
+
     import scalatags.JsDom.tags2.*
       nav(cls := "navbar navbar-expand-lg bg-light fixed-top border-bottom")(
         div(cls := "container-fluid")(

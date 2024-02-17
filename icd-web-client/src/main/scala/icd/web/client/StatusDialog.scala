@@ -9,7 +9,7 @@ import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
 
 import scala.util.{Failure, Success}
 import scalatags.JsDom.all.*
-import scalacss.ScalatagsCss.*
+
 import scalatags.JsDom
 
 import scala.concurrent.Future
@@ -126,7 +126,7 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
   private def apiTable(pubInfo: PublishInfo): JsDom.TypedTag[Table] = {
     val apiVersionInfo = pubInfo.apiVersions.head
     table(
-      Styles.componentTable,
+      cls := "componentTable",
       attr("data-bs-toggle") := "table",
       thead(
         tr(
@@ -160,7 +160,7 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
 
   private def icdTable(pubInfo: PublishInfo): JsDom.TypedTag[Table] = {
     table(
-      Styles.componentTable,
+      cls := "componentTable",
       attr("data-bs-toggle") := "table",
       thead(
         tr(
@@ -278,7 +278,7 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
 
   override def markup(): Element = {
     div(
-      div(Styles.statusDialogSubsystemRow)(msg),
+      div(cls := "statusDialogSubsystemRow")(msg),
       div(
         cls := "input-group",
         style := "width: fit-content",

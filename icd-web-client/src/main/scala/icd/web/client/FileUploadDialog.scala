@@ -57,8 +57,8 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   // HTML item displaying error messages
   private val messagesItem = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
-    div(Styles.fileUploadMessages).render
+
+    div(id := "fileUploadMessages", cls := "alert alert-info").render
   }
 
   // Adds an error (or warning) message to the upload messages

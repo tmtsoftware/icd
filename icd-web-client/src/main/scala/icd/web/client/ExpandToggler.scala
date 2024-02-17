@@ -9,16 +9,15 @@ case class ExpandToggler() extends Displayable {
 
   private val item = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
     button(
-      Styles.attributeBtn,
-      cls := "btn btn-sm d-none",
+      cls := "attributeBtn btn btn-sm d-none",
       tpe := "button",
       id := "expand-init",
       attr("data-bs-toggle") := "collapse",
       attr("data-bs-target") := ".panel-collapse",
       title := "Expand or collapse all detailed information"
-    )(i(Styles.navbarBtn, cls := "bi bi-caret-down-square")).render
+    )(i(cls := "navbarBtn bi bi-caret-down-square")).render
   }
 
   override def setEnabled(enabled: Boolean): Unit = {

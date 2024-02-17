@@ -47,16 +47,16 @@ object Components {
    *
    * @param headings   the table headings
    * @param rowList    list of row data
-   * @param tableStyle optional table style
+   * @param tableClass optional table class for css
    * @return an html table element
    */
   def mkTable(
       headings: List[String],
       rowList: List[List[String]],
-      tableStyle: scalacss.StyleA = Styles.emptyStyle
+      tableClass: String = ""
   ): TypedTag[HTMLElement] = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
 
     // Returns a table cell markup, checking if the text is already in html format (after markdown processing)
     def mkTableCell(text: String) = {
@@ -72,7 +72,7 @@ object Components {
       if (newHead.isEmpty) div()
       else {
         table(
-          tableStyle,
+          cls := tableClass,
           attr("data-bs-toggle") := "table",
           thead(
             tr(newHead.map(th(_)))
@@ -269,7 +269,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       targetInfoList      <- getComponentInfo(targetSv, Some(sv), searchAllSubsystems, clientApi)
     } yield {
       import scalatags.JsDom.all.*
-      import scalacss.ScalatagsCss.*
+
       val titleInfo              = TitleInfo(subsystemInfo, Some(targetSv), maybeIcd)
       val subsystemVersion       = sv.maybeVersion.getOrElse(TitleInfo.unpublished)
       val targetSubsystemVersion = targetSv.maybeVersion.getOrElse(TitleInfo.unpublished)
@@ -277,7 +277,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       mainContent.setTitle(titleInfo.title, titleInfo.maybeSubtitle, titleInfo.maybeDescription)
       mainContent.appendElement(
         div(
-          Styles.component,
+          cls := "component container-fluid",
           p(strong(s"${subsystemInfo.sv.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
           raw(subsystemInfo.description),
           if (subsystemInfo.sv == targetSubsystemInfo.sv) div()
@@ -319,7 +319,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         else None
 
       mainContent.appendElement(
-        div(Styles.component, id := "Summary")(raw(summaryTable1), summaryTable2.map(raw).getOrElse(span())).render
+        div(cls := "component container-fluid", id := "Summary")(raw(summaryTable1), summaryTable2.map(raw).getOrElse(span())).render
       )
       infoList.foreach(i => displayComponentInfo(i, forApi = false, clientApi = clientApi))
       if (subsystemInfo.sv != targetSubsystemInfo.sv)
@@ -358,7 +358,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       archiveReportHtml   <- getArchivedItemsReportHtml(sv2)
     } yield {
       import scalatags.JsDom.all.*
-      import scalacss.ScalatagsCss.*
+
       val titleInfo              = TitleInfo(subsystemInfo, Some(targetSv), maybeIcd)
       val subsystemVersion       = sv.maybeVersion.getOrElse(TitleInfo.unpublished)
       val targetSubsystemVersion = targetSv.maybeVersion.getOrElse(TitleInfo.unpublished)
@@ -366,7 +366,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       mainContent.setTitle(titleInfo.title, titleInfo.maybeSubtitle, titleInfo.maybeDescription)
       mainContent.appendElement(
         div(
-          Styles.component,
+          cls := "component container-fluid",
           p(strong(s"${subsystemInfo.sv.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
           raw(subsystemInfo.description),
           p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
@@ -402,7 +402,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       clientApi: Boolean
   ): Future[List[ComponentInfo]] = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
 
     if (maybeTargetSubsystem.isDefined) {
       val targetSv = maybeTargetSubsystem.get
@@ -437,7 +437,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             .render
 
         mainContent.appendElement(
-          div(Styles.component, id := "Summary")(raw(summaryTable)).render
+          div(cls := "component container-fluid", id := "Summary")(raw(summaryTable)).render
         )
         if (fitsDict.fitsKeys.nonEmpty) mainContent.appendElement(makeFitsKeyTable(fitsDict, sv).render)
         infoList.foreach(i => displayComponentInfo(i, forApi = true, clientApi = clientApi))
@@ -508,7 +508,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         }
       div(
         strong("Parameters"),
-        mkTable(headings, rowList, tableStyle = Styles.attributeTable),
+        mkTable(headings, rowList, "attributeTable"),
         parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError))
       )
     }
@@ -534,7 +534,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         }
       div(
         strong(s"Image Metadata for $nameStr"),
-        mkTable(headings, rowList, tableStyle = Styles.attributeTable)
+        mkTable(headings, rowList, "attributeTable")
       )
     }
   }
@@ -565,7 +565,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           )
       div(
         strong("Parameters"),
-        mkTable(headings, rowList, tableStyle = Styles.attributeTable),
+        mkTable(headings, rowList, "attributeTable"),
         parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError))
       )
     }
@@ -584,7 +584,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       val rowList  = for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units)
       div(
         strong("Result Type Parameters"),
-        mkTable(headings, rowList, tableStyle = Styles.attributeTable),
+        mkTable(headings, rowList, "attributeTable"),
         parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError))
       )
     }
@@ -604,13 +604,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       colSpan: Int
   ): (TypedTag[HTMLButtonElement], TypedTag[HTMLTableRowElement]) = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
     // button to toggle visibility
     val rowId    = makeHiddenRowId(targetId)
     val buttonId = s"button-$targetId"
     val btn = button(
-      Styles.attributeBtn,
-      cls := "btn btn-sm",
+      cls := "attributeBtn btn btn-sm",
       `type` := "button",
       id := buttonId,
       name := buttonId,
@@ -642,7 +641,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   // Generates the HTML markup to display the component's publish information
   private def publishMarkup(component: ComponentModel, maybePublishes: Option[Publishes], forApi: Boolean, clientApi: Boolean) = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
 
     val compName = component.component
 
@@ -727,7 +726,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                 List(
                   tr(
                     td(
-                      Styles.attributeCell,
+                      cls := "attributeCell",
                       p(
                         btn,
                         a(id := idStr, name := idStr)(
@@ -770,7 +769,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                 List(
                   tr(
                     td(
-                      Styles.attributeCell,
+                      cls := "attributeCell",
                       p(
                         btn,
                         a(id := idStr, name := idStr)(
@@ -827,7 +826,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                 List(
                   tr(
                     td(
-                      Styles.attributeCell,
+                      cls := "attributeCell",
                       p(btn, a(id := idStr, name := idStr)(m.name))
                     ),
                     td(raw(m.description))
@@ -859,7 +858,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       case Some(publishes) =>
         if (publishes.nonEmpty) {
           div(
-            Styles.componentSection,
+            cls := "componentSection",
             raw(publishes.description),
             publishEventListMarkup("Events", publishes.eventList),
             publishEventListMarkup("Observe Events", publishes.observeEventList),
@@ -876,7 +875,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   // Generates the HTML markup to display the component's subscribe information
   private def subscribeMarkup(component: ComponentModel, maybeSubscribes: Option[Subscribes], forApi: Boolean) = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
 
     val compName = component.component
 
@@ -946,9 +945,9 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         div(
           h3(s"$pubType Subscribed to by $compName"),
           div(
-            Styles.componentSection,
+            cls := "componentSection",
             table(
-              Styles.componentTable,
+              cls := "componentTable",
               attr("data-bs-toggle") := "table",
               thead(
                 tr(
@@ -978,7 +977,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                   List(
                     tr(
                       td(
-                        Styles.attributeCell,
+                        cls := "attributeCell",
                         p(
                           btn,
                           a(id := idStr, name := idStr)(s.subscribeModelInfo.name)
@@ -1001,7 +1000,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       case Some(subscribes) =>
         if (subscribes.subscribeInfo.nonEmpty) {
           div(
-            Styles.componentSection,
+            cls := "componentSection",
             raw(subscribes.description),
             subscribeListMarkup("Events", subscribes.subscribeInfo.filter(_.itemType == Events)),
             subscribeListMarkup("Observe Events", subscribes.subscribeInfo.filter(_.itemType == ObserveEvents)),
@@ -1035,17 +1034,17 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   // Generates the HTML markup to display the commands a component receives
   private def receivedCommandsMarkup(component: ComponentModel, info: List[ReceivedCommandInfo], clientApi: Boolean) = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
 
     // Only display non-empty tables
     if (info.isEmpty) div()
     else {
       val compName = component.component
       div(
-        Styles.componentSection,
+        cls := "componentSection",
         h4(s"Command Configurations Received by $compName"),
         table(
-          Styles.componentTable,
+          cls := "componentTable",
           attr("data-bs-toggle") := "table",
           thead(
             tr(
@@ -1062,7 +1061,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               List(
                 tr(
                   td(
-                    Styles.attributeCell,
+                    cls := "attributeCell",
                     p(
                       btn,
                       a(id := idStr, name := idStr)(rc.name)
@@ -1083,7 +1082,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   // Generates the HTML markup to display the commands a component sends
   private def sentCommandsMarkup(component: ComponentModel, info: List[SentCommandInfo]) = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
 
     val compName = component.component
 
@@ -1105,7 +1104,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           List(
             tr(
               td(
-                Styles.attributeCell,
+                cls := "attributeCell",
                 p(btn, a(id := idStr, name := idStr)(s.name))
               ),
               td(raw(r.description)),
@@ -1116,7 +1115,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         case None =>
           List(
             tr(
-              td(Styles.attributeCell, p(s.name)),
+              td(cls := "attributeCell", p(s.name)),
               td(getWarning(s)),
               td(p(s.receiver.map(makeLinkForComponent)))
             )
@@ -1128,10 +1127,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     if (info.isEmpty) div()
     else
       div(
-        Styles.componentSection,
+        cls := "componentSection",
         h4(s"Command Configurations Sent by $compName"),
         table(
-          Styles.componentTable,
+          cls := "componentTable",
           attr("data-bs-toggle") := "table",
           thead(
             tr(
@@ -1193,15 +1192,15 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       info: List[ServicesRequiredInfo]
   ) = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
     val compName = component.component
     if (info.isEmpty) div()
     else {
       div(
-        Styles.componentSection,
+        cls := "componentSection",
         h4(s"HTTP Services required by $compName"),
         table(
-          Styles.componentTable,
+          cls := "componentTable",
           attr("data-bs-toggle") := "table",
           thead(
             tr(
@@ -1239,7 +1238,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               List(
                 tr(
                   td(
-                    Styles.attributeCell,
+                    cls := "attributeCell",
                     p(
                       btn,
                       a(id := idStr, name := idStr, onclick := openInNewTab, title := s"Open ${m.name} API in new tab.")(m.name)
@@ -1278,16 +1277,16 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       clientApi: Boolean
   ) = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
 
     val compName = component.component
     if (info.isEmpty) div()
     else {
       div(
-        Styles.componentSection,
+        cls := "componentSection",
         h4(s"HTTP Services provided by $compName"),
         table(
-          Styles.componentTable,
+          cls := "componentTable",
           attr("data-bs-toggle") := "table",
           thead(
             tr(
@@ -1317,7 +1316,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               List(
                 tr(
                   td(
-                    Styles.attributeCell,
+                    cls := "attributeCell",
                     p(
                       btn,
                       a(id := idStr, name := idStr, onclick := openInNewTab, title := s"Open ${m.name} API in new tab.")(m.name)
@@ -1338,10 +1337,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   // Generates a one line table with basic component information
   private def componentInfoTableMarkup(info: ComponentInfo) = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
     div(
       table(
-        Styles.componentTable,
+        cls := "componentTable",
         attr("data-bs-toggle") := "table",
         thead(
           tr(
@@ -1368,12 +1367,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   // Generates table with related FITS key information
   private def makeFitsKeyTable(fitsDict: FitsDictionary, sv: SubsystemWithVersion) = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
     val fitsKeys = fitsDict.fitsKeys
-    div(Styles.component, id := "FITS-Keys")(
+    div(cls := "component container-fluid", id := "FITS-Keys")(
       h3(a(name := "FITS-Keys")("FITS Keywords")),
       table(
-        Styles.componentTable,
+        cls := "componentTable",
         attr("data-bs-toggle") := "table",
         thead(
           tr(
@@ -1414,11 +1413,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       clientApi: Boolean
   ): TypedTag[Div] = {
     import scalatags.JsDom.all.*
-    import scalacss.ScalatagsCss.*
+
 
     val idStr = getComponentInfoId(info.componentModel.component)
 
-    div(Styles.component, id := idStr)(
+    div(cls := "component container-fluid", id := idStr)(
       h2(info.componentModel.component),
       componentInfoTableMarkup(info),
       raw(info.componentModel.description),
