@@ -57,7 +57,6 @@ object Components {
   ): TypedTag[HTMLElement] = {
     import scalatags.JsDom.all.*
 
-
     // Returns a table cell markup, checking if the text is already in html format (after markdown processing)
     def mkTableCell(text: String) = {
       if (text.startsWith("<"))
@@ -319,7 +318,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         else None
 
       mainContent.appendElement(
-        div(cls := "component container-fluid", id := "Summary")(raw(summaryTable1), summaryTable2.map(raw).getOrElse(span())).render
+        div(cls := "component container-fluid", id := "Summary")(
+          raw(summaryTable1),
+          summaryTable2.map(raw).getOrElse(span())
+        ).render
       )
       infoList.foreach(i => displayComponentInfo(i, forApi = false, clientApi = clientApi))
       if (subsystemInfo.sv != targetSubsystemInfo.sv)
@@ -402,7 +404,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       clientApi: Boolean
   ): Future[List[ComponentInfo]] = {
     import scalatags.JsDom.all.*
-
 
     if (maybeTargetSubsystem.isDefined) {
       val targetSv = maybeTargetSubsystem.get
@@ -642,13 +643,12 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def publishMarkup(component: ComponentModel, maybePublishes: Option[Publishes], forApi: Boolean, clientApi: Boolean) = {
     import scalatags.JsDom.all.*
 
-
     val compName = component.component
 
     // Returns a div displaying more details for the given event
     def makeEventDetailsRow(eventInfo: EventInfo, pubType: String, maybeEventId: Option[String] = None) = {
       val showArchiveInfo = pubType != "Observe Events"
-      val eventModel = eventInfo.eventModel
+      val eventModel      = eventInfo.eventModel
       val totalArchiveSpacePerYear =
         if (eventModel.totalArchiveSpacePerYear.isEmpty) ""
         else if (eventModel.maybeMaxRate.isEmpty) em(eventModel.totalArchiveSpacePerYear).render.outerHTML
@@ -674,7 +674,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         if (showArchiveInfo) mkTable(headings, rowList) else div(),
         if (showArchiveInfo && eventModel.maybeMaxRate.isEmpty) span("* Default maxRate of 1 Hz assumed.") else span(),
         eventParameterListMarkup(eventModel.parameterList, forApi, maybeEventId),
-        if (pubType == "Events") p(strong("Category: "), eventModel.getCategory) else span(),
+        if (pubType == "Events") p(strong("Category: "), eventModel.getCategory) else span()
       )
     }
 
@@ -876,7 +876,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def subscribeMarkup(component: ComponentModel, maybeSubscribes: Option[Subscribes], forApi: Boolean) = {
     import scalatags.JsDom.all.*
 
-
     val compName = component.component
 
     // Returns a div displaying more details for the given subscription
@@ -1035,7 +1034,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   private def receivedCommandsMarkup(component: ComponentModel, info: List[ReceivedCommandInfo], clientApi: Boolean) = {
     import scalatags.JsDom.all.*
 
-
     // Only display non-empty tables
     if (info.isEmpty) div()
     else {
@@ -1082,7 +1080,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   // Generates the HTML markup to display the commands a component sends
   private def sentCommandsMarkup(component: ComponentModel, info: List[SentCommandInfo]) = {
     import scalatags.JsDom.all.*
-
 
     val compName = component.component
 
@@ -1278,7 +1275,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   ) = {
     import scalatags.JsDom.all.*
 
-
     val compName = component.component
     if (info.isEmpty) div()
     else {
@@ -1322,7 +1318,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                       a(id := idStr, name := idStr, onclick := openInNewTab, title := s"Open ${m.name} API in new tab.")(m.name)
                     )
                   ),
-                  td(m.description),
+                  td(
+                    width := "90%",
+                    m.description
+                  ),
                   if (clientApi) td(s.requiredBy.map(_.component).distinct.map(makeLinkForComponent)) else span
                 ),
                 row
@@ -1413,7 +1412,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       clientApi: Boolean
   ): TypedTag[Div] = {
     import scalatags.JsDom.all.*
-
 
     val idStr = getComponentInfoId(info.componentModel.component)
 
