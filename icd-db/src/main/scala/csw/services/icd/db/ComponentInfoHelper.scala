@@ -226,13 +226,17 @@ class ComponentInfoHelper(
       cmd  <- models.commandModel.toList
       sent <- cmd.send
     } yield {
-      // Need to resolve any refs in the receiver's model
+      // Resolve any refs in the receiver's model
       val allModels = versionManager.getModels(
         makeSubsystemWithVersion(sent.subsystem, Some(sent.component)),
         maybePdfOptions,
-        Map.empty
+        Map.empty,
+        Set("componentModel", "commandModel")
       )
-      val targetComponentModel = allModels.flatMap(_.componentModel).headOption
+      val targetComponentModel = allModels
+        .flatMap(_.componentModel)
+        .headOption
+        .getOrElse(ComponentModel("?", sent.subsystem, sent.component, "", "", "", "", None))
       val targetCmdModel = allModels
         .flatMap(_.commandModel)
         .headOption
@@ -252,7 +256,7 @@ class ComponentInfoHelper(
         sent.subsystem,
         sent.component,
         resolvedRecvModel,
-        targetComponentModel,
+        Some(targetComponentModel),
         displayWarnings
       )
     }
