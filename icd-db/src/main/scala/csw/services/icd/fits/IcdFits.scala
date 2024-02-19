@@ -2,34 +2,16 @@ package csw.services.icd.fits
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import csw.services.icd.db.{IcdDb, IcdDbDefaults}
-import icd.web.shared.JsonSupport.*
-import icd.web.shared.{
-  AvailableChannels,
-  BuildInfo,
-  FitsDictionary,
-  FitsKeyInfo,
-  FitsKeyInfoList,
-  FitsSource,
-  FitsTags,
-  PdfOptions,
-  SubsystemWithVersion
-}
+import icd.web.shared.{AvailableChannels, BuildInfo, FitsDictionary, FitsKeyInfo, FitsKeyInfoList, FitsSource, FitsTags, PdfOptions, SubsystemWithVersion}
 import reactivemongo.api.bson.collection.BSONCollection
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import csw.services.icd.*
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
-import reactivemongo.play.json.compat.*
-import csw.services.icd.db.parser.{
-  AvailableChannelsListBsonParser,
-  FitsKeyInfoListBsonParser,
-  FitsTagsBsonParser
-}
-import lax.*
-import json2bson.*
+import csw.services.icd.db.parser.{AvailableChannelsListBsonParser, FitsKeyInfoListBsonParser, FitsTagsBsonParser}
 
 import java.io.{File, FileInputStream, FileOutputStream}
-import play.api.libs.json.*
+import play.api.libs.json.{JsObject, Json}
 import reactivemongo.api.bson.BSONDocument
 
 import scala.util.Try
@@ -238,6 +220,9 @@ case class IcdFits(db: IcdDb) {
   private val fitsChannelCollection = db.db.collection[BSONCollection](fitsChannelCollectionName)
 
   def ingestTags(file: File): List[Problem] = {
+    import reactivemongo.play.json.compat.*
+    import bson2json.*
+    import json2bson.*
     // Check for duplicate keywords (duplicates must have different channels)
     // Return an error for each duplicate
     def checkDups(config: Config): List[Problem] = {
@@ -269,6 +254,9 @@ case class IcdFits(db: IcdDb) {
   }
 
   def ingestChannels(file: File): List[Problem] = {
+    import reactivemongo.play.json.compat.*
+    import bson2json.*
+    import json2bson.*
     val config   = ConfigFactory.parseFile(file)
     val jsObj    = Json.parse(IcdValidator.toJson(config)).as[JsObject]
     val problems = IcdValidator.validateFitsChannels(jsObj.toString())
@@ -297,6 +285,7 @@ case class IcdFits(db: IcdDb) {
    * If a subsystem (with optional version) is specified, restrict the merging to that subsystem.
    */
   def generateFitsDictionary(file: File, maybeSv: Option[SubsystemWithVersion]): List[Problem] = {
+    import icd.web.shared.JsonSupport.*
     val fitsDictionary = getFitsDictionary(None)
     val fitsKeyList    = fitsDictionary.fitsKeys
     if (fitsKeyList.isEmpty) {
@@ -324,6 +313,9 @@ case class IcdFits(db: IcdDb) {
    * Ingest the FITS-Dictionary.json file into the icd db
    */
   def ingest(file: File): List[Problem] = {
+    import reactivemongo.play.json.compat.*
+    import bson2json.*
+    import json2bson.*
     val inputStream = new FileInputStream(file)
     val jsObj       = Json.parse(inputStream).asInstanceOf[JsObject]
     val problems = IcdValidator.validateFitsDictionary(jsObj.toString())
@@ -337,6 +329,9 @@ case class IcdFits(db: IcdDb) {
   }
 
   def getFitsTags: FitsTags = {
+    import reactivemongo.play.json.compat.*
+    import bson2json.*
+    import json2bson.*
     val maybeFitsTagDoc = fitsTagCollection.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await
     val maybeFitsTags   = maybeFitsTagDoc.map(FitsTagsBsonParser(_))
     maybeFitsTags.getOrElse(FitsTags(Map.empty))
@@ -345,6 +340,9 @@ case class IcdFits(db: IcdDb) {
   // Contents of FITS-Channels.conf: List of available FITS keyword channel names for each subsystem referenced in
   // FITS-Dictionary.json.
   def getFitsChannels: List[AvailableChannels] = {
+    import reactivemongo.play.json.compat.*
+    import bson2json.*
+    import json2bson.*
     val maybeFitsChannelsDoc = fitsChannelCollection.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await
     val maybeFitsChannels    = maybeFitsChannelsDoc.map(AvailableChannelsListBsonParser(_))
     maybeFitsChannels.getOrElse(Nil)
@@ -356,6 +354,9 @@ case class IcdFits(db: IcdDb) {
   }
 
   def getFitsKeyInfo(maybePdfOptions: Option[PdfOptions] = None): List[FitsKeyInfo] = {
+    import reactivemongo.play.json.compat.*
+    import bson2json.*
+    import json2bson.*
     val maybeFitsKeyDoc  = fitsKeyCollection.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await
     val maybeFitsKeyList = maybeFitsKeyDoc.map(FitsKeyInfoListBsonParser(_, maybePdfOptions))
     maybeFitsKeyList.getOrElse(Nil)
@@ -443,6 +444,7 @@ case class IcdFits(db: IcdDb) {
       maybeTag: Option[String],
       pdfOptions: PdfOptions
   ): Unit = {
+    import icd.web.shared.JsonSupport.*
     val fitsDictionary = getFitsDictionary(maybeSubsystem, maybeComponent, maybeTag, Some(pdfOptions))
     val fitsKeyList    = fitsDictionary.fitsKeys
     if (fitsKeyList.isEmpty) {

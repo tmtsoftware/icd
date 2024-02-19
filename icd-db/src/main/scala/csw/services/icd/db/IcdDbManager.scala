@@ -7,8 +7,7 @@ import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.bson.*
 
 import reactivemongo.play.json.compat.*
-//import bson2json.*
-import lax.*
+import bson2json.*
 import json2bson.*
 
 import scala.concurrent.ExecutionContext.Implicits.global

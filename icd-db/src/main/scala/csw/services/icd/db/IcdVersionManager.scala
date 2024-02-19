@@ -17,15 +17,15 @@ import csw.services.icd.db.parser.{
   SubscribeModelBsonParser,
   SubsystemModelBsonParser
 }
-import play.api.libs.json.{JsObject, JsValue, Json}
-import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONInteger, BSONObjectID, BSONString}
+import play.api.libs.json.{JsObject, JsValue, Json, DefaultWrites}
+import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONObjectID}
 import reactivemongo.api.{Cursor, WriteConcern}
 import reactivemongo.api.bson.collection.BSONCollection
-import reactivemongo.play.json.compat.*
-import bson2json.*
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import icd.web.shared.ComponentInfo.PublishType
-import lax.*
+//import lax.*
+import reactivemongo.play.json.compat.*
+import bson2json.*
 import json2bson.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -41,34 +41,34 @@ object IcdVersionManager extends DefaultWrites {
   implicit val lcs: Patience[JsValue] = new Patience[JsValue]
 
   /** The id key inserted into all documents */
-  val idKey = "_id"
+  private val idKey = "_id"
 
   /** The version key inserted into all documents */
   val versionKey = "_version"
 
   /** The version key used for top level subsystems or components */
-  val versionStrKey = "version"
+  private val versionStrKey = "version"
 
   /** The name of the sub-collection containing the previous versions or version information */
-  val versionColl = "v"
+  private val versionColl = "v"
 
   val versionSuffix = ".v"
 
-  val partsKey = "parts"
+  private val partsKey = "parts"
 
   /** Name of collection with information about published ICDs */
-  val icdCollName = "icds"
+  private val icdCollName = "icds"
 
-  val subsystemKey        = "subsystem"
-  val subsystemVersionKey = "subsystemVersion"
-  val targetKey           = "target"
-  val targetVersionKey    = "targetVersion"
-  val userKey             = "user"
-  val dateKey             = "date"
-  val commentKey          = "comment"
-  val commitKey           = "commit"
+  private val subsystemKey        = "subsystem"
+  private val subsystemVersionKey = "subsystemVersion"
+  private val targetKey           = "target"
+  private val targetVersionKey    = "targetVersion"
+  private val userKey             = "user"
+  private val dateKey             = "date"
+  private val commentKey          = "comment"
+  private val commitKey           = "commit"
 
-  val queryAny: BSONDocument = BSONDocument()
+  private val queryAny: BSONDocument = BSONDocument()
 
   /**
    * Holds a collection path for a component or subsystem and it's version
@@ -76,7 +76,7 @@ object IcdVersionManager extends DefaultWrites {
   case class PartInfo(path: String, version: Int)
 
   // Name of version history collection for the given subsystem or component
-  def versionCollectionName(name: String): String = s"$name.$versionColl"
+  private def versionCollectionName(name: String): String = s"$name.$versionColl"
 
   /**
    * Describes a version of a subsystem or component
@@ -351,7 +351,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * @param subsystem       the name of the subsystem
    * @param maybeComponent  if defined, the name of the component
    */
-  def getLatestPublishedVersion(
+  private def getLatestPublishedVersion(
       collectionNames: Set[String],
       subsystem: String,
       maybeComponent: Option[String]
