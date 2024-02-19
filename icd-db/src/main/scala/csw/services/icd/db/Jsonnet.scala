@@ -12,7 +12,7 @@ object Jsonnet {
    * RuntimeException with the error output.
    */
   def preprocess(inputFile: File): Config = {
-    val result = os.proc("ls", "-l").call()
+    val result = os.proc("jsonnet", inputFile.getAbsolutePath).call()
     if (result.exitCode != 0)
       throw new RuntimeException(s"$inputFile: ${result.err.text()}")
     val reader = new StringReader(result.out.text())
