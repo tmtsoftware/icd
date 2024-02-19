@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
+## [ICD v3.0.1] - 2024-02-
+
+- Updated dependencies, switched from akka to pekko.
+- Replaced dependency on sjsonnet Java lib with a use of "jsonnet" command, which must be installed if the feature is used.
+- UI Changes in icd web app: Moved buttons that depend on the selected subsystems or ICDs to the *Select* tab (Buttons are only enabled when applicable).
+
 ## [ICD v3.0] - 2024-02-04
 
 - Added "subsystem" constant in generated source files with subsystem name and version: For example: subsystem = "APS-1.4" (See Generate menu item in icd web app).
@@ -18,9 +24,6 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Added new optional "category" field for events with possible values: [DEMAND, CONTROL, EVENT, STATUS] (See "Event Categories" at end of [README.md](README.md))
 - Replaced general usage of "TMT" with "TIO" (TMT International Observatory) in web app and docs.
 - Added validation check for parameters that the "defaultValue" is valid for the declared type
-- Updated dependencies, swithced from akka to pekko
-- Replaced dependency on sjsonnet Java lib with a use of "jsonnet" command, which must be installed if the feature is used.
-- UI Changes in icd web app: Moved buttons that depend on the selected subsystems or ICDs to the *Select* tab (Buttons are only enabled when applicable).
 
 ## [ICD v2.2.3] - 2023-03-05
 
