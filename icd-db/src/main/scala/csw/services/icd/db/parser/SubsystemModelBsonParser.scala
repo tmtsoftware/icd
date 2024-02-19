@@ -15,10 +15,10 @@ object SubsystemModelBsonParser {
     else
       Some(
         SubsystemModel(
-          subsystem = doc.getAsOpt[String]("subsystem").get,
-          title = doc.getAsOpt[String]("title").get,
-          description = HtmlMarkup.gfmToHtml(doc.getAsOpt[String]("description").get, maybePdfOptions),
-          modelVersion = doc.getAsOpt[String]("modelVersion").get
+          subsystem = doc.string("subsystem").get,
+          title = doc.string("title").get,
+          description = HtmlMarkup.gfmToHtml(doc.string("description").get, maybePdfOptions),
+          modelVersion = doc.string("modelVersion").get
         )
       )
   }

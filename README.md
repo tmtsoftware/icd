@@ -72,6 +72,7 @@ and gives an error otherwise.
 
 Note: 
 - The [Graphviz](https://graphviz.org/download/) apps needs to be installed in order to use the UML or icd-viz features (Tested with version 2.43.0).
+- The [jsonnet](https://jsonnet.org/) command needs to be installed to use sjsnonnet syntax for model files (Tested with version 0.17.0).
 - The [swagger-codegen](https://swagger.io/tools/swagger-codegen/) command line app needs to be installed in order to generate the documentation for components that provide or use HTTP services and declare them in the `service-model.conf` model file. You can install `swagger-codegen` with this command: `cs install --contrib swagger-codegen`. This icd release was tested with version swagger-codegen-3.0.36.
 
 An install.sh script is provided that builds and installs all of the subprojects into the __../install_icd__ directory.

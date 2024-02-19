@@ -1,15 +1,8 @@
-//// Comment to get more information during initialization
-//logLevel := Level.Warn
-//
-
-//lazy val plugins = (project in file(".")).settings(
-//  scalaVersion := "2.12.17", // TODO: remove when upgraded to sbt 1.8.0 (maybe even 1.7.3), see https://github.com/sbt/sbt/pull/7021
-//)
 
 // Sbt plugins
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.9.0-RC2")
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.14.0")
-addSbtPlugin("com.vmunier" % "sbt-web-scalajs" % "1.2.0")
+addSbtPlugin("org.playframework" % "sbt-plugin" % "3.0.1")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.15.0")
+addSbtPlugin("com.vmunier" % "sbt-web-scalajs" % "1.3.0")
 addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.2")
 addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.1.4")
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.2")

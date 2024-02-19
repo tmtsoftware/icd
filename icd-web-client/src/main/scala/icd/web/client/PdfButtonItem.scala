@@ -82,7 +82,10 @@ case class PdfButtonItem(
         .flatMap { el =>
           val attr = el.attributes.getNamedItem("aria-expanded")
           if (attr.value == "true" && el.nodeName.equalsIgnoreCase("button")) {
-            Some(el.parentNode.lastChild.attributes.getNamedItem("id").value)
+            el.parentNode.lastChild match {
+              case e: Element => Some(e.attributes.getNamedItem("id").value)
+              case _          => None
+            }
           }
           else None
         }

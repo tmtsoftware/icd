@@ -25,10 +25,10 @@ object ParameterModelBsonParser {
 
   private object EventParameterFitsKeyInfoParser {
     def apply(doc: BSONDocument): EventParameterFitsKeyInfo = {
-      val name     = doc.getAsOpt[String]("keyword").get
-      val channel  = doc.getAsOpt[String]("channel")
-      val index    = doc.getAsOpt[Int]("index")
-      val rowIndex = doc.getAsOpt[Int]("rowIndex")
+      val name     = doc.string("keyword").get
+      val channel  = doc.string("channel")
+      val index    = doc.int("index")
+      val rowIndex = doc.int("rowIndex")
       EventParameterFitsKeyInfo(name, channel, index, rowIndex)
     }
   }
@@ -40,27 +40,27 @@ object ParameterModelBsonParser {
       maybeSv: Option[SubsystemWithVersion] = None,
       maybeEventName: Option[String] = None
   ): ParameterModel = {
-    val name        = doc.getAsOpt[String]("name").getOrElse("")
-    val ref         = doc.getAsOpt[String]("ref").getOrElse("")
-    val description = doc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse("")
-    val maybeType   = doc.getAsOpt[String]("type")
+    val name        = doc.string("name").getOrElse("")
+    val ref         = doc.string("ref").getOrElse("")
+    val description = doc.string("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse("")
+    val maybeType   = doc.string("type")
     // Handle case where enum values include numbers and strings
     val maybeEnum       = doc.getAsOpt[Array[BSONValue]]("enum").map(_.toList.map(bsonValueToString))
-    val units           = doc.getAsOpt[String]("units").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse("")
-    val maxItems        = doc.getAsOpt[Int]("maxItems")
-    val minItems        = doc.getAsOpt[Int]("minItems")
-    val maxLength       = doc.getAsOpt[Int]("maxLength")
-    val minLength       = doc.getAsOpt[Int]("minLength")
+    val units           = doc.string("units").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse("")
+    val maxItems        = doc.int("maxItems")
+    val minItems        = doc.int("minItems")
+    val maxLength       = doc.int("maxLength")
+    val minLength       = doc.int("minLength")
     val maybeDimensions = doc.getAsOpt[Array[Int]]("dimensions").map(_.toList)
     val itemsDoc        = doc.get("items").map(_.asInstanceOf[BSONDocument])
     val maybeArrayType  = itemsDoc.flatMap(_.get("type").map(bsonValueToString))
 
     // FITS keyword(s) from publish-model.conf
-    val maybeKeyword = doc.getAsOpt[String]("keyword")
-    val maybeChannel = doc.getAsOpt[String]("channel")
+    val maybeKeyword = doc.string("keyword")
+    val maybeChannel = doc.string("channel")
     val keywords0    = maybeKeyword.toList.map(EventParameterFitsKeyInfo(_, maybeChannel))
     def getItems[A](name: String, f: BSONDocument => A): List[A] =
-      for (subDoc <- doc.getAsOpt[Array[BSONDocument]](name).map(_.toList).getOrElse(Nil)) yield f(subDoc)
+      for (subDoc <- doc.children(name)) yield f(subDoc)
     val keywords = keywords0 ::: getItems("keywords", EventParameterFitsKeyInfoParser(_))
 
     // --- Old json-schema uses Boolean for exclusive* keys, new one uses Number! ---
@@ -76,7 +76,7 @@ object ParameterModelBsonParser {
       .orElse(itemsDoc.flatMap(_.get("exclusiveMaximum").map(bsonValueToString)))
       .getOrElse("false")
     val exclusiveMaximum = exclusiveMaximumStr.toLowerCase() != "false"
-    val allowNaN         = doc.getAsOpt[Boolean]("allowNaN").getOrElse(false)
+    val allowNaN         = doc.booleanLike("allowNaN").getOrElse(false)
 
     def isNumeric(str: String): Boolean        = str.matches("([-+]?\\d+(\\.\\d+)?|[-]?[Ii]nf)")
     def ifNumeric(str: String): Option[String] = Some(str).filter(isNumeric)
@@ -112,7 +112,7 @@ object ParameterModelBsonParser {
     // Returns a string describing an array type
     def parseArrayTypeStr(doc: BSONDocument): String = {
       val items = doc.getAsOpt[BSONDocument]("items")
-      val t     = items.flatMap(_.getAsOpt[String]("type"))
+      val t     = items.flatMap(_.string("type"))
       val e     = items.flatMap(_.getAsOpt[Array[String]]("enum").map(_.toList))
       val s = if (t.isDefined) {
         parseTypeStr(items.get, t)
@@ -163,7 +163,7 @@ object ParameterModelBsonParser {
       else t
     }
 
-    val typeStr = parseTypeStr(doc, doc.getAsOpt[String]("type"))
+    val typeStr = parseTypeStr(doc, doc.string("type"))
 
     // only need FITS keys for events
     val fitsKeys =

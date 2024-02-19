@@ -204,7 +204,7 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
   }
 
   private[db] def getEntries: List[ApiCollections] = {
-    val paths = getCollectionNames.filter(isStdSet).map(IcdPath).toList
+    val paths = getCollectionNames.filter(isStdSet).map(IcdPath.apply).toList
     getEntries(paths)
   }
 

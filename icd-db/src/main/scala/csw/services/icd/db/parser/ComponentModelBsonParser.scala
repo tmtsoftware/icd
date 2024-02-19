@@ -17,17 +17,17 @@ object ComponentModelBsonParser {
   ): Option[ComponentModel] = {
     if (doc.isEmpty) None
     else {
-      val subsystem = doc.getAsOpt[String](BaseModelBsonParser.subsystemKey).get
-      val component = doc.getAsOpt[String](BaseModelBsonParser.componentKey).get
+      val subsystem = doc.string(BaseModelBsonParser.subsystemKey).get
+      val component = doc.string(BaseModelBsonParser.componentKey).get
       Some(
         ComponentModel(
-          componentType = doc.getAsOpt[String]("componentType").get,
+          componentType = doc.string("componentType").get,
           subsystem = subsystem,
           component = component,
-          title = doc.getAsOpt[String]("title").get,
-          description = HtmlMarkup.gfmToHtml(doc.getAsOpt[String]("description").get, maybePdfOptions),
-          modelVersion = doc.getAsOpt[String]("modelVersion").get,
-          wbsId = doc.getAsOpt[String]("wbsId").getOrElse(""),
+          title = doc.string("title").get,
+          description = HtmlMarkup.gfmToHtml(doc.string("description").get, maybePdfOptions),
+          modelVersion = doc.string("modelVersion").get,
+          wbsId = doc.string("wbsId").getOrElse(""),
           maybeSubsystemVersion = maybeSubsystemVersion
         )
       )

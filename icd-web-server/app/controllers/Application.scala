@@ -2,8 +2,8 @@ package controllers
 
 import javax.inject.*
 import java.security.MessageDigest
-import akka.actor.typed.scaladsl.adapter.*
-import akka.actor.typed.{ActorRef, ActorSystem}
+import org.apache.pekko.actor.typed.scaladsl.adapter.*
+import org.apache.pekko.actor.typed.{ActorRef, ActorSystem}
 import controllers.ApplicationData.AuthAction
 import csw.services.icd.db.*
 import csw.services.icd.github.IcdGitManager
@@ -16,13 +16,11 @@ import play.api.mvc.Cookie.SameSite.Strict
 import play.filters.csrf.{CSRF, CSRFAddToken}
 import play.api.mvc.*
 import play.api.{Configuration, Environment, Mode}
-import akka.actor.typed.scaladsl.AskPattern.*
-import akka.util.Timeout
+import org.apache.pekko.actor.typed.scaladsl.AskPattern.*
+import org.apache.pekko.util.Timeout
 import icd.web.shared.IcdModels.{IcdModel, ServicePath}
-import play.utils.UriEncoding
 
 import java.net.URLDecoder
-import java.nio.charset.Charset
 import scala.collection.mutable
 import scala.concurrent.duration.*
 import scala.concurrent.Future
@@ -34,7 +32,7 @@ import scala.util.{Failure, Success, Try}
 //noinspection TypeAnnotation,DuplicatedCode,ScalaUnusedSymbol
 @Singleton
 class Application @Inject() (
-    actorSystem: akka.actor.ActorSystem,
+    actorSystem: org.apache.pekko.actor.ActorSystem,
 //    myExecutionContext: MyExecutionContext,
     env: Environment,
     addToken: CSRFAddToken,

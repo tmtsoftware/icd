@@ -35,6 +35,6 @@ object Settings {
   lazy val dockerSettings = Seq(
     maintainer := "TMT Software",
     dockerExposedPorts := Seq(9000),
-    dockerBaseImage := "java:11"
+    dockerBaseImage := "java:17"
   )
 }

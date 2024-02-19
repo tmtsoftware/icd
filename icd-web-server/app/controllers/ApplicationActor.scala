@@ -2,8 +2,8 @@ package controllers
 
 import csw.services.icd.db.IcdDb
 import play.api.libs.concurrent.ActorModule
-import akka.actor.typed.{ActorRef, Behavior}
-import akka.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorRef, Behavior}
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import icd.web.shared.IcdModels.{IcdModel, ServicePath}
 import icd.web.shared.{
   ApiVersionInfo,

@@ -22,19 +22,20 @@ lazy val `icd-db` = project
   .settings(
     libraryDependencies ++=
       compileScope(
-        akkaActorTyped,
-        akkaActor,
-        akkaStream,
-        akkaSerializationJackson,
+        pekkoActorTyped,
+        pekkoActor,
+        pekkoStream,
+        pekkoSerializationJackson,
         jacksonModuleScala,
         reactivemongo,
-        sjsonnet,
+        reactivemongoActorsPekko,
         reactivemongoPlayJsonCompat,
         scalaCsv,
         playJson,
         jsonSchemaValidator,
         scopt,
         scalatags,
+        osLib,
         typesafeConfig,
         ficus,
         flexmarkAll,
@@ -133,7 +134,7 @@ lazy val icdWebShared = crossProject(JSPlatform, JVMPlatform)
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe.play" %%% "play-json" % PlayJsonVersion,
+      "org.playframework" %%% "play-json" % PlayJsonVersion,
       "com.lihaoyi"       %%% "scalatags" % ScalaTagsVersion
     )
   )

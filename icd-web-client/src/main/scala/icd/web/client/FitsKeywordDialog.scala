@@ -56,7 +56,6 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
   private def makeLinkForFitsKeySource(fitsKey: FitsKeyInfo, fitsChannel: FitsChannel, index: Int) = {
     import scalatags.JsDom.all.*
 
-
     val channel  = if (fitsChannel.name.isEmpty) None else Some(fitsChannel.name)
     val maybeTag = tagMap.get(FitsKeywordAndChannel(fitsKey.name, channel))
 
@@ -87,40 +86,40 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
         hideElement(hrElem)
       }
 
-    // Set which rows are visible based on the selected tag
-    fitsKeys.foreach { fitsKey =>
-      val elem = document.querySelector(s"#${fitsKey.name}")
-      if (tag == allTags) {
-        showElement(elem)
-        val channels = fitsKey.channels.map(_.name).filter(_.nonEmpty)
-        channels.foreach { c =>
-          val sourceElem = document.querySelector(s"#${fitsKey.name}-$c-source")
-          showElement(sourceElem)
-        }
-      }
-      else {
-        if (fitsKeywordsWithTag.exists(_.keyword == fitsKey.name)) {
+      // Set which rows are visible based on the selected tag
+      fitsKeys.foreach { fitsKey =>
+        val elem = document.querySelector(s"#${fitsKey.name}")
+        if (tag == allTags) {
           showElement(elem)
-          // Set which source links are visible based on the channel
           val channels = fitsKey.channels.map(_.name).filter(_.nonEmpty)
           channels.foreach { c =>
-            val showSource = fitsTags
-              .tags(tag)
-              .exists(k =>
-                k.keyword == fitsKey.name
-                  && k.channel.contains(c)
-              )
             val sourceElem = document.querySelector(s"#${fitsKey.name}-$c-source")
-            if (showSource)
-              showElement(sourceElem)
-            else
-              hideElement(sourceElem)
+            showElement(sourceElem)
           }
         }
-        else
-          hideElement(elem)
+        else {
+          if (fitsKeywordsWithTag.exists(_.keyword == fitsKey.name)) {
+            showElement(elem)
+            // Set which source links are visible based on the channel
+            val channels = fitsKey.channels.map(_.name).filter(_.nonEmpty)
+            channels.foreach { c =>
+              val showSource = fitsTags
+                .tags(tag)
+                .exists(k =>
+                  k.keyword == fitsKey.name
+                    && k.channel.contains(c)
+                )
+              val sourceElem = document.querySelector(s"#${fitsKey.name}-$c-source")
+              if (showSource)
+                showElement(sourceElem)
+              else
+                hideElement(sourceElem)
+            }
+          }
+          else
+            hideElement(elem)
+        }
       }
-    }
     }
   }
 
@@ -154,7 +153,6 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
   // Generates table with related FITS key information
   private def makeFitsKeyTable() = {
     import scalatags.JsDom.all.*
-
 
     def makeFitsTableRows() = {
       fitsKeys.map { fitsKey =>

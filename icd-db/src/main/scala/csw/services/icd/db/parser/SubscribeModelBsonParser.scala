@@ -17,16 +17,16 @@ object SubscribeModelBsonParser {
         val subscribeDoc = doc.getAsOpt[BSONDocument]("subscribe").get
 
         def getItems(name: String): List[SubscribeModelInfo] =
-          for (subDoc <- subscribeDoc.getAsOpt[Array[BSONDocument]](name).map(_.toList).getOrElse(Nil))
+          for (subDoc <- subscribeDoc.children(name))
             yield SubscribeInfoBsonParser(subDoc, maybePdfOptions)
 
         // For backward compatibility
         val oldEvents = getItems("telemetry") ++ getItems("eventStreams")
 
         SubscribeModel(
-          subsystem = doc.getAsOpt[String](BaseModelBsonParser.subsystemKey).get,
-          component = doc.getAsOpt[String](BaseModelBsonParser.componentKey).get,
-          description = subscribeDoc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
+          subsystem = doc.string(BaseModelBsonParser.subsystemKey).get,
+          component = doc.string(BaseModelBsonParser.componentKey).get,
+          description = subscribeDoc.string("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
           eventList = oldEvents ++ getItems("events"),
           observeEventList = getItems("observeEvents"),
           currentStateList = getItems("currentStates"),
@@ -41,10 +41,10 @@ object SubscribeInfoBsonParser {
 
   def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): SubscribeModelInfo =
     SubscribeModelInfo(
-      subsystem = doc.getAsOpt[String]("subsystem").getOrElse(""),
-      component = doc.getAsOpt[String](BaseModelBsonParser.componentKey).get,
-      name = doc.getAsOpt[String]("name").getOrElse(""),
-      usage = doc.getAsOpt[String]("usage").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
+      subsystem = doc.string("subsystem").getOrElse(""),
+      component = doc.string(BaseModelBsonParser.componentKey).get,
+      name = doc.string("name").getOrElse(""),
+      usage = doc.string("usage").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
       requiredRate = safeNumGet("requiredRate", doc),
       maxRate = doc.getAsOpt[BSONNumberLike]("maxRate").map(_.toDouble.getOrElse(1.0))
     )

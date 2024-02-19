@@ -7,7 +7,7 @@ import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.bson.*
 
 import reactivemongo.play.json.compat.*
-import bson2json.*
+//import bson2json.*
 import lax.*
 import json2bson.*
 

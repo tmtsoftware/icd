@@ -55,12 +55,12 @@ object FitsSourceBsonParser {
   def apply(doc: BSONDocument): FitsSource = {
     // XXX TODO FIXME: Enforce non-null values in json-schema and validate when importing
     FitsSource(
-      subsystem = doc.getAsOpt[String]("subsystem").getOrElse(""),
-      componentName = doc.getAsOpt[String]("componentName").getOrElse(""),
-      eventName = doc.getAsOpt[String]("eventName").getOrElse(""),
-      parameterName = doc.getAsOpt[String]("parameterName").getOrElse(""),
-      index = doc.getAsOpt[Int]("index"),
-      rowIndex = doc.getAsOpt[Int]("rowIndex")
+      subsystem = doc.string("subsystem").getOrElse(""),
+      componentName = doc.string("componentName").getOrElse(""),
+      eventName = doc.string("eventName").getOrElse(""),
+      parameterName = doc.string("parameterName").getOrElse(""),
+      index = doc.int("index"),
+      rowIndex = doc.int("rowIndex")
     )
   }
 }
@@ -69,8 +69,8 @@ object FitsChannelBsonParser {
   def apply(doc: BSONDocument): FitsChannel = {
     FitsChannel(
       source = doc.getAsOpt[BSONDocument]("source").map(FitsSourceBsonParser(_)).get,
-      name = doc.getAsOpt[String]("name").getOrElse(""),
-      comment = doc.getAsOpt[String]("comment").getOrElse("")
+      name = doc.string("name").getOrElse(""),
+      comment = doc.string("comment").getOrElse("")
     )
   }
 }
@@ -78,7 +78,7 @@ object FitsChannelBsonParser {
 object AvailableChannelsBsonParser {
   def apply(doc: BSONDocument): AvailableChannels = {
     AvailableChannels(
-      subsystem = doc.getAsOpt[String]("subsystem").get,
+      subsystem = doc.string("subsystem").get,
       channels = doc.getAsOpt[Array[String]]("channels").map(_.toList).getOrElse(Nil)
     )
   }
@@ -92,7 +92,7 @@ object AvailableChannelsListBsonParser {
     if (doc.isEmpty) Nil
     else {
       def getItems[A](name: String, f: BSONDocument => A): List[A] =
-        for (subDoc <- doc.getAsOpt[Array[BSONDocument]](name).map(_.toList).getOrElse(Nil)) yield f(subDoc)
+        for (subDoc <- doc.children(name)) yield f(subDoc)
       getItems("availableChannels", AvailableChannelsBsonParser.apply)
     }
   }
@@ -101,7 +101,7 @@ object AvailableChannelsListBsonParser {
 
 object FitsKeyInfoBsonParser {
   private def getChannels(doc: BSONDocument): List[FitsChannel] = {
-    for (subDoc <- doc.getAsOpt[Array[BSONDocument]]("channel").map(_.toList).getOrElse(Nil))
+    for (subDoc <- doc.children("channel"))
       yield FitsChannelBsonParser(subDoc)
   }
 
@@ -114,10 +114,10 @@ object FitsKeyInfoBsonParser {
       else Nil
     }
     FitsKeyInfo(
-      name = doc.getAsOpt[String]("name").get,
-      description = doc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
-      `type` = doc.getAsOpt[String]("type").get,
-      units = doc.getAsOpt[String]("units"),
+      name = doc.string("name").get,
+      description = doc.string("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
+      `type` = doc.string("type").get,
+      units = doc.string("units"),
       channels = channels
     )
   }
@@ -131,7 +131,7 @@ object FitsKeyInfoListBsonParser {
     if (doc.isEmpty) Nil
     else {
       def getItems[A](name: String, f: BSONDocument => A): List[A] =
-        for (subDoc <- doc.getAsOpt[Array[BSONDocument]](name).map(_.toList).getOrElse(Nil)) yield f(subDoc)
+        for (subDoc <- doc.children(name)) yield f(subDoc)
       getItems("fitsKeyInfo", FitsKeyInfoBsonParser.apply(_, maybePdfOptions))
     }
   }

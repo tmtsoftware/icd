@@ -10,12 +10,12 @@ object MetadataModelBsonParser {
       doc: BSONDocument,
       maybePdfOptions: Option[PdfOptions]
   ): MetadataModel = {
-    val name = doc.getAsOpt[String]("name").get
+    val name = doc.string("name").get
     MetadataModel(
       name = name,
-      description = doc.getAsOpt[String]("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
-      dataType = doc.getAsOpt[String]("type").getOrElse(""),
-      keyword = doc.getAsOpt[String]("keyword").getOrElse("")
+      description = doc.string("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
+      dataType = doc.string("type").getOrElse(""),
+      keyword = doc.string("keyword").getOrElse("")
     )
   }
 

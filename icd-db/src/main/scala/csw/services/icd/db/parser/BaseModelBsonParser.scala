@@ -13,7 +13,7 @@ object BaseModelBsonParser {
 
   def apply(doc: BSONDocument): BaseModel =
     BaseModel(
-      subsystem = doc.getAsOpt[String](subsystemKey).get,
-      component = doc.getAsOpt[String](componentKey).get
+      subsystem = doc.string(subsystemKey).get,
+      component = doc.string(componentKey).get
     )
 }

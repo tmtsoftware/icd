@@ -1,12 +1,12 @@
 package csw.services.icd.html
 
 import csw.services.icd.db.getFileContents
+import csw.services.icd.deleteDirectoryRecursively
 import icd.web.shared.IcdModels.ServicePath
 import play.api.libs.json.{Json, Reads}
 
 import java.io.File
 import java.nio.file.Files
-import scala.reflect.io.Directory
 import scala.util.{Failure, Success, Try}
 import sys.process.*
 
@@ -120,7 +120,7 @@ object OpenApiToHtml {
           else {
             errorDiv(s"$indexFile was not generated")
           }
-          new Directory(tempDir).deleteRecursively()
+          deleteDirectoryRecursively(tempDir)
           html
       }
     }
