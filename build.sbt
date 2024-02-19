@@ -29,7 +29,6 @@ lazy val `icd-db` = project
         pekkoSerializationJackson,
         jacksonModuleScala,
         reactivemongo,
-//        reactivemongoActorsPekko,
         reactivemongoPlayJsonCompat,
         scalaCsv,
         playJson,

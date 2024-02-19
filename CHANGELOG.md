@@ -18,6 +18,9 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Added new optional "category" field for events with possible values: [DEMAND, CONTROL, EVENT, STATUS] (See "Event Categories" at end of [README.md](README.md))
 - Replaced general usage of "TMT" with "TIO" (TMT International Observatory) in web app and docs.
 - Added validation check for parameters that the "defaultValue" is valid for the declared type
+- Updated dependencies, swithced from akka to pekko
+- Replaced dependency on sjsonnet Java lib with a use of "jsonnet" command, which must be installed if the feature is used.
+- UI Changes in icd web app: Moved buttons that depend on the selected subsystems or ICDs to the *Select* tab (Buttons are only enabled when applicable).
 
 ## [ICD v2.2.3] - 2023-03-05
 

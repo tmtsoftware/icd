@@ -215,14 +215,14 @@ class ScalaCodeGenerator(db: IcdDb) {
         |// DO NOT EDIT.
         |// See https://github.com/tmtsoftware/icd for more information.
         |
-        |import csw.params.core.generics.KeyType.*
+        |import csw.params.core.generics.KeyType._
         |import csw.params.commands.CommandName
-        |import csw.params.events.*
-        |import csw.prefix.models.*
-        |import csw.params.core.generics.*
-        |import csw.params.core.models.*
-        |import csw.params.core.models.Coords.*
-        |import csw.time.core.models.*
+        |import csw.params.events._
+        |import csw.prefix.models._
+        |import csw.params.core.generics._
+        |import csw.params.core.models._
+        |import csw.params.core.models.Coords._
+        |import csw.time.core.models._
         |
         |/**
         | * Top level API for: $s
