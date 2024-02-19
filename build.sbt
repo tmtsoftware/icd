@@ -2,6 +2,7 @@ import sbt._
 import Dependencies._
 import Settings._
 
+def providedScope(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "provided")
 def compileScope(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 def testScope(deps: ModuleID*): Seq[ModuleID]    = deps map (_ % "test")
 def toPathMapping(f: File): (File, String)       = f          -> f.getName
@@ -28,7 +29,7 @@ lazy val `icd-db` = project
         pekkoSerializationJackson,
         jacksonModuleScala,
         reactivemongo,
-        reactivemongoActorsPekko,
+//        reactivemongoActorsPekko,
         reactivemongoPlayJsonCompat,
         scalaCsv,
         playJson,

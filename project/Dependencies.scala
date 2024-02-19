@@ -43,7 +43,7 @@ object Dependencies {
   val graphDot = ("org.scala-graph"        %% "graph-dot" % "1.13.3") // XXX TODO update to 2.0.0, breaking changes
 //    .cross(CrossVersion.for3Use2_13)
 
-  val reactivemongo               = "org.reactivemongo" %% "reactivemongo"                  % "1.1.0-RC12"
+  val reactivemongo               = "org.reactivemongo" %% "reactivemongo"                  % "1.1.0.pekko-RC12"
   val reactivemongoActorsPekko    = "org.reactivemongo" %% "reactivemongo-actors-pekko"     % "1.1.0-RC12"
   val reactivemongoPlayJsonCompat = "org.reactivemongo" %% "reactivemongo-play-json-compat" % "1.1.0.play210-RC12"
 
