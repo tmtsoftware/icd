@@ -157,7 +157,7 @@ class ComponentInfoHelper(
           makeSubsystemWithVersion(si.subsystem, Some(si.component)),
           maybePdfOptions,
           Map.empty,
-          Set("publishModel")
+          Set("publishModel", "componentModel")
         )
         // need to resolve any "refs" in the publisher's publish model
         resolvedPublishModel <- t.publishModel.map(p => Resolver(List(t)).resolvePublishModel(p))
