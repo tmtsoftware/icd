@@ -9,7 +9,17 @@ import csw.services.icd.IcdValidator
 import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, Subsystems}
 import csw.services.icd.viz.IcdVizManager.EdgeType.EdgeType
 import csw.services.icd.viz.IcdVizManager.MissingType.MissingType
-import icd.web.shared.{ComponentInfo, DetailedSubscribeInfo, EventOrImageInfo, IcdVizOptions, PdfOptions, ReceivedCommandInfo, SentCommandInfo, SubscribeInfo, SubsystemWithVersion}
+import icd.web.shared.{
+  ComponentInfo,
+  DetailedSubscribeInfo,
+  EventOrImageInfo,
+  IcdVizOptions,
+  PdfOptions,
+  ReceivedCommandInfo,
+  SentCommandInfo,
+  SubscribeInfo,
+  SubsystemWithVersion
+}
 import icd.web.shared.IcdModels.{ComponentModel, SubscribeModelInfo}
 import net.sourceforge.plantuml.{FileFormat, FileFormatOption, SourceStringReader}
 import scalax.collection.config.CoreConfig
@@ -54,8 +64,8 @@ object IcdVizManager {
   private case class EdgeModel(components: ComponentPair, label: EdgeLabel)
 
   // Labeled directed edges
-  private case class MyLDiEdge(model: EdgeModel) extends AbstractDiEdge(source = model.components.from, target = model.components.to)
-//  type MyGraph = Graph[String, MyLDiEdge]
+  private case class MyLDiEdge(model: EdgeModel)
+      extends AbstractDiEdge(source = model.components.from, target = model.components.to)
   private object MyGraph extends TypedGraphFactory[String, MyLDiEdge]
 
   // Configuration options for Graph
@@ -65,7 +75,8 @@ object IcdVizManager {
   private val conf: Config = ConfigFactory.load
 
   // Read subsystem color settings from reference.conf
-  private val subsystemColorMap: Map[String, String] = Subsystems.allSubsystems.map(s => s -> conf.getString(s"icd.viz.color.$s")).toMap
+  private val subsystemColorMap: Map[String, String] =
+    Subsystems.allSubsystems.map(s => s -> conf.getString(s"icd.viz.color.$s")).toMap
 
   // --- plotting defaults ---
 
@@ -124,12 +135,13 @@ object IcdVizManager {
     val isIcd = options.subsystems.length + options.components.length == 2
 
     val componentInfoList = if (isIcd) {
-      val svList = options.subsystems ::: options.components
-      val sv1 = svList.head
-      val sv2  = svList.tail.head
+      val svList  = options.subsystems ::: options.components
+      val sv1     = svList.head
+      val sv2     = svList.tail.head
       val sv1List = components.filter(_.subsystem == sv1.subsystem)
       sv1List.flatMap(sv => IcdComponentInfo.getComponentInfo(versionManager, sv, sv2, noMarkdownOpt))
-    } else {
+    }
+    else {
       val componentInfoHelper =
         new ComponentInfoHelper(versionManager, displayWarnings = false, clientApi = true, subsystems)
       components.flatMap(sv => componentInfoHelper.getComponentInfo(sv, noMarkdownOpt, Map.empty))
@@ -697,8 +709,19 @@ object IcdVizManager {
       getSubscribedEventEdges(missing = true, images = true) ++ getPublishedEventEdges(missing = true, images = true)
     val commandEdgeModels        = combineEdgeModels(getSentCommandEdges(missing = false) ++ getReceivedCommandEdges(missing = false))
     val missingCommandEdgeModels = getSentCommandEdges(missing = true) ++ getReceivedCommandEdges(missing = true)
-    val allEdgeModels =
+
+    val allEdgeModels: List[EdgeModel] = (
       eventEdgeModels ++ imageEdgeModels ++ missingEventEdgeModels ++ missingImageEdgeModels ++ commandEdgeModels ++ missingCommandEdgeModels
+    ).distinct
+
+//    // Note: Since scala-graph 2.0, it seems that the component pairs need to be unique, so call combineEdgeModels
+//    // to merge image and event edges
+//    val allEdgeModels = (
+//      combineEdgeModels(eventEdgeModels ++ imageEdgeModels)
+//        ++ combineEdgeModels(missingEventEdgeModels ++ missingImageEdgeModels)
+//        ++ commandEdgeModels
+//        ++ missingCommandEdgeModels
+//    ).distinct
 
     // Create the final graph
     val g = MyGraph.from(
