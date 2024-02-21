@@ -14,8 +14,9 @@ import icd.web.shared.IcdModels.{ComponentModel, SubscribeModelInfo}
 import net.sourceforge.plantuml.{FileFormat, FileFormatOption, SourceStringReader}
 import scalax.collection.config.CoreConfig
 import scalax.collection.generic.AbstractDiEdge
-import scalax.collection.immutable.Graph
+import scalax.collection.immutable.{Graph, TypedGraphFactory}
 import scalax.collection.io.dot.*
+import scalax.collection.io.dot.implicits.*
 
 import language.implicitConversions
 
@@ -54,6 +55,8 @@ object IcdVizManager {
 
   // Labeled directed edges
   private case class MyLDiEdge(model: EdgeModel) extends AbstractDiEdge(source = model.components.from, target = model.components.to)
+//  type MyGraph = Graph[String, MyLDiEdge]
+  private object MyGraph extends TypedGraphFactory[String, MyLDiEdge]
 
   // Configuration options for Graph
   implicit val myConfig: CoreConfig = CoreConfig()
@@ -503,27 +506,27 @@ object IcdVizManager {
     // Make the root graph
     val root = DotRootGraph(
       directed = true,
-      id = Some(Id("icdviz")),
+      id = Some("icdviz"),
       attrStmts = List(
         DotAttrStmt(
           Elem.graph,
           List(
-            DotAttr(Id("layout"), Id(options.layout)),
-            DotAttr(Id("splines"), Id(options.splines.toString)),
-            DotAttr(Id("overlap"), Id(options.overlap)),
-            DotAttr(Id("ratio"), Id(options.ratio))
+            DotAttr("layout", options.layout),
+            DotAttr("splines", options.splines.toString),
+            DotAttr("overlap", options.overlap),
+            DotAttr("ratio", options.ratio)
           )
         ),
         DotAttrStmt(
           Elem.node,
           List(
-            DotAttr(Id("fontsize"), Id(nodeFontsize))
+            DotAttr("fontsize", nodeFontsize)
           )
         ),
         DotAttrStmt(
           Elem.edge,
           List(
-            DotAttr(Id("fontsize"), Id(edgeFontsize))
+            DotAttr("fontsize", edgeFontsize)
           )
         )
       )
@@ -534,16 +537,16 @@ object IcdVizManager {
       val pairs = allSubsystems.map { subsystem =>
         val color = getSubsystemColor(subsystem)
         subsystem -> DotSubGraph(
-          ancestor = root,
-          subgraphId = Id(s"cluster_$subsystem"),
+          root,
+          s"cluster_$subsystem",
           attrList = List(
-            DotAttr(Id("label"), Id(subsystem)),
-            DotAttr(Id("color"), Id(color)),
-            DotAttr(Id("fontcolor"), Id(color)),
-            DotAttr(Id("fontsize"), Id(subsystemFontsize)),
-            DotAttr(Id("style"), Id("rounded")),
-            DotAttr(Id("penwidth"), Id("3")),
-            DotAttr(Id("labelloc"), Id("b"))
+            DotAttr("label", subsystem),
+            DotAttr("color", color),
+            DotAttr("fontcolor", color),
+            DotAttr("fontsize", subsystemFontsize),
+            DotAttr("style", "rounded"),
+            DotAttr("penwidth", "3"),
+            DotAttr("labelloc", "b")
           )
         )
       }
@@ -566,21 +569,21 @@ object IcdVizManager {
       val styleAttr =
         if (edgeLabel.missing.isDefined)
           List(
-            DotAttr(Id("color"), Id(missingColor)),
-            DotAttr(Id("fontcolor"), Id(missingColor)),
-            DotAttr(Id("style"), Id("dashed"))
+            DotAttr("color", missingColor),
+            DotAttr("fontcolor", missingColor),
+            DotAttr("style", "dashed")
           )
         else
           List(
-            DotAttr(Id("color"), Id(color)),
-            DotAttr(Id("fontcolor"), Id(color))
+            DotAttr("color", color),
+            DotAttr("fontcolor", color)
           )
       val labelAttr = if (showLabel) {
         val label = if (edgeLabel.missing.isDefined) {
           s"${edgeLabel.missing.get}:\\n${edgeLabel.label}"
         }
         else s"${edgeLabel.edgeType}:\\n${edgeLabel.label}"
-        if (edgeLabel.label.nonEmpty) List(DotAttr(Id("label"), Id(label))) else Nil
+        if (edgeLabel.label.nonEmpty) List(DotAttr("label", label)) else Nil
       }
       else Nil
       Some(
@@ -605,10 +608,10 @@ object IcdVizManager {
           DotNodeStmt(
             NodeId(component),
             attrList = List(
-              DotAttr(Id("label"), Id(componentNameFromPrefix(component))),
-              DotAttr(Id("color"), Id(color)),
-              DotAttr(Id("fontcolor"), Id(color)),
-              DotAttr(Id("style"), Id(style))
+              DotAttr("label", componentNameFromPrefix(component)),
+              DotAttr("color", color),
+              DotAttr("fontcolor", color),
+              DotAttr("style", style)
             )
           )
         )
@@ -698,7 +701,9 @@ object IcdVizManager {
       eventEdgeModels ++ imageEdgeModels ++ missingEventEdgeModels ++ missingImageEdgeModels ++ commandEdgeModels ++ missingCommandEdgeModels
 
     // Create the final graph
-    val g: Graph[String, MyLDiEdge] = Graph.from(allEdgeModels.map(MyLDiEdge)).asInstanceOf[Graph[String, MyLDiEdge]]
+    val g = MyGraph.from(
+      allEdgeModels.map(MyLDiEdge)
+    )
 
     // Convert to dot
     val dot = g.toDot(
