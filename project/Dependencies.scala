@@ -3,12 +3,12 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport.*
 
 object Dependencies {
   val Version = "3.0.1"
+//  val ScalaVersion    = "3.3.1"
   val ScalaVersion    = "2.13.12"
   val PekkoVersion    = "1.0.2"
   val PlayJsonVersion = "3.0.2"
   val ScalaTagsVersion  = "0.12.0"
   val ScalaJsDomVersion = "2.8.0"
-  val ScalaCssVersion       = "1.0.0"
   val BootstrapVersion      = "5.3.2"
   val JQueryVersion         = "3.7.1"
   val JQueryUiVersion       = "1.13.2"
@@ -37,7 +37,7 @@ object Dependencies {
   val commonsText = "org.apache.commons" % "commons-text" % "1.11.0"
 
   val plantuml = "net.sourceforge.plantuml" % "plantuml"  % "1.2024.3"
-  val graphDot = ("org.scala-graph"        %% "graph-dot" % "1.13.3") // XXX TODO update to 2.0.0, breaking changes
+  val graphDot = ("org.scala-graph"        %% "graph-dot" % "2.0.0")
 
   val reactivemongo               = "org.reactivemongo" %% "reactivemongo"                  % "1.1.0.pekko-RC12"
   val reactivemongoPlayJsonCompat = "org.reactivemongo" %% "reactivemongo-play-json-compat" % "1.1.0.play210-RC12"
