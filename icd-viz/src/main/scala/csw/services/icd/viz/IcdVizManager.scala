@@ -22,8 +22,9 @@ import icd.web.shared.{
 }
 import icd.web.shared.IcdModels.{ComponentModel, SubscribeModelInfo}
 import net.sourceforge.plantuml.{FileFormat, FileFormatOption, SourceStringReader}
+import scalax.collection.OneOrMore
 import scalax.collection.config.CoreConfig
-import scalax.collection.generic.AbstractDiEdge
+import scalax.collection.generic.{AbstractDiEdge, MultiEdge}
 import scalax.collection.immutable.{Graph, TypedGraphFactory}
 import scalax.collection.io.dot.*
 import scalax.collection.io.dot.implicits.*
@@ -66,6 +67,10 @@ object IcdVizManager {
   // Labeled directed edges
   private case class MyLDiEdge(model: EdgeModel)
       extends AbstractDiEdge(source = model.components.from, target = model.components.to)
+      with MultiEdge {
+    override def extendKeyBy: OneOrMore[Any] = OneOrMore.one(model)
+  }
+
   private object MyGraph extends TypedGraphFactory[String, MyLDiEdge]
 
   // Configuration options for Graph
