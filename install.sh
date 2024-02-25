@@ -27,6 +27,9 @@ test $"sc_version" == "3.0.35" -o `echo -e "$sc_version\n3.0.35" | sort -Vr | ta
 # Graphviz is required for UML support and icd-viz
 hash dot 2>/dev/null || { echo >&2 "Please install graphviz first (See https://graphviz.org/download/).  Aborting."; exit 1; }
 
+# jsonnet is required to support model files using it instead of HOCON or JSON
+hash jsonnet 2>/dev/null || { echo >&2 "Please install jsonnet first (See https://jsonnet.org/).  Aborting."; exit 1; }
+
 # Some scalajs related sbt plugins depend on node.js,
 # but the executable has different names on different systems
 if hash nodejs 2>/dev/null ; then

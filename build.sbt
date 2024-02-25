@@ -142,7 +142,6 @@ lazy val icdWebShared = crossProject(JSPlatform, JVMPlatform)
 lazy val icdWebSharedJvm = icdWebShared.jvm
 lazy val icdWebSharedJs  = icdWebShared.js
 
-//// loads the server project at sbt startup
-//Global / onLoad := (onLoad in Global).value andThen { s: State =>
-//  "project icdWebServer" :: s
-//}
+lazy val docs = project
+  .settings(docSettings)
+  .enablePlugins(NoPublish, GithubPublishPlugin, ParadoxMaterialSitePlugin)
