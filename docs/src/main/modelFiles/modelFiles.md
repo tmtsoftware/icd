@@ -1112,3 +1112,120 @@ The screenshot below shows part of the PDF display for the above CurrentStates e
 
 ![](../images/modelFiles/currentStateExample1.png)
 
+## Service Model File
+
+Another optional icd model file is `service-model.conf`. It is used to describe HTTP services provided by or consumed by a component. The actual HTTP services are described in [OpenAPI](https://swagger.io/specification/) files that are also stored in the icd database.
+
+On the consumer side, the file can indicate which routes of the HTTP service it uses.
+
+Here is an example consumer service-model.conf:
+
+```
+subsystem = TEST
+component = env.ctrl
+
+requires = [
+  {
+    subsystem = TEST2
+    component = SegmentService
+    name = esw-segment-db
+    // Optional routes / paths used
+    paths = [
+      {
+        path = /setPosition
+        method = post
+      },
+      {
+        path = /currentPositions
+        method = get
+      }
+    ]
+  }
+]
+```
+
+The above example states that the component uses the HTTP methods `POST /setPosition` and `GET /currentPositions` from the service. The paths are optional and just for information. The generated documentation for an ICD between two subsystems or components will only display the parts of HTTP services that are declared as being used (in the paths array). By default, if the paths are not specified, the complete service API will be included in the ICD documentation.
+
+In the example `service-model.conf` file from a service provider below, the line:
+
+    openApi = esw-segment-db.json
+
+points to the OpenAPI definition for the HTTP service that is being provided (The OpenAPI file should be in the same directory as the `service-model.conf` file and can be in JSON or YAML format and have the suffix `.json`, `.yaml` or `.yml`). Both the service-model information and the contents of the OpenAPI file are stored in the icd database where they are used to produce documentation (YAML files are first converted to JSON).
+
+service-model.conf:
+```
+subsystem = TEST2
+component = SegmentService
+
+provides = [
+  {
+    name = esw-segment-db
+    description = "HTTP API to ESW Segment DB service, used for keeping track of TMT mirror segments"
+    openApi = esw-segment-db.json
+  }
+]
+```
+
+The screenshot below shows how the above service provider info is displayed in the icd web app:
+
+![](../images/modelFiles/seg-service.png)
+
+If you click on the small button in the Name column, the detailed display is toggled open or closed. If you click on the link next to it, the documentation for the HTTP service is opened in a new tab. The format of the documentation for HTTP services is different from that of events, since it is provided by the [swagger-ui](https://swagger.io/tools/swagger-ui/) library. The PDF version is somewhat simpler and is provided by the [swagger-codegen](https://swagger.io/tools/swagger-codegen/) command line application.
+
+Note that each component can declare multiple services consumed and/or provided in the `service-model.conf` file. You can find example `service-model.conf` files and OpenAPI files in the [examples/3.0](https://github.com/tmtsoftware/icd/tree/master/examples/3.0) directory in the icd sources.
+
+## Alarms
+
+An alarm is published to mark an abnormal condition that requires attention. Alarms are not errors; they are conditions that occur asynchronously while components are executing or inactive. 
+
+The alarm feature has been redesigned for the CSW PDR in response to CoDR comments.  The structure of the model follows the design of the Alarm Configuration file, which provides a listing of all possible alarms within the Observatory, as well as information for the operator to respond to the alarm.
+
+The table below lists the required and optional fields for an alarm definition in `alarm-model.conf`:
+
+|Field| Required?| Notes|
+|----:|:-----:|:-------|
+|name| yes| Name of the alarm, which should be one word.|
+|description| yes| A description of the alarm including what is the cause and possible response. The description is in triple quotes for multi-lined text. Note that spaces between paragraphs are retained.|
+|requirements| no| List of requirements that flow to this alarm|
+|severityLevels| yes| An array of severity levels that the alarm can have (besides `Disconnected`, `Indeterminate`, `Okay`): Default is any severity. Possible values are: `Warning`, `Major`, `Critical`.|
+|location| yes| A text description of where the alarming condition is located|
+|alarmType| yes| The general category for the alarm: One of: `Absolute`, `BitPattern`, `Calculated`, `Deviation`, `Discrepancy`, `Instrument`, `RateChange`, `RecipeDriven`, `Safety`, `Statistical`, `System`|
+|probableCause| yes| The probable cause for each level or for all levels|
+|operatorResponse| yes| Instructions or information to help the operator respond to the alarm|
+|autoAck| yes| Does this alarm automatically acknowledge without operator?|
+|latched| yes| Does this alarm latch?|
+
+Below is an example `alarm-model.conf` file:
+
+```
+subsystem = TEST
+component = env.ctrl
+
+alarms = [
+    {
+      name = limit
+      description = "The NGS FSM stage has reached a limit. It is not possible to position the FSM."
+      requirements = [TBD]
+      severityLevels = [Major]
+      location = "NGS FSM stage"
+      alarmType = System
+    probableCause = "The PFSM HCD was commanded without the knowledge of the assembly, or the configured soft limits are incorrect"
+      operatorResponse = "Execute the datum command"
+      autoAck = false
+      latched = true
+    }
+  ]
+```
+
+The PDF output generated from this part of the `alarm-model.conf` file is shown below:
+
+![](../images/modelFiles/alarmExample1.png)
+
+@@@ note
+
+In previous icd versions, the alarms were listed in the publish-model.conf file and this is still supported for backward compatibility.
+
+@@@
+
+## Subscribe-model
+
