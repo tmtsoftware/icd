@@ -17,7 +17,7 @@ object Settings {
     scalaVersion := Dependencies.ScalaVersion,
   )
 
-  val docSettings = Seq(
+  val docSettings = commonSettings ++ Seq(
     docsRepo       := "https://github.com/tmtsoftware/tmtsoftware.github.io.git",
     docsParentDir  := "idbs",
     gitCurrentRepo := "https://github.com/tmtsoftware/idbs",

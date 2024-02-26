@@ -45,3 +45,16 @@ The git clone command will result in a local directly called icd. An `install.sh
 The code is built with the `sbt` build program, which must be downloaded and installed (see http://www.scala-sbt.org). That task is not covered here. The “All Platforms” or “Manual installation” is quick, which is the suggested approach.
 
 The `icdwebserver` application starts the web application (by default on localhost:9000).
+
+## Installing MongoDB
+
+In order to run the icd applications locally, it is necessary to install the database MongoDB, which is available at https://www.mongodb.org. The community edition is sufficient for our needs and instructions for installation can be found for a variety of platforms at
+
+https://docs.mongodb.com/manual/administration/install-community/.
+
+Note that it may be necessary to adjust system limits in order for mongod to run correctly. See
+
+https://docs.mongodb.com/manual/reference/ulimit/.
+
+Note: If you wish to “start over” with no database entries, you can use the command `icd-db –drop db`. Run `icd-git –ingest` to get the published APIs and ICDs from the released versions on GitHub.
+
