@@ -1004,6 +1004,111 @@ The format of a single metadata item for an image is shown in the table below:
 |type| yes| The data type of the keyword value (One of: [boolean, integer, string, byte, short, long, float, double])|
 |keyword| no| FITS keyword (for example: SCALE, ITIME)|
 
+Below is an example section of a `publish-model.conf` file that shows two published images. Other components can then reference these images in the `subscribe-model.conf` file to indicate that they will subscribe to the published images.
 
+```
+  images = [
+    {
+      name = guider1
+      description = "Images from the WFOS AGWFS 1"
+      channel = viz.wfos.agwfs1
+      format = FITS
+      size = [2048, 2048]
+      pixelSize = 2
+      maxRate = 5.0
+      metadata = [
+        {
+          name = platescale
+          type = float
+          description = "platescale of image in arcsec/pixel"
+          keyword = SCALE
+        }
+        {
+          name = integrationTime
+          type = integer
+          description = "integration time of image in ms"
+          keyword = ITIME
+        }
+      ]
+    }
+    {
+      name = guider3
+      description = "Images from the WFOS AGWFS 3"
+      channel = viz.wfos.agwfs1
+      format = FITS
+      size = [2048, 2048]
+      pixelSize = 2
+      maxRate = 5.0
+      metadata = [
+        {
+          name = platescale
+          type = float
+          description = "platescale of image in arcsec/pixel"
+          keyword = SCALE
+        }
+        {
+          name = integrationTime
+          type = integer
+          description = "integration time of image in ms"
+          keyword = ITIME
+        }
+      ]
+    }
+  ]
+```
 
+## Other Event Types
+
+Some events signal an occurrence of an activity in a component that other systems use to synchronize actions. Some, like observe events, are system defined. They are not periodic, so a rate is not necessary. The `publish-model.conf` file has a container for events the component publishes that includes an array of one or more events.
+
+Current states, which are published by HCDs for assemblies, are not actually events, but are structured the same, and written in the `currentStates` block instead of the `events` block.
+
+Events and current states have the same schema, with a `name`, `description`, and parameters describing the event data. Below is an example current state event described in the `publish-model.conf` file:
+
+```
+  currentStates = [
+    {
+      name = "nacqUnarchived"
+      archive = false
+      parameters = [
+        {
+          name = nacq_detector_state
+          description = "current state of the NACQ detector"
+          enum = [EXPOSING, READING, IDLE, ERROR]
+        }
+        {
+          name = nacq_period
+          description = "NACQ continuous read period"
+          type = float
+          units = seconds
+        }
+        {
+          name = nacq_contRead
+          description = "NACQ continuous read state enabled"
+          type = boolean
+        }
+        {
+          name = nacq_mag_position
+          description = "NACQ magnifier stage motor position"
+          type = float
+          // units = TBD
+        }
+        {
+          name = nacq_position
+          description = "nominal position of the NACQ/NHRWFS stage for the NACQ "
+          // array of 3 floating point numbers in mm
+          type = array
+          dimensions: [3]
+          items = {
+            type = float
+          }
+          units = mm
+        }
+      ]
+    }
+```
+
+The screenshot below shows part of the PDF display for the above CurrentStates example:
+
+![](../images/modelFiles/currentStateExample1.png)
 
