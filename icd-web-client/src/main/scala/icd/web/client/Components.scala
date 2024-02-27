@@ -1323,7 +1323,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                       a(id := idStr, name := idStr, onclick := openInNewTab, title := s"Open ${m.name} API in new tab.")(m.name)
                     )
                   ),
-                  td(m.description),
+                  td(
+                    width := "90%",
+                    m.description
+                  ),
                   if (clientApi) td(s.requiredBy.map(_.component).distinct.map(makeLinkForComponent)) else span
                 ),
                 row
