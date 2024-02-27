@@ -20,7 +20,7 @@ object Settings {
   val docSettings = commonSettings ++ Seq(
     docsRepo       := "https://github.com/tmtsoftware/tmtsoftware.github.io.git",
     docsParentDir  := "idbs",
-    gitCurrentRepo := "https://github.com/tmtsoftware/idbs",
+    gitCurrentRepo := "https://github.com/tmtsoftware/icd",
     commands += Command.command("openSite") { state =>
       val uri = s"file://${Project.extract(state).get(siteDirectory)}/${docsParentDir.value}/${version.value}/index.html"
       state.log.info(s"Opening browser at $uri ...")

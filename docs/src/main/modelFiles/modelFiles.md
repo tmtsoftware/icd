@@ -1229,3 +1229,193 @@ In previous icd versions, the alarms were listed in the publish-model.conf file 
 
 ## Subscribe-model
 
+The `subscribe-model.conf` file lists the event information a component subscribes to from other components. The `subscribe-model.conf` file is simpler than the `publish-model.conf` file, containing only references to the published items.
+
+Like `publish-model.conf`, the `subscribe-model.conf` file includes sections for each of the kinds of events or images that are available: `events`, `observeEvents`, `images` and `currentStates`.  Each section is an array of items with the same fields as shown in the table below. Only the `subsystem`, `component`, and `name` fields are required.
+
+|Field| Required? | Notes|
+|----:|:---------:|:-----|
+|subsystem| yes| Name of the publisher’s subsystem.|
+|component| yes| Name of the component publishing the item.|
+|name| yes| The simple name of the item such as: zenithAngle.|
+|usage| no| Describes how the item is being used by the subscriber|
+|requiredRate| no| The rate the subscriber needs updates of the item in order to operate properly (in Hz). This may not be the rate that the publisher publishes.|
+|maxRate| no| The maximum rate at which the subscriber can process the item (in Hz).|
+
+Below is an example `subscribe-model.conf` file for an IRIS component called `oiwfs_adc_assembly` that uses the published data of the TCS.
+
+```
+subsystem = IRIS
+component = oiwfs_adc_assembly
+
+subscribe {
+  events = [
+    {
+      subsystem = TCS
+      component = cmIRIS
+      name = oiwfs1AtmDispersion
+      usage = "Atmospheric dispersion stream"
+      requiredRate = 1
+    }
+    {
+      subsystem = TCS
+      component = cmIRIS
+      name = oiwfs2AtmDispersion
+      usage = "Atmospheric dispersion stream"
+      requiredRate = 1
+    }
+    {
+      subsystem = TCS
+      component = cmIRIS
+      name = oiwfs3AtmDispersion
+      usage = "Atmospheric dispersion stream"
+      requiredRate = 1
+    }
+    {
+      subsystem = IRIS
+      component = oiwfs_poa_assembly
+      name = POS_current
+      usage = "Current OIWFS probe rotations needed to set correct ADC orientations"
+    }
+    {
+      subsystem = NFIRAOS
+      component = rtc
+      name = oiwfsImage
+      usage = "OIWFS ellipticity correction stream for ADCs"
+    }
+  ]
+}
+```
+
+Events have been redesigned for the CSW PDR. Components write their data and other systems sample it at the rate they need. `requiredRate` allows a component to state a rate they require to operate properly. It’s up to the publisher to make sure that they can provide that rate. This is part of checking interfaces.
+
+There is minimal documentation for subscribe items. The full description of an item belongs with the publisher, not the subscriber. The subscriber is only referencing its use of information published by another component.
+
+The `name` field must match the name of published item in another component. It must be spelled correctly. The best way is to browse the API of the source system and copy the full path.
+
+By default, subscribed events are not displayed in API documents. To include them, pass the `–clientApi` option to `icd-db`, or select the `Include client API information` check box in the web app.
+
+The figure below shows a section of the display of the icd web app for the above `subscribe-model.conf` file. The descriptions are looked up in the database (originally from `publish-model.conf` files in other components).
+
+![](../images/modelFiles/subscribeModel1.png)
+
+See also the example subsystems in the icd GitHub repo that show the different types of events and images used in the `subscribe-model.conf` files. 
+
+## Command-model
+
+The `command-model.conf` file describes the submit commands the component accepts (receive) and the submit commands it sends to other components it depends on (send). As in other sections, there is a block for the `send` and `receive` entries. The required and optional fields of `command-model.conf` are shown in the table below:
+
+|Field| Required?| Notes|
+|----:|:-------:|:------|
+|subsystem| yes| Name of the subsystem. Must be the same as SE subsystem name.|
+|component| yes| Name of the component that uses this command-model.conf file. Should match name used elsewhere.|
+|receive| yes| The block for commands this component supports.|
+|description| no| An optional overall description of the commands received by the component. The description is in triple quotes for multi-lined text.|
+|send| no| The block for commands this component sends to other components.|
+
+The `receive` block holds an array of items that are descriptions of commands the component receives or accepts. 
+
+The required and optional fields of the `receive` block are shown in table below.
+
+|Field| Required?| Notes|
+|----:|:--------:|:-----|
+|name| yes| Name of the command (appended to prefix).|
+|description| yes| A description of the command.|
+|requirements| no| A list of one or more TMT requirements that are associated with this command.|
+|preconditions| no| List of preconditions for this command, including safety.precautions. Unless otherwise documented, it is assumed that the conditions ALL need to be met.|
+|postconditions| no| List of postconditions for this command, including safety precautions. Unless otherwise documented, it is assumed that the conditions ALL need to be met.|
+|requiredArgs| no| A list of command arguments (parameters) that are required.|
+|parameters| no| The block for arguments the command supports. Parameters are as described for events. |
+|completionType| no| Indicates the completion type of a command: See CSW CommandService API for details. Possible values: `immediate`, `longRunning`, `oneway` (default: `immediate`).|
+|resultType| no| Defines a list of parameters in the result (For commands that return a result) in the same format as the command parameters.|
+|completionCondition| no| For oneway commands, a list of conditions (string text) for determining command completion (if applicable). Unless otherwise documented, it is assumed that the conditions ALL need to be met.|
+|role| no| The user role required in order to execute this command (one of: `eng`, `admin` or `user`). Some commands may be protected and only allowed for engineering or admin users. The default required role is a regular `user` role.|
+
+The contents of the parameters and `resultType` containers are parameters as described for events in a previous section.
+
+The `send` block contains a list of commands this component sends to other components. The required fields for each item in the list are shown in the following table.
+
+|Field| Required?| Notes|
+|----:|:--------:|:-----|
+|subsystem| yes| The TMT subsystem for the component that receives the command|
+|component| yes| Name of the component that receives the command. Should match name used elsewhere.|
+|name| yes| name of the command|
+
+An example of the beginning and the `receive` block from a `command-model.conf` file for is shown below.
+
+```
+subsystem = TEST
+component = lgsWfs
+
+description = "Example Commands …"
+
+receive = [
+  {
+    name = LGS_WFS_INITIALIZE
+    description = """
+       |LGS_WFS_INITIALIZE command will:
+       |* disable the LGS WFS engineering continuous read mode (if required)
+       |* (re)connect to the LGS WFS HCD
+       |* set LGS WFS exposure parameters to default values
+    """
+    requirements = ["INT-TEST-AOESW-1000"]
+    parameters = [
+      {
+        name = wfsUsed
+        description = "OIWFS used"
+        type = string
+      }
+    ]
+    completionType = oneway
+    completionCondition = [
+      "List of conditions to meet for oneway command to be complete...",
+      "condition two",
+      "condition three"
+    ]
+  }
+]
+```
+
+The resulting PDF display for the above model file is shown in the screenshot below.
+
+![](../images/modelFiles/commandReceive1.png)
+
+The `send` container documents the configuration commands one component sends to another. This allows mapping the command flow in the system and dependencies between components. The name of the configuration command, the component and the subsystem are enough to identify the destination of the configuration command.
+
+The example `send` container section of the `command-model.conf` file for the `TCS Corrections` assembly is shown below. 
+
+```
+send = [
+  //*******
+  // cabinet-environment assembly
+  {
+    name = GLY_init
+    subsystem = IRIS
+    component = cabinet_environment_assembly
+  }
+  {
+    name = GLY_test
+    subsystem = IRIS
+    component = cabinet_environment_assembly
+  }
+  {
+    name = TEMP_init
+    subsystem = IRIS
+    component = cabinet_environment_assembly
+  }
+  {
+    name = TEMP_test
+    subsystem = IRIS
+    component = cabinet_environment_assembly
+```
+
+The generated HTML output from the above send section of the `command-model.conf` file is shown below. The description and other details are taken from the `publish` information in the database.
+
+![](../images/modelFiles/commandsSent1.png)
+
+@@@ note
+
+By default, sent commands are not displayed in API documents. To include them, pass the `–clientApi` option to `icd-db`, or select the `Include client API information` check box in the web app.
+
+@@@
+

@@ -3,13 +3,14 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
-## [ICD v3.0.1] - 2024-02-
+## [ICD v3.1.0] - 2024-02-
 
 - Updated dependencies, switched from akka to pekko.
 - Replaced dependency on sjsonnet Java lib with a use of "jsonnet" command, which must be installed if the feature is used.
 - UI Changes in icd web app: Moved buttons that depend on the selected subsystems or ICDs to the *Select* tab (Buttons are only enabled when applicable).
+- Added Markdown/Paradox based documentation under ./docs directory. (to replace Docushare PDF version)
 
-## [ICD v3.0] - 2024-02-04
+## [ICD v3.0.0] - 2024-02-04
 
 - Added "subsystem" constant in generated source files with subsystem name and version: For example: subsystem = "APS-1.4" (See Generate menu item in icd web app).
 - Added file [MacOs-Max-Files-Limit.md](MacOs-Max-Files-Limit.md) describing how to increase the max-files limit on recent MacOS versions (This is required in order to run MongoDB when running the ICD web server locally, since the default setting is too low).
