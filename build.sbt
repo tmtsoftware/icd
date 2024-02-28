@@ -1,11 +1,27 @@
 import sbt._
 import Dependencies._
 import Settings._
+import org.tmt.sbt.docs.DocKeys._
 
 def providedScope(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "provided")
 def compileScope(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 def testScope(deps: ModuleID*): Seq[ModuleID]    = deps map (_ % "test")
 def toPathMapping(f: File): (File, String)       = f          -> f.getName
+
+ThisBuild / docsRepo       := "https://github.com/tmtsoftware/tmtsoftware.github.io.git"
+ThisBuild / docsParentDir  := "idbs"
+ThisBuild / gitCurrentRepo := "https://github.com/tmtsoftware/icd"
+
+lazy val openSite =
+  Def.setting {
+    Command.command("openSite") { state =>
+      val uri = s"file://${Project.extract(state).get(siteDirectory)}/${docsParentDir.value}/${version.value}/index.html"
+      state.log.info(s"Opening browser at $uri ...")
+      java.awt.Desktop.getDesktop.browse(new java.net.URI(uri))
+      state
+    }
+  }
+
 
 // SCALAJS_PROD is set in install.sh to enable fully optimized JavaScript
 val optStage = if (sys.env.contains("SCALAJS_PROD")) FullOptStage else FastOptStage
@@ -13,13 +29,19 @@ val optStage = if (sys.env.contains("SCALAJS_PROD")) FullOptStage else FastOptSt
 //noinspection ScalaUnusedSymbol
 // Root of the multi-project build
 lazy val root = (project in file("."))
-  .aggregate(icdWebSharedJvm, `icd-db`, `icd-git`, `icd-viz`, icdWebServer, icdWebSharedJvm)
-  .settings(name := "ICD")
+  .aggregate(icdWebSharedJvm, `icd-db`, `icd-git`, `icd-viz`, icdWebServer, icdWebSharedJvm, docs)
+  .settings(commonSettings)
+  .enablePlugins(GithubPublishPlugin)
+  .settings(
+    commands += openSite.value,
+    org.tmt.sbt.docs.Settings.makeSiteMappings(docs)
+  )
+//  .settings(name := "idbs")
 
 // Adds MongoDB database support, ICD versioning, queries, icd-db command line tool
 lazy val `icd-db` = project
   .enablePlugins(DeployApp)
-  .settings(defaultSettings: _*)
+  .settings(defaultSettings)
   .settings(
     libraryDependencies ++=
       compileScope(
@@ -56,7 +78,7 @@ lazy val `icd-db` = project
 // Command line tool to support visualization of API and ICD relationships
 lazy val `icd-viz` = project
   .enablePlugins(DeployApp)
-  .settings(defaultSettings: _*)
+  .settings(defaultSettings)
   .settings(
     libraryDependencies ++=
       compileScope(graphDot) ++
@@ -66,7 +88,7 @@ lazy val `icd-viz` = project
 // Adds support for working with ICD model file repositories on GitHub, ICD version management, icd-github tool
 lazy val `icd-git` = project
   .enablePlugins(DeployApp)
-  .settings(defaultSettings: _*)
+  .settings(defaultSettings)
   .settings(
     libraryDependencies ++=
       compileScope(jgit) ++
@@ -77,8 +99,8 @@ lazy val `icd-git` = project
 
 // a Play framework based web server that goes between icd-db and the web client
 lazy val icdWebServer = (project in file("icd-web-server"))
-  .settings(defaultSettings: _*)
-  .settings(dockerSettings: _*)
+  .settings(defaultSettings)
+  .settings(dockerSettings)
   .settings(
     scalaJSProjects := Seq(icdWebClient),
     Assets / pipelineStages := Seq(scalaJSPipeline),
@@ -125,7 +147,6 @@ lazy val icdWebClient = (project in file("icd-web-client"))
 lazy val icdWebShared = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("icd-web-shared"))
-  //  .jsConfigure(_.enablePlugins(ScalaJSWeb))
   .enablePlugins(BuildInfoPlugin)
   .settings(
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
@@ -143,5 +164,5 @@ lazy val icdWebSharedJvm = icdWebShared.jvm
 lazy val icdWebSharedJs  = icdWebShared.js
 
 lazy val docs = project
-  .settings(docSettings)
-  .enablePlugins(NoPublish, GithubPublishPlugin, ParadoxMaterialSitePlugin)
+  .settings(commonSettings)
+  .enablePlugins(ParadoxMaterialSitePlugin)

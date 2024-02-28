@@ -1,5 +1,3 @@
-import com.typesafe.sbt.site.SitePlugin.autoImport.siteDirectory
-import org.tmt.sbt.docs.DocKeys._
 import com.typesafe.sbt.packager.Keys.*
 import sbt.Keys.*
 import sbt.*
@@ -15,18 +13,6 @@ object Settings {
     version := Dependencies.Version,
     scalacOptions ++= Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-unchecked", "-Xsource:3"),
     scalaVersion := Dependencies.ScalaVersion,
-  )
-
-  val docSettings = commonSettings ++ Seq(
-    docsRepo       := "https://github.com/tmtsoftware/tmtsoftware.github.io.git",
-    docsParentDir  := "idbs",
-    gitCurrentRepo := "https://github.com/tmtsoftware/icd",
-    commands += Command.command("openSite") { state =>
-      val uri = s"file://${Project.extract(state).get(siteDirectory)}/${docsParentDir.value}/${version.value}/index.html"
-      state.log.info(s"Opening browser at $uri ...")
-      java.awt.Desktop.getDesktop.browse(new java.net.URI(uri))
-      state
-    },
   )
 
   // Basic settings
