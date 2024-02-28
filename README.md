@@ -11,7 +11,7 @@ Acronyms:
 
 This project contains support for creating, validating and viewing TIO subsystem APIs and ICDs.
 
-*You can find a detailed description of the IDBS software [here](https://docushare.tmt.org/docushare/dsweb/Get/Version-144317/OSW%20TN018-ICDDatabaseUserManual_REL09.pdf).*
+*You can find a detailed description of the IDBS software [here](https://tmtsoftware.github.io/idbs/webapp/webapp.html).*
 
 Subsystem APIs are described in model files. The model files are validated using [JSON Schema](http://json-schema.org/),
 however the schema descriptions as well as the model files are normally written in
