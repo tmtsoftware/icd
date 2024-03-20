@@ -154,18 +154,6 @@ case class IcdDbPrinter(
             displayDetails(infoList, nh, forApi = false, pdfOptions, clientApi = clientApi)
           )
         }
-        else if (sv.subsystem == "DMS" || targetSv.subsystem == "DMS") {
-          // Special case: When DMS is involved, ICD consists of "Archived Items Report" with an ICD header
-          // page (DEOPSICDDB-138)
-          val sv2 = if (sv.subsystem == "DMS") targetSv else sv
-          div (
-            p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
-            raw(targetSubsystemInfo.description),
-            icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description))),
-            ArchivedItemsReport(db, Some(sv2), maybePdfOptions, nh)
-              .makeReportMarkup(s"Archived Items for ${sv2.subsystem}")
-          )
-        }
         else {
           // Two subsystems
           div(
@@ -177,7 +165,16 @@ case class IcdDbPrinter(
             makeIntro(titleInfo1),
             displayDetails(infoList, nh, forApi = false, pdfOptions, clientApi = clientApi),
             makeIntro(titleInfo2),
-            displayDetails(infoList2, nh, forApi = false, pdfOptions, clientApi = clientApi)
+            displayDetails(infoList2, nh, forApi = false, pdfOptions, clientApi = clientApi),
+            if (sv.subsystem == "DMS" || targetSv.subsystem == "DMS") {
+              // Special case: When DMS is involved, ICD consists of "Archived Items Report" with an ICD header
+              // page (DEOPSICDDB-138)
+              val sv2 = if (sv.subsystem == "DMS") targetSv else sv
+              div (
+                ArchivedItemsReport(db, Some(sv2), maybePdfOptions, nh)
+                  .makeReportMarkup(s"Archived Items for ${sv2.subsystem}")
+              )
+            } else div()
           )
         }
       )
