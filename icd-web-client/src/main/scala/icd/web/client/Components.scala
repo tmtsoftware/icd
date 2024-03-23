@@ -349,26 +349,29 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       targetSv: SubsystemWithVersion,
       maybeIcd: Option[IcdVersion]
   ): Future[Unit] = {
-    // Special case: When DMS is involved, ICD consists of "Archived Items Report" with an ICD header
-    // page (DEOPSICDDB-138)
-    val sv2 = if (sv.subsystem == "DMS") targetSv else sv
+    if (sv.subsystem == "DMS" && targetSv.subsystem != "DMS" || targetSv.subsystem == "DMS" && sv.subsystem != "DMS") {
+      // Special case: When DMS is involved, ICD consists of "Archived Items Report" with an ICD header
+      // page (DEOPSICDDB-138)
+      val sv2 = if (sv.subsystem == "DMS") targetSv else sv
 
-    val f = for {
-      archiveReportHtml <- getArchivedItemsReportHtml(sv2)
-    } yield {
-      import scalatags.JsDom.all.*
-      mainContent.appendElement(
-        div(
-          cls := "component container-fluid",
-          raw(archiveReportHtml)
-        ).render
-      )
+      val f = for {
+        archiveReportHtml <- getArchivedItemsReportHtml(sv2)
+      } yield {
+        import scalatags.JsDom.all.*
+        mainContent.appendElement(
+          div(
+            cls := "component container-fluid",
+            raw(archiveReportHtml)
+          ).render
+        )
+      }
+      f.onComplete {
+        case Failure(ex) => mainContent.displayInternalError(ex)
+        case _           =>
+      }
+      f
     }
-    f.onComplete {
-      case Failure(ex) => mainContent.displayInternalError(ex)
-      case _           =>
-    }
-    f
+    else Future.successful(())
   }
 
   /**
@@ -393,9 +396,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     if (maybeTargetSubsystem.isDefined) {
       val targetSv = maybeTargetSubsystem.get
       for {
-        compInfoList <-  addComponentsForIcd(sv, targetSv, maybeIcd, searchAllSubsystems, clientApi)
-        _ <- addComponentsForDmsIcd(sv, targetSv, maybeIcd)
-        if (sv.subsystem == "DMS" && targetSv.subsystem != "DMS" || targetSv.subsystem == "DMS" && sv.subsystem != "DMS")
+        compInfoList <- addComponentsForIcd(sv, targetSv, maybeIcd, searchAllSubsystems, clientApi)
+        _            <- addComponentsForDmsIcd(sv, targetSv, maybeIcd)
       } yield compInfoList
     }
     else {
