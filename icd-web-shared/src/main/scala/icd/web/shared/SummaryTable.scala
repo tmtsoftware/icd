@@ -250,7 +250,7 @@ object SummaryTable {
         publishedSummaryMarkup("Images", publishedImages, "Published by", "for"),
         publishedSummaryMarkup("Alarms", publishedAlarms, "Published by", "for"),
         publishedSummaryMarkup("Commands", receivedCommands, "Received by", "from"),
-        publishedSummaryMarkup("Services", providedServices, "Provided by", "for")
+        publishedSummaryMarkup("Services", providedServices, "Provided by", "and used by")
       )
     }
 
