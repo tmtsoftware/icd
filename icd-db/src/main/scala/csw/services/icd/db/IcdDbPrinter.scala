@@ -166,7 +166,7 @@ case class IcdDbPrinter(
             displayDetails(infoList, nh, forApi = false, pdfOptions, clientApi = clientApi),
             makeIntro(titleInfo2),
             displayDetails(infoList2, nh, forApi = false, pdfOptions, clientApi = clientApi),
-            if (sv.subsystem == "DMS" || targetSv.subsystem == "DMS") {
+            if (sv.subsystem == "DMS" && targetSv.subsystem != "DMS" || targetSv.subsystem == "DMS" && sv.subsystem != "DMS") {
               // Special case: When DMS is involved, ICD consists of "Archived Items Report" with an ICD header
               // page (DEOPSICDDB-138)
               val sv2 = if (sv.subsystem == "DMS") targetSv else sv
