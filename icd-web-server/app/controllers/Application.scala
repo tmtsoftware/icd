@@ -1019,7 +1019,7 @@ class Application @Inject() (
         .map(URLDecoder.decode(_, "UTF-8"))
         .map(_.split(',').toList.flatMap { s =>
           s.split(':') match {
-            case Array(method, path) => Some(ServicePath(method, path))
+            case Array(method, path) => Some(ServicePath(method, path, ""))
             case _                   => None
           }
         })

@@ -452,8 +452,22 @@ object IcdComponentInfo {
         serviceModelClient.name,
         targetModelsList
       )
+      // Insert service path descriptions from provider (extracted from OpenApi file)
+      val serviceModelClientCopy = (maybeServiceModelProvider
+        .map { provider =>
+          val newPaths = serviceModelClient.paths.map(p =>
+            ServicePath(
+              p.method,
+              p.path,
+              provider.paths.find(x => x.method == p.method && x.path == p.path).map(_.description).getOrElse("")
+            )
+          )
+          serviceModelClient.copy(paths = newPaths)
+        })
+        .getOrElse(serviceModelClient)
+
       ServicesRequiredInfo(
-        serviceModelClient,
+        serviceModelClientCopy,
         maybeServiceModelProvider,
         query.getComponentModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions)
       )
