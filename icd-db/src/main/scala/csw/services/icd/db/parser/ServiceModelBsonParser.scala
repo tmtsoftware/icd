@@ -66,7 +66,7 @@ object ServiceModelBsonParser {
           val description =
             if (summary.nonEmpty) summary
             else (json \ "paths" \ path \ method \ "description").validate[String].getOrElse("")
-          ServicePath(method, path, summary)
+          ServicePath(method, path, description)
         }
       }
     }

@@ -424,7 +424,10 @@ object IcdComponentInfo {
       provides     <- serviceModel.provides
     } yield {
       val clientComponentInfo = getServiceClients(serviceModel.subsystem, serviceModel.component, provides.name, targetModelsList)
-      ServiceProvidedInfo(provides, clientComponentInfo)
+      // Filter the list of service paths (routes) to only those declared as used
+      val clientPaths = clientComponentInfo.flatMap(_.paths)
+      val paths = provides.paths.filter(p => clientPaths.exists(c => c.path == p.path && c.method == p.method))
+      ServiceProvidedInfo(provides.copy(paths = paths), clientComponentInfo)
     }
   }
 

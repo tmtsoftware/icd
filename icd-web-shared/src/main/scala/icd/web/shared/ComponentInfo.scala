@@ -338,12 +338,21 @@ object SummaryInfo {
   }
 
   /**
-   * Summary of a published item or received command.
+   * For summary of a published item or received command.
    *
    * @param publisher the publishing (or receiving, for commands) component
    * @param item      name and description of the item or command
+   * @param subscribers list of subscribers or command senders
    */
   case class PublishedItem(publisher: ComponentModel, item: NameDesc, subscribers: List[ComponentModel])
+
+  /**
+   * For summary of a provided service, including paths used by client
+   * @param provider service provider
+   * @param service describes the service
+   * @param consumers list of service consumers
+   */
+  case class ProvidedServiceItem(provider: ComponentModel, service: ServiceProvidedInfo, consumers: List[ComponentModel])
 
   /**
    * Summary of a subscribed item.

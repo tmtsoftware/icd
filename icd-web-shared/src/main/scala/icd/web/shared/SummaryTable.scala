@@ -43,6 +43,13 @@ object SummaryTable {
       if (i == -1) s else s.substring(0, i + 4)
     }
 
+    def linkToSubscriber(subscriber: ComponentModel) = {
+      if ((isIcd && subscriber.subsystem == maybeTargetSv.get.subsystem) || subscriber.subsystem == subsystemInfo.sv.subsystem)
+        span(a(href := s"#${subscriber.component}")(wrap(subscriber.component)), " ")
+      else
+        span(wrap(s"${subscriber.subsystem}.${subscriber.component}"), " ")
+    }
+
     // Displays a summary for published items of a given event type or commands received.
     def publishedSummaryMarkup(
         itemType: String,
@@ -56,15 +63,7 @@ object SummaryTable {
         case "provided by"  => ("provides", "Provider", "Consumers")
       }
 
-      val targetStr = if (maybeTargetSv.isDefined) s" $prep ${maybeTargetSv.get.subsystem}$targetComponentPart" else ""
-
-      def linkToSubscriber(subscriber: ComponentModel) = {
-        if ((isIcd && subscriber.subsystem == maybeTargetSv.get.subsystem) || subscriber.subsystem == subsystemInfo.sv.subsystem)
-          span(a(href := s"#${subscriber.component}")(wrap(subscriber.component)), " ")
-        else
-          span(wrap(s"${subscriber.subsystem}.${subscriber.component}"), " ")
-      }
-
+      val targetStr       = if (maybeTargetSv.isDefined) s" $prep ${maybeTargetSv.get.subsystem}$targetComponentPart" else ""
       val showYearlyAccum = !isIcd && itemType.endsWith("Events")
 
       def totalArchiveSpace(): Text.TypedTag[String] = {
@@ -120,6 +119,48 @@ object SummaryTable {
       }
     }
 
+    // Displays a summary for services provided
+    def serviceProviderSummaryMarkup(list: List[ProvidedServiceItem]): Text.TypedTag[String] = {
+      val targetStr = if (maybeTargetSv.isDefined) s" and used by ${maybeTargetSv.get.subsystem}$targetComponentPart" else ""
+      if (list.isEmpty) div()
+      else {
+        div(
+          nh.H3(s"Services Provided by $sourceStr$targetStr"),
+          table(
+            thead(
+              tr(
+                th("Service Name"),
+                if (clientApi || isIcd) th("Used by") else span,
+                th("Prefix"),
+                th("Path"),
+                th("Method"),
+                th("Description")
+              )
+            ),
+            tbody(
+              for {
+                info <- list
+                path <- info.service.serviceModelProvider.paths
+              } yield {
+                val component = info.provider.component
+                val subsystem = info.provider.subsystem
+                val serviceName = info.service.serviceModelProvider.name
+                val idStr = idFor(component, "provides", "Service", subsystem, component, serviceName)
+                tr(
+                  td(p(a(href := s"#$idStr")(wrap(serviceName)))),
+                  if (clientApi || isIcd) td(p(info.consumers.map(linkToSubscriber))) else span(),
+                  td(p(a(href := s"#$component")(wrap(info.provider.prefix)))),
+                  td(p(path.path)),
+                  td(p(path.method)),
+                  td(raw(firstParagraph(path.description)))
+                )
+              }
+            )
+          )
+        )
+      }
+    }
+
     // Displays a summary for subscribed items of a given event type or commands sent.
     def subscribedSummaryMarkup(
         itemType: String,
@@ -158,7 +199,7 @@ object SummaryTable {
                   if (info.publisherSubsystem == info.subscriber.subsystem)
                     a(href := s"#${info.publisherComponent}")(wrap(info.publisherComponent))
                   // XXX TODO FIXME: Make link in web app for components in other subsystems also!
-                  else span(wrap(s"${info.publisherSubsystem}.${info.publisherComponent}"))
+                  else span(wrap(s"${info.publisherComponent}"))
 
                 val publisherPrefix =
                   if (info.publisherSubsystem == info.subscriber.subsystem)
@@ -231,17 +272,32 @@ object SummaryTable {
         command  <- commands.commandsReceived
       } yield PublishedItem(info.componentModel, command.receiveCommandModel, command.senders.distinct)
 
-      val providedServices = for {
-        info     <- infoList
-        services <- info.services.toList
-        service  <- services.servicesProvided
-      } yield {
-        val nameDesc = new NameDesc {
-          override val name: String        = service.serviceModelProvider.name
-          override val description: String = service.serviceModelProvider.description
+      // For ICDs, list the service paths (routes) used by the client
+      val providedServicesForIcd = if (isIcd) {
+        for {
+          info     <- infoList
+          services <- info.services.toList
+          service  <- services.servicesProvided
+        } yield {
+          ProvidedServiceItem(info.componentModel, service, service.requiredBy.map(_.component).distinct)
         }
-        PublishedItem(info.componentModel, nameDesc, service.requiredBy.map(_.component).distinct)
       }
+      else Nil
+
+      // For APIs, list only the services used without path details here
+      val providedServices = if (!isIcd) {
+        for {
+          info     <- infoList
+          services <- info.services.toList
+          service  <- services.servicesProvided
+        } yield {
+          val nameDesc = new NameDesc {
+            override val name: String        = service.serviceModelProvider.name
+            override val description: String = service.serviceModelProvider.description
+          }
+          PublishedItem(info.componentModel, nameDesc, service.requiredBy.map(_.component).distinct)
+        }
+      } else Nil
 
       div(
         publishedSummaryMarkup("Events", publishedEvents, "Published by", "for"),
@@ -250,7 +306,10 @@ object SummaryTable {
         publishedSummaryMarkup("Images", publishedImages, "Published by", "for"),
         publishedSummaryMarkup("Alarms", publishedAlarms, "Published by", "for"),
         publishedSummaryMarkup("Commands", receivedCommands, "Received by", "from"),
-        publishedSummaryMarkup("Services", providedServices, "Provided by", "and used by")
+        if (isIcd)
+          serviceProviderSummaryMarkup(providedServicesForIcd)
+        else
+          publishedSummaryMarkup("Services", providedServices, "Provided by", "and used by")
       )
     }
 
