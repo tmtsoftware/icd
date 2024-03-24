@@ -1228,7 +1228,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                     )
                   ),
                   td(p(desc)),
-                  td(s.provider.map(makeLinkForComponent))
+                  td(s.provider.map(makeLinkForComponent)
+                    .getOrElse(makeLinkForComponent(s.serviceModelClient.subsystem, s.serviceModelClient.component)))
                 ),
                 row
               )
