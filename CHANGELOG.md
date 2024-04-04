@@ -3,12 +3,13 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
-## [ICD v3.1.0] - 2024-02-
+## [ICD v3.1.0] - 2024--
 
 - Updated dependencies, switched from akka to pekko.
 - Replaced dependency on sjsonnet Java lib with a use of "jsonnet" command, which must be installed if the feature is used.
 - UI Changes in icd web app: Moved buttons that depend on the selected subsystems or ICDs to the *Select* tab (Buttons are only enabled when applicable).
 - Added Markdown/Paradox based documentation under ./docs directory. (to replace Docushare PDF version)
+- For ICDs, the summary table now displays the paths/routes that are used for HTTP services
 
 ## [ICD v3.0.0] - 2024-02-04
 
