@@ -6,11 +6,23 @@ import icd.web.shared.ComponentInfo.{Alarms, CurrentStates, Events, Images, Obse
 import icd.web.shared.IcdModels.{ComponentModel, EventModel, NameDesc}
 import Headings.idFor
 
+import scala.annotation.tailrec
+
 //noinspection DuplicatedCode
 object SummaryTable {
 
   // Insert a <wbr/> tag to help wrapping
   private def wrap(s: String) = raw(s.replace(".", ".<wbr/>").replace("_", "_<wbr/>"))
+
+  // Insert an element between the elements in the list (like a span with a comma)
+  private def intersperse[T](xs: List[T], item: T): List[T] =
+    xs match {
+      case Nil      => xs
+      case _ :: Nil => xs
+      case a :: ys  => a :: item :: intersperse(ys, item)
+    }
+  private def addCommas(elems: List[Text.TypedTag[String]]): List[Text.TypedTag[String]] =
+    intersperse(elems, span(", "))
 
   /**
    * Displays a summary of the events published and commands received by the subsystem
@@ -43,11 +55,12 @@ object SummaryTable {
       if (i == -1) s else s.substring(0, i + 4)
     }
 
-    def linkToSubscriber(subscriber: ComponentModel) = {
+    def linkToSubscriber(subscriber: ComponentModel): Text.TypedTag[String] = {
+      val name = s"${subscriber.subsystem}.${subscriber.component}"
       if ((isIcd && subscriber.subsystem == maybeTargetSv.get.subsystem) || subscriber.subsystem == subsystemInfo.sv.subsystem)
-        span(a(href := s"#${subscriber.component}")(wrap(subscriber.component)), " ")
+        span(a(href := s"#${subscriber.component}")(wrap(name)))
       else
-        span(wrap(s"${subscriber.subsystem}.${subscriber.component}"), " ")
+        span(wrap(name))
     }
 
     // Displays a summary for published items of a given event type or commands received.
@@ -81,7 +94,7 @@ object SummaryTable {
             thead(
               tr(
                 th(publisher),
-                if (clientApi) th(subscribers) else span,
+                if (clientApi || isIcd) th(subscribers) else span,
                 th("Prefix"),
                 th("Name"),
                 if (showYearlyAccum) th("Yearly", br, "Accum.") else span(),
@@ -94,7 +107,7 @@ object SummaryTable {
               } yield {
                 tr(
                   td(p(a(href := s"#${info.publisher.component}")(wrap(info.publisher.component)))),
-                  if (clientApi) td(p(info.subscribers.map(linkToSubscriber))) else span(),
+                  if (clientApi || isIcd) td(p(addCommas(info.subscribers.map(linkToSubscriber)))) else span(),
                   td(p(a(href := s"#${info.publisher.component}")(wrap(info.publisher.prefix)))),
                   td(
                     p(
@@ -142,13 +155,13 @@ object SummaryTable {
                 info <- list
                 path <- info.service.serviceModelProvider.paths
               } yield {
-                val component = info.provider.component
-                val subsystem = info.provider.subsystem
+                val component   = info.provider.component
+                val subsystem   = info.provider.subsystem
                 val serviceName = info.service.serviceModelProvider.name
-                val idStr = idFor(component, "provides", "Service", subsystem, component, serviceName)
+                val idStr       = idFor(component, "provides", "Service", subsystem, component, serviceName)
                 tr(
                   td(p(a(href := s"#$idStr")(wrap(serviceName)))),
-                  if (clientApi || isIcd) td(p(info.consumers.map(linkToSubscriber))) else span(),
+                  if (clientApi || isIcd) td(p(addCommas(info.consumers.map(linkToSubscriber)))) else span(),
                   td(p(a(href := s"#$component")(wrap(info.provider.prefix)))),
                   td(p(path.path)),
                   td(p(path.method)),
@@ -297,7 +310,8 @@ object SummaryTable {
           }
           PublishedItem(info.componentModel, nameDesc, service.requiredBy.map(_.component).distinct)
         }
-      } else Nil
+      }
+      else Nil
 
       div(
         publishedSummaryMarkup("Events", publishedEvents, "Published by", "for"),
