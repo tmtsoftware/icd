@@ -448,13 +448,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       forApi: Boolean,
       clientApi: Boolean
   ): Unit = {
-    if (
-      forApi || (info.publishes.isDefined && info.publishes.get.nonEmpty
-      || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
-      || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
-      || info.commands.get.commandsSent.nonEmpty)
-      || info.services.isDefined && (info.services.get.servicesProvided.nonEmpty || info.services.get.servicesRequired.nonEmpty))
-    ) {
+    if (forApi || SharedUtils.showComponentInfo(info)) {
       val markup     = markupForComponent(info, forApi, clientApi).render
       val oldElement = $id(getComponentInfoId(info.componentModel.component))
       if (oldElement == null) {

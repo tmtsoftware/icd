@@ -48,6 +48,14 @@ object SharedUtils {
     }
   }
 
+  def showComponentInfo(info: ComponentInfo): Boolean = {
+    info.publishes.isDefined && info.publishes.get.nonEmpty
+      || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
+      || info.commands.isDefined && (info.commands.get.commandsReceived.nonEmpty
+      || info.commands.get.commandsSent.nonEmpty)
+      || info.services.isDefined && (info.services.get.servicesProvided.nonEmpty || info.services.get.servicesRequired.nonEmpty)
+  }
+
 //  // Inverts a map of T to List[T]
 //  implicit class MapInverter[T, U](map: Map[T, List[U]]) {
 //    def invert: Map[U, T] = {

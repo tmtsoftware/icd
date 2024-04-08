@@ -1,13 +1,12 @@
 package icd.web.client
 
-import icd.web.shared.{BuildInfo, FitsDictionary, IcdVersion, SubsystemWithVersion}
+import icd.web.shared.{BuildInfo, FitsDictionary, IcdVersion, SharedUtils, SubsystemWithVersion}
 import org.scalajs.dom
 import org.scalajs.dom.{HTMLStyleElement, PopStateEvent, document}
 
 import scala.concurrent.Future
 import scala.scalajs.js.annotation.JSExportTopLevel
 import scalatags.JsDom.TypedTag
-
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
 import BrowserHistory.*
 import Components.*
@@ -15,6 +14,7 @@ import icd.web.client.PasswordDialog.PasswordDialogListener
 import icd.web.client.PublishDialog.PublishDialogListener
 import icd.web.client.SelectDialog.SelectDialogListener
 import icd.web.client.StatusDialog.StatusDialogListener
+import icd.web.shared.IcdModels.ComponentModel
 import play.api.libs.json.*
 
 /**
@@ -36,7 +36,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val fitsDictionaryItem =
     NavbarItem("FITS Dictionary", "Display information about all FITS keywords", showFitsDictionary())
 
-
   private val navbar = MainNavbar()
   private val layout = Layout()
 
@@ -47,7 +46,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   private val selectItem   = NavbarItem("Select", "Select the API or ICD to display", selectSubsystems())
   private val selectDialog = SelectDialog(mainContent, Selector)
-  private val reloadButton  = ReloadButton(selectDialog)
+  private val reloadButton = ReloadButton(selectDialog)
 
   private val logoutItem = NavbarItem("Logout", "Log out of the icd web app", logout)
 
@@ -235,8 +234,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Listener for sidebar component checkboxes
   private object LeftSidebarListener extends SidebarListener {
     // Called when a component link is selected in the sidebar
-    override def componentSelected(componentName: String): Unit = {
-      goToComponent(componentName, saveHistory = false)
+    override def componentSelected(componentModel: ComponentModel): Unit = {
+      goToComponent(componentModel.component, saveHistory = false)
     }
   }
 
@@ -424,7 +423,9 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         components
           .addComponents(maybeSv.get, maybeTargetSv, maybeIcd, searchAllSubsystems, clientApi)
           .map { infoList =>
-            infoList.foreach(info => sidebar.addComponent(info.componentModel.component))
+            infoList
+              .filter(SharedUtils.showComponentInfo)
+              .foreach(info => sidebar.addComponent(info.componentModel))
             setSidebarVisible(true)
           }
       }

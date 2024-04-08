@@ -93,9 +93,8 @@ object SummaryTable {
           table(
             thead(
               tr(
-                th(publisher),
+                th(s"$publisher Prefix"),
                 if (clientApi || isIcd) th(subscribers) else span,
-                th("Prefix"),
                 th("Name"),
                 if (showYearlyAccum) th("Yearly", br, "Accum.") else span(),
                 th("Description")
@@ -106,9 +105,8 @@ object SummaryTable {
                 info <- list
               } yield {
                 tr(
-                  td(p(a(href := s"#${info.publisher.component}")(wrap(info.publisher.component)))),
-                  if (clientApi || isIcd) td(p(addCommas(info.subscribers.map(linkToSubscriber)))) else span(),
                   td(p(a(href := s"#${info.publisher.component}")(wrap(info.publisher.prefix)))),
+                  if (clientApi || isIcd) td(p(addCommas(info.subscribers.map(linkToSubscriber)))) else span(),
                   td(
                     p(
                       a(

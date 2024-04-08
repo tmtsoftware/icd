@@ -1,5 +1,6 @@
 package icd.web.client
 
+import icd.web.shared.IcdModels.ComponentModel
 import org.scalajs.dom
 import org.scalajs.dom.Node
 import org.scalajs.dom.Element
@@ -13,7 +14,7 @@ trait SidebarListener {
    *
    * @param componentName the component name
    */
-  def componentSelected(componentName: String): Unit
+  def componentSelected(componentModel: ComponentModel): Unit
 }
 
 /**
@@ -26,20 +27,21 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
   private val sidebarList = ul(cls := "list-group").render
 
   // HTML for component
-  private def componentLink(compName: String) = {
+  private def componentLink(componentModel: ComponentModel) = {
+    val name = s"${componentModel.subsystem}.${componentModel.component}"
     a(
       cls := "list-group-item list-group-item-action",
-      title := s"Scroll to $compName",
+      title := s"Scroll to $name",
       href := "#",
-      compName,
-      onclick := componentSelected(compName) _
+      name,
+      onclick := componentSelected(componentModel) _
     )
   }
 
   // called when a component link is clicked
-  private def componentSelected(compName: String)(e: dom.Event): Unit = {
+  private def componentSelected(componentModel: ComponentModel)(e: dom.Event): Unit = {
     e.preventDefault()
-    sidebarListener.componentSelected(compName)
+    sidebarListener.componentSelected(componentModel)
   }
 
   /**
@@ -54,8 +56,8 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
   /**
    * Adds a component to the sidebar
    */
-  def addComponent(compName: String): Unit = {
-    addItem(componentLink(compName).render)
+  def addComponent(componentModel: ComponentModel): Unit = {
+    addItem(componentLink(componentModel).render)
   }
 
   /**
