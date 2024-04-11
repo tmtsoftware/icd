@@ -193,9 +193,8 @@ object SummaryTable {
           table(
             thead(
               tr(
-                th(publisher),
+                th(s"$publisher Prefix"),
                 th(subscriber),
-                th("Prefix"),
                 th("Name"),
                 th("Description")
               )
@@ -216,6 +215,7 @@ object SummaryTable {
                   if (info.publisherSubsystem == info.subscriber.subsystem)
                     a(href := s"#${info.publisherComponent}")(prefixItem)
                   else span(prefixItem)
+                val subscriberPrefix = s"${info.subscriber.subsystem}.${info.subscriber.component}"
 
                 val description = info.maybeWarning match {
                   case Some(msg) => p(em("Warning: ", msg))
@@ -223,9 +223,8 @@ object SummaryTable {
                 }
 
                 tr(
-                  td(p(publisherComponent)),
-                  td(p(a(href := s"#${info.subscriber.component}")(info.subscriber.component))),
                   td(p(publisherPrefix)),
+                  td(p(a(href := s"#${info.subscriber.component}")(subscriberPrefix))),
                   td(
                     p(
                       a(

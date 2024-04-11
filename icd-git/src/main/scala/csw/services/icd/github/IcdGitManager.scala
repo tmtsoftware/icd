@@ -2,13 +2,12 @@ package csw.services.icd.github
 
 import java.io.{File, PrintWriter}
 import java.nio.file.{FileSystems, Files, Paths}
-
 import csw.services.icd.{IcdValidator, PdfCache, Problem}
 import csw.services.icd.db.ApiVersions.ApiEntry
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.db.{ApiVersions, IcdDb, IcdDbDefaults, IcdVersionManager, IcdVersions, Subsystems}
 import icd.web.shared.{ApiVersionInfo, GitHubCredentials, IcdVersion, IcdVersionInfo, PublishInfo, SubsystemWithVersion}
-import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.api.{Git, ResetCommand}
 import org.eclipse.jgit.lib.ObjectId
 import org.eclipse.jgit.revwalk.RevWalk
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
@@ -738,7 +737,9 @@ object IcdGitManager {
         apiEntries.reverse.foreach { e =>
           feedback(s"Checking out $subsystem-${e.version} (commit: ${e.commit}) from $url")
           try {
-            git.checkout().setName(e.commit).call
+//            git.checkout().setName(e.commit).call
+            // Use git reset to make sure no files from previous version are left over?
+            git.reset().setRef(e.commit).setMode(ResetCommand.ResetType.HARD).call
             feedback(s"Ingesting $subsystem-${e.version}")
             val (_, problems) = db.ingest(gitWorkDir)
             problems.foreach(p => feedback(p.errorMessage()))

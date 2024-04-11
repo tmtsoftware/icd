@@ -920,7 +920,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
     } yield {
       SubscribeInfo(componentModel, query.getSubscribedTo(componentModel, Some(subscribeModel)))
     }
-    val subscribeInfo = subscribeInfo1 ++ subscribeInfo2
+    val subscribeInfo = (subscribeInfo1 ++ subscribeInfo2).distinct
 
     for {
       i <- subscribeInfo
@@ -969,7 +969,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       componentModel
     }
 
-    components1 ++ components2
+    (components1 ++ components2).distinct
   }
 
   /**
@@ -1013,7 +1013,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       componentModel
     }
 
-    components1 ++ components2
+    (components1 ++ components2).distinct
   }
 
   /**
