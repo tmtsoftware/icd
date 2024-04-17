@@ -453,7 +453,7 @@ object IcdToHtml {
       case Some(services) =>
         if (services.servicesProvided.nonEmpty || (services.servicesRequired.nonEmpty && forApi && clientApi)) {
           div(
-            nh.H3(s"Services for ${component.component}"),
+//            nh.H3(s"Services for ${component.component}"),
             raw(services.description),
             servicesProvidedMarkup(component, services.servicesProvided, nh, pdfOptions, clientApi),
             if (forApi && clientApi) servicesRequiredMarkup(component, services.servicesRequired, nh) else div()
@@ -463,7 +463,7 @@ object IcdToHtml {
     }
   }
 
-  private def servicesRequiredTitle(compName: String): String = s"Services Required by $compName"
+//  private def servicesRequiredesRequiredTitle(compName: String): String = s"Services Required by $compName"
 
   // Generates the HTML markup to display the HTTP services a component requires
   private def servicesRequiredMarkup(
@@ -477,7 +477,7 @@ object IcdToHtml {
     if (info.isEmpty) div()
     else {
       div(
-        nh.H4(servicesRequiredTitle(compName)),
+//        nh.H4(servicesRequiredTitle(compName)),
         for (s <- info) yield {
           val maybeOpenApi = s.maybeServiceModelProvider.map(_.openApi)
           val m            = s.serviceModelClient
@@ -486,7 +486,7 @@ object IcdToHtml {
             span(strong(s"Provider: "), provider)
           }
           div(cls := "nopagebreak")(
-            nh.H5(s"HTTP Service: ${m.name}"),
+            nh.H3(s"HTTP Service: ${m.name}"),
             p(providerInfo),
             maybeOpenApi match {
               case Some(openApi) =>
@@ -520,7 +520,7 @@ object IcdToHtml {
     if (info.isEmpty) div()
     else {
       div(
-        nh.H4(servicesProvidedTitle(compName)),
+//        nh.H4(servicesProvidedTitle(compName)),
         for (s <- info) yield {
           val m = s.serviceModelProvider
           val consumerInfo = if (clientApi) {
@@ -533,7 +533,7 @@ object IcdToHtml {
           val paths           = s.requiredBy.flatMap(_.paths).distinct
           val filteredOpenApi = OpenApiToHtml.filterOpenApiJson(m.openApi, paths)
           div(cls := "nopagebreak")(
-            nh.H5(s"HTTP Service: ${m.name}", linkId),
+            nh.H3(s"HTTP Service: ${m.name}", linkId),
             if (clientApi) p(consumerInfo, ", ", providerInfo) else p(providerInfo),
             if (showDetails) {
               div(
@@ -594,7 +594,7 @@ object IcdToHtml {
 
   private def receivedCommandsTitle(compName: String): String = s"Command Configurations Received by $compName"
 
-  private def servicesProvidedTitle(compName: String): String = s"HTTP Services provided by $compName"
+//  private def servicesProvidedTitle(compName: String): String = s"HTTP Services provided by $compName"
 
   // Generates the HTML markup to display the component's subscribe information
   private def subscribeMarkup(

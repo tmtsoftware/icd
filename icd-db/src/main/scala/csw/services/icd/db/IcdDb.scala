@@ -14,7 +14,7 @@ import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.fits.IcdFits
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.{BuildInfo, HtmlHeadings, PdfOptions, SubsystemWithVersion}
-import io.swagger.util.Yaml
+import io.swagger.v3.core.util.Yaml
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
 import io.swagger.v3.parser.util.DeserializationUtils
@@ -654,7 +654,7 @@ case class IcdDb(
             DeserializationUtils.deserializeIntoTree(yaml, fileName).toPrettyString
           }
           else {
-            io.swagger.util.Json.pretty().writeValueAsString(openAPI)
+            io.swagger.v3.core.util.Json.pretty().writeValueAsString(openAPI)
           }
         // Ingest into db
         val jsObj = Json.parse(jsonStr).as[JsObject]

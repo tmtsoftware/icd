@@ -42,7 +42,7 @@ object Dependencies {
   val reactivemongoPlayJsonCompat = "org.reactivemongo" %% "reactivemongo-play-json-compat" % "1.1.0.play210-RC12"
 
   // XXX Need at one point to fix indirect dependency conflict (still needed?)
-  val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.16.1"
+  val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.17.0"
 
   val diffson = "org.gnieh" %% "diffson-play-json" % "4.5.0"
 
@@ -51,7 +51,7 @@ object Dependencies {
   val osLib          = "com.lihaoyi"                %% "os-lib"           % "0.9.3"
   val jsoup          = "org.jsoup"                   % "jsoup"            % "1.17.2"
   val jgit           = "org.eclipse.jgit"            % "org.eclipse.jgit" % "6.8.0.202311291450-r"
-  val swaggerParser  = "io.swagger.parser.v3"        % "swagger-parser"   % "2.1.20"
+  val swaggerParser  = "io.swagger.parser.v3"        % "swagger-parser"   % "2.1.22"
   val playJson       = "org.playframework"          %% "play-json"        % PlayJsonVersion
   val jqueryUi       = "org.webjars"                 % "jquery-ui"        % JQueryUiVersion
   val webjarsPlay    = "org.webjars"                %% "webjars-play"     % "3.0.1"
