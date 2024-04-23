@@ -291,29 +291,25 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       // XXX TODO FIXME: Hyperlinks to other subsystems can't be made in the summary table,
       // since the code is shared with non-javascript code on the server side.
       val summaryTable1 =
-        SummaryTable
-          .displaySummary(
-            subsystemInfo,
-            Some(targetSv),
-            infoList,
-            new HtmlHeadings,
-            clientApi = false,
-            displayTitle = true
-          )
-          .render
+        SummaryTable(
+          subsystemInfo,
+          Some(targetSv),
+          infoList,
+          new HtmlHeadings,
+          clientApi = false,
+          displayTitle = true
+        ).displaySummary().render
       val summaryTable2 =
         if (subsystemInfo.sv != targetSubsystemInfo.sv)
           Some(
-            SummaryTable
-              .displaySummary(
-                targetSubsystemInfo,
-                Some(sv),
-                targetInfoList,
-                new HtmlHeadings,
-                clientApi = false,
-                displayTitle = false
-              )
-              .render
+            SummaryTable(
+              targetSubsystemInfo,
+              Some(sv),
+              targetInfoList,
+              new HtmlHeadings,
+              clientApi = false,
+              displayTitle = false
+            ).displaySummary().render
           )
         else None
 
@@ -412,16 +408,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         // XXX TODO FIXME: Hyperlinks to other subsystems can't be made in the summary table,
         // since the code is shared with non-javascript code on the server side.
         val summaryTable =
-          SummaryTable
-            .displaySummary(
-              subsystemInfo,
-              maybeTargetSubsystem,
-              infoList,
-              new HtmlHeadings,
-              clientApi,
-              displayTitle = true
-            )
-            .render
+          SummaryTable(
+            subsystemInfo,
+            maybeTargetSubsystem,
+            infoList,
+            new HtmlHeadings,
+            clientApi,
+            displayTitle = true
+          ).displaySummary().render
 
         mainContent.appendElement(
           div(cls := "component container-fluid", id := "Summary")(raw(summaryTable)).render
@@ -1222,8 +1216,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                     )
                   ),
                   td(p(desc)),
-                  td(s.provider.map(makeLinkForComponent)
-                    .getOrElse(makeLinkForComponent(s.serviceModelClient.subsystem, s.serviceModelClient.component)))
+                  td(
+                    s.provider
+                      .map(makeLinkForComponent)
+                      .getOrElse(makeLinkForComponent(s.serviceModelClient.subsystem, s.serviceModelClient.component))
+                  )
                 ),
                 row
               )

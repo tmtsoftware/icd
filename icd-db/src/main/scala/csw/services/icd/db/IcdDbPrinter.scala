@@ -146,26 +146,30 @@ case class IcdDbPrinter(
         p(strong(s"${subsystemInfo.sv.subsystem}: ${subsystemInfo.title} $subsystemVersion")),
         raw(subsystemInfo.description),
         if (subsystemInfo.sv == targetSubsystemInfo.sv) {
+          val summaryTable = SummaryTable(subsystemInfo, Some(targetSv), infoList, nh, clientApi = false, displayTitle = true)
           // Two components in same subsystem
           div(
             icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description))),
-            SummaryTable.displaySummary(subsystemInfo, Some(targetSv), infoList, nh, clientApi = false, displayTitle = true),
+            summaryTable.displaySummary(),
             makeIntro(titleInfo1),
-            displayDetails(infoList, nh, forApi = false, pdfOptions, clientApi = clientApi)
+            displayDetails(infoList, summaryTable, nh, forApi = false, pdfOptions, clientApi = clientApi)
           )
         }
         else {
           // Two subsystems
+          val summaryTable = SummaryTable(subsystemInfo, Some(targetSv), infoList, nh, clientApi = false, displayTitle = true)
+          val targetSummaryTable = SummaryTable(targetSubsystemInfo, Some(sv), infoList2, nh, clientApi = false, displayTitle = false)
+
           div(
             p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
             raw(targetSubsystemInfo.description),
             icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description))),
-            SummaryTable.displaySummary(subsystemInfo, Some(targetSv), infoList, nh, clientApi = false, displayTitle = true),
-            SummaryTable.displaySummary(targetSubsystemInfo, Some(sv), infoList2, nh, clientApi = false, displayTitle = false),
+            summaryTable.displaySummary(),
+            targetSummaryTable.displaySummary(),
             makeIntro(titleInfo1),
-            displayDetails(infoList, nh, forApi = false, pdfOptions, clientApi = clientApi),
+            displayDetails(infoList, summaryTable, nh, forApi = false, pdfOptions, clientApi = clientApi),
             makeIntro(titleInfo2),
-            displayDetails(infoList2, nh, forApi = false, pdfOptions, clientApi = clientApi),
+            displayDetails(infoList2, targetSummaryTable, nh, forApi = false, pdfOptions, clientApi = clientApi),
             if (sv.subsystem == "DMS" && targetSv.subsystem != "DMS" || targetSv.subsystem == "DMS" && sv.subsystem != "DMS") {
               // Special case: When DMS is involved, ICD consists of "Archived Items Report" with an ICD header
               // page (DEOPSICDDB-138)
