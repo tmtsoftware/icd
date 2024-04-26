@@ -169,6 +169,7 @@ object IcdToHtml {
     val nh           = new NumberedHeadings
     val titleInfo    = TitleInfo(subsystemInfo, None, None, documentNumber = pdfOptions.documentNumber)
     val summaryTable = SummaryTable(subsystemInfo, None, infoList, nh, clientApi, displayTitle = true)
+    val summaryTableMarkup = summaryTable.displaySummary()
     val fitsTable =
       if (fitsDictionary.fitsKeys.nonEmpty)
         makeFitsKeyTable(
@@ -183,7 +184,7 @@ object IcdToHtml {
 
     val mainContent = div(
       style := "width: 100%;",
-      summaryTable.displaySummary(),
+      summaryTableMarkup,
       fitsTable,
       displayDetails(db, infoList, summaryTable, nh, forApi = true, pdfOptions, clientApi)
     )
