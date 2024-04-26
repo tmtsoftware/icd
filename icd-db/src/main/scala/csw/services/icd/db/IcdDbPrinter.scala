@@ -95,7 +95,7 @@ case class IcdDbPrinter(
       subsystemInfo <- getSubsystemInfo(sv)
     } yield {
       val infoList = getComponentInfo(versionManager, sv, None, fitsKeyMap)
-      IcdToHtml.getApiAsHtml(subsystemInfo, infoList, pdfOptions, clientApi, fitsDictionary)
+      IcdToHtml.getApiAsHtml(db, subsystemInfo, infoList, pdfOptions, clientApi, fitsDictionary)
     }
     markup.map(_.render)
   }
@@ -152,7 +152,7 @@ case class IcdDbPrinter(
             icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description))),
             summaryTable.displaySummary(),
             makeIntro(titleInfo1),
-            displayDetails(infoList, summaryTable, nh, forApi = false, pdfOptions, clientApi = clientApi)
+            displayDetails(db, infoList, summaryTable, nh, forApi = false, pdfOptions, clientApi = clientApi)
           )
         }
         else {
@@ -167,9 +167,9 @@ case class IcdDbPrinter(
             summaryTable.displaySummary(),
             targetSummaryTable.displaySummary(),
             makeIntro(titleInfo1),
-            displayDetails(infoList, summaryTable, nh, forApi = false, pdfOptions, clientApi = clientApi),
+            displayDetails(db, infoList, summaryTable, nh, forApi = false, pdfOptions, clientApi = clientApi),
             makeIntro(titleInfo2),
-            displayDetails(infoList2, targetSummaryTable, nh, forApi = false, pdfOptions, clientApi = clientApi),
+            displayDetails(db, infoList2, targetSummaryTable, nh, forApi = false, pdfOptions, clientApi = clientApi),
             if (sv.subsystem == "DMS" && targetSv.subsystem != "DMS" || targetSv.subsystem == "DMS" && sv.subsystem != "DMS") {
               // Special case: When DMS is involved, ICD consists of "Archived Items Report" with an ICD header
               // page (DEOPSICDDB-138)

@@ -5,6 +5,7 @@ import icd.web.shared.*
 import scalatags.Text
 import Headings.idFor
 import HtmlMarkup.yesNo
+import csw.services.icd.db.IcdDb
 import icd.web.shared.IcdModels.{AlarmModel, ComponentModel, EventModel, MetadataModel, ParameterModel}
 
 /**
@@ -147,6 +148,7 @@ object IcdToHtml {
   /**
    * Returns HTML describing the given components in the given subsystem.
    *
+   * @param db                 the icd database
    * @param subsystemInfo      contains info about the subsystem
    * @param infoList           details about each component and what it publishes, subscribes to, etc.
    * @param pdfOptions         options for pdf generation
@@ -155,6 +157,7 @@ object IcdToHtml {
    * @return the html tags
    */
   def getApiAsHtml(
+      db: IcdDb,
       subsystemInfo: SubsystemInfo,
       infoList: List[ComponentInfo],
       pdfOptions: PdfOptions,
@@ -182,7 +185,7 @@ object IcdToHtml {
       style := "width: 100%;",
       summaryTable.displaySummary(),
       fitsTable,
-      displayDetails(infoList, summaryTable, nh, forApi = true, pdfOptions, clientApi)
+      displayDetails(db, infoList, summaryTable, nh, forApi = true, pdfOptions, clientApi)
     )
     val toc   = nh.mkToc()
     val intro = makeIntro(titleInfo)
@@ -233,6 +236,7 @@ object IcdToHtml {
   /**
    * Displays the details of the events published and commands received by the subsystem
    *
+   * @param db the icd database
    * @param infoList list of component info
    * @param summaryTable object used to create a summary table (of subsciber/client info)
    * @param nh       used for numbered headings and TOC
@@ -242,6 +246,7 @@ object IcdToHtml {
    * @return the HTML
    */
   def displayDetails(
+      db: IcdDb,
       infoList: List[ComponentInfo],
       summaryTable: SummaryTable,
       nh: NumberedHeadings,
@@ -251,7 +256,7 @@ object IcdToHtml {
   ): Text.TypedTag[String] = {
     import scalatags.Text.all.*
     div(
-      infoList.map(displayComponentInfo(_, summaryTable, nh, forApi, pdfOptions, clientApi))
+      infoList.map(displayComponentInfo(db, _, summaryTable, nh, forApi, pdfOptions, clientApi))
     )
   }
 
@@ -259,6 +264,7 @@ object IcdToHtml {
    * Displays the information for a component
    */
   private def displayComponentInfo(
+      db: IcdDb,
       info: ComponentInfo,
       summaryTable: SummaryTable,
       nh: NumberedHeadings,
@@ -278,13 +284,14 @@ object IcdToHtml {
       || info.commands.isDefined && info.commands.get.nonEmpty
       || info.services.isDefined && info.services.get.nonEmpty)
     ) {
-      markupForComponent(info, summaryTable, nh, forApi, pdfOptions, clientApi)
+      markupForComponent(db, info, summaryTable, nh, forApi, pdfOptions, clientApi)
     }
     else div()
   }
 
   // Generates the HTML markup to display the component information
   private def markupForComponent(
+      db: IcdDb,
       info: ComponentInfo,
       summaryTable: SummaryTable,
       nh: NumberedHeadings,
@@ -301,7 +308,7 @@ object IcdToHtml {
       publishMarkup(info.componentModel, info.publishes, nh, forApi, pdfOptions, clientApi),
       if (forApi && clientApi) subscribeMarkup(info.componentModel, info.subscribes, nh, forApi, pdfOptions) else div(),
       commandsMarkup(info.componentModel, info.commands, nh, forApi, pdfOptions, clientApi),
-      servicesMarkup(info.componentModel, info.services, nh, forApi, pdfOptions, clientApi),
+      servicesMarkup(db, info.componentModel, info.services, nh, forApi, pdfOptions, clientApi),
       if (!forApi)
         summaryTable
           .copy(
@@ -454,6 +461,7 @@ object IcdToHtml {
 
   // Generates the markup for the services section (description plus provides and requires)
   private def servicesMarkup(
+      db: IcdDb,
       component: ComponentModel,
       maybeServices: Option[Services],
       nh: NumberedHeadings,
@@ -469,7 +477,7 @@ object IcdToHtml {
           div(
             raw(services.description),
             servicesProvidedMarkup(component, services.servicesProvided, nh, pdfOptions, clientApi),
-            if (forApi && clientApi) servicesRequiredMarkup(component, services.servicesRequired, nh) else div()
+            if (forApi && clientApi) servicesRequiredMarkup(db, services.servicesRequired, nh) else div()
           )
         }
         else div()
@@ -480,7 +488,7 @@ object IcdToHtml {
 
   // Generates the HTML markup to display the HTTP services a component requires
   private def servicesRequiredMarkup(
-      component: ComponentModel,
+      db: IcdDb,
       info: List[ServicesRequiredInfo],
       nh: NumberedHeadings
   ): Text.TypedTag[String] = {
@@ -490,8 +498,18 @@ object IcdToHtml {
     else {
       div(
         for (s <- info) yield {
-          val maybeOpenApi = s.maybeServiceModelProvider.map(_.openApi)
-          val m            = s.serviceModelClient
+          val maybeOpenApi = s.maybeServiceModelProvider.map(_.openApi) match {
+            case Some(openApi) => Some(openApi)
+            case None =>
+              db.getOpenApi(
+                s.serviceModelClient.subsystem,
+                s.serviceModelClient.component,
+                s.serviceModelClient.name,
+                None,
+                s.serviceModelClient.paths
+              )
+          }
+          val m = s.serviceModelClient
           val providerInfo = {
             val provider = s"${s.serviceModelClient.subsystem}.${s.serviceModelClient.component}"
             span(strong(s"Provider: "), provider)
@@ -503,7 +521,6 @@ object IcdToHtml {
               case Some(openApi) =>
                 val filteredOpenApi = OpenApiToHtml.filterOpenApiJson(openApi, s.serviceModelClient.paths)
                 div(
-                  p("Note: Only the routes required by the client are listed here."),
                   raw(OpenApiToHtml.getHtml(filteredOpenApi))
                 )
               case None =>

@@ -423,7 +423,7 @@ object ApplicationActor extends ActorModule {
           replyTo ! app.getFitsDictionary(maybeSubsystem, maybeComponent)
           Behaviors.same
         case GetOpenApi(subsystem, component, service, maybeVersion, paths, replyTo) =>
-          replyTo ! app.getOpenApi(subsystem, component, service, maybeVersion, paths)
+          replyTo ! app.db.getOpenApi(subsystem, component, service, maybeVersion, paths)
           Behaviors.same
       }
     }

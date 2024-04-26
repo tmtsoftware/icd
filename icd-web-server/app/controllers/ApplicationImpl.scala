@@ -8,16 +8,15 @@ import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
 import csw.services.icd.db.{AlarmsReport, ArchivedItemsReport, CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, IcdDbPrinter, IcdDbQuery, IcdVersionManager, MissingItemsReport, getFileContents}
 import csw.services.icd.fits.{IcdFits, IcdFitsPrinter}
 import csw.services.icd.github.IcdGitManager
-import csw.services.icd.html.OpenApiToHtml
 import csw.services.icd.viz.IcdVizManager
 import diffson.playJson.DiffsonProtocol
-import icd.web.shared.IcdModels.{IcdModel, ServicePath}
+import icd.web.shared.IcdModels.IcdModel
 import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, FitsDictionary, FitsTags, HtmlHeadings, IcdName, IcdVersion, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, SubsystemWithVersion, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
 import play.api.libs.json.Json
 
 import scala.util.Try
 
-class ApplicationImpl(db: IcdDb) {
+case class ApplicationImpl(db: IcdDb) {
   private val log = play.Logger.of("ApplicationImpl")
 
   // Cache of API and ICD versions published on GitHub (cached for better performance)
@@ -867,28 +866,4 @@ class ApplicationImpl(db: IcdDb) {
     }
   }
 
-  def getOpenApi(
-      subsystem: String,
-      component: String,
-      service: String,
-      maybeVersion: Option[String],
-      paths: List[ServicePath]
-  ): Option[String] = {
-    val sv = SubsystemWithVersion(subsystem, maybeVersion, Some(component))
-    try {
-      db.versionManager
-        .getModels(sv, includeOnly = Set("serviceModel"))
-        .head
-        .serviceModel
-        .toList
-        .flatMap(_.provides.find(_.name == service))
-        .map(p => OpenApiToHtml.filterOpenApiJson(p.openApi, paths))
-        .headOption
-    }
-    catch {
-      case ex: Exception =>
-        log.error(s"Failed to get OpenApi JSON for $sv, service: $service, paths: $paths", ex)
-        None
-    }
-  }
 }
