@@ -1,8 +1,10 @@
 package csw.services.icd.db.parser
 
-import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.{AvailableChannels, FitsChannel, FitsKeyInfo, FitsKeyword, FitsSource, FitsTags, PdfOptions}
+import org.apache.commons.text.StringEscapeUtils
 import reactivemongo.api.bson.*
+import org.jsoup.Jsoup
+import org.jsoup.safety.Safelist
 
 // keywords: A list of FITS keywords (or keyword/channel)
 // inherit: A list of tags whose keywords should also be included
@@ -115,7 +117,8 @@ object FitsKeyInfoBsonParser {
     }
     FitsKeyInfo(
       name = doc.string("name").get,
-      description = doc.string("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
+//      description = doc.string("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
+      description = doc.string("description").map(StringEscapeUtils.escapeHtml4).getOrElse(""),
       `type` = doc.string("type").get,
       units = doc.string("units"),
       channels = channels

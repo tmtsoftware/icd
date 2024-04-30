@@ -1,6 +1,40 @@
 {
   "fitsKeyInfo": [
     {
+      "name": "DATE",
+      "description": "The date on which  the HDU was created, in the format specified in the FITS Standard. The old date format was ‘yy/mm/dd’ and may be used only for dates from 1900 through 1999. The new Y2K compliant date format is ‘yyyy-mm-dd’ or ‘yyyy-mm- ddTHH:MM:SS[.sss] ’.",
+      "type": "string",
+      "units": "NoUnits",
+      "source": {}
+    },
+    {
+      "name": "DATE-OBS",
+      "description": "The date of the observation, in the format specified in the FITS Standard. The old date format was ‘yy/mm/dd’ and may be used only for dates from 1900 through 1999. The new Y2K compliant date format is ‘yyyy- mm-dd’ or ‘yyyy- mm- ddTHH:MM:SS[.sss] ’.",
+      "type": "string",
+      "units": "NoUnits",
+      "source": {}
+    },
+    {
+      "name": "OBJECT",
+      "description": "The value field shall contain a character string giving a name or type of the object observed. Often ‘TARGNAME’ is used for target name, in which case ‘OBJECT’ can be used to specify the object category.",
+      "type": "string",
+      "units": "NoUnits",
+      "source": {
+        "subsystem": "ESW",
+        "componentName": "ocs",
+        "eventName": "object",
+        "parameterName": "XXX"
+      }
+    },
+    {
+      "name": "OBSERVER",
+      "description": "The value field shall contain a character string identifying who acquired the data associated with the header.",
+      "type": "string",
+      "units": "NoUnits",
+      "source": {}
+    },
+
+    {
       "name": "CRPIX1",
       "description": "This is the X coordinate of the reference pixel in the image",
       "type": "float",
@@ -133,20 +167,6 @@
       }
     },
     {
-      "name": "DATE",
-      "description": "The date on which  the HDU was created, in the format specified in the FITS Standard. The old date format was ‘yy/mm/dd’ and may be used only for dates from 1900 through 1999. The new Y2K compliant date format is ‘yyyy-mm-dd’ or ‘yyyy-mm- ddTHH:MM:SS[.sss] ’.",
-      "type": "string",
-      "units": "NoUnits",
-      "source": {}
-    },
-    {
-      "name": "DATE-OBS",
-      "description": "The date of the observation, in the format specified in the FITS Standard. The old date format was ‘yy/mm/dd’ and may be used only for dates from 1900 through 1999. The new Y2K compliant date format is ‘yyyy- mm-dd’ or ‘yyyy- mm- ddTHH:MM:SS[.sss] ’.",
-      "type": "string",
-      "units": "NoUnits",
-      "source": {}
-    },
-    {
       "name": "EQUINOX",
       "description": "The value field shall contain a floating point number giving the equinox in years for the celestial coordinate system in which positions are expressed. The interpretation of epoch depends upon the value of RADESYSa if present: Besselian if the value is FK4 or FK4-NO-E, Julian if the value is FK5; not applicable if the value is ICRS or GAPPT.",
       "type": "float",
@@ -157,25 +177,6 @@
         "eventName": "CurrentPosition",
         "parameterName": "Equinox"
       }
-    },
-    {
-      "name": "OBJECT",
-      "description": "The value field shall contain a character string giving a name or type of the object observed. Often ‘TARGNAME’ is used for target name, in which case ‘OBJECT’ can be used to specify the object category.",
-      "type": "string",
-      "units": "NoUnits",
-      "source": {
-        "subsystem": "ESW",
-        "componentName": "ocs",
-        "eventName": "object",
-        "parameterName": "XXX"
-      }
-    },
-    {
-      "name": "OBSERVER",
-      "description": "The value field shall contain a character string identifying who acquired the data associated with the header.",
-      "type": "string",
-      "units": "NoUnits",
-      "source": {}
     },
     {
       "name": "RA",
@@ -321,14 +322,67 @@
         "parameterName": "pointingstate"
       }
     },
+
+
+    {
+      "name": "AGWSTATE",
+      "description": "Operational state of the AGW Guider",
+      "type": "string",
+      "units": "NoUnits",
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "TCS AGW GUIDER Assembly",
+        "eventName": "state",
+        "parameterName": "OperationalState"
+      }
+    },
+    {
+      "name": "AGWID",
+      "description": "ID of Guider or WFS used for guiding",
+      "type": "string",
+      "units": "NoUnits",
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "TCS AGW GUIDER Assembly",
+        "eventName": "centroids",
+        "parameterName": "EquipId"
+      }
+    },
+    {
+      "name": "AGWXPOS",
+      "description": "Guide Star position x as determined by centroiding algorithm",
+      "type": "float",
+      "units": "mm",
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "TCS AGW GUIDER Assembly",
+        "eventName": "centroids",
+        "parameterName": "xPosition"
+      }
+    },
+    {
+      "name": "AGWYPOS",
+      "description": "Guide Star position y as determined by centroiding algorithm",
+      "type": "float",
+      "units": "mm",
+      "source": {
+        "subsystem": "TCS",
+        "componentName": "TCS AGW GUIDER Assembly",
+        "eventName": "centroids",
+        "parameterName": "yPosition"
+      }
+    },
+
+
+
     {
       "name": "M3ROT",
       "description": "Current M3 position in rotation.",
       "type": "float",
       "units": "degree",
       "source": {
-        "subsystem": "TCS",
-        "componentName": "TCS M3 Assembly",
+        "subsystem": "M3S",
+        "componentName": "M3Assembly",
         "eventName": "M3 Position",
         "parameterName": "rotation"
       }
@@ -339,8 +393,8 @@
       "type": "float",
       "units": "degree",
       "source": {
-        "subsystem": "TCS",
-        "componentName": "TCS M3 Assembly",
+        "subsystem": "M3S",
+        "componentName": "M3Assembly",
         "eventName": "M3 Position",
         "parameterName": "tilt"
       }
@@ -351,9 +405,9 @@
       "type": "float",
       "units": "degree",
       "source": {
-        "subsystem": "TCS",
-        "componentName": "TCS M2 Assembly",
-        "eventName": "M2 Position",
+        "subsystem": "M2S",
+        "componentName": "M2Assembly",
+        "eventName": "M2Position",
         "parameterName": "tip"
       }
     },
@@ -363,9 +417,9 @@
       "type": "float",
       "units": "degree",
       "source": {
-        "subsystem": "TCS",
-        "componentName": "TCS M2 Assembly",
-        "eventName": "M2 Position",
+        "subsystem": "M2S",
+        "componentName": "M2Assembly",
+        "eventName": "M2Position",
         "parameterName": "tilt"
       }
     },
@@ -375,9 +429,9 @@
       "type": "float",
       "units": "m",
       "source": {
-        "subsystem": "TCS",
-        "componentName": "TCS M2 Assembly",
-        "eventName": "M2 Position",
+        "subsystem": "M2S",
+        "componentName": "M2Assembly",
+        "eventName": "M2Position",
         "parameterName": "piston"
       }
     },
@@ -387,9 +441,9 @@
       "type": "float",
       "units": "m",
       "source": {
-        "subsystem": "TCS",
-        "componentName": "TCS M2 Assembly",
-        "eventName": "M2 Position",
+        "subsystem": "M2S",
+        "componentName": "M2Assembly",
+        "eventName": "M2Position",
         "parameterName": "decenter-x"
       }
     },
@@ -399,12 +453,38 @@
       "type": "float",
       "units": "m",
       "source": {
-        "subsystem": "TCS",
-        "componentName": "TCS M2 Assembly",
-        "eventName": "M2 Position",
+        "subsystem": "M2S",
+        "componentName": "M2Assembly",
+        "eventName": "M2Position",
         "parameterName": "decenter-y"
       }
     },
+    {
+      "name": "ENCBASE",
+      "description": "This is the Current Base Position.",
+      "type": "float",
+      "units": "degree",
+      "source": {
+        "subsystem": "ENC",
+        "componentName": "EncAssembly",
+        "eventName": "CurrentPosition",
+        "parameterName": "base"
+      }
+    },
+    {
+      "name": "ENCCAP",
+      "description": "This is the Current Cap Position",
+      "type": "float",
+      "units": "degree",
+      "source": {
+        "subsystem": "ENC",
+        "componentName": "EncAssembly",
+        "eventName": "CurrentPosition",
+        "parameterName": "cap"
+      }
+    },
+
+
     {
       "name": "IMGDISWV",
       "description": "An array of wavelengths. Each provided wavelength value must be unique.",
@@ -412,7 +492,7 @@
       "units": "NoUnits",
       "channel": [
         {
-          "name": "IMG-ATM",
+          "name": "IRIS-IFS",
           "comment": "",
           "source": {
             "subsystem": "TCS",
@@ -422,31 +502,21 @@
           }
         },
         {
-          "name": "ATM",
+          "name": "IRIS-IMAGER",
           "comment": "",
           "source": {
             "subsystem": "TCS",
-            "componentName": "cmNFIRAOS",
-            "eventName": "atmDispersion",
-            "parameterName": "wavelength"
-          }
-        },
-        {
-          "name": "IMG-ATM-TEST",
-          "comment": "",
-          "source": {
-            "subsystem": "TEST2",
-            "componentName": "cmTEST",
+            "componentName": "cmIRIS",
             "eventName": "imgAtmDispersion",
             "parameterName": "wavelength"
           }
         },
         {
-          "name": "ATM-TEST",
+          "name": "MODHIS",
           "comment": "",
           "source": {
-            "subsystem": "TEST2",
-            "componentName": "cmTEST2",
+            "subsystem": "TCS",
+            "componentName": "cmNFIRAOS",
             "eventName": "atmDispersion",
             "parameterName": "wavelength"
           }
@@ -460,7 +530,7 @@
       "units": "NoUnits",
       "channel": [
         {
-          "name": "IMG-ATM",
+          "name": "IRIS-IMAGER",
           "comment": "",
           "source": {
             "subsystem": "TCS",
@@ -470,7 +540,17 @@
           }
         },
         {
-          "name": "ATM",
+          "name": "IRIS-IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "TCS",
+            "componentName": "cmIRIS",
+            "eventName": "imgAtmDispersion",
+            "parameterName": "weight"
+          }
+        },
+        {
+          "name": "MODHIS",
           "comment": "",
           "source": {
             "subsystem": "TCS",
@@ -488,7 +568,7 @@
       "units": "NoUnits",
       "channel": [
         {
-          "name": "IMG-ATM",
+          "name": "IRIS-IMAGER",
           "comment": "",
           "source": {
             "subsystem": "TCS",
@@ -498,7 +578,17 @@
           }
         },
         {
-          "name": "ATM",
+          "name": "IRIS-IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "TCS",
+            "componentName": "cmIRIS",
+            "eventName": "imgAtmDispersion",
+            "parameterName": "dispersion"
+          }
+        },
+        {
+          "name": "MODHIS",
           "comment": "",
           "source": {
             "subsystem": "TCS",
@@ -727,30 +817,9 @@
         "index": 3
       }
     },
-    {
-      "name": "ENCBASE",
-      "description": "This is the Current Base Position.",
-      "type": "float",
-      "units": "degree",
-      "source": {
-        "subsystem": "TCS",
-        "componentName": "EncAssembly",
-        "eventName": "CurrentPosition",
-        "parameterName": "base"
-      }
-    },
-    {
-      "name": "ENCCAP",
-      "description": "This is the Current Cap Position",
-      "type": "float",
-      "units": "degree",
-      "source": {
-        "subsystem": "TCS",
-        "componentName": "EncAssembly",
-        "eventName": "CurrentPosition",
-        "parameterName": "cap"
-      }
-    },
+
+
+
     {
       "name": "FILTER",
       "description": "Current imager filter name. When two or more filters are inserted in the science light path, filter names are concatinated with TBD character in the order of wheel number.",
@@ -789,57 +858,58 @@
         }
       ]
     },
+
     {
-      "name": "XSIZE",
-      "description": "Window Size X",
+      "name": "COADDS",
+      "description": "Number of coadditions.",
       "type": "integer",
-      "units": "pixels",
-      "source": {
-        "subsystem": "IRIS",
-        "componentName": "",
-        "eventName": "",
-        "parameterName": ""
-      }
+      "units": "NoUnits",
+      "channel": [
+        {
+          "name": "IRIS-IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "is",
+            "eventName": "ifsObserveSettings",
+            "parameterName": "numRamps"
+          }
+        },
+        {
+          "name": "IRIS-IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "is",
+            "eventName": "imagerObserveSettings",
+            "parameterName": "numRamps"
+          }
+        },
+        {
+          "name": "MODHIS",
+          "comment": "",
+          "source": {
+            "subsystem": "MODHIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        },
+        {
+          "name": "WFOS",
+          "comment": "",
+          "source": {
+            "subsystem": "WFOS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        }
+      ]
     },
     {
-      "name": "YSIZE",
-      "description": "Window Size Y",
-      "type": "integer",
-      "units": "Pixels",
-      "source": {
-        "subsystem": "IRIS",
-        "componentName": "",
-        "eventName": "",
-        "parameterName": ""
-      }
-    },
-    {
-      "name": "XSTART",
-      "description": "Subarray Start X",
-      "type": "integer",
-      "units": "pixels",
-      "source": {
-        "subsystem": "IRIS",
-        "componentName": "",
-        "eventName": "",
-        "parameterName": ""
-      }
-    },
-    {
-      "name": "YSTART",
-      "description": "Subarray Start Y",
-      "type": "integer",
-      "units": "pixels",
-      "source": {
-        "subsystem": "IRIS",
-        "componentName": "",
-        "eventName": "",
-        "parameterName": ""
-      }
-    },
-    {
-      "name": "SARRMODE",
-      "description": "Subarray Mode [FULL_FRAME,SUB_ARRAY,ODGW]",
+      "name": "DET_ID",
+      "description": "Detector ID IMG1/2/3/4 ,SLC/LEN",
       "type": "string",
       "units": "NoUnits",
       "source": {
@@ -850,34 +920,610 @@
       }
     },
     {
-      "name": "READTIMEXXX",
+      "name": "EXPNO",
+      "description": "Number of current (if in progress) or last IFS exposure at current dither pattern with current instrument configuration (1-based).",
+      "type": "integer",
+      "units": "NoUnits",
+      "channel": [
+        {
+          "name": "IRIS-IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "is",
+            "eventName": "exposureRepeats",
+            "parameterName": "currentIFSExposureNumber"
+          }
+        },
+        {
+          "name": "IRIS-IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "is",
+            "eventName": "exposureRepeats",
+            "parameterName": "currentImagerExposureNumber"
+          }
+        },
+        {
+          "name": "MODHIS",
+          "comment": "",
+          "source": {
+            "subsystem": "MODHIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        },
+        {
+          "name": "WFOS",
+          "comment": "",
+          "source": {
+            "subsystem": "WFOS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "EXPSTART",
       "description": "Start time of the first pixel read",
       "type": "integer",
       "units": "Microseconds in MJD",
-      "source": {
-        "subsystem": "IRIS",
-        "componentName": "",
-        "eventName": "",
-        "parameterName": ""
-      }
+      "channel": [
+        {
+          "name": "IRIS-IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        },
+        {
+          "name": "IRIS-IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        },
+        {
+          "name": "MODHIS",
+          "comment": "",
+          "source": {
+            "subsystem": "MODHIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        },
+        {
+          "name": "WFOS",
+          "comment": "",
+          "source": {
+            "subsystem": "WFOS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        }
+      ]
     },
     {
-      "name": "RST_TIME",
-      "description": "Time of the last reset",
-      "type": "integer",
-      "units": "Microseconds in MJD",
-      "source": {
-        "subsystem": "IRIS",
-        "componentName": "",
-        "eventName": "",
-        "parameterName": ""
-      }
+      "name": "EXPTIME",
+      "description": "Actual total exposure time which is rampIntegrationTime multiplied by ramps.",
+      "type": "float",
+      "units": "second",
+      "channel": [
+        {
+          "name": "IRIS-IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "ifs.detector",
+            "eventName": "currentConfig",
+            "parameterName": "totalTime"
+          }
+        },
+        {
+          "name": "IRIS-IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "imager.detector",
+            "eventName": "currentConfig",
+            "parameterName": "totalTime"
+          }
+        },
+        {
+          "name": "MODHIS",
+          "comment": "",
+          "source": {
+            "subsystem": "MODHIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        },
+        {
+          "name": "WFOS",
+          "comment": "",
+          "source": {
+            "subsystem": "WFOS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        }
+      ]
     },
     {
       "name": "FRM_TIME",
       "description": "Time taken to read all the pixels in the readout frame",
       "type": "integer",
       "units": "Microseconds",
+      "channel": [
+        {
+          "name": "IRIS-IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "ifs.detector",
+            "eventName": "currentConfig",
+            "parameterName": "readoutTime"
+          }
+        },
+        {
+          "name": "IRIS-IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "imager.detector",
+            "eventName": "currentConfig",
+            "parameterName": "readoutTime"
+          }
+        },
+        {
+          "name": "MODHIS",
+          "comment": "",
+          "source": {
+            "subsystem": "MODHIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        },
+        {
+          "name": "WFOS",
+          "comment": "",
+          "source": {
+            "subsystem": "WFOS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "GAIN",
+      "description": "Conversion of photoelectrons to counts for each detector.",
+      "type": "integer",
+      "units": "NoUnits",
+      "channel": [
+        {
+          "name": "IRIS-IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "ifs.detector",
+            "eventName": "systemConf",
+            "parameterName": "gain"
+          }
+        },
+        {
+          "name": "IRIS-IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "imager.detector",
+            "eventName": "systemConf",
+            "parameterName": "gain"
+          }
+        },
+        {
+          "name": "MODHIS",
+          "comment": "",
+          "source": {
+            "subsystem": "MODHIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        },
+        {
+          "name": "WFOS",
+          "comment": "",
+          "source": {
+            "subsystem": "WFOS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "NUMREADS",
+      "description": "Number of raw readouts used in the sampling mode per ramp. This is the number of raw readouts that are added together before being used in the sampling mode to create a single frame. This number is only used in sample modes of MDS and UTR.",
+      "type": "integer",
+      "units": "NoUnits",
+      "channel": [
+        {
+          "name": "IRIS-IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "is",
+            "eventName": "ifsObserveSettings",
+            "parameterName": "numReads"
+          }
+        },
+        {
+          "name": "IRIS-IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "is",
+            "eventName": "imagerObserveSettings",
+            "parameterName": "numReads"
+          }
+        },
+        {
+          "name": "MODHIS",
+          "comment": "",
+          "source": {
+            "subsystem": "MODHIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "RAMPINTT",
+      "description": "Integration time, this is the length of time for each ramp.",
+      "type": "integer",
+      "units": "NoUnits",
+      "channel": [
+        {
+          "name": "IRIS-IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "is",
+            "eventName": "ifsObserveSettings",
+            "parameterName": "integrationTime"
+          }
+        },
+        {
+          "name": "IRIS-IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "is",
+            "eventName": "imagerObserveSettings",
+            "parameterName": "integrationTime"
+          }
+        },
+        {
+          "name": "MODHIS",
+          "comment": "",
+          "source": {
+            "subsystem": "MODHIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "READNOIS",
+      "description": "Nominal read noise of the entire array measured at commissioning phase.",
+      "type": "integer",
+      "units": "NoUnits",
+      "channel": [
+        {
+          "name": "IRIS-IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "ifs.detector",
+            "eventName": "systemConf",
+            "parameterName": "readNoise"
+          }
+        },
+        {
+          "name": "IRIS-IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "imager.detector",
+            "eventName": "systemConf",
+            "parameterName": "readNoise"
+          }
+        },
+        {
+          "name": "MODHIS",
+          "comment": "",
+          "source": {
+            "subsystem": "MODHIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        },
+        {
+          "name": "WFOS",
+          "comment": "",
+          "source": {
+            "subsystem": "WFOS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "READTIME",
+      "description": "Time to clock one detector, which is dependent on pixel clocking time and subarray dimensions and channels used.",
+      "type": "float",
+      "units": "second",
+      "channel": [
+        {
+          "name": "IRIS-IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "ifs.detector",
+            "eventName": "currentConfig",
+            "parameterName": "readoutTime"
+          }
+        },
+        {
+          "name": "IRIS-IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "imager.detector",
+            "eventName": "currentConfig",
+            "parameterName": "readoutTime"
+          }
+        },
+        {
+          "name": "MODHIS",
+          "comment": "",
+          "source": {
+            "subsystem": "MODHIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        },
+        {
+          "name": "WFOS",
+          "comment": "",
+          "source": {
+            "subsystem": "WFOS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "RST_TIME",
+      "description": "Time of the last reset",
+      "type": "integer",
+      "units": "Microseconds in MJD",
+      "channel": [
+        {
+          "name": "IRIS-IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        },
+        {
+          "name": "IRIS-IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        },
+        {
+          "name": "MODHIS",
+          "comment": "",
+          "source": {
+            "subsystem": "MODHIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "SAMPMODE",
+      "description": "This is the sampling mode. This could be CDS, MDS or UTR.",
+      "type": "string",
+      "units": "NoUnits",
+      "channel": [
+        {
+          "name": "IRIS-IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "is",
+            "eventName": "ifsObserveSettings",
+            "parameterName": "samplingMode"
+          }
+        },
+        {
+          "name": "IRIS-IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "is",
+            "eventName": "imagerObserveSettings",
+            "parameterName": "samplingMode"
+          }
+        },
+        {
+          "name": "MODHIS",
+          "comment": "",
+          "source": {
+            "subsystem": "MODHIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "XSIZE",
+      "description": "Window Size X",
+      "type": "integer",
+      "units": "pixels",
+      "channel": [
+        {
+          "name": "IRIS-IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        },
+        {
+          "name": "IRIS-IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "YSIZE",
+      "description": "Window Size Y",
+      "type": "integer",
+      "units": "Pixels",
+      "channel": [
+        {
+          "name": "IRIS-IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        },
+        {
+          "name": "IRIS-IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "XSTART",
+      "description": "Subarray Start X",
+      "type": "integer",
+      "units": "pixels",
+      "channel": [
+        {
+          "name": "IRIS-IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        },
+        {
+          "name": "IRIS-IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "YSTART",
+      "description": "Subarray Start Y",
+      "type": "integer",
+      "units": "pixels",
+      "channel": [
+        {
+          "name": "IRIS-IFS",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        },
+        {
+          "name": "IRIS-IMAGER",
+          "comment": "",
+          "source": {
+            "subsystem": "IRIS",
+            "componentName": "",
+            "eventName": "",
+            "parameterName": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "SARRMODE",
+      "description": "Subarray Mode [FULL_FRAME,SUB_ARRAY,ODGW]",
+      "type": "string",
+      "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "",
@@ -897,66 +1543,7 @@
         "parameterName": "observationId ?"
       }
     },
-    {
-      "name": "DET_ID",
-      "description": "Detector ID IMG1/2/3/4 ,SLC/LEN",
-      "type": "string",
-      "units": "NoUnits",
-      "source": {
-        "subsystem": "IRIS",
-        "componentName": "",
-        "eventName": "",
-        "parameterName": ""
-      }
-    },
-    {
-      "name": "EXP_NO",
-      "description": "Exposure number  XXXX 0-9999",
-      "type": "integer",
-      "units": "NoUnits",
-      "source": {
-        "subsystem": "IRIS",
-        "componentName": "",
-        "eventName": "",
-        "parameterName": ""
-      }
-    },
-    {
-      "name": "RAMP_NO",
-      "description": "Ramp within Exposure [0-99999]",
-      "type": "integer",
-      "units": "NoUnits",
-      "source": {
-        "subsystem": "IRIS",
-        "componentName": "",
-        "eventName": "",
-        "parameterName": ""
-      }
-    },
-    {
-      "name": "READ_NO",
-      "description": "Readout Within Ramp [0-99999]",
-      "type": "integer",
-      "units": "NoUnits",
-      "source": {
-        "subsystem": "IRIS",
-        "componentName": "",
-        "eventName": "",
-        "parameterName": ""
-      }
-    },
-    {
-      "name": "COMPLETE",
-      "description": "Indicates if Pixels were readout",
-      "type": "type",
-      "units": "NoUnits",
-      "source": {
-        "subsystem": "IRIS",
-        "componentName": "",
-        "eventName": "",
-        "parameterName": ""
-      }
-    },
+
     {
       "name": "CLDSTPX",
       "description": "Current position in X axis.",
@@ -1126,18 +1713,6 @@
       }
     },
     {
-      "name": "EXPNO",
-      "description": "Number of current (if in progress) or last IFS exposure at current dither pattern with current instrument configuration (1-based).",
-      "type": "integer",
-      "units": "NoUnits",
-      "source": {
-        "subsystem": "IRIS",
-        "componentName": "is",
-        "eventName": "exposureRepeats",
-        "parameterName": "currentIFSExposureNumber"
-      }
-    },
-    {
       "name": "DITHNO",
       "description": "Total number of IFS exposures at current dither pattern.",
       "type": "integer",
@@ -1161,130 +1736,7 @@
         "parameterName": "ifs"
       }
     },
-    {
-      "name": "IMSTATE",
-      "description": "IMAGER is currently observing, means when set the start prepare event was received and will stay that way until the observation is complete is received.",
-      "type": "type",
-      "units": "NoUnits",
-      "source": {
-        "subsystem": "IRIS",
-        "componentName": "is",
-        "eventName": "observing",
-        "parameterName": "imager"
-      }
-    },
-    {
-      "name": "NUMREADS",
-      "description": "Number of raw readouts used in the sampling mode per ramp. This is the number of raw readouts that are added together before being used in the sampling mode to create a single frame. This number is only used in sample modes of MDS and UTR.",
-      "type": "integer",
-      "units": "NoUnits",
-      "channel": [
-        {
-          "name": "IFS",
-          "comment": "",
-          "source": {
-            "subsystem": "IRIS",
-            "componentName": "is",
-            "eventName": "ifsObserveSettings",
-            "parameterName": "numReads"
-          }
-        },
-        {
-          "name": "IMAGER",
-          "comment": "",
-          "source": {
-            "subsystem": "IRIS",
-            "componentName": "is",
-            "eventName": "imagerObserveSettings",
-            "parameterName": "numReads"
-          }
-        }
-      ]
-    },
-    {
-      "name": "NUMRAMPS",
-      "description": "Number of configured ramps. Each ramp is bounded by resets and is of integration time in length. Each ramp has the sampling mode applied. The resultant raw Science Frame is created by adding the output of each ramp.",
-      "type": "integer",
-      "units": "NoUnits",
-      "channel": [
-        {
-          "name": "IFS",
-          "comment": "",
-          "source": {
-            "subsystem": "IRIS",
-            "componentName": "is",
-            "eventName": "ifsObserveSettings",
-            "parameterName": "numRamps"
-          }
-        },
-        {
-          "name": "IMAGER",
-          "comment": "",
-          "source": {
-            "subsystem": "IRIS",
-            "componentName": "is",
-            "eventName": "imagerObserveSettings",
-            "parameterName": "numRamps"
-          }
-        }
-      ]
-    },
-    {
-      "name": "RAMPINTT",
-      "description": "Integration time, this is the length of time for each ramp.",
-      "type": "integer",
-      "units": "NoUnits",
-      "channel": [
-        {
-          "name": "IFS",
-          "comment": "",
-          "source": {
-            "subsystem": "IRIS",
-            "componentName": "is",
-            "eventName": "ifsObserveSettings",
-            "parameterName": "integrationTime"
-          }
-        },
-        {
-          "name": "IMAGER",
-          "comment": "",
-          "source": {
-            "subsystem": "IRIS",
-            "componentName": "is",
-            "eventName": "imagerObserveSettings",
-            "parameterName": "integrationTime"
-          }
-        }
-      ]
-    },
-    {
-      "name": "SAMPMODE",
-      "description": "This is the sampling mode. This could be CDS, MDS or UTR.",
-      "type": "string",
-      "units": "NoUnits",
-      "channel": [
-        {
-          "name": "IFS",
-          "comment": "",
-          "source": {
-            "subsystem": "IRIS",
-            "componentName": "is",
-            "eventName": "ifsObserveSettings",
-            "parameterName": "samplingMode"
-          }
-        },
-        {
-          "name": "IMAGER",
-          "comment": "",
-          "source": {
-            "subsystem": "IRIS",
-            "componentName": "is",
-            "eventName": "imagerObserveSettings",
-            "parameterName": "samplingMode"
-          }
-        }
-      ]
-    },
+
     {
       "name": "IFSSCALE",
       "description": "IFS Scale.",
@@ -1429,163 +1881,28 @@
         "parameterName": "position"
       }
     },
+
     {
-      "name": "OBSID",
-      "description": "Observation ID given by LOAD_CONFIGURATION command.",
-      "type": "string",
-      "units": "NoUnits",
-      "channel": [
-        {
-          "name": "IFS",
-          "comment": "",
-          "source": {
-            "subsystem": "IRIS",
-            "componentName": "ifs.detector",
-            "eventName": "currentConfig",
-            "parameterName": "obsId"
-          }
-        },
-        {
-          "name": "IMAGER",
-          "comment": "",
-          "source": {
-            "subsystem": "IRIS",
-            "componentName": "imager.detector",
-            "eventName": "currentConfig",
-            "parameterName": "obsId"
-          }
-        }
-      ]
-    },
-    {
-      "name": "EXPTIME",
-      "description": "Actual total exposure time which is rampIntegrationTime multiplied by ramps.",
-      "type": "float",
-      "units": "second",
-      "channel": [
-        {
-          "name": "IFS",
-          "comment": "",
-          "source": {
-            "subsystem": "IRIS",
-            "componentName": "ifs.detector",
-            "eventName": "currentConfig",
-            "parameterName": "totalTime"
-          }
-        },
-        {
-          "name": "IMAGER",
-          "comment": "",
-          "source": {
-            "subsystem": "IRIS",
-            "componentName": "imager.detector",
-            "eventName": "currentConfig",
-            "parameterName": "totalTime"
-          }
-        }
-      ]
-    },
-    {
-      "name": "RAMPTIME",
-      "description": "Actual integration time of one ramp. The reuqested integration time is rounded down to the nearest valid integration time which is a multiple of readoutTime.",
-      "type": "float",
-      "units": "second",
-      "channel": [
-        {
-          "name": "IFS",
-          "comment": "",
-          "source": {
-            "subsystem": "IRIS",
-            "componentName": "ifs.detector",
-            "eventName": "currentConfig",
-            "parameterName": "rampIntegrationTime"
-          }
-        },
-        {
-          "name": "IMAGER",
-          "comment": "",
-          "source": {
-            "subsystem": "IRIS",
-            "componentName": "imager.detector",
-            "eventName": "currentConfig",
-            "parameterName": "rampIntegrationTime"
-          }
-        }
-      ]
-    },
-    {
-      "name": "READTIME",
-      "description": "Time to clock one detector, which is dependent on pixel clocking time and subarray dimensions and channels used.",
-      "type": "float",
-      "units": "second",
-      "channel": [
-        {
-          "name": "IFS",
-          "comment": "",
-          "source": {
-            "subsystem": "IRIS",
-            "componentName": "ifs.detector",
-            "eventName": "currentConfig",
-            "parameterName": "readoutTime"
-          }
-        },
-        {
-          "name": "IMAGER",
-          "comment": "",
-          "source": {
-            "subsystem": "IRIS",
-            "componentName": "imager.detector",
-            "eventName": "currentConfig",
-            "parameterName": "readoutTime"
-          }
-        }
-      ]
-    },
-    {
-      "name": "GAIN",
-      "description": "Conversion of photoelectrons to counts for each detector.",
-      "type": "integer",
-      "units": "NoUnits",
-      "source": {
-        "subsystem": "IRIS",
-        "componentName": "imager.detector",
-        "eventName": "systemConf",
-        "parameterName": "gain"
-      }
-    },
-    {
-      "name": "READNOIS",
-      "description": "Nominal read noise of the entire array measured at commissioning phase.",
-      "type": "integer",
-      "units": "NoUnits",
-      "source": {
-        "subsystem": "IRIS",
-        "componentName": "imager.detector",
-        "eventName": "systemConf",
-        "parameterName": "readNoise"
-      }
-    },
-    {
-      "name": "IMGTMPXX",
+      "name": "IMGTMP",
       "description": "ID of the sensor assigned for the temperature reading.",
       "type": "string",
       "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "sc.cryoenv",
-        "eventName": "IMGTEMP[XX]",
+        "eventName": "IMGTEMP[1]",
         "parameterName": "sensorID"
       }
     },
     {
-      "name": "IFSTMPXX",
+      "name": "IFSTMP",
       "description": "ID of the sensor assigned for the temperature reading.",
       "type": "string",
       "units": "NoUnits",
       "source": {
         "subsystem": "IRIS",
         "componentName": "sc.cryoenv",
-        "eventName": "IFSTEMP[XX]",
+        "eventName": "IFSTEMP[1]",
         "parameterName": "sensorID"
       }
     },
@@ -1601,6 +1918,8 @@
         "parameterName": "sensorID"
       }
     },
+
+
     {
       "name": "SSLGSALT",
       "description": "Current altitude (85 ≤ x ≤ 100) estimated based on measured range distance and the value set for zenith angle (= current.rangeDistance*cos(simTcs.zenithAngle)).",
