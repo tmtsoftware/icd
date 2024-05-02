@@ -9,7 +9,7 @@ object Headings {
    * Returns a unique id for a link target.
    *
    * @param thisComponent component name (Component being described)
-   * @param action    publishes, subscribes, sends, receives
+   * @param action    publishes, subscribes, sends, receives, provides, requires
    * @param itemType  Event, Alarm, etc.
    * @param subsystem the item's subsystem
    * @param component the item's component name

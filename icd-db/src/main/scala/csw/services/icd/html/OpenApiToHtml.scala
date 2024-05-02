@@ -48,16 +48,16 @@ object OpenApiToHtml {
       jsonStr
     else {
       import play.api.libs.json.*
-      val allPaths  = paths.map(_.path)
-      val methodMap = paths.map(p => p.path -> p.method).toMap
+      val pathSet = paths.map(_.path).toSet
+      val methodMap = paths.map(p => p.path -> paths.filter(_.path == p.path).map(_.method)).toMap
 
-      // Filter out all but the HTTP method required by the client
-      def filterMethod(js: JsValue, method: String): JsValue = {
+      // Filter out all but the HTTP methods required by the client
+      def filterMethod(js: JsValue, methods: List[String]): JsValue = {
         js match {
           case JsObject(vs) =>
             JsObject(vs.flatMap {
               case (key, value) =>
-                if (key == method) Some(key -> value)
+                if (methods.contains(key)) Some(key -> value)
                 else None
             })
           case x => x
@@ -70,7 +70,7 @@ object OpenApiToHtml {
           case JsObject(vs) =>
             JsObject(vs.flatMap {
               case (key, value) =>
-                if (allPaths.contains(key)) Some(key -> filterMethod(value, methodMap(key)))
+                if (pathSet.contains(key)) Some(key -> filterMethod(value, methodMap(key)))
                 else None
             })
           case x => x

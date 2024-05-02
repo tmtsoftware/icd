@@ -478,7 +478,7 @@ object IcdToHtml {
           div(
             raw(services.description),
             servicesProvidedMarkup(component, services.servicesProvided, nh, pdfOptions, clientApi),
-            if (forApi && clientApi) servicesRequiredMarkup(db, services.servicesRequired, nh) else div()
+            if (forApi && clientApi) servicesRequiredMarkup(db, component, services.servicesRequired, nh) else div()
           )
         }
         else div()
@@ -490,6 +490,7 @@ object IcdToHtml {
   // Generates the HTML markup to display the HTTP services a component requires
   private def servicesRequiredMarkup(
       db: IcdDb,
+      component: ComponentModel,
       info: List[ServicesRequiredInfo],
       nh: NumberedHeadings
   ): Text.TypedTag[String] = {
@@ -515,8 +516,10 @@ object IcdToHtml {
             val provider = s"${s.serviceModelClient.subsystem}.${s.serviceModelClient.component}"
             span(strong(s"Provider: "), provider)
           }
+          val compName = component.component
+          val linkId = idFor(compName, "requires", "Services", m.subsystem, m.component, m.name)
           div(cls := "nopagebreak")(
-            nh.H3(s"HTTP Service: ${m.name}"),
+            nh.H3(s"HTTP Service: ${m.name}", linkId),
             p(providerInfo),
             maybeOpenApi match {
               case Some(openApi) =>
