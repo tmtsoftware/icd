@@ -39,10 +39,9 @@ case class MainContent() extends Displayable {
    *
    * @param displayable the content to display
    * @param title       the title to display
-   * @param maybeElem        Optional element to display next to title
    */
-  def setContent(displayable: Displayable, title: String, maybeElem: Option[Element] = None): Unit = {
-    setTitle(title, maybeElem = maybeElem)
+  def setContent(displayable: Displayable, title: String): Unit = {
+    setTitle(title)
     contentDiv.innerHTML = ""
     contentDiv.appendChild(displayable.markup())
   }
@@ -54,24 +53,13 @@ case class MainContent() extends Displayable {
   def setTitle(
       title: String,
       maybeSubtitle: Option[String] = None,
-      maybeDescription: Option[String] = None,
-      maybeElem: Option[Element] = None
+      maybeDescription: Option[String] = None
   ): Unit = {
-    maybeElem match {
-      case Some(elem) =>
-        maybeSubtitle match {
-          case Some(subtitle) =>
-            contentTitle.innerHTML = s"$title ${elem.innerHTML} <br><small class='text-secondary'>$subtitle</small>"
-          case None =>
-            contentTitle.innerHTML = s"$title ${elem.innerHTML}"
-        }
+    maybeSubtitle match {
+      case Some(subtitle) =>
+        contentTitle.innerHTML = s"$title<br><small class='text-secondary'>$subtitle</small>"
       case None =>
-        maybeSubtitle match {
-          case Some(subtitle) =>
-            contentTitle.innerHTML = s"$title<br><small class='text-secondary'>$subtitle</small>"
-          case None =>
-            contentTitle.textContent = title
-        }
+        contentTitle.textContent = title
     }
     setDescription(maybeDescription.getOrElse(""))
   }

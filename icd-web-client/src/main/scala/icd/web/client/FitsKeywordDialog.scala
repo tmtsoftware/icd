@@ -161,7 +161,8 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
           ),
           label(cls := "form-check-label", `for` := s"fitsTag-$key")(displayName)
         )
-      }
+      },
+      span(style := "margin-left:15px", pdfButton.markup())
     )
   }
 
