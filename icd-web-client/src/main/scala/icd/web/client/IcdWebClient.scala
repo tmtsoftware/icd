@@ -482,7 +482,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
           }
     } yield {
       val fitsKeywordDialog = FitsKeywordDialog(fitsDict, ComponentLinkSelectionHandler)
-      mainContent.setContent(fitsKeywordDialog, "FITS Dictionary")
+      mainContent.setContent(fitsKeywordDialog, "FITS Dictionary", Some(FitsKeywordDialog.pdfButton.markup()))
       if (saveHistory) pushState(viewType = FitsView)
     }
     showBusyCursorWhile(f.map(_ => ()))

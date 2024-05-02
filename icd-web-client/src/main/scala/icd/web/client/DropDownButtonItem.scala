@@ -54,7 +54,7 @@ extends Displayable {
   override def markup(): Element = {
     import scalatags.JsDom.all.*
 
-    div(cls := "selectDialogButton btn-group", item, dropdown).render
+    span(cls := "selectDialogButton", item, dropdown).render
   }
 
 }

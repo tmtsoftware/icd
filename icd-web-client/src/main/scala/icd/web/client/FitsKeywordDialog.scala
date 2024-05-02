@@ -1,7 +1,7 @@
 package icd.web.client
 
 import icd.web.client.Components.ComponentListener
-import icd.web.shared.{FitsChannel, FitsDictionary, FitsKeyInfo, FitsKeywordAndChannel, FitsSource}
+import icd.web.shared.{FitsChannel, FitsDictionary, FitsKeyInfo, FitsKeywordAndChannel, FitsSource, PdfOptions}
 import org.scalajs.dom
 import org.scalajs.dom.{Element, HTMLInputElement, document}
 import scalatags.JsDom.all.*
@@ -30,6 +30,21 @@ object FitsKeywordDialog {
       .toList
       .head
   }
+
+  private def makePdf(pdfOptions: PdfOptions): Unit = {
+    val tag = FitsKeywordDialog.getFitsTag
+    val uri = ClientRoutes.fitsDictionaryAsPdf(tag, pdfOptions)
+    dom.window.open(uri) // opens in new window or tab
+  }
+
+  val pdfButton: PdfButtonItem =
+    PdfButtonItem(
+      "PDF",
+      "Generate and display a PDF containing the FITS Dictionary based on the selected tag",
+      makePdf,
+      showDocumentNumber = false,
+      showDetailButtons = false
+    )
 }
 
 case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListener) extends Displayable {

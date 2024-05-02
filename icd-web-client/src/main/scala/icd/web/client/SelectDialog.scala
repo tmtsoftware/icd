@@ -323,8 +323,8 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       ),
       div(
         style := "padding-top: 20px",
-        div(cls := "selectDialogButton btn-group")(applyButton),
-        div(cls := "selectDialogButton btn-group")(historyButton),
+        span(cls := "selectDialogButton")(applyButton),
+        span(cls := "selectDialogButton")(historyButton),
         pdfButton.markup(),
         generateButton.markup(),
         graphButton.markup(),

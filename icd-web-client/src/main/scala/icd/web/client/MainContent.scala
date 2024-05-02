@@ -12,12 +12,14 @@ case class MainContent() extends Displayable {
   // Title to display
   private val contentTitle = h3(cls := "page-header")().render
 
+  // Place for some element next to the title
+  private val titleExtElem = span().render
+
   // Optional description
   private val contentDescription = p.render
 
   // Holds the content to display
   private val contentDiv = {
-
     div(id := "content").render
   }
 
@@ -37,22 +39,39 @@ case class MainContent() extends Displayable {
    *
    * @param displayable the content to display
    * @param title       the title to display
+   * @param maybeElem        Optional element to display next to title
    */
-  def setContent(displayable: Displayable, title: String): Unit = {
-    setTitle(title)
+  def setContent(displayable: Displayable, title: String, maybeElem: Option[Element] = None): Unit = {
+    setTitle(title, maybeElem = maybeElem)
     contentDiv.innerHTML = ""
     contentDiv.appendChild(displayable.markup())
   }
 
   /**
-   * Sets the title and optional subtitle of the main section of the page
+   * Sets the title and optional subtitle of the main section of the page.
+   * optional maybeElem is displayed next to the title.
    */
-  def setTitle(title: String, maybeSubtitle: Option[String] = None, maybeDescription: Option[String] = None): Unit = {
-    maybeSubtitle match {
-      case Some(subtitle) =>
-        contentTitle.innerHTML = s"$title<br><small class='text-secondary'>$subtitle</small>"
+  def setTitle(
+      title: String,
+      maybeSubtitle: Option[String] = None,
+      maybeDescription: Option[String] = None,
+      maybeElem: Option[Element] = None
+  ): Unit = {
+    maybeElem match {
+      case Some(elem) =>
+        maybeSubtitle match {
+          case Some(subtitle) =>
+            contentTitle.innerHTML = s"$title ${elem.innerHTML} <br><small class='text-secondary'>$subtitle</small>"
+          case None =>
+            contentTitle.innerHTML = s"$title ${elem.innerHTML}"
+        }
       case None =>
-        contentTitle.textContent = title
+        maybeSubtitle match {
+          case Some(subtitle) =>
+            contentTitle.innerHTML = s"$title<br><small class='text-secondary'>$subtitle</small>"
+          case None =>
+            contentTitle.textContent = title
+        }
     }
     setDescription(maybeDescription.getOrElse(""))
   }
@@ -124,7 +143,7 @@ case class MainContent() extends Displayable {
 
   override def markup(): Element = {
     div(id := "mainContent", cls := "col overflow-auto h-100")(
-      contentTitle,
+      span(contentTitle, titleExtElem),
       contentDescription,
       contentDiv
     ).render

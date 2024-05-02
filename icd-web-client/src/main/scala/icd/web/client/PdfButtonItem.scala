@@ -184,7 +184,7 @@ case class PdfButtonItem(
   override def markup(): Element = {
     import scalatags.JsDom.all.*
 
-    div(cls := "selectDialogButton btn-group", item, pdfModal).render
+    span(cls := "selectDialogButton", item, pdfModal).render
   }
 
 }
