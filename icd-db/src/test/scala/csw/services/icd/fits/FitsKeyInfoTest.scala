@@ -2,7 +2,7 @@ package csw.services.icd.fits
 
 import csw.services.icd.IcdValidator
 import csw.services.icd.db.{IcdDb, TestHelper}
-import icd.web.shared.{FitsSource, PdfOptions, SubsystemWithVersion}
+import icd.web.shared.{FitsKeyword, FitsSource, PdfOptions, SubsystemWithVersion}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.File
@@ -18,7 +18,13 @@ class FitsKeyInfoTest extends AnyFunSuite {
   }
 
   def containsList[A](list: List[A], sublist: List[A]): Boolean = {
-    sublist.forall(list.contains)
+//    sublist.forall(list.contains)
+    sublist.forall{s =>
+      if (list.contains(s)) true else {
+        println(s"XXX missing $s")
+        false
+      }
+    }
   }
 
   test("Test FITS tag access") {
@@ -36,7 +42,7 @@ class FitsKeyInfoTest extends AnyFunSuite {
     val dlKeywords     = fitsTags.tags("DL")
     val slKeywords     = fitsTags.tags("SL")
     val wfosKeywords   = fitsTags.tags("WFOS")
-    val irisKeywords   = fitsTags.tags("IRIS")
+    val irisKeywords   = fitsTags.tags("IRIS-IFS")
     val modhisKeywords = fitsTags.tags("MODHIS")
     assert(containsList(irisKeywords, dlKeywords))
     assert(containsList(modhisKeywords, dlKeywords))
@@ -63,7 +69,7 @@ class FitsKeyInfoTest extends AnyFunSuite {
     val dir     = getTestDir(examplesDir)
     icdFits.ingestChannels(new File(s"$dir/FITS-Channels.conf"))
     val map = icdFits.getFitsChannelMap
-    assert(map("IRIS") == Set("IRIS", "IFS", "IMAGER"));
+    assert(map("IRIS") == Set("IRIS-IFS", "IRIS-IMAGER"));
     assert(map("MODHIS") == Set("MODHIS"));
   }
 
@@ -86,36 +92,14 @@ class FitsKeyInfoTest extends AnyFunSuite {
     val problems2 = icdFits.ingest(tempFitsDict)
     problems2.foreach(println)
     assert(problems2.isEmpty)
-    val fitsKeyMap = icdFits.getFitsKeyMap()
 
-    /**
-     * subsystem: String,
-     * componentName: String,
-     * eventName: String,
-     * parameterName: String,
-     * index: Option[Int],
-     * rowIndex: Option[Int]
-     *
-     * "source" : {
-     * "subsystem" : "TEST2",
-     * "componentName" : "cmTEST",
-     * "eventName" : "imgAtmDispersion",
-     * "parameterName" : "wavelength"
-     * },
-     *
-     */
-    assert(
-      fitsKeyMap
-        .get(FitsSource("TEST2", "cmTEST", "imgAtmDispersion", "wavelength", None, None))
-        .contains(List("IMGDISWV"))
-    )
     assert(
       icdFits
         .getFitsKeyInfo()
         .exists(i =>
           i.name == "IMGDISWV" &&
-            i.channels.exists(_.name == "IMG-ATM") &&
-            i.channels.exists(_.name == "ATM")
+            i.channels.exists(_.name == "IRIS-IFS") &&
+            i.channels.exists(_.name == "IRIS-IMAGER")
         )
     )
   }

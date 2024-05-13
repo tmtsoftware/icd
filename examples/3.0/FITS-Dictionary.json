@@ -12,7 +12,12 @@
       "description": "The date of the observation, in the format specified in the FITS Standard. The old date format was ‘yy/mm/dd’ and may be used only for dates from 1900 through 1999. The new Y2K compliant date format is ‘yyyy- mm-dd’ or ‘yyyy- mm- ddTHH:MM:SS[.sss] ’.",
       "type": "string",
       "units": "NoUnits",
-      "source": {}
+      "source": {
+        "subsystem": "ESW",
+        "componentName": "TopLevelSequencer",
+        "eventName": "ObservationDetails",
+        "parameterName": "observationStartDateTime"
+      }
     },
     {
       "name": "OBJECT",
@@ -21,9 +26,9 @@
       "units": "NoUnits",
       "source": {
         "subsystem": "ESW",
-        "componentName": "ocs",
+        "componentName": "TopLevelSequencer",
         "eventName": "object",
-        "parameterName": "XXX"
+        "parameterName": "name"
       }
     },
     {
@@ -31,7 +36,12 @@
       "description": "The value field shall contain a character string identifying who acquired the data associated with the header.",
       "type": "string",
       "units": "NoUnits",
-      "source": {}
+      "source": {
+        "subsystem": "ESW",
+        "componentName": "TopLevelSequencer",
+        "eventName": "ObservationDetails",
+        "parameterName": "observer"
+      }
     },
 
     {
@@ -1537,10 +1547,10 @@
       "type": "string",
       "units": "NoUnits",
       "source": {
-        "subsystem": "IRIS",
-        "componentName": "is",
-        "eventName": "cmdStatus",
-        "parameterName": "observationId ?"
+        "subsystem": "ESW",
+        "componentName": "TopLevelSequencer",
+        "eventName": "ObservationDetails",
+        "parameterName": "observationId"
       }
     },
 
