@@ -1,6 +1,6 @@
 package icd.web.client
 
-import icd.web.shared.{BuildInfo, FitsDictionary, IcdVersion, SharedUtils, SubsystemWithVersion}
+import icd.web.shared.{BuildInfo, FitsDictionary, IcdVersion, PdfOptions, SharedUtils, SubsystemWithVersion}
 import org.scalajs.dom
 import org.scalajs.dom.{HTMLStyleElement, PopStateEvent, document}
 
@@ -35,6 +35,16 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   private val fitsDictionaryItem =
     NavbarItem("FITS Dictionary", "Display information about all FITS keywords", showFitsDictionary())
+
+  val pdfButton: PdfButtonItem =
+    PdfButtonItem(
+      "PDF",
+      "mainpdf",
+      "Generate and display a PDF containing the FITS Dictionary based on the selected tag",
+      makePdf,
+      showDocumentNumber = true,
+      showDetailButtons = true
+    )
 
   private val navbar = MainNavbar()
   private val layout = Layout()
@@ -120,6 +130,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     navbar.addItem(publishItem)
     navbar.addItem(reloadButton)
     navbar.addItem(expandToggler)
+    navbar.addItem(pdfButton)
+
     navbar.addRightSideItem(logoutItem)
 
     document.body.appendChild(navbar.markup())
@@ -155,6 +167,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     setSidebarVisible(false)
     reloadButton.setVisible(show = false)
     expandToggler.setVisible(show = false)
+    pdfButton.setVisible(show = false)
     mainContent.setContent(selectDialog, "Select Subsystems and Components")
     if (saveHistory) {
       pushState(
@@ -179,6 +192,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     setNavbarVisible(false)
     reloadButton.setVisible(show = false)
     expandToggler.setVisible(show = false)
+    pdfButton.setVisible(show = false)
     val title = "TIO Software Interface Database System"
     mainContent.setContent(passwordDialog, s"$title ${BuildInfo.version}")
   }
@@ -188,6 +202,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     setSidebarVisible(false)
     reloadButton.setVisible(show = false)
     expandToggler.setVisible(show = false)
+    pdfButton.setVisible(show = false)
     val title = "TIO Software Interface Database System"
     if (saveHistory) {
       mainContent.setContent(statusDialog, s"$title ${BuildInfo.version}")
@@ -216,6 +231,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     setSidebarVisible(false)
     reloadButton.setVisible(show = false)
     expandToggler.setVisible(show = false)
+    pdfButton.setVisible(show = false)
     mainContent.setContent(fileUploadDialog, "Upload Subsystem Model Files")
     if (saveHistory) pushState(viewType = UploadView)
   }
@@ -225,6 +241,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     setSidebarVisible(false)
     reloadButton.setVisible(show = false)
     expandToggler.setVisible(show = false)
+    pdfButton.setVisible(show = false)
     val f = publishDialog.update()
     showBusyCursorWhile(f)
     mainContent.setContent(publishDialog, "Publish APIs and ICDs")
@@ -419,6 +436,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     val f = if (maybeSv.isDefined) {
       reloadButton.setVisible(show = true)
       expandToggler.setVisible(show = true)
+      pdfButton.setVisible(show = true)
       showBusyCursorWhile {
         components
           .addComponents(maybeSv.get, maybeTargetSv, maybeIcd, searchAllSubsystems, clientApi)
@@ -434,6 +452,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       // Should not get here?
       reloadButton.setVisible(show = false)
       expandToggler.setVisible(show = false)
+      pdfButton.setVisible(show = false)
       Future.successful(())
     }
     if (saveHistory) {
@@ -467,12 +486,41 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     links.toArray.foreach(x => x.addEventListener("click", linkListener(_)))
   }
 
+  // Gets a PDF of the currently selected ICD or subsystem API
+  private def makePdf(pdfOptions: PdfOptions): Unit = {
+    import scalatags.JsDom.all.*
+
+    val maybeSv = selectDialog.subsystem.getSubsystemWithVersion()
+    maybeSv.foreach { sv =>
+      val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion()
+      val maybeIcdVersion = selectDialog.icdChooser.getSelectedIcdVersion.map(_.icdVersion)
+      val searchAll       = selectDialog.searchAllSubsystems()
+      val isClientApi     = selectDialog.clientApi()
+      val uri             = ClientRoutes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll, isClientApi, pdfOptions)
+
+      if (!pdfOptions.details && pdfOptions.expandedIds.nonEmpty) {
+        // We need to do a POST in case expandedIds are passed, which can be very long, so create a temp form
+        val formId = "tmpPdfForm"
+        val tmpForm = form(id := formId, method := "POST", action := uri, target := "_blank")(
+          input(`type` := "hidden", name := "expandedIds", value := pdfOptions.expandedIds.mkString(","))
+        ).render
+        document.body.appendChild(tmpForm)
+        tmpForm.submit()
+        document.body.removeChild(tmpForm)
+      }
+      else {
+        dom.window.open(uri) // opens in new window or tab
+      }
+    }
+  }
+
   // Called when the "FITS Dictionary" item is selected
   private def showFitsDictionary(saveHistory: Boolean = true)(): Unit = {
     import icd.web.shared.JsonSupport.*
     setSidebarVisible(false)
     reloadButton.setVisible(show = false)
     expandToggler.setVisible(show = false)
+    pdfButton.setVisible(show = false)
     val f = for {
       fitsDict <-
         Fetch

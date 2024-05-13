@@ -64,7 +64,14 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   private val historyDialog = HistoryDialog(mainContent)
 
   private val pdfButton =
-    PdfButtonItem("PDF", "Generate and display a PDF for the API or ICD", makePdf, showDocumentNumber = true)
+    PdfButtonItem(
+      "PDF",
+      "selectpdf",
+      "Generate and display a PDF for the API or ICD",
+      makePdf,
+      showDocumentNumber = true,
+      showDetailButtons = false
+    )
   pdfButton.setEnabled(false)
 
   private val generateButton = DropDownButtonItem(
@@ -82,6 +89,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   private val archiveButton =
     PdfButtonItem(
       "Archive",
+      "archivepdf",
       "Generate and display an 'Archived Items' report for the selected subsystem/component (or all subsystems)",
       makeArchivedItemsReport,
       showDocumentNumber = false,
@@ -91,6 +99,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   private val alarmsButton =
     PdfButtonItem(
       "Alarms",
+      "alarmpdf",
       "Generate and display an 'Alarms' report for the selected subsystem/component (or all subsystems)",
       makeAlarmsReport,
       showDocumentNumber = false,
@@ -100,6 +109,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   private val missingButton =
     PdfButtonItem(
       "Missing",
+      "missingpdf",
       "Generate and display a 'Missing Items' report for the selected subsystems/components (or all subsystems)",
       makeMissingItemsReport,
       showDocumentNumber = false,
@@ -368,20 +378,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       val searchAll       = searchAllSubsystems()
       val isClientApi     = clientApi()
       val uri             = ClientRoutes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll, isClientApi, pdfOptions)
-
-      if (!pdfOptions.details && pdfOptions.expandedIds.nonEmpty) {
-        // We need to do a POST in case expandedIds are passed, which can be very long, so create a temp form
-        val formId = "tmpPdfForm"
-        val tmpForm = form(id := formId, method := "POST", action := uri, target := "_blank")(
-          input(`type` := "hidden", name := "expandedIds", value := pdfOptions.expandedIds.mkString(","))
-        ).render
-        document.body.appendChild(tmpForm)
-        tmpForm.submit()
-        document.body.removeChild(tmpForm)
-      }
-      else {
-        dom.window.open(uri) // opens in new window or tab
-      }
+      dom.window.open(uri) // opens in new window or tab
     }
   }
 

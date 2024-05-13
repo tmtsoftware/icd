@@ -40,6 +40,7 @@ object FitsKeywordDialog {
   val pdfButton: PdfButtonItem =
     PdfButtonItem(
       "PDF",
+      "fitspdf",
       "Generate and display a PDF containing the FITS Dictionary based on the selected tag",
       makePdf,
       showDocumentNumber = false,
