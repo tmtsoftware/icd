@@ -5,6 +5,9 @@ import java.nio.file.Files
 
 import icd.web.shared.{BuildInfo, PdfOptions, SubsystemWithVersion}
 
+// XXX TODO: Remove this class. It is disabled in reference.conf and so not currently used
+// (There are too many options for PDF generation that make caching difficult)
+
 /**
  * Implements a cache of PDF files for published API and ICD releases.
  *
