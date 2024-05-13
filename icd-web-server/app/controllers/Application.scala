@@ -58,10 +58,10 @@ class Application @Inject() (
   private val db: IcdDb = tryDb.get
 
   // The expected SHA of username:password from application.conf
-  val expectedSha = configuration.get[String](cookieName)
+  private val expectedSha = configuration.get[String](cookieName)
 
   // Use an actor to manage concurrent access to cached data
-  val appActor: ActorRef[ApplicationActor.Messages] = {
+  private val appActor: ActorRef[ApplicationActor.Messages] = {
     val behavior = ApplicationActor.create(db)
     actorSystem.spawn(behavior, "app-actor")
   }
@@ -230,7 +230,11 @@ class Application @Inject() (
       )
       resp.map {
         case Some(bytes) =>
-          Ok(bytes).as("application/pdf")
+          val filename = maybeIcdVersion match {
+            case None => s"ICD-SDB-$subsystem-$target.pdf"
+            case Some(icdVersion) => s"ICD-SDB-$subsystem-$target-$icdVersion.pdf"
+          }
+          Ok(bytes).as("application/pdf").withHeaders(("Content-Disposition", s"filename=\"$filename\""))
         case None =>
           NotFound
       }
@@ -290,7 +294,11 @@ class Application @Inject() (
       )
       resp.map {
         case Some(bytes) =>
-          Ok(bytes).as("application/pdf")
+          val filename = maybeVersion match {
+            case None => s"API-SDB-$subsystem.pdf"
+            case Some(version) => s"API-SDB-$subsystem-$version.pdf"
+          }
+          Ok(bytes).as("application/pdf").withHeaders(("Content-Disposition", s"filename=\"$filename\""))
         case None =>
           NotFound
       }
@@ -325,7 +333,11 @@ class Application @Inject() (
       )
       resp.map {
         case Some(bytes) =>
-          Ok(bytes).as("application/pdf")
+          val fileName = tag match {
+            case "All" => "FITS-Dictionary.pdf"
+            case _ => s"FITS-Dictionary-$tag.pdf"
+          }
+          Ok(bytes).as("application/pdf").withHeaders(("Content-Disposition", s"filename=\"$fileName\""))
         case None =>
           NotFound
       }
@@ -361,7 +373,11 @@ class Application @Inject() (
       )
       resp.map {
         case Some(bytes) =>
-          Ok(bytes).as("application/pdf")
+          val filename = maybeVersion match {
+            case None => s"$subsystem-Archived-Items.pdf"
+            case Some(version) => s"$subsystem-$version-Archived-Items.pdf"
+          }
+          Ok(bytes).as("application/pdf").withHeaders(("Content-Disposition", s"filename=\"$filename\""))
         case None =>
           NotFound
       }
@@ -416,7 +432,7 @@ class Application @Inject() (
       )
       resp.map {
         case Some(bytes) =>
-          Ok(bytes).as("application/pdf")
+          Ok(bytes).as("application/pdf").withHeaders(("Content-Disposition", s"filename=\"Archived-Items.pdf\""))
         case None =>
           NotFound
       }
@@ -452,7 +468,11 @@ class Application @Inject() (
       )
       resp.map {
         case Some(bytes) =>
-          Ok(bytes).as("application/pdf")
+          val filename = maybeVersion match {
+            case None => s"$subsystem-Alarms.pdf"
+            case Some(version) => s"$subsystem-$version-Alarms.pdf"
+          }
+          Ok(bytes).as("application/pdf").withHeaders(("Content-Disposition", s"filename=\"$filename\""))
         case None =>
           NotFound
       }
@@ -479,7 +499,7 @@ class Application @Inject() (
       )
       resp.map {
         case Some(bytes) =>
-          Ok(bytes).as("application/pdf")
+          Ok(bytes).as("application/pdf").withHeaders(("Content-Disposition", s"filename=\"Alarms.pdf\""))
         case None =>
           NotFound
       }
@@ -524,7 +544,11 @@ class Application @Inject() (
       )
       resp.map {
         case Some(bytes) =>
-          Ok(bytes).as("application/pdf")
+          val filename = maybeVersion match {
+            case None => s"$subsystem-Missing-Items.pdf"
+            case Some(version) => s"$subsystem-$version-Missing-Items.pdf"
+          }
+          Ok(bytes).as("application/pdf").withHeaders(("Content-Disposition", s"filename=\"$filename\""))
         case None =>
           NotFound
       }
@@ -550,7 +574,7 @@ class Application @Inject() (
       )
       resp.map {
         case Some(bytes) =>
-          Ok(bytes).as("application/pdf")
+          Ok(bytes).as("application/pdf").withHeaders(("Content-Disposition", s"filename=\"Missing-Items.pdf\""))
         case None =>
           NotFound
       }
@@ -628,14 +652,27 @@ class Application @Inject() (
       )
       resp.map {
         case Some(bytes) =>
-          val contentType = maybeImageFormat.getOrElse(defaultImageFormat).toLowerCase() match {
-            case "png" => "image/png"
-            case "svg" => "image/svg+xml"
-            case "pdf" => "application/pdf"
-            case "eps" => "application/postscript"
-            case _     => "application/pdf"
+          val format = maybeImageFormat.getOrElse(defaultImageFormat).toLowerCase()
+          val (suffix, contentType) = format match {
+            case "png" => (format, "image/png")
+            case "svg" => (format, "image/svg+xml")
+            case "pdf" => (format, "application/pdf")
+            case "eps" => (format, "application/postscript")
+            case _     => ("pdf", "application/pdf")
           }
-          Ok(bytes).as(contentType)
+          val filename = maybeTarget match {
+            case None =>
+              maybeVersion match {
+                case None => s"$subsystem-Graph.$suffix"
+                case Some(version) => s"$subsystem-$version-Graph.$suffix"
+              }
+            case Some(target) =>
+              maybeIcdVersion match {
+                case None => s"$subsystem-$target-Graph.$suffix"
+                case Some(icdVersion) => s"$subsystem-$target-$icdVersion-Graph.$suffix"
+              }
+          }
+          Ok(bytes).as(contentType).withHeaders(("Content-Disposition", s"filename=\"$filename\""))
         case None =>
           NotFound
       }
