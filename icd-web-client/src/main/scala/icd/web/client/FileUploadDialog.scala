@@ -51,7 +51,8 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   private def isStdFile(file: WebkitFile): Boolean = {
     stdList.contains(basename(file)) || file.name.endsWith("-icd-model.conf") || file.name.endsWith(".json") || file.name
       .endsWith(".yml") || file.name.endsWith(".yaml") || file.name.endsWith(".jsonnet") || file.name.endsWith(
-      ".libsonnet") || file.name.endsWith(".txt") || file.name.endsWith("FITS-Tags.conf") || file.name.endsWith("FITS-Channels.conf")
+      ".libsonnet"
+    ) || file.name.endsWith(".txt") || file.name.endsWith("FITS-Tags.conf") || file.name.endsWith("FITS-Channels.conf")
   }
 
   // HTML item displaying error messages
@@ -184,11 +185,9 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
         statusItem.classList.add(statusClass)
         statusItem.textContent = statusMsg
       }
-      if (xhr.status != 200) {
-        val problems = Json.fromJson[List[Problem]](Json.parse(xhr.responseText)).getOrElse(Nil)
-        for (problem <- problems.reverse)
-          displayProblem(problem)
-      }
+      val problems = Json.fromJson[List[Problem]](Json.parse(xhr.responseText)).getOrElse(Nil)
+      for (problem <- problems.reverse)
+        displayProblem(problem)
 
       // Update the menus of subsystem names,in case anything changed
       subsystemNames.update()

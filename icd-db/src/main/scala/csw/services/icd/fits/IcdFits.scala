@@ -1,7 +1,7 @@
 package csw.services.icd.fits
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
-import csw.services.icd.db.{IcdDb, IcdDbDefaults}
+import csw.services.icd.db.{IcdDb, IcdDbDefaults, Subsystems}
 import icd.web.shared.{
   AvailableChannels,
   BuildInfo,
@@ -299,10 +299,11 @@ case class IcdFits(db: IcdDb) {
    */
   def postIngestValidateFitsDictionary(): List[Problem] = {
     // XXXX TODO: Can we limit the list of subsystems that produce FITS keywords?
-    val subsystems = db.query.getSubsystemNames.map(SubsystemWithVersion(_, None, None))
+    val allSubsystems = Subsystems.allSubsystems.toSet
+    val subsystems    = db.query.getSubsystemNames.map(SubsystemWithVersion(_, None, None))
     // get a map of maps of maps with the relevant information needed to validate the FITS sources
     // This maps subsystem -> components -> events -> params.
-    val severity = "error"
+    val severity = "warning"
     val subsystemMap = subsystems
       .map { sv =>
         val models = db.versionManager.getModels(sv, includeOnly = Set("publishModel"))
@@ -328,7 +329,10 @@ case class IcdFits(db: IcdDb) {
         def subsystemError(): List[Problem] = {
           if (fitsSource.subsystem.isEmpty)
             List(Problem(severity, s"Missing subsystem name for FITS keyword ${fitsKeyInfo.name}"))
-          else List(Problem(severity, s"Invalid subsystem '${fitsSource.subsystem}' for FITS keyword ${fitsKeyInfo.name}"))
+          else if (allSubsystems.contains(fitsSource.subsystem))
+            List(Problem(severity, s"Subsystem '${fitsSource.subsystem}', referenced for FITS keyword ${fitsKeyInfo.name} was not found in the ICD database"))
+          else
+            List(Problem(severity, s"Invalid subsystem '${fitsSource.subsystem}' for FITS keyword ${fitsKeyInfo.name}"))
         }
         def componentError(): List[Problem] = {
           if (fitsSource.componentName.isEmpty)
@@ -342,7 +346,7 @@ case class IcdFits(db: IcdDb) {
             List(
               Problem(
                 severity,
-                s"Invalid component name: subsystem: ${fitsSource.subsystem}, component name: '${fitsSource.componentName}' for FITS keyword ${fitsKeyInfo.name}"
+                s"Unknown component name: subsystem: ${fitsSource.subsystem}, component name: '${fitsSource.componentName}' for FITS keyword ${fitsKeyInfo.name}"
               )
             )
         }
@@ -358,7 +362,7 @@ case class IcdFits(db: IcdDb) {
             List(
               Problem(
                 severity,
-                s"Invalid event name: prefix: '${fitsSource.subsystem}.${fitsSource.componentName}', event name: '${fitsSource.eventName}', for FITS keyword ${fitsKeyInfo.name}"
+                s"Unknown event name: prefix: '${fitsSource.subsystem}.${fitsSource.componentName}', event name: '${fitsSource.eventName}', for FITS keyword ${fitsKeyInfo.name}"
               )
             )
         }
@@ -374,7 +378,7 @@ case class IcdFits(db: IcdDb) {
             List(
               Problem(
                 severity,
-                s"Invalid parameter name: prefix: '${fitsSource.subsystem}.${fitsSource.componentName}', event name: '${fitsSource.eventName}' parameter name: '${fitsSource.parameterName}', for FITS keyword ${fitsKeyInfo.name}"
+                s"Unknown parameter name: prefix: '${fitsSource.subsystem}.${fitsSource.componentName}', event name: '${fitsSource.eventName}' parameter name: '${fitsSource.parameterName}', for FITS keyword ${fitsKeyInfo.name}"
               )
             )
         }

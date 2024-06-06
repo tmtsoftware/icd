@@ -29,9 +29,9 @@ class FileUploadController @Inject() (components: ControllerComponents) extends 
       val problems = db.ingestAndCleanup(tempDir)
       deleteDirectoryRecursively(tempDir)
 
-      if (problems.nonEmpty)
+      if (problems.exists(_.severity == "error"))
         NotAcceptable(Json.toJson(problems))
       else
-        Ok.as(JSON)
+        Ok(Json.toJson(problems))
     }
 }
