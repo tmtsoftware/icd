@@ -285,6 +285,7 @@ case class Subsystem(
           }
       case None =>
         versionItem.value = unpublishedVersion
+        updateSubsystemVersionOptions(Nil)
         Future.successful(())
     }
   }

@@ -213,6 +213,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       alarmsButton.setEnabled(maybeSv.isDefined && maybeTargetSv.isEmpty)
       clientApiCheckbox.disabled = maybeTargetSv.isDefined || maybeSv.isEmpty
       searchAllCheckbox.disabled = maybeTargetSv.isDefined || maybeSv.isEmpty || !clientApi()
+      historyButton.disabled = maybeSv.isEmpty
       maybeSv
         .map { sv =>
           for {
@@ -225,7 +226,13 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
             historyButton.disabled = maybeSv.isEmpty || (maybeTargetSv.isDefined && icdChooser.getSelectedIcd.isEmpty)
           }
         }
-        .getOrElse(Future.successful(()))
+        .getOrElse {
+          subsystem.updateComponentOptions(Nil)
+          targetSubsystem.setSubsystemWithVersion(None)
+          targetSubsystem.updateComponentOptions(Nil)
+          icdChooser.setIcdWithVersion(None, notifyListener = false, saveHistory = false)
+          Future.successful(())
+        }
     }
   }
 
@@ -241,6 +248,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       alarmsButton.setEnabled(maybeSv.isDefined && maybeTargetSv.isEmpty)
       clientApiCheckbox.disabled = maybeTargetSv.isDefined || maybeSv.isEmpty
       searchAllCheckbox.disabled = maybeTargetSv.isDefined || maybeSv.isEmpty || !clientApi()
+      historyButton.disabled = maybeSv.isEmpty
       maybeSv
         .map { sv =>
           for {
