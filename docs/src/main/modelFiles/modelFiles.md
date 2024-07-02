@@ -1287,6 +1287,31 @@ subscribe {
 }
 ```
 
+Here is another example `subscribe-model.conf` that also subscribes to a published image stream:
+
+```
+subscribe {
+
+  events = [
+    {
+      subsystem = TEST
+      component = lgsWfs
+      name = engMode
+    }
+  ]
+
+  // Components can also subscribe to VIZ image streams
+  images = [
+    {
+      subsystem = TEST
+      component = lgsWfs
+      name = guider1
+      usage = "WFOS guider images use for acquisition"
+    }
+  ]
+}
+```
+
 Events have been redesigned for the CSW PDR. Components write their data and other systems sample it at the rate they need. `requiredRate` allows a component to state a rate they require to operate properly. It’s up to the publisher to make sure that they can provide that rate. This is part of checking interfaces.
 
 There is minimal documentation for subscribe items. The full description of an item belongs with the publisher, not the subscriber. The subscriber is only referencing its use of information published by another component.
