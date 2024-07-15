@@ -136,16 +136,16 @@ for the ids is to look at the generated HTML. For example, the output of:
 Note that the name attribute is used in the generated HTML instead of id, since the PDF generator required that. Many of
 the anchors have the following syntax:
 
-*$thisComponent-$action-$itemType-$subsystem.$component.$name*
+*thisComponent-action-itemType-subsystem.component.name*
 
 where
 
-* *$thisComponent* is the component being described
-* *$action* is one of {publishes, subscribes, sends, receives}
-* *$itemType* is one of {Event, ObserveEvent, Alarm, Command}
-* *$subsystem* is the subsystem for the item
-* *$component* is the component for the item
-* *$name* is the name of the item being published, subscribed to, or the command being sent or received
+* *thisComponent* is the component being described
+* *action* is one of {publishes, subscribes, sends, receives}
+* *itemType* is one of {Event, ObserveEvent, Alarm, Command}
+* *subsystem* is the subsystem for the item
+* *component* is the component for the item
+* *name* is the name of the item being published, subscribed to, or the command being sent or received
 
 For example, to link to the description of a published event named `heartbeat` in the lgsWfs component in the TEST
 subsystem:
