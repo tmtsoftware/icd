@@ -23,7 +23,7 @@ object TitleInfo {
   val unpublished = "(unpublished)"
 
   private def getSubtitle(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): String = {
-    if (maybeTargetSv.isEmpty)
+    if (maybeTargetSv.isEmpty || maybeTargetSv.get.subsystem == sv.subsystem && maybeTargetSv.get.maybeVersion == sv.maybeVersion)
       s"Based on ${sv.subsystem} ${sv.maybeVersion.getOrElse(unpublished)}"
     else
       s"Based on ${sv.subsystem} ${sv.maybeVersion.getOrElse(unpublished)} and ${maybeTargetSv.get.subsystem} ${maybeTargetSv.get.maybeVersion
@@ -64,7 +64,11 @@ object TitleInfo {
     }
     else {
       if (maybeTargetSv.isDefined) {
-        val title    = s"ICD SDB $part ${sv.subsystem}$componentPart -> $targetName$targetComponentPart $unpublished"
+        val icdVersion =
+          if (maybeTargetSv.get.subsystem == sv.subsystem && maybeTargetSv.get.maybeVersion == sv.maybeVersion)
+            sv.maybeVersion.getOrElse(unpublished)
+          else unpublished
+        val title    = s"ICD SDB $part ${sv.subsystem}$componentPart -> $targetName$targetComponentPart $icdVersion"
         val subtitle = getSubtitle(sv, maybeTargetSv)
         TitleInfo(title, Some(subtitle), None, maybeDocumentNumber)
       }
