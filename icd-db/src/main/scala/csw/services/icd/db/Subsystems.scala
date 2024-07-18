@@ -8,7 +8,7 @@ object Subsystems {
    * A list of all known TMT subsystems (read from the same resources file used in validating the ICDs)
    */
   val allSubsystems: List[String] = {
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.*
     val config = ConfigFactory.parseResources(s"${IcdValidator.currentSchemaVersion}/subsystem.conf")
     config.getStringList("enum").asScala.toList
   }

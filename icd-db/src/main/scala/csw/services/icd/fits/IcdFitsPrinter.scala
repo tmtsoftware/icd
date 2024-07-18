@@ -13,7 +13,7 @@ case class IcdFitsPrinter(
 ) {
 
   private def getAsHtml(maybeTag: Option[String], pdfOptions: PdfOptions): Option[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
     if (fitsDict.fitsKeys.isEmpty) None
     else {
       val str = List(

@@ -1,8 +1,7 @@
 package csw.services.icd.fits
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
-import csw.services.icd.db.{IcdDb, IcdDbDefaults}
-import icd.web.shared.JsonSupport._
+import csw.services.icd.db.{IcdDb, IcdDbDefaults, Subsystems}
 import icd.web.shared.{
   AvailableChannels,
   BuildInfo,
@@ -19,17 +18,10 @@ import reactivemongo.api.bson.collection.BSONCollection
 import scala.concurrent.ExecutionContext.Implicits.global
 import csw.services.icd.*
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
-import reactivemongo.play.json.compat.*
-import csw.services.icd.db.parser.{
-  AvailableChannelsListBsonParser,
-  FitsKeyInfoListBsonParser,
-  FitsTagsBsonParser
-}
-import lax.*
-import json2bson.*
+import csw.services.icd.db.parser.{AvailableChannelsListBsonParser, FitsKeyInfoListBsonParser, FitsTagsBsonParser}
 
 import java.io.{File, FileInputStream, FileOutputStream}
-import play.api.libs.json.*
+import play.api.libs.json.{JsObject, Json}
 import reactivemongo.api.bson.BSONDocument
 
 import scala.util.Try
@@ -223,7 +215,9 @@ object IcdFits extends App {
     options.ingestTags.foreach(file => icdFits.ingestTags(file).foreach(println))
     options.ingestChannels.foreach(file => icdFits.ingestChannels(file).foreach(println))
     options.ingest.foreach(file => icdFits.ingest(file).foreach(println))
-    options.outputFile.foreach(file => icdFits.output(file, maybeSv.map(_.subsystem), maybeSv.flatMap(_.maybeComponent), options.tag, pdfOptions))
+    options.outputFile.foreach(file =>
+      icdFits.output(file, maybeSv.map(_.subsystem), maybeSv.flatMap(_.maybeComponent), options.tag, pdfOptions)
+    )
     db.close()
     System.exit(0)
   }
@@ -232,16 +226,19 @@ object IcdFits extends App {
 
 //noinspection SpellCheckingInspection
 case class IcdFits(db: IcdDb) {
-  import IcdFitsDefs._
+  import IcdFitsDefs.*
   private val fitsKeyCollection     = db.db.collection[BSONCollection](fitsKeyCollectionName)
   private val fitsTagCollection     = db.db.collection[BSONCollection](fitsTagCollectionName)
   private val fitsChannelCollection = db.db.collection[BSONCollection](fitsChannelCollectionName)
 
   def ingestTags(file: File): List[Problem] = {
+    import reactivemongo.play.json.compat.*
+    import bson2json.*
+    import json2bson.*
     // Check for duplicate keywords (duplicates must have different channels)
     // Return an error for each duplicate
     def checkDups(config: Config): List[Problem] = {
-      import scala.jdk.CollectionConverters._
+      import scala.jdk.CollectionConverters.*
       val tags = config.root().entrySet().asScala.toList.map(_.getKey)
       val keywords = tags.flatMap { tag =>
         config.getStringList(s"$tag.keywords").asScala.toList
@@ -269,6 +266,9 @@ case class IcdFits(db: IcdDb) {
   }
 
   def ingestChannels(file: File): List[Problem] = {
+    import reactivemongo.play.json.compat.*
+    import bson2json.*
+    import json2bson.*
     val config   = ConfigFactory.parseFile(file)
     val jsObj    = Json.parse(IcdValidator.toJson(config)).as[JsObject]
     val problems = IcdValidator.validateFitsChannels(jsObj.toString())
@@ -288,7 +288,142 @@ case class IcdFits(db: IcdDb) {
     val jsObj       = Json.parse(inputStream).asInstanceOf[JsObject]
     val problems    = IcdValidator.validateFitsDictionary(jsObj.toString())
     inputStream.close()
-    problems
+    if (problems.nonEmpty)
+      problems
+    else
+      postIngestValidateFitsDictionary()
+  }
+
+  /**
+   * Read FITS Dictionary from the database and check that referenced components and events exist
+   */
+  def postIngestValidateFitsDictionary(): List[Problem] = {
+    // XXXX TODO: Can we limit the list of subsystems that produce FITS keywords?
+    val allSubsystems = Subsystems.allSubsystems.toSet
+    val subsystems    = db.query.getSubsystemNames.map(SubsystemWithVersion(_, None, None))
+    // get a map of maps of maps with the relevant information needed to validate the FITS sources
+    // This maps subsystem -> components -> events -> params.
+    val severity = "warning"
+    val subsystemMap = subsystems
+      .map { sv =>
+        val models = db.versionManager.getModels(sv, includeOnly = Set("publishModel"))
+        sv.subsystem -> models
+          .flatMap(_.publishModel)
+          .map { publishModel =>
+            publishModel.component -> publishModel.eventList
+              .map { eventModel =>
+                eventModel.name -> eventModel.parameterList
+                  .map { param =>
+                    param.name -> param
+                  }
+                  .groupMap(_._1)(_._2)
+              }
+              .groupMap(_._1)(_._2)
+          }
+          .groupMap(_._1)(_._2)
+      }
+      .groupMap(_._1)(_._2)
+
+    getFitsKeyInfo().flatMap { fitsKeyInfo =>
+      fitsKeyInfo.channels.map(_.source).flatMap { fitsSource =>
+        def subsystemError(): List[Problem] = {
+          if (fitsSource.subsystem.isEmpty)
+            List(Problem(severity, s"Missing subsystem name for FITS keyword ${fitsKeyInfo.name}"))
+          else if (allSubsystems.contains(fitsSource.subsystem))
+            List(Problem(severity, s"Subsystem '${fitsSource.subsystem}', referenced for FITS keyword ${fitsKeyInfo.name} was not found in the ICD database"))
+          else
+            List(Problem(severity, s"Invalid subsystem '${fitsSource.subsystem}' for FITS keyword ${fitsKeyInfo.name}"))
+        }
+        def componentError(): List[Problem] = {
+          if (fitsSource.componentName.isEmpty)
+            List(
+              Problem(
+                severity,
+                s"Missing component name: subsystem: ${fitsSource.subsystem}, for FITS keyword ${fitsKeyInfo.name}"
+              )
+            )
+          else
+            List(
+              Problem(
+                severity,
+                s"Unknown component name: subsystem: ${fitsSource.subsystem}, component name: '${fitsSource.componentName}' for FITS keyword ${fitsKeyInfo.name}"
+              )
+            )
+        }
+        def eventError(): List[Problem] = {
+          if (fitsSource.eventName.isEmpty)
+            List(
+              Problem(
+                severity,
+                s"Missing event name: prefix: '${fitsSource.subsystem}.${fitsSource.componentName}', for FITS keyword ${fitsKeyInfo.name}"
+              )
+            )
+          else
+            List(
+              Problem(
+                severity,
+                s"Unknown event name: prefix: '${fitsSource.subsystem}.${fitsSource.componentName}', event name: '${fitsSource.eventName}', for FITS keyword ${fitsKeyInfo.name}"
+              )
+            )
+        }
+        def paramError(): List[Problem] = {
+          if (fitsSource.parameterName.isEmpty)
+            List(
+              Problem(
+                severity,
+                s"Missing parameter name: prefix: '${fitsSource.subsystem}.${fitsSource.componentName}', event name: '${fitsSource.eventName}', for FITS keyword ${fitsKeyInfo.name}"
+              )
+            )
+          else
+            List(
+              Problem(
+                severity,
+                s"Unknown parameter name: prefix: '${fitsSource.subsystem}.${fitsSource.componentName}', event name: '${fitsSource.eventName}' parameter name: '${fitsSource.parameterName}', for FITS keyword ${fitsKeyInfo.name}"
+              )
+            )
+        }
+        def paramIndexError(): List[Problem] = {
+          List(
+            Problem(
+              severity,
+              s"Invalid parameter index: prefix: '${fitsSource.subsystem}.${fitsSource.componentName}', event name: '${fitsSource.eventName}', parameter name: '${fitsSource.parameterName}', index: '${fitsSource.index}', for FITS keyword ${fitsKeyInfo.name}"
+            )
+          )
+        }
+        subsystemMap.get(fitsSource.subsystem) match {
+          case None =>
+            subsystemError()
+          case Some(compMap) =>
+            compMap.headOption.flatMap(_.get(fitsSource.componentName)) match {
+              case None =>
+                componentError()
+              case Some(eventMap) =>
+                eventMap.headOption.flatMap(_.get(fitsSource.eventName)) match {
+                  case None =>
+                    eventError()
+                  case Some(paramMap) =>
+                    paramMap.headOption.flatMap(_.get(fitsSource.parameterName)) match {
+                      case None =>
+                        paramError()
+                      case Some(param) =>
+                        param.headOption.flatMap(_.maybeDimensions) match {
+                          case None => Nil
+                          case Some(dims) =>
+                            fitsSource.index match {
+                              case Some(i) =>
+                                if (i >= dims.headOption.getOrElse(0))
+                                  paramIndexError()
+                                else Nil
+                              case None =>
+                                Nil
+                            }
+                        }
+                    }
+                }
+            }
+        }
+      }
+    }
   }
 
   /**
@@ -297,6 +432,7 @@ case class IcdFits(db: IcdDb) {
    * If a subsystem (with optional version) is specified, restrict the merging to that subsystem.
    */
   def generateFitsDictionary(file: File, maybeSv: Option[SubsystemWithVersion]): List[Problem] = {
+    import icd.web.shared.JsonSupport.*
     val fitsDictionary = getFitsDictionary(None)
     val fitsKeyList    = fitsDictionary.fitsKeys
     if (fitsKeyList.isEmpty) {
@@ -307,9 +443,9 @@ case class IcdFits(db: IcdDb) {
       if (!fname.endsWith(".json")) {
         List(Problem("error", "Output file should have the .json suffix (Usually FITS-Dictionary.json)"))
       }
-      else  {
-        val fitsGen = IcdFitsGenerate(db)
-        val newFitsKeyList = fitsGen.generate(maybeSv, fitsKeyList)
+      else {
+        val fitsGen         = IcdFitsGenerate(db)
+        val newFitsKeyList  = fitsGen.generate(maybeSv, fitsKeyList)
         val fitsKeyInfoList = FitsKeyInfoList(newFitsKeyList)
         val out             = new FileOutputStream(file)
         val json            = Json.toJson(fitsKeyInfoList)
@@ -324,9 +460,12 @@ case class IcdFits(db: IcdDb) {
    * Ingest the FITS-Dictionary.json file into the icd db
    */
   def ingest(file: File): List[Problem] = {
+    import reactivemongo.play.json.compat.*
+    import bson2json.*
+    import json2bson.*
     val inputStream = new FileInputStream(file)
     val jsObj       = Json.parse(inputStream).asInstanceOf[JsObject]
-    val problems = IcdValidator.validateFitsDictionary(jsObj.toString())
+    val problems    = IcdValidator.validateFitsDictionary(jsObj.toString())
     inputStream.close()
     if (problems.isEmpty) {
       fitsKeyCollection.drop().await
@@ -337,6 +476,9 @@ case class IcdFits(db: IcdDb) {
   }
 
   def getFitsTags: FitsTags = {
+    import reactivemongo.play.json.compat.*
+    import bson2json.*
+    import json2bson.*
     val maybeFitsTagDoc = fitsTagCollection.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await
     val maybeFitsTags   = maybeFitsTagDoc.map(FitsTagsBsonParser(_))
     maybeFitsTags.getOrElse(FitsTags(Map.empty))
@@ -345,6 +487,9 @@ case class IcdFits(db: IcdDb) {
   // Contents of FITS-Channels.conf: List of available FITS keyword channel names for each subsystem referenced in
   // FITS-Dictionary.json.
   def getFitsChannels: List[AvailableChannels] = {
+    import reactivemongo.play.json.compat.*
+    import bson2json.*
+    import json2bson.*
     val maybeFitsChannelsDoc = fitsChannelCollection.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await
     val maybeFitsChannels    = maybeFitsChannelsDoc.map(AvailableChannelsListBsonParser(_))
     maybeFitsChannels.getOrElse(Nil)
@@ -356,6 +501,9 @@ case class IcdFits(db: IcdDb) {
   }
 
   def getFitsKeyInfo(maybePdfOptions: Option[PdfOptions] = None): List[FitsKeyInfo] = {
+    import reactivemongo.play.json.compat.*
+    import bson2json.*
+    import json2bson.*
     val maybeFitsKeyDoc  = fitsKeyCollection.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await
     val maybeFitsKeyList = maybeFitsKeyDoc.map(FitsKeyInfoListBsonParser(_, maybePdfOptions))
     maybeFitsKeyList.getOrElse(Nil)
@@ -443,6 +591,7 @@ case class IcdFits(db: IcdDb) {
       maybeTag: Option[String],
       pdfOptions: PdfOptions
   ): Unit = {
+    import icd.web.shared.JsonSupport.*
     val fitsDictionary = getFitsDictionary(maybeSubsystem, maybeComponent, maybeTag, Some(pdfOptions))
     val fitsKeyList    = fitsDictionary.fitsKeys
     if (fitsKeyList.isEmpty) {
@@ -470,7 +619,7 @@ case class IcdFits(db: IcdDb) {
         out.close()
       }
       else if (fname.endsWith(".csv")) {
-        import com.github.tototoshi.csv._
+        import com.github.tototoshi.csv.*
         implicit object MyFormat extends DefaultCSVFormat {
           override val lineTerminator = "\n"
           override val delimiter      = '|'

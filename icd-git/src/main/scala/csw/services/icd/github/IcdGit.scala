@@ -148,7 +148,7 @@ object IcdGit extends App {
 
   // If the --interactive option was given, ask for any missing options
   private def interact(options: Options): Options = {
-    import scala.io.StdIn._
+    import scala.io.StdIn.*
 
     // If no subsystem was specified, ask for one, using the given prompt
     def readSubsystemAndVersion(

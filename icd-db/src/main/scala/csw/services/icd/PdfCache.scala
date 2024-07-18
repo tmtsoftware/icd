@@ -5,6 +5,9 @@ import java.nio.file.Files
 
 import icd.web.shared.{BuildInfo, PdfOptions, SubsystemWithVersion}
 
+// XXX TODO: Remove this class. It is disabled in reference.conf and so not currently used
+// (There are too many options for PDF generation that make caching difficult)
+
 /**
  * Implements a cache of PDF files for published API and ICD releases.
  *
@@ -22,7 +25,7 @@ class PdfCache(cacheDir: File) {
       sv: SubsystemWithVersion,
       pdfOptions: PdfOptions
   ): File = {
-    import pdfOptions._
+    import pdfOptions.*
     val name = s"${sv.subsystem}-${sv.maybeVersion.get}-$orientation-$fontSize-$lineHeight-$paperSize.pdf"
     new File(dir, name)
   }
@@ -62,7 +65,7 @@ class PdfCache(cacheDir: File) {
       targetSv: SubsystemWithVersion,
       pdfOptions: PdfOptions
   ): File = {
-    import pdfOptions._
+    import pdfOptions.*
     val name =
       s"${sv.subsystem}-${sv.maybeVersion.get}--${targetSv.subsystem}-${targetSv.maybeVersion.get}-$orientation-$fontSize-$lineHeight-$paperSize.pdf"
     new File(dir, name)
@@ -174,7 +177,7 @@ class PdfCache(cacheDir: File) {
 
   // Deletes the cached PDF file (or files) for the given API
   def deleteApi(sv: SubsystemWithVersion): Unit = {
-    import PdfOptions._
+    import PdfOptions.*
     if (sv.maybeVersion.isDefined && sv.maybeComponent.isEmpty) {
       orientations.foreach { orient =>
         fontSizes.foreach { fs =>
@@ -193,7 +196,7 @@ class PdfCache(cacheDir: File) {
 
   // Deletes the cached PDF file (or files) for the ICD between the given APIs
   def deleteIcd(sv: SubsystemWithVersion, targetSv: SubsystemWithVersion): Unit = {
-    import PdfOptions._
+    import PdfOptions.*
     if (
       sv.maybeVersion.isDefined && sv.maybeComponent.isEmpty
       && targetSv.maybeVersion.isDefined && targetSv.maybeComponent.isEmpty

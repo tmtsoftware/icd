@@ -1,10 +1,10 @@
 package icd.web.client
 
-import icd.web.client.FileUtils._
+import icd.web.client.FileUtils.*
 import org.scalajs.dom
-import org.scalajs.dom._
+import org.scalajs.dom.*
 import org.scalajs.dom.HTMLDivElement
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.language.implicitConversions
 
@@ -36,7 +36,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
 
   // Displays upload button
   private val inputItem = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     input(
       `type` := "file",
       name := "files[]",
@@ -51,14 +51,15 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   private def isStdFile(file: WebkitFile): Boolean = {
     stdList.contains(basename(file)) || file.name.endsWith("-icd-model.conf") || file.name.endsWith(".json") || file.name
       .endsWith(".yml") || file.name.endsWith(".yaml") || file.name.endsWith(".jsonnet") || file.name.endsWith(
-      ".libsonnet") || file.name.endsWith(".txt") || file.name.endsWith("FITS-Tags.conf") || file.name.endsWith("FITS-Channels.conf")
+      ".libsonnet"
+    ) || file.name.endsWith(".txt") || file.name.endsWith("FITS-Tags.conf") || file.name.endsWith("FITS-Channels.conf")
   }
 
   // HTML item displaying error messages
   private val messagesItem = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
-    div(Styles.fileUploadMessages).render
+    import scalatags.JsDom.all.*
+
+    div(id := "fileUploadMessages", cls := "alert alert-info").render
   }
 
   // Adds an error (or warning) message to the upload messages
@@ -184,11 +185,9 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
         statusItem.classList.add(statusClass)
         statusItem.textContent = statusMsg
       }
-      if (xhr.status != 200) {
-        val problems = Json.fromJson[List[Problem]](Json.parse(xhr.responseText)).getOrElse(Nil)
-        for (problem <- problems.reverse)
-          displayProblem(problem)
-      }
+      val problems = Json.fromJson[List[Problem]](Json.parse(xhr.responseText)).getOrElse(Nil)
+      for (problem <- problems.reverse)
+        displayProblem(problem)
 
       // Update the menus of subsystem names,in case anything changed
       subsystemNames.update()
@@ -206,7 +205,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
 
   // Produce the HTML to display for the upload screen
   override def markup(): Element = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
 
     val dirMsg = "Here you can select the top level directory containing the subsystem or component files to upload."
     val dirLabel =

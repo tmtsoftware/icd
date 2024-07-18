@@ -9,17 +9,27 @@ import csw.services.icd.IcdValidator
 import csw.services.icd.db.{CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, Subsystems}
 import csw.services.icd.viz.IcdVizManager.EdgeType.EdgeType
 import csw.services.icd.viz.IcdVizManager.MissingType.MissingType
-import icd.web.shared.{ComponentInfo, DetailedSubscribeInfo, EventOrImageInfo, IcdVizOptions, PdfOptions, ReceivedCommandInfo, SentCommandInfo, SubscribeInfo, SubsystemWithVersion}
-import scalax.collection.Graph
+import icd.web.shared.{
+  ComponentInfo,
+  DetailedSubscribeInfo,
+  EventOrImageInfo,
+  IcdVizOptions,
+  PdfOptions,
+  ReceivedCommandInfo,
+  SentCommandInfo,
+  SubscribeInfo,
+  SubsystemWithVersion
+}
+import icd.web.shared.IcdModels.{ComponentModel, SubscribeModelInfo}
+import net.sourceforge.plantuml.{FileFormat, FileFormatOption, SourceStringReader}
+import scalax.collection.OneOrMore
+import scalax.collection.config.CoreConfig
+import scalax.collection.generic.{AbstractDiEdge, MultiEdge}
+import scalax.collection.immutable.{Graph, TypedGraphFactory}
 import scalax.collection.io.dot.*
 import scalax.collection.io.dot.implicits.*
 
 import language.implicitConversions
-import scalax.collection.edge.LkDiEdge
-import scalax.collection.edge.Implicits.*
-import icd.web.shared.IcdModels.{ComponentModel, SubscribeModelInfo}
-import net.sourceforge.plantuml.{FileFormat, FileFormatOption, SourceStringReader}
-import scalax.collection.config.CoreConfig
 
 //noinspection SpellCheckingInspection
 object IcdVizManager {
@@ -44,24 +54,34 @@ object IcdVizManager {
   }
 
   // Type of an edge label
-  case class EdgeLabel(labels: List[String], edgeType: EdgeType, missing: Option[MissingType] = None) {
+  private case class EdgeLabel(labels: List[String], edgeType: EdgeType, missing: Option[MissingType] = None) {
     lazy val label: String = labels.sorted.mkString("\\n")
   }
 
   // Holds both components of an edge
-  case class ComponentPair(from: String, to: String)
+  private case class ComponentPair(from: String, to: String)
 
   // Describes an Edge from one component to another
-  case class EdgeModel(components: ComponentPair, label: EdgeLabel)
+  private case class EdgeModel(components: ComponentPair, label: EdgeLabel)
+
+  // Labeled directed edges
+  private case class MyLDiEdge(model: EdgeModel)
+      extends AbstractDiEdge(source = model.components.from, target = model.components.to)
+      with MultiEdge {
+    override def extendKeyBy: OneOrMore[Any] = OneOrMore.one(model)
+  }
+
+  private object MyGraph extends TypedGraphFactory[String, MyLDiEdge]
 
   // Configuration options for Graph
   implicit val myConfig: CoreConfig = CoreConfig()
 
   // Load settings from reference.conf
-  val conf: Config = ConfigFactory.load
+  private val conf: Config = ConfigFactory.load
 
   // Read subsystem color settings from reference.conf
-  val subsystemColorMap: Map[String, String] = Subsystems.allSubsystems.map(s => s -> conf.getString(s"icd.viz.color.$s")).toMap
+  private val subsystemColorMap: Map[String, String] =
+    Subsystems.allSubsystems.map(s => s -> conf.getString(s"icd.viz.color.$s")).toMap
 
   // --- plotting defaults ---
 
@@ -120,12 +140,13 @@ object IcdVizManager {
     val isIcd = options.subsystems.length + options.components.length == 2
 
     val componentInfoList = if (isIcd) {
-      val svList = options.subsystems ::: options.components
-      val sv1 = svList.head
-      val sv2  = svList.tail.head
+      val svList  = options.subsystems ::: options.components
+      val sv1     = svList.head
+      val sv2     = svList.tail.head
       val sv1List = components.filter(_.subsystem == sv1.subsystem)
       sv1List.flatMap(sv => IcdComponentInfo.getComponentInfo(versionManager, sv, sv2, noMarkdownOpt))
-    } else {
+    }
+    else {
       val componentInfoHelper =
         new ComponentInfoHelper(versionManager, displayWarnings = false, clientApi = true, subsystems)
       components.flatMap(sv => componentInfoHelper.getComponentInfo(sv, noMarkdownOpt, Map.empty))
@@ -551,9 +572,9 @@ object IcdVizManager {
     else Map.empty[String, DotSubGraph]
 
     // Creates a dot edge
-    def edgeTransformer(innerEdge: Graph[String, LkDiEdge]#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
-      val edge      = innerEdge.edge
-      val edgeLabel = edge.label.asInstanceOf[EdgeLabel]
+    def edgeTransformer(innerEdge: Graph[String, MyLDiEdge]#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
+      val edge      = innerEdge.outer
+      val edgeLabel = edge.model.label
       val showLabel = options.eventLabels &&
         (edgeLabel.edgeType == EdgeType.events || edgeLabel.edgeType == EdgeType.images) ||
         options.commandLabels && edgeLabel.edgeType == EdgeType.commands
@@ -566,35 +587,35 @@ object IcdVizManager {
         if (edgeLabel.missing.isDefined)
           List(
             DotAttr("color", missingColor),
-            DotAttr(Id("fontcolor"), missingColor),
-            DotAttr(Id("style"), "dashed")
+            DotAttr("fontcolor", missingColor),
+            DotAttr("style", "dashed")
           )
         else
           List(
             DotAttr("color", color),
-            DotAttr(Id("fontcolor"), color)
+            DotAttr("fontcolor", color)
           )
       val labelAttr = if (showLabel) {
         val label = if (edgeLabel.missing.isDefined) {
           s"${edgeLabel.missing.get}:\\n${edgeLabel.label}"
         }
         else s"${edgeLabel.edgeType}:\\n${edgeLabel.label}"
-        if (edgeLabel.label.nonEmpty) List(DotAttr(Id("label"), Id(label))) else Nil
+        if (edgeLabel.label.nonEmpty) List(DotAttr("label", label)) else Nil
       }
       else Nil
       Some(
         root,
         DotEdgeStmt(
-          NodeId(edge.from.toString),
-          NodeId(edge.to.toString),
+          NodeId(edge.source),
+          NodeId(edge.target),
           styleAttr ++ labelAttr
         )
       )
     }
 
     // Creates a dot node
-    def nodeTransformer(innerNode: Graph[String, LkDiEdge]#NodeT): Option[(DotGraph, DotNodeStmt)] = {
-      val component = innerNode.value
+    def nodeTransformer(innerNode: Graph[String, MyLDiEdge]#NodeT): Option[(DotGraph, DotNodeStmt)] = {
+      val component = innerNode.outer
       val subsystem = component.split('.').head
       if (options.groupSubsystems && subgraphs.contains(subsystem)) {
         val style = if (primaryComponents.map(_.prefix).contains(component)) "bold" else "dashed"
@@ -604,10 +625,10 @@ object IcdVizManager {
           DotNodeStmt(
             NodeId(component),
             attrList = List(
-              DotAttr(Id("label"), Id(componentNameFromPrefix(component))),
-              DotAttr(Id("color"), color),
-              DotAttr(Id("fontcolor"), color),
-              DotAttr(Id("style"), style)
+              DotAttr("label", componentNameFromPrefix(component)),
+              DotAttr("color", color),
+              DotAttr("fontcolor", color),
+              DotAttr("style", style)
             )
           )
         )
@@ -693,12 +714,23 @@ object IcdVizManager {
       getSubscribedEventEdges(missing = true, images = true) ++ getPublishedEventEdges(missing = true, images = true)
     val commandEdgeModels        = combineEdgeModels(getSentCommandEdges(missing = false) ++ getReceivedCommandEdges(missing = false))
     val missingCommandEdgeModels = getSentCommandEdges(missing = true) ++ getReceivedCommandEdges(missing = true)
-    val allEdgeModels =
+
+    val allEdgeModels: List[EdgeModel] = (
       eventEdgeModels ++ imageEdgeModels ++ missingEventEdgeModels ++ missingImageEdgeModels ++ commandEdgeModels ++ missingCommandEdgeModels
+    ).distinct
+
+//    // Note: Since scala-graph 2.0, it seems that the component pairs need to be unique, so call combineEdgeModels
+//    // to merge image and event edges
+//    val allEdgeModels = (
+//      combineEdgeModels(eventEdgeModels ++ imageEdgeModels)
+//        ++ combineEdgeModels(missingEventEdgeModels ++ missingImageEdgeModels)
+//        ++ commandEdgeModels
+//        ++ missingCommandEdgeModels
+//    ).distinct
 
     // Create the final graph
-    val g = Graph.from(
-      allEdgeModels.map(e => (e.components.from ~+#> e.components.to)(e.label))
+    val g = MyGraph.from(
+      allEdgeModels.map(MyLDiEdge)
     )
 
     // Convert to dot

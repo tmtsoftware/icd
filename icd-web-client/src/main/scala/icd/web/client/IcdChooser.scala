@@ -4,10 +4,10 @@ import icd.web.shared.{IcdName, IcdVersion, IcdVersionInfo, SubsystemWithVersion
 import org.scalajs.dom
 
 import scala.concurrent.Future
-import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
-import IcdChooser._
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
+import IcdChooser.*
 import org.scalajs.dom.Element
-import play.api.libs.json._
+import play.api.libs.json.*
 
 /**
  * Manages the ICD and related ICD version comboboxes
@@ -40,11 +40,11 @@ object IcdChooser {
 //noinspection DuplicatedCode
 case class IcdChooser(listener: IcdListener) extends Displayable {
 
-  import icd.web.shared.JsonSupport._
+  import icd.web.shared.JsonSupport.*
 
   // The ICD combobox
   private val icdItem = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     select(cls := "form-select", onchange := icdSelected _)(
       option(value := emptyOptionMsg)(emptyOptionMsg)
     ).render
@@ -52,7 +52,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
 
   // The ICD version combobox
   private val versionItem = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     select(cls := "form-select", onchange := icdVersionSelected _).render
   }
 
@@ -87,12 +87,12 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
 
   // HTML markup displaying the ICD and version comboboxes
   override def markup(): Element = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+
     div(cls := "row")(
-      div(Styles.selectDialogLabel)(label("ICD")),
-      div(Styles.selectDialogSubsystem)(icdItem),
-      div(Styles.selectDialogVersion)(versionItem)
+      div(cls := "selectDialogLabel col-1")(label("ICD")),
+      div(cls := "selectDialogSubsystem col-2")(icdItem),
+      div(cls := "selectDialogVersion col-1")(versionItem)
     ).render
   }
 
@@ -145,26 +145,22 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
       notifyListener: Boolean = true,
       saveHistory: Boolean = true
   ): Future[Unit] = {
-    if (maybeIcdVersion == getSelectedIcdVersion)
-      Future.successful(())
-    else {
-      maybeIcdVersion match {
-        case Some(icdVersion) =>
-          val value = Json.toJson(IcdName(icdVersion.subsystem, icdVersion.target)).toString()
-          icdItem.value = value // JSON
-          val f = updateIcdVersionOptions()
-          versionItem.value = Json.toJson(icdVersion).toString() // JSON
-          if (notifyListener)
-            Future.sequence(List(f, listener.icdSelected(maybeIcdVersion))).map(_ => ())
-          else f
-        case None =>
-          icdItem.value = emptyOptionMsg
-          val f = updateIcdVersionOptions()
-          versionItem.value = unpublishedVersion
-          if (notifyListener)
-            Future.sequence(List(f, listener.icdSelected(None))).map(_ => ())
-          else f
-      }
+    maybeIcdVersion match {
+      case Some(icdVersion) =>
+        val value = Json.toJson(IcdName(icdVersion.subsystem, icdVersion.target)).toString()
+        icdItem.value = value // JSON
+        val f = updateIcdVersionOptions()
+        versionItem.value = Json.toJson(icdVersion).toString() // JSON
+        if (notifyListener)
+          Future.sequence(List(f, listener.icdSelected(maybeIcdVersion))).map(_ => ())
+        else f
+      case None =>
+        icdItem.value = emptyOptionMsg
+        val f = updateIcdVersionOptions()
+        versionItem.value = unpublishedVersion
+        if (notifyListener)
+          Future.sequence(List(f, listener.icdSelected(None))).map(_ => ())
+        else f
     }
   }
 
@@ -218,14 +214,10 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
    */
   def selectMatchingIcd(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): Future[Unit] = {
     val f = selectMatchingIcdImpl(sv, maybeTargetSv).map { maybeIcdVersion =>
-      if (maybeIcdVersion.isEmpty) {
-        // Select none if a matching ICD is not found
-        for {
-          _ <- setIcdWithVersion(None, notifyListener = false, saveHistory = false)
-          _ <- updateIcdVersionOptions(Nil)
-        } yield {}
-      }
-      else Future.successful(())
+      for {
+        _ <- updateIcdVersionOptions(Nil)
+        _ <- setIcdWithVersion(maybeIcdVersion, notifyListener = false, saveHistory = false)
+      } yield {}
     }
     f.flatten
   }
@@ -243,7 +235,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   // Update the ICD combobox options
   private def updateIcdOptions(icdNames: List[IcdName]): Future[Unit] = {
 
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
 
     val maybeIcdVersion = getSelectedIcdVersion
     while (icdItem.options.length != 0) {
@@ -302,9 +294,6 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
           .flatMap { list => // Future!
             updateIcdVersionOptions(list)
           }
-//          .recover {
-//            case ex => ex.printStackTrace()
-//          }
       case None =>
         updateIcdVersionOptions(Nil).map { _ =>
           versionItem.value = unpublishedVersion
@@ -315,7 +304,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   // Updates the ICD version combobox with the given list of available versions for the selected ICD
   private def updateIcdVersionOptions(versions: List[IcdVersion]): Future[Unit] = {
 
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     while (versionItem.options.length != 0) {
       versionItem.remove(0)
     }

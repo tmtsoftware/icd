@@ -2,9 +2,9 @@ package csw.services.icd.db
 
 import csw.services.icd.db.IcdDbQuery.Subscribed
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
-import icd.web.shared.ComponentInfo._
-import icd.web.shared.IcdModels._
-import icd.web.shared._
+import icd.web.shared.ComponentInfo.*
+import icd.web.shared.IcdModels.*
+import icd.web.shared.*
 
 /**
  * Gathers information related to a component in a given version of an ICD.
@@ -424,7 +424,10 @@ object IcdComponentInfo {
       provides     <- serviceModel.provides
     } yield {
       val clientComponentInfo = getServiceClients(serviceModel.subsystem, serviceModel.component, provides.name, targetModelsList)
-      ServiceProvidedInfo(provides, clientComponentInfo)
+      // Filter the list of service paths (routes) to only those declared as used
+      val clientPaths = clientComponentInfo.flatMap(_.paths)
+      val paths = provides.paths.filter(p => clientPaths.exists(c => c.path == p.path && c.method == p.method))
+      ServiceProvidedInfo(provides.copy(paths = paths), clientComponentInfo)
     }
   }
 
@@ -452,8 +455,22 @@ object IcdComponentInfo {
         serviceModelClient.name,
         targetModelsList
       )
+      // Insert service path descriptions from provider (extracted from OpenApi file)
+      val serviceModelClientCopy = (maybeServiceModelProvider
+        .map { provider =>
+          val newPaths = serviceModelClient.paths.map(p =>
+            ServicePath(
+              p.method,
+              p.path,
+              provider.paths.find(x => x.method == p.method && x.path == p.path).map(_.description).getOrElse("")
+            )
+          )
+          serviceModelClient.copy(paths = newPaths)
+        })
+        .getOrElse(serviceModelClient)
+
       ServicesRequiredInfo(
-        serviceModelClient,
+        serviceModelClientCopy,
         maybeServiceModelProvider,
         query.getComponentModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions)
       )

@@ -3,7 +3,7 @@ package csw.services.icd.db
 import java.io.{File, FileNotFoundException}
 import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions, ConfigValueFactory}
 import csw.services.icd.{Problem, StdName}
-import csw.services.icd.StdName._
+import csw.services.icd.StdName.*
 import StdConfig.Resources
 
 object StdConfig {

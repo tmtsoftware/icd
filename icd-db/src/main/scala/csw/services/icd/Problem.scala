@@ -1,6 +1,6 @@
 package csw.services.icd
 
-import play.api.libs.json._
+import play.api.libs.json.*
 
 object Problem {
   implicit val ProblemFormat: OFormat[Problem] = Json.format[Problem]

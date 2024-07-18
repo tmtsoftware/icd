@@ -1,10 +1,11 @@
 package csw.services.icd.html
 
-import icd.web.shared.ComponentInfo._
-import icd.web.shared._
+import icd.web.shared.ComponentInfo.*
+import icd.web.shared.*
 import scalatags.Text
 import Headings.idFor
 import HtmlMarkup.yesNo
+import csw.services.icd.db.IcdDb
 import icd.web.shared.IcdModels.{AlarmModel, ComponentModel, EventModel, MetadataModel, ParameterModel}
 
 /**
@@ -17,8 +18,8 @@ object IcdToHtml {
    * Returns the CSS for saving to an HTML or PDF file, with changes according to the given options.
    */
   def getCss(pdfOptions: PdfOptions): String = {
-    import pdfOptions._
-    import PdfOptions._
+    import pdfOptions.*
+    import PdfOptions.*
 
     val fontIncr = fontSize - defaultFontSize
     val stream   = this.getClass.getResourceAsStream("/icd.css")
@@ -51,7 +52,7 @@ object IcdToHtml {
       withLinks: Boolean,
       tagMap: Map[FitsKeywordAndChannel, String]
   ) = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
     val fitsSource = fitsChannel.source
     val channel    = if (fitsChannel.name.nonEmpty) Some(fitsChannel.name) else None
     // Get tag for key
@@ -98,7 +99,7 @@ object IcdToHtml {
       maybeSubsystem: Option[String] = None,
       maybeComponent: Option[String] = None
   ): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
 
     // Map from FITS keyword and channel to the tag for that keyword/channel
     val tagMap: Map[FitsKeywordAndChannel, String] =
@@ -147,6 +148,7 @@ object IcdToHtml {
   /**
    * Returns HTML describing the given components in the given subsystem.
    *
+   * @param db                 the icd database
    * @param subsystemInfo      contains info about the subsystem
    * @param infoList           details about each component and what it publishes, subscribes to, etc.
    * @param pdfOptions         options for pdf generation
@@ -155,17 +157,19 @@ object IcdToHtml {
    * @return the html tags
    */
   def getApiAsHtml(
+      db: IcdDb,
       subsystemInfo: SubsystemInfo,
       infoList: List[ComponentInfo],
       pdfOptions: PdfOptions,
       clientApi: Boolean,
       fitsDictionary: FitsDictionary
   ): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
 
     val nh           = new NumberedHeadings
     val titleInfo    = TitleInfo(subsystemInfo, None, None, documentNumber = pdfOptions.documentNumber)
-    val summaryTable = SummaryTable.displaySummary(subsystemInfo, None, infoList, nh, clientApi, displayTitle = true)
+    val summaryTable = SummaryTable(subsystemInfo, None, infoList, nh, clientApi, displayTitle = true)
+    val summaryTableMarkup = summaryTable.displaySummary()
     val fitsTable =
       if (fitsDictionary.fitsKeys.nonEmpty)
         makeFitsKeyTable(
@@ -180,9 +184,9 @@ object IcdToHtml {
 
     val mainContent = div(
       style := "width: 100%;",
-      summaryTable,
+      summaryTableMarkup,
       fitsTable,
-      displayDetails(infoList, nh, forApi = true, pdfOptions, clientApi)
+      displayDetails(db, infoList, summaryTable, nh, forApi = true, pdfOptions, clientApi)
     )
     val toc   = nh.mkToc()
     val intro = makeIntro(titleInfo)
@@ -205,7 +209,7 @@ object IcdToHtml {
   }
 
   def getTitleMarkup(titleInfo: TitleInfo, titleId: String = "title"): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
     titleInfo.maybeSubtitle match {
       case Some(subtitle) =>
         titleInfo.maybeDocumentNumber match {
@@ -233,7 +237,9 @@ object IcdToHtml {
   /**
    * Displays the details of the events published and commands received by the subsystem
    *
+   * @param db the icd database
    * @param infoList list of component info
+   * @param summaryTable object used to create a summary table (of subsciber/client info)
    * @param nh       used for numbered headings and TOC
    * @param forApi   true if this is for an API document, false for ICD
    * @param pdfOptions   options for pdf gen
@@ -241,15 +247,17 @@ object IcdToHtml {
    * @return the HTML
    */
   def displayDetails(
+      db: IcdDb,
       infoList: List[ComponentInfo],
+      summaryTable: SummaryTable,
       nh: NumberedHeadings,
       forApi: Boolean,
       pdfOptions: PdfOptions,
       clientApi: Boolean
   ): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
     div(
-      infoList.map(displayComponentInfo(_, nh, forApi, pdfOptions, clientApi))
+      infoList.map(displayComponentInfo(db, _, summaryTable, nh, forApi, pdfOptions, clientApi))
     )
   }
 
@@ -257,16 +265,19 @@ object IcdToHtml {
    * Displays the information for a component
    */
   private def displayComponentInfo(
+      db: IcdDb,
       info: ComponentInfo,
+      summaryTable: SummaryTable,
       nh: NumberedHeadings,
       forApi: Boolean,
       pdfOptions: PdfOptions,
       clientApi: Boolean
   ): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
     // For ICDs, only display published items/received commands, for APIs show everything
     // (Note: Need to include even if only subscribed items are defined, to keep summary links from breaking)
-    // (XXX FIXME: Aug 2020: APIs should only show pub and recv, added clientApi option to show sub/send)
+    // (XXX Aug 2020: APIs should only show pub and recv, added clientApi option to show sub/send)
+    // (XXX Apr 2024: ICDs should show client summary with links to provider side)
     if (
       forApi ||
       (info.publishes.isDefined && info.publishes.get.nonEmpty
@@ -274,20 +285,22 @@ object IcdToHtml {
       || info.commands.isDefined && info.commands.get.nonEmpty
       || info.services.isDefined && info.services.get.nonEmpty)
     ) {
-      markupForComponent(info, nh, forApi, pdfOptions, clientApi)
+      markupForComponent(db, info, summaryTable, nh, forApi, pdfOptions, clientApi)
     }
     else div()
   }
 
   // Generates the HTML markup to display the component information
   private def markupForComponent(
+      db: IcdDb,
       info: ComponentInfo,
+      summaryTable: SummaryTable,
       nh: NumberedHeadings,
       forApi: Boolean,
       pdfOptions: PdfOptions,
       clientApi: Boolean
   ): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
 
     div(cls := "pagebreakBefore")(
       nh.H2(info.componentModel.title, info.componentModel.component),
@@ -296,7 +309,16 @@ object IcdToHtml {
       publishMarkup(info.componentModel, info.publishes, nh, forApi, pdfOptions, clientApi),
       if (forApi && clientApi) subscribeMarkup(info.componentModel, info.subscribes, nh, forApi, pdfOptions) else div(),
       commandsMarkup(info.componentModel, info.commands, nh, forApi, pdfOptions, clientApi),
-      servicesMarkup(info.componentModel, info.services, nh, forApi, pdfOptions, clientApi)
+      servicesMarkup(db, info.componentModel, info.services, nh, forApi, pdfOptions, clientApi),
+      if (!forApi)
+        summaryTable
+          .copy(
+            infoList = List(info),
+            subsystemInfo = summaryTable.subsystemInfo
+              .copy(sv = summaryTable.subsystemInfo.sv.copy(maybeComponent = Some(info.componentModel.component)))
+          )
+          .subscribedSummary()
+      else div()
     )
   }
 
@@ -315,7 +337,7 @@ object IcdToHtml {
       nh: NumberedHeadings,
       pdfOptions: PdfOptions
   ): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
 
     val compName   = component.component
     val senderInfo = span(strong("Sender: "), s"${component.subsystem}.$compName")
@@ -365,7 +387,7 @@ object IcdToHtml {
       pdfOptions: PdfOptions,
       clientApi: Boolean
   ): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
     maybeCommands match {
       case None => div()
       case Some(commands) =>
@@ -389,7 +411,7 @@ object IcdToHtml {
       pdfOptions: PdfOptions,
       clientApi: Boolean
   ): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
 
     val compName     = component.component
     val receiverInfo = span(strong("Receiver: "), s"${component.subsystem}.$compName")
@@ -440,6 +462,7 @@ object IcdToHtml {
 
   // Generates the markup for the services section (description plus provides and requires)
   private def servicesMarkup(
+      db: IcdDb,
       component: ComponentModel,
       maybeServices: Option[Services],
       nh: NumberedHeadings,
@@ -447,52 +470,61 @@ object IcdToHtml {
       pdfOptions: PdfOptions,
       clientApi: Boolean
   ): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
     maybeServices match {
       case None => div()
       case Some(services) =>
         if (services.servicesProvided.nonEmpty || (services.servicesRequired.nonEmpty && forApi && clientApi)) {
           div(
-            nh.H3(s"Services for ${component.component}"),
             raw(services.description),
             servicesProvidedMarkup(component, services.servicesProvided, nh, pdfOptions, clientApi),
-            if (forApi && clientApi) servicesRequiredMarkup(component, services.servicesRequired, nh) else div()
+            if (forApi && clientApi) servicesRequiredMarkup(db, component, services.servicesRequired, nh) else div()
           )
         }
         else div()
     }
   }
 
-  private def servicesRequiredTitle(compName: String): String = s"Services Required by $compName"
+//  private def servicesRequiredesRequiredTitle(compName: String): String = s"Services Required by $compName"
 
   // Generates the HTML markup to display the HTTP services a component requires
   private def servicesRequiredMarkup(
+      db: IcdDb,
       component: ComponentModel,
       info: List[ServicesRequiredInfo],
       nh: NumberedHeadings
   ): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
 
-    val compName = component.component
     if (info.isEmpty) div()
     else {
       div(
-        nh.H4(servicesRequiredTitle(compName)),
         for (s <- info) yield {
-          val maybeOpenApi = s.maybeServiceModelProvider.map(_.openApi)
-          val m            = s.serviceModelClient
+          val maybeOpenApi = s.maybeServiceModelProvider.map(_.openApi) match {
+            case Some(openApi) => Some(openApi)
+            case None =>
+              db.getOpenApi(
+                s.serviceModelClient.subsystem,
+                s.serviceModelClient.component,
+                s.serviceModelClient.name,
+                None,
+                s.serviceModelClient.paths
+              )
+          }
+          val m = s.serviceModelClient
           val providerInfo = {
             val provider = s"${s.serviceModelClient.subsystem}.${s.serviceModelClient.component}"
             span(strong(s"Provider: "), provider)
           }
+          val compName = component.component
+          val linkId = idFor(compName, "requires", "Services", m.subsystem, m.component, m.name)
           div(cls := "nopagebreak")(
-            nh.H5(s"HTTP Service: ${m.name}"),
+            nh.H3(s"HTTP Service: ${m.name}", linkId),
             p(providerInfo),
             maybeOpenApi match {
               case Some(openApi) =>
                 val filteredOpenApi = OpenApiToHtml.filterOpenApiJson(openApi, s.serviceModelClient.paths)
                 div(
-                  p("Note: Only the routes required by the client are listed here."),
                   raw(OpenApiToHtml.getHtml(filteredOpenApi))
                 )
               case None =>
@@ -512,7 +544,7 @@ object IcdToHtml {
       pdfOptions: PdfOptions,
       clientApi: Boolean
   ): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
 
     val compName     = component.component
     val providerInfo = span(strong("Service Provider: "), s"${component.subsystem}.$compName")
@@ -520,7 +552,6 @@ object IcdToHtml {
     if (info.isEmpty) div()
     else {
       div(
-        nh.H4(servicesProvidedTitle(compName)),
         for (s <- info) yield {
           val m = s.serviceModelProvider
           val consumerInfo = if (clientApi) {
@@ -533,7 +564,7 @@ object IcdToHtml {
           val paths           = s.requiredBy.flatMap(_.paths).distinct
           val filteredOpenApi = OpenApiToHtml.filterOpenApiJson(m.openApi, paths)
           div(cls := "nopagebreak")(
-            nh.H5(s"HTTP Service: ${m.name}", linkId),
+            nh.H3(s"HTTP Service: ${m.name}", linkId),
             if (clientApi) p(consumerInfo, ", ", providerInfo) else p(providerInfo),
             if (showDetails) {
               div(
@@ -551,7 +582,7 @@ object IcdToHtml {
   }
 
   private def resultTypeMarkup(parameterList: List[ParameterModel]): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
     if (parameterList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units")
@@ -570,7 +601,7 @@ object IcdToHtml {
       parameterList: List[ParameterModel],
       requiredArgs: List[String]
   ): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
     if (parameterList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default", "Required")
@@ -594,7 +625,7 @@ object IcdToHtml {
 
   private def receivedCommandsTitle(compName: String): String = s"Command Configurations Received by $compName"
 
-  private def servicesProvidedTitle(compName: String): String = s"HTTP Services provided by $compName"
+//  private def servicesProvidedTitle(compName: String): String = s"HTTP Services provided by $compName"
 
   // Generates the HTML markup to display the component's subscribe information
   private def subscribeMarkup(
@@ -604,7 +635,7 @@ object IcdToHtml {
       forApi: Boolean,
       pdfOptions: PdfOptions
   ): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
 
     val compName       = component.component
     val subscriberInfo = span(strong("Subscriber: "), s"${component.subsystem}.$compName")
@@ -735,7 +766,7 @@ object IcdToHtml {
   private def subscribeTitle(compName: String): String = s"Items subscribed to by $compName"
 
   private def makeErrorDiv(msg: String): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
     div(cls := "alert alert-warning", role := "alert")(
       i(cls := "bi bi-exclamation-triangle"),
       span(em(s" $msg"))
@@ -749,7 +780,7 @@ object IcdToHtml {
       forApi: Boolean,
       linkId: Option[String] = None
   ): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
     if (parameterList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Type", "Units", "Default", "FITS Keywords")
@@ -777,7 +808,7 @@ object IcdToHtml {
       metadataList: List[MetadataModel],
       linkId: Option[String] = None
   ): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
     if (metadataList.isEmpty) div()
     else {
       val headings = List("Name", "Description", "Keyword")
@@ -803,7 +834,7 @@ object IcdToHtml {
       pdfOptions: PdfOptions,
       clientApi: Boolean
   ): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
 
     val compName      = component.component
     val publisherInfo = span(strong("Publisher: "), s"${component.subsystem}.$compName")
@@ -1057,7 +1088,7 @@ object IcdToHtml {
 
   // Generates a one line table with basic component information
   private def componentInfoTableMarkup(info: ComponentInfo): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
     div(
       table(
         thead(
@@ -1086,7 +1117,7 @@ object IcdToHtml {
    * Displays the subsystem title and description
    */
   def makeIntro(titleInfo: TitleInfo): Text.TypedTag[String] = {
-    import scalatags.Text.all._
+    import scalatags.Text.all.*
     if (titleInfo.maybeDescription.isDefined) {
       div(raw(titleInfo.maybeDescription.get))
     }

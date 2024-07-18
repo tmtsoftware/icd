@@ -1,13 +1,13 @@
 package csw.services.icd.db
 
-import csw.services.icd._
+import csw.services.icd.*
 import icd.web.shared.IcdModels.{ComponentModel, IcdModel, ServiceModel, SubsystemModel}
 import icd.web.shared.{IcdModels, IcdVersion, IcdVersionInfo, PdfOptions, SubsystemWithVersion}
 import org.joda.time.{DateTime, DateTimeZone}
-import diffson.playJson._
-import diffson.lcs._
-import diffson.jsonpatch._
-import diffson.jsonpatch.lcsdiff.remembering._
+import diffson.playJson.*
+import diffson.lcs.*
+import diffson.jsonpatch.*
+import diffson.jsonpatch.lcsdiff.remembering.*
 import csw.services.icd.db.parser.{
   AlarmsModelBsonParser,
   ComponentModelBsonParser,
@@ -17,16 +17,16 @@ import csw.services.icd.db.parser.{
   SubscribeModelBsonParser,
   SubsystemModelBsonParser
 }
-import play.api.libs.json.{JsObject, JsValue, Json}
-import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONInteger, BSONObjectID, BSONString}
+import play.api.libs.json.{JsObject, JsValue, Json, DefaultWrites}
+import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONObjectID}
 import reactivemongo.api.{Cursor, WriteConcern}
 import reactivemongo.api.bson.collection.BSONCollection
-import reactivemongo.play.json.compat._
-import bson2json._
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import icd.web.shared.ComponentInfo.PublishType
-import lax._
-import json2bson._
+//import lax.*
+import reactivemongo.play.json.compat.*
+import bson2json.*
+import json2bson.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -36,39 +36,39 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * In addition, a top level collection keeps track of which versions of each collection belong
  * to a given "top level" version for the subsystem (or component).
  */
-object IcdVersionManager {
+object IcdVersionManager extends DefaultWrites {
 
   implicit val lcs: Patience[JsValue] = new Patience[JsValue]
 
   /** The id key inserted into all documents */
-  val idKey = "_id"
+  private val idKey = "_id"
 
   /** The version key inserted into all documents */
   val versionKey = "_version"
 
   /** The version key used for top level subsystems or components */
-  val versionStrKey = "version"
+  private val versionStrKey = "version"
 
   /** The name of the sub-collection containing the previous versions or version information */
-  val versionColl = "v"
+  private val versionColl = "v"
 
   val versionSuffix = ".v"
 
-  val partsKey = "parts"
+  private val partsKey = "parts"
 
   /** Name of collection with information about published ICDs */
-  val icdCollName = "icds"
+  private val icdCollName = "icds"
 
-  val subsystemKey        = "subsystem"
-  val subsystemVersionKey = "subsystemVersion"
-  val targetKey           = "target"
-  val targetVersionKey    = "targetVersion"
-  val userKey             = "user"
-  val dateKey             = "date"
-  val commentKey          = "comment"
-  val commitKey           = "commit"
+  private val subsystemKey        = "subsystem"
+  private val subsystemVersionKey = "subsystemVersion"
+  private val targetKey           = "target"
+  private val targetVersionKey    = "targetVersion"
+  private val userKey             = "user"
+  private val dateKey             = "date"
+  private val commentKey          = "comment"
+  private val commitKey           = "commit"
 
-  val queryAny: BSONDocument = BSONDocument()
+  private val queryAny: BSONDocument = BSONDocument()
 
   /**
    * Holds a collection path for a component or subsystem and it's version
@@ -76,7 +76,7 @@ object IcdVersionManager {
   case class PartInfo(path: String, version: Int)
 
   // Name of version history collection for the given subsystem or component
-  def versionCollectionName(name: String): String = s"$name.$versionColl"
+  private def versionCollectionName(name: String): String = s"$name.$versionColl"
 
   /**
    * Describes a version of a subsystem or component
@@ -107,16 +107,16 @@ object IcdVersionManager {
   object VersionInfo {
     // Creates a VersionInfo instance from an object in the database
     def apply(doc: BSONDocument): VersionInfo = {
-      import reactivemongo.api.bson._
-      val maybeVersion = doc.getAsOpt[String](versionStrKey)
-      val user         = doc.getAsOpt[String](userKey).get
-      val comment      = doc.getAsOpt[String](commentKey).get
+      import reactivemongo.api.bson.*
+      val maybeVersion = doc.string(versionStrKey)
+      val user         = doc.string(userKey).get
+      val comment      = doc.string(commentKey).get
       val date         = new DateTime(doc.getAsOpt[BSONDateTime](dateKey).get.value, DateTimeZone.UTC)
-      val commit       = doc.getAsOpt[String](commitKey).get
-      val partDocs     = doc.getAsOpt[Array[BSONDocument]](partsKey).get.toList
+      val commit       = doc.string(commitKey).get
+      val partDocs     = doc.children(partsKey)
       val parts = partDocs.map { part =>
-        val name    = part.getAsOpt[String]("name").get
-        val version = part.getAsOpt[Int](versionStrKey).get
+        val name    = part.string("name").get
+        val version = part.int(versionStrKey).get
         PartInfo(name, version)
       }
 
@@ -208,8 +208,8 @@ object IcdVersionManager {
 //noinspection DuplicatedCode,SpellCheckingInspection
 case class IcdVersionManager(query: IcdDbQuery) {
 
-  import IcdVersionManager._
-  import IcdDbQuery._
+  import IcdVersionManager.*
+  import IcdDbQuery.*
 
   private val db = query.db
 
@@ -300,7 +300,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
 //    if (collectionExists(collName)) {
 //      val docs = sortCollectionById(collName)
 //      docs.map { doc =>
-//        doc.getAsOpt[String](versionStrKey).get
+//        doc.string(versionStrKey).get
 //      }
 //    }
 //    else Nil
@@ -329,12 +329,12 @@ case class IcdVersionManager(query: IcdDbQuery) {
         def getPartVersion(path: String): Option[Int] = {
           val coll     = db.collection[BSONCollection](path)
           val maybeDoc = coll.find(queryAny, Option.empty[JsObject]).one[BSONDocument].await
-          maybeDoc.flatMap(_.getAsOpt[BSONInteger](versionKey).map(_.value))
+          maybeDoc.flatMap(_.int(versionKey))
         }
 
         def filter(p: IcdPath) = p.subsystem == sv.subsystem && sv.maybeComponent.fold(true)(_ => p.component == path)
 
-        val paths   = getCollectionNames.filter(isStdSet).map(IcdPath).filter(filter).map(_.path).toList
+        val paths   = getCollectionNames.filter(isStdSet).map(IcdPath.apply).filter(filter).map(_.path).toList
         val now     = new DateTime(DateTimeZone.UTC)
         val user    = ""
         val comment = "Working version, unpublished"
@@ -351,7 +351,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * @param subsystem       the name of the subsystem
    * @param maybeComponent  if defined, the name of the component
    */
-  def getLatestPublishedVersion(
+  private def getLatestPublishedVersion(
       collectionNames: Set[String],
       subsystem: String,
       maybeComponent: Option[String]
@@ -366,7 +366,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
         .sort(BSONDocument(idKey -> -1))
         .one[BSONDocument]
         .await
-        .map(_.getAsOpt[String](versionStrKey))
+        .map(_.string(versionStrKey))
         .head
     }
     else None
@@ -412,7 +412,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
     // Note: Doc might not exist in current version, but exist in an older, published version
     coll.find(queryAny, Option.empty[JsObject]).one[BSONDocument].await match {
       case Some(doc) =>
-        val currentVersion = doc.getAsOpt[BSONInteger](versionKey).get.value
+        val currentVersion = doc.int(versionKey).get
         if (version == currentVersion) doc else getPublishedDoc
 
       case None =>
@@ -457,7 +457,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       case Some(versionInfo) =>
         versionInfo.parts
           .map(_.path)
-          .map(IcdPath)
+          .map(IcdPath.apply)
           .filter(p => p.parts.length == 3)
           .map(_.parts.tail.head)
           .distinct
@@ -469,7 +469,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
   // Returns a list of IcdEntry objects for the given parts (one part for each component or subsystem)
   // The result is sorted so that the subsystem comes first.
   private def getEntries(parts: List[PartInfo]): List[ApiCollections] = {
-    val paths = parts.map(_.path).map(IcdPath)
+    val paths = parts.map(_.path).map(IcdPath.apply)
     query.getEntries(paths)
   }
 
@@ -692,12 +692,12 @@ case class IcdVersionManager(query: IcdDbQuery) {
     val collectionNames = getCollectionNames
 
     // Save any of the subsystem's collections that changed
-    val icdPaths = collectionNames.filter(isStdSet).map(IcdPath).filter(_.subsystem == subsystem)
+    val icdPaths = collectionNames.filter(isStdSet).map(IcdPath.apply).filter(_.subsystem == subsystem)
     val paths    = icdPaths.map(_.path).toList
     val versions = for (path <- paths) yield {
       val coll            = db.collection[BSONCollection](path)
       val obj             = coll.find(queryAny, Option.empty[JsObject]).one[BSONDocument].await.get
-      val version         = obj.getAsOpt[BSONInteger](versionKey).get.value
+      val version         = obj.int(versionKey).get
       val id              = obj.getAsOpt[BSONObjectID](idKey).get
       val versionCollName = versionCollectionName(path)
       val exists          = collectionNames.contains(versionCollName)
@@ -818,8 +818,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
           .toList
       docs
         .map { doc =>
-          val subsystem = doc.getAsOpt[BSONString](subsystemKey).map(_.value).get
-          val target    = doc.getAsOpt[BSONString](targetKey).map(_.value).get
+          val subsystem = doc.string(subsystemKey).get
+          val target    = doc.string(targetKey).get
           IcdName(subsystem, target)
         }
         .distinct
@@ -853,14 +853,14 @@ case class IcdVersionManager(query: IcdDbQuery) {
       }
       docs
         .map { doc =>
-          import reactivemongo.api.bson._
-          val icdVersion       = doc.getAsOpt[String](versionStrKey).get
-          val subsystem        = doc.getAsOpt[String](subsystemKey).get
-          val subsystemVersion = doc.getAsOpt[String](subsystemVersionKey).get
-          val target           = doc.getAsOpt[String](targetKey).get
-          val targetVersion    = doc.getAsOpt[String](targetVersionKey).get
-          val user             = doc.getAsOpt[String](userKey).get
-          val comment          = doc.getAsOpt[String](commentKey).get
+          import reactivemongo.api.bson.*
+          val icdVersion       = doc.string(versionStrKey).get
+          val subsystem        = doc.string(subsystemKey).get
+          val subsystemVersion = doc.string(subsystemVersionKey).get
+          val target           = doc.string(targetKey).get
+          val targetVersion    = doc.string(targetVersionKey).get
+          val user             = doc.string(userKey).get
+          val comment          = doc.string(commentKey).get
           val date             = new DateTime(doc.getAsOpt[BSONDateTime](dateKey).get.value, DateTimeZone.UTC).toString()
           IcdVersionInfo(
             IcdVersion(icdVersion, subsystem, subsystemVersion, target, targetVersion),
@@ -920,7 +920,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
     } yield {
       SubscribeInfo(componentModel, query.getSubscribedTo(componentModel, Some(subscribeModel)))
     }
-    val subscribeInfo = subscribeInfo1 ++ subscribeInfo2
+    val subscribeInfo = (subscribeInfo1 ++ subscribeInfo2).distinct
 
     for {
       i <- subscribeInfo
@@ -969,7 +969,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       componentModel
     }
 
-    components1 ++ components2
+    (components1 ++ components2).distinct
   }
 
   /**
@@ -1013,7 +1013,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       componentModel
     }
 
-    components1 ++ components2
+    (components1 ++ components2).distinct
   }
 
   /**

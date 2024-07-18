@@ -1,6 +1,6 @@
-import com.typesafe.sbt.packager.Keys._
-import sbt.Keys._
-import sbt._
+import com.typesafe.sbt.packager.Keys.*
+import sbt.Keys.*
+import sbt.*
 
 //noinspection TypeAnnotation
 // Defines the global build settings so they don't need to be edited everywhere
@@ -12,7 +12,7 @@ object Settings {
     organizationHomepage := Some(url("http://www.tmt.org")),
     version := Dependencies.Version,
     scalacOptions ++= Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-unchecked", "-Xsource:3"),
-    scalaVersion := Dependencies.ScalaVersion
+    scalaVersion := Dependencies.ScalaVersion,
   )
 
   // Basic settings
@@ -35,6 +35,6 @@ object Settings {
   lazy val dockerSettings = Seq(
     maintainer := "TMT Software",
     dockerExposedPorts := Seq(9000),
-    dockerBaseImage := "java:11"
+    dockerBaseImage := "java:17"
   )
 }

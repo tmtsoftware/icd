@@ -4,8 +4,8 @@ import icd.web.shared.SubsystemWithVersion
 import org.scalajs.dom
 
 import scala.concurrent.Future
-import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
-import Subsystem._
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
+import Subsystem.*
 import org.scalajs.dom.Element
 
 /**
@@ -57,7 +57,7 @@ case class Subsystem(
 
   // The subsystem combobox
   private val subsystemItem = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     select(cls := "form-select", onchange := subsystemSelected _)(
       if (enablePlaceholder)
         option(value := placeholderMsg, selected := true)(placeholderMsg)
@@ -68,13 +68,13 @@ case class Subsystem(
 
   // The subsystem version combobox
   private val versionItem = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     select(cls := "form-select", onchange := subsystemVersionSelected _).render
   }
 
   // The component combobox
   private val componentItem = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     select(cls := "form-select")(
       option(value := componentPlaceholder, selected := true)(componentPlaceholder)
     ).render
@@ -106,13 +106,13 @@ case class Subsystem(
 
   // HTML markup displaying the subsystem and version comboboxes
   override def markup(): Element = {
-    import scalatags.JsDom.all._
-    import scalacss.ScalatagsCss._
+    import scalatags.JsDom.all.*
+
     div(cls := "row")(
-      div(Styles.selectDialogLabel)(label(s"$labelStr")),
-      div(Styles.selectDialogSubsystem)(subsystemItem),
-      div(Styles.selectDialogVersion)(versionItem),
-      div(Styles.selectDialogComponent)(componentItem)
+      div(cls := "selectDialogLabel col-1")(label(s"$labelStr")),
+      div(cls := "selectDialogSubsystem col-2")(subsystemItem),
+      div(cls := "selectDialogVersion col-1")(versionItem),
+      div(cls := "selectDialogComponent col-4")(componentItem)
     ).render
   }
 
@@ -217,7 +217,7 @@ case class Subsystem(
   def updateSubsystemOptions(items: List[String]): Future[Unit] = {
     val currentSubsystems = getSubsystems
     items.foreach { subsystem =>
-      import scalatags.JsDom.all._
+      import scalatags.JsDom.all.*
       if (!currentSubsystems.contains(subsystem))
         subsystemItem.add(option(value := subsystem)(subsystem).render)
     }
@@ -232,7 +232,7 @@ case class Subsystem(
       componentItem.remove(i)
     }
     items.foreach { str =>
-      import scalatags.JsDom.all._
+      import scalatags.JsDom.all.*
       componentItem.add(option(value := str)(str).render)
     }
   }
@@ -285,13 +285,14 @@ case class Subsystem(
           }
       case None =>
         versionItem.value = unpublishedVersion
+        updateSubsystemVersionOptions(Nil)
         Future.successful(())
     }
   }
 
   // Updates the version combobox with the given list of available versions for the selected subsystem
   private def updateSubsystemVersionOptions(versions: List[String]): Unit = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     while (versionItem.options.length != 0) {
       versionItem.remove(0)
     }
@@ -303,7 +304,7 @@ case class Subsystem(
 
   // Gets the list of available versions for the given subsystem
   private def getSubsystemVersionOptions(subsystem: String): Future[List[String]] = {
-    import play.api.libs.json._
+    import play.api.libs.json.*
     Fetch
       .get(ClientRoutes.versionNames(subsystem))
       .map { text =>

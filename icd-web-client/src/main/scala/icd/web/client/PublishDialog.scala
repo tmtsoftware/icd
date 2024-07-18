@@ -1,16 +1,16 @@
 package icd.web.client
 
 import icd.web.client.PublishDialog.PublishDialogListener
-import icd.web.shared._
+import icd.web.shared.*
 import org.scalajs.dom
-import play.api.libs.json._
+import play.api.libs.json.*
 
-import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
 import org.scalajs.dom.{Element, document}
 import org.scalajs.dom.html.{Button, Div, Input}
 import org.scalajs.dom.HTMLInputElement
 import scalatags.JsDom
-import scalatags.JsDom.all._
+import scalatags.JsDom.all.*
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
@@ -30,7 +30,7 @@ object PublishDialog {
  */
 case class PublishDialog(mainContent: MainContent, publishChangeListener: PublishDialogListener) extends Displayable {
 
-  import icd.web.shared.JsonSupport._
+  import icd.web.shared.JsonSupport.*
 
   // Main version div
   private val contentDiv = div(id := "publishDialog").render
@@ -641,14 +641,14 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
 
   // Returns the markup for getting the GitHub credentials
   private def markupGitHubCredentials(): Div = {
-    import scalacss.ScalatagsCss._
+
     usernameChanged()
     passwordChanged()
     div(
       div(
         id := "gitHubCredentials",
-        div(Styles.commentBox, label("GitHub Username")("*", usernameBox, usernameMissing)),
-        div(Styles.commentBox, label("GitHub Password")("*", passwordBox, passwordMissing, passwordIncorrect)),
+        div(cls := "commentBox", label("GitHub Username")("*", usernameBox, usernameMissing)),
+        div(cls := "commentBox", label("GitHub Password")("*", passwordBox, passwordMissing, passwordIncorrect)),
         button(
           `type` := "submit",
           cls := "btn btn-primary",
@@ -664,7 +664,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
 
   // Returns the markup for displaying a table of subsystems
   private def markupSubsystemTable(publishInfoList: List[PublishInfo]): Div = {
-    import scalacss.ScalatagsCss._
+
     val publishLabel  = label(id := "publishLabel", publishLabelMsg)
     val publishStatus = label(id := "publishStatus", "")
     div(
@@ -674,7 +674,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
         div(cls := "card-body")(
           helpMsg,
           table(
-            Styles.componentTable,
+            cls := "componentTable",
             attr("data-bs-toggle") := "table",
             thead(
               tr(
@@ -709,7 +709,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
               }
             )
           ),
-          div(Styles.commentBox, label("Comments")("*", commentBox, commentMissing)),
+          div(cls := "commentBox", label("Comments")("*", commentBox, commentMissing)),
           div(cls := "form-check", majorVersionCheckBox, label(cls := "form-check-label", "Increment major version")),
           div(
             br,

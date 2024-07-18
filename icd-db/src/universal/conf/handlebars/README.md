@@ -6,5 +6,4 @@ and modified to change the appearance of the HTML generated from OpenApi JSON fi
 for HTTP Service APIs.
 
 * htmlDocs - for static HTML output (used in PDFs)
-* htmlDocs2 - for dynamic HTML output (used in web app)
 

@@ -1,6 +1,6 @@
 package csw.services.icd.db
 
-import play.api.libs.json._
+import play.api.libs.json.*
 
 /**
  * These definitions determine the JSON format of the files recording the ICD version information.

@@ -1,14 +1,14 @@
 package csw.services.icd.html
 
 import csw.services.icd.db.getFileContents
+import csw.services.icd.deleteDirectoryRecursively
 import icd.web.shared.IcdModels.ServicePath
 import play.api.libs.json.{Json, Reads}
 
 import java.io.File
 import java.nio.file.Files
-import scala.reflect.io.Directory
 import scala.util.{Failure, Success, Try}
-import sys.process._
+import sys.process.*
 
 object OpenApiToHtml {
   // Return this HTML if there is an error
@@ -47,17 +47,17 @@ object OpenApiToHtml {
     if (paths.isEmpty)
       jsonStr
     else {
-      import play.api.libs.json._
-      val allPaths  = paths.map(_.path)
-      val methodMap = paths.map(p => p.path -> p.method).toMap
+      import play.api.libs.json.*
+      val pathSet = paths.map(_.path).toSet
+      val methodMap = paths.map(p => p.path -> paths.filter(_.path == p.path).map(_.method)).toMap
 
-      // Filter out all but the HTTP method required by the client
-      def filterMethod(js: JsValue, method: String): JsValue = {
+      // Filter out all but the HTTP methods required by the client
+      def filterMethod(js: JsValue, methods: List[String]): JsValue = {
         js match {
           case JsObject(vs) =>
             JsObject(vs.flatMap {
               case (key, value) =>
-                if (key == method) Some(key -> value)
+                if (methods.contains(key)) Some(key -> value)
                 else None
             })
           case x => x
@@ -70,7 +70,7 @@ object OpenApiToHtml {
           case JsObject(vs) =>
             JsObject(vs.flatMap {
               case (key, value) =>
-                if (allPaths.contains(key)) Some(key -> filterMethod(value, methodMap(key)))
+                if (pathSet.contains(key)) Some(key -> filterMethod(value, methodMap(key)))
                 else None
             })
           case x => x
@@ -120,7 +120,7 @@ object OpenApiToHtml {
           else {
             errorDiv(s"$indexFile was not generated")
           }
-          new Directory(tempDir).deleteRecursively()
+          deleteDirectoryRecursively(tempDir)
           html
       }
     }

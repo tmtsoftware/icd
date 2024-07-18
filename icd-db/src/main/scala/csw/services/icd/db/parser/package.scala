@@ -1,6 +1,6 @@
 package csw.services.icd.db
 
-import reactivemongo.api.bson._
+import reactivemongo.api.bson.*
 
 
 // Safely get a number from MongoDB, or return 0.0 if not found.

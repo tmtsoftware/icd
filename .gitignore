@@ -32,3 +32,5 @@ project/plugins/project/
 /ICD-ESEN-TCS-1.0.pdf
 /TCS-1.10.pdf
 /.bsp/sbt.json
+/icd-db/XXX.json
+/icd-db/XXX.pdf

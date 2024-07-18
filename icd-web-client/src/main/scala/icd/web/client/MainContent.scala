@@ -2,7 +2,7 @@ package icd.web.client
 
 import org.scalajs.dom.Element
 
-import scalatags.JsDom.all._
+import scalatags.JsDom.all.*
 
 /**
  * Manages the main content section, which displays information on the
@@ -12,13 +12,15 @@ case class MainContent() extends Displayable {
   // Title to display
   private val contentTitle = h3(cls := "page-header")().render
 
+  // Place for some element next to the title
+  private val titleExtElem = span().render
+
   // Optional description
   private val contentDescription = p.render
 
   // Holds the content to display
   private val contentDiv = {
-    import scalacss.ScalatagsCss._
-    div(Styles.contentDiv, id := "content").render
+    div(id := "content").render
   }
 
   /**
@@ -45,9 +47,14 @@ case class MainContent() extends Displayable {
   }
 
   /**
-   * Sets the title and optional subtitle of the main section of the page
+   * Sets the title and optional subtitle of the main section of the page.
+   * optional maybeElem is displayed next to the title.
    */
-  def setTitle(title: String, maybeSubtitle: Option[String] = None, maybeDescription: Option[String] = None): Unit = {
+  def setTitle(
+      title: String,
+      maybeSubtitle: Option[String] = None,
+      maybeDescription: Option[String] = None
+  ): Unit = {
     maybeSubtitle match {
       case Some(subtitle) =>
         contentTitle.innerHTML = s"$title<br><small class='text-secondary'>$subtitle</small>"
@@ -123,9 +130,10 @@ case class MainContent() extends Displayable {
 //  }
 
   override def markup(): Element = {
-    import scalacss.ScalatagsCss._
-    div(Styles.mainContent, id := "mainContent", cls := "col overflow-auto h-100")(
-      contentTitle, contentDescription, contentDiv
+    div(id := "mainContent", cls := "col overflow-auto h-100")(
+      span(contentTitle, titleExtElem),
+      contentDescription,
+      contentDiv
     ).render
   }
 }

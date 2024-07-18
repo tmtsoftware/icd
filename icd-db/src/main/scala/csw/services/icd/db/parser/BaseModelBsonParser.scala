@@ -1,7 +1,7 @@
 package csw.services.icd.db.parser
 
 import icd.web.shared.IcdModels.BaseModel
-import reactivemongo.api.bson._
+import reactivemongo.api.bson.*
 
 /**
  * Fake model class used to hold only the subsystem and component name
@@ -13,7 +13,7 @@ object BaseModelBsonParser {
 
   def apply(doc: BSONDocument): BaseModel =
     BaseModel(
-      subsystem = doc.getAsOpt[String](subsystemKey).get,
-      component = doc.getAsOpt[String](componentKey).get
+      subsystem = doc.string(subsystemKey).get,
+      component = doc.string(componentKey).get
     )
 }

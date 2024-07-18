@@ -1,15 +1,15 @@
 package icd.web.client
 
-import icd.web.shared._
+import icd.web.shared.*
 import org.scalajs.dom
 import org.scalajs.dom.HTMLInputElement
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.concurrent.Future
-import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
 import org.scalajs.dom.{Element, document}
 import org.scalajs.dom.html.Button
-import scalatags.JsDom.all._
+import scalatags.JsDom.all.*
 
 object HistoryDialog {
   // Split a version string into (maj.min)
@@ -38,15 +38,15 @@ object HistoryDialog {
  */
 case class HistoryDialog(mainContent: MainContent) extends Displayable {
 
-  import HistoryDialog._
-  import icd.web.shared.JsonSupport._
+  import HistoryDialog.*
+  import icd.web.shared.JsonSupport.*
 
   // Main version div
   private val contentDiv = div(id := "versionHistory").render
 
   // Displays the Compare button
   private def compareButton(subsystem: String): Button = {
-    import scalatags.JsDom.all._
+    import scalatags.JsDom.all.*
     button(
       disabled := true,
       `type` := "submit",
@@ -78,7 +78,7 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
   private def markupDiff(subsystem: String, list: List[DiffInfo]) = {
 
     def jsonDiffMarkup(infoList: List[JsonDiff]) = {
-      import scalacss.ScalatagsCss._
+
 
       val headings = List("Operation", "Path", "Old Value", "New Value")
 
@@ -88,7 +88,7 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
           div(json.substring(1, json.length - 1).replace("\\n", "\n").trim.split("\n").map(s => p(s)))
         }
         else {
-          pre(code(Styles.unstyledPre, Json.prettyPrint(Json.parse(json))))
+          pre(code(cls := "unstyledPre", Json.prettyPrint(Json.parse(json))))
         }
       }
 
@@ -102,8 +102,8 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
             tr(
               td(p(i.op)),
               td(p(i.path)),
-              td(div(Styles.scrollableDiv, displayJson(i.old))),
-              td(div(Styles.scrollableDiv, displayJson(i.value)))
+              td(div(cls := "scrollableDiv", displayJson(i.old))),
+              td(div(cls := "scrollableDiv", displayJson(i.value)))
             )
           }
         )
@@ -172,13 +172,13 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
 
   // Returns the markup for displaying a table of version information for a subsystem
   private def markupSubsystemVersionInfo(subsystem: String, list: List[VersionInfo]) = {
-    import scalacss.ScalatagsCss._
+
     if (list.isEmpty) div(p(em(s"No published versions found for $subsystem."))).render
     else {
       val compButton = compareButton(subsystem)
       div(
         table(
-          Styles.componentTable,
+          cls := "componentTable",
           attr("data-bs-toggle") := "table",
           thead(
             tr(
@@ -193,7 +193,7 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
               tr(
                 td(makeVersionCheckBox(v.version, compButton)),
                 td(v.user),
-                td(Styles.noWrapTableColumn, v.date),
+                td(cls := "noWrapTableColumn", v.date),
                 td(v.comment)
               )
             }
@@ -208,12 +208,12 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
 
   // Returns the markup for displaying a table of version information for an ICD
   private def markupIcdVersionInfo(icdName: IcdName, list: List[IcdVersionInfo]) = {
-    import scalacss.ScalatagsCss._
+
     if (list.isEmpty) div().render
     else
       div(
         table(
-          Styles.componentTable,
+          cls := "componentTable",
           attr("data-bs-toggle") := "table",
           thead(
             tr(
@@ -233,7 +233,7 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
                 td(icdVersion.subsystemVersion),
                 td(icdVersion.targetVersion),
                 td(v.user),
-                td(Styles.noWrapTableColumn, v.date),
+                td(cls := "noWrapTableColumn", v.date),
                 td(v.comment)
               )
             }
@@ -264,7 +264,7 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
 
   // Gets the ICD version info from the server
   private def getIcdVersionInfo(icdName: IcdName): Future[List[IcdVersionInfo]] = {
-    import play.api.libs.json._
+    import play.api.libs.json.*
     Fetch
       .get(ClientRoutes.icdVersions(icdName))
       .map { text =>

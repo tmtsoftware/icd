@@ -1,16 +1,19 @@
 package icd.web.client
 
-import org.scalajs.dom._
+import org.scalajs.dom.*
 import org.scalajs.dom.html.Div
-import scalacss.ScalatagsCss._
-import scalatags.JsDom.all._
+
+import scalatags.JsDom.all.*
 
 /**
  * Manages the main layout (below the navbar)
  */
 case class Layout() extends Displayable {
   private val row: Div = div(cls := "row h-100").render
-  private val container: Div = div(Styles.layout, cls :=   "container-fluid vh-100")(row).render
+  private val container: Div = div(
+    id := "layout",
+    cls := "container-fluid vh-100"
+  )(row).render
 
   override def markup(): Element = container
 

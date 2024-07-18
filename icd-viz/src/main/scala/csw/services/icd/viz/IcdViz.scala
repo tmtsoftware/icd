@@ -10,7 +10,7 @@ object IcdViz extends App {
 
   // Parser for the command line options
   private val parser = new scopt.OptionParser[IcdVizOptions]("icd-viz") {
-    import IcdVizOptions._
+    import IcdVizOptions.*
     import csw.services.icd.db.IcdDbDefaults.{defaultDbName, defaultHost, defaultPort}
     head("icd-viz", BuildInfo.version)
 

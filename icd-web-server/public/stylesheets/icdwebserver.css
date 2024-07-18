@@ -30,7 +30,7 @@
     margin: 3px;
 }
 
-/* For expanding table cells containing long descriptions (text-overflow missing in scalacss, so doing this here) */
+/* For expanding table cells containing long descriptions */
 .shortDescription {
     max-height: 30px;
     max-width: 300px;
@@ -86,13 +86,159 @@
     -webkit-animation: spin 2s linear infinite; /* Safari */
     animation: spin 2s linear infinite;
 }
+
 /* Safari */
 @-webkit-keyframes spin {
-    0% { -webkit-transform: rotate(0deg); }
-    100% { -webkit-transform: rotate(360deg); }
+    0% {
+        -webkit-transform: rotate(0deg);
+    }
+    100% {
+        -webkit-transform: rotate(360deg);
+    }
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* The settings below were previously done with scalacss, which seems to be no longer maintained. */
+
+#mainContent {
+    padding: 7px 0 0 15px;
+}
+
+#sidebar {
+    padding: 7px 0 0 5px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+#layout {
+    padding: 60px 0 0 0;
+}
+
+#content {
+    float: left;
+    padding: 0 0 100px 0
+}
+
+.componentTable {
+    table-layout: fixed;
+    max-width: 90%;
+}
+
+#fitsTags {
+    margin-bottom: 16px;
+    margin-left: 16px;
+}
+
+#fitsTagsLabel {
+    margin-right: 16px;
+}
+
+#fitsTable {
+    padding: 10px 0 0 0;
+    table-layout: fixed;
+    max-width: 90%;
+}
+
+.attributeTable {
+    margin: 0;
+}
+
+.noWrapTableColumn {
+    white-space: nowrap;
+}
+
+#fileUploadMessages {
+    padding: 0 10px;
+    margin: 1em 0;
+    border: 1px solid gray;
+}
+
+.commentBox {
+    padding: 10px 0;
+    margin: 1em 0;
+}
+
+.component {
+    width: 100%;
+    page-break-before: always;
+}
+
+.componentSection {
+    page-break-inside: avoid;
+}
+
+.attributeBtn {
+    margin: 0;
+    outline: none;
+    border-radius: 0;
+    border: 0
+}
+
+.navbarBtn {
+   font-size: 17px;
+}
+
+.attributeCell {
+    white-space: nowrap;
+}
+
+.selectDialogLabel {
+    padding: 6px 6px 0 16px;
+}
+
+.selectDialogSubsystem {
+    padding: 0 0 0 12px;
+}
+
+.selectDialogVersion {
+    padding: 0 0 0 5px;
+}
+
+.selectDialogComponent {
+    padding: 0 0 0 5px;
+}
+
+.selectDialogIcdRow {
+    padding: 0 0 60px 0;
+}
+
+.selectDialogSubsystemRow {
+    padding: 0 0 5px 0;
+}
+
+#subsystemSwapper {
+    padding: 0 0 20px 200px;
+    font-size: 30px;
+}
+
+.selectDialogButton {
+    padding: 0 0 0 10px;
+}
+
+.statusDialogSubsystemRow {
+    padding: 0 0 20px 0;
+}
+
+.scrollableDiv {
+    width: 100%;
+    height: 100%;
+    max-height: 300px;
+    max-width: 600px;
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+}
+
+.unstyledPre {
+    border: 0;
+    color: black;
+    background-color: transparent;
 }

@@ -3,19 +3,20 @@ package csw.services.icd.db.parser
 import com.typesafe.config.{Config, ConfigObject}
 import icd.web.shared.IcdModels.{ServiceModel, ServiceModelProvider}
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 /**
  * Alternative parser used during validation and ingesting into the database
  */
 object ServiceModelParser {
 
-  object ServiceModelProviderParser {
+  private object ServiceModelProviderParser {
     def apply(configObject: ConfigObject): ServiceModelProvider = {
       ServiceModelProvider(
         name = configObject.get("name").unwrapped().toString,
         description = configObject.get("description").unwrapped().toString,
-        openApi = configObject.get("openApi").unwrapped().toString
+        openApi = configObject.get("openApi").unwrapped().toString,
+        Nil
       )
     }
   }

@@ -1,24 +1,21 @@
 package icd.web.client
 
-import icd.web.shared.{BuildInfo, FitsDictionary, IcdVersion, IcdVizOptions, PdfOptions, SubsystemWithVersion}
+import icd.web.shared.{BuildInfo, FitsDictionary, IcdVersion, PdfOptions, SharedUtils, SubsystemWithVersion}
 import org.scalajs.dom
-import org.scalajs.dom.{Element, HTMLAnchorElement, HTMLStyleElement, PopStateEvent, document}
+import org.scalajs.dom.{HTMLStyleElement, PopStateEvent, document}
 
 import scala.concurrent.Future
 import scala.scalajs.js.annotation.JSExportTopLevel
 import scalatags.JsDom.TypedTag
-import scalacss.ScalatagsCss._
-import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits._
-import BrowserHistory._
-import Components._
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
+import BrowserHistory.*
+import Components.*
 import icd.web.client.PasswordDialog.PasswordDialogListener
 import icd.web.client.PublishDialog.PublishDialogListener
 import icd.web.client.SelectDialog.SelectDialogListener
 import icd.web.client.StatusDialog.StatusDialogListener
-import play.api.libs.json._
-
-import scala.scalajs.js.URIUtils
-import scala.util.Success
+import icd.web.shared.IcdModels.ComponentModel
+import play.api.libs.json.*
 
 /**
  * Main class for the ICD web app.
@@ -30,62 +27,26 @@ import scala.util.Success
 @JSExportTopLevel("IcdWebClient")
 case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
-  private val cssSettings = scalacss.devOrProdDefaults
-  import cssSettings._
-
   // Page components
   private val expandToggler = ExpandToggler()
-  private val reloadButton  = ReloadButton()
   private val mainContent   = MainContent()
   private val components    = Components(mainContent, ComponentLinkSelectionHandler)
   private val sidebar       = Sidebar(LeftSidebarListener)
 
-  private val historyItem   = NavbarItem("History", "Display the version history for an API or ICD", showVersionHistory())
-  private val historyDialog = HistoryDialog(mainContent)
-
   private val fitsDictionaryItem =
     NavbarItem("FITS Dictionary", "Display information about all FITS keywords", showFitsDictionary())
 
-  private val pdfItem = NavbarPdfItem("PDF", "Generate and display a PDF for the API or ICD", makePdf, showDocumentNumber = true)
-  pdfItem.setEnabled(false)
+  val pdfButton: PdfButtonItem =
+    PdfButtonItem(
+      "PDF",
+      "mainpdf",
+      "Generate and display a PDF containing the FITS Dictionary based on the selected tag",
+      makePdf,
+      showDocumentNumber = true,
+      showDetailButtons = true
+    )
 
-  private val generateItem = NavbarDropDownItem(
-    "Generate",
-    "Generate code for the selected API/component",
-    List("Scala", "Java", "TypeScript", "Python"),
-    generateCode
-  )
-  generateItem.setEnabled(false)
-
-  private val graphItem =
-    NavbarGraphItem("Graph", "Generate and display a graph of relationships for the selected components", makeGraph)
-  graphItem.setEnabled(false)
-
-  private val archiveItem = NavbarPdfItem(
-    "Archive",
-    "Generate and display an 'Archived Items' report for the selected subsystem/component (or all subsystems)",
-    makeArchivedItemsReport,
-    showDocumentNumber = false,
-    showDetailButtons = false
-  )
-
-  private val alarmsItem = NavbarPdfItem(
-    "Alarms",
-    "Generate and display an 'Alarms' report for the selected subsystem/component (or all subsystems)",
-    makeAlarmsReport,
-    showDocumentNumber = false,
-    showDetailButtons = false
-  )
-
-  private val missingItem = NavbarPdfItem(
-    "Missing",
-    "Generate and display a 'Missing Items' report for the selected subsystems/components (or all subsystems)",
-    makeMissingItemsReport,
-    showDocumentNumber = false,
-    showDetailButtons = false
-  )
-
-  private val navbar = Navbar()
+  private val navbar = MainNavbar()
   private val layout = Layout()
 
   // Get the list of subsystems from the server and update the two comboboxes
@@ -94,21 +55,19 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val passwordDialog = PasswordDialog(mainContent, PasswordListener)
 
   private val selectItem   = NavbarItem("Select", "Select the API or ICD to display", selectSubsystems())
-  private val selectDialog = SelectDialog(mainContent, Selector, List(pdfItem, generateItem, graphItem))
+  private val selectDialog = SelectDialog(mainContent, Selector)
+  private val reloadButton = ReloadButton(selectDialog)
 
   private val logoutItem = NavbarItem("Logout", "Log out of the icd web app", logout)
 
   private val statusItem   = NavbarItem("Status", "Display the published status of a selected subsystem", showStatus())
-  private val statusDialog = StatusDialog(mainContent, StatusListener, List(pdfItem, generateItem, graphItem))
+  private val statusDialog = StatusDialog(mainContent, StatusListener)
 
   private val fileUploadItem   = NavbarItem("Upload", "Select icd model files to ingest into the icd database", showUploadDialog())
   private val fileUploadDialog = FileUploadDialog(subsystemNames, csrfToken, inputDirSupported)
 
   private val publishItem   = NavbarItem("Publish", "Shows dialog to publish APIs and ICDs", showPublishDialog())
   private val publishDialog = PublishDialog(mainContent, PublishListener)
-
-  // Used to keep track of the current dialog, so that we know which subsystem to use for History, PDF buttons
-  private var currentView: ViewType = StatusView
 
   // Call popState() when the user presses the browser Back button
   dom.window.onpopstate = popState _
@@ -162,24 +121,17 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   // Layout the components on the page
   private def doLayout(): Unit = {
-    import scalatags.JsDom.all._
-    // Add CSS styles
-    document.head.appendChild(Styles.render[TypedTag[HTMLStyleElement]].render)
+    import scalatags.JsDom.all.*
 
     navbar.addItem(statusItem)
     navbar.addItem(selectItem)
     navbar.addItem(fileUploadItem)
-    navbar.addItem(historyItem)
-    navbar.addItem(pdfItem)
-    navbar.addItem(generateItem)
-    navbar.addItem(graphItem)
-    navbar.addItem(archiveItem)
-    navbar.addItem(alarmsItem)
-    navbar.addItem(missingItem)
     navbar.addItem(fitsDictionaryItem)
     navbar.addItem(publishItem)
     navbar.addItem(reloadButton)
     navbar.addItem(expandToggler)
+    navbar.addItem(pdfButton)
+
     navbar.addRightSideItem(logoutItem)
 
     document.body.appendChild(navbar.markup())
@@ -192,17 +144,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private def updateSubsystemOptions(items: List[String]): Future[Unit] = {
     statusDialog.updateSubsystemOptions(items)
     selectDialog.updateSubsystemOptions(items)
-  }
-
-  // Hide or show the sidebar
-  private def setSidebarVisible(show: Boolean): Unit = {
-    val s = document.querySelector("#sidebar")
-    if (show) {
-      s.classList.remove("d-none")
-    }
-    else {
-      s.classList.add("d-none")
-    }
   }
 
   // Hide or show the navbar
@@ -224,8 +165,10 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       saveHistory: Boolean = true
   )(): Unit = {
     setSidebarVisible(false)
+    reloadButton.setVisible(show = false)
+    expandToggler.setVisible(show = false)
+    pdfButton.setVisible(show = false)
     mainContent.setContent(selectDialog, "Select Subsystems and Components")
-    currentView = SelectView
     if (saveHistory) {
       pushState(
         viewType = SelectView,
@@ -247,6 +190,9 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private def showPasswordDialog()(): Unit = {
     setSidebarVisible(false)
     setNavbarVisible(false)
+    reloadButton.setVisible(show = false)
+    expandToggler.setVisible(show = false)
+    pdfButton.setVisible(show = false)
     val title = "TIO Software Interface Database System"
     mainContent.setContent(passwordDialog, s"$title ${BuildInfo.version}")
   }
@@ -254,7 +200,9 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Called when the Home/TMT ICD Database navbar item is selected (or through browser history)
   private def showStatus(maybeSubsystem: Option[String] = None, saveHistory: Boolean = true)(): Unit = {
     setSidebarVisible(false)
-    currentView = StatusView
+    reloadButton.setVisible(show = false)
+    expandToggler.setVisible(show = false)
+    pdfButton.setVisible(show = false)
     val title = "TIO Software Interface Database System"
     if (saveHistory) {
       mainContent.setContent(statusDialog, s"$title ${BuildInfo.version}")
@@ -281,6 +229,9 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Called when the Upload item is selected
   private def showUploadDialog(saveHistory: Boolean = true)(): Unit = {
     setSidebarVisible(false)
+    reloadButton.setVisible(show = false)
+    expandToggler.setVisible(show = false)
+    pdfButton.setVisible(show = false)
     mainContent.setContent(fileUploadDialog, "Upload Subsystem Model Files")
     if (saveHistory) pushState(viewType = UploadView)
   }
@@ -288,6 +239,9 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Called when the Publish item is selected
   private def showPublishDialog(saveHistory: Boolean = true)(): Unit = {
     setSidebarVisible(false)
+    reloadButton.setVisible(show = false)
+    expandToggler.setVisible(show = false)
+    pdfButton.setVisible(show = false)
     val f = publishDialog.update()
     showBusyCursorWhile(f)
     mainContent.setContent(publishDialog, "Publish APIs and ICDs")
@@ -297,8 +251,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   // Listener for sidebar component checkboxes
   private object LeftSidebarListener extends SidebarListener {
     // Called when a component link is selected in the sidebar
-    override def componentSelected(componentName: String): Unit = {
-      goToComponent(componentName, saveHistory = false)
+    override def componentSelected(componentModel: ComponentModel): Unit = {
+      goToComponent(componentModel.component, saveHistory = false)
     }
   }
 
@@ -347,32 +301,6 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   }
 
   /**
-   * Push (or replace) the current app state for the browser history.
-   * (Replace is needed if the browser is following a link, in which case the browser automatically pushes something
-   * on the stack that we don't want.)
-   *
-   * If a single component is selected, it should be passed as compName.
-   */
-  private def pushState(
-      viewType: ViewType,
-      compName: Option[String] = None,
-      maybeSourceSubsystem: Option[SubsystemWithVersion] = None,
-      maybeTargetSubsystem: Option[SubsystemWithVersion] = None,
-      maybeIcd: Option[IcdVersion] = None,
-      maybeUri: Option[String] = None
-  ): Unit = {
-    val hist = BrowserHistory(
-      maybeSourceSubsystem,
-      maybeTargetSubsystem,
-      maybeIcd,
-      viewType,
-      compName,
-      maybeUri
-    )
-    hist.pushState()
-  }
-
-  /**
    * Called when the user presses the Back button in the browser
    */
   private def popState(e: PopStateEvent): Unit = {
@@ -382,7 +310,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       hist.viewType match {
         case UploadView  => showUploadDialog(saveHistory = false)()
         case PublishView => showPublishDialog(saveHistory = false)()
-        case VersionView => showVersionHistory(saveHistory = false)()
+        case VersionView => selectDialog.showVersionHistory(saveHistory = false)()
         case FitsView    => showFitsDictionary(saveHistory = false)()
         case StatusView =>
           showStatus(
@@ -506,17 +434,27 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     sidebar.clearComponents()
     mainContent.clearContent()
     val f = if (maybeSv.isDefined) {
+      reloadButton.setVisible(show = true)
+      expandToggler.setVisible(show = true)
+      pdfButton.setVisible(show = true)
       showBusyCursorWhile {
         components
           .addComponents(maybeSv.get, maybeTargetSv, maybeIcd, searchAllSubsystems, clientApi)
           .map { infoList =>
-            infoList.foreach(info => sidebar.addComponent(info.componentModel.component))
+            infoList
+              .filter(SharedUtils.showComponentInfo)
+              .foreach(info => sidebar.addComponent(info.componentModel))
             setSidebarVisible(true)
           }
       }
     }
-    else Future.successful(())
-    currentView = SelectView
+    else {
+      // Should not get here?
+      reloadButton.setVisible(show = false)
+      expandToggler.setVisible(show = false)
+      pdfButton.setVisible(show = false)
+      Future.successful(())
+    }
     if (saveHistory) {
       pushState(
         viewType = SelectView,
@@ -548,34 +486,41 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     links.toArray.foreach(x => x.addEventListener("click", linkListener(_)))
   }
 
-  // Called when the "History" item is selected
-  private def showVersionHistory(saveHistory: Boolean = true)(): Unit = {
-    def showApiVersionHistory(subsystem: String): Unit = {
-      historyDialog.setSubsystem(subsystem)
-      setSidebarVisible(false)
-      mainContent.setContent(historyDialog, s"Subsystem API Version History: $subsystem")
-      if (saveHistory) pushState(viewType = VersionView)
-    }
-    if (currentView == StatusView) {
-      statusDialog.getSelectedSubsystem.foreach(showApiVersionHistory)
-    }
-    else {
-      selectDialog.icdChooser.getSelectedIcd match {
-        case Some(icdName) =>
-          historyDialog.setIcd(icdName)
-          setSidebarVisible(false)
-          mainContent.setContent(historyDialog, s"ICD Version History: ${icdName.subsystem} to ${icdName.target}")
-          if (saveHistory) pushState(viewType = VersionView)
-        case None =>
-          selectDialog.subsystem.getSelectedSubsystem.foreach(showApiVersionHistory)
+  // Gets a PDF of the currently selected ICD or subsystem API
+  private def makePdf(pdfOptions: PdfOptions): Unit = {
+    import scalatags.JsDom.all.*
+
+    val maybeSv = selectDialog.subsystem.getSubsystemWithVersion()
+    maybeSv.foreach { sv =>
+      val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion()
+      val maybeIcdVersion = selectDialog.icdChooser.getSelectedIcdVersion.map(_.icdVersion)
+      val searchAll       = selectDialog.searchAllSubsystems()
+      val isClientApi     = selectDialog.clientApi()
+      val uri             = ClientRoutes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll, isClientApi, pdfOptions)
+
+      if (!pdfOptions.details && pdfOptions.expandedIds.nonEmpty) {
+        // We need to do a POST in case expandedIds are passed, which can be very long, so create a temp form
+        val formId = "tmpPdfForm"
+        val tmpForm = form(id := formId, method := "POST", action := uri, target := "_blank")(
+          input(`type` := "hidden", name := "expandedIds", value := pdfOptions.expandedIds.mkString(","))
+        ).render
+        document.body.appendChild(tmpForm)
+        tmpForm.submit()
+        document.body.removeChild(tmpForm)
+      }
+      else {
+        dom.window.open(uri) // opens in new window or tab
       }
     }
   }
 
   // Called when the "FITS Dictionary" item is selected
   private def showFitsDictionary(saveHistory: Boolean = true)(): Unit = {
-    import icd.web.shared.JsonSupport._
+    import icd.web.shared.JsonSupport.*
     setSidebarVisible(false)
+    reloadButton.setVisible(show = false)
+    expandToggler.setVisible(show = false)
+    pdfButton.setVisible(show = false)
     val f = for {
       fitsDict <-
         Fetch
@@ -586,171 +531,8 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     } yield {
       val fitsKeywordDialog = FitsKeywordDialog(fitsDict, ComponentLinkSelectionHandler)
       mainContent.setContent(fitsKeywordDialog, "FITS Dictionary")
-      currentView = FitsView
       if (saveHistory) pushState(viewType = FitsView)
     }
     showBusyCursorWhile(f.map(_ => ()))
   }
-
-  // Gets a PDF of the currently selected ICD or subsystem API
-  private def makePdf(pdfOptions: PdfOptions): Unit = {
-    import scalatags.JsDom.all._
-
-    if (currentView == FitsView) {
-      val tag = FitsKeywordDialog.getFitsTag
-      val uri = ClientRoutes.fitsDictionaryAsPdf(tag, pdfOptions)
-      dom.window.open(uri) // opens in new window or tab
-    }
-    else {
-      val maybeSv =
-        if (currentView == StatusView)
-          statusDialog.getSubsystemWithVersion
-        else selectDialog.subsystem.getSubsystemWithVersion()
-
-      maybeSv.foreach { sv =>
-        val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion()
-        val maybeIcdVersion = selectDialog.icdChooser.getSelectedIcdVersion.map(_.icdVersion)
-        val searchAll       = selectDialog.searchAllSubsystems()
-        val clientApi       = selectDialog.clientApi()
-        val uri             = ClientRoutes.icdAsPdf(sv, maybeTargetSv, maybeIcdVersion, searchAll, clientApi, pdfOptions)
-
-        if (!pdfOptions.details && pdfOptions.expandedIds.nonEmpty) {
-          // We need to do a POST in case expandedIds are passed, which can be very long, so create a temp form
-          val formId = "tmpPdfForm"
-          val tmpForm = form(id := formId, method := "POST", action := uri, target := "_blank")(
-            input(`type` := "hidden", name := "expandedIds", value := pdfOptions.expandedIds.mkString(","))
-          ).render
-          document.body.appendChild(tmpForm)
-          tmpForm.submit()
-          document.body.removeChild(tmpForm)
-        }
-        else {
-          dom.window.open(uri) // opens in new window or tab
-        }
-      }
-    }
-  }
-
-  private def generateCode(language: String): Unit = {
-    import scalatags.JsDom.all._
-    val maybeSv =
-      if (currentView == StatusView)
-        statusDialog.getSubsystemWithVersion
-      else selectDialog.subsystem.getSubsystemWithVersion()
-
-    maybeSv.foreach { sv =>
-      val className   = s"${sv.subsystem.toLowerCase().capitalize}Api"
-      val packageName = s"${sv.subsystem.toLowerCase()}.api"
-      val suffix = language
-        .toLowerCase()
-        .replace("typescript", "ts")
-        .replace("python", "py")
-      val sourceFile = s"$className.$suffix"
-      val uri        = ClientRoutes.generate(sv, language, className, packageName)
-      val f = Fetch.get(uri).map { text =>
-        val link = document.createElement("a").asInstanceOf[HTMLAnchorElement]
-        link.setAttribute("download", sourceFile)
-        link.href = "data:," + URIUtils.encodeURIComponent(text)
-        link.click();
-      }
-      showBusyCursorWhile(f)
-    }
-  }
-
-  // Generates a graph of relationships for the currently selected components
-  private def makeGraph(options: IcdVizOptions): Unit = {
-    val maybeSv =
-      if (currentView == StatusView)
-        statusDialog.getSubsystemWithVersion
-      else selectDialog.subsystem.getSubsystemWithVersion()
-
-    maybeSv.foreach { sv =>
-      val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion()
-      val maybeIcdVersion = selectDialog.icdChooser.getSelectedIcdVersion.map(_.icdVersion)
-      val uri             = ClientRoutes.makeGraph(sv, maybeTargetSv, maybeIcdVersion, options)
-      dom.window.open(uri) // opens in new window or tab
-    }
-  }
-
-  // Gets a PDF with an Archived Items report for the currently selected subsystem API
-  private def makeArchivedItemsReport(options: PdfOptions): Unit = {
-    val maybeSv =
-      if (currentView == StatusView)
-        statusDialog.getSubsystemWithVersion
-      else selectDialog.subsystem.getSubsystemWithVersion()
-
-    val uri =
-      if (maybeSv.isDefined)
-        ClientRoutes.archivedItemsReport(maybeSv.get, options)
-      else
-        ClientRoutes.archivedItemsReportFull(options)
-    dom.window.open(uri) // opens in new window or tab
-  }
-
-  // Gets a PDF with an Alarms report for the currently selected subsystem API
-  private def makeAlarmsReport(options: PdfOptions): Unit = {
-    val maybeSv =
-      if (currentView == StatusView)
-        statusDialog.getSubsystemWithVersion
-      else selectDialog.subsystem.getSubsystemWithVersion()
-
-    val uri =
-      if (maybeSv.isDefined)
-        ClientRoutes.alarmsReport(maybeSv.get, options)
-      else
-        ClientRoutes.alarmsReportFull(options)
-    dom.window.open(uri) // opens in new window or tab
-  }
-
-  // Gets a PDF with a Missing Items report for the currently selected subsystem API
-  private def makeMissingItemsReport(options: PdfOptions): Unit = {
-    val maybeSv =
-      if (currentView == StatusView)
-        statusDialog.getSubsystemWithVersion
-      else selectDialog.subsystem.getSubsystemWithVersion()
-
-    val uri =
-      if (maybeSv.isDefined) {
-        val maybeTargetSv   = selectDialog.targetSubsystem.getSubsystemWithVersion()
-        ClientRoutes.missingItemsReport(maybeSv.get, maybeTargetSv, options)
-      } else {
-        ClientRoutes.missingItemsReportFull(options)
-      }
-    dom.window.open(uri) // opens in new window or tab
-  }
-
-  private case class ReloadButton() extends Displayable {
-    private def reloadPage(): Unit = {
-      val main = document.getElementById("mainContent")
-      val y    = main.scrollTop
-      val f =
-        if (currentView == StatusView)
-          statusDialog.applySettings()
-        else
-          selectDialog.applySettings()
-      f.onComplete {
-        case Success(_) =>
-          main.scrollTop = y
-        case _ =>
-      }
-    }
-
-    override def markup(): Element = {
-      import scalatags.JsDom.all._
-      import scalacss.ScalatagsCss._
-      li(
-        a(
-          button(
-            cls := "btn btn-sm",
-            Styles.attributeBtn,
-            tpe := "button",
-            id := "reload",
-            title := "Reload the selected subsystem, API or ICD, refresh from icd database",
-            onclick := reloadPage _
-          )(i(Styles.navbarBtn, cls := "bi bi-arrow-clockwise"))
-        )
-      ).render
-    }
-  }
-
 }

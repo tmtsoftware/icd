@@ -164,7 +164,7 @@ object IcdDbQuery {
  */
 //noinspection DuplicatedCode
 case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) {
-  import IcdDbQuery._
+  import IcdDbQuery.*
 
   // Search only the given subsystems, or all subsystems, if maybeSubsystems is empty
   private[db] def collectionNameFilter(collName: String): Boolean = {
@@ -204,7 +204,7 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
   }
 
   private[db] def getEntries: List[ApiCollections] = {
-    val paths = getCollectionNames.filter(isStdSet).map(IcdPath).toList
+    val paths = getCollectionNames.filter(isStdSet).map(IcdPath.apply).toList
     getEntries(paths)
   }
 
@@ -622,9 +622,13 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
         }
         // Backup all current collections for subsystem, so we can restore them in case of post-ingest validation error
         val backupCollections =
-          if (makeBackups)
+          if (makeBackups) {
             renameCollections(paths, backupCollSuffix, removeSuffix = false, dbName)
-          else Set.empty[String]
+          }
+          else {
+            deleteCollections(paths)
+            Set.empty[String]
+          }
         // Rename the temp collection that were just ingested so that they are the current collections for the subsystem
         val newCollections = renameCollections(tmpPaths, tmpCollSuffix, removeSuffix = true, dbName)
         (newCollections, backupCollections)

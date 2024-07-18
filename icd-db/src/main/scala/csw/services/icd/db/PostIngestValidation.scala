@@ -312,7 +312,11 @@ class PostIngestValidation(db: IcdDb) {
       }
       publishProblems ::: commandProblems
     }
-    duplicateKeywordChannelProblems ::: problems
+    val fitsDictProblems =
+      if (subsystem == "DMS")
+        icdFits.postIngestValidateFitsDictionary()
+      else Nil
+    duplicateKeywordChannelProblems ::: problems ::: fitsDictProblems
   }
 }
 

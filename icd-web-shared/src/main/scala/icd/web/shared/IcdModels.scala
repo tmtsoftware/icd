@@ -422,20 +422,22 @@ object IcdModels {
   )
 
   /**
+   * Describes a path or route in an HTTP service
+   * @param method the HTTP method (POST, GET, etc.)
+   * @param path the path / route
+   * @param description short description of what the path / route does
+   */
+  case class ServicePath(method: String, path: String, description: String)
+
+  /**
    * Describes an HTTP service provided by this subsystem
    * @param name name of the service
    * @param description short description of the service
    * @param openApi originally holds the name of file containing OpenApi description of the service
    *                (When read from the icd database this field then holds the contents of the OpenApi JSON file.)
+   * @param paths list of routes/paths provided by the service
    */
-  case class ServiceModelProvider(name: String, description: String, openApi: String)
-
-  /**
-   * Describes a path or route in an HTTP service
-   * @param method the HTTP method (POST, GET, etc.)
-   * @param path the path / route
-   */
-  case class ServicePath(method: String, path: String)
+  case class ServiceModelProvider(name: String, description: String, openApi: String, paths: List[ServicePath])
 
   /**
    * A reference to an HTTP service required by this subsystem
@@ -486,8 +488,8 @@ object IcdModels {
 
   object EventModel {
     // Use 1hz if maxRate is not defined and display the result in italics
-    val defaultMaxRate = 1.0
-    val eventCategories = List("DEMAND", "CONTROL", "EVENT", "STATUS")
+    val defaultMaxRate       = 1.0
+    val eventCategories      = List("DEMAND", "CONTROL", "EVENT", "STATUS")
     val defaultEventCategory = "STATUS"
 
     // Returns a pair of (maxRate, defaultUsed), where defaultUsed is true if maxRate is None or 0
@@ -534,7 +536,7 @@ object IcdModels {
       archiveDuration: String,
       parameterList: List[ParameterModel]
   ) extends NameDesc {
-    import EventModel._
+    import EventModel.*
 
     def getCategory: String = if (category.isEmpty) defaultEventCategory else category
 
@@ -582,7 +584,7 @@ object IcdModels {
   ) extends NameDesc
 }
 
-import IcdModels._
+import IcdModels.*
 
 /**
  * Holds the set of models associated with the set of standard ICD files

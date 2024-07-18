@@ -12,9 +12,11 @@ import csw.services.icd.db.ComponentDataReporter.*
 import csw.services.icd.db.IcdDbDefaults.{backupCollSuffix, tmpCollSuffix}
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.fits.IcdFits
+import csw.services.icd.html.OpenApiToHtml
 import diffson.playJson.DiffsonProtocol
+import icd.web.shared.IcdModels.ServicePath
 import icd.web.shared.{BuildInfo, HtmlHeadings, PdfOptions, SubsystemWithVersion}
-import io.swagger.util.Yaml
+import io.swagger.v3.core.util.Yaml
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
 import io.swagger.v3.parser.util.DeserializationUtils
@@ -654,7 +656,7 @@ case class IcdDb(
             DeserializationUtils.deserializeIntoTree(yaml, fileName).toPrettyString
           }
           else {
-            io.swagger.util.Json.pretty().writeValueAsString(openAPI)
+            io.swagger.v3.core.util.Json.pretty().writeValueAsString(openAPI)
           }
         // Ingest into db
         val jsObj = Json.parse(jsonStr).as[JsObject]
@@ -756,9 +758,43 @@ case class IcdDb(
   /**
    * Drops this database. Use with caution!
    */
-
   def dropDatabase(): Unit = {
     db.drop().await
+  }
+
+  /**
+   * Gets the OpenApi JSON given the provider information
+   *
+   * @param subsystem the service provider subsystem
+   * @param component the service provider component
+   * @param service the service name
+   * @param maybeVersion optional version
+   * @param paths the paths to include
+   * @return a string containing the OpenApi JSON if found
+   */
+  def getOpenApi(
+      subsystem: String,
+      component: String,
+      service: String,
+      maybeVersion: Option[String],
+      paths: List[ServicePath]
+  ): Option[String] = {
+    val sv = SubsystemWithVersion(subsystem, maybeVersion, Some(component))
+    try {
+      versionManager
+        .getModels(sv, includeOnly = Set("serviceModel"))
+        .head
+        .serviceModel
+        .toList
+        .flatMap(_.provides.find(_.name == service))
+        .map(p => OpenApiToHtml.filterOpenApiJson(p.openApi, paths))
+        .headOption
+    }
+    catch {
+      case ex: Exception =>
+        println(s"Failed to get OpenApi JSON for $sv, service: $service, paths: $paths", ex)
+        None
+    }
   }
 
 }

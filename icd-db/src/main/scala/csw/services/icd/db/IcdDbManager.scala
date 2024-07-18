@@ -1,15 +1,14 @@
 package csw.services.icd.db
 
-import play.api.libs.json._
-import csw.services.icd._
+import play.api.libs.json.*
+import csw.services.icd.*
 import reactivemongo.api.DB
 import reactivemongo.api.bson.collection.BSONCollection
-import reactivemongo.api.bson._
+import reactivemongo.api.bson.*
 
-import reactivemongo.play.json.compat._
-import bson2json._
-import lax._
-import json2bson._
+import reactivemongo.play.json.compat.*
+import bson2json.*
+import json2bson.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -19,7 +18,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
  */
 case class IcdDbManager(db: DB, versionManager: IcdVersionManager) {
 
-  import IcdVersionManager._
+  import IcdVersionManager.*
 
   /**
    * Ingests the given object into the database in the named collection,

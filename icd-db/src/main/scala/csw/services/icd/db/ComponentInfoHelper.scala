@@ -1,9 +1,9 @@
 package csw.services.icd.db
 
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
-import icd.web.shared.ComponentInfo._
-import icd.web.shared.IcdModels._
-import icd.web.shared._
+import icd.web.shared.ComponentInfo.*
+import icd.web.shared.IcdModels.*
+import icd.web.shared.*
 
 /**
  * Support for creating instances of the shared (scala/scala.js) ComponentInfo class.
@@ -156,7 +156,8 @@ class ComponentInfoHelper(
         t <- versionManager.getModels(
           makeSubsystemWithVersion(si.subsystem, Some(si.component)),
           maybePdfOptions,
-          Map.empty
+          Map.empty,
+          Set("publishModel", "componentModel")
         )
         // need to resolve any "refs" in the publisher's publish model
         resolvedPublishModel <- t.publishModel.map(p => Resolver(List(t)).resolvePublishModel(p))
@@ -226,13 +227,17 @@ class ComponentInfoHelper(
       cmd  <- models.commandModel.toList
       sent <- cmd.send
     } yield {
-      // Need to resolve any refs in the receiver's model
+      // Resolve any refs in the receiver's model
       val allModels = versionManager.getModels(
         makeSubsystemWithVersion(sent.subsystem, Some(sent.component)),
         maybePdfOptions,
-        Map.empty
+        Map.empty,
+        Set("componentModel", "commandModel")
       )
-      val targetComponentModel = allModels.flatMap(_.componentModel).headOption
+      val targetComponentModel = allModels
+        .flatMap(_.componentModel)
+        .headOption
+        .getOrElse(ComponentModel("?", sent.subsystem, sent.component, "", "", "", "", None))
       val targetCmdModel = allModels
         .flatMap(_.commandModel)
         .headOption
@@ -252,7 +257,7 @@ class ComponentInfoHelper(
         sent.subsystem,
         sent.component,
         resolvedRecvModel,
-        targetComponentModel,
+        Some(targetComponentModel),
         displayWarnings
       )
     }

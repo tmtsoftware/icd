@@ -1,10 +1,10 @@
 package icd.web.shared
 
-import icd.web.shared.ComponentInfo._
-import icd.web.shared.IcdModels.{IcdModel, _}
+import icd.web.shared.ComponentInfo.*
+import icd.web.shared.IcdModels.{IcdModel, *}
 import icd.web.shared.SharedUtils.Credentials
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
+import play.api.libs.json.*
+import play.api.libs.functional.syntax.*
 
 //noinspection TypeAnnotation
 object JsonSupport {
@@ -101,27 +101,25 @@ object JsonSupport {
 
   // This version is used only when writing to the human editable FITS-Dictionary.json file:
   // To make it easier to read/edit, uses the abbrieviated "source" syntax if there is only a default channel.
-  val fitsKeyInfoWrites: Writes[FitsKeyInfo] = new Writes[FitsKeyInfo] {
-    def writes(fitsKeyInfo: FitsKeyInfo): JsValue = {
-      if (fitsKeyInfo.channels.size == 1 && fitsKeyInfo.channels.head.name.isEmpty)
-        Json.obj(
-          "name"        -> fitsKeyInfo.name,
-          "description" -> fitsKeyInfo.description,
-          "type"        -> fitsKeyInfo.`type`,
-          "units"       -> fitsKeyInfo.units,
-//          "source"      -> fitsSourceFormat.writes(fitsKeyInfo.channels.head.source)
-          "source"      -> fitsKeyInfo.channels.head.source
-        )
-      else
-        Json.obj(
-          "name"        -> fitsKeyInfo.name,
-          "description" -> fitsKeyInfo.description,
-          "type"        -> fitsKeyInfo.`type`,
-          "units"       -> fitsKeyInfo.units,
-//          "channel"     -> fitsKeyInfo.channels.map(c => fitsChannelFormat.writes(c))
-          "channel"     -> fitsKeyInfo.channels
-        )
-    }
+  val fitsKeyInfoWrites: Writes[FitsKeyInfo] = (fitsKeyInfo: FitsKeyInfo) => {
+    if (fitsKeyInfo.channels.size == 1 && fitsKeyInfo.channels.head.name.isEmpty)
+      Json.obj(
+        "name" -> fitsKeyInfo.name,
+        "description" -> fitsKeyInfo.description,
+        "type" -> fitsKeyInfo.`type`,
+        "units" -> fitsKeyInfo.units,
+        //          "source"      -> fitsSourceFormat.writes(fitsKeyInfo.channels.head.source)
+        "source" -> fitsKeyInfo.channels.head.source
+      )
+    else
+      Json.obj(
+        "name" -> fitsKeyInfo.name,
+        "description" -> fitsKeyInfo.description,
+        "type" -> fitsKeyInfo.`type`,
+        "units" -> fitsKeyInfo.units,
+        //          "channel"     -> fitsKeyInfo.channels.map(c => fitsChannelFormat.writes(c))
+        "channel" -> fitsKeyInfo.channels
+      )
   }
 
   implicit val fitsKeyInfoReads: Reads[FitsKeyInfo] = (
