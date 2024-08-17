@@ -363,7 +363,7 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
           )
         )
     )
-    val forSubsystems = if (subsystems.isEmpty) "" else s"for ${subsystems.map(_.toStringWithVersion).mkString(", ")}"
+    val forSubsystems = if (subsystems.isEmpty) "" else s" for ${subsystems.map(_.toStringWithVersion).mkString(", ")}"
     val titleStr = s"Missing Items Report$forSubsystems"
     val markup = html(
       head(
