@@ -5,13 +5,46 @@ import controllers.ApplicationData.maybeCache
 import csw.services.icd.IcdToPdf
 import csw.services.icd.codegen.{JavaCodeGenerator, PythonCodeGenerator, ScalaCodeGenerator, TypescriptCodeGenerator}
 import csw.services.icd.db.IcdVersionManager.{SubsystemAndVersion, VersionDiff}
-import csw.services.icd.db.{AlarmsReport, ArchivedItemsReport, CachedIcdDbQuery, CachedIcdVersionManager, ComponentInfoHelper, IcdComponentInfo, IcdDb, IcdDbPrinter, IcdDbQuery, IcdVersionManager, MissingItemsReport, getFileContents}
+import csw.services.icd.db.{
+  AlarmsReport,
+  ArchivedItemsReport,
+  CachedIcdDbQuery,
+  CachedIcdVersionManager,
+  ComponentInfoHelper,
+  IcdComponentInfo,
+  IcdDb,
+  IcdDbPrinter,
+  IcdDbQuery,
+  IcdVersionManager,
+  MissingItemsReport,
+  getFileContents
+}
 import csw.services.icd.fits.{IcdFits, IcdFitsPrinter}
 import csw.services.icd.github.IcdGitManager
+import csw.services.icd.html.NumberedHeadings
 import csw.services.icd.viz.IcdVizManager
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.IcdModels.IcdModel
-import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, FitsDictionary, FitsTags, HtmlHeadings, IcdName, IcdVersion, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, SubsystemWithVersion, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
+import icd.web.shared.{
+  ApiVersionInfo,
+  ComponentInfo,
+  DiffInfo,
+  FitsDictionary,
+  FitsTags,
+  HtmlHeadings,
+  IcdName,
+  IcdVersion,
+  IcdVersionInfo,
+  IcdVizOptions,
+  PdfOptions,
+  PublishApiInfo,
+  PublishIcdInfo,
+  SubsystemInfo,
+  SubsystemWithVersion,
+  UnpublishApiInfo,
+  UnpublishIcdInfo,
+  VersionInfo
+}
 import play.api.libs.json.Json
 
 import scala.util.Try
@@ -420,54 +453,6 @@ case class ApplicationImpl(db: IcdDb) {
   }
 
   /**
-   * Returns the Alarms report (HTML) for the given subsystem API
-   *
-   * @param subsystem      the source subsystem
-   * @param maybeVersion   the source subsystem's version (default: current)
-   * @param maybeComponent optional component (default: all in subsystem)
-   */
-  def getAlarmsReportHtml(
-      subsystem: String,
-      maybeVersion: Option[String],
-      maybeComponent: Option[String]
-  ): Option[String] = {
-    val sv = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
-    try {
-      Some(
-        AlarmsReport(db, Some(sv), None, new HtmlHeadings)
-          .makeReportMarkup(s"Alarms for ${sv.subsystem}")
-          .render
-      )
-    }
-    catch {
-      case ex: Exception =>
-        log.error(s"Failed to get alarms report for $sv", ex)
-        None
-    }
-  }
-
-  /**
-   * Returns the Alarms report (PDF) for all current subsystems
-   *
-   * @param pdfOptions options for PDF generation
-   */
-  def getAlarmsItemsReportFull(
-      pdfOptions: PdfOptions
-  ): Option[Array[Byte]] = {
-    val out = new ByteArrayOutputStream()
-    try {
-      val html = AlarmsReport(db, None, Some(pdfOptions), new HtmlHeadings).makeReport(pdfOptions)
-      IcdToPdf.saveAsPdf(out, html, showLogo = false, pdfOptions)
-      Some(out.toByteArray)
-    }
-    catch {
-      case ex: Exception =>
-        log.error("Failed to get full alarms report", ex)
-        None
-    }
-  }
-
-  /**
    * Returns a missing items report (PDF) for the given subsystem API
    *
    * @param subsystem      the source subsystem
@@ -494,6 +479,43 @@ case class ApplicationImpl(db: IcdDb) {
       val html = MissingItemsReport(db, List(Some(sv), maybeTargetSv).flatten, pdfOptions).makeReport()
       IcdToPdf.saveAsPdf(out, html, showLogo = false, pdfOptions)
       Some(out.toByteArray)
+    }
+    catch {
+      case ex: Exception =>
+        log.error(s"Failed to get missing items report for $sv", ex)
+        None
+    }
+  }
+
+  /**
+   * Returns a missing items list (HTML) for the given subsystem APIs
+   *
+   * @param subsystem      the source subsystem
+   * @param maybeVersion   the source subsystem's version (default: current)
+   * @param maybeComponent optional component (default: all in subsystem)
+   * @param maybeTarget    optional target subsystem
+   * @param maybeTargetVersion optional target subsystem's version (default: current)
+   * @param maybeTargetComponent optional target component name (default: all in target subsystem)
+   * @param pdfOptions         options for PDF generation
+   */
+  def getMissingItemsReportHtml(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      maybeTarget: Option[String],
+      maybeTargetVersion: Option[String],
+      maybeTargetComponent: Option[String],
+      pdfOptions: PdfOptions
+  ): Option[String] = {
+    val out           = new ByteArrayOutputStream()
+    val sv            = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
+    val maybeTargetSv = maybeTarget.map(target => SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent))
+    try {
+      Some(
+        MissingItemsReport(db, List(Some(sv), maybeTargetSv).flatten, pdfOptions)
+          .makeReportMarkup(new HtmlHeadings)
+          .render
+      )
     }
     catch {
       case ex: Exception =>

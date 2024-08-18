@@ -341,6 +341,31 @@ object ClientRoutes {
   }
 
   /**
+   * Returns the route to use to get a missing items report HTML for the given Subsystem with selected components.
+   *
+   * @param sv the subsystem
+   * @return the URL path to use
+   */
+  def missingItemsReportHtml(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): String = {
+    val attrs = maybeTargetSv match {
+      case None =>
+        getAttrs(
+          sv.maybeVersion,
+          sv.maybeComponent
+        )
+      case Some(targetSv) =>
+        getAttrs(
+          sv.maybeVersion,
+          sv.maybeComponent,
+          maybeTargetVersion = targetSv.maybeVersion,
+          maybeTargetCompName = targetSv.maybeComponent,
+          maybeTarget = maybeTargetSv.map(_.subsystem)
+        )
+    }
+    s"/missingItemsReportHtml/${sv.subsystem}$attrs"
+  }
+
+  /**
    * Returns the route to use to get a missing items report for all subsystems
    *
    * @return the URL path to use

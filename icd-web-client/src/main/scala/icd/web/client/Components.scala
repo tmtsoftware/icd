@@ -196,6 +196,16 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
+   * Gets a Missing Items Report in HTML
+   *
+   * @param sv            the subsystem
+   * @return future HTML string for the report
+   */
+  private def getMissingItemsReportHtml(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): Future[String] = {
+    Fetch.get(ClientRoutes.missingItemsReportHtml(sv, maybeTargetSv))
+  }
+
+  /**
    * Gets the list of components for the given subsystem and then gets the information for them
    */
   private def getComponentInfo(
@@ -337,13 +347,10 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    *
    * @param sv                   the selected subsystem, version and optional single component
    * @param targetSv             target subsystem, version, optional component
-   * @param maybeIcd             optional icd version
-   * @return an empty future list of ComponentInfo (Since we are not displaying that)
    */
   def addComponentsForDmsIcd(
       sv: SubsystemWithVersion,
-      targetSv: SubsystemWithVersion,
-      maybeIcd: Option[IcdVersion]
+      targetSv: SubsystemWithVersion
   ): Future[Unit] = {
     if (sv.subsystem == "DMS" && targetSv.subsystem != "DMS" || targetSv.subsystem == "DMS" && sv.subsystem != "DMS") {
       // Special case: When DMS is involved, ICD consists of "Archived Items Report" with an ICD header
@@ -371,6 +378,36 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
   }
 
   /**
+   * Adds a missing items report for ICDs
+   *
+   * @param sv                   the selected subsystem, version and optional single component
+   * @param targetSv             target subsystem, version, optional component
+   * @param maybeIcd             optional icd version
+   */
+  def addMissingItemsReportForIcd(
+      sv: SubsystemWithVersion,
+      targetSv: SubsystemWithVersion,
+      maybeIcd: Option[IcdVersion]
+  ): Future[Unit] = {
+      val f = for {
+        missingItemsReportHtml <- getMissingItemsReportHtml(sv, Some(targetSv))
+      } yield {
+        import scalatags.JsDom.all.*
+        mainContent.appendElement(
+          div(
+            cls := "component container-fluid",
+            raw(missingItemsReportHtml)
+          ).render
+        )
+      }
+      f.onComplete {
+        case Failure(ex) => mainContent.displayInternalError(ex)
+        case _           =>
+      }
+      f
+  }
+
+  /**
    * Adds components to the display.
    *
    * @param sv                   the selected subsystem, version and optional single component
@@ -393,7 +430,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       val targetSv = maybeTargetSubsystem.get
       for {
         compInfoList <- addComponentsForIcd(sv, targetSv, maybeIcd, searchAllSubsystems, clientApi)
-        _            <- addComponentsForDmsIcd(sv, targetSv, maybeIcd)
+        _            <- addComponentsForDmsIcd(sv, targetSv)
+        _            <- addMissingItemsReportForIcd(sv, targetSv, maybeIcd)
       } yield compInfoList
     }
     else {
@@ -1382,6 +1420,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       )
     )
   }
+
+  // Generates the markup for the Missing Items section
+  private def missingItemsMarkup(): TypedTag[Div] = {
+    import scalatags.JsDom.all.*
+    div()
+  }
+
 
   // Generates the HTML markup to display the component information
   private def markupForComponent(

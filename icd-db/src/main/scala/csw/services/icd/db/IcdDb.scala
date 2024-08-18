@@ -12,7 +12,7 @@ import csw.services.icd.db.ComponentDataReporter.*
 import csw.services.icd.db.IcdDbDefaults.{backupCollSuffix, tmpCollSuffix}
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
 import csw.services.icd.fits.IcdFits
-import csw.services.icd.html.OpenApiToHtml
+import csw.services.icd.html.{NumberedHeadings, OpenApiToHtml}
 import diffson.playJson.DiffsonProtocol
 import icd.web.shared.IcdModels.ServicePath
 import icd.web.shared.{BuildInfo, HtmlHeadings, PdfOptions, SubsystemWithVersion}

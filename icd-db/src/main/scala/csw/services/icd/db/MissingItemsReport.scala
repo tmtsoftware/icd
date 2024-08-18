@@ -4,7 +4,7 @@ import java.io.*
 import csw.services.icd.IcdToPdf
 import csw.services.icd.html.{IcdToHtml, NumberedHeadings}
 import icd.web.shared.IcdModels.*
-import icd.web.shared.{PdfOptions, SubsystemWithVersion}
+import icd.web.shared.{Headings, PdfOptions, SubsystemWithVersion}
 import scalatags.Text
 
 /**
@@ -79,7 +79,7 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
       query.getSubsystemNames.filter(s => !selectedSubsystemNames.contains(s)).map(SubsystemWithVersion(_, None, None))
     else Nil
 
-  // s"$subsystem.$component" for all components in all subsystems (latest versions or specified version)
+  // "subsystem.component" for all components in all subsystems (latest versions or specified version)
   private val allComponents = {
     val currentComps = query
       .getComponents(None)
@@ -89,6 +89,35 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
       .flatMap(sv => versionManager.getComponentNames(sv).map(c => s"${sv.subsystem}.$c"))
     specifiedVersionComps ::: currentComps
   }
+
+  private val introText = if (subsystems.isEmpty) {
+    s"""
+         |This report takes the list of published and subscribed events, received and sent commands for
+         |all subsystems and looks for matches in the latest versions of all the other subsystems.
+         |The tables below list the names of the events and commands for which no matches were found.
+         |Note that this could be due to changes in the latest versions of the other subsystems.
+         |To avoid this issue, specify a list of subsystems with versions (if using the icd-db -m command line
+         |option), or select two subsystems with versions or a published ICD in the icd web app.
+         |""".stripMargin
+  }
+  else if (subsystems.size == 1) {
+    s"""
+         |This report takes the list of published and subscribed events, received and sent commands for
+         |${subsystems.head.toStringWithVersion} and looks for matches in the latest versions of
+         |all the other subsystems.
+         |The tables below list the names of the events and commands for which no matches were found.
+         |Note that this could be due to changes in the latest versions of the other subsystems.
+         |To avoid this issue, specify a list of subsystems with versions (if using the icd-db -m command line
+         |option), or select two subsystems with versions or a published ICD in the icd web app.
+         |""".stripMargin
+  }
+  else
+    s"""
+       |This report takes the list of published and subscribed events, received and sent commands defined for
+       |${subsystems.map(_.toStringWithVersion).mkString(" and ")} and looks for matches
+       |in the same group of subsystems.
+       |The tables below list the names of the events and commands for which no matches were found.
+       |""".stripMargin
 
   // Returns a list of items missing a publisher, subscriber, sender or receiver
   private def getMissingItems: Items = {
@@ -267,17 +296,15 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
     )
   }
 
-  // Generates the HTML for the report
-  def makeReport(): String = {
+  // Generates the HTML markup for the body of the report
+  def makeReportMarkup(headings: Headings): Text.TypedTag[String] = {
     import scalatags.Text.all.*
-
-    val nh = new NumberedHeadings
 
     def missingPubItemMarkup(title: String, info: List[PublishedItemInfo]): Text.TypedTag[String] = {
       if (info.isEmpty) div()
       else
         div(
-          nh.H3(title),
+          headings.H3(title),
           div(
             table(
               thead(
@@ -309,7 +336,7 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
       if (info.isEmpty) div()
       else
         div(
-          nh.H3(title),
+          headings.H3(title),
           div(
             table(
               thead(
@@ -342,8 +369,8 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
     }
 
     val missingItems = getMissingItems
-    val mainDiv = div(
-      nh.H2("Missing Items"),
+    div(
+      headings.H2("Missing Items"),
       missingPubItemMarkup("Published Events with no Subscribers", missingItems.publishedEvents),
       missingPubItemMarkup("Published Observe Events with no Subscribers", missingItems.publishedObserveEvents),
       missingPubItemMarkup("Published Current States with no Subscribers", missingItems.publishedCurrentStates),
@@ -357,14 +384,20 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
       if (missingItems.badComponentNames.isEmpty) div()
       else
         div(
-          nh.H3("Component names that were Referenced but not Defined Anywhere"),
+          headings.H3("Component names that were Referenced but not Defined Anywhere"),
           ul(
             missingItems.badComponentNames.toList.map(s => li(s))
           )
         )
     )
+  }
+
+  // Generates the HTML for the report
+  def makeReport(): String = {
+    import scalatags.Text.all.*
+    val nh = new NumberedHeadings
     val forSubsystems = if (subsystems.isEmpty) "" else s" for ${subsystems.map(_.toStringWithVersion).mkString(", ")}"
-    val titleStr = s"Missing Items Report$forSubsystems"
+    val titleStr      = s"Missing Items Report$forSubsystems"
     val markup = html(
       head(
         scalatags.Text.tags2.title(titleStr),
@@ -373,38 +406,11 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
       body(
         div(
           h3(cls := "page-header", titleStr),
-          if (subsystems.isEmpty) {
-            p(s"""
-                 |This report takes the list of published and subscribed events, received and sent commands for
-                 |all subsystems and looks for matches in the latest versions of all the other subsystems.
-                 |The tables below list the names of the events and commands for which no matches were found.
-                 |Note that this could be due to changes in the latest versions of the other subsystems.
-                 |To avoid this issue, specify a list of subsystems with versions (if using the icd-db -m command line
-                 |option), or select two subsystems with versions or a published ICD in the icd web app.
-                 |""".stripMargin)
-          }
-          else if (subsystems.size == 1) {
-            p(s"""
-                 |This report takes the list of published and subscribed events, received and sent commands for
-                 |${subsystems.head.toStringWithVersion} and looks for matches in the latest versions of
-                 |all the other subsystems.
-                 |The tables below list the names of the events and commands for which no matches were found.
-                 |Note that this could be due to changes in the latest versions of the other subsystems.
-                 |To avoid this issue, specify a list of subsystems with versions (if using the icd-db -m command line
-                 |option), or select two subsystems with versions or a published ICD in the icd web app.
-                 |""".stripMargin)
-          }
-          else
-            s"""
-                 |This report takes the list of published and subscribed events, received and sent commands defined for
-                 |${subsystems.map(_.toStringWithVersion).mkString(" and ")} and looks for matches
-                 |in the same group of subsystems.
-                 |The tables below list the names of the events and commands for which no matches were found.
-                 |""".stripMargin,
+          p(introText),
           h2("Table of Contents"),
           nh.mkToc()
         ),
-        mainDiv
+        makeReportMarkup(nh)
       )
     )
     markup.render

@@ -553,6 +553,50 @@ class Application @Inject() (
           NotFound
       }
     }
+  /**
+   * Returns a missing items report (HTML) for the given subsystem/component API
+   *
+   * @param subsystem      the source subsystem
+   * @param maybeVersion   the source subsystem's version (default: current)
+   * @param maybeComponent optional component (default: all in subsystem)
+   * @param maybeTarget    optional target subsystem
+   * @param maybeTargetVersion optional target subsystem's version (default: current)
+   * @param maybeTargetComponent optional target component name (default: all in target subsystem)
+   * @param maybeOrientation If set, should be "portrait" or "landscape" (default: landscape)
+   * @param maybeFontSize base font size for body text (default: 10)
+   */
+  def missingItemsReportHtml(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      maybeTarget: Option[String],
+      maybeTargetVersion: Option[String],
+      maybeTargetComponent: Option[String],
+      maybeOrientation: Option[String],
+      maybeFontSize: Option[Int],
+      maybeLineHeight: Option[String],
+      maybePaperSize: Option[String]
+  ) =
+    authAction.async {
+      val resp: Future[Option[String]] = appActor ? (
+        GetMissingItemsReportHtml(
+          subsystem,
+          maybeVersion,
+          maybeComponent,
+          maybeTarget,
+          maybeTargetVersion,
+          maybeTargetComponent,
+          PdfOptions(maybeOrientation, maybeFontSize, maybeLineHeight, maybePaperSize),
+          _
+        )
+      )
+      resp.map {
+        case Some(html) =>
+          Ok(html).as("text/html")
+        case None =>
+          NotFound
+      }
+    }
 
   /**
    * Returns a missing items report (PDF) for all current subsystems

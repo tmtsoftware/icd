@@ -158,7 +158,8 @@ case class IcdDbPrinter(
         else {
           // Two subsystems
           val summaryTable = SummaryTable(subsystemInfo, Some(targetSv), infoList, nh, clientApi = false, displayTitle = true)
-          val targetSummaryTable = SummaryTable(targetSubsystemInfo, Some(sv), infoList2, nh, clientApi = false, displayTitle = false)
+          val targetSummaryTable =
+            SummaryTable(targetSubsystemInfo, Some(sv), infoList2, nh, clientApi = false, displayTitle = false)
 
           div(
             p(strong(s"${targetSubsystemInfo.sv.subsystem}: ${targetSubsystemInfo.title} $targetSubsystemVersion")),
@@ -174,11 +175,16 @@ case class IcdDbPrinter(
               // Special case: When DMS is involved, ICD consists of "Archived Items Report" with an ICD header
               // page (DEOPSICDDB-138)
               val sv2 = if (sv.subsystem == "DMS") targetSv else sv
-              div (
+              div(
                 ArchivedItemsReport(db, Some(sv2), maybePdfOptions, nh)
                   .makeReportMarkup(s"Archived Items for ${sv2.subsystem}")
               )
-            } else div()
+            }
+            else div(),
+            div(
+              MissingItemsReport(db, List(sv, targetSv), maybePdfOptions.getOrElse(PdfOptions()))
+                .makeReportMarkup(nh)
+            )
           )
         }
       )

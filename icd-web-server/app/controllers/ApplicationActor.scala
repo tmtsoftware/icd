@@ -120,6 +120,16 @@ object ApplicationActor extends ActorModule {
       pdfOptions: PdfOptions,
       replyTo: ActorRef[Option[Array[Byte]]]
   ) extends Messages
+  final case class GetMissingItemsReportHtml(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      maybeTarget: Option[String],
+      maybeTargetVersion: Option[String],
+      maybeTargetComponent: Option[String],
+      pdfOptions: PdfOptions,
+      replyTo: ActorRef[Option[String]]
+  ) extends Messages
   final case class GetMissingItemsReportFull(
       pdfOptions: PdfOptions,
       replyTo: ActorRef[Option[Array[Byte]]]
@@ -323,6 +333,26 @@ object ApplicationActor extends ActorModule {
               replyTo
             ) =>
           replyTo ! app.getMissingItemsReport(
+            subsystem,
+            maybeVersion,
+            maybeComponent,
+            maybeTarget,
+            maybeTargetVersion,
+            maybeTargetComponent,
+            pdfOptions
+          )
+          Behaviors.same
+        case GetMissingItemsReportHtml(
+              subsystem,
+              maybeVersion,
+              maybeComponent,
+              maybeTarget,
+              maybeTargetVersion,
+              maybeTargetComponent,
+              pdfOptions,
+              replyTo
+            ) =>
+          replyTo ! app.getMissingItemsReportHtml(
             subsystem,
             maybeVersion,
             maybeComponent,
