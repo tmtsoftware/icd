@@ -369,33 +369,38 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
     }
 
     val missingItems = getMissingItems
-    div(
-      headings.H2("Missing Items"),
-      missingPubItemMarkup("Published Events with no Subscribers", missingItems.publishedEvents),
-      missingPubItemMarkup("Published Observe Events with no Subscribers", missingItems.publishedObserveEvents),
-      missingPubItemMarkup("Published Current States with no Subscribers", missingItems.publishedCurrentStates),
-      missingPubItemMarkup("Published Images with no Subscribers", missingItems.publishedImages),
-      missingSubItemMarkup("Subscribed Events that are not Published Anywhere", missingItems.subscribedEvents),
-      missingSubItemMarkup("Subscribed Observe Events that are not Published Anywhere", missingItems.subscribedObserveEvents),
-      missingSubItemMarkup("Subscribed CurrentStates that are not Published Anywhere", missingItems.subscribedCurrentStates),
-      missingSubItemMarkup("Subscribed Images that are not Published Anywhere", missingItems.subscribedImages),
-      missingPubItemMarkup("Received Commands with no Senders", missingItems.receivedCommands),
-      missingSubItemMarkup("Sent Commands that are not Defined Anywhere", missingItems.sentCommands, "Receiver", "Sender"),
-      if (missingItems.badComponentNames.isEmpty) div()
-      else
-        div(
-          headings.H3("Component names that were Referenced but not Defined Anywhere"),
-          ul(
-            missingItems.badComponentNames.toList.map(s => li(s))
+    if (missingItems.isEmpty) {
+      div()
+    }
+    else {
+      div(
+        headings.H2("Missing Items"),
+        missingPubItemMarkup("Published Events with no Subscribers", missingItems.publishedEvents),
+        missingPubItemMarkup("Published Observe Events with no Subscribers", missingItems.publishedObserveEvents),
+        missingPubItemMarkup("Published Current States with no Subscribers", missingItems.publishedCurrentStates),
+        missingPubItemMarkup("Published Images with no Subscribers", missingItems.publishedImages),
+        missingSubItemMarkup("Subscribed Events that are not Published Anywhere", missingItems.subscribedEvents),
+        missingSubItemMarkup("Subscribed Observe Events that are not Published Anywhere", missingItems.subscribedObserveEvents),
+        missingSubItemMarkup("Subscribed CurrentStates that are not Published Anywhere", missingItems.subscribedCurrentStates),
+        missingSubItemMarkup("Subscribed Images that are not Published Anywhere", missingItems.subscribedImages),
+        missingPubItemMarkup("Received Commands with no Senders", missingItems.receivedCommands),
+        missingSubItemMarkup("Sent Commands that are not Defined Anywhere", missingItems.sentCommands, "Receiver", "Sender"),
+        if (missingItems.badComponentNames.isEmpty) div()
+        else
+          div(
+            headings.H3("Component names that were Referenced but not Defined Anywhere"),
+            ul(
+              missingItems.badComponentNames.toList.map(s => li(s))
+            )
           )
-        )
-    )
+      )
+    }
   }
 
   // Generates the HTML for the report
   def makeReport(): String = {
     import scalatags.Text.all.*
-    val nh = new NumberedHeadings
+    val nh            = new NumberedHeadings
     val forSubsystems = if (subsystems.isEmpty) "" else s" for ${subsystems.map(_.toStringWithVersion).mkString(", ")}"
     val titleStr      = s"Missing Items Report$forSubsystems"
     val markup = html(
