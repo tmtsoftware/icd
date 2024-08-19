@@ -1,7 +1,7 @@
 package icd.web.client
 
 import org.scalajs.dom
-import org.scalajs.dom.{HttpMethod, RequestInit}
+import org.scalajs.dom.{Blob, HttpMethod, RequestInit}
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.*
 
 import scala.concurrent.Future
@@ -14,6 +14,12 @@ object Fetch {
   def get(url: String): Future[String] = {
     dom.fetch(url).toFuture.flatMap(_.text().toFuture)
   }
+
+  // Does an HTTP GET on the URL and returns the blob
+  def getBlob(url: String): Future[Blob] = {
+    dom.fetch(url).toFuture.flatMap(_.blob().toFuture)
+  }
+
 
   // Does an HTTP POST on the URL with the given JSON body and returns a future pair (status, text)
   def post(url: String, data: String): Future[(Int, String)] = {

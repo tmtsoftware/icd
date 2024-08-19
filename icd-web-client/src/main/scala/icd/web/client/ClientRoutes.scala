@@ -1,7 +1,7 @@
 package icd.web.client
 
 import icd.web.shared.IcdModels.ServicePath
-import icd.web.shared.{IcdName, IcdVizOptions, PdfOptions, SubsystemWithVersion}
+import icd.web.shared.{IcdName, IcdVersion, IcdVizOptions, PdfOptions, SubsystemWithVersion}
 
 import java.net.URLEncoder
 

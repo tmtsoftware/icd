@@ -199,10 +199,36 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
    * Gets a Missing Items Report in HTML
    *
    * @param sv            the subsystem
+   * @param maybeTargetSv optional other subsystem
    * @return future HTML string for the report
    */
   private def getMissingItemsReportHtml(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): Future[String] = {
     Fetch.get(ClientRoutes.missingItemsReportHtml(sv, maybeTargetSv))
+  }
+
+  /**
+   * Gets a relationship graph for the given subsystems
+   *
+   * @param sv            the subsystem
+   * @param maybeTargetSv optional other subsystem
+   * @return future HTML string URL for the graph image
+   */
+  private def getGraphUrl(
+      sv: SubsystemWithVersion,
+      maybeTargetSv: Option[SubsystemWithVersion],
+      icdVersion: Option[String]
+  ): Future[String] = {
+    import org.scalajs.dom.URL
+    val options = IcdVizOptions(
+      imageFormat = "PNG",
+      commandLabels = true,
+      missingEvents = false
+    )
+    for {
+      blob <- Fetch.getBlob(ClientRoutes.makeGraph(sv, maybeTargetSv, icdVersion, options))
+    } yield {
+      URL.createObjectURL(blob)
+    }
   }
 
   /**
@@ -389,22 +415,53 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       targetSv: SubsystemWithVersion,
       maybeIcd: Option[IcdVersion]
   ): Future[Unit] = {
-      val f = for {
-        missingItemsReportHtml <- getMissingItemsReportHtml(sv, Some(targetSv))
-      } yield {
-        import scalatags.JsDom.all.*
-        mainContent.appendElement(
-          div(
-            cls := "component container-fluid",
-            raw(missingItemsReportHtml)
-          ).render
-        )
-      }
-      f.onComplete {
-        case Failure(ex) => mainContent.displayInternalError(ex)
-        case _           =>
-      }
-      f
+    val f = for {
+      missingItemsReportHtml <- getMissingItemsReportHtml(sv, Some(targetSv))
+    } yield {
+      import scalatags.JsDom.all.*
+      mainContent.appendElement(
+        div(
+          cls := "component container-fluid",
+          raw(missingItemsReportHtml)
+        ).render
+      )
+    }
+    f.onComplete {
+      case Failure(ex) => mainContent.displayInternalError(ex)
+      case _           =>
+    }
+    f
+  }
+
+  /**
+   * Adds a relationship graph for ICDs
+   *
+   * @param sv                   the selected subsystem, version and optional single component
+   * @param targetSv             target subsystem, version, optional component
+   * @param maybeIcd             optional icd version
+   */
+  def addGraphForIcd(
+      sv: SubsystemWithVersion,
+      targetSv: SubsystemWithVersion,
+      maybeIcd: Option[IcdVersion]
+  ): Future[Unit] = {
+    val f = for {
+      graphUrl <- getGraphUrl(sv, Some(targetSv), maybeIcd.map(_.icdVersion))
+    } yield {
+      import scalatags.JsDom.all.*
+      mainContent.appendElement(
+        div(
+          cls := "component container-fluid",
+          h2(a(name := "graph")(s"Graph showing connections between $sv and $targetSv")),
+          img(src := graphUrl)
+        ).render
+      )
+    }
+    f.onComplete {
+      case Failure(ex) => mainContent.displayInternalError(ex)
+      case _           =>
+    }
+    f
   }
 
   /**
@@ -432,6 +489,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         compInfoList <- addComponentsForIcd(sv, targetSv, maybeIcd, searchAllSubsystems, clientApi)
         _            <- addComponentsForDmsIcd(sv, targetSv)
         _            <- addMissingItemsReportForIcd(sv, targetSv, maybeIcd)
+        _            <- addGraphForIcd(sv, targetSv, maybeIcd)
       } yield compInfoList
     }
     else {
@@ -1426,7 +1484,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     import scalatags.JsDom.all.*
     div()
   }
-
 
   // Generates the HTML markup to display the component information
   private def markupForComponent(
