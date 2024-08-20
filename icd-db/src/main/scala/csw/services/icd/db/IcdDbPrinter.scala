@@ -112,13 +112,15 @@ case class IcdDbPrinter(
    * @param targetSv        the target subsystem and version
    * @param maybeIcdVersion optional ICD version, to be displayed in the title
    * @param pdfOptions      options for generating HTML/PDF
+   * @param graphImageFile  image file containing a relationship graph for the two subsystems
    *
    */
   private def getIcdAsHtml(
       sv: SubsystemWithVersion,
       targetSv: SubsystemWithVersion,
       maybeIcdVersion: Option[IcdVersion],
-      pdfOptions: PdfOptions
+      pdfOptions: PdfOptions,
+      graphImageFile: File
   ): Option[String] = {
 
     // Use caching, since we need to look at all the components multiple times, in order to determine who
@@ -152,7 +154,10 @@ case class IcdDbPrinter(
             icdInfoList.map(i => div(p(strong(i.titleStr)), raw(i.description))),
             summaryTable.displaySummary(),
             makeIntro(titleInfo1),
-            displayDetails(db, infoList, summaryTable, nh, forApi = false, pdfOptions, clientApi = clientApi)
+            displayDetails(db, infoList, summaryTable, nh, forApi = false, pdfOptions, clientApi = clientApi),
+            div(MissingItemsReport(db, List(sv, targetSv), maybePdfOptions.getOrElse(PdfOptions())).makeReportMarkup(nh)),
+            nh.H2(s"Graph showing connections between $sv and $targetSv", "graph"),
+            img(src := graphImageFile.toString)
           )
         }
         else {
@@ -176,15 +181,12 @@ case class IcdDbPrinter(
               // page (DEOPSICDDB-138)
               val sv2 = if (sv.subsystem == "DMS") targetSv else sv
               div(
-                ArchivedItemsReport(db, Some(sv2), maybePdfOptions, nh)
-                  .makeReportMarkup(s"Archived Items for ${sv2.subsystem}")
+                ArchivedItemsReport(db, Some(sv2), maybePdfOptions, nh).makeReportMarkup(s"Archived Items for ${sv2.subsystem}")
               )
             }
             else div(),
-            div(
-              MissingItemsReport(db, List(sv, targetSv), maybePdfOptions.getOrElse(PdfOptions()))
-                .makeReportMarkup(nh)
-            )
+            div(MissingItemsReport(db, List(sv, targetSv), maybePdfOptions.getOrElse(PdfOptions())).makeReportMarkup(nh))
+            // XXX TODO: Add graph
           )
         }
       )
@@ -332,17 +334,28 @@ case class IcdDbPrinter(
       }
   }
 
+  /**
+   * Saves the ICD document as a PDF.
+   *
+   * @param sv first subsystem
+   * @param targetSv second subsystem
+   * @param iv ICD version, if known
+   * @param pdfOptions PDF options
+   * @param graphImageFile image file containing a relationship graph for the two subsystems
+   * @return
+   */
   def saveIcdAsPdf(
       sv: SubsystemWithVersion,
       targetSv: SubsystemWithVersion,
       iv: Option[IcdVersion],
-      pdfOptions: PdfOptions
+      pdfOptions: PdfOptions,
+      graphImageFile: File
   ): Option[Array[Byte]] = {
     val maybeCachedBytes = maybeCache.flatMap(_.getIcd(sv, targetSv, pdfOptions))
     if (maybeCachedBytes.isDefined)
       maybeCachedBytes
     else
-      getIcdAsHtml(sv, targetSv, iv, pdfOptions).map { html =>
+      getIcdAsHtml(sv, targetSv, iv, pdfOptions, graphImageFile).map { html =>
         val out = new ByteArrayOutputStream()
         IcdToPdf.saveAsPdf(out, html, showLogo = true, pdfOptions)
         val bytes = out.toByteArray
