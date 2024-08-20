@@ -229,18 +229,6 @@ case class ApplicationImpl(db: IcdDb) {
     }
   }
 
-  // Makes a graph for the given subsystems and returns a temp image file for it
-  private def makeGraphImageFile(sv: SubsystemWithVersion, targetSv: SubsystemWithVersion, imageFile: File): Unit = {
-    val options = IcdVizOptions(
-      subsystems = List(sv, targetSv),
-      imageFormat = "PNG",
-      commandLabels = true,
-      missingEvents = false,
-      imageFile = Some(imageFile)
-    )
-    IcdVizManager.showRelationships(db, options)
-  }
-
   /**
    * Returns the PDF for the given ICD
    *
@@ -274,10 +262,7 @@ case class ApplicationImpl(db: IcdDb) {
         maybeIcdVersion
       )
       val icdPrinter = IcdDbPrinter(db, searchAllSubsystems = false, clientApi = true, maybeCache, Some(pdfOptions))
-      val graphImageFile  = File.createTempFile("graph", "png")
-      makeGraphImageFile(sv, targetSv, graphImageFile)
-      val result = icdPrinter.saveIcdAsPdf(sv, targetSv, iv, pdfOptions, graphImageFile)
-      graphImageFile.delete()
+      val result = icdPrinter.saveIcdAsPdf(sv, targetSv, iv, pdfOptions)
       result
     }
     catch {

@@ -453,7 +453,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         div(
           cls := "component container-fluid",
           h2(a(name := "graph")(s"Graph showing connections between $sv and $targetSv")),
-          img(src := graphUrl)
+          img(src := graphUrl, maxWidth := "100%")
         ).render
       )
     }

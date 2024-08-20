@@ -6,8 +6,10 @@ import csw.services.icd.html.{IcdToHtml, NumberedHeadings}
 import icd.web.shared.TitleInfo.unpublished
 import icd.web.shared.*
 import IcdToHtml.*
+import com.itextpdf.kernel.geom.PageSize
 import csw.services.icd.fits.{IcdFits, IcdFitsDefs}
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
+import csw.services.icd.viz.IcdVizManager
 import icd.web.shared.IcdModels.IcdModel
 
 /**
@@ -130,6 +132,18 @@ case class IcdDbPrinter(
       new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), Some(pdfOptions), fitsKeyMap)
     val versionManager = new CachedIcdVersionManager(query)
     val icdInfoList    = getIcdModelList(sv, targetSv)
+    // Letter, Legal, A4, A3
+    val pageWidth = (pdfOptions.paperSize, pdfOptions.orientation) match {
+      case ("A4", "landscape")     => PageSize.A4.getHeight
+      case ("A4", "portrait")      => PageSize.A4.getWidth
+      case ("Legal", "landscape")  => PageSize.LEGAL.getHeight
+      case ("Legal", "portrait")   => PageSize.LEGAL.getWidth
+      case ("A3", "landscape")     => PageSize.A3.getHeight
+      case ("A3", "portrait")      => PageSize.A3.getWidth
+      case ("Letter", "landscape") => PageSize.LETTER.getHeight
+      case ("Letter", "portrait")  => PageSize.LETTER.getWidth
+      case _                       => PageSize.LETTER.getHeight
+    }
     val markup = for {
       subsystemInfo       <- getSubsystemInfo(sv)
       targetSubsystemInfo <- getSubsystemInfo(targetSv)
@@ -157,7 +171,7 @@ case class IcdDbPrinter(
             displayDetails(db, infoList, summaryTable, nh, forApi = false, pdfOptions, clientApi = clientApi),
             div(MissingItemsReport(db, List(sv, targetSv), maybePdfOptions.getOrElse(PdfOptions())).makeReportMarkup(nh)),
             nh.H2(s"Graph showing connections between $sv and $targetSv", "graph"),
-            img(src := graphImageFile.toString)
+            img(src := graphImageFile.toString, width := s"$pageWidth")
           )
         }
         else {
@@ -185,8 +199,9 @@ case class IcdDbPrinter(
               )
             }
             else div(),
-            div(MissingItemsReport(db, List(sv, targetSv), maybePdfOptions.getOrElse(PdfOptions())).makeReportMarkup(nh))
-            // XXX TODO: Add graph
+            div(MissingItemsReport(db, List(sv, targetSv), maybePdfOptions.getOrElse(PdfOptions())).makeReportMarkup(nh)),
+            nh.H2(s"Graph showing connections between $sv and $targetSv", "graph"),
+            img(src := graphImageFile.toString, width := s"$pageWidth")
           )
         }
       )
@@ -287,8 +302,10 @@ case class IcdDbPrinter(
       out.close()
     }
     else {
+      val graphImageFile = File.createTempFile("graph", "png")
       val maybeHtml = if (maybeTarg.isDefined) {
-        getIcdAsHtml(subsys, maybeTarg.get, maybeIcdV, pdfOptions)
+        makeGraphImageFile(subsys, maybeTarg.get, graphImageFile)
+        getIcdAsHtml(subsys, maybeTarg.get, maybeIcdV, pdfOptions, graphImageFile)
       }
       else {
         getApiAsHtml(subsys, pdfOptions)
@@ -299,8 +316,10 @@ case class IcdDbPrinter(
           file.getName.split('.').drop(1).lastOption match {
             case Some("html") =>
               saveAsHtml(html)
+            // In this case don't delete the image file for the graph (Not the usual case)
             case Some("pdf") =>
               saveAsPdf(html)
+              graphImageFile.delete()
               maybeCache.foreach {
                 _.save(subsys, maybeTarg, pdfOptions, searchAllSubsystems, clientApi, file)
               }
@@ -334,6 +353,19 @@ case class IcdDbPrinter(
       }
   }
 
+  // Makes a graph for the given subsystems and returns an image file for it
+  def makeGraphImageFile(sv: SubsystemWithVersion, targetSv: SubsystemWithVersion, imageFile: File): Unit = {
+    val options = IcdVizOptions(
+      subsystems = List(sv, targetSv),
+      imageFormat = "PNG",
+      commandLabels = true,
+      missingEvents = false,
+      showPlot = false,
+      imageFile = Some(imageFile)
+    )
+    IcdVizManager.showRelationships(db, options)
+  }
+
   /**
    * Saves the ICD document as a PDF.
    *
@@ -341,26 +373,30 @@ case class IcdDbPrinter(
    * @param targetSv second subsystem
    * @param iv ICD version, if known
    * @param pdfOptions PDF options
-   * @param graphImageFile image file containing a relationship graph for the two subsystems
    * @return
    */
   def saveIcdAsPdf(
       sv: SubsystemWithVersion,
       targetSv: SubsystemWithVersion,
       iv: Option[IcdVersion],
-      pdfOptions: PdfOptions,
-      graphImageFile: File
+      pdfOptions: PdfOptions
   ): Option[Array[Byte]] = {
+
     val maybeCachedBytes = maybeCache.flatMap(_.getIcd(sv, targetSv, pdfOptions))
     if (maybeCachedBytes.isDefined)
       maybeCachedBytes
-    else
-      getIcdAsHtml(sv, targetSv, iv, pdfOptions, graphImageFile).map { html =>
+    else {
+      val graphImageFile = File.createTempFile("graph", "png")
+      makeGraphImageFile(sv, targetSv, graphImageFile)
+      val result = getIcdAsHtml(sv, targetSv, iv, pdfOptions, graphImageFile).map { html =>
         val out = new ByteArrayOutputStream()
         IcdToPdf.saveAsPdf(out, html, showLogo = true, pdfOptions)
         val bytes = out.toByteArray
         maybeCache.foreach(_.saveIcd(sv, targetSv, pdfOptions, bytes))
         bytes
       }
+      graphImageFile.delete()
+      result
+    }
   }
 }

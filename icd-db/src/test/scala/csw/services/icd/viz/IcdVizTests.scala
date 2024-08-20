@@ -1,11 +1,12 @@
 package csw.services.icd.viz
-import java.io.File
-import java.nio.file.Files
+
 import csw.services.icd.IcdValidator
 import csw.services.icd.db.{IcdDb, Resolver, TestHelper}
 import icd.web.shared.{IcdVizOptions, SubsystemWithVersion}
 import org.scalatest.funsuite.AnyFunSuite
 
+import java.io.File
+import java.nio.file.Files
 import scala.io.Source
 
 class IcdVizTests extends AnyFunSuite {
