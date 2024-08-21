@@ -114,7 +114,7 @@ case class IcdDbPrinter(
    * @param targetSv        the target subsystem and version
    * @param maybeIcdVersion optional ICD version, to be displayed in the title
    * @param pdfOptions      options for generating HTML/PDF
-   * @param graphImageFile  image file containing a relationship graph for the two subsystems
+   * @param maybeGraphImageFile  image file containing a relationship graph for the two subsystems
    *
    */
   private def getIcdAsHtml(
@@ -122,7 +122,7 @@ case class IcdDbPrinter(
       targetSv: SubsystemWithVersion,
       maybeIcdVersion: Option[IcdVersion],
       pdfOptions: PdfOptions,
-      graphImageFile: File
+      maybeGraphImageFile: Option[File]
   ): Option[String] = {
 
     // Use caching, since we need to look at all the components multiple times, in order to determine who
@@ -170,8 +170,12 @@ case class IcdDbPrinter(
             makeIntro(titleInfo1),
             displayDetails(db, infoList, summaryTable, nh, forApi = false, pdfOptions, clientApi = clientApi),
             div(MissingItemsReport(db, List(sv, targetSv), maybePdfOptions.getOrElse(PdfOptions())).makeReportMarkup(nh)),
-            nh.H2(s"Graph showing connections between $sv and $targetSv", "graph"),
-            img(src := graphImageFile.toString, width := s"$pageWidth")
+            maybeGraphImageFile.map { graphImageFile =>
+              div(
+                nh.H2(s"Graph showing connections between $sv and $targetSv", "graph"),
+                img(src := graphImageFile.toString, width := s"$pageWidth")
+              )
+            }
           )
         }
         else {
@@ -200,8 +204,12 @@ case class IcdDbPrinter(
             }
             else div(),
             div(MissingItemsReport(db, List(sv, targetSv), maybePdfOptions.getOrElse(PdfOptions())).makeReportMarkup(nh)),
-            nh.H2(s"Graph showing connections between $sv and $targetSv", "graph"),
-            img(src := graphImageFile.toString, width := s"$pageWidth")
+            maybeGraphImageFile.map { graphImageFile =>
+              div(
+                nh.H2(s"Graph showing connections between $sv and $targetSv", "graph"),
+                img(src := graphImageFile.toString, width := s"$pageWidth")
+              )
+            }
           )
         }
       )
@@ -304,8 +312,9 @@ case class IcdDbPrinter(
     else {
       val graphImageFile = File.createTempFile("graph", "png")
       val maybeHtml = if (maybeTarg.isDefined) {
-        makeGraphImageFile(subsys, maybeTarg.get, graphImageFile)
-        getIcdAsHtml(subsys, maybeTarg.get, maybeIcdV, pdfOptions, graphImageFile)
+        val isGraphEmpty = !makeGraphImageFile(subsys, maybeTarg.get, graphImageFile)
+        val maybeGraphFile = if (isGraphEmpty) None else Some(graphImageFile)
+        getIcdAsHtml(subsys, maybeTarg.get, maybeIcdV, pdfOptions, maybeGraphFile)
       }
       else {
         getApiAsHtml(subsys, pdfOptions)
@@ -353,8 +362,8 @@ case class IcdDbPrinter(
       }
   }
 
-  // Makes a graph for the given subsystems and returns an image file for it
-  def makeGraphImageFile(sv: SubsystemWithVersion, targetSv: SubsystemWithVersion, imageFile: File): Unit = {
+  // Makes a graph for the given subsystems and returns true if the graph is nonempty
+  def makeGraphImageFile(sv: SubsystemWithVersion, targetSv: SubsystemWithVersion, imageFile: File): Boolean = {
     val options = IcdVizOptions(
       subsystems = List(sv, targetSv),
       imageFormat = "PNG",
@@ -387,8 +396,9 @@ case class IcdDbPrinter(
       maybeCachedBytes
     else {
       val graphImageFile = File.createTempFile("graph", "png")
-      makeGraphImageFile(sv, targetSv, graphImageFile)
-      val result = getIcdAsHtml(sv, targetSv, iv, pdfOptions, graphImageFile).map { html =>
+      val isGraphEmpty   = !makeGraphImageFile(sv, targetSv, graphImageFile)
+      val maybeGraphFile = if (isGraphEmpty) None else Some(graphImageFile)
+      val result = getIcdAsHtml(sv, targetSv, iv, pdfOptions, maybeGraphFile).map { html =>
         val out = new ByteArrayOutputStream()
         IcdToPdf.saveAsPdf(out, html, showLogo = true, pdfOptions)
         val bytes = out.toByteArray

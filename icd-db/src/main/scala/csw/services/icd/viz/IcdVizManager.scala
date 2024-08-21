@@ -108,13 +108,14 @@ object IcdVizManager {
   private val subsystemFontsize = 30
 
   /**
-   * Returns a string in Graphviz/dot format showing the relationships between
+   * Uses Graphviz/dot to generate a graph of the relationships between
    * the selected subsystems/components according to the given options.
    * @param db the icd database
    * @param options the options
    * @param maybeOut optional output stream to hold the generated image
+   * @return true if the graph is nonempty
    */
-  def showRelationships(db: IcdDb, options: IcdVizOptions, maybeOut: Option[OutputStream] = None): Unit = {
+  def showRelationships(db: IcdDb, options: IcdVizOptions, maybeOut: Option[OutputStream] = None): Boolean = {
     val query          = new CachedIcdDbQuery(db.db, db.admin, None, None, Map.empty)
     val versionManager = new CachedIcdVersionManager(query)
 
@@ -620,9 +621,15 @@ object IcdVizManager {
           if (missing) getMissingServiceConsumerInfo(info) else getServiceProvidedInfo(info)
         // Map consuming component name to list of service (paths) provided by info.component
         val providedServiceMap = providedServices
-          .flatMap(c => c.requiredBy.map(clientComponent => List(clientComponent.component.prefix, c.serviceModelProvider.name)))
+          .flatMap(c =>
+            c.requiredBy.map(clientComponent =>
+              List(
+                clientComponent.component.prefix,
+                s"${c.serviceModelProvider.name}\n${clientComponent.paths.map(p => s"${p.method.toUpperCase} ${p.path}").mkString("\n")}"
+              )
+            )
+          )
           .groupMap(_.head)(_.tail.head)
-
         val missingType = if (missing) Some(MissingType.noConsumers) else None
         consumerComponents.map(c =>
           EdgeModel(
@@ -640,8 +647,13 @@ object IcdVizManager {
         val (requiredServices, providerComponents) =
           if (missing) getMissingServiceProviderInfo(info) else getServiceRequiredInfo(info)
         // Map providing component name (prefix) to list of consumer paths from info.component
-        val serviceRequiredMap = requiredServices
-          .map(c => List(s"${c.serviceModelClient.subsystem}.${c.serviceModelClient.component}", c.serviceModelClient.name))
+        val serviceRequiredMap: Map[String, List[String]] = requiredServices
+          .map(c =>
+            List(
+              s"${c.serviceModelClient.subsystem}.${c.serviceModelClient.component}",
+              s"${c.serviceModelClient.name}\n${c.serviceModelClient.paths.map(p => s"${p.method.toUpperCase()} ${p.path}").mkString("\n")}"
+            )
+          )
           .groupMap(_.head)(_.tail.head)
         val missingType = if (missing) Some(MissingType.missingProvider) else None
         providerComponents.map(c =>
@@ -882,5 +894,8 @@ object IcdVizManager {
       val fileFormat = getImageFileFormat(new File(s"x.x"))
       saveImageToStream(dot, out, fileFormat)
     }
+
+    // Return true if nonempty
+    !g.isEmpty
   }
 }
