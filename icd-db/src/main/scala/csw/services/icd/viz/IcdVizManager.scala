@@ -17,10 +17,12 @@ import icd.web.shared.{
   PdfOptions,
   ReceivedCommandInfo,
   SentCommandInfo,
+  ServiceProvidedInfo,
+  ServicesRequiredInfo,
   SubscribeInfo,
   SubsystemWithVersion
 }
-import icd.web.shared.IcdModels.{ComponentModel, SubscribeModelInfo}
+import icd.web.shared.IcdModels.{ComponentModel, ServiceModelClientComponent, SubscribeModelInfo}
 import net.sourceforge.plantuml.{FileFormat, FileFormatOption, SourceStringReader}
 import scalax.collection.OneOrMore
 import scalax.collection.config.CoreConfig
@@ -42,6 +44,8 @@ object IcdVizManager {
     val missingImagePublisher = Value("Image missing in publisher")
     val noSenders             = Value("No senders")
     val missingReceiver       = Value("Missing in receiver")
+    val noConsumers           = Value("No service consumers")
+    val missingProvider       = Value("Missing in service provider")
   }
 
   //noinspection TypeAnnotation
@@ -51,9 +55,10 @@ object IcdVizManager {
     val events   = Value("Events")
     val images   = Value("Images")
     val commands = Value("Commands")
+    val services = Value("Services")
   }
 
-  // Type of an edge label
+  // Type of edge label
   private case class EdgeLabel(labels: List[String], edgeType: EdgeType, missing: Option[MissingType] = None) {
     lazy val label: String = labels.sorted.mkString("\\n")
   }
@@ -92,10 +97,11 @@ object IcdVizManager {
     }
   }
 
-  private val commandColor = "chocolate" // command color
-  private val eventColor   = "dimgrey"   // event colors
-  private val imageColor   = "purple"    // image colors
-  private val missingColor = "red"       // missing command or event color
+  private val commandColor = "chocolate"
+  private val eventColor   = "dimgrey"
+  private val imageColor   = "purple"
+  private val serviceColor = "blue"
+  private val missingColor = "red" // missing command, event, etc. color
 
   private val nodeFontsize      = 20
   private val edgeFontsize      = 10
@@ -339,6 +345,35 @@ object IcdVizManager {
       )
     }
 
+    // Gets information about commands received where there are no senders
+    def getMissingSenderCommandInfo(info: ComponentInfo): (List[ReceivedCommandInfo], List[ComponentModel]) = {
+      if (options.missingCommands) {
+        val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
+        val receivedCommands = info.commands.toList
+          .flatMap(_.commandsReceived)
+          .filter(_.senders.isEmpty)
+          .map(r => ReceivedCommandInfo(r.receiveCommandModel, List(missingComponentModel)))
+        (
+          receivedCommands,
+          receivedCommands.map(_ => missingComponentModel)
+        )
+      }
+      else (Nil, Nil)
+    }
+
+    // Gets information about commands received and the components sending the commands
+    def getReceivedCommandInfo(info: ComponentInfo): (List[ReceivedCommandInfo], List[ComponentModel]) = {
+      val receivedCommands = info.commands.toList.flatMap(_.commandsReceived).filter(_.senders.nonEmpty)
+      (
+        receivedCommands,
+        receivedCommands
+          .flatMap(_.senders)
+          .distinct
+          .filter(omitFilter)
+          .filter(_.prefix != info.componentModel.prefix)
+      )
+    }
+
     // Gets information about commands a component sends where no receiver was found
     def getMissingReceiverInfo(info: ComponentInfo): (List[SentCommandInfo], List[ComponentModel]) = {
       if (options.missingCommands) {
@@ -370,30 +405,75 @@ object IcdVizManager {
       else (Nil, Nil)
     }
 
-    // Gets information about commands received and the components sending the commands
-    def getReceivedCommandInfo(info: ComponentInfo): (List[ReceivedCommandInfo], List[ComponentModel]) = {
-      val receivedCommands = info.commands.toList.flatMap(_.commandsReceived).filter(_.senders.nonEmpty)
+    // Gets information about services provided and the components requiring the service
+    def getServiceProvidedInfo(info: ComponentInfo): (List[ServiceProvidedInfo], List[ComponentModel]) = {
+      val servicesProvided = info.services.toList.flatMap(_.servicesProvided).filter(_.requiredBy.nonEmpty)
       (
-        receivedCommands,
-        receivedCommands
-          .flatMap(_.senders)
+        servicesProvided,
+        servicesProvided
+          .flatMap(_.requiredBy)
+          .distinct
+          .filter(c => omitFilter(c.component))
+          .filter(_.component.prefix != info.componentModel.prefix)
+          .map(_.component)
+      )
+    }
+
+    // Gets information about services a component requires where no provider was found
+    def getMissingServiceProviderInfo(info: ComponentInfo): (List[ServicesRequiredInfo], List[ComponentModel]) = {
+      if (options.missingCommands) {
+        val requiredServices = info.services.toList
+          .flatMap(_.servicesRequired)
+          .filter(_.maybeServiceModelProvider.isEmpty)
+        (
+          requiredServices,
+          requiredServices
+            .map(s =>
+              s.provider
+                .getOrElse(
+                  ComponentModel(
+                    "?",
+                    s.serviceModelClient.subsystem,
+                    s.serviceModelClient.component,
+                    s.serviceModelClient.component,
+                    s.serviceModelClient.component,
+                    IcdValidator.currentSchemaVersion,
+                    ""
+                  )
+                )
+            )
+            .distinct
+            .filter(omitFilter)
+            .filter(_.prefix != info.componentModel.prefix)
+        )
+      }
+      else (Nil, Nil)
+    }
+
+    // Gets information about services provided and the components requiring the service
+    def getServiceRequiredInfo(info: ComponentInfo): (List[ServicesRequiredInfo], List[ComponentModel]) = {
+      val servicesRequired = info.services.toList.flatMap(_.servicesRequired).filter(_.provider.nonEmpty)
+      (
+        servicesRequired,
+        servicesRequired
+          .flatMap(_.provider.toList)
           .distinct
           .filter(omitFilter)
           .filter(_.prefix != info.componentModel.prefix)
       )
     }
 
-    // Gets information about commands received where there are no senders
-    def getMissingSenderCommandInfo(info: ComponentInfo): (List[ReceivedCommandInfo], List[ComponentModel]) = {
+    // Gets information about services provided where there are no consumers
+    def getMissingServiceConsumerInfo(info: ComponentInfo): (List[ServiceProvidedInfo], List[ComponentModel]) = {
       if (options.missingCommands) {
         val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
-        val receivedCommands = info.commands.toList
-          .flatMap(_.commandsReceived)
-          .filter(_.senders.isEmpty)
-          .map(r => ReceivedCommandInfo(r.receiveCommandModel, List(missingComponentModel)))
+        val servicesProvided = info.services.toList
+          .flatMap(_.servicesProvided)
+          .filter(_.requiredBy.isEmpty)
+          .map(r => ServiceProvidedInfo(r.serviceModelProvider, List(ServiceModelClientComponent(missingComponentModel, Nil))))
         (
-          receivedCommands,
-          receivedCommands.map(_ => missingComponentModel)
+          servicesProvided,
+          servicesProvided.map(_ => missingComponentModel)
         )
       }
       else (Nil, Nil)
@@ -403,6 +483,7 @@ object IcdVizManager {
     val primaryComponents = componentInfoList.map(_.componentModel).filter(omitFilter)
 
     // All subsystems related to the primary components
+    // XXX TODO FIXME: Check if this can be simplified, at least for ICDs
     val allSubsystems = componentInfoList.flatMap { info =>
       val (_, eventSubscriberComponents)       = getSubscriberInfo(info, images = false)
       val (_, missingEventPublisherComponents) = getMissingPublisherInfo(info, images = false)
@@ -422,6 +503,13 @@ object IcdVizManager {
       val (_, senderComponents)        = getReceivedCommandInfo(info)
       val (_, missingSenderComponents) = getMissingSenderCommandInfo(info)
 
+      // ---
+      val (_, serviceProviderComponents)        = getServiceProvidedInfo(info)
+      val (_, missingServiceProviderComponents) = getMissingServiceProviderInfo(info)
+
+      val (_, serviceConsumerComponents)        = getServiceRequiredInfo(info)
+      val (_, missingServiceConsumerComponents) = getMissingServiceConsumerInfo(info)
+
       (info.componentModel :: (eventSubscriberComponents ++
         missingEventPublisherComponents ++
         eventPublisherComponents ++
@@ -433,7 +521,11 @@ object IcdVizManager {
         receivierComponents ++
         missingReceivierComponents ++
         senderComponents ++
-        missingSenderComponents))
+        missingSenderComponents ++
+        serviceProviderComponents ++
+        missingServiceProviderComponents ++
+        serviceConsumerComponents ++
+        missingServiceConsumerComponents))
         .map(_.subsystem)
         .distinct
     }
@@ -507,14 +599,55 @@ object IcdVizManager {
         val (receivedCommands, senderComponents) =
           if (missing) getMissingSenderCommandInfo(info) else getReceivedCommandInfo(info)
         // Map sending component name to list of commands received by info.component
-        val recvCmdmdMap = receivedCommands
+        val recvCmdMap = receivedCommands
           .flatMap(c => c.senders.map(senderComponent => List(senderComponent.prefix, c.receiveCommandModel.name)))
           .groupMap(_.head)(_.tail.head)
         val missingType = if (missing) Some(MissingType.noSenders) else None
         senderComponents.map(c =>
           EdgeModel(
             makeComponentPair(c.prefix, info.componentModel.prefix),
-            EdgeLabel(recvCmdmdMap(c.prefix), EdgeType.commands, missingType)
+            EdgeLabel(recvCmdMap(c.prefix), EdgeType.commands, missingType)
+          )
+        )
+      }
+    }
+
+    // Edges for services that the primary components provides.
+    // If missing is true, only those with no conumers, otherwise only those with consumers.
+    def getServiceProvidedEdges(missing: Boolean): List[EdgeModel] = {
+      componentInfoList.flatMap { info =>
+        val (providedServices, consumerComponents) =
+          if (missing) getMissingServiceConsumerInfo(info) else getServiceProvidedInfo(info)
+        // Map consuming component name to list of service (paths) provided by info.component
+        val providedServiceMap = providedServices
+          .flatMap(c => c.requiredBy.map(clientComponent => List(clientComponent.component.prefix, c.serviceModelProvider.name)))
+          .groupMap(_.head)(_.tail.head)
+
+        val missingType = if (missing) Some(MissingType.noConsumers) else None
+        consumerComponents.map(c =>
+          EdgeModel(
+            makeComponentPair(c.prefix, info.componentModel.prefix),
+            EdgeLabel(providedServiceMap(c.prefix), EdgeType.services, missingType)
+          )
+        )
+      }
+    }
+
+    // Edges for services that the primary components consumes / requires.
+    // If missing is true, only those with no providers, otherwise only those with providers.
+    def getServiceRequiredEdges(missing: Boolean): List[EdgeModel] = {
+      componentInfoList.flatMap { info =>
+        val (requiredServices, providerComponents) =
+          if (missing) getMissingServiceProviderInfo(info) else getServiceRequiredInfo(info)
+        // Map providing component name (prefix) to list of consumer paths from info.component
+        val serviceRequiredMap = requiredServices
+          .map(c => List(s"${c.serviceModelClient.subsystem}.${c.serviceModelClient.component}", c.serviceModelClient.name))
+          .groupMap(_.head)(_.tail.head)
+        val missingType = if (missing) Some(MissingType.missingProvider) else None
+        providerComponents.map(c =>
+          EdgeModel(
+            makeComponentPair(info.componentModel.prefix, c.prefix),
+            EdgeLabel(serviceRequiredMap(c.prefix), EdgeType.services, missingType)
           )
         )
       }
@@ -575,13 +708,17 @@ object IcdVizManager {
     def edgeTransformer(innerEdge: Graph[String, MyLDiEdge]#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
       val edge      = innerEdge.outer
       val edgeLabel = edge.model.label
-      val showLabel = options.eventLabels &&
-        (edgeLabel.edgeType == EdgeType.events || edgeLabel.edgeType == EdgeType.images) ||
-        options.commandLabels && edgeLabel.edgeType == EdgeType.commands
+      // XXX TODO FIXME: Introduce new option "serviceLabels"? Using "commandLabels" for now.
+      val showLabel = (options.eventLabels &&
+        (edgeLabel.edgeType == EdgeType.events || edgeLabel.edgeType == EdgeType.images)) ||
+        (options.commandLabels &&
+          (edgeLabel.edgeType == EdgeType.commands || edgeLabel.edgeType == EdgeType.services))
       val color = edgeLabel.edgeType match {
-        case EdgeType.events => eventColor
-        case EdgeType.images => imageColor
-        case _               => commandColor
+        case EdgeType.events   => eventColor
+        case EdgeType.images   => imageColor
+        case EdgeType.commands => commandColor
+        case EdgeType.services => serviceColor
+        case _                 => commandColor
       }
       val styleAttr =
         if (edgeLabel.missing.isDefined)
@@ -714,19 +851,14 @@ object IcdVizManager {
       getSubscribedEventEdges(missing = true, images = true) ++ getPublishedEventEdges(missing = true, images = true)
     val commandEdgeModels        = combineEdgeModels(getSentCommandEdges(missing = false) ++ getReceivedCommandEdges(missing = false))
     val missingCommandEdgeModels = getSentCommandEdges(missing = true) ++ getReceivedCommandEdges(missing = true)
+    val serviceEdgeModels = combineEdgeModels(
+      getServiceRequiredEdges(missing = false) ++ getServiceProvidedEdges(missing = false)
+    )
+    val missingServiceEdgeModels = getServiceRequiredEdges(missing = true) ++ getServiceProvidedEdges(missing = true)
 
     val allEdgeModels: List[EdgeModel] = (
-      eventEdgeModels ++ imageEdgeModels ++ missingEventEdgeModels ++ missingImageEdgeModels ++ commandEdgeModels ++ missingCommandEdgeModels
+      eventEdgeModels ++ imageEdgeModels ++ missingEventEdgeModels ++ missingImageEdgeModels ++ commandEdgeModels ++ missingCommandEdgeModels ++ serviceEdgeModels ++ missingServiceEdgeModels
     ).distinct
-
-//    // Note: Since scala-graph 2.0, it seems that the component pairs need to be unique, so call combineEdgeModels
-//    // to merge image and event edges
-//    val allEdgeModels = (
-//      combineEdgeModels(eventEdgeModels ++ imageEdgeModels)
-//        ++ combineEdgeModels(missingEventEdgeModels ++ missingImageEdgeModels)
-//        ++ commandEdgeModels
-//        ++ missingCommandEdgeModels
-//    ).distinct
 
     // Create the final graph
     val g = MyGraph.from(

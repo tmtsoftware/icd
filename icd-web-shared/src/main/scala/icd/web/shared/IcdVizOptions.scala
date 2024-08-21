@@ -46,9 +46,9 @@ case class IcdVizOptions(
     ratio: Double = defaultRatio,
     // Plot missing events
     missingEvents: Boolean = defaultMissingEvents,
-    // Plot missing commands
+    // Plot missing commands (and services)
     missingCommands: Boolean = defaultMissingCommands,
-    // Plot command labels
+    // Plot command (and service) labels
     commandLabels: Boolean = defaultCommandLabels,
     // Plot event labels
     eventLabels: Boolean = defaultEventLabels,
