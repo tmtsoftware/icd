@@ -38,7 +38,7 @@ case class IcdDbManager(db: DB, versionManager: IcdVersionManager) {
     }
   }
 
-  // Inserts an new object in a collection, with _version = 1
+  // Inserts a new object in a collection, with _version = 1
   private def insert(coll: BSONCollection, obj: JsObject): Unit = {
     coll.insert.one(obj + (versionKey -> JsNumber(1))).await
   }
