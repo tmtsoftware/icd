@@ -1,6 +1,7 @@
 package csw.services.icd.db
 
 import csw.services.icd.*
+import csw.services.icd.StdName.serviceFileNames
 import icd.web.shared.IcdModels.{ComponentModel, IcdModel, ServiceModel, SubsystemModel}
 import icd.web.shared.{IcdModels, IcdVersion, IcdVersionInfo, PdfOptions, SubsystemWithVersion}
 import org.joda.time.{DateTime, DateTimeZone}
@@ -17,7 +18,7 @@ import csw.services.icd.db.parser.{
   SubscribeModelBsonParser,
   SubsystemModelBsonParser
 }
-import play.api.libs.json.{JsObject, JsValue, Json, DefaultWrites}
+import play.api.libs.json.{DefaultWrites, JsObject, JsValue, Json}
 import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONObjectID}
 import reactivemongo.api.{Cursor, WriteConcern}
 import reactivemongo.api.bson.collection.BSONCollection
@@ -221,7 +222,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
   /**
    * Increments the version for the named subsystem or component.
    * This creates a Mongo collection named "name.v" that contains the subsystem or component version (starting with "1.0"),
-   * the user and date as well as a list of the names and versions of each of the subsystem or component parts.
+   * the user and date as well as a list of the collection names and versions of each of the subsystem or component parts.
    *
    * @param collectionNames list of collection names (for better performance)
    * @param subsystem       the subsystem
@@ -334,12 +335,14 @@ case class IcdVersionManager(query: IcdDbQuery) {
 
         def filter(p: IcdPath) = p.subsystem == sv.subsystem && sv.maybeComponent.fold(true)(_ => p.component == path)
 
-        val paths   = getCollectionNames.filter(isStdSet).map(IcdPath.apply).filter(filter).map(_.path).toList
-        val now     = new DateTime(DateTimeZone.UTC)
-        val user    = ""
-        val comment = "Working version, unpublished"
-        val commit  = ""
-        val parts   = paths.map(p => (p, getPartVersion(p))).flatMap(pair => pair._2.map(version => PartInfo(pair._1, version)))
+        val collectionNames = getCollectionNames
+        val icdPaths        = collectionNames.filter(isStdSet).map(IcdPath.apply).filter(filter)
+        val paths           = icdPaths.map(_.path).toList ++ getOpenApiCollectionPaths(collectionNames, icdPaths)
+        val now             = new DateTime(DateTimeZone.UTC)
+        val user            = ""
+        val comment         = "Working version, unpublished"
+        val commit          = ""
+        val parts           = paths.map(p => (p, getPartVersion(p))).flatMap(pair => pair._2.map(version => PartInfo(pair._1, version)))
         Some(VersionInfo(None, user, comment, now, commit, parts))
     }
   }
@@ -402,7 +405,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
   }
 
   // Returns the contents of the given version of the given collection
-  private def getVersionOf(coll: BSONCollection, version: Int): BSONDocument = {
+  private[db] def getVersionOf(coll: BSONCollection, version: Int): BSONDocument = {
     // Get a previously published version from $coll.v
     def getPublishedDoc: BSONDocument = {
       val v     = db.collection[BSONCollection](versionCollectionName(coll.name))
@@ -494,6 +497,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
       includeOnly: Set[String] = Set.empty
   ): List[IcdModels] = {
 
+    // XXX TODO FIXME: Use enum for includeOnly
+
     // Return an object that holds all the model classes associated with a single ICD entry.
     def makeModels(versionMap: Map[String, Int], entry: ApiCollections): IcdModels = {
       def getDocVersion(coll: BSONCollection): BSONDocument = getVersionOf(coll, versionMap(coll.name))
@@ -531,9 +536,10 @@ case class IcdVersionManager(query: IcdDbQuery) {
           entry.component.flatMap(coll => ComponentModelBsonParser(getDocVersion(coll), maybePdfOptions, sv.maybeVersion))
         else None
 
+      val serviceMap = entry.serviceMap.view.mapValues(getDocVersion).toMap
       val serviceModel: Option[IcdModels.ServiceModel] =
         if (includeOnly.isEmpty || includeOnly.contains("serviceModel"))
-          entry.services.flatMap(coll => ServiceModelBsonParser(db, getDocVersion(coll), maybePdfOptions))
+          entry.services.flatMap(coll => ServiceModelBsonParser(db, getDocVersion(coll), serviceMap, maybePdfOptions))
         else None
 
       val alarmsModel: Option[IcdModels.AlarmsModel] =
@@ -553,7 +559,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
       case Some(versionInfo) =>
         val versionMap = versionInfo.parts.map(v => v.path -> v.version).toMap
         val allEntries = getEntries(versionInfo.parts)
-        val entries    = if (includeOnly.contains("subsystemModel")) allEntries.take(1) else allEntries
+        // XXX TODO FIXME Check this
+        val entries = if (includeOnly.contains("subsystemModel")) allEntries.take(1) else allEntries
         entries.map(makeModels(versionMap, _))
       case None =>
         println(s"$sv not found in the icd database.")
@@ -692,37 +699,40 @@ case class IcdVersionManager(query: IcdDbQuery) {
     val collectionNames = getCollectionNames
 
     // Save any of the subsystem's collections that changed
-    val icdPaths = collectionNames.filter(isStdSet).map(IcdPath.apply).filter(_.subsystem == subsystem)
-    val paths    = icdPaths.map(_.path).toList
-    val versions = for (path <- paths) yield {
-      val coll            = db.collection[BSONCollection](path)
-      val obj             = coll.find(queryAny, Option.empty[JsObject]).one[BSONDocument].await.get
-      val version         = obj.int(versionKey).get
-      val id              = obj.getAsOpt[BSONObjectID](idKey).get
-      val versionCollName = versionCollectionName(path)
-      val exists          = collectionNames.contains(versionCollName)
-      val lastVersion = if (!exists || diff(db(versionCollName), obj).isDefined) {
-        // Update version history
-        val v = db.collection[BSONCollection](versionCollName)
-        if (exists) {
-          // avoid duplicate key (needed?)
-          v.findAndRemove(BSONDocument(idKey -> id), None, None, WriteConcern.Default, None, None, Nil).await
+    def saveChangedCollections(): List[(String, Int)] = {
+      val icdPaths = collectionNames.filter(isStdSet).map(IcdPath.apply).filter(_.subsystem == subsystem)
+      val paths    = icdPaths.map(_.path).toList ++ getOpenApiCollectionPaths(collectionNames, icdPaths)
+      for (path <- paths) yield {
+        val coll            = db.collection[BSONCollection](path)
+        val obj             = coll.find(queryAny, Option.empty[JsObject]).one[BSONDocument].await.get
+        val version         = obj.int(versionKey).get
+        val id              = obj.getAsOpt[BSONObjectID](idKey).get
+        val versionCollName = versionCollectionName(path)
+        val exists          = collectionNames.contains(versionCollName)
+        val lastVersion = if (!exists || diff(db(versionCollName), obj).isDefined) {
+          // Update version history
+          val v = db.collection[BSONCollection](versionCollName)
+          if (exists) {
+            // avoid duplicate key (needed?)
+            v.findAndRemove(BSONDocument(idKey -> id), None, None, WriteConcern.Default, None, None, Nil).await
+          }
+          v.insert.one(obj).await
+          // increment version for unpublished working copy
+          val mod = BSONDocument("$set" -> BSONDocument(versionKey -> (version + 1)))
+          coll.update.one(queryAny, mod).await
+          version
         }
-        v.insert.one(obj).await
-        // increment version for unpublished working copy
-        val mod = BSONDocument("$set" -> BSONDocument(versionKey -> (version + 1)))
-        coll.update.one(queryAny, mod).await
-        version
+        else {
+          // XXX TODO FIXME: Forgot why subtracting 1 here
+          version - 1
+        }
+        (path, lastVersion)
       }
-      else
-        version - 1
-      (path, lastVersion)
     }
 
     // Add to collection of published subsystem versions
+    val versions = saveChangedCollections()
     newVersion(collectionNames, subsystem, maybeVersion, None, versions, comment, username, majorVersion, date, commit)
-
-    // Add to collection of published subsystem component versions
     getComponentNames(SubsystemWithVersion(subsystem, None, None)).foreach { name =>
       val prefix       = s"$subsystem.$name."
       val compVersions = versions.filter(p => p._1.startsWith(prefix))

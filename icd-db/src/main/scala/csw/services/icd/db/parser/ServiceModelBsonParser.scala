@@ -9,6 +9,7 @@ import reactivemongo.api.bson.collection.BSONCollection
 import csw.services.icd.*
 import reactivemongo.play.json.compat.*
 import bson2json.*
+import csw.services.icd.StdName.serviceFileNames
 import lax.*
 import json2bson.*
 import reactivemongo.api.bson.BSONDocument
@@ -71,14 +72,24 @@ object ServiceModelBsonParser {
       }
     }
 
-    def apply(db: DB, doc: BSONDocument, subsystem: String, component: String): Option[ServiceModelProvider] = {
+    def apply(
+        db: DB,
+        doc: BSONDocument,
+        subsystem: String,
+        component: String,
+        serviceMap: Map[String, BSONDocument]
+    ): Option[ServiceModelProvider] = {
       if (doc.isEmpty) None
       else {
         // When reading from the database replace the openApi file name with the contents that were ingested for that file
-        val name            = doc.string("name").get
-        val collName        = s"$subsystem.$component.service.$name"
-        val coll            = db.collection[BSONCollection](collName)
-        val maybeOpenApiDoc = coll.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await
+        val name     = doc.string("name").get
+        val collName = s"$subsystem.$component.service.$name"
+        val maybeOpenApiDoc =
+          if (serviceMap.contains(collName)) serviceMap.get(collName)
+          else {
+            val coll = db.collection[BSONCollection](collName)
+            coll.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await
+          }
         if (maybeOpenApiDoc.isEmpty) {
           println(s"ServiceModelProviderBsonParser: Can't locate MongoDB collection: $collName")
         }
@@ -95,7 +106,21 @@ object ServiceModelBsonParser {
     }
   }
 
-  def apply(db: DB, doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): Option[ServiceModel] = {
+  /**
+   * Parses the service model JSON from the database.
+   *
+   * @param db reference to the mongodb database
+   * @param doc the mongodb doc containing the service model
+   * @param serviceMap maps service name to db collection
+   * @param maybePdfOptions optional PDF options used when generating the HTML for descriptions
+   * @return
+   */
+  def apply(
+      db: DB,
+      doc: BSONDocument,
+      serviceMap: Map[String, BSONDocument],
+      maybePdfOptions: Option[PdfOptions]
+  ): Option[ServiceModel] = {
     if (doc.isEmpty) None
     else {
       val subsystem = doc.string(BaseModelBsonParser.subsystemKey).get
@@ -109,7 +134,7 @@ object ServiceModelBsonParser {
           subsystem = subsystem,
           component = component,
           description = doc.string("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse(""),
-          provides = getItems("provides", ServiceModelProviderBsonParser(db, _, subsystem, component)).flatten,
+          provides = getItems("provides", ServiceModelProviderBsonParser(db, _, subsystem, component, serviceMap)).flatten,
           requires = getItems("requires", ServiceModelClientBsonParser(_)).flatten
         )
       )

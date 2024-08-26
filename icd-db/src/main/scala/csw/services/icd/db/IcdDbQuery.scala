@@ -22,6 +22,7 @@ import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.play.json.compat.*
 import bson2json.*
 import csw.services.icd.db.IcdDbDefaults.{backupCollSuffix, tmpCollSuffix}
+import csw.services.icd.db.IcdVersionManager.versionSuffix
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import lax.*
 import json2bson.*
@@ -31,7 +32,7 @@ import scala.language.implicitConversions
 
 object IcdDbQuery {
   // Set of standard ICD model parts: subsystem, component, publish, subscribe, command
-  val stdSet: Set[String] = stdNames.map(_.modelBaseName).toSet
+  private val stdSet: Set[String] = stdNames.map(_.modelBaseName).toSet
 
   // True if the named collection represents an ICD model (has one of the standard names)
   def isStdSet(name: String): Boolean =
@@ -39,23 +40,47 @@ object IcdDbQuery {
 
   // for working with dot separated paths
   private[db] case class IcdPath(path: String) {
-    lazy val parts: List[String] = {
+    // The logical parts of a collection path: [subsystem, component, modelBaseName?, openApiName?]
+    val parts: List[String] = {
       // allow embedded dots in component name
       val l         = path.split("\\.").toList
       val subsystem = l.head
-      val component = l.tail.dropRight(1).mkString(".")
-      val suffix    = l.reverse.head
-      if (component.nonEmpty)
-        List(subsystem, component, suffix)
-      else
-        List(subsystem, suffix)
+      if (!path.contains(".service.")) {
+        // For example: $subsystem.$component.publish
+        val component     = l.tail.dropRight(1).mkString(".")
+        val modelBaseName = l.reverse.head
+        if (component.nonEmpty)
+          List(subsystem, component, modelBaseName)
+        else
+          List(subsystem, modelBaseName)
+      }
+      else {
+        // OpenApi collections referred to in service model
+        // For example: $subsystem.$component.service.$name (component can contain dots)
+        val modelBaseName = "service"
+        val i             = l.indexOf(modelBaseName)
+        val component     = l.tail.dropRight(l.size - i).mkString(".")
+        // XXX TODO FIXME: concat rest of parts?
+        val openApiName   = l(i + 1)
+        List(subsystem, component, modelBaseName, openApiName)
+      }
     }
 
+    // XXX TODO FIXME
     // The common path for an assembly, HCD, sequencer, etc.
-    lazy val component: String = parts.dropRight(1).mkString(".")
+    val component: String = if (parts.size < 4) parts.dropRight(1).mkString(".") else s"${parts.head}.${parts.tail.head}"
 
     // The top level subsystem collection name
-    lazy val subsystem: String = parts.head
+    val subsystem: String = parts.head
+  }
+
+  // Returns a list of OpenApi collections that store the JSON (possibly converted from YAML files)
+  // referenced in the service-model.conf file
+  def getOpenApiCollectionPaths(collectionNames: Set[String], icdPaths: Set[IcdPath]): List[String] = {
+    val maybeServiceModelPath = icdPaths.filter(_.parts.reverse.head == serviceFileNames.modelBaseName)
+    maybeServiceModelPath.toList.flatMap { serviceModelPath =>
+      collectionNames.toList.filter(s => s.startsWith(s"${serviceModelPath.path}.") && !s.endsWith(versionSuffix))
+    }
   }
 
   // Lists available db collections related to an API
@@ -68,11 +93,14 @@ object IcdDbQuery {
       command: Option[BSONCollection],
       alarms: Option[BSONCollection],
       services: Option[BSONCollection],
+      serviceMap: Map[String, BSONCollection],
       icds: List[BSONCollection]
   ) {
 
     // Returns all collections belonging to this entry
-    def getCollections: List[BSONCollection] = (subsystem ++ component ++ publish ++ subscribe ++ command ++ alarms).toList
+    def getCollections: List[BSONCollection] = {
+      (subsystem ++ component ++ publish ++ subscribe ++ command ++ alarms ++ services ++ serviceMap.values.toList).toList
+    }
   }
 
   // Returns an IcdEntry for the given collection path
@@ -86,6 +114,7 @@ object IcdDbQuery {
       command = paths.find(_.endsWith(".command")).map(db(_)),
       alarms = paths.find(_.endsWith(".alarm")).map(db(_)),
       services = paths.find(_.endsWith(".service")).map(db(_)),
+      serviceMap = paths.filter(_.contains(".service.")).map(s => s -> db(s)).toMap,
       icds = paths.filter(_.endsWith("-icd")).map(db(_))
     )
   }
@@ -204,11 +233,14 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
   }
 
   private[db] def getEntries: List[ApiCollections] = {
-    val paths = getCollectionNames.filter(isStdSet).map(IcdPath.apply).toList
+    val collectionNames = getCollectionNames
+    val icdPaths        = collectionNames.filter(isStdSet).map(IcdPath.apply)
+    val openApiPaths = getOpenApiCollectionPaths(collectionNames, icdPaths).map(IcdPath.apply)
+    val paths        = icdPaths.toList ++ openApiPaths
     getEntries(paths)
   }
 
-  def collectionHead(coll: BSONCollection): Option[BSONDocument] = {
+  private def collectionHead(coll: BSONCollection): Option[BSONDocument] = {
     coll.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await
   }
 
@@ -237,13 +269,25 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
       command = getCommandCollection(subsystem, component),
       alarms = getAlarmsCollection(subsystem, component),
       services = getServiceCollection(subsystem, component),
+      serviceMap = Map.empty,
       icds = Nil
     )
   }
 
   // Returns an IcdEntry object for the given subsystem name, if found
   private[db] def entryForSubsystemName(subsystem: String): ApiCollections = {
-    ApiCollections(subsystem, getSubsystemCollection(subsystem), None, None, None, None, None, None, getIcdCollections(subsystem))
+    ApiCollections(
+      name = subsystem,
+      subsystem = getSubsystemCollection(subsystem),
+      component = None,
+      publish = None,
+      subscribe = None,
+      command = None,
+      alarms = None,
+      services = None,
+      serviceMap = Map.empty,
+      icds = getIcdCollections(subsystem)
+    )
   }
 
   /**
@@ -251,7 +295,7 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
    *
    * @param query restricts the components returned (a MongoDBObject, for example)
    */
-  def queryComponents(query: BSONDocument, maybePdfOptions: Option[PdfOptions]): List[ComponentModel] = {
+  private def queryComponents(query: BSONDocument, maybePdfOptions: Option[PdfOptions]): List[ComponentModel] = {
     getEntries.flatMap {
       _.component.flatMap { coll =>
         val maybeDoc = coll.find(query, Option.empty[JsObject]).one[BSONDocument].await
@@ -302,8 +346,8 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
    * Returns a list of all subsystem names in the database.
    */
   def getSubsystemNames: List[String] = {
-    getEntries.flatMap {
-      _.subsystem.flatMap { coll =>
+    getEntries.flatMap { e =>
+      e.subsystem.flatMap { coll =>
         val doc = coll.find(BSONDocument(), Option.empty[JsObject]).one[BSONDocument].await.get
         SubsystemModelBsonParser(doc, None).map(_.subsystem)
       }
@@ -454,7 +498,7 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
     val collName = getServiceCollectionName(subsystem, component)
     if (collectionExists(collName)) {
       val coll = db.collection[BSONCollection](collName)
-      collectionHead(coll).flatMap(ServiceModelBsonParser(db, _, maybePdfOptions))
+      collectionHead(coll).flatMap(ServiceModelBsonParser(db, _, Map.empty, maybePdfOptions))
     }
     else None
   }
@@ -516,7 +560,9 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
       val alarmsModel: Option[AlarmsModel] =
         entry.alarms.flatMap(coll => collectionHead(coll).flatMap(AlarmsModelBsonParser(_, maybePdfOptions)))
       val serviceModel: Option[ServiceModel] =
-        entry.services.flatMap(coll => collectionHead(coll).flatMap(ServiceModelBsonParser(db, _, maybePdfOptions)))
+        entry.services.flatMap(coll =>
+          collectionHead(coll).flatMap(ServiceModelBsonParser(db, _, Map.empty, maybePdfOptions))
+        )
       val icdModels: List[IcdModel] =
         entry.icds.flatMap(coll => collectionHead(coll).flatMap(IcdModelBsonParser(_, maybePdfOptions)))
       IcdModels(subsystemModel, componentModel, publishModel, subscribeModel, commandModel, alarmsModel, serviceModel, icdModels)
@@ -585,16 +631,15 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
   private[db] def getSubsystemCollectionNames(collectionNames: Set[String], subsystem: String): Set[String] = {
     collectionNames
       .filter(name =>
-        name.startsWith(s"$subsystem.")
-          && !name.endsWith(IcdVersionManager.versionSuffix)
-          && !name.endsWith(tmpCollSuffix)
-          && !name.endsWith(backupCollSuffix)
+        name.startsWith(s"$subsystem.") && !name.endsWith(versionSuffix) && !name.endsWith(tmpCollSuffix) && !name.endsWith(
+          backupCollSuffix
+        )
       )
   }
 
   /**
    * If there were errors, delete the temp collections (that were created while ingesting the model files).
-   * Otherwise make backups of the existing collections before renaming the temp collections.
+   * Otherwise, make backups of the existing collections before renaming the temp collections.
    * Returns a pair of (newCollections, backupCollections) so that post-ingest validation can clean up
    * on error.
    */

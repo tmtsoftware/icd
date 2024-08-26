@@ -12,7 +12,7 @@ object SubsystemModelBsonParser {
 
   def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): Option[SubsystemModel] = {
     if (doc.isEmpty) None
-    else
+    else {
       Some(
         SubsystemModel(
           subsystem = doc.string("subsystem").get,
@@ -21,6 +21,6 @@ object SubsystemModelBsonParser {
           modelVersion = doc.string("modelVersion").get
         )
       )
+    }
   }
 }
-
