@@ -3,6 +3,10 @@ digraph icdviz {
 	node [fontsize = 20]
 	edge [fontsize = 10]
 	"TEST2.test2Pk" -> "TEST.rtc" [color = red, fontcolor = red, style = dashed, label = "Missing in publisher:\nzenithAngle"]
+	"TEST.env.ctrl" -> "TEST2.SegmentService" [color = red, fontcolor = red, style = dashed, label = "Missing in service provider:\nesw-segment-db
+POST /setPosition
+GET /currentPositions
+POST /segmentPositions/{segmentId}"]
 	"TEST.rtc" -> "TEST.?" [color = red, fontcolor = red, style = dashed, label = "No subscribers:\nho.scallop.m1\npwfs.pupilShift.offset\ntel.coma\ntel.focus\ntel.m1\ntel.magnification\ntel.rate\ntel.tilt"]
 	"TEST2.Corrections" -> "TEST.rtc" [color = red, fontcolor = red, style = dashed, label = "Missing in publisher:\nmodes\nsetPoints"]
 	"TEST.env.ctrl" -> "TEST.?" [color = red, fontcolor = red, style = dashed, label = "No subscribers:\nDataWriteEnd\nDataWriteStart\nDowntimeStart\nExposureAborted\nExposureAvailable\nExposureEnd\nExposureStart\nGuidestarAcqEnd\nGuidestarAcqStart\nIRDetectorExposureData\nIRDetectorExposureState\nMetadataAvailable\nObservationEnd\nObservationStart\nObserveEnd\nObservePaused\nObserveResumed\nObserveStart\nOpticalDetectorExposureData\nOpticalDetectorExposureState\nPrepareStart\nPresetEnd\nPresetStart\nPublishFail\nPublishSuccess\nReadoutEnd\nReadoutFailed\nScitargetAcqEnd\nScitargetAcqStart\nWfsDetectorExposureState\nheartbeat\ninitialized\nlogToFile\nsensors\nstate"]
@@ -20,6 +24,21 @@ digraph icdviz {
 	"TEST.?" -> "TEST.lgsWfs" [color = red, fontcolor = red, style = dashed, label = "No senders:\nLGS_WFS_DETECTOR\nLGS_WFS_DETECTOR2\nLGS_WFS_INITIALIZE\nLGS_WFS_INITIALIZE_REF\nLGS_WFS_STOP"]
 	"TEST.?" -> "TEST.rtc" [color = red, fontcolor = red, style = dashed, label = "No senders:\nCONFIGURE\nINITIALIZE\nSHUTDOWN"]
 	"TEST.ndme" -> "TEST.?" [color = red, fontcolor = red, style = dashed, label = "No subscribers:\ncrateVoltage\ndiagnosticsEngr\ndiagnosticsOps\nengrMode\nhighVoltage\npower"]
+	"TEST.lgsWfs" -> "TEST2.SegmentService" [color = red, fontcolor = red, style = dashed, label = "Missing in service provider:\nesw-segment-db
+GET /currentPositions"]
+	subgraph cluster_TEST2 {
+		label = TEST2
+		color = grey
+		fontcolor = grey
+		fontsize = 30
+		style = rounded
+		penwidth = 3
+		labelloc = b
+		"TEST2.Corrections" [label = Corrections, color = grey, fontcolor = grey, style = dashed]
+		"TEST2.cmTEST" [label = cmTEST, color = grey, fontcolor = grey, style = dashed]
+		"TEST2.SegmentService" [label = SegmentService, color = grey, fontcolor = grey, style = dashed]
+		"TEST2.test2Pk" [label = test2Pk, color = grey, fontcolor = grey, style = dashed]
+	}
 	subgraph cluster_TEST {
 		label = TEST
 		color = grey
@@ -35,17 +54,5 @@ digraph icdviz {
 		"TEST.lgsWfs" [label = lgsWfs, color = grey, fontcolor = grey, style = bold]
 		"TEST.?" [label = "?", color = red, fontcolor = red, style = dashed]
 		"TEST.jsonnet.example" [label = "jsonnet.example", color = grey, fontcolor = grey, style = bold]
-	}
-	subgraph cluster_TEST2 {
-		label = TEST2
-		color = grey
-		fontcolor = grey
-		fontsize = 30
-		style = rounded
-		penwidth = 3
-		labelloc = b
-		"TEST2.Corrections" [label = Corrections, color = grey, fontcolor = grey, style = dashed]
-		"TEST2.cmTEST" [label = cmTEST, color = grey, fontcolor = grey, style = dashed]
-		"TEST2.test2Pk" [label = test2Pk, color = grey, fontcolor = grey, style = dashed]
 	}
 }

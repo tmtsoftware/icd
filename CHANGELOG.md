@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
+## next release
+
+- Added HTTP services (defined in service-model.conf and OpenApi files) to the visualization graph
+- Fixed versioning for OpenApi data stored in the icd database (previously the latest version was always used)
+- Put context/interface diagram and missing item report in appendix of generated ICD SDBs
+
 ## [ICD v3.1.0] - 2024-07-22
 
 - Updated dependencies, switched from akka to pekko.
