@@ -57,7 +57,6 @@ case class AlarmsReport(
     val result = if (maybeSv.isDefined) {
       // Use given subsystem version and component, if defined.
       // Note: For backward compatibility, look for alarms in publish-model as well as alarm-model files
-      // XXX TODO FIXME: Assumes there will be a publish-model file
       val sv = maybeSv.get
       for {
         models         <- versionManager.getResolvedModels(sv, maybePdfOptions, Map.empty)

@@ -634,8 +634,6 @@ case class IcdDb(
    */
   private def ingestConfig(stdConfig: StdConfig): List[Problem] = {
 
-    // XXX TODO FIXME: Need to manage versions of OpenApi file (Check collection names?)
-
     // Ingest a single OpenApi file
     def ingestOpenApiFile(collectionName: String, fileName: String): List[Problem] = {
       import scala.jdk.CollectionConverters.*
