@@ -497,7 +497,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       includeOnly: Set[String] = Set.empty
   ): List[IcdModels] = {
 
-    // XXX TODO FIXME: Use enum for includeOnly
+    // XXX TODO FIXME: For Scala3: Use enum for includeOnly
 
     // Return an object that holds all the model classes associated with a single ICD entry.
     def makeModels(versionMap: Map[String, Int], entry: ApiCollections): IcdModels = {

@@ -60,13 +60,11 @@ object IcdDbQuery {
         val modelBaseName = "service"
         val i             = l.indexOf(modelBaseName)
         val component     = l.tail.dropRight(l.size - i).mkString(".")
-        // XXX TODO FIXME: concat rest of parts?
-        val openApiName   = l(i + 1)
+        val openApiName   = l.splitAt(i + 1)._2.mkString(".")
         List(subsystem, component, modelBaseName, openApiName)
       }
     }
 
-    // XXX TODO FIXME
     // The common path for an assembly, HCD, sequencer, etc.
     val component: String = if (parts.size < 4) parts.dropRight(1).mkString(".") else s"${parts.head}.${parts.tail.head}"
 
@@ -235,8 +233,8 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
   private[db] def getEntries: List[ApiCollections] = {
     val collectionNames = getCollectionNames
     val icdPaths        = collectionNames.filter(isStdSet).map(IcdPath.apply)
-    val openApiPaths = getOpenApiCollectionPaths(collectionNames, icdPaths).map(IcdPath.apply)
-    val paths        = icdPaths.toList ++ openApiPaths
+    val openApiPaths    = getOpenApiCollectionPaths(collectionNames, icdPaths).map(IcdPath.apply)
+    val paths           = icdPaths.toList ++ openApiPaths
     getEntries(paths)
   }
 
@@ -560,9 +558,7 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
       val alarmsModel: Option[AlarmsModel] =
         entry.alarms.flatMap(coll => collectionHead(coll).flatMap(AlarmsModelBsonParser(_, maybePdfOptions)))
       val serviceModel: Option[ServiceModel] =
-        entry.services.flatMap(coll =>
-          collectionHead(coll).flatMap(ServiceModelBsonParser(db, _, Map.empty, maybePdfOptions))
-        )
+        entry.services.flatMap(coll => collectionHead(coll).flatMap(ServiceModelBsonParser(db, _, Map.empty, maybePdfOptions)))
       val icdModels: List[IcdModel] =
         entry.icds.flatMap(coll => collectionHead(coll).flatMap(IcdModelBsonParser(_, maybePdfOptions)))
       IcdModels(subsystemModel, componentModel, publishModel, subscribeModel, commandModel, alarmsModel, serviceModel, icdModels)

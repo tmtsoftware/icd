@@ -26,5 +26,21 @@ class IcdPathTest extends AnyFunSuite {
       assert(p4.subsystem == "APS")
       assert(p4.component == "APS")
       assert(p4.parts == List("APS", "subsystem"))
+
+      val p5 = IcdPath("DMS.MetadataAccessService.service.Metadata.Access.Service")
+      assert(p5.subsystem == "DMS")
+      assert(p5.component == "DMS.MetadataAccessService")
+      assert(p5.parts == List("DMS", "MetadataAccessService", "service", "Metadata.Access.Service"))
+
+      val p6 = IcdPath("APS.v")
+      assert(p6.subsystem == "APS")
+      assert(p6.component == "APS")
+      assert(p6.parts == List("APS", "v"))
+
+      val p7 = IcdPath("APS.PEAS.v")
+      assert(p7.subsystem == "APS")
+      assert(p7.component == "APS.PEAS")
+      assert(p7.parts == List("APS", "PEAS", "v"))
     }
+
 }
