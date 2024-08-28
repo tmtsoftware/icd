@@ -720,10 +720,11 @@ case class IcdVersionManager(query: IcdDbQuery) {
           // increment version for unpublished working copy
           val mod = BSONDocument("$set" -> BSONDocument(versionKey -> (version + 1)))
           coll.update.one(queryAny, mod).await
+          // return previous version
           version
         }
         else {
-          // XXX TODO FIXME: Forgot why subtracting 1 here
+          // return previous version (version number was incremented when ingesting the model file)
           version - 1
         }
         (path, lastVersion)
