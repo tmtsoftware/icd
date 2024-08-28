@@ -3,10 +3,11 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
-## next release
+## [ICD v3.1.x] - 2024-
 
 - Added HTTP services (defined in service-model.conf and OpenApi files) to the visualization graph
-- Fixed versioning for OpenApi data stored in the icd database (previously the latest version was always used)
+- Fixed versioning for OpenApi data stored in the icd database (previously the latest version was always used) 
+  Note: run `icd-git --ingest` to reload and fix an existing icd database.
 - Put context/interface diagram and missing item report in appendix of generated ICD SDBs
 
 ## [ICD v3.1.0] - 2024-07-22
