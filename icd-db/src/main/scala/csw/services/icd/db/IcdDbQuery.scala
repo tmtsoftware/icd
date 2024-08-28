@@ -77,8 +77,8 @@ object IcdDbQuery {
   // Returns a list of OpenApi collections that store the JSON (possibly converted from YAML files)
   // referenced in the service-model.conf file
   def getOpenApiCollectionPaths(collectionNames: Set[String], icdPaths: Set[IcdPath]): List[String] = {
-    val maybeServiceModelPath = icdPaths.filter(_.parts.reverse.head == serviceFileNames.modelBaseName)
-    maybeServiceModelPath.toList.flatMap { serviceModelPath =>
+    val serviceModelPaths = icdPaths.filter(_.parts.reverse.head == serviceFileNames.modelBaseName)
+    serviceModelPaths.toList.flatMap { serviceModelPath =>
       collectionNames.toList.filter(s => s.startsWith(s"${serviceModelPath.path}.") && !s.endsWith(versionSuffix))
     }
   }
