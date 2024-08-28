@@ -559,7 +559,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       case Some(versionInfo) =>
         val versionMap = versionInfo.parts.map(v => v.path -> v.version).toMap
         val allEntries = getEntries(versionInfo.parts)
-        // XXX TODO FIXME Check this
+        // Note: allEntries is sorted by parts length, so subsystem model comes first
         val entries = if (includeOnly.contains("subsystemModel")) allEntries.take(1) else allEntries
         entries.map(makeModels(versionMap, _))
       case None =>
@@ -710,10 +710,10 @@ case class IcdVersionManager(query: IcdDbQuery) {
         val versionCollName = versionCollectionName(path)
         val exists          = collectionNames.contains(versionCollName)
         val lastVersion = if (!exists || diff(db(versionCollName), obj).isDefined) {
-          // Update version history
+          // New or modified: Update version history
           val v = db.collection[BSONCollection](versionCollName)
           if (exists) {
-            // avoid duplicate key (needed?)
+            // avoid duplicate key
             v.findAndRemove(BSONDocument(idKey -> id), None, None, WriteConcern.Default, None, None, Nil).await
           }
           v.insert.one(obj).await

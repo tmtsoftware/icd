@@ -8,7 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 // Test issue https://tmt-project.atlassian.net/browse/DEOPSICDDB-163
 // problem when component is renamed
 // Ignore until master branch of ESW is published, then use version number
-@Ignore
+//@Ignore
 class IcdGitTestRenamedComponents extends AnyFunSuite with BeforeAndAfter {
 
   test("Renamed component") {
@@ -18,21 +18,22 @@ class IcdGitTestRenamedComponents extends AnyFunSuite with BeforeAndAfter {
 
     val comps1_4 = List(
       "alarm-monitor-ui",
-      "master-sequencer",
+      "master-sequencer"
     )
 
-    val compsMaster = List(
+    val comps1_6 = List(
+      "APSAcquisitionSequencer",
+      "TopLevelSequencer",
       "acquisitionObsEventLib",
       "alarm_monitor_ui",
       "irInstDetLib",
-      "master_sequencer",
       "opticalCcdInstDetLib",
       "opticalWfsOrGuiderDetLib"
     )
 
     IcdGitManager.ingest(db, SubsystemAndVersion("ESW", Some("1.4")), (s) => println(s), allApiVersions)
     assert(db.query.getComponentNames(Some("ESW")) == comps1_4)
-    IcdGitManager.ingest(db, SubsystemAndVersion("ESW", Some("master")), (s) => println(s), allApiVersions)
-    assert(db.query.getComponentNames(Some("ESW")) == compsMaster)
+    IcdGitManager.ingest(db, SubsystemAndVersion("ESW", Some("1.6")), (s) => println(s), allApiVersions)
+    assert(db.query.getComponentNames(Some("ESW")) == comps1_6)
   }
 }
