@@ -5,8 +5,7 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 
 ## [ICD v3.1.x] - 2024-
 
-- Added HTTP services (defined in service-model.conf and OpenApi files) to the visualizati
-- on graph
+- Added HTTP services (defined in service-model.conf and OpenApi files) to the visualization graph
 - Fixed versioning for OpenApi data stored in the icd database (previously the latest version was always used) 
   Note: run `icd-git --ingest` to reload and fix an existing icd database.
 - Put context/interface diagram and missing item report in appendix of generated ICD SDBs
