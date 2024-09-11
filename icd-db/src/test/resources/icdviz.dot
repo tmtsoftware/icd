@@ -28,31 +28,31 @@ POST /segmentPositions/{segmentId}"]
 GET /currentPositions"]
 	subgraph cluster_TEST {
 		label = TEST
-		color = grey
-		fontcolor = grey
+		color = gray19
+		fontcolor = gray19
 		fontsize = 30
 		style = rounded
 		penwidth = 3
 		labelloc = b
-		"TEST.env.ctrl" [label = "env.ctrl", color = grey, fontcolor = grey, style = bold]
-		"TEST.nacqNhrwfs" [label = nacqNhrwfs, color = grey, fontcolor = grey, style = bold]
-		"TEST.rtc" [label = rtc, color = grey, fontcolor = grey, style = bold]
-		"TEST.ndme" [label = ndme, color = grey, fontcolor = grey, style = bold]
-		"TEST.lgsWfs" [label = lgsWfs, color = grey, fontcolor = grey, style = bold]
+		"TEST.lgsWfs" [label = lgsWfs, color = gray19, fontcolor = gray19, style = bold]
+		"TEST.jsonnet.example" [label = "jsonnet.example", color = gray19, fontcolor = gray19, style = bold]
+		"TEST.rtc" [label = rtc, color = gray19, fontcolor = gray19, style = bold]
+		"TEST.nacqNhrwfs" [label = nacqNhrwfs, color = gray19, fontcolor = gray19, style = bold]
+		"TEST.ndme" [label = ndme, color = gray19, fontcolor = gray19, style = bold]
 		"TEST.?" [label = "?", color = red, fontcolor = red, style = dashed]
-		"TEST.jsonnet.example" [label = "jsonnet.example", color = grey, fontcolor = grey, style = bold]
+		"TEST.env.ctrl" [label = "env.ctrl", color = gray19, fontcolor = gray19, style = bold]
 	}
 	subgraph cluster_TEST2 {
 		label = TEST2
-		color = grey
-		fontcolor = grey
+		color = gray19
+		fontcolor = gray19
 		fontsize = 30
 		style = rounded
 		penwidth = 3
 		labelloc = b
-		"TEST2.Corrections" [label = Corrections, color = grey, fontcolor = grey, style = dashed]
-		"TEST2.cmTEST" [label = cmTEST, color = grey, fontcolor = grey, style = dashed]
-		"TEST2.SegmentService" [label = SegmentService, color = grey, fontcolor = grey, style = dashed]
-		"TEST2.test2Pk" [label = test2Pk, color = grey, fontcolor = grey, style = dashed]
+		"TEST2.Corrections" [label = Corrections, color = gray19, fontcolor = gray19, style = dashed]
+		"TEST2.cmTEST" [label = cmTEST, color = gray19, fontcolor = gray19, style = dashed]
+		"TEST2.test2Pk" [label = test2Pk, color = gray19, fontcolor = gray19, style = dashed]
+		"TEST2.SegmentService" [label = SegmentService, color = gray19, fontcolor = gray19, style = dashed]
 	}
 }

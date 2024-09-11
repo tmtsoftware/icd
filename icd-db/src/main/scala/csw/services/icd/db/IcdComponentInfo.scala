@@ -124,8 +124,7 @@ object IcdComponentInfo {
         val alarmList = if (includeAlarms) models.alarmsModel.toList.flatMap(_.alarmList) ++ m.alarmList else Nil
 
         if (
-          m.description.nonEmpty || eventList.nonEmpty || observeEventList.nonEmpty || currentStateList.nonEmpty
-          || imageList.nonEmpty || alarmList.nonEmpty
+          m.description.nonEmpty || eventList.nonEmpty || observeEventList.nonEmpty || currentStateList.nonEmpty || imageList.nonEmpty || alarmList.nonEmpty
         )
           Some(Publishes(m.description, eventList, observeEventList, currentStateList, imageList, alarmList))
         else None
@@ -426,7 +425,7 @@ object IcdComponentInfo {
       val clientComponentInfo = getServiceClients(serviceModel.subsystem, serviceModel.component, provides.name, targetModelsList)
       // Filter the list of service paths (routes) to only those declared as used
       val clientPaths = clientComponentInfo.flatMap(_.paths)
-      val paths = provides.paths.filter(p => clientPaths.exists(c => c.path == p.path && c.method == p.method))
+      val paths       = provides.paths.filter(p => clientPaths.exists(c => c.path == p.path && c.method == p.method))
       ServiceProvidedInfo(provides.copy(paths = paths), clientComponentInfo)
     }
   }
@@ -448,30 +447,26 @@ object IcdComponentInfo {
     val result = for {
       serviceModel       <- models.serviceModel.toList
       serviceModelClient <- serviceModel.requires
-    } yield {
-      val maybeServiceModelProvider = getServiceModelProvider(
+      provider <- getServiceModelProvider(
         serviceModelClient.subsystem,
         serviceModelClient.component,
         serviceModelClient.name,
         targetModelsList
       )
+    } yield {
       // Insert service path descriptions from provider (extracted from OpenApi file)
-      val serviceModelClientCopy = (maybeServiceModelProvider
-        .map { provider =>
-          val newPaths = serviceModelClient.paths.map(p =>
-            ServicePath(
-              p.method,
-              p.path,
-              provider.paths.find(x => x.method == p.method && x.path == p.path).map(_.description).getOrElse("")
-            )
-          )
-          serviceModelClient.copy(paths = newPaths)
-        })
-        .getOrElse(serviceModelClient)
+      val newPaths = serviceModelClient.paths.map(p =>
+        ServicePath(
+          p.method,
+          p.path,
+          provider.paths.find(x => x.method == p.method && x.path == p.path).map(_.description).getOrElse("")
+        )
+      )
+      val serviceModelClientCopy = serviceModelClient.copy(paths = newPaths)
 
       ServicesRequiredInfo(
         serviceModelClientCopy,
-        maybeServiceModelProvider,
+        Some(provider),
         query.getComponentModel(serviceModelClient.subsystem, serviceModelClient.component, maybePdfOptions)
       )
     }
