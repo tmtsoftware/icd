@@ -218,6 +218,14 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
                 (s.subsystem == p.publisherSubsystem && (s.maybeComponent.isEmpty || s.maybeComponent
                   .contains(p.publisherComponent)))
             )
+        case 2 =>
+          // DEOPSICDDB-172: Limit missing items to items that both subsystems in ICD are involved in
+          p.subscriberSubsystem != p.publisherSubsystem &&
+          selectedSubsystemNames.contains(p.subscriberSubsystem) && selectedSubsystemNames.contains(p.publisherSubsystem) &&
+            subsystems.exists(s =>
+              s.subsystem == p.subscriberSubsystem && (s.maybeComponent.isEmpty || s.maybeComponent
+                .contains(p.subscriberComponent))
+            )
         case _ =>
           selectedSubsystemNames.contains(p.subscriberSubsystem) && selectedSubsystemNames.contains(p.publisherSubsystem) &&
             subsystems.exists(s =>

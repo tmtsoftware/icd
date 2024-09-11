@@ -508,7 +508,6 @@ case class ApplicationImpl(db: IcdDb) {
       maybeTargetComponent: Option[String],
       pdfOptions: PdfOptions
   ): Option[String] = {
-    val out           = new ByteArrayOutputStream()
     val sv            = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     val maybeTargetSv = maybeTarget.map(target => SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent))
     try {
