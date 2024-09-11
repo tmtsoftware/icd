@@ -446,7 +446,7 @@ object IcdModels {
    * @param name the name of the service provided
    * @param paths list of routes/paths used (empty means; all paths used)
    */
-  case class ServiceModelClient(subsystem: String, component: String, name: String, paths: List[ServicePath])
+  case class ServiceModelClient(subsystem: String, component: String, name: String, paths: List[ServicePath]) extends SubsystemComponentName
 
   /**
    * Contains a client component model and the list of service paths used

@@ -38,6 +38,8 @@ object MissingItemsReport {
       subscribedImages: List[SubscribedItemInfo],
       receivedCommands: List[PublishedItemInfo],
       sentCommands: List[SubscribedItemInfo],
+      providedServices: List[PublishedItemInfo],
+      requiredServices: List[SubscribedItemInfo],
       badComponentNames: Set[String]
   ) {
     def isEmpty: Boolean =
@@ -51,6 +53,8 @@ object MissingItemsReport {
         subscribedImages.isEmpty &&
         receivedCommands.isEmpty &&
         sentCommands.isEmpty &&
+        providedServices.isEmpty &&
+        requiredServices.isEmpty &&
         badComponentNames.isEmpty
   }
 
@@ -148,6 +152,7 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
         val publishModel           = models.publishModel
         val subscribeModel         = models.subscribeModel
         val commandModel           = models.commandModel
+        val serviceModel           = models.serviceModel
         val publishedEvents        = getPublishedItems(component, publishModel.map(_.eventList.map(_.name)).getOrElse(Nil))
         val publishedObserveEvents = getPublishedItems(component, publishModel.map(_.observeEventList.map(_.name)).getOrElse(Nil))
         val publishedCurrentStates = getPublishedItems(component, publishModel.map(_.currentStateList.map(_.name)).getOrElse(Nil))
@@ -160,6 +165,9 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
 
         val receivedCommands = getPublishedItems(component, commandModel.map(_.receive.map(_.name)).getOrElse(Nil))
         val sentCommands     = getSubscribedItems(component, commandModel.map(_.send).getOrElse(Nil))
+
+        val providedServices = getPublishedItems(component, serviceModel.map(_.provides.map(_.name)).getOrElse(Nil))
+        val requiredServices = getSubscribedItems(component, serviceModel.toList.flatMap(_.requires))
 
         // "$subsystem.$component" for referenced components
         def getPubComp(i: PublishedItemInfo)     = s"${i.publisherSubsystem}.${i.publisherComponent}"
@@ -176,22 +184,26 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
             subscribedCurrentStates.filter(subFilter).map(getSubPubComp) ++ subscribedCurrentStates.map(getSubComp) ++
             subscribedImages.filter(subFilter).map(getSubPubComp) ++ subscribedImages.map(getSubComp) ++
             receivedCommands.filter(pubFilter).map(getPubComp) ++
-            sentCommands.filter(subFilter).map(getSubPubComp) ++ sentCommands.map(getSubComp)
+            sentCommands.filter(subFilter).map(getSubPubComp) ++ sentCommands.map(getSubComp) ++
+            providedServices.filter(pubFilter).map(getPubComp) ++
+            requiredServices.filter(subFilter).map(getSubPubComp) ++ requiredServices.map(getSubComp)
         val compSet           = allComponents.toSet
         val badComponentNames = compRefs.toSet.filter(!compSet.contains(_))
 
         Items(
-          publishedEvents,
-          publishedObserveEvents,
-          publishedCurrentStates,
-          publishedImages,
-          subscribedEvents,
-          subscribedObserveEvents,
-          subscribedCurrentStates,
-          subscribedImages,
-          receivedCommands,
-          sentCommands,
-          badComponentNames
+          publishedEvents = publishedEvents,
+          publishedObserveEvents = publishedObserveEvents,
+          publishedCurrentStates = publishedCurrentStates,
+          publishedImages = publishedImages,
+          subscribedEvents = subscribedEvents,
+          subscribedObserveEvents = subscribedObserveEvents,
+          subscribedCurrentStates = subscribedCurrentStates,
+          subscribedImages = subscribedImages,
+          receivedCommands = receivedCommands,
+          sentCommands = sentCommands,
+          providedServices = providedServices,
+          requiredServices = requiredServices,
+          badComponentNames = badComponentNames
         )
       }
     }
@@ -221,7 +233,7 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
         case 2 =>
           // DEOPSICDDB-172: Limit missing items to items that both subsystems in ICD are involved in
           p.subscriberSubsystem != p.publisherSubsystem &&
-          selectedSubsystemNames.contains(p.subscriberSubsystem) && selectedSubsystemNames.contains(p.publisherSubsystem) &&
+            selectedSubsystemNames.contains(p.subscriberSubsystem) && selectedSubsystemNames.contains(p.publisherSubsystem) &&
             subsystems.exists(s =>
               s.subsystem == p.subscriberSubsystem && (s.maybeComponent.isEmpty || s.maybeComponent
                 .contains(p.subscriberComponent))
@@ -274,6 +286,11 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
     val sentCommands       = items.flatMap(_.sentCommands)
     val sentCommandsMap    = sentCommands.map(c => c.key -> c).toMap
 
+    val providedServices    = items.flatMap(_.providedServices)
+    val providedServicesMap = providedServices.map(c => c.key -> c).toMap
+    val requiredServices    = items.flatMap(_.requiredServices)
+    val requiredServicesMap = requiredServices.map(c => c.key -> c).toMap
+
     val publishedEventsWithNoSubscribers        = getPubNoSub(publishedEvents, subscribedEventsMap)
     val publishedObserveEventsWithNoSubscribers = getPubNoSub(publishedObserveEvents, subscribedObserveEventsMap)
     val publishedCurrentStatesWithNoSubscribers = getPubNoSub(publishedCurrentStates, subscribedCurrentStatesMap)
@@ -287,20 +304,25 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
     val receivedCommandsWithNoSenders = getPubNoSub(receivedCommands, sentCommandsMap)
     val sentCommandsWithNoReceivers   = getSubNoPub(sentCommands, receivedCommandMap)
 
+    val providedServicesWithNoUsers    = getPubNoSub(providedServices, requiredServicesMap)
+    val requiredServicesWithNoProvider = getSubNoPub(requiredServices, providedServicesMap)
+
     val badComponentNames = items.flatMap(_.badComponentNames).toSet
 
     Items(
-      publishedEventsWithNoSubscribers,
-      publishedObserveEventsWithNoSubscribers,
-      publishedCurrentStatesWithNoSubscribers,
-      publishedImagesWithNoSubscribers,
-      subscribedEventsWithNoPublisher,
-      subscribedObserveEventsWithNoPublisher,
-      subscribedCurrentStatesWithNoPublisher,
-      subscribedImagesWithNoPublisher,
-      receivedCommandsWithNoSenders,
-      sentCommandsWithNoReceivers,
-      badComponentNames
+      publishedEvents = publishedEventsWithNoSubscribers,
+      publishedObserveEvents = publishedObserveEventsWithNoSubscribers,
+      publishedCurrentStates = publishedCurrentStatesWithNoSubscribers,
+      publishedImages = publishedImagesWithNoSubscribers,
+      subscribedEvents = subscribedEventsWithNoPublisher,
+      subscribedObserveEvents = subscribedObserveEventsWithNoPublisher,
+      subscribedCurrentStates = subscribedCurrentStatesWithNoPublisher,
+      subscribedImages = subscribedImagesWithNoPublisher,
+      receivedCommands = receivedCommandsWithNoSenders,
+      sentCommands = sentCommandsWithNoReceivers,
+      providedServices = providedServicesWithNoUsers,
+      requiredServices = requiredServicesWithNoProvider,
+      badComponentNames = badComponentNames
     )
   }
 
@@ -393,6 +415,8 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
         missingSubItemMarkup("Subscribed Images that are not Published Anywhere", missingItems.subscribedImages),
         missingPubItemMarkup("Received Commands with no Senders", missingItems.receivedCommands),
         missingSubItemMarkup("Sent Commands that are not Defined Anywhere", missingItems.sentCommands, "Receiver", "Sender"),
+        missingPubItemMarkup("Provided Services with no Users", missingItems.providedServices),
+        missingSubItemMarkup("Required Services with no Providers", missingItems.requiredServices, "Provider", "User"),
         if (missingItems.badComponentNames.isEmpty) div()
         else
           div(
@@ -514,6 +538,9 @@ case class MissingItemsReport(db: IcdDb, subsystems: List[SubsystemWithVersion],
 
     missingPubItemCsv(dir, "Received Commands with no Senders", missingItems.receivedCommands)
     missingSubItemCsv(dir, "Sent Commands that are not Defined Anywhere", missingItems.sentCommands, "Receiver", "Sender")
+
+    missingPubItemCsv(dir, "Provided Services with no Users", missingItems.providedServices)
+    missingSubItemCsv(dir, "Required Services with no Providers", missingItems.requiredServices, "Provider", "User")
 
     badComponentNamesCsv(
       dir,
