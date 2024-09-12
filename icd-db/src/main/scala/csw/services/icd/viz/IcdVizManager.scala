@@ -274,63 +274,65 @@ object IcdVizManager {
 
     // Gets info about published events with no subscribers
     def getMissingSubscriberInfo(info: ComponentInfo, images: Boolean): (List[EventOrImageInfo], List[ComponentModel]) = {
-      if (options.missingEvents) {
-        val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
-        val infoList =
-          if (images)
-            info.publishes.toList
-              .flatMap(p => p.imageList)
-              .filter(_.subscribers.isEmpty)
-              .map(e =>
-                // Create dummy subscriber component
-                EventOrImageInfo(
-                  e.imageModel,
-                  List(
-                    SubscribeInfo(
-                      missingComponentModel,
-                      ComponentInfo.Images,
-                      SubscribeModelInfo(
-                        info.componentModel.subsystem,
-                        info.componentModel.component,
-                        e.imageModel.name,
-                        "",
-                        1.0,
-                        None
-                      )
-                    )
-                  )
-                )
-              )
-          else
-            info.publishes.toList
-              .flatMap(p => p.currentStateList ++ p.eventList ++ p.observeEventList)
-              .filter(_.subscribers.isEmpty)
-              .map(e =>
-                // Create dummy subscriber component
-                EventOrImageInfo(
-                  e.eventModel,
-                  List(
-                    SubscribeInfo(
-                      missingComponentModel,
-                      ComponentInfo.Events,
-                      SubscribeModelInfo(
-                        info.componentModel.subsystem,
-                        info.componentModel.component,
-                        e.eventModel.name,
-                        "",
-                        1.0,
-                        None
-                      )
-                    )
-                  )
-                )
-              )
-        (
-          infoList,
-          infoList.map(_ => missingComponentModel)
-        )
-      }
-      else (Nil, Nil)
+//      if (options.missingEvents) {
+//        val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
+//        val infoList =
+//          if (images)
+//            info.publishes.toList
+//              .flatMap(p => p.imageList)
+//              .filter(_.subscribers.isEmpty)
+//              .map(e =>
+//                // Create dummy subscriber component
+//                EventOrImageInfo(
+//                  e.imageModel,
+//                  List(
+//                    SubscribeInfo(
+//                      missingComponentModel,
+//                      ComponentInfo.Images,
+//                      SubscribeModelInfo(
+//                        info.componentModel.subsystem,
+//                        info.componentModel.component,
+//                        e.imageModel.name,
+//                        "",
+//                        1.0,
+//                        None
+//                      )
+//                    )
+//                  )
+//                )
+//              )
+//          else
+//            info.publishes.toList
+//              .flatMap(p => p.currentStateList ++ p.eventList ++ p.observeEventList)
+//              .filter(_.subscribers.isEmpty)
+//              .map(e =>
+//                // Create dummy subscriber component
+//                EventOrImageInfo(
+//                  e.eventModel,
+//                  List(
+//                    SubscribeInfo(
+//                      missingComponentModel,
+//                      ComponentInfo.Events,
+//                      SubscribeModelInfo(
+//                        info.componentModel.subsystem,
+//                        info.componentModel.component,
+//                        e.eventModel.name,
+//                        "",
+//                        1.0,
+//                        None
+//                      )
+//                    )
+//                  )
+//                )
+//              )
+//        (
+//          infoList,
+//          infoList.map(_ => missingComponentModel)
+//        )
+//      }
+//      else
+      // XXX Skip for now since it seems less important
+      (Nil, Nil)
     }
 
     // Gets information about commands a component sends and the receiver components involved
@@ -348,18 +350,20 @@ object IcdVizManager {
 
     // Gets information about commands received where there are no senders
     def getMissingSenderCommandInfo(info: ComponentInfo): (List[ReceivedCommandInfo], List[ComponentModel]) = {
-      if (options.missingCommands) {
-        val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
-        val receivedCommands = info.commands.toList
-          .flatMap(_.commandsReceived)
-          .filter(_.senders.isEmpty)
-          .map(r => ReceivedCommandInfo(r.receiveCommandModel, List(missingComponentModel)))
-        (
-          receivedCommands,
-          receivedCommands.map(_ => missingComponentModel)
-        )
-      }
-      else (Nil, Nil)
+//      if (options.missingCommands) {
+//        val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
+//        val receivedCommands = info.commands.toList
+//          .flatMap(_.commandsReceived)
+//          .filter(_.senders.isEmpty)
+//          .map(r => ReceivedCommandInfo(r.receiveCommandModel, List(missingComponentModel)))
+//        (
+//          receivedCommands,
+//          receivedCommands.map(_ => missingComponentModel)
+//        )
+//      }
+//      else
+      // XXX Skip for now as it seems less important
+        (Nil, Nil)
     }
 
     // Gets information about commands received and the components sending the commands
@@ -466,18 +470,20 @@ object IcdVizManager {
 
     // Gets information about services provided where there are no consumers
     def getMissingServiceConsumerInfo(info: ComponentInfo): (List[ServiceProvidedInfo], List[ComponentModel]) = {
-      if (options.missingCommands) {
-        val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
-        val servicesProvided = info.services.toList
-          .flatMap(_.servicesProvided)
-          .filter(_.requiredBy.isEmpty)
-          .map(r => ServiceProvidedInfo(r.serviceModelProvider, List(ServiceModelClientComponent(missingComponentModel, Nil))))
-        (
-          servicesProvided,
-          servicesProvided.map(_ => missingComponentModel)
-        )
-      }
-      else (Nil, Nil)
+//      if (options.missingCommands) {
+//        val missingComponentModel = ComponentModel("?", info.componentModel.subsystem, "?", "?", "?", "?", "")
+//        val servicesProvided = info.services.toList
+//          .flatMap(_.servicesProvided)
+//          .filter(_.requiredBy.isEmpty)
+//          .map(r => ServiceProvidedInfo(r.serviceModelProvider, List(ServiceModelClientComponent(missingComponentModel, Nil))))
+//        (
+//          servicesProvided,
+//          servicesProvided.map(_ => missingComponentModel)
+//        )
+//      }
+//      else
+      // XXX Skip for now since it seems less important
+        (Nil, Nil)
     }
 
     // Primary components are the ones specified in the options
