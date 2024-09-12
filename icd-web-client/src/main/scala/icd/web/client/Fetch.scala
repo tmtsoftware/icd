@@ -17,7 +17,12 @@ object Fetch {
 
   // Does an HTTP GET on the URL and returns the blob
   def getBlob(url: String): Future[Blob] = {
-    dom.fetch(url).toFuture.flatMap(_.blob().toFuture)
+    dom.fetch(url).toFuture.flatMap{ resp =>
+      if (resp.ok)
+        resp.blob().toFuture
+      else
+        Future.failed(new RuntimeException("Graph is empty"))
+    }
   }
 
 

@@ -458,7 +458,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       )
     }
     f.onComplete {
-      case Failure(ex) => mainContent.displayInternalError(ex)
+      case Failure(ex) => // mainContent.displayInternalError(ex)
       case _           =>
     }
     f

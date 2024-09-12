@@ -262,7 +262,7 @@ case class ApplicationImpl(db: IcdDb) {
         maybeIcdVersion
       )
       val icdPrinter = IcdDbPrinter(db, searchAllSubsystems = false, clientApi = true, maybeCache, Some(pdfOptions))
-      val result = icdPrinter.saveIcdAsPdf(sv, targetSv, iv, pdfOptions)
+      val result     = icdPrinter.saveIcdAsPdf(sv, targetSv, iv, pdfOptions)
       result
     }
     catch {
@@ -587,8 +587,7 @@ case class ApplicationImpl(db: IcdDb) {
       val newOptions =
         options.copy(subsystems = subsystems, components = components, showPlot = false, imageFile = None, dotFile = None)
       val out = new ByteArrayOutputStream()
-      IcdVizManager.showRelationships(db, newOptions, Some(out))
-      Some(out.toByteArray)
+      if (IcdVizManager.showRelationships(db, newOptions, Some(out))) Some(out.toByteArray) else None
     }
     catch {
       case ex: Exception =>
