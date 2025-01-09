@@ -57,7 +57,8 @@ object StdConfig {
           Some(Right(stdConfig))
         }
         catch {
-          case ex: Exception => Some(Left(Problem("error", s"$jsonnetInputFile: ${ex.getMessage}")))
+          case ex: Exception =>
+            Some(Left(Problem("error", s"${removeTmpDirFromFile(jsonnetInputFile)}: ${ex.getMessage}")))
         }
       }
       else None

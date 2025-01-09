@@ -68,7 +68,7 @@ package object client {
   // Returns an HTML div containing the given error message
   def errorDiv(msg: String): String = {
     import scalatags.JsDom.all.*
-    div(cls := "alert alert-danger", role := "alert")(
+    div(cls := "alert alert-danger card-body", role := "alert")(
       span(i(cls := "bi bi-exclamation-triangle"), attr("aria-hidden") := "true"),
       span(cls := "sr-only", " Error: "),
       s" $msg"
@@ -78,7 +78,7 @@ package object client {
   // Returns an HTML div containing the given warning message
   def warningDiv(msg: String): String = {
     import scalatags.JsDom.all.*
-    div(cls := "alert alert-warning", role := "alert")(
+    div(cls := "alert alert-warning card-body", role := "alert")(
       span(i(cls := "bi bi-exclamation-triangle"), attr("aria-hidden") := "true"),
       span(cls := "sr-only", " Warning: "),
       s" $msg"

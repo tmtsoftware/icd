@@ -1,6 +1,7 @@
 package csw.services.icd
 
 import java.io.File
+import java.nio.file.Paths
 import scala.io.Source
 
 package object db {
@@ -21,6 +22,12 @@ package object db {
     val s      = source.mkString
     source.close()
     s
+  }
+
+  // Remove the first two dirs from a path (for example: /tmp/xxx/dir/file becomes dir/file)
+  def removeTmpDirFromFile(file: File): String = {
+    val p = file.toPath
+    p.subpath(2, p.getNameCount).toString
   }
 
   def firstParagraph(s: String): String = {

@@ -59,7 +59,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   private val messagesItem = {
     import scalatags.JsDom.all.*
 
-    div(id := "fileUploadMessages", cls := "alert alert-info").render
+    div(id := "fileUploadMessages", cls := "card").render
   }
 
   // Adds an error (or warning) message to the upload messages
@@ -255,7 +255,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
         span(style := "margin-left:15px;"),
         span(id := "status", cls := "badge", "Working...")
       ),
-      messagesItem
+      div(style := "position: fixed; width:90%", messagesItem)
     ).render
   }
 }
