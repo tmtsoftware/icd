@@ -157,20 +157,10 @@ object HtmlMarkup extends Extensions {
         val s    = processUml(processMath(stripLeadingWs(gfm), maybePdfOptions), maybePdfOptions)
         val html = renderer.render(parser.parse(s))
 
-//        // Then clean it up with jsoup to avoid issues with the pdf generator (and for security)
-//        val whiteList = Whitelist.relaxed()
-//        // Enforce self-closing tags (e.g. for <img> tags) so that PDF generator will not fail.
-//        val os = new OutputSettings().syntax(OutputSettings.Syntax.xml)
-//        Jsoup.clean(html, "#", whiteList, os)
-
         // Not using Jsoup.clean(), since it prevents the use of inner-document links (We don't know the required baseUri)
         val document = Jsoup.parseBodyFragment(html)
         document.outputSettings().syntax(xml)
         document.outputSettings().charset("UTF-8")
-//        val whiteList = Whitelist.relaxed()
-//        val cleaner = new Cleaner(whiteList)
-//        val clean = cleaner.clean(document)
-//        clean.body().html()
         document.body().html()
       } catch {
         case ex: Throwable =>
