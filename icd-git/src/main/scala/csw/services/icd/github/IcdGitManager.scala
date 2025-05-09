@@ -25,21 +25,21 @@ import scala.concurrent.Future
 //noinspection DuplicatedCode
 object IcdGitManager {
   // Cache of PDF files for published API and ICD versions
-  val maybeCache: Option[PdfCache] =
+  private def maybeCache: Option[PdfCache] =
     if (IcdDbDefaults.conf.getBoolean("icd.pdf.cache.enabled"))
       Some(new PdfCache(new File(IcdDbDefaults.conf.getString("icd.pdf.cache.dir"))))
     else None
 
   //  For testing you can override the parent GitHub URI of the subsystem model file repos
   //  (The model files are then in $gitParentUri/$subsystem-Model-Files)
-  private val gitParentUri = {
+  private def gitParentUri = {
     val uri = System.getProperty("csw.services.icd.github.parent.uri")
     if (uri != null) uri else "https://github.com/tmt-icd"
   }
 
   //  For testing you can override the GitHub URI used to access the ICD and API version files
   // (These are in the $gitBaseUri/icds and $gitBaseUri/apis subdirs.)
-  private val gitBaseUri = {
+  private def gitBaseUri = {
     val uri = System.getProperty("csw.services.icd.github.uri")
     if (uri != null) uri else s"$gitParentUri/ICD-Model-Files"
   }

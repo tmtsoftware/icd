@@ -1,4 +1,4 @@
-package csw.services.icd.viz
+  package csw.services.icd.viz
 
 import csw.services.icd.IcdValidator
 import csw.services.icd.db.{IcdDb, Resolver, TestHelper}
