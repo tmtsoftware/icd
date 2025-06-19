@@ -129,7 +129,7 @@ object JsonSupport {
       (JsPath \ "units").readNullable[String] and
       (JsPath \ "source").readNullable[FitsSource] and
       (JsPath \ "channel").readNullable[List[FitsChannel]]
-  )(FitsKeyInfo.fromSourceOrChannel _)
+  )(FitsKeyInfo.fromSourceOrChannel)
 
   implicit val fitsKeyInfoFormat: Format[FitsKeyInfo] =
     Format(fitsKeyInfoReads, fitsKeyInfoWrites)

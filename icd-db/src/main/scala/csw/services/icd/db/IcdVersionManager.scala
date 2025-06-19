@@ -706,7 +706,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
         val coll            = db.collection[BSONCollection](path)
         val obj             = coll.find(queryAny, Option.empty[JsObject]).one[BSONDocument].await.get
         val version         = obj.int(versionKey).get
-        val id              = obj.getAsOpt[BSONObjectID](idKey).get
+//        val id              = obj.getAsOpt[BSONObjectID](idKey).get
+        val id              = obj.get(idKey).get
         val versionCollName = versionCollectionName(path)
         val exists          = collectionNames.contains(versionCollName)
         val lastVersion = if (!exists || diff(db(versionCollName), obj).isDefined) {

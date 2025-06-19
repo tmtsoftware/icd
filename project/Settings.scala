@@ -11,7 +11,16 @@ object Settings {
     organizationName := "TMT",
     organizationHomepage := Some(url("http://www.tmt.org")),
     version := Dependencies.Version,
-    scalacOptions ++= Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-unchecked"),
+    scalacOptions ++= Seq(
+//      "-deprecation",
+//      "-encoding",
+//      "UTF-8",
+      "-feature",
+//      "-unchecked",
+//      "-explain"
+//      "-source:3.0-migration",
+//      "-rewrite"
+    ),
     scalaVersion := Dependencies.ScalaVersion,
   )
 

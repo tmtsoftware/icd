@@ -21,7 +21,7 @@ class FitsKeyInfoTest extends AnyFunSuite {
 //    sublist.forall(list.contains)
     sublist.forall{s =>
       if (list.contains(s)) true else {
-        println(s"XXX missing $s")
+//        println(s"XXX missing $s")
         false
       }
     }

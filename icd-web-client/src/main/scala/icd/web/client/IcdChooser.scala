@@ -45,7 +45,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   // The ICD combobox
   private val icdItem = {
     import scalatags.JsDom.all.*
-    select(cls := "form-select", onchange := icdSelected _)(
+    select(cls := "form-select", onchange := icdSelected)(
       option(value := emptyOptionMsg)(emptyOptionMsg)
     ).render
   }
@@ -53,7 +53,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
   // The ICD version combobox
   private val versionItem = {
     import scalatags.JsDom.all.*
-    select(cls := "form-select", onchange := icdVersionSelected _).render
+    select(cls := "form-select", onchange := icdVersionSelected).render
   }
 
   override def setEnabled(enabled: Boolean): Unit = {

@@ -132,7 +132,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       `type` := "button",
       cls := "btn btn-primary",
       title := "Display the selected API or ICD",
-      onclick := apply() _
+      onclick := apply()
     )("Apply").render
   }
   applyButton.disabled = true
@@ -144,7 +144,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       `type` := "button",
       cls := "btn btn-secondary",
       title := "Display the version history for an API or ICD",
-      onclick := showVersionHistory() _
+      onclick := (() => showVersionHistory()())
     )("History").render
   }
   historyButton.disabled = true
@@ -158,7 +158,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   // Displays a checkbox for the "include client API" option
   private val clientApiCheckbox: Input = {
     import scalatags.JsDom.all.*
-    input(`type` := "checkbox", cls := "form-check-input", disabled := true, onchange := clientApiCheckboxChanged() _).render
+    input(`type` := "checkbox", cls := "form-check-input", disabled := true, onchange := clientApiCheckboxChanged()).render
   }
 
   //noinspection ScalaUnusedSymbol

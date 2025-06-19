@@ -152,7 +152,7 @@ case class PdfButtonItem(
           div(cls := "modal-footer")(
             button(`type` := "button", cls := "btn btn-secondary", attr("data-bs-dismiss") := "modal")("Cancel"),
             button(
-              onclick := pdfModalListener _,
+              onclick := (() => pdfModalListener()),
               `type` := "button",
               cls := "btn btn-primary",
               attr("data-bs-dismiss") := "modal"

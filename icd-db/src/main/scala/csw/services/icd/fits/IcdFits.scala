@@ -57,7 +57,7 @@ object IcdFitsDefs {
   }
 }
 
-object IcdFits extends App {
+object IcdFits {
 
   /**
    * Command line options ("icd-fits --help" prints a usage message with descriptions of all the options)
@@ -161,21 +161,23 @@ object IcdFits extends App {
     version("version")
   }
 
-  // Parse the command line options
-  parser.parse(args, Options()) match {
-    case Some(options) =>
-      try {
-        run(options)
-      }
-      catch {
-        case e: IllegalArgumentException =>
-          println(s"Error: ${e.getMessage}")
-          System.exit(1)
-        case e: Throwable =>
-          e.printStackTrace()
-          System.exit(1)
-      }
-    case None => System.exit(1)
+  def main(args: Array[String]): Unit = {
+    // Parse the command line options
+    parser.parse(args, Options()) match {
+      case Some(options) =>
+        try {
+          run(options)
+        }
+        catch {
+          case e: IllegalArgumentException =>
+            println(s"Error: ${e.getMessage}")
+            System.exit(1)
+          case e: Throwable =>
+            e.printStackTrace()
+            System.exit(1)
+        }
+      case None => System.exit(1)
+    }
   }
 
   // Run the application

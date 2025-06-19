@@ -13,6 +13,7 @@ import org.eclipse.jgit.revwalk.RevWalk
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.Json
+import csw.services.icd.RichFuture
 
 import scala.jdk.CollectionConverters.*
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -100,7 +101,7 @@ object IcdGitManager {
       Future
         .sequence(
           Option(apisDir.listFiles)
-            .getOrElse(Array())
+            .getOrElse(Array[File]())
             .toList
             .map(_.toPath)
             .filter(apiMatcher.matches)
@@ -118,7 +119,7 @@ object IcdGitManager {
         .await
 
     val icdVersions = Option(icdsDir.listFiles)
-      .getOrElse(Array())
+      .getOrElse(Array[File]())
       .toList
       .map(_.toPath)
       .filter(icdMatcher.matches)

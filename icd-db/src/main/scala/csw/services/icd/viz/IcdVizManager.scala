@@ -880,7 +880,7 @@ object IcdVizManager {
 
     // Create the final graph
     val g = MyGraph.from(
-      allEdgeModels.map(MyLDiEdge)
+      allEdgeModels.map(MyLDiEdge.apply)
     )
 
     // Convert to dot

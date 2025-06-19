@@ -84,7 +84,7 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
         title := s"Go to event parameter that is the source of this FITS keyword",
         s"${fitsChannel.source.toLongString} ",
         href := "#",
-        onclick := clickedOnFitsSource(fitsChannel.source) _
+        onclick := clickedOnFitsSource(fitsChannel.source)
       )
     )
   }
@@ -158,7 +158,7 @@ case class FitsKeywordDialog(fitsDict: FitsDictionary, listener: ComponentListen
             value := key,
             id := s"fitsTag-$key",
             if (key == allTags) checked else name := "fitsTag",
-            onchange := radioButtonListener _
+            onchange := radioButtonListener
           ),
           label(cls := "form-check-label", `for` := s"fitsTag-$key")(displayName)
         )

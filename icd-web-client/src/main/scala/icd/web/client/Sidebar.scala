@@ -34,7 +34,7 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
       title := s"Scroll to $name",
       href := "#",
       name,
-      onclick := componentSelected(componentModel) _
+      onclick := componentSelected(componentModel)
     )
   }
 

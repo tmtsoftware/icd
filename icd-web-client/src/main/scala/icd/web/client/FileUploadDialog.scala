@@ -42,8 +42,8 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
       name := "files[]",
       multiple := "multiple",
       attr("webkitdirectory") := "webkitdirectory",
-      onclick := fileSelectReset _,
-      onchange := fileSelectHandler _
+      onclick := fileSelectReset,
+      onchange := fileSelectHandler
     ).render
   }
 
@@ -193,8 +193,8 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
       subsystemNames.update()
     }
 
-    xhr.upload.addEventListener("progress", progressListener _, useCapture = false)
-    xhr.onload = onloadListener _
+    xhr.upload.addEventListener("progress", progressListener, useCapture = false)
+    xhr.onload = (e: dom.Event) => onloadListener(e)
 
     //start upload
     statusItem.classList.add("text-bg-primary")

@@ -58,7 +58,7 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
 
   // The subsystem combobox
   private val subsystemItem = {
-    select(id := "statusSubsystemItem", cls := "form-select", onchange := onSubsystemSelected _)(
+    select(id := "statusSubsystemItem", cls := "form-select", onchange := onSubsystemSelected)(
       option(value := placeholderMsg, disabled := true, selected := true)(placeholderMsg)
     ).render
   }
@@ -132,7 +132,7 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
         tr(
           th("Subsystem"),
           th("API Version"),
-          th("Date"),
+          th("Publish Date"),
           th("User"),
           th("Comment"),
           th("Status")
@@ -146,7 +146,7 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
               title := s"Select this API for viewing",
               apiVersionInfo.version,
               href := "#",
-              onclick := clickedOnApi(apiVersionInfo) _
+              onclick := clickedOnApi(apiVersionInfo)
             )
           ),
           td(formatDate(apiVersionInfo.date)),
@@ -167,7 +167,7 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
           th("Subsystem 1"),
           th("Subsystem 2"),
           th("ICD Version"),
-          th("Date"),
+          th("Publish Date"),
           th("User"),
           th("Comment")
         )
@@ -183,7 +183,7 @@ case class StatusDialog(mainContent: MainContent, listener: StatusDialogListener
                 title := s"Select this ICD for viewing",
                 iv.icdVersion,
                 href := "#",
-                onclick := clickedOnIcd(iv) _
+                onclick := clickedOnIcd(iv)
               )
             ),
             td(formatDate(icdVersionInfo.date)),

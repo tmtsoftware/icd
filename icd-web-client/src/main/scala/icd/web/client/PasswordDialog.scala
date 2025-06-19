@@ -38,7 +38,7 @@ case class PasswordDialog(mainContent: MainContent, listener: PasswordDialogList
       name := "icd-username",
       id := "icd-username",
       required,
-      onkeyup := usernameChanged _,
+      onkeyup := (() => usernameChanged()),
       placeholder := "Enter the user name..."
     ).render
   }
@@ -63,7 +63,7 @@ case class PasswordDialog(mainContent: MainContent, listener: PasswordDialogList
       `type` := "password",
       name := "icd-password",
       id := "icd-password",
-      onkeyup := passwordChanged _,
+      onkeyup := (() => passwordChanged()),
       required,
       placeholder := "Enter the password..."
     ).render
@@ -136,7 +136,7 @@ case class PasswordDialog(mainContent: MainContent, listener: PasswordDialogList
           cls := "btn btn-primary",
           id := "applyButton",
           title := s"Login",
-          onclick := checkCredentials _
+          onclick := checkCredentials
         )("Apply")
       ),
       div(id := "contentDivPlaceholder")

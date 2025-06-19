@@ -139,7 +139,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       title := s"Show API for $subsystem.$component",
       s"$subsystem.$component ",
       href := "#",
-      onclick := clickedOnComponent(subsystem, component) _
+      onclick := clickedOnComponent(subsystem, component)
     )
   }
 
@@ -158,7 +158,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         title := s"Go to event parameter that is the source of this FITS keyword",
         s"${fitsSource.toShortString} ",
         href := "#",
-        onclick := clickedOnFitsSource(fitsSource) _
+        onclick := clickedOnFitsSource(fitsSource)
       )
     )
   }

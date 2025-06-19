@@ -52,7 +52,7 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
       `type` := "submit",
       cls := "btn btn-primary",
       title := "Compare two selected subsystem versions",
-      onclick := compareHandler(subsystem) _
+      onclick := compareHandler(subsystem)
     )("Compare").render
   }
 
@@ -163,7 +163,7 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
         cls := "form-check-input",
         title := s"Select this version for comparison",
         tpe := "checkbox",
-        onchange := checkboxListener(compButton) _,
+        onchange := checkboxListener(compButton),
         value := version.getOrElse("")
       ),
       label(cls := "form-check-label", version)

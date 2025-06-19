@@ -25,7 +25,7 @@ case class ReloadButton(selectDialog: SelectDialog) extends Displayable {
       tpe := "button",
       id := "reload",
       title := "Reload the selected subsystem, API or ICD, refresh from icd database",
-      onclick := reloadPage _
+      onclick := (() => reloadPage())
     )(i(cls := "navbarBtn bi bi-arrow-clockwise")).render
   }
 

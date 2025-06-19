@@ -81,7 +81,7 @@ object IcdDbDefaults {
 
 // This is the command line app icd-db
 //noinspection DuplicatedCode
-object IcdDb extends App {
+object IcdDb {
   import IcdDbDefaults.*
 
   // Cache of PDF files for published API and ICD versions
@@ -207,21 +207,23 @@ object IcdDb extends App {
     version("version")
   }
 
-  // Parse the command line options
-  parser.parse(args, IcdDbOptions()) match {
-    case Some(options) =>
-      try {
-        run(options)
-      }
-      catch {
-        case _: IcdDbException =>
-          println("Error: Failed to connect to mongodb. Make sure mongod server is running.")
-          System.exit(1)
-        case e: Throwable =>
-          e.printStackTrace()
-          System.exit(1)
-      }
-    case None => System.exit(1)
+  def main(args: Array[String]): Unit = {
+    // Parse the command line options
+    parser.parse(args, IcdDbOptions()) match {
+      case Some(options) =>
+        try {
+          run(options)
+        }
+        catch {
+          case _: IcdDbException =>
+            println("Error: Failed to connect to mongodb. Make sure mongod server is running.")
+            System.exit(1)
+          case e: Throwable =>
+            e.printStackTrace()
+            System.exit(1)
+        }
+      case None => System.exit(1)
+    }
   }
 
   // Run the application
@@ -793,7 +795,7 @@ case class IcdDb(
     }
     catch {
       case ex: Exception =>
-        println(s"Failed to get OpenApi JSON for $sv, service: $service, paths: $paths", ex)
+        println(s"Failed to get OpenApi JSON for $sv, service: $service, paths: $paths: $ex")
         None
     }
   }

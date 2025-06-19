@@ -120,7 +120,7 @@ case class GraphButtonItem(labelStr: String, tip: String, listener: IcdVizOption
           div(cls := "modal-footer")(
             button(`type` := "button", cls := "btn btn-secondary", attr("data-bs-dismiss") := "modal")("Cancel"),
             button(
-              onclick := graphModalListener _,
+              onclick := (() => graphModalListener()),
               `type` := "button",
               cls := "btn btn-primary",
               attr("data-bs-dismiss") := "modal"

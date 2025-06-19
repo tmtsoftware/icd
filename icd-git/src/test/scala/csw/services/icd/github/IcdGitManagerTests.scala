@@ -12,8 +12,8 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class IcdGitManagerTests extends AnyFunSuite with BeforeAndAfter {
 
-  private var repoDir: File = _
-  private var git: Git      = _
+  private var repoDir: File = scala.compiletime.uninitialized
+  private var git: Git      = scala.compiletime.uninitialized
 
   private val user       = System.getProperty("user.name")
   private val password   = ""

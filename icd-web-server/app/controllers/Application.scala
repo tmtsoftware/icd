@@ -81,7 +81,7 @@ class Application @Inject() (
    */
   def subsystemNames =
     Action.async {
-      val resp: Future[List[String]] = appActor ? GetSubsystemNames
+      val resp: Future[List[String]] = appActor ? GetSubsystemNames.apply
       resp.map(names => Ok(Json.toJson(names)))
     }
 
@@ -231,7 +231,7 @@ class Application @Inject() (
       resp.map {
         case Some(bytes) =>
           val filename = maybeIcdVersion match {
-            case None => s"ICD-SDB-$subsystem-$target.pdf"
+            case None             => s"ICD-SDB-$subsystem-$target.pdf"
             case Some(icdVersion) => s"ICD-SDB-$subsystem-$target-$icdVersion.pdf"
           }
           Ok(bytes).as("application/pdf").withHeaders(("Content-Disposition", s"filename=\"$filename\""))
@@ -295,7 +295,7 @@ class Application @Inject() (
       resp.map {
         case Some(bytes) =>
           val filename = maybeVersion match {
-            case None => s"API-SDB-$subsystem.pdf"
+            case None          => s"API-SDB-$subsystem.pdf"
             case Some(version) => s"API-SDB-$subsystem-$version.pdf"
           }
           Ok(bytes).as("application/pdf").withHeaders(("Content-Disposition", s"filename=\"$filename\""))
@@ -313,7 +313,6 @@ class Application @Inject() (
    * @param maybeLineHeight  line-height for HTML
    * @param maybePaperSize   Letter, Legal, A4, A3, default: Letter
    * @param maybeDetails     Not used (for compatibility with other PDF generating APIs)
-   *
    */
   def fitsDictionaryAsPdf(
       tag: String,
@@ -335,7 +334,7 @@ class Application @Inject() (
         case Some(bytes) =>
           val fileName = tag match {
             case "All" => "FITS-Dictionary.pdf"
-            case _ => s"FITS-Dictionary-$tag.pdf"
+            case _     => s"FITS-Dictionary-$tag.pdf"
           }
           Ok(bytes).as("application/pdf").withHeaders(("Content-Disposition", s"filename=\"$fileName\""))
         case None =>
@@ -374,7 +373,7 @@ class Application @Inject() (
       resp.map {
         case Some(bytes) =>
           val filename = maybeVersion match {
-            case None => s"$subsystem-Archived-Items.pdf"
+            case None          => s"$subsystem-Archived-Items.pdf"
             case Some(version) => s"$subsystem-$version-Archived-Items.pdf"
           }
           Ok(bytes).as("application/pdf").withHeaders(("Content-Disposition", s"filename=\"$filename\""))
@@ -469,7 +468,7 @@ class Application @Inject() (
       resp.map {
         case Some(bytes) =>
           val filename = maybeVersion match {
-            case None => s"$subsystem-Alarms.pdf"
+            case None          => s"$subsystem-Alarms.pdf"
             case Some(version) => s"$subsystem-$version-Alarms.pdf"
           }
           Ok(bytes).as("application/pdf").withHeaders(("Content-Disposition", s"filename=\"$filename\""))
@@ -545,7 +544,7 @@ class Application @Inject() (
       resp.map {
         case Some(bytes) =>
           val filename = maybeVersion match {
-            case None => s"$subsystem-Missing-Items.pdf"
+            case None          => s"$subsystem-Missing-Items.pdf"
             case Some(version) => s"$subsystem-$version-Missing-Items.pdf"
           }
           Ok(bytes).as("application/pdf").withHeaders(("Content-Disposition", s"filename=\"$filename\""))
@@ -553,6 +552,7 @@ class Application @Inject() (
           NotFound
       }
     }
+
   /**
    * Returns a missing items report (HTML) for the given subsystem/component API
    *
@@ -707,12 +707,12 @@ class Application @Inject() (
           val filename = maybeTarget match {
             case None =>
               maybeVersion match {
-                case None => s"$subsystem-Graph.$suffix"
+                case None          => s"$subsystem-Graph.$suffix"
                 case Some(version) => s"$subsystem-$version-Graph.$suffix"
               }
             case Some(target) =>
               maybeIcdVersion match {
-                case None => s"$subsystem-$target-Graph.$suffix"
+                case None             => s"$subsystem-$target-Graph.$suffix"
                 case Some(icdVersion) => s"$subsystem-$target-$icdVersion-Graph.$suffix"
               }
           }
@@ -746,7 +746,7 @@ class Application @Inject() (
    */
   def getIcdNames =
     Action.async {
-      val resp: Future[List[IcdName]] = appActor ? GetIcdNames
+      val resp: Future[List[IcdName]] = appActor ? GetIcdNames.apply
       resp.map(names => Ok(Json.toJson(names)))
     }
 
@@ -790,7 +790,7 @@ class Application @Inject() (
    * Checks if the given GitHub user and password are valid for publish
    */
   def checkGitHubCredentials() =
-    authAction { implicit request =>
+    authAction(block = { implicit request =>
       val maybeGitHubCredentials = request.body.asJson.map(json => Json.fromJson[GitHubCredentials](json).get)
       if (maybeGitHubCredentials.isEmpty) {
         BadRequest("Missing POST data of type GitHubCredentials")
@@ -809,7 +809,7 @@ class Application @Inject() (
             BadRequest(ex.getMessage)
         }
       }
-    }
+    })
 
   private def convertBytesToHex(bytes: Array[Byte]): String = {
     val sb = new mutable.StringBuilder
@@ -823,7 +823,7 @@ class Application @Inject() (
    * Checks if the given user and password are valid for using the web app
    */
   def checkCredentials() =
-    Action { implicit request =>
+    Action(block = { implicit request =>
       val maybeCredentials = request.body.asJson.map(json => Json.fromJson[Credentials](json).get)
       if (maybeCredentials.isEmpty) {
         BadRequest("Missing POST data of type Credentials")
@@ -843,18 +843,18 @@ class Application @Inject() (
             BadRequest(ex.getMessage)
         }
       }
-    }
+    })
 
   /**
    * Checks if the user is already logged in (returns true if logged in)
    */
   def checkForCookie() =
-    Action { implicit request =>
+    Action(block = { implicit request =>
       request.cookies.get(cookieName) match {
         case Some(cookie) => Ok(Json.toJson(cookie.value == expectedSha))
         case None         => Ok(Json.toJson(false))
       }
-    }
+    })
 
   /**
    * Log out of the web app
@@ -997,7 +997,7 @@ class Application @Inject() (
    */
   def updatePublished() =
     authAction {
-      appActor ? UpdatePublished
+      appActor ? UpdatePublished.apply
       Ok.as(JSON)
     }
 

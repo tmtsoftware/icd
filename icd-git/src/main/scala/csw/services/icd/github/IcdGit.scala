@@ -9,7 +9,7 @@ import icd.web.shared.BuildInfo
  * support importing from Git into the ICD database.
  */
 //noinspection DuplicatedCode
-object IcdGit extends App {
+object IcdGit {
 
   // Default user name if none given
   private val defaultUser = System.getProperty("user.name")
@@ -116,20 +116,22 @@ object IcdGit extends App {
     version("version")
   }
 
-  // Parse the command line options
-  parser.parse(args, Options()) match {
-    case Some(options) =>
-      try {
-        run(options)
-      } catch {
-        case e: IllegalArgumentException =>
-          println(s"Error: ${e.getMessage}")
-          System.exit(1)
-        case e: Throwable =>
-          e.printStackTrace()
-          System.exit(1)
-      }
-    case None => System.exit(1)
+  def main(args: Array[String]): Unit = {
+    // Parse the command line options
+    parser.parse(args, Options()) match {
+      case Some(options) =>
+        try {
+          run(options)
+        } catch {
+          case e: IllegalArgumentException =>
+            println(s"Error: ${e.getMessage}")
+            System.exit(1)
+          case e: Throwable =>
+            e.printStackTrace()
+            System.exit(1)
+        }
+      case None => System.exit(1)
+    }
   }
 
   // Run the application

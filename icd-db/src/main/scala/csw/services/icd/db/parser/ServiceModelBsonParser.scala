@@ -3,7 +3,7 @@ package csw.services.icd.db.parser
 import csw.services.icd.html.HtmlMarkup
 import icd.web.shared.IcdModels.{ServiceModel, ServiceModelClient, ServiceModelProvider, ServicePath}
 import icd.web.shared.PdfOptions
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import reactivemongo.api.DB
 import reactivemongo.api.bson.collection.BSONCollection
 import csw.services.icd.*
@@ -63,11 +63,11 @@ object ServiceModelBsonParser {
       paths.flatMap { path =>
         val methods = (json \ "paths" \ path).as[JsObject].keys.toList
         methods.map { method =>
-          val summary = (json \ "paths" \ path \ method \ "summary").validate[String].getOrElse("")
+          val summary = (json \ "paths" \ path \ method \ "summary").validate[JsString]
           val description =
-            if (summary.nonEmpty) summary
-            else (json \ "paths" \ path \ method \ "description").validate[String].getOrElse("")
-          ServicePath(method, path, description)
+            if (summary.isSuccess) summary
+            else (json \ "paths" \ path \ method \ "description").validate[JsString]
+          ServicePath(method, path, description.getOrElse(JsString("")).value)
         }
       }
     }

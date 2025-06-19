@@ -6,7 +6,7 @@ import csw.services.icd.db.IcdDb
 import icd.web.shared.{BuildInfo, IcdVizOptions, SubsystemWithVersion}
 
 //noinspection DuplicatedCode
-object IcdViz extends App {
+object IcdViz {
 
   // Parser for the command line options
   private val parser = new scopt.OptionParser[IcdVizOptions]("icd-viz") {
@@ -98,17 +98,19 @@ object IcdViz extends App {
     version("version")
   }
 
-  // Parse the command line options
-  parser.parse(args, IcdVizOptions()) match {
-    case Some(options) =>
-      try {
-        run(options)
-      } catch {
-        case e: Throwable =>
-          e.printStackTrace()
-          System.exit(1)
-      }
-    case None => System.exit(1)
+  def main(args: Array[String]): Unit = {
+    // Parse the command line options
+    parser.parse(args, IcdVizOptions()) match {
+      case Some(options) =>
+        try {
+          run(options)
+        } catch {
+          case e: Throwable =>
+            e.printStackTrace()
+            System.exit(1)
+        }
+      case None => System.exit(1)
+    }
   }
 
   // Run the application

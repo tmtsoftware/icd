@@ -70,7 +70,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val publishDialog = PublishDialog(mainContent, PublishListener)
 
   // Call popState() when the user presses the browser Back button
-  dom.window.onpopstate = popState _
+  dom.window.onpopstate = (e: PopStateEvent) => popState(e)
 
   // Initial browser state
   doLayout()

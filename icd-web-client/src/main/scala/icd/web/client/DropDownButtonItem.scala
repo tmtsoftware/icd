@@ -39,7 +39,7 @@ extends Displayable {
     ul(
       cls := "dropdown-menu",
       items.map { item =>
-        li(a(cls := "dropdown-item", href := "#", onclick := itemSelected(item) _)(item))
+        li(a(cls := "dropdown-item", href := "#", onclick := itemSelected(item))(item))
       }
     )
   }

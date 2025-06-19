@@ -60,7 +60,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
       id := buttonId,
       title := buttonTitle,
       disabled := true,
-      onclick := publishButtonClicked(unpublish) _,
+      onclick := publishButtonClicked(unpublish),
       attr("data-bs-toggle") := "modal",
       attr("data-bs-target") := "#publishModal"
     )(s).render
@@ -118,7 +118,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
         $id("confirmPublishMessage").innerHTML =
           span("Are you sure you want to unpublish the API ")(strong(s"$subsystem-${maybeVersion.get}$icdMsg?")).render.innerHTML
         $id("confirmPublishButton").innerHTML = "Unpublish"
-        $id("confirmPublishButton").asInstanceOf[Button].onclick = publishHandler(unpublish = true) _
+        $id("confirmPublishButton").asInstanceOf[Button].onclick = (e: dom.Event) => publishHandler(unpublish = true)(e)
       }
     }
     else {
@@ -126,7 +126,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
       $id("confirmPublishMessage").innerHTML =
         span("Are you sure you want to publish the API ")(strong(s"$subsystem-$v?")).render.innerHTML
       $id("confirmPublishButton").innerHTML = "Publish"
-      $id("confirmPublishButton").asInstanceOf[Button].onclick = publishHandler(unpublish = false) _
+      $id("confirmPublishButton").asInstanceOf[Button].onclick = (e: dom.Event) => publishHandler(unpublish = false)(e)
     }
   }
 
@@ -154,14 +154,14 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
     ).render.innerHTML
 
     $id("confirmPublishButton").innerHTML = if (unpublish) "Unpublish" else "Publish"
-    $id("confirmPublishButton").asInstanceOf[Button].onclick = publishHandler(unpublish) _
+    $id("confirmPublishButton").asInstanceOf[Button].onclick = (e: dom.Event) => publishHandler(unpublish)(e)
   }
 
   // Displays a Publish API button in the table that just jumps to the main publish button
   private def readyToPublishButton(publishInfo: PublishInfo): Button = {
     button(
       title := s"Enter your GitHub credentials to Publish the API for ${publishInfo.subsystem} ...",
-      onclick := readyToPublishHandler(publishInfo) _
+      onclick := readyToPublishHandler(publishInfo)
     )("Ready to Publish...").render
   }
 
@@ -173,7 +173,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
       rows := 10,
       cols := 80,
       placeholder := "Enter publish comment here...",
-      onkeyup := commentChanged _
+      onkeyup := (() => commentChanged())
     ).render
   }
 
@@ -199,13 +199,13 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
       name := "github-username",
       id := "github-username",
       required,
-      onkeyup := usernameChanged _,
+      onkeyup := (() => usernameChanged()),
       placeholder := "Enter your GitHub user name..."
     ).render
   }
 
   private val majorVersionCheckBox = {
-    input(tpe := "checkbox", cls := "form-check-input", onchange := changeListener _).render
+    input(tpe := "checkbox", cls := "form-check-input", onchange := (() => changeListener())).render
   }
 
   // Message about missing username
@@ -228,7 +228,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
       `type` := "password",
       name := "github-password",
       id := "github-password",
-      onkeyup := passwordChanged _,
+      onkeyup := (() => passwordChanged()),
       required,
       placeholder := "Enter your GitHub password..."
     ).render
@@ -614,7 +614,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
         name := "api",
         title := s"Select this API to publish",
         tpe := "checkbox",
-        onchange := changeListener _,
+        onchange := (() => changeListener()),
         value := Json.toJson(publishInfo).toString()
       ),
       label(cls := "form-check-label", publishInfo.subsystem)
@@ -654,7 +654,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
           cls := "btn btn-primary",
           id := "applyButton",
           title := s"Use the given GitHub credentials...",
-          onclick := checkGitHubCredentials _
+          onclick := checkGitHubCredentials
           //        disabled := true
         )("Apply")
       ),
