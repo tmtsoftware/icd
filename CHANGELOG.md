@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
-## [ICD v3.1.x] - 2024-
+## [ICD v3.2.x] - 2025-
 
 - Added HTTP services (defined in service-model.conf and OpenApi files) to the visualization graph
 - Added HTTP services to the "Missing Items" reports
@@ -12,6 +12,7 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
   Note: run `icd-git --ingest` to reload and fix an existing icd database.
 - Put context/interface diagram and missing item report in appendix of generated ICD SDBs (if the graph is not empty, if there are missing items)
 - Fixed JSON schema for service-model.conf to support both "required" and "provided" services in the same file
+- Updated dependencies and moved to Java-21 and Scala3
 
 ## [ICD v3.1.0] - 2024-07-22
 

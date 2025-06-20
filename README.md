@@ -64,7 +64,7 @@ There are currently these ICD subprojects:
 
 Build and Install
 -----------------
-*Note that this project has been tested with java-17.
+*Note that this project has been tested with java-21 and scala-3.
 
 Note: The build requires that [node.js](https://nodejs.org/en/) be installed on the system.
 This is checked in the install.sh script, which automatically sets the SBT_OPTS environment variable if node.js is found 

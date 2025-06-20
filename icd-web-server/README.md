@@ -3,7 +3,7 @@ ICD Web App
 
 This subproject contains a Play/Scala.js based web app for accessing the ICD database.
 
-*Note that this project has been tested with java-11 and java-17.
+*Note that this project has been tested with java-21.
 
 * The icd-web-server subproject is a Play project and provides an HTTP API for the client.
 

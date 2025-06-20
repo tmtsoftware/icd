@@ -1,6 +1,6 @@
 # Installing IDBS
 
-While the public ICD web service can be useful for browsing existing APIs, it can be easier to develop model files by using the IDBS system locally.  The icd-db and icdwebserver programs are useful for the developer in order to validate and ingest model files into the local ICD database. The ICD software can be installed on any machine with a Java JDK version of 17 or greater. The details of installing Java on a system are not covered here (Java 17 was used for testing).
+While the public ICD web service can be useful for browsing existing APIs, it can be easier to develop model files by using the IDBS system locally.  The icd-db and icdwebserver programs are useful for the developer in order to validate and ingest model files into the local ICD database. The ICD software can be installed on any machine with a Java JDK version of 21 or greater. The details of installing Java on a system are not covered here (Java 21 was used for testing).
 
 The following external applications are also required at runtime:
 * [graphviz](https://graphviz.org/) – The `dot` command is required to generate graphs and for inline UML support.

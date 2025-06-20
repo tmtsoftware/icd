@@ -7,11 +7,11 @@
 # See build.sbt: Causes fullOpt to be used to optimize the generated JS code
 export SCALAJS_PROD=true
 
-#java_version=`java -version 2>&1 | head -1 | cut -d'"' -f2 | sed '/^1\./s///' | cut -d'.' -f1`
-#if test $java_version != '11'; then
-#  echo "This project requires Java-11, but you have java-$java_version: Aborting.";
-#  exit 1
-#fi
+java_version=`java -version 2>&1 | head -1 | cut -d'"' -f2 | sed '/^1\./s///' | cut -d'.' -f1`
+if test $java_version != '21'; then
+  echo "This project requires Java-21, but you have java-$java_version: Aborting.";
+  exit 1
+fi
 
 # Make sure we can find sbt for the build
 hash sbt 2>/dev/null || { echo >&2 "Please install sbt first.  Aborting."; exit 1; }
@@ -20,7 +20,7 @@ hash sbt 2>/dev/null || { echo >&2 "Please install sbt first.  Aborting."; exit 
 hash cs 2>/dev/null || { echo >&2 "Please install cs (https://get-coursier.io/) first.  Aborting."; exit 1; }
 hash swagger-codegen 2>/dev/null || { echo >&2 "Please install swagger-codegen first (use: cs install --contrib swagger-codegen).  Aborting."; exit 1; }
 
-# Check version of swagger-codegen, since there is a problem with older versions and Java-17
+# Check version of swagger-codegen, since there is a problem with older versions
 sc_version=`swagger-codegen version`
 test $"sc_version" == "3.0.35" -o `echo -e "$sc_version\n3.0.35" | sort -Vr | tail -1` == "3.0.35" || { echo >&2 "Version of swagger-codegen is too old: Please update (run: cs update swagger-codegen).  Aborting."; exit 1; }
 
