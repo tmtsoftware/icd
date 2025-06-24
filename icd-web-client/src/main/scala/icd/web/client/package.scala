@@ -53,12 +53,18 @@ package object client {
     hist.pushState()
   }
 
-  // Show/hide the busy cursor while the future is running
+  // Show/hide the busy cursor and disable all while the future is running
   def showBusyCursorWhile(f: Future[Unit]): Future[Unit] = {
     // Note: See implicit NodeList to List support in package object in this dir
-    document.querySelectorAll("*").foreach(_.classList.add("change-cursor"))
+    document.querySelectorAll("*").foreach { e =>
+      e.classList.add("change-cursor")
+      e.classList.add("pe-none")
+    }
     f.onComplete { _ =>
-      document.querySelectorAll("*").foreach(_.classList.remove("change-cursor"))
+      document.querySelectorAll("*").foreach { e =>
+        e.classList.remove("change-cursor")
+        e.classList.remove("pe-none")
+      }
     }
     f
   }
@@ -70,7 +76,7 @@ package object client {
     import scalatags.JsDom.all.*
     div(cls := "alert alert-danger card-body", role := "alert")(
       span(i(cls := "bi bi-exclamation-triangle"), attr("aria-hidden") := "true"),
-      span(cls := "sr-only", " Error: "),
+      span(cls                                                         := "sr-only", " Error: "),
       s" $msg"
     ).toString()
   }
@@ -80,7 +86,7 @@ package object client {
     import scalatags.JsDom.all.*
     div(cls := "alert alert-warning card-body", role := "alert")(
       span(i(cls := "bi bi-exclamation-triangle"), attr("aria-hidden") := "true"),
-      span(cls := "sr-only", " Warning: "),
+      span(cls                                                         := "sr-only", " Warning: "),
       s" $msg"
     ).toString()
   }

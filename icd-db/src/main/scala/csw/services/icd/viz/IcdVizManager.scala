@@ -337,7 +337,7 @@ object IcdVizManager {
 
     // Gets information about commands a component sends and the receiver components involved
     def getSentCommandInfo(info: ComponentInfo): (List[SentCommandInfo], List[ComponentModel]) = {
-      val sentCommands = info.commands.toList.flatMap(_.commandsSent).filter(_.receiveCommandModel.isDefined)
+      val sentCommands = info.commands.toList.flatMap(_.commandsSent).filter(_.receiver.isDefined)
       (
         sentCommands,
         sentCommands

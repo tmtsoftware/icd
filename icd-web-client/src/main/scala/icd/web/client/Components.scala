@@ -449,6 +449,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       graphUrl <- getGraphUrl(sv, Some(targetSv), maybeIcd.map(_.icdVersion))
     } yield {
       import scalatags.JsDom.all.*
+      // XXX TODO FIXME: Should only do this if the user did not switch to a different view before it completed
+//      println(s"XXX dom.window.history.state = ${dom.window.history.state}")
       mainContent.appendElement(
         div(
           cls := "component container-fluid",
