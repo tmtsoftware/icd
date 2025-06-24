@@ -1,7 +1,7 @@
 package csw.services.icd.github
 
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
-import csw.services.icd.db.{IcdDb, IcdDbDefaults, IcdDbException, Subsystems}
+import csw.services.icd.db.{ApiVersions, IcdDb, IcdDbDefaults, IcdDbException, Subsystems}
 import icd.web.shared.BuildInfo
 
 /**
@@ -13,9 +13,6 @@ object IcdGit {
 
   // Default user name if none given
   private val defaultUser = System.getProperty("user.name")
-
-  // cache of API and ICD versions published on GitHub (to avoid cloning the same repo multiple times)
-  private val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
 
   /**
    * Command line options ("icd-git --help" prints a usage message with descriptions of all the options)
@@ -165,7 +162,7 @@ object IcdGit {
         else
           Option(s).map { subsys =>
             if (needsVersion) {
-              val versions = IcdGitManager.getSubsystemVersionNumbers(SubsystemAndVersion(subsys, None), allApiVersions)
+              val versions = IcdGitManager.getSubsystemVersionNumbers(SubsystemAndVersion(subsys, None), IcdGitManager.allApiVersions)
               if (versions.isEmpty) error(s"No published versions of $subsys were found. Please use --publish option.")
               val version =
                 if (versions.size == 1) versions.head
@@ -251,7 +248,7 @@ object IcdGit {
   private def list(options: Options): Unit = {
     if (options.subsystems.size == 2) {
       for {
-        icdVersions <- IcdGitManager.list(options.subsystems, allIcdVersions)
+        icdVersions <- IcdGitManager.list(options.subsystems, IcdGitManager.allIcdVersions)
       } {
         icdVersions.icds.foreach { icd =>
           val a = s"${icdVersions.subsystems.head}-${icd.versions.head}"
@@ -263,7 +260,7 @@ object IcdGit {
       }
     } else if (options.subsystems.nonEmpty) {
       // list the publish history for each of the given subsystems
-      options.subsystems.map(sv => IcdGitManager.getApiVersions(sv, allApiVersions)).foreach {
+      options.subsystems.map(sv => IcdGitManager.getApiVersions(sv, IcdGitManager.allApiVersions)).foreach {
         _.foreach { a =>
           a.apis.foreach { api =>
             println(s"\nSubsystem ${a.subsystem}-${api.version}: created by ${api.user} on ${api.date}:\n${api.comment}\n")
@@ -349,7 +346,8 @@ object IcdGit {
     }
     if (options.subsystems.size == 1 || options.subsystems.size == 2) {
       val db = IcdDb(options.dbName, options.host, options.port)
-      IcdGitManager.ingestMissing(db)
+//      IcdGitManager.ingestMissing(db)
+      IcdGitManager.ingestLatest(db)
     }
   }
 
@@ -372,7 +370,9 @@ object IcdGit {
         db.dropDatabase()
       else
         options.subsystems.foreach(sv => db.query.dropSubsystem(sv.subsystem))
-      IcdGitManager.ingest(db, options.subsystems, (s: String) => println(s), allApiVersions, allIcdVersions)
+      val latestApiVersions = IcdGitManager.allApiVersions.map(a => ApiVersions(a.subsystem, a.apis.take(2)))
+      IcdGitManager.ingest(db, options.subsystems, (s: String) => println(s),
+        latestApiVersions, IcdGitManager.allIcdVersions)
     } catch {
       case _: IcdDbException => error("Failed to connect to mongodb. Make sure mongod server is running.")
       case ex: Exception =>
@@ -383,6 +383,7 @@ object IcdGit {
 
   private def ingestMissing(options: Options): Unit = {
     val db = IcdDb(options.dbName, options.host, options.port)
-    IcdGitManager.  ingestMissing(db)
+//    IcdGitManager.ingestMissing(db)
+    IcdGitManager.ingestLatest(db)
   }
 }

@@ -55,7 +55,8 @@ case class ApplicationImpl(db: IcdDb) {
   // Cache of API and ICD versions published on GitHub (cached for better performance)
   var (allApiVersions, allIcdVersions) =
     try {
-      IcdGitManager.ingestMissing(db)
+//      IcdGitManager.ingestMissing(db)
+      IcdGitManager.ingestLatest(db)
     }
     catch {
       case ex: Exception =>
@@ -66,7 +67,8 @@ case class ApplicationImpl(db: IcdDb) {
 
   // Update the database and cache after a new API or ICD was published (or in case one was published)
   private def updateAfterPublish(): Unit = {
-    val pair = IcdGitManager.ingestMissing(db)
+//    val pair = IcdGitManager.ingestMissing(db)
+    val pair = IcdGitManager.ingestLatest(db)
     allApiVersions = pair._1
     allIcdVersions = pair._2
   }
@@ -150,7 +152,7 @@ case class ApplicationImpl(db: IcdDb) {
     try {
       val fitsKeyMap     = IcdFits(db).getFitsKeyMap()
       val query          = new CachedIcdDbQuery(db.db, db.admin, subsystems, None, fitsKeyMap)
-      val versionManager = new CachedIcdVersionManager(query)
+      val versionManager = new CachedIcdVersionManager(db)
       new ComponentInfoHelper(
         versionManager,
         displayWarnings = searchAllSubsystems,
@@ -187,7 +189,7 @@ case class ApplicationImpl(db: IcdDb) {
     try {
       val fitsKeyMap     = IcdFits(db).getFitsKeyMap()
       val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), None, fitsKeyMap)
-      val versionManager = new CachedIcdVersionManager(query)
+      val versionManager = new CachedIcdVersionManager(db)
       IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, None, fitsKeyMap)
     }
     catch {
@@ -775,7 +777,7 @@ case class ApplicationImpl(db: IcdDb) {
     val targetSv = SubsystemWithVersion(target, maybeTargetVersion, None)
 
     val query          = new IcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)))
-    val versionManager = new IcdVersionManager(query)
+    val versionManager = new IcdVersionManager(db)
     try {
       versionManager.getIcdModels(sv, targetSv, None)
     }

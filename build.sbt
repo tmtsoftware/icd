@@ -29,7 +29,7 @@ val optStage = if (sys.env.contains("SCALAJS_PROD")) FullOptStage else FastOptSt
 //noinspection ScalaUnusedSymbol
 // Root of the multi-project build
 lazy val root = (project in file("."))
-  .aggregate(icdWebSharedJvm, `icd-db`, `icd-git`, icdWebServer, icdWebSharedJvm, docs)
+  .aggregate(icdWebSharedJvm, `icd-db`, icdWebServer, icdWebSharedJvm, docs)
   .settings(commonSettings)
   .enablePlugins(GithubPublishPlugin)
   .settings(
@@ -71,20 +71,11 @@ lazy val `icd-db` = project
         jsoup,
         swaggerParser,
         commonsText,
-        graphDot
+        graphDot,
+        jgit
       ) ++
         testScope(scalaTest)
   ) dependsOn icdWebSharedJvm
-
-// Adds support for working with ICD model file repositories on GitHub, ICD version management, icd-github tool
-lazy val `icd-git` = project
-  .enablePlugins(DeployApp)
-  .settings(defaultSettings)
-  .settings(
-    libraryDependencies ++=
-      compileScope(jgit) ++
-        testScope(scalaTest)
-  ) dependsOn `icd-db`
 
 // -- Play/ScalaJS parts below --
 
@@ -104,7 +95,7 @@ lazy val icdWebServer = (project in file("icd-web-server"))
         testScope(specs2)
   )
   .enablePlugins(PlayScala, SbtWeb, DockerPlugin)
-  .dependsOn(`icd-db`, `icd-git`)
+  .dependsOn(`icd-db`)
 
 // ScalaJS client JavaScript dependencies
 val clientJsDeps = Def.setting(

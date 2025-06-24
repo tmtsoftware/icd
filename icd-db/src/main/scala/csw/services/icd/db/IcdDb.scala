@@ -480,7 +480,7 @@ case class IcdDb(
   sys.addShutdownHook(close())
 
   val query: IcdDbQuery                 = IcdDbQuery(db, admin, None)
-  val versionManager: IcdVersionManager = IcdVersionManager(query)
+  val versionManager: IcdVersionManager = IcdVersionManager(this)
   private val manager: IcdDbManager     = IcdDbManager(db, versionManager)
 
   /**

@@ -7,10 +7,10 @@ package csw.services.icd.db
  * This version only caches the collection names. Alternatively, you can pass a CachedIcdDbQuery instance
  * to cache a lot more information. In tests, the collectionExists method was found to be a bottleneck.
  *
- * @param query may be used to share caching of collection names (see CachedIcdDbQuery)
+ * @param icdDb used to share caching of collection names (see CachedIcdDbQuery)
  */
-class CachedIcdVersionManager(query: IcdDbQuery) extends IcdVersionManager(query) {
-  private val collectionNames = query.getCollectionNames
+class CachedIcdVersionManager(icdDb: IcdDb) extends IcdVersionManager(icdDb) {
+  private val collectionNames = icdDb.query.getCollectionNames
 
   override def getCollectionNames: Set[String] = collectionNames
 

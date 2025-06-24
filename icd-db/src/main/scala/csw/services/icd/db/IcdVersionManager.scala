@@ -23,6 +23,7 @@ import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONObjectID}
 import reactivemongo.api.{Cursor, WriteConcern}
 import reactivemongo.api.bson.collection.BSONCollection
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
+import csw.services.icd.github.IcdGitManager
 import icd.web.shared.ComponentInfo.PublishType
 //import lax.*
 import reactivemongo.play.json.compat.*
@@ -207,12 +208,13 @@ object IcdVersionManager extends DefaultWrites {
  * @param query may be used to share caching of collection names (see CachedIcdDbQuery)
  */
 //noinspection DuplicatedCode,SpellCheckingInspection
-case class IcdVersionManager(query: IcdDbQuery) {
+case class IcdVersionManager(icdDb: IcdDb) {
 
   import IcdVersionManager.*
   import IcdDbQuery.*
 
-  private val db = query.db
+  val query: IcdDbQuery = icdDb.query
+  private val db        = query.db
 
   // Performance can be improved by caching these values in some cases (redefine in a subclass)
   private[db] def collectionExists(name: String): Boolean = query.collectionExists(name)
@@ -317,14 +319,26 @@ case class IcdVersionManager(query: IcdDbQuery) {
     sv.maybeVersion match {
       case Some(version) => // published version
         val collName = versionCollectionName(path)
-        if (collectionExists(collName)) {
-          val coll     = db.collection[BSONCollection](collName)
-          val query    = BSONDocument(versionStrKey -> version)
-          val maybeDoc = coll.find(query, Option.empty[JsObject]).one[BSONDocument].await
-          maybeDoc.map(VersionInfo(_))
+        def getVersionInfo: Option[VersionInfo] = {
+          if (collectionExists(collName)) {
+            val coll     = db.collection[BSONCollection](collName)
+            val query    = BSONDocument(versionStrKey -> version)
+            val maybeDoc = coll.find(query, Option.empty[JsObject]).one[BSONDocument].await
+            maybeDoc.map(VersionInfo(_))
+          }
+          else None
         }
+        val versionInfo = getVersionInfo
+        if (versionInfo.nonEmpty) versionInfo
         else {
-          None // not found
+          // This version hasn't been ingested yet?
+          IcdGitManager.ingest(
+            icdDb,
+            SubsystemAndVersion(sv.subsystem, sv.maybeVersion),
+            s => println(s"XXX (auto-ingest) $s"),
+            IcdGitManager.allApiVersions
+          )
+          getVersionInfo
         }
       case None => // current, unpublished version
         def getPartVersion(path: String): Option[Int] = {
@@ -342,7 +356,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
         val user            = ""
         val comment         = "Working version, unpublished"
         val commit          = ""
-        val parts           = paths.map(p => (p, getPartVersion(p))).flatMap(pair => pair._2.map(version => PartInfo(pair._1, version)))
+        val parts = paths.map(p => (p, getPartVersion(p))).flatMap(pair => pair._2.map(version => PartInfo(pair._1, version)))
         Some(VersionInfo(None, user, comment, now, commit, parts))
     }
   }
@@ -632,7 +646,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
 
   /**
    * Gets information about the ICD between the two subsystems
-
+   *
    * @param sv the subsystem and version
    * @param tv the target subsystem and version
    * @param maybePdfOptions used for formatting
@@ -703,9 +717,9 @@ case class IcdVersionManager(query: IcdDbQuery) {
       val icdPaths = collectionNames.filter(isStdSet).map(IcdPath.apply).filter(_.subsystem == subsystem)
       val paths    = icdPaths.map(_.path).toList ++ getOpenApiCollectionPaths(collectionNames, icdPaths)
       for (path <- paths) yield {
-        val coll            = db.collection[BSONCollection](path)
-        val obj             = coll.find(queryAny, Option.empty[JsObject]).one[BSONDocument].await.get
-        val version         = obj.int(versionKey).get
+        val coll    = db.collection[BSONCollection](path)
+        val obj     = coll.find(queryAny, Option.empty[JsObject]).one[BSONDocument].await.get
+        val version = obj.int(versionKey).get
 //        val id              = obj.getAsOpt[BSONObjectID](idKey).get
         val id              = obj.get(idKey).get
         val versionCollName = versionCollectionName(path)
@@ -777,14 +791,14 @@ case class IcdVersionManager(query: IcdDbQuery) {
       date: DateTime
   ): Unit = {
 
-    // Only add an ICD version if the referenced subsystem and target versions exist
-    val subsystemVersions = getVersions(subsystem)
-    val targetVersions    = getVersions(target)
-    if (
-      subsystemVersions.exists(_.maybeVersion.contains(subsystemVersion)) && targetVersions.exists(
-        _.maybeVersion.contains(targetVersion)
-      )
-    ) {
+//    // Only add an ICD version if the referenced subsystem and target versions exist
+//    val subsystemVersions = getVersions(subsystem)
+//    val targetVersions    = getVersions(target)
+//    if (
+//      subsystemVersions.exists(_.maybeVersion.contains(subsystemVersion)) && targetVersions.exists(
+//        _.maybeVersion.contains(targetVersion)
+//      )
+//    ) {
       val obj = BSONDocument(
         versionStrKey       -> icdVersion,
         subsystemKey        -> subsystem,
@@ -796,12 +810,12 @@ case class IcdVersionManager(query: IcdDbQuery) {
         dateKey             -> BSONDateTime(date.getMillis)
       )
       db.collection[BSONCollection](icdCollName).insert.one(obj).await
-    }
-    else {
-      println(
-        s"Warning: Not adding ICD version $icdVersion between $subsystem-$subsystemVersion and $target-$targetVersion, since not all referenced subsystem versions exist"
-      )
-    }
+//    }
+//    else {
+//      println(
+//        s"Warning: Not adding ICD version $icdVersion between $subsystem-$subsystemVersion and $target-$targetVersion, since not all referenced subsystem versions exist"
+//      )
+//    }
   }
 
   /**
@@ -1007,7 +1021,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
     val components1 = for {
       componentModel <- getUnversionedComponents(versionedSubsystems, maybePdfOptions)
       serviceModel   <- query.getServiceModel(componentModel, maybePdfOptions)
-      _              <- serviceModel.requires.find(s => s.subsystem == subsystem && s.component == component && s.name == serviceName)
+      _ <- serviceModel.requires.find(s => s.subsystem == subsystem && s.component == component && s.name == serviceName)
     } yield componentModel
 
     val components2 = for {
@@ -1020,7 +1034,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       )
       componentModel <- models.componentModel
       serviceModel   <- models.serviceModel
-      _              <- serviceModel.requires.find(s => s.subsystem == subsystem && s.component == component && s.name == serviceName)
+      _ <- serviceModel.requires.find(s => s.subsystem == subsystem && s.component == component && s.name == serviceName)
     } yield {
       componentModel
     }

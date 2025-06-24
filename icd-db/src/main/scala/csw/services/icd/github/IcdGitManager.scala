@@ -54,6 +54,34 @@ object IcdGitManager {
   // A temp dir is used to clone the GitHub repo in order to edit the ICD version file
   private val tmpDir = System.getProperty("java.io.tmpdir")
 
+  // Map of subsystem name to latest commit id for repos that were empty at time of development.
+  // This is used to speed up the check if a repo is empty. If the commit id changes,
+  // then we assume somebody added something.
+  private val emptyRepos = Map(
+    "CIS"    -> "7f42a42871015c5e5bdaea64f49bd26619217314",
+    "CLN"    -> "29eefda09df5b1415ca69724ee131aafadcb2f87",
+    "CRYO"   -> "73714a1bee9fc38c4a14ab4e9e5d3bfa731c7136",
+    "CSW"    -> "0be40700817fb3ffd4393aba58207a696ae16321",
+    "DMS"    -> "f9b257eded51a2daf1b13b28ef16a781f21882c7",
+    "DPS"    -> "132c3aacfb1f13bed0751bf4ead3ae14827b4092",
+    "ENC"    -> "c950920d4c39fcf27d59e4c8d7566d7d2a4fb72f",
+    "LGSF"   -> "b01dfa73a1f3e5c677f819aa855e8158e12c1bc5",
+    "M2S"    -> "cfaaacc833812f210354db9d38befa80bdf00e4b",
+    "M3S"    -> "c1d43e5289dd9cdbac379daad5ffb641db6ee29f",
+    "MODHIS" -> "6139728cc2e1c1ba64724c5cff40c16452ee8da9",
+    "NSCU"   -> "5f26e4dd18bee60f0c631e625d4b02558dccd3e1",
+    "REFR"   -> "e57687a18f61875deea19cb1ba83ceca3d1fc9a5",
+    "SCMS"   -> "13916c6a742b3f37f8c6a131a1ff9291edf3f781",
+    "SOSS"   -> "48684f6dc2a54d290c69edbfdd4909528a2b27a7",
+    "STR"    -> "035688c16bbd991d08a22137b6804c78c24f75ba",
+    "SUM"    -> "2864dbc7ec2dbdc5762405d57683c1c97a31cd12",
+    "TINS"   -> "ba5ec70cafa2d7a3704b537bc38b3156909c6ff2",
+    "WFOS"   -> "330391bb97a21ff5c888594517019cb65f5c34fc"
+  )
+
+  // cache of API and ICD versions published on GitHub (to avoid cloning the same repo multiple times)
+  val (allApiVersions, allIcdVersions) = getAllVersions
+
   /**
    * Gets a list of information about all of the published API and ICD versions by reading any
    * apis/api-*.json and icds/icd-*.json files from the GitHub repo.
@@ -97,26 +125,16 @@ object IcdGitManager {
     val apiMatcher = FileSystems.getDefault.getPathMatcher(s"glob:$apisDir/api-*.json")
     val icdMatcher = FileSystems.getDefault.getPathMatcher(s"glob:$icdsDir/icd-*.json")
 
-    val apiVersions =
-      Future
-        .sequence(
-          Option(apisDir.listFiles)
-            .getOrElse(Array[File]())
-            .toList
-            .map(_.toPath)
-            .filter(apiMatcher.matches)
-            .map(path => ApiVersions.fromJson(new String(Files.readAllBytes(path))))
-            .filter(_.apis.nonEmpty)
-            .sorted
-            .map { apiVersions =>
-              // Add master branch as pseudo version, do in parallel for performance
-              Future(getMasterApiVersion(apiVersions.subsystem)).map(
-                _.toList.map(master => ApiVersions(apiVersions.subsystem, master :: apiVersions.apis))
-              )
-            }
-        )
-        .map(_.flatten)
-        .await
+    val apiVersions = Option(apisDir.listFiles)
+      .getOrElse(Array[File]())
+      .toList
+      .map(_.toPath)
+      .filter(apiMatcher.matches)
+      .map(path => ApiVersions.fromJson(new String(Files.readAllBytes(path))))
+      .filter(_.apis.nonEmpty)
+      .sorted
+      // Add master branch as pseudo version
+      .map(a => ApiVersions(a.subsystem, getMasterApiVersion(a.subsystem).toList ++ a.apis))
 
     val icdVersions = Option(icdsDir.listFiles)
       .getOrElse(Array[File]())
@@ -685,8 +703,8 @@ object IcdGitManager {
       }
     }
 
-    // For ingesting subsystems into the db, make ESW is first,
-    // since it contains the predefined observe events that others depend on
+    // For ingesting subsystems into the db, make sure ESW is first,
+    // since it contains the predefined observe events that others depend on.
     subsystems
       .sortWith((x, _) => x.subsystem == "ESW")
       .foreach(ingest(db, _, feedback, allApiVersions))
@@ -802,38 +820,12 @@ object IcdGitManager {
     }
   }
 
-  // Map of subsystem name to latest commit id for repos that were empty at time of development.
-  // This is used to speed up the check if a repo is empty. If the commit id changes,
-  // then we assume somebody added something.
-  private val emptyRepos = Map(
-    "CIS"    -> "7f42a42871015c5e5bdaea64f49bd26619217314",
-    "CLN"    -> "29eefda09df5b1415ca69724ee131aafadcb2f87",
-    "CRYO"   -> "73714a1bee9fc38c4a14ab4e9e5d3bfa731c7136",
-    "CSW"    -> "0be40700817fb3ffd4393aba58207a696ae16321",
-    "DMS"    -> "f9b257eded51a2daf1b13b28ef16a781f21882c7",
-    "DPS"    -> "132c3aacfb1f13bed0751bf4ead3ae14827b4092",
-    "ENC"    -> "c950920d4c39fcf27d59e4c8d7566d7d2a4fb72f",
-    "LGSF"   -> "b01dfa73a1f3e5c677f819aa855e8158e12c1bc5",
-    "M2S"    -> "cfaaacc833812f210354db9d38befa80bdf00e4b",
-    "M3S"    -> "c1d43e5289dd9cdbac379daad5ffb641db6ee29f",
-    "MODHIS" -> "6139728cc2e1c1ba64724c5cff40c16452ee8da9",
-    "NSCU"   -> "5f26e4dd18bee60f0c631e625d4b02558dccd3e1",
-    "REFR"   -> "e57687a18f61875deea19cb1ba83ceca3d1fc9a5",
-    "SCMS"   -> "13916c6a742b3f37f8c6a131a1ff9291edf3f781",
-    "SOSS"   -> "48684f6dc2a54d290c69edbfdd4909528a2b27a7",
-    "STR"    -> "035688c16bbd991d08a22137b6804c78c24f75ba",
-    "SUM"    -> "2864dbc7ec2dbdc5762405d57683c1c97a31cd12",
-    "TINS"   -> "ba5ec70cafa2d7a3704b537bc38b3156909c6ff2",
-    "WFOS"   -> "330391bb97a21ff5c888594517019cb65f5c34fc"
-  )
-
   case class SubsystemGitInfo(commitId: String, isEmpty: Boolean)
 
   private def getSubsystemGitInfo(subsystem: String): SubsystemGitInfo = {
     val url      = getSubsystemGitHubUrl(subsystem)
     val commitId = getRepoCommitId(url)
-//    println(s"""    "$subsystem" -> "$commitId", """)
-    val isEmpty = emptyRepos.get(subsystem).contains(commitId)
+    val isEmpty  = emptyRepos.get(subsystem).contains(commitId)
     SubsystemGitInfo(commitId, isEmpty)
   }
 
@@ -944,6 +936,62 @@ object IcdGitManager {
     if (missingSubsystemVersions.nonEmpty) {
       println(s"Updating the ICD database with newly published changes from GitHub")
       IcdGitManager.ingest(db, missingSubsystemVersions, (s: String) => println(s), allApiVersions, allIcdVersions)
+    }
+    else {
+      // There might still be icds that have not yet been ingested in the local database
+      // Ingest any missing published icd versions
+      val missingIcdVersions = allIcdVersions
+        .flatMap { icdVersions =>
+          val s        = icdVersions.subsystems.head
+          val t        = icdVersions.subsystems.tail.head
+          val versions = db.versionManager.getIcdVersions(s, t).toSet
+          if (icdVersions.icds.exists(icdEntry => !versions.exists(_.icdVersion.icdVersion == icdEntry.icdVersion)))
+            Some(List(SubsystemAndVersion(s, None), SubsystemAndVersion(t, None)))
+          else None
+        }
+      missingIcdVersions.foreach { subsystems =>
+        IcdGitManager.importIcdFiles(db, subsystems, (s: String) => println(s), allIcdVersions)
+      }
+    }
+
+    (allApiVersions, allIcdVersions)
+  }
+
+  /**
+   * Ingest the master branches and any versions of APIs that are the most recently published, but not yet in the database
+   * and return a pair of lists containing all API and ICD version info.
+   *
+   * @param db the icd database
+   * @return a pair containing lists of all API and ICD versions
+   */
+  def ingestLatest(db: IcdDb): (List[ApiVersions], List[IcdVersions]) = {
+    val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
+    val latestApiVersions                = allApiVersions.map(a => ApiVersions(a.subsystem, a.apis.take(2)))
+
+    // Ingest any missing subsystems
+    val missingSubsystems = latestApiVersions
+      .map(_.subsystem)
+      .toSet
+      .diff(db.query.getSubsystemNames.toSet)
+      .map(SubsystemAndVersion(_, None))
+    if (missingSubsystems.nonEmpty) {
+      println(s"Updating the ICD database with changes from GitHub")
+      IcdGitManager.ingest(db, missingSubsystems.toList, (s: String) => println(s), latestApiVersions, allIcdVersions)
+    }
+
+    // Ingest any missing published subsystem versions
+    val missingSubsystemVersions = latestApiVersions
+      .flatMap { apiVersions =>
+        val versions = db.versionManager.getVersions(apiVersions.subsystem).tail.toSet
+        apiVersions.apis
+          .filter(apiEntry =>
+            !versions.exists(info => info.maybeVersion.contains(apiEntry.version) && info.commit == apiEntry.commit)
+          )
+          .map(apiEntry => SubsystemAndVersion(apiVersions.subsystem, Some(apiEntry.version)))
+      }
+    if (missingSubsystemVersions.nonEmpty) {
+      println(s"Updating the ICD database with newly published changes from GitHub")
+      IcdGitManager.ingest(db, missingSubsystemVersions, (s: String) => println(s), latestApiVersions, allIcdVersions)
     }
     else {
       // There might still be icds that have not yet been ingested in the local database

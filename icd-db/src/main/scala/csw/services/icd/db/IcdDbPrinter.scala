@@ -91,7 +91,7 @@ case class IcdDbPrinter(
     // Use caching, since we need to look at all the components multiple times, in order to determine who
     // subscribes, who calls commands, etc.
     val query          = new CachedIcdDbQuery(db.db, db.admin, maybeSubsystems, Some(pdfOptions), fitsKeyMap)
-    val versionManager = new CachedIcdVersionManager(query)
+    val versionManager = new CachedIcdVersionManager(db)
 
     val markup = for {
       subsystemInfo <- getSubsystemInfo(sv)
@@ -130,7 +130,7 @@ case class IcdDbPrinter(
     val fitsKeyMap = IcdFits(db).getFitsKeyMap(maybePdfOptions)
     val query =
       new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), Some(pdfOptions), fitsKeyMap)
-    val versionManager = new CachedIcdVersionManager(query)
+    val versionManager = new CachedIcdVersionManager(db)
     val icdInfoList    = getIcdModelList(sv, targetSv)
     // Letter, Legal, A4, A3
     val pageWidth = (pdfOptions.paperSize, pdfOptions.orientation) match {

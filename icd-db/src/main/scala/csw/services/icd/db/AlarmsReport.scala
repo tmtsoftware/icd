@@ -33,7 +33,7 @@ case class AlarmsReport(
     headings: Headings
 ) {
   private val query          = new CachedIcdDbQuery(db.db, db.admin, maybeSv.map(sv => List(sv.subsystem)), maybePdfOptions, Map.empty)
-  private val versionManager = new CachedIcdVersionManager(query)
+  private val versionManager = new CachedIcdVersionManager(db)
 
   // Returns true if the given subsystem should be included in the report
   private def subsystemFilter(subsystem: String): Boolean = {

@@ -117,7 +117,7 @@ object IcdVizManager {
    */
   def showRelationships(db: IcdDb, options: IcdVizOptions, maybeOut: Option[OutputStream] = None): Boolean = {
     val query          = new CachedIcdDbQuery(db.db, db.admin, None, None, Map.empty)
-    val versionManager = new CachedIcdVersionManager(query)
+    val versionManager = new CachedIcdVersionManager(db)
 
     // Add components from user-specified subsystems
     val subsystemComponents = options.subsystems.flatMap(sv =>

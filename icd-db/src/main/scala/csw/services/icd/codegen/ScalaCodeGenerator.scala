@@ -202,7 +202,7 @@ class ScalaCodeGenerator(db: IcdDb) {
     val sv             = SubsystemWithVersion(s.subsystem, s.maybeVersion, maybeComponent)
     val versionDef     = s"val subsystem = \"$s\""
     val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem)), None, Map.empty)
-    val versionManager = new CachedIcdVersionManager(query)
+    val versionManager = new CachedIcdVersionManager(db)
     val subsystemModel = db.versionManager.getSubsystemModel(sv, None)
     val infoList = new ComponentInfoHelper(versionManager, false, false)
       .getComponentInfoList(sv, None, Map.empty)
