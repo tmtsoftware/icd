@@ -77,7 +77,7 @@ object IcdDbQuery {
   def getOpenApiCollectionPaths(collectionNames: Set[String], icdPaths: Set[IcdPath]): List[String] = {
     val serviceModelPaths = icdPaths.filter(_.parts.reverse.head == serviceFileNames.modelBaseName)
     serviceModelPaths.toList.flatMap { serviceModelPath =>
-      collectionNames.toList.filter(s => s.startsWith(s"${serviceModelPath.path}.") && !s.endsWith(versionSuffix))
+      collectionNames.toList.filter(s => s.startsWith(s"${serviceModelPath.path}.") && !s.endsWith(versionSuffix) && !s.endsWith(backupCollSuffix))
     }
   }
 
