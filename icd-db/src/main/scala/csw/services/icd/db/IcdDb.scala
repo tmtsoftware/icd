@@ -491,7 +491,7 @@ case class IcdDb(
    *
    * @param dir the top level directory containing one or more of the the standard set of ICD files
    *            and any number of subdirectories containing ICD files
-   * @return a pair of two lists: 1: A list of the configs in the directories, 2: A list describing any problems that occurred
+   * @return A list describing any problems that occurred
    */
   def ingestAndCleanup(dir: File = new File(".")): List[Problem] = {
     val (configs, ingestProblems) = ingest(dir)
@@ -736,7 +736,7 @@ case class IcdDb(
   def importIcds(icdVersions: IcdVersions, feedback: String => Unit): Unit = {
     versionManager.removeIcdVersions(icdVersions.subsystems.head, icdVersions.subsystems(1))
     icdVersions.icds.foreach { icd =>
-      feedback(s"Ingesting ICD ${icdVersions.subsystems.head}-${icdVersions.subsystems(1)}-${icd.icdVersion}")
+//      feedback(s"Ingesting ICD ${icdVersions.subsystems.head}-${icdVersions.subsystems(1)}-${icd.icdVersion}")
       versionManager.addIcdVersion(
         icd.icdVersion,
         icdVersions.subsystems.head,

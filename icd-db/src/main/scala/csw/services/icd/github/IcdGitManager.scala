@@ -14,6 +14,7 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.Json
 import csw.services.icd.RichFuture
+import csw.services.icd.db.IcdDbDefaults.backupCollSuffix
 
 import scala.jdk.CollectionConverters.*
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -707,7 +708,7 @@ object IcdGitManager {
     // since it contains the predefined observe events that others depend on.
     subsystems
       .sortWith((x, _) => x.subsystem == "ESW")
-      .foreach(ingest(db, _, feedback, allApiVersions))
+      .foreach(ingest(db, _, feedback, allApiVersions, updateUnpublishedVersion = true))
     importIcdFiles(db, subsystems, feedback, allIcdVersions)
   }
 
@@ -718,8 +719,16 @@ object IcdGitManager {
    * @param db       the database to use
    * @param sv       the subsystem and optional version
    * @param feedback optional feedback function
+   * @param allApiVersions versions to ingest
+   * @param updateUnpublishedVersion if true, update the unpublished version of the subsystem API to the last one ingested
    */
-  def ingest(db: IcdDb, sv: SubsystemAndVersion, feedback: String => Unit, allApiVersions: List[ApiVersions]): Unit = {
+  def ingest(
+      db: IcdDb,
+      sv: SubsystemAndVersion,
+      feedback: String => Unit,
+      allApiVersions: List[ApiVersions],
+      updateUnpublishedVersion: Boolean
+  ): Unit = {
     getApiVersions(sv, allApiVersions) match {
       case Some(versionsFound) =>
         sv.maybeVersion.foreach { v =>
@@ -730,7 +739,7 @@ object IcdGitManager {
         def versionFilter(e: ApiEntry) = if (sv.maybeVersion.isEmpty) true else sv.maybeVersion.get == e.version
 
         val apiEntries = versionsFound.apis.filter(versionFilter)
-        ingest(db, sv.subsystem, apiEntries, feedback)
+        ingest(db, sv.subsystem, apiEntries, feedback, updateUnpublishedVersion)
 
       case None =>
         warning(s"No published versions of ${sv.subsystem} were found in the repository")
@@ -745,8 +754,15 @@ object IcdGitManager {
    * @param subsystem  the subsystem to ingest into the db
    * @param apiEntries the (GitHub version) entries for the published versions to ingest
    * @param feedback   optional feedback function
+   * @param updateUnpublishedVersion if true, update the unpublished version of the subsystem API to the last one ingested
    */
-  def ingest(db: IcdDb, subsystem: String, apiEntries: List[ApiEntry], feedback: String => Unit): Unit =
+  def ingest(
+      db: IcdDb,
+      subsystem: String,
+      apiEntries: List[ApiEntry],
+      feedback: String => Unit,
+      updateUnpublishedVersion: Boolean
+  ): Unit =
     this.synchronized {
       // Checkout the subsystem repo in a temp dir
       val url        = getSubsystemGitHubUrl(subsystem)
@@ -760,13 +776,20 @@ object IcdGitManager {
             // Use git reset to make sure no files from previous version are left over?
             git.reset().setRef(e.commit).setMode(ResetCommand.ResetType.HARD).call
             feedback(s"Ingesting $subsystem-${e.version}")
+
             val (_, problems) = db.ingest(gitWorkDir)
             problems.foreach(p => feedback(p.errorMessage()))
             val errors = problems.exists(_.severity != "warning")
-            db.query.afterIngest(Some(subsystem), errors, db.dbName, makeBackups = false)
+            val (newCollections, backupCollections) =
+              db.query.afterIngest(Some(subsystem), errors, db.dbName, makeBackups = !updateUnpublishedVersion)
             if (!problems.exists(_.severity != "warning")) {
               val date = DateTime.parse(e.date)
               db.versionManager.publishApi(subsystem, Some(e.version), majorVersion = false, e.comment, e.user, date, e.commit)
+              if (!updateUnpublishedVersion) {
+                // Restore unpublished version from backup (After auto-ingesting older version of subsystem)
+                db.query.deleteCollections(newCollections)
+                db.query.renameCollections(backupCollections, backupCollSuffix, removeSuffix = true, db.dbName)
+              }
             }
           }
           catch {
@@ -958,7 +981,7 @@ object IcdGitManager {
   }
 
   /**
-   * Ingest the master branches and any versions of APIs that are the most recently published, but not yet in the database
+   * Ingest the versions of APIs that are the most recently published, but not yet in the database
    * and return a pair of lists containing all API and ICD version info.
    *
    * @param db the icd database
@@ -966,7 +989,7 @@ object IcdGitManager {
    */
   def ingestLatest(db: IcdDb): (List[ApiVersions], List[IcdVersions]) = {
     val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
-    val latestApiVersions                = allApiVersions.map(a => ApiVersions(a.subsystem, a.apis.take(2)))
+    val latestApiVersions                = allApiVersions.map(a => ApiVersions(a.subsystem, a.apis.slice(1, 2)))
 
     // Ingest any missing subsystems
     val missingSubsystems = latestApiVersions

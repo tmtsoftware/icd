@@ -31,9 +31,21 @@ class IcdGitTestRenamedComponents extends AnyFunSuite with BeforeAndAfter {
       "opticalWfsOrGuiderDetLib"
     )
 
-    IcdGitManager.ingest(db, SubsystemAndVersion("ESW", Some("1.4")), (s) => println(s), allApiVersions)
+    IcdGitManager.ingest(
+      db,
+      SubsystemAndVersion("ESW", Some("1.4")),
+      (s) => println(s),
+      allApiVersions,
+      updateUnpublishedVersion = true
+    )
     assert(db.query.getComponentNames(Some("ESW")) == comps1_4)
-    IcdGitManager.ingest(db, SubsystemAndVersion("ESW", Some("1.6")), (s) => println(s), allApiVersions)
+    IcdGitManager.ingest(
+      db,
+      SubsystemAndVersion("ESW", Some("1.6")),
+      (s) => println(s),
+      allApiVersions,
+      updateUnpublishedVersion = true
+    )
     assert(db.query.getComponentNames(Some("ESW")) == comps1_6)
   }
 }

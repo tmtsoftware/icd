@@ -335,8 +335,9 @@ case class IcdVersionManager(icdDb: IcdDb) {
           IcdGitManager.ingest(
             icdDb,
             SubsystemAndVersion(sv.subsystem, sv.maybeVersion),
-            s => println(s"XXX (auto-ingest) $s"),
-            IcdGitManager.allApiVersions
+            s => println(s"auto-ingesting $s"),
+            IcdGitManager.allApiVersions,
+            updateUnpublishedVersion = false
           )
           getVersionInfo
         }

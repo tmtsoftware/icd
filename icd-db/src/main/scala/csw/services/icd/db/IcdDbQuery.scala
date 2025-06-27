@@ -603,7 +603,7 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
   private def baseName(s: String, suffix: String) = s.dropRight(suffix.length)
 
   // Rename the given set of collections by adding or removing the given suffix.
-  private[db] def renameCollections(
+  def renameCollections(
       paths: Set[String],
       suffix: String,
       removeSuffix: Boolean,
@@ -617,7 +617,7 @@ case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) 
   }
 
   // Delete the given collections
-  private[db] def deleteCollections(paths: Set[String]): Unit = {
+  def deleteCollections(paths: Set[String]): Unit = {
     paths.foreach { path =>
       val coll = db.collection[BSONCollection](path)
       coll.drop(failIfNotFound = false).await

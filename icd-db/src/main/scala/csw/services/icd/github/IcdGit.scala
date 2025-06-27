@@ -370,7 +370,7 @@ object IcdGit {
         db.dropDatabase()
       else
         options.subsystems.foreach(sv => db.query.dropSubsystem(sv.subsystem))
-      val latestApiVersions = IcdGitManager.allApiVersions.map(a => ApiVersions(a.subsystem, a.apis.take(2)))
+      val latestApiVersions = IcdGitManager.allApiVersions.map(a => ApiVersions(a.subsystem, a.apis.slice(1, 2)))
       IcdGitManager.ingest(db, options.subsystems, (s: String) => println(s),
         latestApiVersions, IcdGitManager.allIcdVersions)
     } catch {

@@ -91,17 +91,19 @@ case class Subsystem(
     componentItem.disabled = !enabled
   }
 
-  //noinspection ScalaUnusedSymbol
+  // noinspection ScalaUnusedSymbol
   // called when a subsystem is selected
   private def subsystemSelected(e: dom.Event): Unit = {
     for (_ <- updateSubsystemVersionOptions())
       listener.subsystemSelected(getSubsystemWithVersion(subsystemOnly = true))
   }
 
-  //noinspection ScalaUnusedSymbol
+  // noinspection ScalaUnusedSymbol
   // called when a subsystem version is selected
   private def subsystemVersionSelected(e: dom.Event): Unit = {
-    listener.subsystemSelected(getSubsystemWithVersion())
+    showBusyCursorWhile(
+      listener.subsystemSelected(getSubsystemWithVersion())
+    )
   }
 
   // HTML markup displaying the subsystem and version comboboxes
@@ -131,7 +133,7 @@ case class Subsystem(
   def getSelectedComponent: Option[String] = {
     componentItem.value match {
       case `componentPlaceholder` | "" => None
-      case componentName          => Some(componentName)
+      case componentName               => Some(componentName)
     }
   }
 
@@ -165,9 +167,12 @@ case class Subsystem(
    */
   def getSubsystemWithVersion(subsystemOnly: Boolean = false): Option[SubsystemWithVersion] = {
     getSelectedSubsystem.map(subsystem =>
-      SubsystemWithVersion(subsystem,
+      SubsystemWithVersion(
+        subsystem,
         if (subsystemOnly) None else getSelectedSubsystemVersion,
-        if (subsystemOnly) None else getSelectedComponent))
+        if (subsystemOnly) None else getSelectedComponent
+      )
+    )
   }
 
   /**
@@ -205,10 +210,13 @@ case class Subsystem(
           componentItem.value = componentPlaceholder
       }
     }
-    for {
-      _ <- updateSubsystemVersionOptions(maybeSv.flatMap(_.maybeVersion))
-      _ <- listener.subsystemSelected(maybeSv, findMatchingIcd = false)
-    } yield {}
+
+    showBusyCursorWhile {
+      for {
+        _ <- updateSubsystemVersionOptions(maybeSv.flatMap(_.maybeVersion))
+        _ <- listener.subsystemSelected(maybeSv, findMatchingIcd = false)
+      } yield {}
+    }
   }
 
   /**
