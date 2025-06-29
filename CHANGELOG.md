@@ -13,6 +13,7 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Put context/interface diagram and missing item report in appendix of generated ICD SDBs (if the graph is not empty, if there are missing items)
 - Fixed JSON schema for service-model.conf to support both "required" and "provided" services in the same file
 - Updated dependencies and moved to Java-21 and Scala3
+- Changed web app to only ingest latest published APIs and ICDs and load older versions on demand
 
 ## [ICD v3.1.0] - 2024-07-22
 
