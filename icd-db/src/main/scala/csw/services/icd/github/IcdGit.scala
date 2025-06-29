@@ -33,7 +33,8 @@ object IcdGit {
       host: String = IcdDbDefaults.defaultHost,
       port: Int = IcdDbDefaults.defaultPort,
       ingest: Boolean = false,
-      ingestMissing: Boolean = false
+      ingestMissing: Boolean = false,
+      ingestAll: Boolean = false
   )
 
   private def parseSubsystemsArg(s: String): List[SubsystemAndVersion] = {
@@ -103,11 +104,15 @@ object IcdGit {
 
     opt[Unit]("ingest") action { (_, c) =>
       c.copy(ingest = true)
-    } text "Ingests the selected subsystem model files and ICDs from GitHub into the ICD database (Ingests all subsystems, if no subsystem options given)"
+    } text "Ingests the selected subsystem model files and ICDs from GitHub into the ICD database (Ingests the latest published subsystems, if no subsystem options given)"
 
     opt[Unit]("ingestMissing") action { (_, c) =>
       c.copy(ingestMissing = true)
-    } text "Ingests any APIs or ICDs that were published, but are not yet in the local database, plus any master branch versions"
+    } text "Ingests any subsystem APIs or ICDs that were published on GitHub, but are not yet in the local database, plus any master branch versions"
+
+    opt[Unit]("ingestAll") action { (_, c) =>
+      c.copy(ingestAll = true)
+    } text "Ingests all subsystem APIs and ICDs plus any master branch versions of APIs on GitHub into the local icd database"
 
     help("help")
     version("version")
@@ -119,7 +124,8 @@ object IcdGit {
       case Some(options) =>
         try {
           run(options)
-        } catch {
+        }
+        catch {
           case e: IllegalArgumentException =>
             println(s"Error: ${e.getMessage}")
             System.exit(1)
@@ -140,6 +146,7 @@ object IcdGit {
 //    if (options.tag) tag(options)
     if (options.ingest) ingest(options)
     if (options.ingestMissing) ingestMissing(options)
+    if (options.ingestAll) ingestAll(options)
     System.exit(0)
   }
 
@@ -162,7 +169,8 @@ object IcdGit {
         else
           Option(s).map { subsys =>
             if (needsVersion) {
-              val versions = IcdGitManager.getSubsystemVersionNumbers(SubsystemAndVersion(subsys, None), IcdGitManager.allApiVersions)
+              val versions =
+                IcdGitManager.getSubsystemVersionNumbers(SubsystemAndVersion(subsys, None), IcdGitManager.allApiVersions)
               if (versions.isEmpty) error(s"No published versions of $subsys were found. Please use --publish option.")
               val version =
                 if (versions.size == 1) versions.head
@@ -171,9 +179,11 @@ object IcdGit {
                   readLine()
                 }
               SubsystemAndVersion(subsys, Some(version))
-            } else SubsystemAndVersion(subsys, None)
+            }
+            else SubsystemAndVersion(subsys, None)
           }
-      } else sv
+      }
+      else sv
     }
 
     def readIcdVersion(opts: Options): Option[String] = {
@@ -182,7 +192,8 @@ object IcdGit {
         list(opts)
         // XXX TODO: check that version is correct and exists
         Option(readLine())
-      } else opts.icdVersion
+      }
+      else opts.icdVersion
     }
 
     // Get the user name and password and return the pair
@@ -258,7 +269,8 @@ object IcdGit {
           )
         }
       }
-    } else if (options.subsystems.nonEmpty) {
+    }
+    else if (options.subsystems.nonEmpty) {
       // list the publish history for each of the given subsystems
       options.subsystems.map(sv => IcdGitManager.getApiVersions(sv, IcdGitManager.allApiVersions)).foreach {
         _.foreach { a =>
@@ -267,7 +279,8 @@ object IcdGit {
           }
         }
       }
-    } else {
+    }
+    else {
       // list the publish history for all subsystems and icds?
       //      XXX
     }
@@ -294,7 +307,8 @@ object IcdGit {
         error(s"ICD version $icdVersion for $subsystem and $target does not exist")
       else
         println(s"Removed ICD version $icdVersion from the list of ICDs for $subsystem and $target")
-    } else {
+    }
+    else {
       // unpublish API
       val sv  = SubsystemAndVersion(subsystem)
       val api = IcdGitManager.unpublish(sv, user, password, comment)
@@ -305,7 +319,8 @@ object IcdGit {
           case None =>
             error(s"No published API version for $subsystem was found")
         }
-      } else {
+      }
+      else {
         println(s"Removed API version ${api.get.version} from the list of published versions for $subsystem")
       }
     }
@@ -337,7 +352,8 @@ object IcdGit {
 
       val info = IcdGitManager.publish(sv.subsystem, options.majorVersion, user, password, comment)
       println(s"Created API version ${info.version} of ${sv.subsystem}")
-    } else if (options.subsystems.size == 2) {
+    }
+    else if (options.subsystems.size == 2) {
       // publish ICD between two subsystems
       val sv       = options.subsystems.head
       val targetSv = options.subsystems.tail.head
@@ -371,9 +387,9 @@ object IcdGit {
       else
         options.subsystems.foreach(sv => db.query.dropSubsystem(sv.subsystem))
       val latestApiVersions = IcdGitManager.allApiVersions.map(a => ApiVersions(a.subsystem, a.apis.slice(1, 2)))
-      IcdGitManager.ingest(db, options.subsystems, (s: String) => println(s),
-        latestApiVersions, IcdGitManager.allIcdVersions)
-    } catch {
+      IcdGitManager.ingest(db, options.subsystems, (s: String) => println(s), latestApiVersions, IcdGitManager.allIcdVersions)
+    }
+    catch {
       case _: IcdDbException => error("Failed to connect to mongodb. Make sure mongod server is running.")
       case ex: Exception =>
         ex.printStackTrace()
@@ -382,8 +398,36 @@ object IcdGit {
   }
 
   private def ingestMissing(options: Options): Unit = {
-    val db = IcdDb(options.dbName, options.host, options.port)
-//    IcdGitManager.ingestMissing(db)
-    IcdGitManager.ingestLatest(db)
+    try {
+      val db = IcdDb(options.dbName, options.host, options.port)
+      IcdGitManager.ingestMissing(db)
+    }
+    catch {
+      case _: IcdDbException => error("Failed to connect to mongodb. Make sure mongod server is running.")
+      case ex: Exception =>
+        ex.printStackTrace()
+        error(s"Unable to drop the existing ICD database: $ex")
+    }
+  }
+
+  private def ingestAll(options: Options): Unit = {
+    try {
+      // Get the DB handle
+      val db = IcdDb(options.dbName, options.host, options.port)
+      db.dropDatabase()
+      IcdGitManager.ingest(
+        db,
+        options.subsystems,
+        (s: String) => println(s),
+        IcdGitManager.allApiVersions,
+        IcdGitManager.allIcdVersions
+      )
+    }
+    catch {
+      case _: IcdDbException => error("Failed to connect to mongodb. Make sure mongod server is running.")
+      case ex: Exception =>
+        ex.printStackTrace()
+        error(s"Unable to drop the existing ICD database: $ex")
+    }
   }
 }

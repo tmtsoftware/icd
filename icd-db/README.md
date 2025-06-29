@@ -24,7 +24,7 @@ Example files that can be ingested into the database for testing can be found
 in the [examples/3.0](../examples/3.0) directory.
 
 ```
-icd-db 2.2.2
+icd-db 3.2.0
 Usage: icd-db [options]
 
   --db <name>              The name of the database to use (default: icds4)
@@ -40,7 +40,7 @@ Usage: icd-db [options]
                            Specifies the subsystem (and optional version) to be used by any following options
   -t, --subsystem2 <subsystem>[:version]
                            Specifies the second subsystem (and optional version) in an ICD to be used by any following options
-  --component2 <name>      Specifies the subsytem2 component to be used by any following options (subsystem2 must also be specified)
+  --component2 <name>      Specifies the subsystem2 component to be used by any following options (subsystem2 must also be specified)
   --icdversion <icd-version>
                            Specifies the version to be used by any following options (overrides subsystem and subsystem2 versions)
   -o, --out <outputFile>   Saves the selected API (or ICD) to the given file in a format based on the file's suffix (html, pdf) or generates code for the given API in a language based on the suffix ('scala', 'java', 'ts' (typescript), py (python))
@@ -53,6 +53,7 @@ Usage: icd-db [options]
                            Generates a 'Missing Items' report to the given file (dir for csv) in a format based on the file's suffix (html, pdf, otherwise text/csv formatted files are generated in given dir)
   -a, --archived <outputFile>
                            Generates an 'Archived Items' report for all subsystems (or the given one) to the given file in a format based on the file's suffix (html, pdf, csv)
+  --alarms <outputFile>    Generates an 'Alarms' report for all subsystems (or the given one) to the given file in a format based on the file's suffix (html, pdf, csv)
   --allSubsystems          Include all subsystems in searches for publishers, subscribers, etc. while generating API doc (Default: only consider the one subsystem)
   --clientApi              Include subscribed events and sent commands in the API dic (Default: only include published events and received commands)
   --orientation [portrait|landscape]
@@ -106,8 +107,12 @@ icd-git is a command line application that reads model files from the GitHub
 [ICD-Model-Files](https://github.com/tmt-icd/ICD-Model-Files.git) repositories and
 ingests them into the icd database.
 
-The code for publishing APIs and ICDs is contained in this subproject, however actual
-publishing is done via the icd web app by a TMT admin.
+*Note: The icd web app automatically ingests the latest published versions of APIs and ICDs on startup
+and will load any older versions of subsystem APIs on demand. 
+The icd-git command line app lets you do this manually from the command line.*
+
+*The code for publishing APIs and ICDs is contained in this subproject, however actual
+publishing is done via the icd web app by a TMT admin.*
 
 In order for a subsystem to be part of an ICD, the API for it first needs to be published.
 Publishing a subsystem API or ICD creates an entry in a JSON file in the
@@ -148,7 +153,7 @@ Add the `-i` or `--interactive` option to enter the required options interactive
 a list of possible subsystems and versions.
 
 ```
-icd-git 2.2.1
+icd-git 3.2.0
 Usage: icd-git [options]
 
   -l, --list               Prints the list of API or ICD versions defined on GitHub for the given subsystem options
@@ -167,8 +172,9 @@ Usage: icd-git [options]
   -d, --db <name>          The name of the database to use (for the --ingest option, default: icds4)
   --host <hostname>        The host name where the database is running (for the --ingest option, default: localhost)
   --port <number>          The port number to use for the database (for the --ingest option, default: 27017)
-  --ingest                 Ingests the selected subsystem model files and ICDs from GitHub into the ICD database (Ingests all subsystems, if no subsystem options given)
-  --ingestMissing          Ingests any APIs or ICDs that were published, but are not yet in the local database, plus any master branch versions
+  --ingest                 Ingests the selected subsystem model files and ICDs from GitHub into the ICD database (Ingests the latest published subsystems, if no subsystem options given)
+  --ingestMissing          Ingests any subsystem APIs or ICDs that were published on GitHub, but are not yet in the local database, plus any master branch versions
+  --ingestAll              Ingests all subsystem APIs and ICDs plus any master branch versions of APIs on GitHub into the local icd database
   --help
   --version
 ```
@@ -268,7 +274,7 @@ icd-fits Command
 The icd-fits command supports working with the FITS Dictionary:
 
 ```
-icd-fits 3.0.0
+icd-fits 3.2.0
 Usage: icd-fits [options]
 
   -d, --db <name>          The name of the database to use (for the --ingest option, default: icds4)
@@ -309,7 +315,7 @@ See also the [Graphviz](https://graphviz.org/doc/info/attrs.html) documentation 
 ## Usage
 
 ```
-icd-viz 2.2.2
+icd-viz 3.2.0
 Usage: icd-viz [options]
 
   -d, --db <name>          The name of the database to use (default: icds4)
@@ -330,6 +336,8 @@ Usage: icd-viz [options]
   --eventlabels <value>    Plot event labels (default=true)
   --groupsubsystems <value>
                            Group components from same subsystem together (default=true)
+  --onlysubsystems <value>
+                           Only display subsystems, not components (implies --groupsubsystems false, default=false)
   --layout one of: dot, fdp, sfdp, twopi, neato, circo, patchwork
                            Dot layout engine (default=dot)
   --overlap one of true, false, scale
@@ -427,5 +435,5 @@ Queries can be run on all collections.
 The collection names without ".v" above are for the *current, unpublished versions" of the model files.
 This is where the data is stored after ingesting the files into the database.
 
-When ingesting API releases that were published on GitHub (using [icd-git](../icd-git)), the different versions of the
+When ingesting API releases that were published on GitHub (using icd-git), the different versions of the
 model files are *published* locally in the MongoDB and stored in collections that end with ".v".

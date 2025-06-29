@@ -32,7 +32,7 @@ by command line applications and a web app.
 The [examples](examples) directory also contains some example API descriptions in both the old and new schema versions. All schema versions are supported for backward compatibility, however the newest version (3.0) should be used for future work. To help in upgrading existing subsystem APIs, branches named `schema-3.0` have been created on GitHub for the existing subsystems. 
  
 Command line applications: [icd-db](icd-db), [icd-fits](icd-db/src/main/scala/csw/services/icd/fits), 
-[icd-git](icd-git) and a web app ([icdwebserver](icd-web-server)) 
+[icd-git](icd-db/src/main/scala/csw/services/icd/github) and a web app ([icdwebserver](icd-web-server)) 
 are provided for working with APIs and ICDs, querying and viewing the data.
 
 The applications here assume the [MongoDB database](https://www.mongodb.com) is running. 
@@ -45,7 +45,11 @@ Mongodb can also be started automatically at boot time.
 
 After starting the database, ingest the published ICDs, which are stored in GitHub repositories:
 
-    icd-git --ingest
+    icd-git --ingest  # Loads the latest published APIs and ICDs into the local icd database
+
+or
+
+    icd-git --ingestAll  # loads all published APIs and ICDs into the local icd database
 
 You can rerun this command occasionally to get any updates from newly published ICDs or APIs (The icd web app automatically ingests any missing APIs and ICDs when started).
 
@@ -54,12 +58,9 @@ ICD Subprojects
 
 There are currently these ICD subprojects:
 
-* [icd-db](icd-db) - supports ingesting API model files into a MongoDB database, querying the db and saving an API or ICD as an HTML or PDF document
-* [icd-git](icd-git) - work directly with ICD model files stored on GitHub, publish ICDs, ingest ICD releases into the ICD database
-* [icd-viz](icd-viz) - uses Graphviz/Dot to produce a graph of relationships of selected subsystems or components
+* [icd-db](icd-db) - supports ingesting API model files into a MongoDB database, publishing and querying the db and saving an API or ICD as an HTML or PDF document
 * [icd-web-server](icd-web-server) - a Play Framework based web server for working with ICDs
-* [icd-web-client](icd-web-client) - a Scala.js based web client for the Play server
-                                     (The main client class is [IcdWebClient](icd-web-client/src/main/scala/icd/web/client/IcdWebClient.scala).
+* [icd-web-client](icd-web-client) - a Scala.js based web client for the Play server (The main client class is [IcdWebClient](icd-web-client/src/main/scala/icd/web/client/IcdWebClient.scala)).
 * [icd-web-shared](icd-web-shared) - contains shared classes that can be used by both web client and server
 
 Build and Install
@@ -109,6 +110,10 @@ Importing ICD-Model-Files from GitHub into the ICD Database with Version History
 The icd-git command line app lets you import subsystem model files directly from the
 [GitHub subsystem model file repositories](https://github.com/tmt-icd/)  into a local MongoDB database
 for use with the icd tools. For example, to ingest all the published APIs and ICDS into the local database, use:
+
+    icd-git --ingestAll
+
+To load only the latest published versions, use:
 
     icd-git --ingest
 
