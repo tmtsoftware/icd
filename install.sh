@@ -48,7 +48,7 @@ for i in $dir $dir/bin $dir/lib $dir/conf; do test -d $i || mkdir $i; done
 
 test "$1" == "-nc" || sbt clean
 
-sbt stage
+sbt stage || { echo >&2 "sbt build faild.  Aborting."; exit 1; }
 
 for i in bin lib conf; do
     for j in target/universal/stage/$i/* ; do

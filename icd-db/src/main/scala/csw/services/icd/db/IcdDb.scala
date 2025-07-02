@@ -479,8 +479,8 @@ case class IcdDb(
   // Clean up on exit
   sys.addShutdownHook(close())
 
-  val query: IcdDbQuery                 = IcdDbQuery(db, admin, None)
-  val versionManager: IcdVersionManager = IcdVersionManager(this)
+  val query: IcdDbQuery                 = IcdDbQuery(this, None)
+  val versionManager: IcdVersionManager = IcdVersionManager(query)
   private val manager: IcdDbManager     = IcdDbManager(db, versionManager)
 
   /**

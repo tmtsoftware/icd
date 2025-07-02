@@ -16,12 +16,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * @param maybeSubsystems limit the database searches to the given subsystems
  */
 class CachedIcdDbQuery(
-    db: DB,
-    admin: DB,
+    icdDb: IcdDb,
     maybeSubsystems: Option[List[String]],
     maybePdfOptions: Option[PdfOptions],
     fitsKeyMap: FitsKeyMap
-) extends IcdDbQuery(db, admin, maybeSubsystems) {
+) extends IcdDbQuery(icdDb, maybeSubsystems) {
   import IcdDbQuery.*
 
   // --- Cached values ---

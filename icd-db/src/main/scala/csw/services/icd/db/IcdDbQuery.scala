@@ -185,13 +185,15 @@ object IcdDbQuery {
  * Support for querying the ICD database
  * (Note: This class works on the current, unpublished versions. See IcdVersionManager for use with versions.)
  *
- * @param db the icd DB handle
- * @param admin the admin DB handle
+ * @param icdDb the icd database
  * @param maybeSubsystems if defined, limit the list of subsystems searched
  */
 //noinspection DuplicatedCode
-case class IcdDbQuery(db: DB, admin: DB, maybeSubsystems: Option[List[String]]) {
+case class IcdDbQuery(icdDb: IcdDb, maybeSubsystems: Option[List[String]]) {
   import IcdDbQuery.*
+  
+  val db: DB = icdDb.db
+  val admin: DB = icdDb.admin
 
   // Search only the given subsystems, or all subsystems, if maybeSubsystems is empty
   private[db] def collectionNameFilter(collName: String): Boolean = {

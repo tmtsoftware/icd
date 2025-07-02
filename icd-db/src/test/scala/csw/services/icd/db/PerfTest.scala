@@ -10,8 +10,8 @@ object PerfTest {
     val db = IcdDb(IcdDbDefaults.defaultDbName)
     val subsystem = "TEST"
     val compName = "Corrections"
-    val query = IcdDbQuery(db.db, db.admin, Some(List(subsystem)))
-    val versionManager = IcdVersionManager(db)
+    val query = IcdDbQuery(db, Some(List(subsystem)))
+    val versionManager = IcdVersionManager(query)
 
     new ComponentInfoHelper(versionManager, displayWarnings = false, clientApi = true)
       .getComponentInfo(SubsystemWithVersion(subsystem, None, Some(compName)), None, Map.empty)

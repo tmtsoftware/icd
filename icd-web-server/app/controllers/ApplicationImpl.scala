@@ -151,8 +151,8 @@ case class ApplicationImpl(db: IcdDb) {
     val subsystems          = if (searchAllSubsystems) None else Some(List(sv.subsystem))
     try {
       val fitsKeyMap     = IcdFits(db).getFitsKeyMap()
-      val query          = new CachedIcdDbQuery(db.db, db.admin, subsystems, None, fitsKeyMap)
-      val versionManager = new CachedIcdVersionManager(db)
+      val query          = new CachedIcdDbQuery(db, subsystems, None, fitsKeyMap)
+      val versionManager = new CachedIcdVersionManager(query)
       new ComponentInfoHelper(
         versionManager,
         displayWarnings = searchAllSubsystems,
@@ -188,8 +188,8 @@ case class ApplicationImpl(db: IcdDb) {
     val targetSv = SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent)
     try {
       val fitsKeyMap     = IcdFits(db).getFitsKeyMap()
-      val query          = new CachedIcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)), None, fitsKeyMap)
-      val versionManager = new CachedIcdVersionManager(db)
+      val query          = new CachedIcdDbQuery(db, Some(List(sv.subsystem, targetSv.subsystem)), None, fitsKeyMap)
+      val versionManager = new CachedIcdVersionManager(query)
       IcdComponentInfo.getComponentInfoList(versionManager, sv, targetSv, None, fitsKeyMap)
     }
     catch {
@@ -776,8 +776,8 @@ case class ApplicationImpl(db: IcdDb) {
     val sv       = SubsystemWithVersion(subsystem, maybeVersion, None)
     val targetSv = SubsystemWithVersion(target, maybeTargetVersion, None)
 
-    val query          = new IcdDbQuery(db.db, db.admin, Some(List(sv.subsystem, targetSv.subsystem)))
-    val versionManager = new IcdVersionManager(db)
+    val query          = new IcdDbQuery(db, Some(List(sv.subsystem, targetSv.subsystem)))
+    val versionManager = new IcdVersionManager(query)
     try {
       versionManager.getIcdModels(sv, targetSv, None)
     }

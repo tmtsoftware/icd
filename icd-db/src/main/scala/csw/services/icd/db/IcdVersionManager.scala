@@ -208,12 +208,11 @@ object IcdVersionManager extends DefaultWrites {
  * @param query may be used to share caching of collection names (see CachedIcdDbQuery)
  */
 //noinspection DuplicatedCode,SpellCheckingInspection
-case class IcdVersionManager(icdDb: IcdDb) {
+case class IcdVersionManager(query: IcdDbQuery) {
 
   import IcdVersionManager.*
   import IcdDbQuery.*
 
-  val query: IcdDbQuery = icdDb.query
   private val db        = query.db
 
   // Performance can be improved by caching these values in some cases (redefine in a subclass)
@@ -333,7 +332,7 @@ case class IcdVersionManager(icdDb: IcdDb) {
         else {
           // This version hasn't been ingested yet?
           IcdGitManager.ingest(
-            icdDb,
+            query.icdDb,
             SubsystemAndVersion(sv.subsystem, sv.maybeVersion),
             s => println(s"auto-ingesting $s"),
             IcdGitManager.allApiVersions,

@@ -5,7 +5,7 @@ import java.nio.file.{FileSystems, Files, Paths}
 import csw.services.icd.{IcdValidator, PdfCache, Problem}
 import csw.services.icd.db.ApiVersions.ApiEntry
 import csw.services.icd.db.IcdVersionManager.SubsystemAndVersion
-import csw.services.icd.db.{ApiVersions, IcdDb, IcdDbDefaults, IcdVersionManager, IcdVersions, Subsystems}
+import csw.services.icd.db.{ApiVersions, CachedIcdDbQuery, CachedIcdVersionManager, IcdDb, IcdDbDefaults, IcdVersionManager, IcdVersions, Subsystems}
 import icd.web.shared.{ApiVersionInfo, GitHubCredentials, IcdVersion, IcdVersionInfo, PublishInfo, SubsystemWithVersion}
 import org.eclipse.jgit.api.{Git, ResetCommand}
 import org.eclipse.jgit.lib.ObjectId
@@ -1003,9 +1003,11 @@ object IcdGitManager {
     }
 
     // Ingest any missing published subsystem versions
+    val query = new CachedIcdDbQuery(db, Some(latestApiVersions.map(_.subsystem)), None, Map.empty)
+    val cachedVersionManager = new CachedIcdVersionManager(query)
     val missingSubsystemVersions = latestApiVersions
       .flatMap { apiVersions =>
-        val versions = db.versionManager.getVersions(apiVersions.subsystem).tail.toSet
+        val versions = cachedVersionManager.getVersions(apiVersions.subsystem).tail.toSet
         apiVersions.apis
           .filter(apiEntry =>
             !versions.exists(info => info.maybeVersion.contains(apiEntry.version) && info.commit == apiEntry.commit)
@@ -1023,7 +1025,7 @@ object IcdGitManager {
         .flatMap { icdVersions =>
           val s        = icdVersions.subsystems.head
           val t        = icdVersions.subsystems.tail.head
-          val versions = db.versionManager.getIcdVersions(s, t).toSet
+          val versions = cachedVersionManager.getIcdVersions(s, t).toSet
           if (icdVersions.icds.exists(icdEntry => !versions.exists(_.icdVersion.icdVersion == icdEntry.icdVersion)))
             Some(List(SubsystemAndVersion(s, None), SubsystemAndVersion(t, None)))
           else None

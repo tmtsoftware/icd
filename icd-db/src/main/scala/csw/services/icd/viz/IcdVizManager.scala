@@ -116,8 +116,8 @@ object IcdVizManager {
    * @return true if the graph is nonempty
    */
   def showRelationships(db: IcdDb, options: IcdVizOptions, maybeOut: Option[OutputStream] = None): Boolean = {
-    val query          = new CachedIcdDbQuery(db.db, db.admin, None, None, Map.empty)
-    val versionManager = new CachedIcdVersionManager(db)
+    val query          = new CachedIcdDbQuery(db, None, None, Map.empty)
+    val versionManager = new CachedIcdVersionManager(query)
 
     // Add components from user-specified subsystems
     val subsystemComponents = options.subsystems.flatMap(sv =>
