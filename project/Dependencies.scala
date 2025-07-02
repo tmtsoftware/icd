@@ -5,12 +5,12 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport.*
 object Dependencies {
   val Version = "3.2.0"
   val ScalaVersion    = "3.7.1"
-  val PekkoVersion    = "1.1.3"
+  val PekkoVersion    = "1.1.4"
 //  val PlayJsonVersion = "3.0.4"
   val PlayJsonVersion = "3.1.0-M1"
   val ScalaTagsVersion  = "0.13.1"
   val ScalaJsDomVersion = "2.8.0"
-  val BootstrapVersion      = "5.3.6"
+  val BootstrapVersion      = "5.3.7"
   val JQueryVersion         = "3.7.1"
   val JQueryUiVersion       = "1.14.1"
   val BootstrapTableVersion = "1.24.1"
@@ -37,30 +37,30 @@ object Dependencies {
   val commonsIo   = "commons-io"         % "commons-io"   % "2.19.0"
   val commonsText = "org.apache.commons" % "commons-text" % "1.13.1"
 
-  val plantuml = "net.sourceforge.plantuml" % "plantuml"  % "1.2025.3"
+  val plantuml = "net.sourceforge.plantuml" % "plantuml"  % "1.2025.4"
   val graphDot = ("org.scala-graph"        %% "graph-dot" % "2.0.0")
 
   val reactivemongo               = "org.reactivemongo" %% "reactivemongo"                  % "1.1.0-pekko.RC15"
   val reactivemongoPlayJsonCompat = "org.reactivemongo" %% "reactivemongo-play-json-compat" % "1.1.0-play210.RC15"
 
   // XXX Need at one point to fix indirect dependency conflict (still needed?)
-  val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.19.0"
+  val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.19.1"
 
   val diffson = "org.gnieh" %% "diffson-play-json" % "4.6.0"
 
   val scalaLogging   = "com.typesafe.scala-logging" %% "scala-logging"    % "3.9.5"
   val scalatags      = "com.lihaoyi"                %% "scalatags"        % ScalaTagsVersion
   val osLib          = "com.lihaoyi"                %% "os-lib"           % "0.11.4"
-  val jsoup          = "org.jsoup"                   % "jsoup"            % "1.20.1"
+  val jsoup          = "org.jsoup"                   % "jsoup"            % "1.21.1"
   val jgit           = "org.eclipse.jgit"            % "org.eclipse.jgit" % "7.3.0.202506031305-r"
-  val swaggerParser  = "io.swagger.parser.v3"        % "swagger-parser"   % "2.1.29"
+  val swaggerParser  = "io.swagger.parser.v3"        % "swagger-parser"   % "2.1.30"
   val playJson       = "org.playframework"          %% "play-json"        % PlayJsonVersion
   val jqueryUi       = "org.webjars"                 % "jquery-ui"        % JQueryUiVersion
   val webjarsPlay    = "org.webjars"                %% "webjars-play"     % "3.0.2"
   val bootstrap      = "org.webjars.npm"             % "bootstrap"        % BootstrapVersion
   val bootstrapTable = "org.webjars.npm"             % "bootstrap-table"  % BootstrapTableVersion
   val bootstrapIcons = "org.webjars.npm"             % "bootstrap-icons"  % BootstrapIconsVersion
-  val swaggerUi      = "org.webjars"                 % "swagger-ui"       % "5.24.1"
+  val swaggerUi      = "org.webjars"                 % "swagger-ui"       % "5.25.3"
 
   // ScalaJS web client scala dependencies
   val clientDeps = Def.setting(
