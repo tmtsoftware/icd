@@ -278,6 +278,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
         case _ =>
           val maybeLinkSv = Some(SubsystemWithVersion(link.subsystem, None, Some(link.compName)))
           for {
+            _ <- selectDialog.icdChooser.setIcdWithVersion(None, false, false)
             _ <- selectDialog.targetSubsystem.setSubsystemWithVersion(None)
             _ <- selectDialog.subsystem.setSubsystemWithVersion(maybeLinkSv)
             _ <- selectDialog.applySettings()
