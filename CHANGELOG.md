@@ -14,6 +14,7 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Fixed JSON schema for service-model.conf to support both "required" and "provided" services in the same file
 - Updated dependencies and moved to Java-21 and Scala3
 - Changed web app to only ingest latest published APIs and ICDs and load older versions on demand (You can still use `icd-git --ingestAll` to preload the icd database)
+- Changed web app sidebar to sort components by subsystem, component type and then alphabetically
 
 ## [ICD v3.1.0] - 2024-07-22
 
