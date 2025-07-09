@@ -64,16 +64,16 @@ case class MainContent() extends Displayable {
     setDescription(maybeDescription.getOrElse(""))
   }
 
-//  /**
-//   * Gets the title of the page (excluding the subtitle, if there is one)
-//   */
-//  def getTitle: String = {
-//    val s = contentTitle.innerHTML
-//    s.indexOf("<br>") match {
-//      case -1 => s
-//      case n  => s.substring(0, n)
-//    }
-//  }
+  /**
+   * Gets the title of the page (excluding the subtitle, if there is one)
+   */
+  def getTitle: String = {
+    val s = contentTitle.innerHTML
+    s.indexOf("<br>") match {
+      case -1 => s
+      case n  => s.substring(0, n)
+    }
+  }
 
   /**
    * Sets the optional description text below the title

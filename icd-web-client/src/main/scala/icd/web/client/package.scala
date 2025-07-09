@@ -58,12 +58,12 @@ package object client {
     // Note: See implicit NodeList to List support in package object in this dir
     document.querySelectorAll("*").foreach { e =>
       e.classList.add("change-cursor")
-      e.classList.add("pe-none")
+//      e.classList.add("pe-none")
     }
     f.onComplete { _ =>
       document.querySelectorAll("*").foreach { e =>
         e.classList.remove("change-cursor")
-        e.classList.remove("pe-none")
+//        e.classList.remove("pe-none")
       }
     }
     f

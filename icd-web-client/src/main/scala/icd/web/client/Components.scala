@@ -71,7 +71,7 @@ object Components {
       if (newHead.isEmpty) div()
       else {
         table(
-          cls := tableClass,
+          cls                    := tableClass,
           attr("data-bs-toggle") := "table",
           thead(
             tr(newHead.map(th(_)))
@@ -138,7 +138,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     a(
       title := s"Show API for $subsystem.$component",
       s"$subsystem.$component ",
-      href := "#",
+      href    := "#",
       onclick := clickedOnComponent(subsystem, component)
     )
   }
@@ -157,7 +157,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       a(
         title := s"Go to event parameter that is the source of this FITS keyword",
         s"${fitsSource.toShortString} ",
-        href := "#",
+        href    := "#",
         onclick := clickedOnFitsSource(fitsSource)
       )
     )
@@ -419,12 +419,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       missingItemsReportHtml <- getMissingItemsReportHtml(sv, Some(targetSv))
     } yield {
       import scalatags.JsDom.all.*
-      mainContent.appendElement(
-        div(
-          cls := "component container-fluid",
-          raw(missingItemsReportHtml)
-        ).render
-      )
+      if (mainContent.getTitle.startsWith("ICD")) {
+        mainContent.appendElement(
+          div(
+            cls := "component container-fluid",
+            raw(missingItemsReportHtml)
+          ).render
+        )
+      }
     }
     f.onComplete {
       case Failure(ex) => mainContent.displayInternalError(ex)
@@ -449,15 +451,16 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       graphUrl <- getGraphUrl(sv, Some(targetSv), maybeIcd.map(_.icdVersion))
     } yield {
       import scalatags.JsDom.all.*
-      // XXX TODO FIXME: Should only do this if the user did not switch to a different view before it completed
-//      println(s"XXX dom.window.history.state = ${dom.window.history.state}")
-      mainContent.appendElement(
-        div(
-          cls := "component container-fluid",
-          h2(a(name := "graph")(s"Graph showing connections between $sv and $targetSv")),
-          img(src := graphUrl, maxWidth := "100%")
-        ).render
-      )
+      // Should only do this if the user did not switch to a different view before it completed
+      if (mainContent.getTitle.startsWith("ICD")) {
+        mainContent.appendElement(
+          div(
+            cls := "component container-fluid",
+            h2(a(name := "graph")(s"Graph showing connections between $sv and $targetSv")),
+            img(src := graphUrl, maxWidth := "100%")
+          ).render
+        )
+      }
     }
     f.onComplete {
       case Failure(ex) => // mainContent.displayInternalError(ex)
@@ -682,13 +685,13 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     val rowId    = makeHiddenRowId(targetId)
     val buttonId = s"button-$targetId"
     val btn = button(
-      cls := "attributeBtn btn btn-sm",
-      `type` := "button",
-      id := buttonId,
-      name := buttonId,
+      cls                    := "attributeBtn btn btn-sm",
+      `type`                 := "button",
+      id                     := buttonId,
+      name                   := buttonId,
       attr("data-bs-toggle") := "collapse",
       attr("data-bs-target") := s"#$rowId",
-      title := "Show/hide details"
+      title                  := "Show/hide details"
     )(
       i(cls := "bi bi-caret-down-square")
     )
@@ -1018,7 +1021,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           div(
             cls := "componentSection",
             table(
-              cls := "componentTable",
+              cls                    := "componentTable",
               attr("data-bs-toggle") := "table",
               thead(
                 tr(
@@ -1114,7 +1117,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         cls := "componentSection",
         h4(s"Command Configurations Received by $compName"),
         table(
-          cls := "componentTable",
+          cls                    := "componentTable",
           attr("data-bs-toggle") := "table",
           thead(
             tr(
@@ -1199,7 +1202,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         cls := "componentSection",
         h4(s"Command Configurations Sent by $compName"),
         table(
-          cls := "componentTable",
+          cls                    := "componentTable",
           attr("data-bs-toggle") := "table",
           thead(
             tr(
@@ -1269,7 +1272,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         cls := "componentSection",
         h4(s"HTTP Services required by $compName"),
         table(
-          cls := "componentTable",
+          cls                    := "componentTable",
           attr("data-bs-toggle") := "table",
           thead(
             tr(
@@ -1336,8 +1339,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     div(id := "swagger-ui")(
       embed(
         `type` := "text/html",
-        src := url,
-        width := "100%",
+        src    := url,
+        width  := "100%",
         height := "800px"
       )
     )
@@ -1358,7 +1361,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         cls := "componentSection",
         h4(s"HTTP Services provided by $compName"),
         table(
-          cls := "componentTable",
+          cls                    := "componentTable",
           attr("data-bs-toggle") := "table",
           thead(
             tr(
@@ -1415,7 +1418,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     div(
       table(
-        cls := "componentTable",
+        cls                    := "componentTable",
         attr("data-bs-toggle") := "table",
         thead(
           tr(
@@ -1447,7 +1450,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     div(cls := "component container-fluid", id := "FITS-Keys")(
       h3(a(name := "FITS-Keys")("FITS Keywords")),
       table(
-        cls := "componentTable",
+        cls                    := "componentTable",
         attr("data-bs-toggle") := "table",
         thead(
           tr(
