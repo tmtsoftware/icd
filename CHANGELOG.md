@@ -9,11 +9,11 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Added HTTP services to the "Missing Items" reports
 - Removed elements from "Missing Items" report and relationship graph that show published events with no subscribers, commands with no senders and services with no users
 - Fixed versioning for OpenApi data stored in the icd database (previously the latest version was always used) 
-  Note: run `icd-git --ingest` to reload and fix an existing icd database.
+  Note: run `icd-git --ingest` or icd-git --ingestAll to reload and fix an existing icd database.
 - Put context/interface diagram and missing item report in appendix of generated ICD SDBs (if the graph is not empty, if there are missing items)
 - Fixed JSON schema for service-model.conf to support both "required" and "provided" services in the same file
 - Updated dependencies and moved to Java-21 and Scala3
-- Changed web app to only ingest latest published APIs and ICDs and load older versions on demand
+- Changed web app to only ingest latest published APIs and ICDs and load older versions on demand (You can still use `icd-git --ingestAll` to preload the icd database)
 
 ## [ICD v3.1.0] - 2024-07-22
 
