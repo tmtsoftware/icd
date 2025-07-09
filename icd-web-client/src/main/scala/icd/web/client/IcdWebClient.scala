@@ -473,7 +473,10 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
               .filter(SharedUtils.showComponentInfo)
               .sortWith(sortComponentInfo)
               .foreach(info => sidebar.addComponent(info.componentModel))
-            setSidebarVisible(true)
+            // Only make sidebar visible if the user did not change to another tab
+            val title = mainContent.getTitle
+            if (title.startsWith("ICD") || title.startsWith("API"))
+              setSidebarVisible(true)
           }
       }
     }
