@@ -29,7 +29,6 @@ class CodeGenerationTests extends AnyFunSuite with BeforeAndAfterAll with Before
     val d2 = new File("icd-db/src/test/codegen")
     if (d1.isDirectory) d1 else d2
   }
-  private val cswVersion = "5.0.1"
 
   db.dropDatabase() // start with a clean db for test
   // Need ESW for ObserveEvents

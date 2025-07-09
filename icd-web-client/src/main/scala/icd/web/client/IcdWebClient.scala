@@ -15,6 +15,7 @@ import icd.web.client.PublishDialog.PublishDialogListener
 import icd.web.client.SelectDialog.SelectDialogListener
 import icd.web.client.StatusDialog.StatusDialogListener
 import icd.web.shared.IcdModels.ComponentModel
+import icd.web.shared.ComponentInfo
 import play.api.libs.json.*
 
 /**
@@ -419,6 +420,32 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     }
   }
 
+  private val componentSortOrder = Map(
+    "Application" -> 1,
+    "Container" -> 2,
+    "Sequencer" -> 3,
+    "Service" -> 4,
+    "Assembly" -> 5,
+    "HCD" -> 6,
+  )
+
+  // Sort sidebar components by component type, otherwise alphabetical
+  private def sortComponentInfo(i1: ComponentInfo, i2: ComponentInfo): Boolean = {
+    val c1 = i1.componentModel
+    val c2 = i2.componentModel
+    if (c1.subsystem == c2.subsystem) {
+      val type1 = c1.componentType
+      val type2 = c2.componentType
+      if (type1 == type2) {
+        c1.component < c2.component
+      } else {
+        componentSortOrder.getOrElse(type1, 99) < componentSortOrder.getOrElse(type2, 99)
+      }
+    } else {
+      c1.subsystem < c2.subsystem
+    }
+  }
+
   /**
    * Updates the main display to match the selected subsystem(s) and component(s)
    *
@@ -444,6 +471,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
           .map { infoList =>
             infoList
               .filter(SharedUtils.showComponentInfo)
+              .sortWith(sortComponentInfo)
               .foreach(info => sidebar.addComponent(info.componentModel))
             setSidebarVisible(true)
           }
