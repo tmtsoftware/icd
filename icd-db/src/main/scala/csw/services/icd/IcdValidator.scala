@@ -2,14 +2,12 @@ package csw.services.icd
 
 import java.io.*
 import java.net.URI
-import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions, ConfigResolveOptions}
-import csw.services.icd.db.StdConfig.FileResources
+import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import csw.services.icd.db.StdConfig
 import csw.services.icd.db.parser.ServiceModelParser
 import io.swagger.v3.parser.OpenAPIV3Parser
 import org.everit.json.schema.loader.SchemaClient
 
-import scala.util.{Failure, Success, Try}
 import org.everit.json.schema.{Schema, ValidationException}
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
@@ -22,7 +20,7 @@ import scala.jdk.CollectionConverters.*
 //noinspection DuplicatedCode
 object IcdValidator {
 
-  val schemaVersionKey     = "modelVersion"
+  private val schemaVersionKey     = "modelVersion"
   val currentSchemaVersion = "3.0"
 
 //  /**
@@ -47,7 +45,7 @@ object IcdValidator {
 //    }
 //  }
 
-  val jsonOptions: ConfigRenderOptions =
+  private val jsonOptions: ConfigRenderOptions =
     ConfigRenderOptions.defaults().setComments(false).setOriginComments(false)
 
   /**
@@ -63,7 +61,7 @@ object IcdValidator {
   // Adds a custom URI scheme, so that config:/... loads the config file as a resource
   // and converts it to JSON. In this way you can use "$ref": "config:/myfile.conf"
   // to refer to external JSON schemas in HOCON format.
-  object HoconSchemaClient extends SchemaClient {
+  private object HoconSchemaClient extends SchemaClient {
     override def get(url: String): InputStream = {
       val uri    = URI.create(url)
       val config = ConfigFactory.parseResources(uri.getPath.substring(1))
@@ -104,35 +102,17 @@ object IcdValidator {
    * @param dir the directory containing the standard set of ICD files (default: current dir)
    */
   def validateOneDir(dir: File = new File(".")): List[Problem] = {
-    import StdName.*
-    if (!dir.isDirectory) {
-      List(Problem("error", s"$dir does not exist or is not a directory"))
+    val (stdConfigs, problems) = StdConfig.get(dir)
+    if (problems.nonEmpty) {
+      problems
     }
     else {
-      // Note: first file read contains the schema version (subsystem or component model)
       var schemaVersion = currentSchemaVersion
-      val result = for (stdName <- stdNames) yield {
-        val inputFile = new File(dir, stdName.name)
-        if (!inputFile.exists()) {
-          Nil
-        }
-        else {
-          Try(ConfigFactory.parseFile(inputFile)) match {
-            case Success(parsedConfigFile) =>
-              val inputConfig =
-                StdConfig.addTargetSubsystem(parsedConfigFile.resolve(ConfigResolveOptions.noSystem()), stdName)
-              if (inputConfig.hasPath(schemaVersionKey))
-                schemaVersion = inputConfig.getString(schemaVersionKey)
-              val resources = new FileResources(dir.getPath)
-              val sc        = StdConfig(stdName, inputConfig, inputFile.getPath, resources)
-              validateStdName(sc, schemaVersion)
-            case Failure(ex) =>
-              ex.printStackTrace()
-              List(Problem("error", s"Fatal config parsing error in $inputFile: $ex"))
-          }
-        }
+      stdConfigs.flatMap { stdConfig =>
+        if (stdConfig.config.hasPath(schemaVersionKey))
+          schemaVersion = stdConfig.config.getString(schemaVersionKey)
+        validateStdName(stdConfig, schemaVersion)
       }
-      result.flatten
     }
   }
 
@@ -158,7 +138,7 @@ object IcdValidator {
 
     if (sc.stdName.isServiceModel) {
       val serviceModel = ServiceModelParser(sc.config)
-      val dir = new File(sc.fileName).getParent
+      val dir          = new File(sc.fileName).getParent
       serviceModel.provides
         .flatMap(p => validateOpenApi(new File(dir, p.openApi).getPath))
     }
@@ -171,7 +151,7 @@ object IcdValidator {
    * @param schemaVersion value of the component or subsystem model's modelVersion field: Should be 1.0, 2.0, or 3.0.
    * @return a list of problems, if any were found
    */
-  def validateStdName(sc: StdConfig, schemaVersion: String): List[Problem] = {
+  private def validateStdName(sc: StdConfig, schemaVersion: String): List[Problem] = {
     checkSchemaVersion(schemaVersion, sc.fileName) match {
       case Right(version) =>
         val schemaPath   = s"$version/${sc.stdName.schema}"
@@ -196,7 +176,7 @@ object IcdValidator {
   def validateFitsChannels(jsonStr: String): List[Problem] = {
     val schemaPath   = s"$currentSchemaVersion/fits-channels-schema.conf"
     val schemaConfig = ConfigFactory.parseResources(schemaPath)
-    val jsonSchema = new JSONObject(toJson(schemaConfig))
+    val jsonSchema   = new JSONObject(toJson(schemaConfig))
     val schemaLoader = SchemaLoader
       .builder()
       .schemaClient(HoconSchemaClient)
@@ -216,7 +196,7 @@ object IcdValidator {
   def validateFitsDictionary(jsonStr: String): List[Problem] = {
     val schemaPath   = s"$currentSchemaVersion/fits-dictionary-schema.conf"
     val schemaConfig = ConfigFactory.parseResources(schemaPath)
-    val jsonSchema = new JSONObject(toJson(schemaConfig))
+    val jsonSchema   = new JSONObject(toJson(schemaConfig))
     val schemaLoader = SchemaLoader
       .builder()
       .schemaClient(HoconSchemaClient)

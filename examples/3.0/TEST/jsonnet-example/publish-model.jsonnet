@@ -36,10 +36,10 @@ local utils = import '../utils.libsonnet';
           {
             name: 'state',
             description: 'Detector state',
-            enum: ['EXPOSING', 'READING', 'IDLE', 'ERROR'],
-          },
-        ],
-      },
-    ],
-  },
+            enum: ['EXPOSING', 'READING', 'IDLE', 'ERROR']
+          }
+        ]
+      }
+    ]
+  }
 }
