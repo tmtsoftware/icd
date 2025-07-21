@@ -242,3 +242,33 @@
     color: black;
     background-color: transparent;
 }
+
+/* Sidebar badges */
+
+.badge-application {
+    background-color: #D39FA3;
+    color: black;
+}
+.badge-container {
+    background-color: #FEFEFE;
+    color: black;
+    border: 1px solid #888;
+}
+.badge-sequencer {
+    background-color: #D4F6BF;
+    color: black;
+}
+.badge-service {
+    background-color: #007bff;
+    color: white;
+}
+.badge-assembly {
+    /*background-color: #F8FED3;*/
+    background-color: #ffc107;
+    color: black;
+    /*border: 1px solid #888;*/
+}
+.badge-hcd {
+    background-color: #ECDBFF;
+    color: black;
+}

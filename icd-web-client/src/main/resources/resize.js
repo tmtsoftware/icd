@@ -24,8 +24,6 @@ $(document).ready(function() {
       if (x >= (par - 100)) {
         $("#sidebar").resizable("option", "maxWidth", ui.size.width);
       }
-      sidebar.addClass("w-auto");
-
     }
   });
 

@@ -30,12 +30,12 @@ object Sidebar {
 
   // css for sidebar component type badges
   private val componentTypeBadgeMap = Map(
-    "Application" -> "text-bg-dark",
-    "Container"   -> "text-bg-danger",
-    "Sequencer"   -> "text-bg-primary",
-    "Service"     -> "text-bg-success",
-    "Assembly"    -> "text-bg-info",
-    "HCD"         -> "text-bg-warning"
+    "Application" -> "badge-application",
+    "Container"   -> "badge-container",
+    "Sequencer"   -> "badge-sequencer",
+    "Service"     -> "badge-service",
+    "Assembly"    -> "badge-assembly",
+    "HCD"         -> "badge-hcd"
   )
 }
 
@@ -100,7 +100,7 @@ case class Sidebar(sidebarListener: SidebarListener) extends Displayable {
   override def markup(): Element = {
     div(
       id  := "sidebar",
-      cls := "d-none col-1 w-auto"
+      cls := "d-none col-1 h-100 w-auto"
     )(
       sidebarList
     ).render
