@@ -220,12 +220,21 @@ class PostIngestValidation(db: IcdDb) {
   }
 
   private def getCommandProblems(prefix: String, commands: List[ReceiveCommandModel]): List[Problem] = {
+    // Check that requiredArgs for commands are defined
+    def checkRequiredArgs(command: ReceiveCommandModel): List[Problem] = {
+      command.requiredArgs.flatMap(arg =>
+        if (command.parameters.map(_.name).contains(arg)) None
+        else Some(Problem("error", s"requiredArg '$arg' is not defined for command ${command.name} in $prefix"))
+      )
+    }
+
     val p1 = getDuplicates(commands.map(_.name)).map(s => Problem("error", s"Duplicate command name: '$s''"))
     val p2 = commands.flatMap(command =>
       getDuplicates(command.parameters.map(_.name))
         .map(s => Problem("error", s"Duplicate parameter name '$s' in command '$prefix.${command.name}''"))
     )
-    p1 ::: p2
+    val p3 = commands.flatMap(command => checkRequiredArgs(command))
+    p1 ::: p2 ::: p3
   }
 
   private def checkDuplicateKeywordChannelPair(models: List[IcdModels]): List[Problem] = {
