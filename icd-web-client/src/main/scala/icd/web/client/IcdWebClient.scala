@@ -64,7 +64,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val statusItem   = NavbarItem("Status", "Display the published status of a selected subsystem", showStatus())
   private val statusDialog = StatusDialog(mainContent, StatusListener)
 
-  private val fileUploadItem   = NavbarItem("Upload", "Select icd model files to ingest into the icd database", showUploadDialog())
+  private val fileUploadItem = NavbarItem("Upload", "Select icd model files to ingest into the icd database", showUploadDialog())
   private val fileUploadDialog = FileUploadDialog(subsystemNames, csrfToken, inputDirSupported)
 
   private val publishItem   = NavbarItem("Publish", "Shows dialog to publish APIs and ICDs", showPublishDialog())
@@ -422,11 +422,11 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
 
   private val componentSortOrder = Map(
     "Application" -> 1,
-    "Container" -> 2,
-    "Sequencer" -> 3,
-    "Service" -> 4,
-    "Assembly" -> 5,
-    "HCD" -> 6,
+    "Container"   -> 2,
+    "Sequencer"   -> 3,
+    "Service"     -> 4,
+    "Assembly"    -> 5,
+    "HCD"         -> 6
   )
 
   // Sort sidebar components by component type, otherwise alphabetical
@@ -438,10 +438,12 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       val type2 = c2.componentType
       if (type1 == type2) {
         c1.component < c2.component
-      } else {
+      }
+      else {
         componentSortOrder.getOrElse(type1, 99) < componentSortOrder.getOrElse(type2, 99)
       }
-    } else {
+    }
+    else {
       c1.subsystem < c2.subsystem
     }
   }
@@ -460,6 +462,11 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
       saveHistory: Boolean = true
   ): Future[Unit] = {
     sidebar.clearComponents()
+    // Reset the sidebar width to fit component names
+    val sidebarElem = document.getElementById("sidebar")
+    if (sidebarElem != null) {
+      sidebarElem.classList.add("w-auto")
+    }
     mainContent.clearContent()
     val f = if (maybeSv.isDefined) {
       reloadButton.setVisible(show = true)
