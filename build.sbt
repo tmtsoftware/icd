@@ -58,6 +58,7 @@ lazy val `icd-db` = project
         scopt,
         scalatags,
         osLib,
+        logbackClassic,
         typesafeConfig,
         ficus,
         flexmarkAll,

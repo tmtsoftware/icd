@@ -48,6 +48,9 @@ object Dependencies {
 
   val diffson = "org.gnieh" %% "diffson-play-json" % "4.6.0"
 
+  // Dual license: Either, Eclipse Public License v1.0 or GNU Lesser General Public License version 2.1
+  val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.5.17"
+
   val scalaLogging   = "com.typesafe.scala-logging" %% "scala-logging"    % "3.9.5"
   val scalatags      = "com.lihaoyi"                %% "scalatags"        % ScalaTagsVersion
   val osLib          = "com.lihaoyi"                %% "os-lib"           % "0.11.4"
