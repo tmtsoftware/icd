@@ -78,6 +78,8 @@ class IcdGitManagerTests extends AnyFunSuite with BeforeAndAfter {
     assert(api2.user == user)
     assert(api2.comment == comment + " 2")
 
+    IcdGitManager.updateApiVersions()
+
     // Publish the ICD between TEST and TEST2
     val i3 = IcdGitManager.publish(subsysList, majorVersion = false, user, password, comment + " 3")
     assert(i3.icdVersion == IcdVersion("1.0", "TEST", "1.0", "TEST2", "1.0"))
@@ -103,7 +105,7 @@ class IcdGitManagerTests extends AnyFunSuite with BeforeAndAfter {
       case ex: Exception => throw new RuntimeException("Unable to drop the existing ICD database", ex)
     }
     val (apis, icds) = IcdGitManager.getAllVersions
-    IcdGitManager.ingest(db, subsysList, (s: String) => println(s), apis, icds)
+    IcdGitManager.ingest(db, subsysList, (s: String) => println(s), apis, icds, updateUnpublishedVersion = true)
     val icdNames = db.versionManager.getIcdNames
     assert(icdNames.size == 1)
     assert(icdNames.head.subsystem == "TEST")
