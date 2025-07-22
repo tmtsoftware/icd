@@ -17,5 +17,5 @@ Once the model files are checked in, TIO Systems Engineering determines when the
 TIO Systems Engineering also determines when a new ICD can be generated based on the APIs of the constituent subsystems and manages the publication of a new detailed ICD release. When published, the new ICD is also shown as published in the ICD-DB web user interface.
 
 @@@ note
-It may be necessary to click the browser refresh button to see a newly published API or ICD that is not yet in the local icd database (The icd web app then automatically ingests any newly published APIs and ICDs into the local database). The command `icd-git –ingest` will also update the local database from the released versions on GitHub.
+It may be necessary to click the browser refresh button to see a newly published API or ICD that is not yet in the local icd database (The icd web app then automatically ingests any newly published APIs and ICDs into the local database). The command `icd-git –ingest` will also update the local database from the most recently released versions on GitHub (`icd-git --ingestAll` ingests all versions of the APIs from GitHub. Otherwise the older versions of APIs are downloaded and ingested on demand when needed).
 @@@

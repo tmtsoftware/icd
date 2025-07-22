@@ -26,7 +26,9 @@ If the web server is running on your own machine, go to http://localhost:9000. T
 
 @@@ note
 
-The icd web app automatically ingests any released APIs and ICDs on startup by downloading any missing versions from the GitHub repos under https://github.com/tmt-icd. Then you can upload any directories containing model files that you are working on. These will be the considered the “working version” or “*” in the subsystem version menu.
+The icd web app automatically ingests the most recently released APIs and ICDs on startup by downloading any missing versions from the GitHub repos under https://github.com/tmt-icd. Older versions of APIs are downloaded from GitHub and ingested automatically as needed. 
+You can also upload any directories containing model files that you are working on. 
+These will be the considered the “working version” or “*” in the subsystem version menu.
 
 @@@
 

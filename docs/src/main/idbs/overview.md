@@ -44,7 +44,7 @@ A public (password-protected) ICD web service has been set up that allows users 
 
 ## icd-git
 
-The icd-git application is a command line tool that can be used to update your local icd database with the published versions from GitHub (Use: `icd-git --ingest`). Otherwise, this application is primarily meant to be used by systems engineering to manage official releases of APIs and ICDs by interacting directly with versions of subsystem model files as maintained by the official GitHub repository (http://github.com/tmt-icd). Since this tool is mainly intended to be used by the Systems Engineering group, it is not documented here.
+The icd-git application is a command line tool that can be used to update your local icd database with the published versions from GitHub (Use: `icd-git --ingest` to update the local database with the latest published versions, or `icd-git --ingestAll` to ingest all subsystem versions.). Otherwise, this application is primarily meant to be used by systems engineering to manage official releases of APIs and ICDs by interacting directly with versions of subsystem model files as maintained by the official GitHub repository (http://github.com/tmt-icd). Since this tool is mainly intended to be used by the Systems Engineering group, it is not documented here.
 
 It is also possible to publish APIs and ICDs using the web app (`icdwebserver`) and this is now the preferred way to do it. The API publishing features of the web app are protected by password and only enabled for use by those with permission to push to the GitHub repository that holds that information.
 

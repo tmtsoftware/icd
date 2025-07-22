@@ -56,5 +56,5 @@ Note that it may be necessary to adjust system limits in order for mongod to run
 
 https://docs.mongodb.com/manual/reference/ulimit/.
 
-Note: If you wish to “start over” with no database entries, you can use the command `icd-db –drop db`. Run `icd-git –ingest` to get the published APIs and ICDs from the released versions on GitHub.
+Note: If you wish to “start over” with no database entries, you can use the command `icd-db –drop db`. Run `icd-git –ingest` to get the latest published APIs and ICDs from the released versions on GitHub (or `icd-git --ingestAll` to ingest all versions of the subsystems).
 
