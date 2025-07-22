@@ -26,7 +26,10 @@ If the web server is running on your own machine, go to http://localhost:9000. T
 
 @@@ note
 
-The icd web app automatically ingests the most recently released APIs and ICDs on startup by downloading any missing versions from the GitHub repos under https://github.com/tmt-icd. Older versions of APIs are downloaded from GitHub and ingested automatically as needed. 
+The icd web app automatically ingests the most recently released APIs and ICDs on startup by downloading any missing versions from the GitHub repos under https://github.com/tmt-icd. 
+Older versions of APIs are downloaded from GitHub and ingested automatically as needed. 
+You can preload the local database to include all versions of the subsystem APIs using the icd-git command line app before starting the icd web app: `icd-git --ingestAll`.
+
 You can also upload any directories containing model files that you are working on. 
 These will be the considered the “working version” or “*” in the subsystem version menu.
 
