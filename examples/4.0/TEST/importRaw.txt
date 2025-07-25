@@ -1,0 +1,1 @@
+This file can contain raw text or JSON to be imported using jsonnet's 'importstr'.

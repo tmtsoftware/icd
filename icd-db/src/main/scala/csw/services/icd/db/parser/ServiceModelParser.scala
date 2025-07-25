@@ -11,11 +11,11 @@ import scala.jdk.CollectionConverters.*
 object ServiceModelParser {
 
   private object ServiceModelProviderParser {
-    def apply(configObject: ConfigObject): ServiceModelProvider = {
+    def apply(config: Config): ServiceModelProvider = {
       ServiceModelProvider(
-        name = configObject.get("name").unwrapped().toString,
-        description = configObject.get("description").unwrapped().toString,
-        openApi = configObject.get("openApi").unwrapped().toString,
+        name = config.getString("name"),
+        description = if (config.hasPath("description")) config.getString("description") else "",
+        openApi = config.getString("openApi"),
         Nil
       )
     }
@@ -31,6 +31,7 @@ object ServiceModelParser {
           .getObjectList("provides")
           .asScala
           .toList
+          .map(_.toConfig)
           .map(ServiceModelProviderParser(_))
       }
       else Nil,

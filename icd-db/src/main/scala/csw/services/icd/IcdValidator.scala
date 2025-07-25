@@ -78,7 +78,8 @@ object IcdValidator {
       case "1.0" | "1.1" | "0.1" => Right("1.0")
       case "2.0"                 => Right("2.0")
       case "3.0"                 => Right("3.0")
-      case _                     => Left(Problem("error", s"Invalid modelVersion in $fileName: Expected 1.0, 2.0 or 3.0"))
+      case "4.0"                 => Right("4.0")
+      case _                     => Left(Problem("error", s"Invalid modelVersion in $fileName: Expected 1.0, 2.0, 3.0 or 4.0"))
     }
   }
 

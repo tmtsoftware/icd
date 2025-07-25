@@ -16,6 +16,8 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Changed web app to only ingest latest published APIs and ICDs and load older versions on demand (You can still use `icd-git --ingestAll` to preload the icd database)
 - Changed web app sidebar to sort components by subsystem, component type and then alphabetically and added colored icons based on component type.
 - The sidebar with is now set to fit the contents by default (but can be resized)
+- Added a new `modelVersion` 4.0 (specified in component-model.conf and subsystem-model.conf): Removed `args` from command-model and `attributes` from event-model: Usage of `parameters` is now required.
+- Added check that `requiredArgs` for commands are defined.
 
 ## [ICD v3.1.0] - 2024-07-22
 

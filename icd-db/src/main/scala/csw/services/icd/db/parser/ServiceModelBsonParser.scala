@@ -97,7 +97,7 @@ object ServiceModelBsonParser {
           val openApiDocJson = Json.toJson(openApiDoc)
           ServiceModelProvider(
             name = doc.string("name").get,
-            description = doc.string("description").get,
+            description = doc.string("description").getOrElse(""),
             openApi = openApiDocJson.toString(),
             paths = getOpenApiPaths(openApiDocJson)
           )

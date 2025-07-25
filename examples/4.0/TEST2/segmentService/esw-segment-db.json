@@ -1,0 +1,1299 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "The ESW Segment DB API",
+    "version": "0.1-SNAPSHOT",
+    "description": "HTTP API to ESW Segment DB service, used for keeping track of TMT mirror segments"
+  },
+  "paths": {
+    "/setPosition": {
+      "post": {
+        "description": "Insert/update segment to M1 positions mapping",
+        "operationId": "postSetposition",
+        "requestBody": {
+          "description": "Position of a segment on a given date. The segment id is optional and can be missing if no segment is installed at the position.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SegmentToM1Pos"
+              },
+              "example": {
+                "date": "2021-05-27",
+                "maybeId": "SN-513",
+                "position": "A2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/setPositions": {
+      "post": {
+        "description": "Set positions of a number of segments on a given date",
+        "operationId": "postSetpositions",
+        "requestBody": {
+          "description": "Holds a number of segment-id assignments for the mirror. A segment id is optional and can be misisng if no segment is installed at the position.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MirrorConfig"
+              },
+              "example": {
+                "date": "2021-05-27",
+                "segments": [
+                  {
+                    "position": "A78",
+                    "segmentId": "SN-483"
+                  },
+                  {
+                    "position": "B78",
+                    "segmentId": "SN-484"
+                  },
+                  {
+                    "position": "D78",
+                    "segmentId": "SN-486"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/setAllPositions": {
+      "post": {
+        "description": "Sets all 574 segment positions (A1 to G82) for a given date",
+        "operationId": "postSetallpositions",
+        "requestBody": {
+          "description": "Holds all 574 segment-id assignments (A1 to G8, including spares) for the mirror. A segment id can be null if no segment is installed at the position.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AllSegmentPositions"
+              },
+              "example": {
+                "allPositions": [
+                  "SN-013",
+                  "SN-450",
+                  "SN-019",
+                  null,
+                  "SN-007",
+                  "etc..."
+                ],
+                "date": "2021-05-27"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/segmentPositions/{segmentId}": {
+      "post": {
+        "description": "Gets a list of segments positions for the given segment id in the given date range",
+        "operationId": "postSegmentpositionsSegmentid",
+        "parameters": [
+          {
+            "name": "segmentId",
+            "in": "path",
+            "description": "the segment id to search for",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "SN-484"
+          }
+        ],
+        "requestBody": {
+          "description": "The range of dates to search for",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DateRange"
+              },
+              "example": {
+                "from": "2020-10-23",
+                "to": "2021-05-27"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "A list of objects mapping segment id to position on a given date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SegmentToM1Pos"
+                  }
+                },
+                "example": [
+                  {
+                    "date": "2021-05-27",
+                    "maybeId": "SN-484",
+                    "position": "B78"
+                  },
+                  {
+                    "date": "2021-05-27",
+                    "position": "D78"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/segmentIds/{position}": {
+      "post": {
+        "description": "Gets a list of segment ids that were in the given position in the given date range.",
+        "operationId": "postSegmentidsPosition",
+        "parameters": [
+          {
+            "name": "position",
+            "in": "path",
+            "description": "the segment position to search for (A1 to F82)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "A32"
+          }
+        ],
+        "requestBody": {
+          "description": "A range of dates, from, to, where each date has the format yyyy-mm-dd",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DateRange"
+              },
+              "example": {
+                "from": "2020-10-23",
+                "to": "2021-05-27"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "A list of objects mapping segment id to position on a given date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SegmentToM1Pos"
+                  }
+                },
+                "example": [
+                  {
+                    "date": "2021-05-27",
+                    "maybeId": "SN-484",
+                    "position": "B78"
+                  },
+                  {
+                    "date": "2021-05-27",
+                    "position": "D78"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/newlyInstalledSegments": {
+      "post": {
+        "description": "Returns a list of segments that were installed since the given date.",
+        "operationId": "postNewlyinstalledsegments",
+        "requestBody": {
+          "description": "A date in the format yyyy-mm-dd",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "date"
+              },
+              "example": "2020-10-23"
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "A list of objects mapping segment id to position on a given date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SegmentToM1Pos"
+                  }
+                },
+                "example": [
+                  {
+                    "date": "2021-05-27",
+                    "maybeId": "SN-484",
+                    "position": "B78"
+                  },
+                  {
+                    "date": "2021-05-27",
+                    "position": "D78"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/segmentExchanges": {
+      "post": {
+        "description": "Returns a list of segment exchanges since the given date.",
+        "operationId": "postSegmentexchanges",
+        "requestBody": {
+          "description": "A date in the format yyyy-mm-dd",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "date"
+              },
+              "example": "2020-10-23"
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Holds a MirrorConfig, representing segment changes on different dates.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MirrorConfig"
+                  }
+                },
+                "example": [
+                  {
+                    "date": "2021-01-29",
+                    "segments": [
+                      {
+                        "position": "A78",
+                        "segmentId": "SN-483"
+                      },
+                      {
+                        "position": "B78",
+                        "segmentId": "SN-484"
+                      },
+                      {
+                        "position": "D78",
+                        "segmentId": "SN-486"
+                      }
+                    ]
+                  },
+                  {
+                    "date": "2021-01-30",
+                    "segments": [
+                      {
+                        "position": "A5",
+                        "segmentId": "SN-007"
+                      },
+                      {
+                        "position": "B78"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/positionsOnDate": {
+      "post": {
+        "description": "Returns the segment positions as they were on the given date.",
+        "operationId": "postPositionsondate",
+        "requestBody": {
+          "description": "A date in the format yyyy-mm-dd",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "date"
+              },
+              "example": "2020-10-23"
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "A list of objects mapping segment id to position on a given date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SegmentToM1Pos"
+                  }
+                },
+                "example": [
+                  {
+                    "date": "2021-05-27",
+                    "maybeId": "SN-484",
+                    "position": "B78"
+                  },
+                  {
+                    "date": "2021-05-27",
+                    "position": "D78"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/segmentPositionOnDate/{segmentId}": {
+      "post": {
+        "description": "Gets the segment position for the given segment id on the given date.",
+        "operationId": "postSegmentpositionondateSegmentid",
+        "parameters": [
+          {
+            "name": "segmentId",
+            "in": "path",
+            "description": "the segment id to search for",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "SN-019"
+          }
+        ],
+        "requestBody": {
+          "description": "A date in the format yyyy-mm-dd",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "date"
+              },
+              "example": "2020-10-23"
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "An optional object mapping segment id to position on a given date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SegmentToM1Pos"
+                },
+                "example": {
+                  "date": "2021-05-27",
+                  "maybeId": "SN-484",
+                  "position": "B78"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/segmentAtPositionOnDate/{position}": {
+      "post": {
+        "description": "Gets the id of the segment that was installed in the given position on the given date.",
+        "operationId": "postSegmentatpositionondatePosition",
+        "parameters": [
+          {
+            "name": "position",
+            "in": "path",
+            "description": "the segment position to search for",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "A82"
+          }
+        ],
+        "requestBody": {
+          "description": "A date in the format yyyy-mm-dd",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "date"
+              },
+              "example": "2020-10-23"
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "An optional object mapping segment id to position on a given date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SegmentToM1Pos"
+                },
+                "example": {
+                  "date": "2021-05-27",
+                  "maybeId": "SN-484",
+                  "position": "B78"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/resetTables": {
+      "post": {
+        "description": "Drops and recreates the database tables (for testing)",
+        "operationId": "postResettables",
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/resetJiraSegmentDataTable": {
+      "post": {
+        "description": "Drops and recreates the JIRA segment database table (for testing)",
+        "operationId": "postResetjirasegmentdatatable",
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/resetSegmentToM1PosTable": {
+      "post": {
+        "description": "Drops and recreates the segment database table (for testing)",
+        "operationId": "postResetsegmenttom1postable",
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mostRecentChange": {
+      "post": {
+        "description": "Returns the most recent date that segments were changed up to the given date, or the current date, if there are no segments installed yet.",
+        "operationId": "postMostrecentchange",
+        "requestBody": {
+          "description": "A date in the format yyyy-mm-dd",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "date"
+              },
+              "example": "2020-10-23"
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "A date in the format yyyy-mm-dd",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "example": "2020-10-23"
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/nextChange": {
+      "post": {
+        "description": "Returns the next date after the given one where segments were changed, or the current date, if there are no newer changes.",
+        "operationId": "postNextchange",
+        "requestBody": {
+          "description": "A date in the format yyyy-mm-dd",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "date"
+              },
+              "example": "2020-10-23"
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "A date in the format yyyy-mm-dd",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "example": "2020-10-23"
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/prevChange": {
+      "post": {
+        "description": "Returns the previous date before the given one where segments were changed, or the first date, if there are no older changes.",
+        "operationId": "postPrevchange",
+        "requestBody": {
+          "description": "A date in the format yyyy-mm-dd",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "date"
+              },
+              "example": "2020-10-23"
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "A date in the format yyyy-mm-dd",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "example": "2020-10-23"
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/authEnabled": {
+      "get": {
+        "description": "Returns true if authorization via Keycloak is enabled.",
+        "operationId": "getAuthenabled",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/currentPositions": {
+      "get": {
+        "description": "Returns the current segment positions.",
+        "operationId": "getCurrentpositions",
+        "responses": {
+          "200": {
+            "description": "A list of objects mapping segment id to position on a given date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SegmentToM1Pos"
+                  }
+                },
+                "example": [
+                  {
+                    "date": "2021-05-27",
+                    "maybeId": "SN-484",
+                    "position": "B78"
+                  },
+                  {
+                    "date": "2021-05-27",
+                    "position": "D78"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/plannedPositions": {
+      "get": {
+        "description": "Returns the segment positions as defined in the JIRA issues.",
+        "operationId": "getPlannedpositions",
+        "responses": {
+          "200": {
+            "description": "A list of objects mapping segment id to position on a given date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SegmentToM1Pos"
+                  }
+                },
+                "example": [
+                  {
+                    "date": "2021-05-27",
+                    "maybeId": "SN-484",
+                    "position": "B78"
+                  },
+                  {
+                    "date": "2021-05-27",
+                    "position": "D78"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/segmentData": {
+      "get": {
+        "description": "Gets the JIRA segment data for all segments.",
+        "operationId": "getSegmentdata",
+        "responses": {
+          "200": {
+            "description": "A list of Data scanned from JIRA issues",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JiraSegmentData"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/currentSegmentPosition/{segmentId}": {
+      "get": {
+        "description": "Gets the current segment position for the given segment id.",
+        "operationId": "getCurrentsegmentpositionSegmentid",
+        "parameters": [
+          {
+            "name": "segmentId",
+            "in": "path",
+            "description": "the segment id to search for",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "SN-019"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An optional object mapping segment id to position on a given date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SegmentToM1Pos"
+                },
+                "example": {
+                  "date": "2021-05-27",
+                  "maybeId": "SN-484",
+                  "position": "B78"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/currentSegmentAtPosition/{position}": {
+      "get": {
+        "description": "Gets the id of the segment currently in the given position.",
+        "operationId": "getCurrentsegmentatpositionPosition",
+        "parameters": [
+          {
+            "name": "position",
+            "in": "path",
+            "description": "the segment position to search for",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "A82"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An optional object mapping segment id to position on a given date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SegmentToM1Pos"
+                },
+                "example": {
+                  "date": "2021-05-27",
+                  "maybeId": "SN-484",
+                  "position": "B78"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/availableSegmentIdsForPos/{position}": {
+      "get": {
+        "description": "Gets a list of segment-ids that can be installed at the given position.",
+        "operationId": "getAvailablesegmentidsforposPosition",
+        "parameters": [
+          {
+            "name": "position",
+            "in": "path",
+            "description": "the segment position to search for",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "A82"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "example": [
+                  "SN-517"
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/allSegmentIds/{position}": {
+      "get": {
+        "description": "Gets a list of segments that were in the given position.",
+        "operationId": "getAllsegmentidsPosition",
+        "parameters": [
+          {
+            "name": "position",
+            "in": "path",
+            "description": "the segment position to search for",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "A82"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of objects mapping segment id to position on a given date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SegmentToM1Pos"
+                  }
+                },
+                "example": [
+                  {
+                    "date": "2021-05-27",
+                    "maybeId": "SN-484",
+                    "position": "B78"
+                  },
+                  {
+                    "date": "2021-05-27",
+                    "position": "D78"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error message."
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SegmentToM1Pos": {
+        "required": [
+          "date",
+          "position"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "date of record in the format yyyy-mm-dd",
+            "format": "date"
+          },
+          "maybeId": {
+            "type": "string",
+            "description": "the segment id, if the segment is present"
+          },
+          "position": {
+            "type": "string",
+            "description": "position of segment (For example: A32, B19, F82)"
+          }
+        }
+      },
+      "MirrorConfig": {
+        "required": [
+          "date"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "the date for the configuration in the format yyyy-mm-dd",
+            "format": "date"
+          },
+          "segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SegmentConfig"
+            },
+            "description": "list of segment assignments"
+          }
+        }
+      },
+      "SegmentConfig": {
+        "required": [
+          "position"
+        ],
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "string",
+            "description": "segment poosition (A1 to G82)"
+          },
+          "segmentId": {
+            "type": "string",
+            "description": "the segment id, if the segment is present"
+          }
+        }
+      },
+      "AllSegmentPositions": {
+        "required": [
+          "date"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "the date corresponding to the positions",
+            "format": "date"
+          },
+          "allPositions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "list of all 574 segment positions from A1 to G82. Missing segments have the value null."
+          }
+        }
+      },
+      "DateRange": {
+        "required": [
+          "from",
+          "to"
+        ],
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "start of the date range in the format yyyy-mm-dd",
+            "format": "date"
+          },
+          "to": {
+            "type": "string",
+            "description": "end of the date range in the format yyyy-mm-dd",
+            "format": "date"
+          }
+        }
+      },
+      "JiraSegmentData": {
+        "required": [
+          "position",
+          "segmentId",
+          "jiraKey",
+          "jiraUri",
+          "sector",
+          "segmentType",
+          "partNumber",
+          "originalPartnerBlankAllocation",
+          "itemLocation",
+          "riskOfLoss",
+          "components",
+          "status",
+          "workPackages",
+          "acceptanceCertificates",
+          "acceptanceDateBlank",
+          "shippingAuthorizations"
+        ],
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "string"
+          },
+          "segmentId": {
+            "type": "string"
+          },
+          "jiraKey": {
+            "type": "string"
+          },
+          "jiraUri": {
+            "type": "string"
+          },
+          "sector": {
+            "type": "integer"
+          },
+          "segmentType": {
+            "type": "integer"
+          },
+          "partNumber": {
+            "type": "string"
+          },
+          "originalPartnerBlankAllocation": {
+            "type": "string"
+          },
+          "itemLocation": {
+            "type": "string"
+          },
+          "riskOfLoss": {
+            "type": "string"
+          },
+          "components": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "workPackages": {
+            "type": "string"
+          },
+          "acceptanceCertificates": {
+            "type": "string"
+          },
+          "acceptanceDateBlank": {
+            "type": "string"
+          },
+          "shippingAuthorizations": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
