@@ -276,6 +276,17 @@ object IcdModels {
   ) extends NameDesc
 
   /**
+   * Model for the result of a received command
+   *
+   * @param description   description of the result
+   * @param parameters    the fields in the result
+   */
+  case class CommandResultModel(
+      description: String,
+      parameters: List[ParameterModel]
+  )
+
+  /**
    * Model for a commands configuration that a component receives
    *
    * @param name           command name
@@ -303,7 +314,7 @@ object IcdModels {
       requiredArgs: List[String],
       parameters: List[ParameterModel],
       completionType: String,
-      resultType: List[ParameterModel],
+      maybeResult: Option[CommandResultModel],
       completionConditions: List[String],
       role: Option[String]
   ) extends NameDesc
@@ -446,7 +457,8 @@ object IcdModels {
    * @param name the name of the service provided
    * @param paths list of routes/paths used (empty means; all paths used)
    */
-  case class ServiceModelClient(subsystem: String, component: String, name: String, paths: List[ServicePath]) extends SubsystemComponentName
+  case class ServiceModelClient(subsystem: String, component: String, name: String, paths: List[ServicePath])
+      extends SubsystemComponentName
 
   /**
    * Contains a client component model and the list of service paths used

@@ -6,7 +6,7 @@ import scalatags.Text
 import Headings.idFor
 import HtmlMarkup.yesNo
 import csw.services.icd.db.IcdDb
-import icd.web.shared.IcdModels.{AlarmModel, ComponentModel, EventModel, MetadataModel, ParameterModel}
+import icd.web.shared.IcdModels.{AlarmModel, CommandResultModel, ComponentModel, EventModel, MetadataModel, ParameterModel}
 
 /**
  * Handles converting model files to static HTML for use in generating a PDF
@@ -66,14 +66,14 @@ object IcdToHtml {
           title := s"Go to event parameter that is the source of this FITS keyword",
           s"${fitsSource.toLongString} ",
           href := s"#${Headings.idForParam(
-            fitsSource.componentName,
-            "publishes",
-            "Event",
-            fitsSource.subsystem,
-            fitsSource.componentName,
-            fitsSource.eventName,
-            fitsSource.parameterName
-          )}"
+              fitsSource.componentName,
+              "publishes",
+              "Event",
+              fitsSource.subsystem,
+              fitsSource.componentName,
+              fitsSource.eventName,
+              fitsSource.parameterName
+            )}"
         )
       }
       else span(s"${fitsSource.toLongString} ")
@@ -166,9 +166,9 @@ object IcdToHtml {
   ): Text.TypedTag[String] = {
     import scalatags.Text.all.*
 
-    val nh           = new NumberedHeadings
-    val titleInfo    = TitleInfo(subsystemInfo, None, None, documentNumber = pdfOptions.documentNumber)
-    val summaryTable = SummaryTable(subsystemInfo, None, infoList, nh, clientApi, displayTitle = true)
+    val nh                 = new NumberedHeadings
+    val titleInfo          = TitleInfo(subsystemInfo, None, None, documentNumber = pdfOptions.documentNumber)
+    val summaryTable       = SummaryTable(subsystemInfo, None, infoList, nh, clientApi, displayTitle = true)
     val summaryTableMarkup = summaryTable.displaySummary()
     val fitsTable =
       if (fitsDictionary.fitsKeys.nonEmpty)
@@ -281,9 +281,9 @@ object IcdToHtml {
     if (
       forApi ||
       (info.publishes.isDefined && info.publishes.get.nonEmpty
-      || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
-      || info.commands.isDefined && info.commands.get.nonEmpty
-      || info.services.isDefined && info.services.get.nonEmpty)
+        || info.subscribes.isDefined && info.subscribes.get.subscribeInfo.nonEmpty
+        || info.commands.isDefined && info.commands.get.nonEmpty
+        || info.services.isDefined && info.services.get.nonEmpty)
     ) {
       markupForComponent(db, info, summaryTable, nh, forApi, pdfOptions, clientApi)
     }
@@ -443,7 +443,7 @@ object IcdToHtml {
                 if (m.refError.startsWith("Error:")) makeErrorDiv(m.refError) else div(),
                 parameterListMarkup(m.name, m.parameters, m.requiredArgs),
                 p(strong("Completion Type: "), m.completionType),
-                resultTypeMarkup(m.resultType),
+                resultMarkup(m.maybeResult),
                 if (m.completionConditions.isEmpty) div()
                 else div(p(strong("Completion Conditions: "), ol(m.completionConditions.map(cc => li(raw(cc)))))),
                 if (m.role.isEmpty) div()
@@ -517,7 +517,7 @@ object IcdToHtml {
             span(strong(s"Provider: "), provider)
           }
           val compName = component.component
-          val linkId = idFor(compName, "requires", "Services", m.subsystem, m.component, m.name)
+          val linkId   = idFor(compName, "requires", "Services", m.subsystem, m.component, m.name)
           div(cls := "nopagebreak")(
             nh.H3(s"HTTP Service: ${m.name}", linkId),
             p(providerInfo),
@@ -588,9 +588,22 @@ object IcdToHtml {
       val headings = List("Name", "Description", "Type", "Units")
       val rowList  = for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units)
       div(cls := "nopagebreak")(
-        p(strong(a("Result Type Parameters"))),
+        p(strong(a("Command Result Parameters"))),
         HtmlMarkup.mkTable(headings, rowList),
         parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError))
+      )
+    }
+  }
+
+  private def resultMarkup(maybeResult: Option[CommandResultModel]): Text.TypedTag[String] = {
+    import scalatags.Text.all.*
+    if (maybeResult.isEmpty) div()
+    else {
+      val result = maybeResult.get
+      div(cls := "nopagebreak")(
+        if (result.description.nonEmpty) div(p(strong("Command Results")), raw(result.description))
+        else div(),
+        resultTypeMarkup(result.parameters)
       )
     }
   }

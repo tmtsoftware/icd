@@ -1,7 +1,7 @@
 package csw.services.icd.db.parser
 
 import csw.services.icd.html.HtmlMarkup
-import icd.web.shared.IcdModels.{CommandModel, ReceiveCommandModel, SendCommandModel}
+import icd.web.shared.IcdModels.{CommandModel, CommandResultModel, ReceiveCommandModel, SendCommandModel}
 import icd.web.shared.PdfOptions
 import reactivemongo.api.bson.*
 
@@ -9,9 +9,28 @@ import reactivemongo.api.bson.*
  * Model for commands received: See resources/<version>/command-schema.conf
  */
 object ReceiveCommandModelBsonParser {
+  private object CommandResultParser {
+    def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): CommandResultModel = {
+      CommandResultModel(
+        description = HtmlMarkup.gfmToHtml(doc.string("description").get, maybePdfOptions),
+        parameters =
+          for (subDoc <- doc.children("parameters"))
+            yield ParameterModelBsonParser(subDoc, maybePdfOptions, Map.empty, None, None)
+      )
+    }
+  }
+
   def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): ReceiveCommandModel = {
     // For backward compatibility, allow "args" or "parameters"
     val argsKey = if (doc.contains("parameters")) "parameters" else "args"
+
+    // For backward compatibility, handle resultType (a parameter list)
+    val resultType =
+      for (subDoc <- doc.children("resultType"))
+        yield ParameterModelBsonParser(subDoc, maybePdfOptions)
+    val maybeResultBackwardCompat = if (resultType.isEmpty) None else Some(CommandResultModel("", resultType))
+    val maybeResult = doc.get("result").map(_.asInstanceOf[BSONDocument]).map(CommandResultParser(_, maybePdfOptions))
+
     ReceiveCommandModel(
       name = doc.string("name").get,
       ref = doc.string("ref").getOrElse(""),
@@ -25,9 +44,7 @@ object ReceiveCommandModelBsonParser {
         for (subDoc <- doc.children(argsKey))
           yield ParameterModelBsonParser(subDoc, maybePdfOptions),
       completionType = doc.string("completionType").getOrElse("immediate"),
-      resultType =
-        for (subDoc <- doc.children("resultType"))
-          yield ParameterModelBsonParser(subDoc, maybePdfOptions),
+      maybeResult = if (maybeResult.isDefined) maybeResult else maybeResultBackwardCompat,
       completionConditions = doc.getAsOpt[Array[String]]("completionCondition").map(_.toList).getOrElse(Nil),
       role = doc.string("role")
     )

@@ -1,7 +1,7 @@
 package csw.services.icd.db
 
 import icd.web.shared.IcdModels
-import icd.web.shared.IcdModels.{ParameterModel, CommandModel, EventModel, PublishModel, ReceiveCommandModel}
+import icd.web.shared.IcdModels.{CommandModel, CommandResultModel, EventModel, ParameterModel, PublishModel, ReceiveCommandModel}
 
 import scala.util.{Failure, Success, Try}
 import com.typesafe.scalalogging.Logger
@@ -115,8 +115,8 @@ object Resolver {
         // For backward compatibility, allow "attributes" or "args" in place of "parameters"
         s match {
           case "parameters" => if (ref.section == Ref.receive) commandParams else eventParams
-          case "attributes" => eventParams    // deprecated
-          case "  args"       => commandParams  // deprecated
+          case "attributes" => eventParams   // deprecated
+          case "  args"     => commandParams // deprecated
           case "resultType" => resultType
           case x =>
             throw resolverException(
@@ -270,15 +270,11 @@ case class Resolver(allModels: List[IcdModels]) {
           completionType =
             if (receiveCommandModel.completionType != "immediate") receiveCommandModel.completionType
             else refReceiveCommandModel.completionType,
-          resultType =
-            if (receiveCommandModel.resultType.nonEmpty)
-              receiveCommandModel.resultType.map(parameterModel =>
-                resolveCommandParameter(commandModel, receiveCommandModel, ParamRef.resultType, parameterModel)
-              )
+          maybeResult =
+            if (receiveCommandModel.maybeResult.nonEmpty)
+              receiveCommandModel.maybeResult
             else
-              refReceiveCommandModel.resultType.map(parameterModel =>
-                resolveCommandParameter(commandModel, receiveCommandModel, ParamRef.resultType, parameterModel)
-              ),
+              refReceiveCommandModel.maybeResult,
           completionConditions =
             if (receiveCommandModel.completionConditions.nonEmpty) receiveCommandModel.completionConditions
             else refReceiveCommandModel.completionConditions,
@@ -306,12 +302,20 @@ case class Resolver(allModels: List[IcdModels]) {
         )
       else
         receiveCommandModel.parameters
-    val resultType =
-      if (resolveParameters)
-        receiveCommandModel.resultType.map(resolveCommandParameter(refCommandModel, receiveCommandModel, ParamRef.resultType, _))
-      else
-        receiveCommandModel.resultType
-    receiveCommandModel.copy(ref = "", parameters = args, resultType = resultType)
+    val resultArgs =
+      if (resolveParameters) {
+        receiveCommandModel.maybeResult
+          .map(_.parameters)
+          .getOrElse(Nil)
+          .map(
+            resolveCommandParameter(refCommandModel, receiveCommandModel, ParamRef.resultType, _)
+          )
+      }
+      else {
+        receiveCommandModel.maybeResult.map(_.parameters).getOrElse(Nil)
+      }
+    val maybeResult = receiveCommandModel.maybeResult.map(r => CommandResultModel(r.description, resultArgs))
+    receiveCommandModel.copy(ref = "", parameters = args, maybeResult = maybeResult)
   }
 
   def resolvePublishModel(publishModel: PublishModel): PublishModel = {
@@ -345,9 +349,8 @@ case class Resolver(allModels: List[IcdModels]) {
             if (eventModel.archiveDuration.nonEmpty) eventModel.archiveDuration else refEventModel.archiveDuration,
           parameterList =
             if (eventModel.parameterList.nonEmpty)
-              eventModel.parameterList.map(parameterModel =>
-                resolveEventParameter(publishModel, eventModel, section, parameterModel)
-              )
+              eventModel.parameterList
+                .map(parameterModel => resolveEventParameter(publishModel, eventModel, section, parameterModel))
             else
               refEventModel.parameterList.map(parameterModel =>
                 resolveEventParameter(publishModel, eventModel, section, parameterModel)
@@ -377,7 +380,7 @@ case class Resolver(allModels: List[IcdModels]) {
         val receiveCommandModel = resolveRefReceiveCommandModel(commandModel, paramRef.ref, resolveParameters = false)
         paramRef.paramSection match {
           case ParamRef.`eventParams` | ParamRef.`commandParams` => receiveCommandModel.parameters
-          case ParamRef.resultType                               => receiveCommandModel.resultType
+          case ParamRef.resultType => receiveCommandModel.maybeResult.map(_.parameters).getOrElse(Nil)
         }
     }
     val maybeParam = paramList.find(_.name == paramRef.name)
@@ -458,7 +461,7 @@ case class Resolver(allModels: List[IcdModels]) {
       defaultValue = if (parameterModel.defaultValue.nonEmpty) parameterModel.defaultValue else refParameter.defaultValue,
       typeStr = if (parameterModel.typeStr.nonEmpty) parameterModel.typeStr else refParameter.typeStr,
       keywords = parameterModel.keywords,
-      fitsKeys = parameterModel.fitsKeys,
+      fitsKeys = parameterModel.fitsKeys
     )
   }
 

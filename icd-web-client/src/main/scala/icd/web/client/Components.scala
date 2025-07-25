@@ -659,9 +659,24 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       val headings = List("Name", "Description", "Type", "Units")
       val rowList  = for (a <- parameterList) yield List(a.name, a.description, a.typeStr, a.units)
       div(
-        strong("Result Type Parameters"),
+        strong("Command Result Parameters"),
         mkTable(headings, rowList, "attributeTable"),
         parameterList.filter(_.refError.startsWith("Error:")).map(a => makeErrorDiv(a.refError))
+      )
+    }
+  }
+
+  private def resultMarkup(maybeResult: Option[CommandResultModel]): TypedTag[HTMLDivElement] = {
+    import scalatags.JsDom.all.*
+    if (maybeResult.isEmpty) div()
+    else {
+      val result = maybeResult.get
+      div(cls := "nopagebreak")(
+        if (result.description.nonEmpty)
+          div(p(strong("Command Results")), raw(result.description))
+        else
+          div(),
+        resultTypeMarkup(result.parameters)
       )
     }
   }
@@ -1097,7 +1112,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       if (m.postconditions.isEmpty) div() else div(p(strong("Postconditions: "), ol(m.postconditions.map(pc => li(raw(pc)))))),
       commandParameterListMarkup(m.parameters, m.requiredArgs),
       p(strong("Completion Type: "), m.completionType),
-      resultTypeMarkup(m.resultType),
+      resultMarkup(m.maybeResult),
       if (m.completionConditions.isEmpty) div()
       else div(p(strong("Completion Conditions: "), ol(m.completionConditions.map(cc => li(raw(cc)))))),
       if (m.role.isEmpty) div()

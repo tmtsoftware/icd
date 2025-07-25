@@ -62,6 +62,7 @@ object JsonSupport {
   implicit val publishesFormat: OFormat[Publishes] = Json.format[Publishes]
   implicit val subscribesFormat: OFormat[Subscribes] = Json.format[Subscribes]
   implicit val otherComponentFormat: OFormat[OtherComponent] = Json.format[OtherComponent]
+  implicit val commandResultModelFormat: OFormat[CommandResultModel] = Json.format[CommandResultModel]
   implicit val receiveCommandModelFormat: OFormat[ReceiveCommandModel] = Json.format[ReceiveCommandModel]
   implicit val sentCommandInfoFormat: OFormat[SentCommandInfo] = Json.format[SentCommandInfo]
   implicit val receivedCommandInfoFormat: OFormat[ReceivedCommandInfo] = Json.format[ReceivedCommandInfo]
