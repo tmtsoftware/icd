@@ -238,8 +238,34 @@ case class Resolver(allModels: List[IcdModels]) {
       else {
         Try(resolveRefReceiveCommandModel(commandModel, Ref(receiveCommandModel.ref, commandModel.component, Ref.receive)))
       }
+
     tryRefReceiveCommandModel match {
       case Success(refReceiveCommandModel) =>
+        // XXX TODO FIXME: Sorry, This got complicated after the model changes for modelVersion 4.0...
+        val resultArgs =
+          if (
+            receiveCommandModel.maybeResult.toList
+              .flatMap(_.parameters)
+              .nonEmpty
+          )
+            receiveCommandModel.maybeResult.toList
+              .flatMap(_.parameters)
+              .map(parameterModel =>
+                resolveCommandParameter(commandModel, receiveCommandModel, ParamRef.resultType, parameterModel)
+              )
+          else
+            refReceiveCommandModel.maybeResult.toList
+              .flatMap(_.parameters)
+              .map(parameterModel =>
+                resolveCommandParameter(commandModel, receiveCommandModel, ParamRef.resultType, parameterModel)
+              )
+        val maybeResult =
+          if (receiveCommandModel.maybeResult.nonEmpty)
+            receiveCommandModel.maybeResult
+          else
+            refReceiveCommandModel.maybeResult
+        val maybeResultOverride = maybeResult.map(r => CommandResultModel(r.description, resultArgs))
+
         ReceiveCommandModel(
           name = receiveCommandModel.name,
           ref = "",
@@ -270,11 +296,7 @@ case class Resolver(allModels: List[IcdModels]) {
           completionType =
             if (receiveCommandModel.completionType != "immediate") receiveCommandModel.completionType
             else refReceiveCommandModel.completionType,
-          maybeResult =
-            if (receiveCommandModel.maybeResult.nonEmpty)
-              receiveCommandModel.maybeResult
-            else
-              refReceiveCommandModel.maybeResult,
+          maybeResult = maybeResultOverride,
           completionConditions =
             if (receiveCommandModel.completionConditions.nonEmpty) receiveCommandModel.completionConditions
             else refReceiveCommandModel.completionConditions,
