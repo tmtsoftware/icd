@@ -315,8 +315,6 @@ object ClientRoutes {
 
   /**
    * Returns the route to use to get a missing items report for the given Subsystem with selected components.
-   *
-   * @param sv the subsystem
    * @return the URL path to use
    */
   def missingItemsReport(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion], options: PdfOptions): String = {
@@ -550,4 +548,29 @@ object ClientRoutes {
     val url        = if (args.isEmpty) baseUrl else s"$baseUrl?$args"
     URLEncoder.encode(url, "UTF-8")
   }
+
+  /**
+   * Returns the route to use to get the data for an events hostogram for the given Subsystems with selected components.
+   *
+   * @return the URL path to use
+   */
+  def eventsHistogram(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): String = {
+    val attrs = maybeTargetSv match {
+      case None =>
+        getAttrs(
+          sv.maybeVersion,
+          sv.maybeComponent
+        )
+      case Some(targetSv) =>
+        getAttrs(
+          sv.maybeVersion,
+          sv.maybeComponent,
+          maybeTargetVersion = targetSv.maybeVersion,
+          maybeTargetCompName = targetSv.maybeComponent,
+          maybeTarget = maybeTargetSv.map(_.subsystem)
+        )
+    }
+    s"/eventsHistogram/${sv.subsystem}$attrs"
+  }
+
 }

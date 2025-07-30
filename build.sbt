@@ -4,9 +4,9 @@ import Settings._
 import org.tmt.sbt.docs.DocKeys._
 
 def providedScope(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "provided")
-def compileScope(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
-def testScope(deps: ModuleID*): Seq[ModuleID]    = deps map (_ % "test")
-def toPathMapping(f: File): (File, String)       = f          -> f.getName
+def compileScope(deps: ModuleID*): Seq[ModuleID]  = deps map (_ % "compile")
+def testScope(deps: ModuleID*): Seq[ModuleID]     = deps map (_ % "test")
+def toPathMapping(f: File): (File, String)        = f -> f.getName
 
 ThisBuild / docsRepo       := "https://github.com/tmtsoftware/tmtsoftware.github.io.git"
 ThisBuild / docsParentDir  := "idbs"
@@ -21,7 +21,6 @@ lazy val openSite =
       state
     }
   }
-
 
 // SCALAJS_PROD is set in install.sh to enable fully optimized JavaScript
 val optStage = if (sys.env.contains("SCALAJS_PROD")) FullOptStage else FastOptStage
@@ -85,14 +84,14 @@ lazy val icdWebServer = (project in file("icd-web-server"))
   .settings(defaultSettings)
   .settings(dockerSettings)
   .settings(
-    scalaJSProjects := Seq(icdWebClient),
-    Assets / pipelineStages := Seq(scalaJSPipeline),
+    scalaJSProjects               := Seq(icdWebClient),
+    Assets / pipelineStages       := Seq(scalaJSPipeline),
     Global / onChangedBuildSource := ReloadOnSourceChanges,
-    pipelineStages := Seq(digest, gzip),
+    pipelineStages                := Seq(digest, gzip),
     // triggers scalaJSPipeline when using compile or continuous compilation
     Compile / compile := ((Compile / compile) dependsOn scalaJSPipeline).value,
     libraryDependencies ++=
-      compileScope(filters, guice, playJson, jqueryUi, webjarsPlay, bootstrap, bootstrapTable, bootstrapIcons, swaggerUi) ++
+      compileScope(filters, guice, playJson, jqueryUi, webjarsPlay, bootstrap, bootstrapTable, bootstrapIcons, plotlyJs, swaggerUi) ++
         testScope(specs2)
   )
   .enablePlugins(PlayScala, SbtWeb, DockerPlugin)
@@ -105,6 +104,7 @@ val clientJsDeps = Def.setting(
     "org.webjars"     % "jquery-ui"       % JQueryUiVersion / "jquery-ui.min.js" dependsOn "jquery.js",
     "org.webjars.npm" % "bootstrap"       % BootstrapVersion / "bootstrap.bundle.js",
     "org.webjars.npm" % "bootstrap-table" % BootstrapTableVersion / "dist/bootstrap-table.min.js",
+    "org.webjars.npm" % "plotly.js-dist-min"  % PlotlyVersion / "plotly.min.js",
     ProvidedJS / "resize.js" dependsOn "jquery-ui.min.js"
   )
 )
@@ -113,10 +113,10 @@ val clientJsDeps = Def.setting(
 lazy val icdWebClient = (project in file("icd-web-client"))
   .settings(commonSettings)
   .settings(
-    scalaJSUseMainModuleInitializer := false,
-    scalaJSStage := optStage,
+    scalaJSUseMainModuleInitializer      := false,
+    scalaJSStage                         := optStage,
     Compile / unmanagedSourceDirectories := Seq((Compile / scalaSource).value),
-    packageJSDependencies / skip := false,
+    packageJSDependencies / skip         := false,
     jsDependencies ++= clientJsDeps.value,
     libraryDependencies ++= clientDeps.value,
     Compile / fastLinkJS / jsMappings += toPathMapping((Compile / packageJSDependencies).value),
@@ -132,7 +132,7 @@ lazy val icdWebShared = crossProject(JSPlatform, JVMPlatform)
   .in(file("icd-web-shared"))
   .enablePlugins(BuildInfoPlugin)
   .settings(
-    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
+    buildInfoKeys    := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
     buildInfoPackage := "icd.web.shared"
   )
   .settings(commonSettings)

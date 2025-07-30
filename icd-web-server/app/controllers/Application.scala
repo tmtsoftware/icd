@@ -1115,4 +1115,37 @@ class Application @Inject() (
       }
     }
 
+  /**
+   * Returns the data for an events histogram for the given subsystem/component APIs
+   *
+   * @param subsystem            the source subsystem
+   * @param maybeVersion         the source subsystem's version (default: current)
+   * @param maybeComponent       optional component (default: all in subsystem)
+   * @param maybeTarget          optional target subsystem
+   * @param maybeTargetVersion   optional target subsystem's version (default: current)
+   * @param maybeTargetComponent optional target component name (default: all in target subsystem)
+   */
+  def eventsHistogram(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      maybeTarget: Option[String],
+      maybeTargetVersion: Option[String],
+      maybeTargetComponent: Option[String]
+  ) =
+    authAction.async {
+      val resp: Future[EventsHistogramData] = appActor ? (
+        GetEventsHistogram(
+          subsystem,
+          maybeVersion,
+          maybeComponent,
+          maybeTarget,
+          maybeTargetVersion,
+          maybeTargetComponent,
+          _
+        )
+      )
+      resp.map(info => Ok(Json.toJson(info)))
+    }
+
 }

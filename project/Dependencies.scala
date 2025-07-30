@@ -3,18 +3,20 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport.*
 
 //noinspection TypeAnnotation
 object Dependencies {
-  val Version = "3.2.0"
-  val ScalaVersion    = "3.7.1"
-  val PekkoVersion    = "1.1.4"
+  val Version      = "3.2.0"
+  val ScalaVersion = "3.7.1"
+  val PekkoVersion = "1.1.4"
 //  val PlayJsonVersion = "3.0.4"
-  val PlayJsonVersion = "3.1.0-M1"
-  val ScalaTagsVersion  = "0.13.1"
-  val ScalaJsDomVersion = "2.8.0"
+  val PlayJsonVersion       = "3.1.0-M1"
+  val ScalaTagsVersion      = "0.13.1"
+  val ScalaJsDomVersion     = "2.8.0"
   val BootstrapVersion      = "5.3.7"
   val JQueryVersion         = "3.7.1"
   val JQueryUiVersion       = "1.14.1"
   val BootstrapTableVersion = "1.24.1"
   val BootstrapIconsVersion = "1.13.1"
+//  val PlotlyVersion         = "3.0.1" // scalajs Layout didn't work, not compatible
+  val PlotlyVersion         = "1.58.5"
 
   val pekkoActorTyped           = "org.apache.pekko" %% "pekko-actor-typed"           % PekkoVersion
   val pekkoActor                = "org.apache.pekko" %% "pekko-actor"                 % PekkoVersion
@@ -63,6 +65,8 @@ object Dependencies {
   val bootstrap      = "org.webjars.npm"             % "bootstrap"        % BootstrapVersion
   val bootstrapTable = "org.webjars.npm"             % "bootstrap-table"  % BootstrapTableVersion
   val bootstrapIcons = "org.webjars.npm"             % "bootstrap-icons"  % BootstrapIconsVersion
+  val plotlyJs       = "org.webjars.npm"             % "plotly.js-dist"   % PlotlyVersion
+
   val swaggerUi      = "org.webjars"                 % "swagger-ui"       % "5.25.3"
 
   // ScalaJS web client scala dependencies
@@ -71,7 +75,10 @@ object Dependencies {
       "org.scala-js"      %%% "scalajs-dom"                 % ScalaJsDomVersion,
       "com.lihaoyi"       %%% "scalatags"                   % ScalaTagsVersion,
       "org.playframework" %%% "play-json"                   % PlayJsonVersion,
-      "org.scala-js"      %%% "scala-js-macrotask-executor" % "1.1.0"
+      "org.scala-js"      %%% "scala-js-macrotask-executor" % "1.1.0",
+      ("org.plotly-scala" %%% "plotly-render"               % "0.8.5")
+        .cross(CrossVersion.for3Use2_13)
+        .exclude("org.scala-js", "scalajs-dom_sjs1_2.13")
     )
   )
 

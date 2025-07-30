@@ -96,6 +96,7 @@ object JsonSupport {
   implicit val componentInfoFormat: OFormat[ComponentInfo] = Json.format[ComponentInfo]
   implicit val fitsSourceFormat: OFormat[FitsSource] = Json.format[FitsSource]
   implicit val fitsChannelFormat: OFormat[FitsChannel] = Json.format[FitsChannel]
+  implicit val eventsHistogramDataFormat: OFormat[EventsHistogramData] = Json.format[EventsHistogramData]
 
   // This version is used for exchanging data between the web app and server
 //  implicit val fitsKeyInfoFormat           = Json.format[FitsKeyInfo]

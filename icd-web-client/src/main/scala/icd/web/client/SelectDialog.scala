@@ -116,6 +116,13 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
       showDetailButtons = false
     )
 
+  private val eventsHistogramButton =
+    EventsHistogram.ButtonItem(
+      "Events Histogram",
+      "Generate and display a histogram of all events based on event size and/or data rate, for the selected subsystems/components (or all subsystems)",
+      makeEventsHistogram,
+    )
+
   val subsystem: Subsystem = Subsystem(SourceSubsystemListener)
   val targetSubsystem: Subsystem = Subsystem(
     TargetSubsystemListener,
@@ -349,6 +356,14 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
         archiveButton.markup(),
         alarmsButton.markup(),
         missingButton.markup()
+      ),
+      div(
+        style := "padding-top: 20px",
+        eventsHistogramButton.markup()
+      ),
+      div(
+        style := "padding-top: 20px",
+        id := "eventsHistogram"
       )
     ).render
   }
@@ -457,5 +472,12 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
         ClientRoutes.missingItemsReportFull(options)
       }
     dom.window.open(uri) // opens in new window or tab
+  }
+
+  private def makeEventsHistogram(): Unit = {
+    val maybeSv = subsystem.getSubsystemWithVersion()
+    val maybeTargetSv = targetSubsystem.getSubsystemWithVersion()
+    if (maybeSv.nonEmpty)
+      EventsHistogram.makeEventsHistogram(maybeSv.get, maybeTargetSv)
   }
 }

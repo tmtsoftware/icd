@@ -3,134 +3,138 @@
 # ~~~~
 
 # Home page
-GET         /                                           controllers.Application.index
+GET         /                                              controllers.Application.index
 
 # Gets a list of top level subsystem names
-GET         /subsystems                                 controllers.Application.subsystemNames
+GET         /subsystems                                    controllers.Application.subsystemNames
 
 # Gets top level information about a given version of the given subsystem
-GET         /subsystemInfo/:subsystem                   controllers.Application.subsystemInfo(subsystem, version: Option[String], component: Option[String])
+GET         /subsystemInfo/:subsystem                      controllers.Application.subsystemInfo(subsystem, version: Option[String], component: Option[String])
 
 # Gets a list of components belonging to the given version of the given subsystem
-GET         /components/:subsystem                      controllers.Application.components(subsystem, version: Option[String])
+GET         /components/:subsystem                         controllers.Application.components(subsystem, version: Option[String])
 
 # Gets information about a given component in a given version of the given subsystem
-GET         /componentInfo/:subsystem                   controllers.Application.componentInfo(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], clientApi: Option[Boolean])
+GET         /componentInfo/:subsystem                      controllers.Application.componentInfo(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], clientApi: Option[Boolean])
 
 # Gets information about a component in a given version of an ICD
-GET         /icdComponentInfo/:subsystem/:target        controllers.Application.icdComponentInfo(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String])
+GET         /icdComponentInfo/:subsystem/:target           controllers.Application.icdComponentInfo(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String])
 
 # Gets the PDF for the given ICD
-GET         /icdAsPdf/:subsystem/:target                controllers.Application.icdAsPdf(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean], documentNumber: Option[String])
+GET         /icdAsPdf/:subsystem/:target                   controllers.Application.icdAsPdf(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean], documentNumber: Option[String])
 
 # Gets the PDF for the given ICD (using POST to pass list of expanded row ids)
-POST        /icdAsPdf/:subsystem/:target                controllers.Application.icdAsPdf(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean], documentNumber: Option[String])
+POST        /icdAsPdf/:subsystem/:target                   controllers.Application.icdAsPdf(subsystem, version: Option[String], component: Option[String], target, targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean], documentNumber: Option[String])
 
 # Gets the PDF for the given subsystem API
-GET         /apiAsPdf/:subsystem                        controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], clientApi: Option[Boolean], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean], documentNumber: Option[String])
+GET         /apiAsPdf/:subsystem                           controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], clientApi: Option[Boolean], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean], documentNumber: Option[String])
 
 # Gets the PDF for the given subsystem API (using POST to pass list of expanded row ids)
-POST        /apiAsPdf/:subsystem                        controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], clientApi: Option[Boolean], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean], documentNumber: Option[String])
+POST        /apiAsPdf/:subsystem                           controllers.Application.apiAsPdf(subsystem, version: Option[String], component: Option[String], searchAll: Option[Boolean], clientApi: Option[Boolean], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean], documentNumber: Option[String])
 
 # Gets the PDF for the FITS keywords
-GET         /fitsDictionaryAsPdf/:tag                   controllers.Application.fitsDictionaryAsPdf(tag, orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
+GET         /fitsDictionaryAsPdf/:tag                      controllers.Application.fitsDictionaryAsPdf(tag, orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String], details: Option[Boolean])
 
 # Gets an archived items report (PDF) for the given subsystem API (and component)
-GET         /archivedItemsReport/:subsystem             controllers.Application.archivedItemsReport(subsystem, version: Option[String], component: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])
+GET         /archivedItemsReport/:subsystem                controllers.Application.archivedItemsReport(subsystem, version: Option[String], component: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])
 
 # Gets an archived items report (PDF) for the given subsystem API (and component)
-GET         /archivedItemsReportFull                    controllers.Application.archivedItemsReportFull(orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])
+GET         /archivedItemsReportFull                       controllers.Application.archivedItemsReportFull(orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])
 
 # Gets an archived items report (HTML) for the given subsystem API (and component)
-GET         /archivedItemsReportHtml/:subsystem         controllers.Application.archivedItemsReportHtml(subsystem, version: Option[String], component: Option[String])
+GET         /archivedItemsReportHtml/:subsystem            controllers.Application.archivedItemsReportHtml(subsystem, version: Option[String], component: Option[String])
 
 # Gets an alarms report (PDF) for the given subsystem API (and component)
-GET         /alarmsReport/:subsystem             controllers.Application.alarmsReport(subsystem, version: Option[String], component: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])
+GET         /alarmsReport/:subsystem                       controllers.Application.alarmsReport(subsystem, version: Option[String], component: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])
 
 # Gets an alarms report (PDF) for the given subsystem API (and component)
-GET         /alarmsReportFull                    controllers.Application.alarmsReportFull(orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])
+GET         /alarmsReportFull                              controllers.Application.alarmsReportFull(orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])
 
 # Gets a missing items report (PDF) for the given subsystem API (and component) and optional target subsystem/component
-GET         /missingItemsReport/:subsystem             controllers.Application.missingItemsReport(subsystem, version: Option[String], component: Option[String], target: Option[String], targetVersion: Option[String], targetComponent: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])
+GET         /missingItemsReport/:subsystem                 controllers.Application.missingItemsReport(subsystem, version: Option[String], component: Option[String], target: Option[String], targetVersion: Option[String], targetComponent: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])
 
 # Gets a missing items report (HTML) for the given subsystem API (and component) and optional target subsystem/component
 GET         /missingItemsReportHtml/:subsystem             controllers.Application.missingItemsReportHtml(subsystem, version: Option[String], component: Option[String], target: Option[String], targetVersion: Option[String], targetComponent: Option[String], orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])
 
 # Gets a missing items report (PDF) for the given subsystem API (and component)
-GET         /missingItemsReportFull                    controllers.Application.missingItemsReportFull(orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])
+GET         /missingItemsReportFull                        controllers.Application.missingItemsReportFull(orientation: Option[String], fontSize: Option[Int], lineHeight: Option[String], paperSize: Option[String])
 
 # Generates a graph of selected component relationships
-GET         /makeGraph/:subsystem                       controllers.Application.makeGraph(subsystem, version: Option[String], component: Option[String], target: Option[String], targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String], ratio: Option[Double], missingEvents: Option[Boolean], missingCommands: Option[Boolean], commandLabels: Option[Boolean], eventLabels: Option[Boolean], groupSubsystems: Option[Boolean], onlySubsystems: Option[Boolean], layout: Option[String], overlap: Option[String], splines: Option[Boolean], omitTypes: Option[String], imageFormat: Option[String])
+GET         /makeGraph/:subsystem                          controllers.Application.makeGraph(subsystem, version: Option[String], component: Option[String], target: Option[String], targetVersion: Option[String], targetComponent: Option[String], icdVersion: Option[String], ratio: Option[Double], missingEvents: Option[Boolean], missingCommands: Option[Boolean], commandLabels: Option[Boolean], eventLabels: Option[Boolean], groupSubsystems: Option[Boolean], onlySubsystems: Option[Boolean], layout: Option[String], overlap: Option[String], splines: Option[Boolean], omitTypes: Option[String], imageFormat: Option[String])
 
 # Gets the detailed information about the versions of a component or subsystem
-GET         /versions/:name                             controllers.Application.getVersions(name)
+GET         /versions/:name                                controllers.Application.getVersions(name)
 
 # Gets a list of version names for a component or subsystem
-GET         /versionNames/:name                         controllers.Application.getVersionNames(name)
+GET         /versionNames/:name                            controllers.Application.getVersionNames(name)
 
 # Gets a list of published ICD names
-GET         /icdNames                                   controllers.Application.getIcdNames
+GET         /icdNames                                      controllers.Application.getIcdNames
 
 # Gets a list of versions for the ICD from subsystem to target
-GET         /icdVersions/:subsystem/:target             controllers.Application.getIcdVersions(subsystem, target)
+GET         /icdVersions/:subsystem/:target                controllers.Application.getIcdVersions(subsystem, target)
 
 # Uploads ICD files from a selected directory, all at once as multipart/formdata
-POST        /uploadFiles                                controllers.FileUploadController.uploadFiles()
+POST        /uploadFiles                                   controllers.FileUploadController.uploadFiles()
 
 # Gets the differences between two versions (version strings separated by a comma)
-GET         /diff/:subsystem/:versions                  controllers.Application.diff(subsystem, versions)
+GET         /diff/:subsystem/:versions                     controllers.Application.diff(subsystem, versions)
 
 # Returns OK(true) if this is a public icd web server (upload not allowed,publish allowed, password protected)
-GET         /isPublicServer                             controllers.Application.isPublicServer
+GET         /isPublicServer                                controllers.Application.isPublicServer
 
 # Gets PublishInfo for every subsystem
-GET         /getPublishInfo                             controllers.Application.getPublishInfo(subsystem: Option[String])
+GET         /getPublishInfo                                controllers.Application.getPublishInfo(subsystem: Option[String])
 
 # Checks if the given GitHub user and password are valid for publish
-POST        /checkGitHubCredentials                     controllers.Application.checkGitHubCredentials()
+POST        /checkGitHubCredentials                        controllers.Application.checkGitHubCredentials()
 
 # Checks if the given user and password are valid for using the web app
-POST        /checkCredentials                           controllers.Application.checkCredentials()
+POST        /checkCredentials                              controllers.Application.checkCredentials()
 
 # Checks if the user is already logged in
-GET         /checkForCookie                             controllers.Application.checkForCookie()
+GET         /checkForCookie                                controllers.Application.checkForCookie()
 
 # Logs out of the web app
-POST        /logout                                     controllers.Application.logout()
+POST        /logout                                        controllers.Application.logout()
 
 # Publishes a given subsystem API on GitHub
-POST        /publishApi                                 controllers.Application.publishApi()
+POST        /publishApi                                    controllers.Application.publishApi()
 
 # Publishes an ICD on GitHub
-POST        /publishIcd                                 controllers.Application.publishIcd()
+POST        /publishIcd                                    controllers.Application.publishIcd()
 
 # Unublishes a given subsystem API on GitHub
-POST        /unpublishApi                               controllers.Application.unpublishApi()
+POST        /unpublishApi                                  controllers.Application.unpublishApi()
 
 # Unublishes an ICD on GitHub
-POST        /unpublishIcd                               controllers.Application.unpublishIcd()
+POST        /unpublishIcd                                  controllers.Application.unpublishIcd()
 
 # Updates the cache of published APIs and ICDs (in case new ones were published)
-POST        /updatePublished                            controllers.Application.updatePublished()
+POST        /updatePublished                               controllers.Application.updatePublished()
 
 # Gets information about the ICD between two subsystems
-GET         /icdModelList/:subsystem/:target             controllers.Application.icdModelList(subsystem, version: Option[String], target, targetVersion: Option[String])
+GET         /icdModelList/:subsystem/:target               controllers.Application.icdModelList(subsystem, version: Option[String], target, targetVersion: Option[String])
 
 # Gets the generated source code for the given subsystem/component API
-GET         /generate/:subsystem/:lang/:className        controllers.Application.generate(subsystem, lang, className, version: Option[String], component: Option[String], packageName: Option[String])
+GET         /generate/:subsystem/:lang/:className          controllers.Application.generate(subsystem, lang, className, version: Option[String], component: Option[String], packageName: Option[String])
 
 # Gets the FITS dictionary and tags
-GET         /fitsDictionary                             controllers.Application.fitsDictionary(subsystem: Option[String], component: Option[String])
+GET         /fitsDictionary                                controllers.Application.fitsDictionary(subsystem: Option[String], component: Option[String])
 
-GET         /openApi/:subsystem/:component/:service     controllers.Application.openApi(subsystem, component, service, version: Option[String], paths: Option[String])
+GET         /openApi/:subsystem/:component/:service        controllers.Application.openApi(subsystem, component, service, version: Option[String], paths: Option[String])
+
+# Gets the data for an events histogram for the given subsystem API (and component) and optional target subsystem/component
+GET         /eventsHistogram/:subsystem                    controllers.Application.eventsHistogram(subsystem, version: Option[String], component: Option[String], target: Option[String], targetVersion: Option[String], targetComponent: Option[String])
+
 
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file                               controllers.Assets.versioned(file)
+GET         /assets/*file                                  controllers.Assets.versioned(file)
 
-GET         /robots.txt                                 controllers.Assets.at(path="/public", file="robots.txt")
+GET         /robots.txt                                    controllers.Assets.at(path="/public", file="robots.txt")
 
 # WebJars
-->          /webjars                                    webjars.Routes
+->          /webjars                                       webjars.Routes
 
 
 

@@ -5,22 +5,7 @@ import play.api.libs.concurrent.ActorModule
 import org.apache.pekko.actor.typed.{ActorRef, Behavior}
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import icd.web.shared.IcdModels.{IcdModel, ServicePath}
-import icd.web.shared.{
-  ApiVersionInfo,
-  ComponentInfo,
-  DiffInfo,
-  FitsDictionary,
-  IcdName,
-  IcdVersionInfo,
-  IcdVizOptions,
-  PdfOptions,
-  PublishApiInfo,
-  PublishIcdInfo,
-  SubsystemInfo,
-  UnpublishApiInfo,
-  UnpublishIcdInfo,
-  VersionInfo
-}
+import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, EventsHistogramData, FitsDictionary, IcdName, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
 
 import scala.util.Try
 
@@ -185,6 +170,16 @@ object ApplicationActor extends ActorModule {
       version: Option[String],
       paths: List[ServicePath],
       replyTo: ActorRef[Option[String]]
+  ) extends Messages
+
+  final case class GetEventsHistogram(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      maybeTarget: Option[String],
+      maybeTargetVersion: Option[String],
+      maybeTargetComponent: Option[String],
+      replyTo: ActorRef[EventsHistogramData]
   ) extends Messages
 
   // -------------------------------------------------------------------
@@ -455,6 +450,25 @@ object ApplicationActor extends ActorModule {
         case GetOpenApi(subsystem, component, service, maybeVersion, paths, replyTo) =>
           replyTo ! app.db.getOpenApi(subsystem, component, service, maybeVersion, paths)
           Behaviors.same
+        case GetEventsHistogram(
+              subsystem,
+              maybeVersion,
+              maybeComponent,
+              maybeTarget,
+              maybeTargetVersion,
+              maybeTargetComponent,
+              replyTo
+            ) =>
+          replyTo ! app.getEventsHistogram(
+            subsystem,
+            maybeVersion,
+            maybeComponent,
+            maybeTarget,
+            maybeTargetVersion,
+            maybeTargetComponent
+          )
+          Behaviors.same
+
       }
     }
   }

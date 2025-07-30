@@ -29,6 +29,7 @@ import icd.web.shared.{
   ApiVersionInfo,
   ComponentInfo,
   DiffInfo,
+  EventsHistogramData,
   FitsDictionary,
   FitsTags,
   HtmlHeadings,
@@ -887,6 +888,37 @@ case class ApplicationImpl(db: IcdDb) {
         log.error(s"Failed to get FITS dictionary for $maybeSv", ex)
         FitsDictionary(Nil, FitsTags(Map.empty))
     }
+  }
+
+  /**
+   * Returns the data for an events histogram for the given subsystem APIs
+   *
+   * @param subsystem            the source subsystem
+   * @param maybeVersion         the source subsystem's version (default: current)
+   * @param maybeComponent       optional component (default: all in subsystem)
+   * @param maybeTarget          optional target subsystem
+   * @param maybeTargetVersion   optional target subsystem's version (default: current)
+   * @param maybeTargetComponent optional target component name (default: all in target subsystem)
+   */
+  def getEventsHistogram(
+      subsystem: String,
+      maybeVersion: Option[String],
+      maybeComponent: Option[String],
+      maybeTarget: Option[String],
+      maybeTargetVersion: Option[String],
+      maybeTargetComponent: Option[String]
+  ): EventsHistogramData = {
+    val sv1           = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
+    val maybeTargetSv = maybeTarget.map(target => SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent))
+    val svList        = List(sv1) ::: maybeTargetSv.toList
+    val eventSizes = for {
+      sv           <- svList
+      models       <- db.versionManager.getModels(sv, None, Map.empty, Set("publishModel"))
+      publishModel <- models.publishModel.toList
+      event        <- publishModel.eventList
+    } yield event.totalSizeInBytes
+    val map = eventSizes.groupBy(identity).map(x => (x._2.length, x._1))
+    EventsHistogramData(map.keySet.toList, map.values.toList)
   }
 
 }
