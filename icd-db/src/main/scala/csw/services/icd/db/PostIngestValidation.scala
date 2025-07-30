@@ -224,7 +224,7 @@ class PostIngestValidation(db: IcdDb) {
     def checkRequiredArgs(command: ReceiveCommandModel): List[Problem] = {
       command.requiredArgs.flatMap(arg =>
         if (command.parameters.map(_.name).contains(arg)) None
-        else Some(Problem("error", s"requiredArg '$arg' is not defined for command ${command.name} in $prefix"))
+        else Some(Problem("warning", s"requiredArg '$arg' is not defined for command ${command.name} in $prefix"))
       )
     }
 
