@@ -1287,7 +1287,7 @@ subscribe {
 }
 ```
 
-Here is another example `subscribe-model.conf` that also subscribes to a published image stream:
+Here is another example `subscribe-model.conf` that also subscribes to a published image stream, current state events and observe events:
 
 ```
 subscribe {
@@ -1307,6 +1307,29 @@ subscribe {
       component = lgsWfs
       name = guider1
       usage = "WFOS guider images use for acquisition"
+    }
+  ]
+  
+  // Subscribe to a component's "current state"
+  currentStates = [
+    {
+      subsystem = TEST
+      component = env.ctrl
+      name = sensors
+    }
+  ]
+
+  // Subscribe to observe events
+  observeEvents = [
+    {
+      subsystem = APS
+      component = ICS.HCD.Detector
+      name = ExposureStart
+    }
+    {
+      subsystem = APS
+      component = ICS.HCD.Detector
+      name = ExposureEnd
     }
   ]
 }
