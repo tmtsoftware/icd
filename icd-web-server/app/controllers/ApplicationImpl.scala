@@ -30,6 +30,7 @@ import icd.web.shared.{
   ComponentInfo,
   DiffInfo,
   EventsHistogramData,
+  EventsHistogramOptions,
   FitsDictionary,
   FitsTags,
   HtmlHeadings,
@@ -906,8 +907,11 @@ case class ApplicationImpl(db: IcdDb) {
       maybeComponent: Option[String],
       maybeTarget: Option[String],
       maybeTargetVersion: Option[String],
-      maybeTargetComponent: Option[String]
+      maybeTargetComponent: Option[String],
+      eventsHistogramOptions: EventsHistogramOptions
   ): EventsHistogramData = {
+    import eventsHistogramOptions.*
+    import EventsHistogramOptions.*
     val sv1           = SubsystemWithVersion(subsystem, maybeVersion, maybeComponent)
     val maybeTargetSv = maybeTarget.map(target => SubsystemWithVersion(target, maybeTargetVersion, maybeTargetComponent))
     val svList        = List(sv1) ::: maybeTargetSv.toList
@@ -916,8 +920,17 @@ case class ApplicationImpl(db: IcdDb) {
       models       <- db.versionManager.getModels(sv, None, Map.empty, Set("publishModel"))
       publishModel <- models.publishModel.toList
       event        <- publishModel.eventList
-    } yield event.totalSizeInBytes
-    val map = eventSizes.groupBy(identity).map(x => (x._2.length, x._1))
+    } yield {
+      histogramType match {
+        case eventSize => event.totalSizeInBytes * 1.0
+        case _         => event.totalSizeInBytes * event.maybeMaxRate.getOrElse(1.0)
+      }
+    }
+    val map =
+      if (swapAxis)
+        eventSizes.groupBy(identity).map(x => (x._1, x._2.length * 1.0))
+      else
+        eventSizes.groupBy(identity).map(x => (x._2.length * 1.0, x._1))
     EventsHistogramData(map.keySet.toList, map.values.toList)
   }
 

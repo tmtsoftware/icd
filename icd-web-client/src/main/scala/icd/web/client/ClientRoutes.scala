@@ -1,7 +1,7 @@
 package icd.web.client
 
 import icd.web.shared.IcdModels.ServicePath
-import icd.web.shared.{IcdName, IcdVersion, IcdVizOptions, PdfOptions, SubsystemWithVersion}
+import icd.web.shared.{EventsHistogramOptions, IcdName, IcdVersion, IcdVizOptions, PdfOptions, SubsystemWithVersion}
 
 import java.net.URLEncoder
 
@@ -28,7 +28,8 @@ object ClientRoutes {
       maybePdfOptions: Option[PdfOptions] = None,
       maybeGraphOptions: Option[IcdVizOptions] = None,
       maybeTarget: Option[String] = None,
-      maybePackageName: Option[String] = None
+      maybePackageName: Option[String] = None,
+      maybeEventHistogramOptions: Option[EventsHistogramOptions] = None
   ): String = {
     val versionAttr         = maybeVersion.map(v => s"version=$v")
     val componentAttr       = maybeComponent.map(c => s"component=$c")
@@ -65,10 +66,16 @@ object ClientRoutes {
         s"imageFormat=${o.imageFormat}"
       ).mkString("&")
     )
+    val eventHistogramAttrs = maybeEventHistogramOptions.map(o =>
+      List(
+        s"histogramType=${o.histogramType}",
+        s"swapAxis=${o.swapAxis}"
+      ).mkString("&")
+    )
     val attrs =
       (versionAttr ++ componentAttr ++ packageAttr ++ searchAllAttr ++ clientApiAttr ++
         targetAttr ++ targetVersionAttr ++ targetComponentAttr ++ icdVersionAttr ++
-        pdfAttrs ++ graphAttrs ++ packageAttr)
+        pdfAttrs ++ graphAttrs ++ eventHistogramAttrs ++ packageAttr)
         .mkString("&")
     if (attrs.isEmpty) "" else s"?$attrs"
   }
@@ -554,12 +561,13 @@ object ClientRoutes {
    *
    * @return the URL path to use
    */
-  def eventsHistogram(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): String = {
+  def eventsHistogram(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion], eventsHistogramOptions: EventsHistogramOptions): String = {
     val attrs = maybeTargetSv match {
       case None =>
         getAttrs(
           sv.maybeVersion,
-          sv.maybeComponent
+          sv.maybeComponent,
+          maybeEventHistogramOptions = Some(eventsHistogramOptions)
         )
       case Some(targetSv) =>
         getAttrs(
@@ -567,7 +575,8 @@ object ClientRoutes {
           sv.maybeComponent,
           maybeTargetVersion = targetSv.maybeVersion,
           maybeTargetCompName = targetSv.maybeComponent,
-          maybeTarget = maybeTargetSv.map(_.subsystem)
+          maybeTarget = maybeTargetSv.map(_.subsystem),
+          maybeEventHistogramOptions = Some(eventsHistogramOptions)
         )
     }
     s"/eventsHistogram/${sv.subsystem}$attrs"

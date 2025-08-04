@@ -1131,9 +1131,12 @@ class Application @Inject() (
       maybeComponent: Option[String],
       maybeTarget: Option[String],
       maybeTargetVersion: Option[String],
-      maybeTargetComponent: Option[String]
+      maybeTargetComponent: Option[String],
+      histogramType: Option[String],
+      swapAxis: Option[Boolean]
   ) =
     authAction.async {
+      import EventsHistogramOptions.*
       val resp: Future[EventsHistogramData] = appActor ? (
         GetEventsHistogram(
           subsystem,
@@ -1142,6 +1145,7 @@ class Application @Inject() (
           maybeTarget,
           maybeTargetVersion,
           maybeTargetComponent,
+          EventsHistogramOptions(histogramType.getOrElse(defaultHistogramType), swapAxis.getOrElse(defaultSwapAxis)),
           _
         )
       )

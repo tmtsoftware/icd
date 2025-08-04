@@ -125,7 +125,7 @@ GET         /fitsDictionary                                controllers.Applicati
 GET         /openApi/:subsystem/:component/:service        controllers.Application.openApi(subsystem, component, service, version: Option[String], paths: Option[String])
 
 # Gets the data for an events histogram for the given subsystem API (and component) and optional target subsystem/component
-GET         /eventsHistogram/:subsystem                    controllers.Application.eventsHistogram(subsystem, version: Option[String], component: Option[String], target: Option[String], targetVersion: Option[String], targetComponent: Option[String])
+GET         /eventsHistogram/:subsystem                    controllers.Application.eventsHistogram(subsystem, version: Option[String], component: Option[String], target: Option[String], targetVersion: Option[String], targetComponent: Option[String], histogramType: Option[String], swapAxis: Option[Boolean])
 
 
 # Map static resources from the /public folder to the /assets URL path

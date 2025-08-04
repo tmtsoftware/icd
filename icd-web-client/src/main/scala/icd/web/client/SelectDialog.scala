@@ -2,7 +2,7 @@ package icd.web.client
 
 import icd.web.client.IcdChooser.IcdListener
 import icd.web.client.Subsystem.SubsystemListener
-import icd.web.shared.{IcdName, IcdVersion, IcdVizOptions, PdfOptions, SubsystemWithVersion}
+import icd.web.shared.{IcdName, IcdVersion, IcdVizOptions, PdfOptions, SubsystemWithVersion, EventsHistogramOptions}
 import org.scalajs.dom
 import play.api.libs.json.*
 import org.scalajs.dom.html.{Button, Input}
@@ -477,7 +477,8 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
   private def makeEventsHistogram(): Unit = {
     val maybeSv = subsystem.getSubsystemWithVersion()
     val maybeTargetSv = targetSubsystem.getSubsystemWithVersion()
-    if (maybeSv.nonEmpty)
+    if (maybeSv.nonEmpty) {
       EventsHistogram.makeEventsHistogram(maybeSv.get, maybeTargetSv)
+    }
   }
 }

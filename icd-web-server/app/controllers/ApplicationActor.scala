@@ -5,7 +5,7 @@ import play.api.libs.concurrent.ActorModule
 import org.apache.pekko.actor.typed.{ActorRef, Behavior}
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import icd.web.shared.IcdModels.{IcdModel, ServicePath}
-import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, EventsHistogramData, FitsDictionary, IcdName, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
+import icd.web.shared.{ApiVersionInfo, ComponentInfo, DiffInfo, EventsHistogramData, EventsHistogramOptions, FitsDictionary, IcdName, IcdVersionInfo, IcdVizOptions, PdfOptions, PublishApiInfo, PublishIcdInfo, SubsystemInfo, UnpublishApiInfo, UnpublishIcdInfo, VersionInfo}
 
 import scala.util.Try
 
@@ -179,6 +179,7 @@ object ApplicationActor extends ActorModule {
       maybeTarget: Option[String],
       maybeTargetVersion: Option[String],
       maybeTargetComponent: Option[String],
+      eventsHistogramOptions: EventsHistogramOptions,
       replyTo: ActorRef[EventsHistogramData]
   ) extends Messages
 
@@ -457,6 +458,7 @@ object ApplicationActor extends ActorModule {
               maybeTarget,
               maybeTargetVersion,
               maybeTargetComponent,
+              eventsHistogramOptions,
               replyTo
             ) =>
           replyTo ! app.getEventsHistogram(
@@ -465,7 +467,8 @@ object ApplicationActor extends ActorModule {
             maybeComponent,
             maybeTarget,
             maybeTargetVersion,
-            maybeTargetComponent
+            maybeTargetComponent,
+            eventsHistogramOptions
           )
           Behaviors.same
 

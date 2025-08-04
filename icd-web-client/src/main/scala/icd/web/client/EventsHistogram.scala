@@ -1,9 +1,10 @@
 package icd.web.client
 
-import icd.web.shared.{EventsHistogramData, SubsystemWithVersion}
+import icd.web.shared.{EventsHistogramData, EventsHistogramOptions, SubsystemWithVersion}
 import org.scalajs.dom.{Element, HTMLInputElement, document}
 import org.scalajs.dom.html.{Button, Div}
 import scalatags.JsDom
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import play.api.libs.json.*
@@ -34,10 +35,10 @@ object EventsHistogram {
           `class` := "form-check form-check-inline",
           input(
             `type` := "radio",
-            id     := "eventSizes",
+            id     := EventsHistogramOptions.eventSize,
             cls    := "form-check-input",
             name   := "eventsHistogramType",
-            value  := "eventSizes",
+            value  := EventsHistogramOptions.eventSize,
             checked
           ),
           label(cls := "form-check-label", "Event Sizes")
@@ -46,12 +47,22 @@ object EventsHistogram {
           `class` := "form-check form-check-inline",
           input(
             `type` := "radio",
-            id     := "maxRates",
+            id     := EventsHistogramOptions.dataRate,
             cls    := "form-check-input",
             name   := "eventsHistogramType",
-            value  := "maxRates"
+            value  := EventsHistogramOptions.dataRate
           ),
-          label(cls := "form-check-label", "Max Rates")
+          label(cls := "form-check-label", "Data Rates")
+        ),
+        div(cls := "form-check")(
+          input(
+            id  := "swapAxis",
+            name  := "swapAxis",
+            cls   := "form-check-input",
+            title := s"Swap the X and Y axis in the chart",
+            tpe   := "checkbox"
+          ),
+          label(cls := "form-check-label", "Swap X and Y axis")
         )
       ).render
     }
@@ -72,26 +83,37 @@ object EventsHistogram {
 
   private def getHistogramData(
       sv: SubsystemWithVersion,
-      maybeTargetSv: Option[SubsystemWithVersion]
+      maybeTargetSv: Option[SubsystemWithVersion],
+      eventsHistogramOptions: EventsHistogramOptions
   ): Future[EventsHistogramData] = {
     import icd.web.shared.JsonSupport.*
     Fetch
-      .get(ClientRoutes.eventsHistogram(sv, maybeTargetSv))
+      .get(ClientRoutes.eventsHistogram(sv, maybeTargetSv, eventsHistogramOptions))
       .map { jsonStr =>
         Json.fromJson[EventsHistogramData](Json.parse(jsonStr)).get
       }
   }
 
   def makeEventsHistogram(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): Unit = {
-    getHistogramData(sv, maybeTargetSv).foreach(makeEventsHistogram)
+    val plotEventSizes = document.getElementById(EventsHistogramOptions.eventSize).asInstanceOf[HTMLInputElement].checked
+    val swapAxis       = document.getElementById("swapAxis").asInstanceOf[HTMLInputElement].checked
+    val eventsHistogramOptions =
+      EventsHistogramOptions(if (plotEventSizes) EventsHistogramOptions.eventSize else EventsHistogramOptions.dataRate, swapAxis)
+
+    getHistogramData(sv, maybeTargetSv, eventsHistogramOptions).foreach(makeEventsHistogram(_, eventsHistogramOptions))
   }
 
   def makeAllEventsHistogram(): Unit = {}
 
-  def makeEventsHistogram(histogramData: EventsHistogramData): Unit = {
+  def makeEventsHistogram(histogramData: EventsHistogramData, eventsHistogramOptions: EventsHistogramOptions): Unit = {
     import plotly.*, element.*, layout.*, Plotly.*
+    import eventsHistogramOptions.*
 
-    val plotEventSizes = document.getElementById("eventSizes").asInstanceOf[HTMLInputElement].checked
+    val axis1 = Axis().withTitle("Number of Events")
+    val axis2 =
+      if (histogramType == EventsHistogramOptions.eventSize) Axis().withTitle("Event Size") else Axis().withTitle("Data Rate")
+    val xAxis = if (swapAxis) axis2 else axis1
+    val yAxis = if (swapAxis) axis1 else axis2
 
     val lay = Layout()
       .withTitle("Event Sizes")
@@ -99,14 +121,20 @@ object EventsHistogram {
       .withHeight(600)
       .withWidth(900)
       .withBargap(0.05)
-      .withXaxis(Axis().withTitle("Number of Events"))
-      .withYaxis(Axis().withTitle("Event Size"))
+      .withXaxis(xAxis)
+      .withYaxis(yAxis)
 
     val data = Seq(
-      Bar(
-        histogramData.xData,
-        histogramData.yData
-      )
+      if (swapAxis)
+        Bar(
+          histogramData.yData,
+          histogramData.xData
+        )
+      else
+        Bar(
+          histogramData.xData,
+          histogramData.yData
+        )
     )
 
     Plotly.plot("eventsHistogram", data, lay) // attaches to div element with id 'eventsHistogram'
