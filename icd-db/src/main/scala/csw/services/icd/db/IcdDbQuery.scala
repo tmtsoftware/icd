@@ -2,16 +2,7 @@ package csw.services.icd.db
 
 import csw.services.icd.*
 import csw.services.icd.StdName.*
-import csw.services.icd.db.parser.{
-  AlarmsModelBsonParser,
-  CommandModelBsonParser,
-  ComponentModelBsonParser,
-  IcdModelBsonParser,
-  PublishModelBsonParser,
-  ServiceModelBsonParser,
-  SubscribeModelBsonParser,
-  SubsystemModelBsonParser
-}
+import csw.services.icd.db.parser.{AlarmsModelBsonParser, CommandModelBsonParser, ComponentModelBsonParser, IcdModelBsonParser, PublishModelBsonParser, ServiceModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
 import icd.web.shared.ComponentInfo.*
 import icd.web.shared.{IcdModels, PdfOptions, SubsystemWithVersion}
 import icd.web.shared.IcdModels.*
@@ -22,7 +13,7 @@ import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.play.json.compat.*
 import bson2json.*
 import csw.services.icd.db.IcdDbDefaults.{backupCollSuffix, tmpCollSuffix}
-import csw.services.icd.db.IcdVersionManager.versionSuffix
+import csw.services.icd.db.IcdVersionManager.{queryAny, versionKey, versionSuffix}
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import lax.*
 import json2bson.*

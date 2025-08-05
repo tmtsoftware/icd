@@ -802,16 +802,17 @@ object IcdGitManager {
             val (_, problems) = db.ingest(gitWorkDir)
             problems.foreach(p => feedback(p.errorMessage()))
             val errors = problems.exists(_.severity != "warning")
-            val (newCollections, backupCollections) =
-              db.query.afterIngest(Some(subsystem), errors, db.dbName, makeBackups = !updateUnpublishedVersion)
+//            val (newCollections, backupCollections) =
+//              db.query.afterIngest(Some(subsystem), errors, db.dbName, makeBackups = !updateUnpublishedVersion)
+              db.query.afterIngest(Some(subsystem), errors, db.dbName, makeBackups = false)
             if (!problems.exists(_.severity != "warning")) {
               val date = DateTime.parse(e.date)
               db.versionManager.publishApi(subsystem, Some(e.version), majorVersion = false, e.comment, e.user, date, e.commit)
-              if (!updateUnpublishedVersion) {
-                // Restore unpublished version from backup (After auto-ingesting older version of subsystem)
-                db.query.deleteCollections(newCollections)
-                db.query.renameCollections(backupCollections, backupCollSuffix, removeSuffix = true, db.dbName)
-              }
+//                if (!updateUnpublishedVersion) {
+//                  // Restore unpublished version from backup (After auto-ingesting older version of subsystem)
+//                  db.query.deleteCollections(newCollections)
+//                  db.query.renameCollections(backupCollections, backupCollSuffix, removeSuffix = true, db.dbName) // XXX TODO FIXME version setting!!!
+//                }
             }
           }
           catch {

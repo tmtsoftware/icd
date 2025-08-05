@@ -70,7 +70,7 @@ object IcdVersionManager extends DefaultWrites {
   private val commentKey          = "comment"
   private val commitKey           = "commit"
 
-  private val queryAny: BSONDocument = BSONDocument()
+  private[db] val queryAny: BSONDocument = BSONDocument()
 
   /**
    * Holds a collection path for a component or subsystem and it's version
@@ -430,9 +430,11 @@ case class IcdVersionManager(query: IcdDbQuery) {
     coll.find(queryAny, Option.empty[JsObject]).one[BSONDocument].await match {
       case Some(doc) =>
         val currentVersion = doc.int(versionKey).get
+//        println(s"XXX getVersionOf ($coll): Some: ($version == $currentVersion) -> ${(version == currentVersion)}")
         if (version == currentVersion) doc else getPublishedDoc
 
       case None =>
+//        println(s"XXX getVersionOf: None")
         getPublishedDoc
     }
   }
