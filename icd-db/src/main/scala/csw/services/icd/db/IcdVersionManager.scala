@@ -429,11 +429,9 @@ case class IcdVersionManager(query: IcdDbQuery) {
     coll.find(queryAny, Option.empty[JsObject]).one[BSONDocument].await match {
       case Some(doc) =>
         val currentVersion = doc.int(versionKey).get
-//        println(s"XXX getVersionOf ($coll): Some: ($version == $currentVersion) -> ${(version == currentVersion)}")
         if (version == currentVersion) doc else getPublishedDoc
 
       case None =>
-//        println(s"XXX getVersionOf: None")
         getPublishedDoc
     }
   }
@@ -734,11 +732,9 @@ case class IcdVersionManager(query: IcdDbQuery) {
         val partVersion = v.int(versionKey).get
         val changed     = diff(path, v, obj).isDefined
         val inc         = if (changed) 1 else 0
-        println(s"XXX $path: changed $changed ${partVersion + inc}")
         partVersion + inc
       }
       else {
-        println(s"XXX $path: create with 1}")
         1
       }
     }
