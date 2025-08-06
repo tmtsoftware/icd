@@ -794,7 +794,6 @@ object IcdGitManager {
         apiEntries.reverse.foreach { e =>
           feedback(s"Checking out $subsystem-${e.version} (commit: ${e.commit}) from $url")
           try {
-//            git.checkout().setName(e.commit).call
             // Use git reset to make sure no files from previous version are left over?
             git.reset().setRef(e.commit).setMode(ResetCommand.ResetType.HARD).call
             feedback(s"Ingesting $subsystem-${e.version}")
@@ -802,17 +801,16 @@ object IcdGitManager {
             val (_, problems) = db.ingest(gitWorkDir)
             problems.foreach(p => feedback(p.errorMessage()))
             val errors = problems.exists(_.severity != "warning")
-//            val (newCollections, backupCollections) =
-//              db.query.afterIngest(Some(subsystem), errors, db.dbName, makeBackups = !updateUnpublishedVersion)
-              db.query.afterIngest(Some(subsystem), errors, db.dbName, makeBackups = false)
+            val (newCollections, backupCollections) =
+              db.query.afterIngest(Some(subsystem), errors, db.dbName, makeBackups = !updateUnpublishedVersion)
             if (!problems.exists(_.severity != "warning")) {
               val date = DateTime.parse(e.date)
-              db.versionManager.publishApi(subsystem, Some(e.version), majorVersion = false, e.comment, e.user, date, e.commit)
-//                if (!updateUnpublishedVersion) {
-//                  // Restore unpublished version from backup (After auto-ingesting older version of subsystem)
-//                  db.query.deleteCollections(newCollections)
-//                  db.query.renameCollections(backupCollections, backupCollSuffix, removeSuffix = true, db.dbName) // XXX TODO FIXME version setting!!!
-//                }
+              db.versionManager.publishApi(subsystem, e.version, majorVersion = false, e.comment, e.user, date, e.commit)
+              if (!updateUnpublishedVersion) {
+                // Restore unpublished version from backup (After auto-ingesting older version of subsystem)
+                db.query.deleteCollections(newCollections)
+                db.query.renameCollections(backupCollections, backupCollSuffix, removeSuffix = true, db.dbName)
+              }
             }
           }
           catch {
