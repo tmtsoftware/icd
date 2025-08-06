@@ -2,22 +2,14 @@ package csw.services.icd.db
 
 import csw.services.icd.*
 import csw.services.icd.StdName.serviceFileNames
-import icd.web.shared.IcdModels.{ComponentModel, IcdModel, ServiceModel, SubsystemModel}
+import icd.web.shared.IcdModels.{ComponentModel, IcdModel, ServiceModel, SubsystemModel, tagSize}
 import icd.web.shared.{IcdModels, IcdVersion, IcdVersionInfo, PdfOptions, SubsystemWithVersion}
 import org.joda.time.{DateTime, DateTimeZone}
 import diffson.playJson.*
 import diffson.lcs.*
 import diffson.jsonpatch.*
 import diffson.jsonpatch.lcsdiff.remembering.*
-import csw.services.icd.db.parser.{
-  AlarmsModelBsonParser,
-  ComponentModelBsonParser,
-  IcdModelBsonParser,
-  PublishModelBsonParser,
-  ServiceModelBsonParser,
-  SubscribeModelBsonParser,
-  SubsystemModelBsonParser
-}
+import csw.services.icd.db.parser.{AlarmsModelBsonParser, ComponentModelBsonParser, IcdModelBsonParser, PublishModelBsonParser, ServiceModelBsonParser, SubscribeModelBsonParser, SubsystemModelBsonParser}
 import play.api.libs.json.{DefaultWrites, JsObject, JsValue, Json}
 import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONObjectID}
 import reactivemongo.api.{Cursor, WriteConcern}
@@ -622,11 +614,19 @@ case class IcdVersionManager(query: IcdDbQuery) {
       else getComponentNames(SubsystemWithVersion(sv.subsystem, sv.maybeVersion, None))
     val allComponentSvs = allComponentNames.map(component => SubsystemWithVersion(sv.subsystem, sv.maybeVersion, Some(component)))
     val allIcdModels = allComponentSvs.flatMap(compSv =>
-      getModels(
+      val models = getModels(
         compSv,
         maybePdfOptions,
         fitsKeyMap
       )
+      // For top level subsystems, models contains everything, which would result in duplicates
+      if (models.length > 1) {
+        // Can happen if there are more components in subdirs of this component (APS did this)
+        // To avoid duplicate component entries, just take the models for this component and
+        // ignore the ones in the subdirs
+        models.take(1)
+      } else
+        models
     )
     val icdModels = getModelsForComponents(allIcdModels, sv, maybePdfOptions)
     Resolver(allIcdModels).resolve(icdModels)
