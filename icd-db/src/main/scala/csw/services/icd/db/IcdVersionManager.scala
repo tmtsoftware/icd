@@ -62,6 +62,7 @@ object IcdVersionManager extends DefaultWrites {
   private val commentKey          = "comment"
   private val commitKey           = "commit"
 
+  // A query that returns the entire document
   private[db] val queryAny: BSONDocument = BSONDocument()
 
   /**
@@ -719,15 +720,16 @@ case class IcdVersionManager(query: IcdDbQuery) {
       val icdPaths = collectionNames.filter(isStdSet).map(IcdPath.apply).filter(_.subsystem == subsystem)
       val paths    = icdPaths.map(_.path).toList ++ getOpenApiCollectionPaths(collectionNames, icdPaths)
       for (path <- paths) yield {
+        // coll is the mongodb collection for the working copy ("*") of an ingested model file
         val coll    = db.collection[BSONCollection](path)
         val obj     = coll.find(queryAny, Option.empty[JsObject]).one[BSONDocument].await.get
+        // XXX TODO FIXME: getting version from working copy: Should use version from first item in $subsystem.v colection?
         val version = obj.int(versionKey).get
-//        val id              = obj.getAsOpt[BSONObjectID](idKey).get
         val id              = obj.get(idKey).get
         val versionCollName = versionCollectionName(path)
         val exists          = collectionNames.contains(versionCollName)
         val lastVersion = if (!exists || diff(db(versionCollName), obj).isDefined) {
-          // New or modified: Update version history
+          // New or modified: Update version history (v is the mongodb collection for a version of an ingested model file)
           val v = db.collection[BSONCollection](versionCollName)
           if (exists) {
             // avoid duplicate key
