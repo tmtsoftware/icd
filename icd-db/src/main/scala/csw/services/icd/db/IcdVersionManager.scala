@@ -76,7 +76,7 @@ object IcdVersionManager extends DefaultWrites {
   /**
    * Holds a collection path for a component or subsystem and it's version
    */
-  case class PartInfo(path: String, version: Int)
+  case class PartInfo(path: String, partVersion: Int)
 
   // Name of version history collection for the given subsystem or component
   private def versionCollectionName(name: String): String = s"$name.$versionColl"
@@ -302,16 +302,20 @@ case class IcdVersionManager(query: IcdDbQuery) {
       case Some(version) => // published version
         // For master version, need to check if it has been updated and reload
         def gitUpdateNeeded(): Boolean = {
-          val collName = versionCollectionName(sv.subsystem)
-          if (collectionExists(collName)) {
-            val coll = db.collection[BSONCollection](collName)
-            val query = BSONDocument(versionStrKey -> version)
-            val doc = coll.find(query, Option.empty[JsObject]).one[BSONDocument].await.get
-            val commit = doc.string(commitKey).get
-            val url = IcdGitManager.getSubsystemGitHubUrl(sv.subsystem)
-            val latestCommit = IcdGitManager.getRepoCommitId(url)
-            commit != latestCommit
-          } else true
+          if (!sv.maybeVersion.contains("master")) false
+          else {
+            val collName = versionCollectionName(sv.subsystem)
+            if (collectionExists(collName)) {
+              val coll         = db.collection[BSONCollection](collName)
+              val query        = BSONDocument(versionStrKey -> version)
+              val doc          = coll.find(query, Option.empty[JsObject]).one[BSONDocument].await.get
+              val commit       = doc.string(commitKey).get
+              val url          = IcdGitManager.getSubsystemGitHubUrl(sv.subsystem)
+              val latestCommit = IcdGitManager.getRepoCommitId(url)
+              commit != latestCommit
+            }
+            else true
+          }
         }
         def getVersionInfo: Option[VersionInfo] = {
           val collName = versionCollectionName(path)
@@ -403,7 +407,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       val result = for {
         p1 <- v1Info.get.parts
         p2 <- v2Info.get.parts if p1.path == p2.path
-      } yield diffPart(p1.path, p1.version, p2.version)
+      } yield diffPart(p1.path, p1.partVersion, sv1.maybeVersion, p2.partVersion, sv2.maybeVersion)
       result.flatten
     }
   }
@@ -415,22 +419,36 @@ case class IcdVersionManager(query: IcdDbQuery) {
   }
 
   // Returns the contents of the given version of the given collection
-  private[db] def getVersionOf(coll: BSONCollection, version: Int): BSONDocument = {
+  private[db] def getVersionOf(coll: BSONCollection, partVersion: Int, subsystemVersion: Option[String]): BSONDocument = {
     // Get a previously published version from $coll.v
-    val v     = db.collection[BSONCollection](versionCollectionName(coll.name))
-    val query = BSONDocument(versionKey -> version)
-    v.find(query, Option.empty[JsObject]).one[BSONDocument].await.getOrElse(queryAny)
+    val collection =
+      if (subsystemVersion.nonEmpty)
+        db.collection[BSONCollection](versionCollectionName(coll.name))
+      else
+        coll
+    val query = BSONDocument(versionKey -> partVersion)
+    collection.find(query, Option.empty[JsObject]).one[BSONDocument].await.getOrElse(queryAny)
   }
 
   // Returns the JSON for the given version of the collection path
-  private def getJsonWithoutVersionOrId(path: String, version: Int): JsValue = {
-    val jsValue = Json.toJson(getVersionOf(db(path), version))
+  private def getJsonWithoutVersionOrId(path: String, partVersion: Int, subsystemVersion: Option[String]): JsValue = {
+    val jsValue = Json.toJson(getVersionOf(db(path), partVersion, subsystemVersion))
     withoutVersionOrId(jsValue)
   }
 
   // Returns the diff of the given versions of the given collection path, if they are different
-  private def diffPart(path: String, v1: Int, v2: Int): Option[VersionDiff] = {
-    diffJson(path, getJsonWithoutVersionOrId(path, v1), getJsonWithoutVersionOrId(path, v2))
+  private def diffPart(
+      path: String,
+      v1PartVersion: Int,
+      v1SubsystemVersion: Option[String],
+      v2PartVersion: Int,
+      v2SubsystemVersion: Option[String]
+  ): Option[VersionDiff] = {
+    diffJson(
+      path,
+      getJsonWithoutVersionOrId(path, v1PartVersion, v1SubsystemVersion),
+      getJsonWithoutVersionOrId(path, v2PartVersion, v2SubsystemVersion)
+    )
   }
 
   // Compares the two json values, returning None if equal, otherwise some VersionDiff
@@ -499,7 +517,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
 
     // Return an object that holds all the model classes associated with a single ICD entry.
     def makeModels(versionMap: Map[String, Int], entry: ApiCollections): IcdModels = {
-      def getDocVersion(coll: BSONCollection): BSONDocument = getVersionOf(coll, versionMap(coll.name))
+      def getDocVersion(coll: BSONCollection): BSONDocument = getVersionOf(coll, versionMap(coll.name), sv.maybeVersion)
 
       val subsystemModel: Option[SubsystemModel] =
         if (includeOnly.isEmpty || includeOnly.contains("subsystemModel"))
@@ -555,7 +573,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
 
     getVersion(sv) match {
       case Some(versionInfo) =>
-        val versionMap = versionInfo.parts.map(v => v.path -> v.version).toMap
+        val versionMap = versionInfo.parts.map(v => v.path -> v.partVersion).toMap
         val allEntries = getEntries(versionInfo.parts)
         // Note: allEntries is sorted by parts length, so subsystem model comes first
         val entries = if (includeOnly.contains("subsystemModel")) allEntries.take(1) else allEntries
