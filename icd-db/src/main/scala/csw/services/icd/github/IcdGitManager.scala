@@ -187,7 +187,7 @@ object IcdGitManager {
   }
 
   // Gets the latest commit id of the given repo
-  private def getRepoCommitId(url: String): String = {
+  def getRepoCommitId(url: String): String = {
     Git
       .lsRemoteRepository()
       .setHeads(true)

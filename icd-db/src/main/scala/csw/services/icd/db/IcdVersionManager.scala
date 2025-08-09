@@ -300,6 +300,19 @@ case class IcdVersionManager(query: IcdDbQuery) {
     val path = sv.maybeComponent.fold(sv.subsystem)(compName => s"${sv.subsystem}.$compName")
     sv.maybeVersion match {
       case Some(version) => // published version
+        // For master version, need to check if it has been updated and reload
+        def gitUpdateNeeded(): Boolean = {
+          val collName = versionCollectionName(sv.subsystem)
+          if (collectionExists(collName)) {
+            val coll = db.collection[BSONCollection](collName)
+            val query = BSONDocument(versionStrKey -> version)
+            val doc = coll.find(query, Option.empty[JsObject]).one[BSONDocument].await.get
+            val commit = doc.string(commitKey).get
+            val url = IcdGitManager.getSubsystemGitHubUrl(sv.subsystem)
+            val latestCommit = IcdGitManager.getRepoCommitId(url)
+            commit != latestCommit
+          } else true
+        }
         def getVersionInfo: Option[VersionInfo] = {
           val collName = versionCollectionName(path)
           if (collectionExists(collName)) {
@@ -311,7 +324,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
           else None
         }
         val versionInfo = getVersionInfo
-        if (versionInfo.nonEmpty) versionInfo
+        if (versionInfo.nonEmpty && !gitUpdateNeeded()) versionInfo
         else {
           // This version hasn't been ingested yet?
           IcdGitManager.ingest(
