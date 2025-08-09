@@ -1025,6 +1025,7 @@ object IcdGitManager {
    */
   def ingestLatest(db: IcdDb): (List[ApiVersions], List[IcdVersions]) = {
     val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
+    // "master" is first in the list, followed by the versions in descending order, but we don't preload it here
     val latestApiVersions                = allApiVersions.map(a => ApiVersions(a.subsystem, a.apis.slice(1, 2)))
 
     // Ingest any missing subsystems (latest versions of subsystems that are not yet in the database)

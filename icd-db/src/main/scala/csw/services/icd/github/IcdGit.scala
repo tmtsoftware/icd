@@ -34,6 +34,7 @@ object IcdGit {
       port: Int = IcdDbDefaults.defaultPort,
       ingest: Boolean = false,
       ingestMissing: Boolean = false,
+      ingestLatest: Boolean = false,
       ingestAll: Boolean = false
   )
 
@@ -110,6 +111,10 @@ object IcdGit {
       c.copy(ingestMissing = true)
     } text "Ingests any subsystem APIs or ICDs that were published on GitHub, but are not yet in the local database, plus any master branch versions"
 
+    opt[Unit]("ingestLatest") action { (_, c) =>
+      c.copy(ingestLatest = true)
+    } text "Ingests the latest versions of APIs or ICDs that were published on GitHub, if they are missing in the local database."
+
     opt[Unit]("ingestAll") action { (_, c) =>
       c.copy(ingestAll = true)
     } text "Ingests all subsystem APIs and ICDs plus any master branch versions of APIs on GitHub into the local icd database"
@@ -146,6 +151,7 @@ object IcdGit {
 //    if (options.tag) tag(options)
     if (options.ingest) ingest(options)
     if (options.ingestMissing) ingestMissing(options)
+    if (options.ingestLatest) ingestLatest(options)
     if (options.ingestAll) ingestAll(options)
     System.exit(0)
   }
@@ -408,6 +414,19 @@ object IcdGit {
     try {
       val db = IcdDb(options.dbName, options.host, options.port)
       IcdGitManager.ingestMissing(db)
+    }
+    catch {
+      case _: IcdDbException => error("Failed to connect to mongodb. Make sure mongod server is running.")
+      case ex: Exception =>
+        ex.printStackTrace()
+        error(s"Unable to drop the existing ICD database: $ex")
+    }
+  }
+
+  private def ingestLatest(options: Options): Unit = {
+    try {
+      val db = IcdDb(options.dbName, options.host, options.port)
+      IcdGitManager.ingestLatest(db)
     }
     catch {
       case _: IcdDbException => error("Failed to connect to mongodb. Make sure mongod server is running.")

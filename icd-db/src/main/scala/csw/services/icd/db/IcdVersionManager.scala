@@ -19,7 +19,7 @@ import csw.services.icd.db.parser.{
   SubsystemModelBsonParser
 }
 import play.api.libs.json.{DefaultWrites, JsObject, JsValue, Json}
-import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONObjectID}
+import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONObjectID, BSONString}
 import reactivemongo.api.{Cursor, WriteConcern}
 import reactivemongo.api.bson.collection.BSONCollection
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
@@ -291,22 +291,6 @@ case class IcdVersionManager(query: IcdDbQuery) {
     else current
   }
 
-//  /**
-//   * Returns a list of published version names of the subsystem
-//   *
-//   * @param subsystem the name of the subsystem
-//   */
-//  def getVersionNames(subsystem: String): List[String] = {
-//    val collName = versionCollectionName(subsystem)
-//    if (collectionExists(collName)) {
-//      val docs = sortCollectionById(collName)
-//      docs.map { doc =>
-//        doc.string(versionStrKey).get
-//      }
-//    }
-//    else Nil
-//  }
-
   /**
    * Returns information about the given version of the given subsystem or component
    *
@@ -316,8 +300,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
     val path = sv.maybeComponent.fold(sv.subsystem)(compName => s"${sv.subsystem}.$compName")
     sv.maybeVersion match {
       case Some(version) => // published version
-        val collName = versionCollectionName(path)
         def getVersionInfo: Option[VersionInfo] = {
+          val collName = versionCollectionName(path)
           if (collectionExists(collName)) {
             val coll     = db.collection[BSONCollection](collName)
             val query    = BSONDocument(versionStrKey -> version)
@@ -360,33 +344,33 @@ case class IcdVersionManager(query: IcdDbQuery) {
     }
   }
 
-  /**
-   * Returns the version name of the latest, published version of the given subsystem or component, if found
-   *
-   * @param collectionNames list of collection names (for better performance)
-   * @param subsystem       the name of the subsystem
-   * @param maybeComponent  if defined, the name of the component
-   */
-  private def getLatestPublishedVersion(
-      collectionNames: Set[String],
-      subsystem: String,
-      maybeComponent: Option[String]
-  ): Option[String] = {
-    val path     = maybeComponent.fold(subsystem)(compName => s"$subsystem.$compName")
-    val collName = versionCollectionName(path)
-    if (collectionNames.contains(collName)) {
-      val coll = db.collection[BSONCollection](collName)
-
-      coll
-        .find(queryAny, Option.empty[JsObject])
-        .sort(BSONDocument(idKey -> -1))
-        .one[BSONDocument]
-        .await
-        .map(_.string(versionStrKey))
-        .head
-    }
-    else None
-  }
+//  /**
+//   * Returns the version name of the latest, published version of the given subsystem or component, if found
+//   *
+//   * @param collectionNames list of collection names (for better performance)
+//   * @param subsystem       the name of the subsystem
+//   * @param maybeComponent  if defined, the name of the component
+//   */
+//  private def getLatestPublishedVersion(
+//      collectionNames: Set[String],
+//      subsystem: String,
+//      maybeComponent: Option[String]
+//  ): Option[String] = {
+//    val path     = maybeComponent.fold(subsystem)(compName => s"$subsystem.$compName")
+//    val collName = versionCollectionName(path)
+//    if (collectionNames.contains(collName)) {
+//      val coll = db.collection[BSONCollection](collName)
+//
+//      coll
+//        .find(queryAny, Option.empty[JsObject])
+//        .sort(BSONDocument(idKey -> -1))
+//        .one[BSONDocument]
+//        .await
+//        .map(_.string(versionStrKey))
+//        .head
+//    }
+//    else None
+//  }
 
   /**
    * Compares all of the named subsystem parts and returns a list of patches describing any differences.
@@ -420,20 +404,9 @@ case class IcdVersionManager(query: IcdDbQuery) {
   // Returns the contents of the given version of the given collection
   private[db] def getVersionOf(coll: BSONCollection, version: Int): BSONDocument = {
     // Get a previously published version from $coll.v
-    def getPublishedDoc: BSONDocument = {
-      val v     = db.collection[BSONCollection](versionCollectionName(coll.name))
-      val query = BSONDocument(versionKey -> version)
-      v.find(query, Option.empty[JsObject]).one[BSONDocument].await.getOrElse(queryAny)
-    }
-    // Note: Doc might not exist in current version, but exist in an older, published version
-    coll.find(queryAny, Option.empty[JsObject]).one[BSONDocument].await match {
-      case Some(doc) =>
-        val currentVersion = doc.int(versionKey).get
-        if (version == currentVersion) doc else getPublishedDoc
-
-      case None =>
-        getPublishedDoc
-    }
+    val v     = db.collection[BSONCollection](versionCollectionName(coll.name))
+    val query = BSONDocument(versionKey -> version)
+    v.find(query, Option.empty[JsObject]).one[BSONDocument].await.getOrElse(queryAny)
   }
 
   // Returns the JSON for the given version of the collection path
@@ -757,9 +730,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
           v.findAndRemove(BSONDocument(idKey -> id), None, None, WriteConcern.Default, None, None, Nil).await
         }
         v.insert.one(obj).await
-        // increment version for unpublished working copy
         val selector = BSONDocument(idKey -> id)
-        val mod = BSONDocument("$set" -> BSONDocument(versionKey -> partVersion))
+        val mod      = BSONDocument("$set" -> BSONDocument(versionKey -> partVersion))
         v.update.one(selector, mod).await
         (path, partVersion)
       }

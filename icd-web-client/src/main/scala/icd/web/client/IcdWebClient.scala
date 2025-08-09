@@ -412,7 +412,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private object PublishListener extends PublishDialogListener {
     override def publishChange(): Future[Unit] = {
       for {
-        _ <- updatePublished()
+//        _ <- updatePublished() // afterIngest() already called on server
         _ <- subsystemNames.update()
         _ <- selectDialog.icdChooser.updateIcdOptions()
 
