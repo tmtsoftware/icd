@@ -971,7 +971,7 @@ object IcdGitManager {
         (s: String) => println(s),
         allApiVersions,
         allIcdVersions,
-        updateUnpublishedVersion = true
+        updateUnpublishedVersion = false
       )
     }
 
@@ -994,7 +994,7 @@ object IcdGitManager {
         (s: String) => println(s),
         allApiVersions,
         allIcdVersions,
-        updateUnpublishedVersion = true
+        updateUnpublishedVersion = false
       )
     }
     else {
