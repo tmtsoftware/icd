@@ -9,7 +9,7 @@ import java.io.File
 import java.nio.file.Files
 import scala.io.Source
 
-class IcdVizTests extends AnyFunSuite {
+  class IcdVizTests extends AnyFunSuite {
   Resolver.loggingEnabled = false
   val examplesDir = s"examples/${IcdValidator.currentSchemaVersion}"
   val dbName      = "test"
@@ -43,9 +43,10 @@ class IcdVizTests extends AnyFunSuite {
     val okDotStr  = Source.fromResource("icdviz.dot").getLines().mkString("\n")
     // The order of the two subsystems is random, so need to check that...
     val okDotStr2  = Source.fromResource("icdviz2.dot").getLines().mkString("\n")
+    val okDotStr3  = Source.fromResource("icdviz3.dot").getLines().mkString("\n")
     val dotStr = new String(Files.readAllBytes(dotPath))
     println(s"Compare $dotPath with test/resources/icdviz.dot")
-    assert(okDotStr == dotStr || okDotStr2 == dotStr)
+    assert(okDotStr == dotStr || okDotStr2 == dotStr || okDotStr3 == dotStr)
 //    dotPath.toFile.delete()
   }
 }

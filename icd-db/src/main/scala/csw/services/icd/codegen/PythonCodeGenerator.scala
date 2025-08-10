@@ -145,7 +145,7 @@ class PythonCodeGenerator(db: IcdDb) {
     val indent2 = indent * 2
     val comment =
       s"$indent# API for ${info.componentModel.componentType}: ${info.componentModel.subsystem}.${info.componentModel.component}"
-    val prefixArg = s"""Prefix(Subsystems.${info.componentModel.subsystem
+    val prefixArg = s"""Prefix(Subsystem.${info.componentModel.subsystem
       .toUpperCase()
       .replace("TEST2", "CSW")
       .replace("TEST", "CSW")},
@@ -205,7 +205,7 @@ class PythonCodeGenerator(db: IcdDb) {
                  |from csw.Prefix import Prefix
                  |from csw.Parameter import *
                  |from csw.Event import EventName
-                 |from csw.Subsystem import Subsystems
+                 |from csw.Subsystem import Subsystem
                  |from csw.EventKey import EventKey
                  |from csw.Units import Units
                  |from csw.Coords import *

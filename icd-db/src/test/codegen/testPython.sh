@@ -6,7 +6,7 @@
 
 set -e
 set -x
-
+PYTHON=python3.13
 tempDir=$1
 cd "$(dirname "$0")"
 scriptDir="$(pwd)"
@@ -14,10 +14,13 @@ cd $tempDir
 unzip $scriptDir/pythonProject.zip
 mv $tempDir/Test.py test
 cd test
+rm -rf .venv
 mkdir .venv
-python3 -m venv .venv
-pipenv install
+$PYTHON -m venv .venv
 . .venv/bin/activate
+python -m pip install pytest
+python -m pip install pipenv
+pipenv install
 python -m pytest
 
 

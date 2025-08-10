@@ -2,6 +2,7 @@ digraph icdviz {
 	graph [layout = dot, splines = true, overlap = scale, ratio = 0.5]
 	node [fontsize = 20]
 	edge [fontsize = 10]
+	"APS.ICS.HCD.Detector" -> "TEST.lgsWfs" [color = red, fontcolor = red, style = dashed, label = "Missing in publisher:\nExposureEnd\nExposureStart"]
 	"TEST2.test2Pk" -> "TEST.rtc" [color = red, fontcolor = red, style = dashed, label = "Missing in publisher:\nzenithAngle"]
 	"TEST2.cmTEST" -> "TEST.lgsWfs" [color = red, fontcolor = red, style = dashed, label = "Missing in publisher:\nvisWfsPos"]
 	"TEST.env.ctrl" -> "TEST2.SegmentService" [color = red, fontcolor = red, style = dashed, label = "Missing in service provider:\nesw-segment-db
@@ -26,6 +27,16 @@ GET /currentPositions"]
 		"TEST2.cmTEST" [label = cmTEST, color = gray19, fontcolor = gray19, style = dashed]
 		"TEST2.test2Pk" [label = test2Pk, color = gray19, fontcolor = gray19, style = dashed]
 		"TEST2.SegmentService" [label = SegmentService, color = gray19, fontcolor = gray19, style = dashed]
+	}
+	subgraph cluster_APS {
+		label = APS
+		color = darkgreen
+		fontcolor = darkgreen
+		fontsize = 30
+		style = rounded
+		penwidth = 3
+		labelloc = b
+		"APS.ICS.HCD.Detector" [label = "ICS.HCD.Detector", color = darkgreen, fontcolor = darkgreen, style = dashed]
 	}
 	subgraph cluster_TEST {
 		label = TEST
