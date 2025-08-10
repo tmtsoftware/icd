@@ -47,6 +47,6 @@ import scala.io.Source
     val dotStr = new String(Files.readAllBytes(dotPath))
     println(s"Compare $dotPath with test/resources/icdviz.dot")
     assert(okDotStr == dotStr || okDotStr2 == dotStr || okDotStr3 == dotStr)
-//    dotPath.toFile.delete()
+    dotPath.toFile.delete()
   }
 }
