@@ -6,5 +6,5 @@
 logdir=$HOME/.icd
 logfile=$logdir/icd.log
 test -d $logdir || mkdir $logdir
-exec ./icdwebserver -Dicd.isPublicServer=true -Dicd.pdf.cache.enabled=true -Dhttp.port=80 > $logfile 2>&1 &
-
+icd-git --ingestAll > $logfile 2>&1
+exec ./icdwebserver -Dicd.isPublicServer=true -Dicd.pdf.cache.enabled=true -Dhttp.port=80 >> $logfile 2>&1 &
