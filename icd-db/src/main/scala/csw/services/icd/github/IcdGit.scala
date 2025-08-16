@@ -33,7 +33,7 @@ object IcdGit {
       host: String = IcdDbDefaults.defaultHost,
       port: Int = IcdDbDefaults.defaultPort,
       ingest: Boolean = false,
-      ingestMissing: Boolean = false,
+//      ingestMissing: Boolean = false,
       ingestLatest: Boolean = false,
       ingestAll: Boolean = false
   )
@@ -107,9 +107,9 @@ object IcdGit {
       c.copy(ingest = true)
     } text "Ingests the selected subsystem model files and ICDs from GitHub into the ICD database (Ingests the latest published subsystems, if no subsystem options given)"
 
-    opt[Unit]("ingestMissing") action { (_, c) =>
-      c.copy(ingestMissing = true)
-    } text "Ingests any subsystem APIs or ICDs that were published on GitHub, but are not yet in the local database, plus any master branch versions"
+//    opt[Unit]("ingestMissing") action { (_, c) =>
+//      c.copy(ingestMissing = true)
+//    } text "Ingests any subsystem APIs or ICDs that were published on GitHub, but are not yet in the local database, plus any master branch versions"
 
     opt[Unit]("ingestLatest") action { (_, c) =>
       c.copy(ingestLatest = true)
@@ -150,7 +150,7 @@ object IcdGit {
     if (options.publish) publish(options)
 //    if (options.tag) tag(options)
     if (options.ingest) ingest(options)
-    if (options.ingestMissing) ingestMissing(options)
+//    if (options.ingestMissing) ingestMissing(options)
     if (options.ingestLatest) ingestLatest(options)
     if (options.ingestAll) ingestAll(options)
     System.exit(0)
@@ -410,18 +410,18 @@ object IcdGit {
     }
   }
 
-  private def ingestMissing(options: Options): Unit = {
-    try {
-      val db = IcdDb(options.dbName, options.host, options.port)
-      IcdGitManager.ingestMissing(db)
-    }
-    catch {
-      case _: IcdDbException => error("Failed to connect to mongodb. Make sure mongod server is running.")
-      case ex: Exception =>
-        ex.printStackTrace()
-        error(s"Unable to drop the existing ICD database: $ex")
-    }
-  }
+//  private def ingestMissing(options: Options): Unit = {
+//    try {
+//      val db = IcdDb(options.dbName, options.host, options.port)
+//      IcdGitManager.ingestMissing(db)
+//    }
+//    catch {
+//      case _: IcdDbException => error("Failed to connect to mongodb. Make sure mongod server is running.")
+//      case ex: Exception =>
+//        ex.printStackTrace()
+//        error(s"Unable to drop the existing ICD database: $ex")
+//    }
+//  }
 
   private def ingestLatest(options: Options): Unit = {
     try {

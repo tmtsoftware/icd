@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
-## [ICD v3.2.x] - 2025-
+## [ICD v3.2.0] - 2025-08-16
 
 - Added HTTP services (defined in service-model.conf and OpenApi files) to the visualization graph
 - Added HTTP services to the "Missing Items" reports
@@ -14,6 +14,8 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 - Fixed JSON schema for service-model.conf to support both "required" and "provided" services in the same file
 - Updated dependencies and moved to Java-21 and Scala3
 - Changed web app to only ingest latest published APIs and ICDs and load older versions on demand (You can still use `icd-git --ingestAll` to preload the icd database)
+- Removed icd-git --ingestMissing option (Use --ingest, --ingestLatest or --ingestAll).
+- In the icd web app, the working version is now the most recently uploaded version of an API, or the most recently published one.
 - Changed web app sidebar to sort components by subsystem, component type and then alphabetically and added colored icons based on component type.
 - The sidebar with is now set to fit the contents by default (but can be resized)
 - Added a new `modelVersion` 4.0 (specified in component-model.conf and subsystem-model.conf): Removed `args` from command-model and `attributes` from event-model: Usage of `parameters` is now required.

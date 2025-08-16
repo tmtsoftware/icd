@@ -32,6 +32,7 @@ You can preload the local database to include all versions of the subsystem APIs
 
 You can also upload any directories containing model files that you are working on. 
 These will be the considered the “working version” or “*” in the subsystem version menu.
+The "*" version is either the last version uploaded, or the latest published API version, if there was no uploaded version, or if a more recent version was published (Note: This may change in a future release to be only the uploaded version). 
 
 @@@
 
@@ -68,7 +69,7 @@ The content area displays all the components for the subsystem.  Clicking on one
 
 The displayed API is constructed from the current versions of the models in the database, and is therefore considered an unpublished working version.  Although APIs are published by Systems Engineering, the system allows the viewing of all versions of published APIs as well as the working version as shown above (Note: the published versions of the APIs are ingested directly from the GitHub repository, whereas the unpublished models are obtained only from the local database).  To do this, select the desired version number in the dropdown menu next to the subsystem name.
 
-Note that “master” also appears in the list of versions and is linked to the contents of the master branch of a subsystem on GitHub. The contents of the master branch are automatically uploaded to the icd database (if there was a change) whenever you refresh the web app or when running the command: `icd-git --ingestMissing`.
+Note that “master” also appears in the list of versions and is linked to the contents of the master branch of a subsystem on GitHub. The contents of the master branch are automatically uploaded to the icd database (if there was a change) whenever you refresh the web app or when running the command: `icd-git --ingest`.
 
 ![](../images/webapp/tcsSelectVersion.png)
 

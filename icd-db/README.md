@@ -173,7 +173,6 @@ Usage: icd-git [options]
   --host <hostname>        The host name where the database is running (for the --ingest option, default: localhost)
   --port <number>          The port number to use for the database (for the --ingest option, default: 27017)
   --ingest                 Ingests the selected subsystem model files and ICDs from GitHub into the ICD database (Ingests the latest published subsystems, if no subsystem options given)
-  --ingestMissing          Ingests any subsystem APIs or ICDs that were published on GitHub, but are not yet in the local database, plus any master branch versions
   --ingestAll              Ingests all subsystem APIs and ICDs plus any master branch versions of APIs on GitHub into the local icd database
   --help
   --version
