@@ -1,8 +1,7 @@
 package csw.services.icd.db
 
 import csw.services.icd.*
-import csw.services.icd.StdName.serviceFileNames
-import icd.web.shared.IcdModels.{ComponentModel, IcdModel, ServiceModel, SubsystemModel, tagSize}
+import icd.web.shared.IcdModels.{ComponentModel, IcdModel, ServiceModel, SubsystemModel}
 import icd.web.shared.{IcdModels, IcdVersion, IcdVersionInfo, PdfOptions, SubsystemWithVersion}
 import org.joda.time.{DateTime, DateTimeZone}
 import diffson.playJson.*
@@ -19,13 +18,12 @@ import csw.services.icd.db.parser.{
   SubsystemModelBsonParser
 }
 import play.api.libs.json.{DefaultWrites, JsObject, JsValue, Json}
-import reactivemongo.api.bson.{BSONDateTime, BSONDocument, BSONObjectID, BSONString}
+import reactivemongo.api.bson.{BSONDateTime, BSONDocument}
 import reactivemongo.api.{Cursor, WriteConcern}
 import reactivemongo.api.bson.collection.BSONCollection
 import csw.services.icd.fits.IcdFitsDefs.FitsKeyMap
 import csw.services.icd.github.IcdGitManager
 import icd.web.shared.ComponentInfo.PublishType
-//import lax.*
 import reactivemongo.play.json.compat.*
 import bson2json.*
 import json2bson.*
@@ -297,7 +295,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * @param sv the subsystem
    */
   def getVersion(sv: SubsystemWithVersion): Option[VersionInfo] = {
-    val path = sv.maybeComponent.fold(sv.subsystem)(compName => s"${sv.subsystem}.$compName")
+    val compPath = sv.maybeComponent.fold(sv.subsystem)(compName => s"${sv.subsystem}.$compName")
     sv.maybeVersion match {
       case Some(version) => // published version
         // For master version, need to check if it has been updated and reload
@@ -317,7 +315,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
             else true
           }
         }
-        def getVersionInfo: Option[VersionInfo] = {
+        def getVersionInfo(path: String): Option[VersionInfo] = {
           val collName = versionCollectionName(path)
           if (collectionExists(collName)) {
             val coll     = db.collection[BSONCollection](collName)
@@ -327,10 +325,11 @@ case class IcdVersionManager(query: IcdDbQuery) {
           }
           else None
         }
-        val versionInfo = getVersionInfo
-        if (versionInfo.nonEmpty && !gitUpdateNeeded()) versionInfo
-        else {
-          // This version hasn't been ingested yet?
+        val versionInfo = getVersionInfo(compPath)
+        if (versionInfo.nonEmpty && !gitUpdateNeeded())
+          versionInfo
+        else if (getVersionInfo(sv.subsystem).isEmpty) {
+          // This version of the subsystem API hasn't been ingested yet?
           IcdGitManager.ingest(
             query.icdDb,
             SubsystemAndVersion(sv.subsystem, sv.maybeVersion),
@@ -338,8 +337,9 @@ case class IcdVersionManager(query: IcdDbQuery) {
             IcdGitManager.allApiVersions,
             updateUnpublishedVersion = false
           )
-          getVersionInfo
+          getVersionInfo(compPath)
         }
+        else None // Might be a reference to a component that has not been defined
       case None => // current, unpublished version
         def getPartVersion(path: String): Option[Int] = {
           val coll     = db.collection[BSONCollection](path)
@@ -347,7 +347,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
           maybeDoc.flatMap(_.int(versionKey))
         }
 
-        def filter(p: IcdPath) = p.subsystem == sv.subsystem && sv.maybeComponent.fold(true)(_ => p.component == path)
+        def filter(p: IcdPath) = p.subsystem == sv.subsystem && sv.maybeComponent.fold(true)(_ => p.component == compPath)
 
         val collectionNames = getCollectionNames
         val icdPaths        = collectionNames.filter(isStdSet).map(IcdPath.apply).filter(filter)
