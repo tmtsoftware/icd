@@ -28,7 +28,7 @@ val optStage = if (sys.env.contains("SCALAJS_PROD")) FullOptStage else FastOptSt
 
 //noinspection ScalaUnusedSymbol
 // Root of the multi-project build
-lazy val root = (project in file("."))
+lazy val icd = (project in file("."))
   .aggregate(icdWebSharedJvm, `icd-db`, icdWebServer, icdWebSharedJvm, docs)
   .settings(commonSettings)
   .enablePlugins(GithubPublishPlugin)
