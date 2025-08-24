@@ -12,7 +12,8 @@ import SummaryInfo.*
 object SummaryTable {
 
   // Insert a <wbr/> tag to help wrapping
-  private def wrapWithWbr(s: String) = raw(s.replace(".", ".<wbr/>").replace("_", "_<wbr/>"))
+//  private def wrapWithWbr(s: String) = raw(s.replace(".", ".<wbr/>").replace("_", "_<wbr/>"))
+  private def wrapWithWbr(s: String) = s
 
   // Insert an element between the elements in the list (like a span with a comma)
   private def intersperse[T](xs: List[T], item: T): List[T] =
