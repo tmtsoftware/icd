@@ -24,9 +24,9 @@ class CachedIcdDbQuery(
   import IcdDbQuery.*
 
   // --- Cached values ---
-  private val allCollectionNames = db.collectionNames.await
+  private lazy val allCollectionNames = db.collectionNames.await
 
-  private val collectionNames = allCollectionNames.filter(collectionNameFilter).toSet
+  private lazy val collectionNames = allCollectionNames.filter(collectionNameFilter).toSet
 
   // Note: this was 99% of the bottleneck: db.collectionExists calls db.getCollectionNames every time!
   override def collectionExists(name: String): Boolean = collectionNames.contains(name)
@@ -35,17 +35,17 @@ class CachedIcdDbQuery(
 
   override def getCollectionNames: Set[String] = collectionNames
 
-  private val entries        = super.getEntries
-  private val components     = super.getComponents(maybePdfOptions)
-  private val subsystemNames = super.getSubsystemNames
+  private lazy val entries        = super.getEntries
+  private lazy val components     = super.getComponents(maybePdfOptions)
+  private lazy val subsystemNames = super.getSubsystemNames
 
-  private val subscribeModelMap = getSubscribeModelMap(components)
-  private val publishModelMap   = getPublishModelMap(components)
-  private val commandModelMap   = getCommandModelMap(components, maybePdfOptions)
-  private val alarmsModelMap    = getAlarmsModelMap(components, maybePdfOptions)
+  private lazy val subscribeModelMap = getSubscribeModelMap(components)
+  private lazy val publishModelMap   = getPublishModelMap(components)
+  private lazy val commandModelMap   = getCommandModelMap(components, maybePdfOptions)
+  private lazy val alarmsModelMap    = getAlarmsModelMap(components, maybePdfOptions)
 
-  private val subscribeInfo  = components.map(c => super.getSubscribeInfo(c, maybePdfOptions))
-  private val publishInfoMap = getPublishInfoMap
+  private lazy val subscribeInfo  = components.map(c => super.getSubscribeInfo(c, maybePdfOptions))
+  private lazy val publishInfoMap = getPublishInfoMap
 
   /**
    * Returns a map from subsystem name to list of PublishInfo for the subsystem

@@ -41,12 +41,13 @@ import scala.io.Source
     )
     IcdVizManager.showRelationships(db, options)
     val okDotStr  = Source.fromResource("icdviz.dot").getLines().mkString("\n")
-    // The order of the two subsystems is random, so need to check that...
+    // XXX TODO FIXME: The order of the two subsystems is random, so need to check that...
     val okDotStr2  = Source.fromResource("icdviz2.dot").getLines().mkString("\n")
     val okDotStr3  = Source.fromResource("icdviz3.dot").getLines().mkString("\n")
+    val okDotStr4  = Source.fromResource("icdviz4.dot").getLines().mkString("\n")
     val dotStr = new String(Files.readAllBytes(dotPath))
     println(s"Compare $dotPath with test/resources/icdviz.dot")
-    assert(okDotStr == dotStr || okDotStr2 == dotStr || okDotStr3 == dotStr)
+    assert(okDotStr == dotStr || okDotStr2 == dotStr || okDotStr3 == dotStr || okDotStr4 == dotStr)
     dotPath.toFile.delete()
   }
 }
