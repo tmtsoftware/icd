@@ -9,7 +9,7 @@ The figure above shows the usage of the `icd-db` program. Its primary purpose is
 Below you see the options for the `icd-db` command, which are listed with the --help option. Some of the options are basic querying of the database, to see what subsystems and components are currently in the local database, and information about them, such as data rates and units used. This can be useful when developing and browsing APIs without bringing up the full system.
 
 ```
-icd-db 3.0.0
+icd-db 3.2.0
 Usage: icd-db [options]
 
   --db <name>              The name of the database to use (default: icds4)
@@ -18,43 +18,29 @@ Usage: icd-db [options]
   -i, --ingest <dir>       Top level directory containing files to ingest into the database
   -l, --list [subsystems|assemblies|hcds|all]
                            Prints a list of ICD subsystems, assemblies, HCDs or all components
-  --listData <subsystem>   Prints a list of event sizes and yearly accumulation of archived data for 
-			   components of the specified subsystem.
-  -u, --allUnits           Prints the set of unique units used in all received commands and published events 
-			   for all components in DB.
-  -c, --component <name>   Specifies the component to be used by any following options 
-			   (subsystem must also be specified)
+  --listData <subsystem>   Prints a list of event sizes and yearly accumulation of archived data for components of the specified subsystem.
+  -u, --allUnits           Prints the set of unique units used in all received commands and published events for all components in DB.
+  -c, --component <name>   Specifies the component to be used by any following options (subsystem must also be specified)
   -s, --subsystem <subsystem>[:version]
                            Specifies the subsystem (and optional version) to be used by any following options
   -t, --subsystem2 <subsystem>[:version]
-                           Specifies the second subsystem (and optional version) in an ICD to be used by 
-			   any following options
-  --component2 <name>      Specifies the subsytem2 component to be used by any following options 
-			   (subsystem2 must also be specified)
+                           Specifies the second subsystem (and optional version) in an ICD to be used by any following options
+  --component2 <name>      Specifies the subsystem2 component to be used by any following options (subsystem2 must also be specified)
   --icdversion <icd-version>
-                           Specifies the version to be used by any following options (overrides subsystem 
-			   and subsystem2 versions)
-  -o, --out <outputFile>   Saves the selected API (or ICD) to the given file in a format based on the file's
- 			   suffix (html, pdf) or generates code for the given API in a language based on the
- 			   suffix ('scala', 'java', 'ts' (typescript), py (python))
+                           Specifies the version to be used by any following options (overrides subsystem and subsystem2 versions)
+  -o, --out <outputFile>   Saves the selected API (or ICD) to the given file in a format based on the file's suffix (html, pdf) or generates code for the given API in a language based on the suffix ('scala', 'java', 'ts' (typescript), py (python))
   --drop [db|subsystem|component]
-                           Drops the specified component, subsystem, or the entire icd database 
-			   (requires restart of icd web app)
+                           Drops the specified component, subsystem, or the entire icd database (requires restart of icd web app)
   --versions <subsystem>   List the version history of the given subsystem
   --diff <subsystem>:<version1>[,version2]
-                           For the given subsystem, list the differences between <version1> and <version2> 
-			   (or the current version)
+                           For the given subsystem, list the differences between <version1> and <version2> (or the current version)
   -m, --missing <outputFile>
-                           Generates a 'Missing Items' report to the given file (dir for csv) in a format 
-			   based on the file's suffix (html, pdf, otherwise text/csv formatted files are
- 			   generated in given dir)
+                           Generates a 'Missing Items' report to the given file (dir for csv) in a format based on the file's suffix (html, pdf, otherwise text/csv formatted files are generated in given dir)
   -a, --archived <outputFile>
-                           Generates an 'Archived Items' report for all subsystems (or the given one) to the
- 			   given file in a format based on the file's suffix (html, pdf, csv)
-  --allSubsystems          Include all subsystems in searches for publishers, subscribers, etc. while 
-			   generating API doc (Default: only consider the one subsystem)
-  --clientApi              Include subscribed events and sent commands in the API dic (Default: only include
-			   published events and received commands)
+                           Generates an 'Archived Items' report for all subsystems (or the given one) to the given file in a format based on the file's suffix (html, pdf, csv)
+  --alarms <outputFile>    Generates an 'Alarms' report for all subsystems (or the given one) to the given file in a format based on the file's suffix (html, pdf, csv)
+  --allSubsystems          Include all subsystems in searches for publishers, subscribers, etc. while generating API doc (Default: only consider the one subsystem)
+  --clientApi              Include subscribed events and sent commands in the API dic (Default: only include published events and received commands)
   --orientation [portrait|landscape]
                            For PDF output: The page orientation (default: landscape)
   --fontSize <size>        For PDF or HTML file output: The base font size in px for body text (default: 10)
