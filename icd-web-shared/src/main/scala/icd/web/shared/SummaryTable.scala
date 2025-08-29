@@ -11,6 +11,9 @@ import SummaryInfo.*
 //noinspection DuplicatedCode
 object SummaryTable {
 
+  // Bootstrap table classes
+  private val tableClasses = "summaryTable table table-striped table-hover w-auto"
+
   // Insert a <wbr/> tag to help wrapping
 //  private def wrapWithWbr(s: String) = raw(s.replace(".", ".<wbr/>").replace("_", "_<wbr/>"))
   private def wrapWithWbr(s: String) = s
@@ -44,6 +47,7 @@ object SummaryTable {
  * @param displayTitle  if true, display the Summary title
  * @return the HTML
  */
+//noinspection DuplicatedCode
 case class SummaryTable(
     subsystemInfo: SubsystemInfo,
     maybeTargetSv: Option[SubsystemWithVersion],
@@ -93,11 +97,14 @@ case class SummaryTable(
       div(
         nh.H3(s"$itemType $heading $sourceStr$targetStr"),
         table(
+          cls := tableClasses,
+          attr("data-toggle") := "table",
+          attr("data-custom-sort") := "icdBootstrapTableCustomSort",
           thead(
             tr(
-              th(s"$publisher Prefix"),
-              if (clientApi || isIcd) th(subscribers) else span,
-              th("Name"),
+              th(attr("data-sortable") := true)(s"$publisher Prefix"),
+              if (clientApi || isIcd) th(attr("data-sortable") := true)(subscribers) else span,
+              th(attr("data-sortable") := true)("Name"),
               if (showYearlyAccum) th("Yearly", br, "Accum.") else span(),
               th("Description")
             )
@@ -151,11 +158,14 @@ case class SummaryTable(
       div(
         nh.H3(s"$itemType $heading $sourceStr$targetStr"),
         table(
+          attr("data-toggle") := "table",
+          attr("data-custom-sort") := "icdBootstrapTableCustomSort",
+          cls := tableClasses,
           thead(
             tr(
-              th(s"$publisher Prefix"),
-              if (isIcd) span() else th(subscriber),
-              th("Name"),
+              th(attr("data-sortable") := true)(s"$publisher Prefix"),
+              if (isIcd) span() else th(attr("data-sortable") := true)(subscriber),
+              th(attr("data-sortable") := true)("Name"),
               th("Description")
             )
           ),
@@ -303,10 +313,13 @@ case class SummaryTable(
         div(
           nh.H3(s"Services Required by $sourceStr$targetStr"),
           table(
+            attr("data-toggle") := "table",
+            attr("data-custom-sort") := "icdBootstrapTableCustomSort",
+            cls := tableClasses,
             thead(
               tr(
-                th("Service Name"),
-                th("Prefix"),
+                th(attr("data-sortable") := true)("Service Name"),
+                th(attr("data-sortable") := true)("Prefix"),
                 th("Path"),
                 th("Method"),
                 th("Description")
@@ -363,11 +376,14 @@ case class SummaryTable(
         div(
           nh.H3(s"Services Provided by $sourceStr$targetStr"),
           table(
+            cls := tableClasses,
+            attr("data-toggle") := "table",
+            attr("data-custom-sort") := "icdBootstrapTableCustomSort",
             thead(
               tr(
-                th("Service Name"),
+                th(attr("data-sortable") := true)("Service Name"),
                 if (clientApi || isIcd) th("Used by") else span,
-                th("Prefix"),
+                th(attr("data-sortable") := true)("Prefix"),
                 th("Path"),
                 th("Method"),
                 th("Description")

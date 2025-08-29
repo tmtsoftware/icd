@@ -92,8 +92,11 @@ lazy val icdWebServer = (project in file("icd-web-server"))
     // triggers scalaJSPipeline when using compile or continuous compilation
     Compile / compile := ((Compile / compile) dependsOn scalaJSPipeline).value,
     libraryDependencies ++=
-      compileScope(filters, guice, playJson, jqueryUi, webjarsPlay, bootstrap, bootstrapTable, bootstrapIcons, swaggerUi) ++
-        testScope(specs2)
+      compileScope(filters, guice, playJson, jquery,
+        //jqueryUi,
+        webjarsPlay, bootstrap, bootstrapTable, bootstrapIcons, swaggerUi) ++
+        testScope(specs2),
+    dependencyOverrides += "org.webjars" %% "jquery" % JQueryVersion
   )
   .enablePlugins(PlayScala, SbtWeb, DockerPlugin)
   .dependsOn(`icd-db`)
@@ -102,10 +105,11 @@ lazy val icdWebServer = (project in file("icd-web-server"))
 val clientJsDeps = Def.setting(
   Seq(
     "org.webjars"     % "jquery"          % JQueryVersion / "jquery.js" minified "jquery.min.js",
-    "org.webjars"     % "jquery-ui"       % JQueryUiVersion / "jquery-ui.min.js" dependsOn "jquery.js",
+//    "org.webjars"     % "jquery-ui"       % JQueryUiVersion / "jquery-ui.min.js" dependsOn "jquery.js",
     "org.webjars.npm" % "bootstrap"       % BootstrapVersion / "bootstrap.bundle.js",
     "org.webjars.npm" % "bootstrap-table" % BootstrapTableVersion / "dist/bootstrap-table.min.js",
-    ProvidedJS / "resize.js" dependsOn "jquery-ui.min.js"
+//    ProvidedJS / "resize.js" dependsOn "jquery-ui.min.js"
+    ProvidedJS / "tableSort.js"
   )
 )
 
@@ -118,6 +122,7 @@ lazy val icdWebClient = (project in file("icd-web-client"))
     Compile / unmanagedSourceDirectories := Seq((Compile / scalaSource).value),
     packageJSDependencies / skip := false,
     jsDependencies ++= clientJsDeps.value,
+    dependencyOverrides += "org.webjars" %% "jquery" % JQueryVersion,
     libraryDependencies ++= clientDeps.value,
     Compile / fastLinkJS / jsMappings += toPathMapping((Compile / packageJSDependencies).value),
     Compile / fullLinkJS / jsMappings += toPathMapping((Compile / packageMinifiedJSDependencies).value),

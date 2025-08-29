@@ -17,7 +17,25 @@ import scalatags.JsDom.TypedTag
 import Headings.idFor
 import icd.web.shared.TitleInfo.unpublished
 
+import scala.scalajs.js
+import scala.scalajs.js.annotation.*
+
+@js.native
+@JSGlobal
+class JQuery extends js.Object {
+  def bootstrapTable(): Unit = js.native
+}
+
+@js.native
+@JSGlobal("jQuery")
+object JQuery extends js.Object {
+  def apply(x: String): JQuery = js.native
+}
+
 object Components {
+
+  // Bootstrap table classes
+  private val tableClasses = "componentTable table table-hover w-auto"
 
   // Id of component info for given component name
   def getComponentInfoId(compName: String): String = compName
@@ -128,6 +146,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   // Action when user clicks on a component link
   private def clickedOnComponent(subsystem: String, component: String)(e: dom.Event): Unit = {
+    println(s"XXX clickedOnComponent: $subsystem, $component")
     e.preventDefault()
     listener.componentSelected(ComponentLink(subsystem, component))
   }
@@ -358,6 +377,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       infoList.foreach(i => displayComponentInfo(i, forApi = false, clientApi = clientApi))
       if (subsystemInfo.sv != targetSubsystemInfo.sv)
         targetInfoList.foreach(i => displayComponentInfo(i, forApi = false, clientApi))
+
+      // This is needed to initialize bootstrap-table to get sorting features
+      JQuery(".summaryTable").bootstrapTable()
+      JQuery(".componentTable").bootstrapTable()
+
       infoList ++ targetInfoList
     }
 
@@ -523,6 +547,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         )
         if (fitsDict.fitsKeys.nonEmpty) mainContent.appendElement(makeFitsKeyTable(fitsDict, sv).render)
         infoList.foreach(i => displayComponentInfo(i, forApi = true, clientApi = clientApi))
+
+        // This is needed to initialize bootstrap-table to get sorting features
+        JQuery(".summaryTable").bootstrapTable()
+        JQuery(".componentTable").bootstrapTable()
+
         infoList
       }
       f.onComplete {
@@ -801,6 +830,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         div(
           h3(s"$pubType Published by $compName"),
           table(
+            cls                    := tableClasses,
             attr("data-bs-toggle") := "table",
             thead(
               tr(
@@ -844,6 +874,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         div(
           h3(s"$pubType Published by $compName"),
           table(
+            cls                    := tableClasses,
             attr("data-bs-toggle") := "table",
             thead(
               tr(
@@ -902,6 +933,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         div(
           h3(s"Alarms Published by $compName"),
           table(
+            cls                    := tableClasses,
             attr("data-bs-toggle") := "table",
             thead(
               tr(
@@ -1036,7 +1068,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           div(
             cls := "componentSection",
             table(
-              cls                    := "componentTable",
+              cls                    := tableClasses,
               attr("data-bs-toggle") := "table",
               thead(
                 tr(
@@ -1132,7 +1164,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         cls := "componentSection",
         h4(s"Command Configurations Received by $compName"),
         table(
-          cls                    := "componentTable",
+          cls                    := tableClasses,
           attr("data-bs-toggle") := "table",
           thead(
             tr(
@@ -1217,7 +1249,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         cls := "componentSection",
         h4(s"Command Configurations Sent by $compName"),
         table(
-          cls                    := "componentTable",
+          cls                    := tableClasses,
           attr("data-bs-toggle") := "table",
           thead(
             tr(
@@ -1287,7 +1319,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         cls := "componentSection",
         h4(s"HTTP Services required by $compName"),
         table(
-          cls                    := "componentTable",
+          cls                    := tableClasses,
           attr("data-bs-toggle") := "table",
           thead(
             tr(
@@ -1376,7 +1408,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         cls := "componentSection",
         h4(s"HTTP Services provided by $compName"),
         table(
-          cls                    := "componentTable",
+          cls                    := tableClasses,
           attr("data-bs-toggle") := "table",
           thead(
             tr(
@@ -1433,7 +1465,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     div(
       table(
-        cls                    := "componentTable",
+        cls                    := tableClasses,
         attr("data-bs-toggle") := "table",
         thead(
           tr(
@@ -1465,7 +1497,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     div(cls := "component container-fluid", id := "FITS-Keys")(
       h3(a(name := "FITS-Keys")("FITS Keywords")),
       table(
-        cls                    := "componentTable",
+        cls                    := tableClasses,
         attr("data-bs-toggle") := "table",
         thead(
           tr(

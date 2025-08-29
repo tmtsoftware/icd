@@ -13,7 +13,7 @@ object Dependencies {
   val BootstrapVersion      = "5.3.7"
   val JQueryVersion         = "3.7.1"
   val JQueryUiVersion       = "1.14.1"
-  val BootstrapTableVersion = "1.24.1"
+  val BootstrapTableVersion = "1.24.2"
   val BootstrapIconsVersion = "1.13.1"
 
   val pekkoActorTyped           = "org.apache.pekko" %% "pekko-actor-typed"           % PekkoVersion
@@ -58,6 +58,7 @@ object Dependencies {
   val jgit           = "org.eclipse.jgit"            % "org.eclipse.jgit" % "7.3.0.202506031305-r"
   val swaggerParser  = "io.swagger.parser.v3"        % "swagger-parser"   % "2.1.30"
   val playJson       = "org.playframework"          %% "play-json"        % PlayJsonVersion
+  val jquery         = "org.webjars"                 % "jquery"           % JQueryVersion
   val jqueryUi       = "org.webjars"                 % "jquery-ui"        % JQueryUiVersion
   val webjarsPlay    = "org.webjars"                %% "webjars-play"     % "3.0.2"
   val bootstrap      = "org.webjars.npm"             % "bootstrap"        % BootstrapVersion

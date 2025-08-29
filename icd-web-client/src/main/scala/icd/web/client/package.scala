@@ -139,4 +139,5 @@ package object client {
     import scalatags.JsDom.all.*
     input(id := nameStr, `type` := "number", min := 0, name := nameStr, value := defaultValue)
   }
+  
 }

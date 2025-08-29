@@ -130,7 +130,7 @@ table {
     margin-right: 16px;
     margin-bottom: 20px;
     padding: 0;
-    table-layout: fixed;
+    table-layout: auto;
     word-wrap: break-word;
     /*word-wrap: break-all;*/
 }

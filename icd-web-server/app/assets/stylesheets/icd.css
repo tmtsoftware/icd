@@ -166,7 +166,7 @@ h2 {
   margin-right: 20px;
   margin-bottom: 20px;
   padding: 0;
-  table-layout: fixed;
+  table-layout: auto;
   word-wrap: break-word;
 }
 @media print {

@@ -124,12 +124,25 @@
 
 #content {
     float: left;
-    padding: 0 0 100px 0
+    padding: 0 0 100px 0;
 }
 
 .componentTable {
-    table-layout: fixed;
+    table-layout: auto;
     max-width: 90%;
+}
+
+.summaryTable {
+    table-layout: auto;
+    max-width: 90%;
+}
+
+.bootstrap-table tr th {
+    padding: 0 13px !important;
+}
+
+.bootstrap-table {
+    margin: 0 0 20px 0;
 }
 
 #fitsTags {
@@ -143,7 +156,7 @@
 
 #fitsTable {
     padding: 10px 0 0 0;
-    table-layout: fixed;
+    table-layout: auto;
     max-width: 90%;
 }
 
