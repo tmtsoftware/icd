@@ -90,7 +90,6 @@ object Components {
       else {
         table(
           cls                    := tableClass,
-          attr("data-bs-toggle") := "table",
           thead(
             tr(newHead.map(th(_)))
           ),
@@ -146,7 +145,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
   // Action when user clicks on a component link
   private def clickedOnComponent(subsystem: String, component: String)(e: dom.Event): Unit = {
-    println(s"XXX clickedOnComponent: $subsystem, $component")
     e.preventDefault()
     listener.componentSelected(ComponentLink(subsystem, component))
   }
@@ -380,7 +378,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
       // This is needed to initialize bootstrap-table to get sorting features
       JQuery(".summaryTable").bootstrapTable()
-      JQuery(".componentTable").bootstrapTable()
 
       infoList ++ targetInfoList
     }
@@ -550,7 +547,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
         // This is needed to initialize bootstrap-table to get sorting features
         JQuery(".summaryTable").bootstrapTable()
-        JQuery(".componentTable").bootstrapTable()
 
         infoList
       }
@@ -831,7 +827,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           h3(s"$pubType Published by $compName"),
           table(
             cls                    := tableClasses,
-            attr("data-bs-toggle") := "table",
             thead(
               tr(
                 th("Name"),
@@ -875,7 +870,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           h3(s"$pubType Published by $compName"),
           table(
             cls                    := tableClasses,
-            attr("data-bs-toggle") := "table",
             thead(
               tr(
                 th("Name"),
@@ -934,7 +928,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           h3(s"Alarms Published by $compName"),
           table(
             cls                    := tableClasses,
-            attr("data-bs-toggle") := "table",
             thead(
               tr(
                 th("Name"),
@@ -1069,7 +1062,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             cls := "componentSection",
             table(
               cls                    := tableClasses,
-              attr("data-bs-toggle") := "table",
               thead(
                 tr(
                   th("Name"),
@@ -1165,7 +1157,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         h4(s"Command Configurations Received by $compName"),
         table(
           cls                    := tableClasses,
-          attr("data-bs-toggle") := "table",
           thead(
             tr(
               th("Name"),
@@ -1250,7 +1241,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         h4(s"Command Configurations Sent by $compName"),
         table(
           cls                    := tableClasses,
-          attr("data-bs-toggle") := "table",
           thead(
             tr(
               th("Name"),
@@ -1320,7 +1310,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         h4(s"HTTP Services required by $compName"),
         table(
           cls                    := tableClasses,
-          attr("data-bs-toggle") := "table",
           thead(
             tr(
               th("Name"),
@@ -1409,7 +1398,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         h4(s"HTTP Services provided by $compName"),
         table(
           cls                    := tableClasses,
-          attr("data-bs-toggle") := "table",
           thead(
             tr(
               th("Name"),
@@ -1466,7 +1454,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     div(
       table(
         cls                    := tableClasses,
-        attr("data-bs-toggle") := "table",
         thead(
           tr(
             th("Subsystem"),
@@ -1498,7 +1485,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       h3(a(name := "FITS-Keys")("FITS Keywords")),
       table(
         cls                    := tableClasses,
-        attr("data-bs-toggle") := "table",
         thead(
           tr(
             th("Name"),
