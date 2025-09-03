@@ -768,7 +768,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         if (eventModel.totalArchiveSpacePerYear.isEmpty) ""
         else if (eventModel.maybeMaxRate.isEmpty) em(eventModel.totalArchiveSpacePerYear).render.outerHTML
         else span(eventModel.totalArchiveSpacePerYear).render.outerHTML
-      val headings = List("Max Rate", "Archive", "Archive Duration", "Bytes per Event", "Year Accumulation")
+      val headings = List("Max Rate", "Archive", "Archive Duration", "Bytes per Event", "Year Accumulation", "Diagnostic Mode")
       val rowList =
         if (showArchiveInfo)
           List(
@@ -777,7 +777,11 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               yesNo(eventModel.archive),
               eventModel.archiveDuration,
               eventModel.totalSizeInBytes.toString,
-              totalArchiveSpacePerYear
+              totalArchiveSpacePerYear,
+              eventModel.diagnosticModes.map{ s =>
+                val linkId = idFor(compName, "handles", "Diagnostic Mode", component.subsystem, component.component, s)
+                a(href := s"#$linkId", s).render.outerHTML
+              }.mkString(", ")
             )
           )
         else Nil
