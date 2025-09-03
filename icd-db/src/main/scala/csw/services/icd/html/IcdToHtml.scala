@@ -921,7 +921,15 @@ object IcdToHtml {
               else if (eventModel.maybeMaxRate.isEmpty) em(eventModel.totalArchiveSpacePerYear).render
               else span(eventModel.totalArchiveSpacePerYear).render
             val headings =
-              List("Max Rate", "Archive", "Archive Duration", "Bytes per Event", "Year Accumulation", "Required Rate", "Diagnostic Mode")
+              List(
+                "Max Rate",
+                "Archive",
+                "Archive Duration",
+                "Bytes per Event",
+                "Year Accumulation",
+                "Required Rate",
+                "Diagnostic Mode"
+              )
             val rowList =
               if (showArchiveInfo)
                 List(
@@ -940,10 +948,15 @@ object IcdToHtml {
                       )
                       .mkString(" ")
                       .trim(),
-                    eventModel.diagnosticModes.map{ s =>
-                      val linkId = idFor(compName, "handles", "Diagnostic Mode", component.subsystem, component.component, s)
-                      a(href := s"#$linkId", s).render
-                    }.mkString(", ")
+                    if (forApi) {
+                      eventModel.diagnosticModes
+                        .map { s =>
+                          val linkId = idFor(compName, "handles", "Diagnostic Mode", component.subsystem, component.component, s)
+                          a(href := s"#$linkId", s).render
+                        }
+                        .mkString(", ")
+                    }
+                    else ""
                   )
                 )
               else Nil

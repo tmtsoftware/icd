@@ -778,10 +778,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
               eventModel.archiveDuration,
               eventModel.totalSizeInBytes.toString,
               totalArchiveSpacePerYear,
-              eventModel.diagnosticModes.map{ s =>
-                val linkId = idFor(compName, "handles", "Diagnostic Mode", component.subsystem, component.component, s)
-                a(href := s"#$linkId", s).render.outerHTML
-              }.mkString(", ")
+              if (forApi) {
+                eventModel.diagnosticModes
+                  .map { s =>
+                    val linkId = idFor(compName, "handles", "Diagnostic Mode", component.subsystem, component.component, s)
+                    a(href := s"#$linkId", s).render.outerHTML
+                  }
+                  .mkString(", ")
+              } else ""
             )
           )
         else Nil

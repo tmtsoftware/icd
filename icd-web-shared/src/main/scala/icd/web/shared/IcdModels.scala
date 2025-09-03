@@ -580,10 +580,10 @@ object IcdModels {
 
     // String describing estimated space required per hour to archive this event (if archive is true)
     lazy val totalArchiveSpacePerHour: String =
-      if (archive) bytesToString(totalArchiveBytesPerYear / (365 * operatingHoursPerNight)) else ""
+      if (diagnosticModes.isEmpty && archive) bytesToString(totalArchiveBytesPerYear / (365 * operatingHoursPerNight)) else ""
 
     // String describing estimated space required per year to archive this event (if archive is true)
-    lazy val totalArchiveSpacePerYear: String = if (archive) bytesToString(totalArchiveBytesPerYear) else ""
+    lazy val totalArchiveSpacePerYear: String = if (diagnosticModes.isEmpty && archive) bytesToString(totalArchiveBytesPerYear) else ""
   }
 
   /**
