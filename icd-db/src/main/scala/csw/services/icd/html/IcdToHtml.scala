@@ -406,8 +406,9 @@ object IcdToHtml {
           ),
           tbody(
             for (mode <- diagnosticModes) yield {
+              val linkId = idFor(compName, "handles", "Diagnostic Mode", component.subsystem, component.component, mode.hint)
               tr(
-                td(mode.hint),
+                td(a(name := linkId, id := linkId)(mode.hint)),
                 td(raw(mode.description))
               )
             }

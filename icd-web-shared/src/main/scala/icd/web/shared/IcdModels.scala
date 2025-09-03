@@ -337,7 +337,9 @@ object IcdModels {
    * @param hint name of the diag mode (hint param in the csw API)
    * @param description description of what the component does when it receives the command to enter this diag mode
    */
-  case class DiagnosticMode(hint: String, description: String)
+  case class DiagnosticMode(hint: String, description: String) extends NameDesc {
+    override val name: String = hint
+  }
 
   /**
    * Model for commands received and sent by component: See resources/command-schema.conf

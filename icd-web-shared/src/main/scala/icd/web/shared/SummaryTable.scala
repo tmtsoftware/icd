@@ -80,6 +80,7 @@ case class SummaryTable(
       case "published by" => ("publishes", "Publisher", "Subscribers")
       case "received by"  => ("receives", "Receiver", "Senders")
       case "provided by"  => ("provides", "Provider", "Consumers")
+      case "handled by"  => ("handles", "Component", "")
     }
 
     val targetStr       = if (maybeTargetSv.isDefined) s" $prep ${maybeTargetSv.get.subsystem}$targetComponentPart" else ""
@@ -97,13 +98,13 @@ case class SummaryTable(
       div(
         nh.H3(s"$itemType $heading $sourceStr$targetStr"),
         table(
-          cls := tableClasses,
-          attr("data-toggle") := "table",
+          cls                      := tableClasses,
+          attr("data-toggle")      := "table",
           attr("data-custom-sort") := "icdBootstrapTableCustomSort",
           thead(
             tr(
               th(attr("data-sortable") := true)(s"$publisher Prefix"),
-              if (clientApi || isIcd) th(attr("data-sortable") := true)(subscribers) else span,
+              if ((clientApi || isIcd) && subscribers.nonEmpty) th(attr("data-sortable") := true)(subscribers) else span,
               th(attr("data-sortable") := true)("Name"),
               if (showYearlyAccum) th("Yearly", br, "Accum.") else span(),
               th("Description")
@@ -115,7 +116,7 @@ case class SummaryTable(
             } yield {
               tr(
                 td(p(a(href := s"#${info.publisher.component}")(wrapWithWbr(info.publisher.prefix)))),
-                if (clientApi || isIcd) td(p(addCommas(info.subscribers.map(linkToSubscriber)))) else span(),
+                if ((clientApi || isIcd) && subscribers.nonEmpty) td(p(addCommas(info.subscribers.map(linkToSubscriber)))) else span(),
                 td(
                   p(
                     a(
@@ -158,9 +159,9 @@ case class SummaryTable(
       div(
         nh.H3(s"$itemType $heading $sourceStr$targetStr"),
         table(
-          attr("data-toggle") := "table",
+          attr("data-toggle")      := "table",
           attr("data-custom-sort") := "icdBootstrapTableCustomSort",
-          cls := tableClasses,
+          cls                      := tableClasses,
           thead(
             tr(
               th(attr("data-sortable") := true)(s"$publisher Prefix"),
@@ -313,9 +314,9 @@ case class SummaryTable(
         div(
           nh.H3(s"Services Required by $sourceStr$targetStr"),
           table(
-            attr("data-toggle") := "table",
+            attr("data-toggle")      := "table",
             attr("data-custom-sort") := "icdBootstrapTableCustomSort",
-            cls := tableClasses,
+            cls                      := tableClasses,
             thead(
               tr(
                 th(attr("data-sortable") := true)("Service Name"),
@@ -376,8 +377,8 @@ case class SummaryTable(
         div(
           nh.H3(s"Services Provided by $sourceStr$targetStr"),
           table(
-            cls := tableClasses,
-            attr("data-toggle") := "table",
+            cls                      := tableClasses,
+            attr("data-toggle")      := "table",
             attr("data-custom-sort") := "icdBootstrapTableCustomSort",
             thead(
               tr(
@@ -449,6 +450,12 @@ case class SummaryTable(
         commands <- info.commands.toList
         command  <- commands.commandsReceived
       } yield PublishedItem(info.componentModel, command.receiveCommandModel, command.senders.distinct)
+      
+      val diagnosticModes = for {
+        info     <- infoList
+        commands <- info.commands.toList
+        diagnosticMode  <- commands.diagnosticModes
+      } yield PublishedItem(info.componentModel, diagnosticMode, Nil)
 
       // For ICDs, list the service paths (routes) used by the client
       val providedServicesForIcd = if (isIcd) {
@@ -485,6 +492,10 @@ case class SummaryTable(
         publishedSummaryMarkup("Images", publishedImages, "Published by", "for"),
         publishedSummaryMarkup("Alarms", publishedAlarms, "Published by", "for"),
         publishedSummaryMarkup("Commands", receivedCommands, "Received by", "from"),
+        if (!isIcd)
+          publishedSummaryMarkup("Diagnostic Modes", diagnosticModes, "Handled by", "")
+        else
+          div(),
         if (isIcd)
           serviceProviderSummaryMarkup(providedServicesForIcd)
         else
