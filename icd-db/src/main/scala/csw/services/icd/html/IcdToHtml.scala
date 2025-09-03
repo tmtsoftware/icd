@@ -6,7 +6,15 @@ import scalatags.Text
 import Headings.idFor
 import HtmlMarkup.yesNo
 import csw.services.icd.db.IcdDb
-import icd.web.shared.IcdModels.{AlarmModel, CommandResultModel, ComponentModel, EventModel, MetadataModel, ParameterModel}
+import icd.web.shared.IcdModels.{
+  AlarmModel,
+  CommandResultModel,
+  ComponentModel,
+  DiagnosticMode,
+  EventModel,
+  MetadataModel,
+  ParameterModel
+}
 
 /**
  * Handles converting model files to static HTML for use in generating a PDF
@@ -378,6 +386,37 @@ object IcdToHtml {
     }
   }
 
+  // Generates the HTML markup to display the diagnostic modes a component handles
+  private def diagnosticModesMarkup(component: ComponentModel, diagnosticModes: List[DiagnosticMode], nh: NumberedHeadings) = {
+    import scalatags.Text.all.*
+
+    // Only display non-empty tables
+    if (diagnosticModes.isEmpty) div()
+    else {
+      val compName = component.component
+      div(
+        cls := "componentSection",
+        nh.H4(s"Diagnostic modes handled by $compName"),
+        table(
+          thead(
+            tr(
+              th("Hint"),
+              th("Description")
+            )
+          ),
+          tbody(
+            for (mode <- diagnosticModes) yield {
+              tr(
+                td(mode.hint),
+                td(raw(mode.description))
+              )
+            }
+          )
+        )
+      )
+    }
+  }
+
   // Generates the markup for the commands section (description plus received and sent)
   private def commandsMarkup(
       component: ComponentModel,
@@ -391,12 +430,15 @@ object IcdToHtml {
     maybeCommands match {
       case None => div()
       case Some(commands) =>
-        if (commands.commandsReceived.nonEmpty || (commands.commandsSent.nonEmpty && forApi && clientApi)) {
+        if (
+          commands.commandsReceived.nonEmpty || (commands.commandsSent.nonEmpty && forApi && clientApi) || commands.diagnosticModes.nonEmpty
+        ) {
           div(
             nh.H3(s"Commands for ${component.component}"),
             raw(commands.description),
             receivedCommandsMarkup(component, commands.commandsReceived, nh, pdfOptions, clientApi),
-            if (forApi && clientApi) sentCommandsMarkup(component, commands.commandsSent, nh, pdfOptions) else div()
+            if (forApi && clientApi) sentCommandsMarkup(component, commands.commandsSent, nh, pdfOptions) else div(),
+            diagnosticModesMarkup(component, commands.diagnosticModes, nh)
           )
         }
         else div()

@@ -353,7 +353,7 @@ object IcdComponentInfo {
       case None => None
       case Some(m) =>
         if (sent.nonEmpty || received.nonEmpty)
-          Some(Commands(m.description, received, sent))
+          Some(Commands(m.description, received, sent, Nil))
         else None
     }
   }

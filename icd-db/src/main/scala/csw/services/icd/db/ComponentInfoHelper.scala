@@ -247,6 +247,7 @@ class ComponentInfoHelper(
             sent.component,
             "",
             Nil,
+            Nil,
             Nil
           )
         )
@@ -265,6 +266,22 @@ class ComponentInfoHelper(
   }
 
   /**
+   * Gets a list of diagnostic modes that the command handles
+   *
+   * @param models model objects for component
+   */
+  private def getDiagnosticModes(
+      models: IcdModels
+  ): List[DiagnosticMode] = {
+    for {
+      cmd             <- models.commandModel.toList
+      diagnosticModes <- cmd.diagnosticModes
+    } yield {
+      diagnosticModes
+    }
+  }
+
+  /**
    * Gets a list of commands sent or received by the component
    *
    * @param models model objects for component
@@ -273,14 +290,15 @@ class ComponentInfoHelper(
       models: IcdModels,
       maybePdfOptions: Option[PdfOptions]
   ): Option[Commands] = {
-    val received = getCommandsReceived(models, maybePdfOptions)
-    val sent     = if (clientApi) getCommandsSent(models, maybePdfOptions) else Nil
+    val received        = getCommandsReceived(models, maybePdfOptions)
+    val sent            = if (clientApi) getCommandsSent(models, maybePdfOptions) else Nil
+    val diagnosticModes = getDiagnosticModes(models)
     models.commandModel match {
       case None => None
       case Some(m) =>
         val desc = m.description
-        if (desc.nonEmpty || sent.nonEmpty || received.nonEmpty)
-          Some(Commands(desc, received, sent))
+        if (desc.nonEmpty || sent.nonEmpty || received.nonEmpty || diagnosticModes.nonEmpty)
+          Some(Commands(desc, received, sent, diagnosticModes))
         else None
     }
   }

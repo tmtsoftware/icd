@@ -333,6 +333,13 @@ object IcdModels {
   ) extends SubsystemComponentName
 
   /**
+   * Model for a single diagnostic mode
+   * @param hint name of the diag mode (hint param in the csw API)
+   * @param description description of what the component does when it receives the command to enter this diag mode
+   */
+  case class DiagnosticMode(hint: String, description: String)
+
+  /**
    * Model for commands received and sent by component: See resources/command-schema.conf
    */
   case class CommandModel(
@@ -340,7 +347,8 @@ object IcdModels {
       component: String,
       description: String,
       receive: List[ReceiveCommandModel],
-      send: List[SendCommandModel]
+      send: List[SendCommandModel],
+      diagnosticModes: List[DiagnosticMode]
   )
 
   /**
@@ -535,6 +543,7 @@ object IcdModels {
    * @param archive true if publisher recommends archiving this event
    * @param archiveDuration lifetime of the archiving (example: '2 years', '6 months'): Required if archive is true.
    * @param parameterList parameters for the event
+   * @param diagnosticModes the event is only fired if the component is in one of the given diagnostic modes
    */
   case class EventModel(
       name: String,
@@ -546,7 +555,8 @@ object IcdModels {
       maybeMaxRate: Option[Double],
       archive: Boolean,
       archiveDuration: String,
-      parameterList: List[ParameterModel]
+      parameterList: List[ParameterModel],
+      diagnosticModes: List[String]
   ) extends NameDesc {
     import EventModel.*
 
@@ -560,8 +570,10 @@ object IcdModels {
 
     // Estimated number of bytes to archive this event at the maxRate for a year
     lazy val totalArchiveBytesPerYear: Long = {
-      val (maxRate, _) = getMaxRate(maybeMaxRate)
-      math.round(totalSizeInBytes * maxRate * hzToCpy)
+      if (diagnosticModes.nonEmpty) 0L else {
+        val (maxRate, _) = getMaxRate(maybeMaxRate)
+        math.round(totalSizeInBytes * maxRate * hzToCpy)
+      }
     }
 
     // String describing estimated space required per hour to archive this event (if archive is true)

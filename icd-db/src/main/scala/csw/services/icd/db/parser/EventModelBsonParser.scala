@@ -32,7 +32,8 @@ object EventModelBsonParser {
       archiveDuration = doc.string("archiveDuration").getOrElse(""),
       parameterList =
         for (subDoc <- doc.children(attrKey))
-          yield ParameterModelBsonParser(subDoc, maybePdfOptions, fitsKeyMap, maybeSv, Some(name))
+          yield ParameterModelBsonParser(subDoc, maybePdfOptions, fitsKeyMap, maybeSv, Some(name)),
+      diagnosticModes = doc.getAsOpt[Array[String]]("diagnosticModes").map(_.toList).getOrElse(Nil),
     )
   }
 }

@@ -44,7 +44,7 @@ object ComponentInfo {
     val newImageList        = oldImageList.filter(p => p.subscribers.nonEmpty)
 
     val newCommandsReceived = oldCommandsReceived.filter(p => p.senders.nonEmpty)
-    val newCommandsSent = oldCommandsSent.filter(p => p.receiver.nonEmpty)
+    val newCommandsSent     = oldCommandsSent.filter(p => p.receiver.nonEmpty)
 
     val newServicesProvided = oldServicesProvided.filter(p => p.requiredBy.nonEmpty)
     val newServicesRequired = oldServicesRequired.filter(p => p.maybeServiceModelProvider.nonEmpty)
@@ -111,7 +111,6 @@ case class ComponentInfo(
  * @param subscribers a list of the other components that subscribe to this item
  */
 case class EventOrImageInfo(model: NameDesc, subscribers: List[SubscribeInfo])
-
 
 /**
  * Describes a published event
@@ -260,13 +259,19 @@ case class ReceivedCommandInfo(receiveCommandModel: ReceiveCommandModel, senders
  * @param description      optional top level description of commands (in html format, after markdown processing)
  * @param commandsReceived a list of commands received be this component
  * @param commandsSent     a list of commands sent by this component
+ * @param diagnosticModes  a list of diagnostic modes handled by this component
  */
-case class Commands(description: String, commandsReceived: List[ReceivedCommandInfo], commandsSent: List[SentCommandInfo]) {
+case class Commands(
+    description: String,
+    commandsReceived: List[ReceivedCommandInfo],
+    commandsSent: List[SentCommandInfo],
+    diagnosticModes: List[DiagnosticMode]
+) {
 
   /**
    * True if at the component sends or receives commands
    */
-  def nonEmpty: Boolean = commandsReceived.nonEmpty || commandsSent.nonEmpty
+  def nonEmpty: Boolean = commandsReceived.nonEmpty || commandsSent.nonEmpty || diagnosticModes.nonEmpty
 
 }
 

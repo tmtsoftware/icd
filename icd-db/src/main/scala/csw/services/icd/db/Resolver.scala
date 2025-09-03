@@ -210,7 +210,8 @@ case class Resolver(allModels: List[IcdModels]) {
       component = commandModel.component,
       description = commandModel.description,
       receive = commandModel.receive.map(m => resolveReceiveCommandModel(commandModel, m)),
-      send = commandModel.send
+      send = commandModel.send,
+      diagnosticModes = commandModel.diagnosticModes
     )
   }
 
@@ -374,9 +375,13 @@ case class Resolver(allModels: List[IcdModels]) {
               eventModel.parameterList
                 .map(parameterModel => resolveEventParameter(publishModel, eventModel, section, parameterModel))
             else
-              refEventModel.parameterList.map(parameterModel =>
-                resolveEventParameter(publishModel, eventModel, section, parameterModel)
-              )
+              refEventModel.parameterList
+                .map(parameterModel => resolveEventParameter(publishModel, eventModel, section, parameterModel)),
+          diagnosticModes =
+            if (eventModel.diagnosticModes.nonEmpty)
+              eventModel.diagnosticModes
+            else
+              refEventModel.diagnosticModes
         )
       case Failure(ex) =>
         eventModel.copy(ref = "", refError = s"Error: ${ex.getMessage}")

@@ -1,7 +1,7 @@
 package csw.services.icd.db.parser
 
 import csw.services.icd.html.HtmlMarkup
-import icd.web.shared.IcdModels.{CommandModel, CommandResultModel, ReceiveCommandModel, SendCommandModel}
+import icd.web.shared.IcdModels.{CommandModel, CommandResultModel, DiagnosticMode, ReceiveCommandModel, SendCommandModel}
 import icd.web.shared.PdfOptions
 import reactivemongo.api.bson.*
 
@@ -65,6 +65,18 @@ object SendCommandModelBsonParser {
 }
 
 /**
+ * Model for diagnostic modes that a command handles
+ */
+object DiagnosticModesBsonParser {
+  def apply(doc: BSONDocument, maybePdfOptions: Option[PdfOptions]): DiagnosticMode = {
+    DiagnosticMode(
+      hint = doc.string("hint").get,
+      description = doc.string("description").map(s => HtmlMarkup.gfmToHtml(s, maybePdfOptions)).getOrElse("")
+    )
+  }
+}
+
+/**
  * Model for commands
  */
 object CommandModelBsonParser {
@@ -81,7 +93,10 @@ object CommandModelBsonParser {
               yield ReceiveCommandModelBsonParser(subDoc, maybePdfOptions),
           send =
             for (subDoc <- doc.children("send"))
-              yield SendCommandModelBsonParser(subDoc)
+              yield SendCommandModelBsonParser(subDoc),
+          diagnosticModes =
+            for (subDoc <- doc.children("diagnosticModes"))
+              yield DiagnosticModesBsonParser(subDoc, maybePdfOptions),
         )
       )
   }

@@ -89,7 +89,7 @@ object Components {
       if (newHead.isEmpty) div()
       else {
         table(
-          cls                    := tableClass,
+          cls := tableClass,
           thead(
             tr(newHead.map(th(_)))
           ),
@@ -826,7 +826,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         div(
           h3(s"$pubType Published by $compName"),
           table(
-            cls                    := tableClasses,
+            cls := tableClasses,
             thead(
               tr(
                 th("Name"),
@@ -869,7 +869,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         div(
           h3(s"$pubType Published by $compName"),
           table(
-            cls                    := tableClasses,
+            cls := tableClasses,
             thead(
               tr(
                 th("Name"),
@@ -927,7 +927,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         div(
           h3(s"Alarms Published by $compName"),
           table(
-            cls                    := tableClasses,
+            cls := tableClasses,
             thead(
               tr(
                 th("Name"),
@@ -1061,7 +1061,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           div(
             cls := "componentSection",
             table(
-              cls                    := tableClasses,
+              cls := tableClasses,
               thead(
                 tr(
                   th("Name"),
@@ -1156,7 +1156,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         cls := "componentSection",
         h4(s"Command Configurations Received by $compName"),
         table(
-          cls                    := tableClasses,
+          cls := tableClasses,
           thead(
             tr(
               th("Name"),
@@ -1182,6 +1182,38 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
                   if (clientApi) td(p(r.senders.distinct.map(makeLinkForComponent))) else span
                 ),
                 row
+              )
+            }
+          )
+        )
+      )
+    }
+  }
+
+  // Generates the HTML markup to display the diagnostic modes a component handles
+  private def diagnosticModesMarkup(component: ComponentModel, diagnosticModes: List[DiagnosticMode]) = {
+    import scalatags.JsDom.all.*
+
+    // Only display non-empty tables
+    if (diagnosticModes.isEmpty) div()
+    else {
+      val compName = component.component
+      div(
+        cls := "componentSection",
+        h4(s"Diagnostic modes handled by $compName"),
+        table(
+          cls := tableClasses,
+          thead(
+            tr(
+              th("Hint"),
+              th("Description")
+            )
+          ),
+          tbody(
+            for (mode <- diagnosticModes) yield {
+              tr(
+                td(mode.hint),
+                td(raw(mode.description))
               )
             }
           )
@@ -1240,7 +1272,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         cls := "componentSection",
         h4(s"Command Configurations Sent by $compName"),
         table(
-          cls                    := tableClasses,
+          cls := tableClasses,
           thead(
             tr(
               th("Name"),
@@ -1268,7 +1300,8 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
             h3(s"Commands for $compName"),
             raw(commands.description),
             receivedCommandsMarkup(component, commands.commandsReceived, clientApi),
-            if (clientApi) sentCommandsMarkup(component, commands.commandsSent) else span
+            if (clientApi) sentCommandsMarkup(component, commands.commandsSent) else span,
+            diagnosticModesMarkup(component, commands.diagnosticModes)
           )
     }
   }
@@ -1309,7 +1342,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         cls := "componentSection",
         h4(s"HTTP Services required by $compName"),
         table(
-          cls                    := tableClasses,
+          cls := tableClasses,
           thead(
             tr(
               th("Name"),
@@ -1397,7 +1430,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         cls := "componentSection",
         h4(s"HTTP Services provided by $compName"),
         table(
-          cls                    := tableClasses,
+          cls := tableClasses,
           thead(
             tr(
               th("Name"),
@@ -1453,7 +1486,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
 
     div(
       table(
-        cls                    := tableClasses,
+        cls := tableClasses,
         thead(
           tr(
             th("Subsystem"),
@@ -1484,7 +1517,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
     div(cls := "component container-fluid", id := "FITS-Keys")(
       h3(a(name := "FITS-Keys")("FITS Keywords")),
       table(
-        cls                    := tableClasses,
+        cls := tableClasses,
         thead(
           tr(
             th("Name"),
