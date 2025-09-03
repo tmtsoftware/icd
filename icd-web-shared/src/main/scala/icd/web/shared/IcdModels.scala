@@ -558,7 +558,8 @@ object IcdModels {
       archive: Boolean,
       archiveDuration: String,
       parameterList: List[ParameterModel],
-      diagnosticModes: List[String]
+      diagnosticModes: List[String],
+      diagnosticModeOnly: Boolean
   ) extends NameDesc {
     import EventModel.*
 
@@ -572,18 +573,16 @@ object IcdModels {
 
     // Estimated number of bytes to archive this event at the maxRate for a year
     lazy val totalArchiveBytesPerYear: Long = {
-      if (diagnosticModes.nonEmpty) 0L else {
-        val (maxRate, _) = getMaxRate(maybeMaxRate)
-        math.round(totalSizeInBytes * maxRate * hzToCpy)
-      }
+      val (maxRate, _) = getMaxRate(maybeMaxRate)
+      math.round(totalSizeInBytes * maxRate * hzToCpy)
     }
 
     // String describing estimated space required per hour to archive this event (if archive is true)
     lazy val totalArchiveSpacePerHour: String =
-      if (diagnosticModes.isEmpty && archive) bytesToString(totalArchiveBytesPerYear / (365 * operatingHoursPerNight)) else ""
+      if (archive) bytesToString(totalArchiveBytesPerYear / (365 * operatingHoursPerNight)) else ""
 
     // String describing estimated space required per year to archive this event (if archive is true)
-    lazy val totalArchiveSpacePerYear: String = if (diagnosticModes.isEmpty && archive) bytesToString(totalArchiveBytesPerYear) else ""
+    lazy val totalArchiveSpacePerYear: String = if (archive) bytesToString(totalArchiveBytesPerYear) else ""
   }
 
   /**

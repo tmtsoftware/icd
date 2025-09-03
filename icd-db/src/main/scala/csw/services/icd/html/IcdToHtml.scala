@@ -927,8 +927,7 @@ object IcdToHtml {
                 "Archive Duration",
                 "Bytes per Event",
                 "Year Accumulation",
-                "Required Rate",
-                "Diagnostic Mode"
+                "Required Rate"
               )
             val rowList =
               if (showArchiveInfo)
@@ -947,16 +946,7 @@ object IcdToHtml {
                         )
                       )
                       .mkString(" ")
-                      .trim(),
-                    if (forApi) {
-                      eventModel.diagnosticModes
-                        .map { s =>
-                          val linkId = idFor(compName, "handles", "Diagnostic Mode", component.subsystem, component.component, s)
-                          a(href := s"#$linkId", s).render
-                        }
-                        .mkString(", ")
-                    }
-                    else ""
+                      .trim()
                   )
                 )
               else Nil
@@ -989,6 +979,16 @@ object IcdToHtml {
                   if (eventModel.refError.startsWith("Error:")) makeErrorDiv(eventModel.refError) else div(),
                   subscriberUsage,
                   if (showArchiveInfo) HtmlMarkup.mkTable(headings, rowList) else div(),
+                  if (eventModel.diagnosticModes.nonEmpty) {
+                    val s = if (eventModel.diagnosticModeOnly) "only" else "also"
+                    val modes = eventModel.diagnosticModes
+                      .map { s =>
+                        val linkId = idFor(compName, "handles", "Diagnostic Mode", component.subsystem, component.component, s)
+                        println(s"linkId = $linkId, s = $s")
+                        span(a(href := s"#$linkId", s), " ")
+                      }
+                    div(s"* Event is $s fired in these diagnostic modes: ", modes)
+                  } else div(),
                   eventParameterListListMarkup(eventModel.name, eventModel.parameterList, forApi, Some(linkId)),
                   hr
                 )

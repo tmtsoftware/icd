@@ -34,6 +34,7 @@ object EventModelBsonParser {
         for (subDoc <- doc.children(attrKey))
           yield ParameterModelBsonParser(subDoc, maybePdfOptions, fitsKeyMap, maybeSv, Some(name)),
       diagnosticModes = doc.getAsOpt[Array[String]]("diagnosticModes").map(_.toList).getOrElse(Nil),
+      diagnosticModeOnly = doc.booleanLike("diagnosticModeOnly").getOrElse(false),
     )
   }
 }

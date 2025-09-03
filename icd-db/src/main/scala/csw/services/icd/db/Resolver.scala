@@ -381,7 +381,9 @@ case class Resolver(allModels: List[IcdModels]) {
             if (eventModel.diagnosticModes.nonEmpty)
               eventModel.diagnosticModes
             else
-              refEventModel.diagnosticModes
+              refEventModel.diagnosticModes,
+          diagnosticModeOnly =
+            if (eventModel.diagnosticModeOnly) eventModel.diagnosticModeOnly else refEventModel.diagnosticModeOnly
         )
       case Failure(ex) =>
         eventModel.copy(ref = "", refError = s"Error: ${ex.getMessage}")
