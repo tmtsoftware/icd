@@ -536,7 +536,7 @@ An example `component-model.conf` file (for the TCS Pointing Kernel Assembly, de
 ```
 subsystem = TCS
 component = TCS PK Assembly
-modelVersion = "3.0"
+modelVersion = "4.0"
 wbsId = tmt.tel.cont.tcs.tpk
 title = "Telescope Pointing Kernel Assembly"
 componentType = Assembly
@@ -871,6 +871,8 @@ The fields of an event item are shown in the table below:
 |archive| no| A Boolean (true/false) stating whether the component recommends archiving this eventitem.|
 |archiveDuration| if archive is true| Lifetime of the archiving (for example ‘2 years’ or ‘6 months’)|
 |parameters| yes| A container of parameters that belong to this event item.|
+|diagnosticModes|no| List of diagnostic modes in which the event is published.|
+|diagnosticModeOnly|no| A Boolean indicating if the event is only published in the given diagnostic modes.|
 
 Unlike an EPICS channel, a CSW event can contain several associated keys and values (called parameters in the schema).
 
