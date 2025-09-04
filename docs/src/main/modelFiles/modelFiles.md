@@ -854,6 +854,7 @@ Events fall into the following categories. The purpose of the categories is to e
 
 |Category| Description|
 |-------:|:-----------|
+|ARCHIVE| An event that is intended only for the TIO Engineering Archive.|
 |DEMAND| An event that is used to transmit a desired position. These events are high frequency/periodic and should not be archived long-term or should be seriously curated into a smaller representative collection.|
 |CONTROL| Similar to a DEMAND, but probably not periodic and considerably less frequent. CONTROL events are events driving other devices, but may be internal to a system. These also may be curated.|
 |EVENT| An event that is used to indicate that something has happened.  Observe Events are one EVENT type.|
@@ -864,7 +865,7 @@ The fields of an event item are shown in the table below:
 |Field| Required?| Notes|
 |----:|:--------:|:-----|
 |name| yes| The name of the event item. This should be a simple name like “zenithAngle”. The prefix for all events is subsystem.component.|
-|category| no| The event category (One of: DEMAND, CONTROL, EVENT, STATUS).|
+|category| no| The event category (One of: ARCHIVE, DEMAND, CONTROL, EVENT, STATUS).|
 |description| no| An optional description of a single event item (may contain Markdown and HTML). The description is in triple quotes for multi-lined text. Note that spaces between paragraphs are retained.|
 |requirements| no| List of requirements that flow to this item.|
 |maxRate| no| Maximum publishing rate in Hz.|

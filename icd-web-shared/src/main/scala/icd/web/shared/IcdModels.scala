@@ -511,7 +511,7 @@ object IcdModels {
   object EventModel {
     // Use 1hz if maxRate is not defined and display the result in italics
     val defaultMaxRate       = 1.0
-    val eventCategories      = List("DEMAND", "CONTROL", "EVENT", "STATUS")
+    val eventCategories      = List("ARCHIVE", "DEMAND", "CONTROL", "EVENT", "STATUS")
     val defaultEventCategory = "STATUS"
 
     // Returns a pair of (maxRate, defaultUsed), where defaultUsed is true if maxRate is None or 0
