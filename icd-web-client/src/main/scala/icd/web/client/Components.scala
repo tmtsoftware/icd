@@ -789,14 +789,14 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
         if (showArchiveInfo) mkTable(headings, rowList) else div(),
         if (showArchiveInfo && eventModel.maybeMaxRate.isEmpty) div("* Default maxRate of 1 Hz assumed.") else div(),
         if (eventModel.diagnosticModes.nonEmpty) {
-          val s = if (eventModel.diagnosticModeOnly) "only" else "also"
+          val onlyAlso = if (eventModel.diagnosticModeOnly) "only" else "also"
           val modes = eventModel.diagnosticModes
             .map { s =>
               val linkId = idFor(compName, "handles", "Diagnostic Mode", component.subsystem, component.component, s)
               println(s"linkId = $linkId, s = $s")
               span(a(href := s"#$linkId", s), " ")
             }
-          div(s"* Event is $s fired in these diagnostic modes: ", modes)
+          div(s"* Event is $onlyAlso fired in these diagnostic modes: ", modes)
         } else div(),
         eventParameterListMarkup(eventModel.parameterList, forApi, maybeEventId),
         if (pubType == "Events") p(strong("Category: "), eventModel.getCategory) else span()

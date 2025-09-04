@@ -980,14 +980,14 @@ object IcdToHtml {
                   subscriberUsage,
                   if (showArchiveInfo) HtmlMarkup.mkTable(headings, rowList) else div(),
                   if (eventModel.diagnosticModes.nonEmpty) {
-                    val s = if (eventModel.diagnosticModeOnly) "only" else "also"
+                    val onlyAlso = if (eventModel.diagnosticModeOnly) "only" else "also"
                     val modes = eventModel.diagnosticModes
                       .map { s =>
                         val linkId = idFor(compName, "handles", "Diagnostic Mode", component.subsystem, component.component, s)
                         println(s"linkId = $linkId, s = $s")
                         span(a(href := s"#$linkId", s), " ")
                       }
-                    div(s"* Event is $s fired in these diagnostic modes: ", modes)
+                    div(s"* Event is $onlyAlso fired in these diagnostic modes: ", modes)
                   } else div(),
                   eventParameterListListMarkup(eventModel.name, eventModel.parameterList, forApi, Some(linkId)),
                   hr
