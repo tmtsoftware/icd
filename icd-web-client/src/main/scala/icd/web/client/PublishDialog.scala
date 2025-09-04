@@ -55,12 +55,12 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
     val s           = if (unpublish) "Unpublish" else "Publish"
     val buttonTitle = s"$s the selected API, or ICD if two APIs are selected"
     button(
-      `type` := "submit",
-      cls := buttonClass,
-      id := buttonId,
-      title := buttonTitle,
-      disabled := true,
-      onclick := publishButtonClicked(unpublish),
+      `type`                 := "submit",
+      cls                    := buttonClass,
+      id                     := buttonId,
+      title                  := buttonTitle,
+      disabled               := true,
+      onclick                := publishButtonClicked(unpublish),
       attr("data-bs-toggle") := "modal",
       attr("data-bs-target") := "#publishModal"
     )(s).render
@@ -160,7 +160,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
   // Displays a Publish API button in the table that just jumps to the main publish button
   private def readyToPublishButton(publishInfo: PublishInfo): Button = {
     button(
-      title := s"Enter your GitHub credentials to Publish the API for ${publishInfo.subsystem} ...",
+      title   := s"Enter your GitHub credentials to Publish the API for ${publishInfo.subsystem} ...",
       onclick := readyToPublishHandler(publishInfo)
     )("Ready to Publish...").render
   }
@@ -168,12 +168,12 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
   // Publish comment box
   private val commentBox = {
     textarea(
-      cls := "form-control",
-      name := "comments",
-      rows := 10,
-      cols := 80,
+      cls         := "form-control",
+      name        := "comments",
+      rows        := 10,
+      cols        := 80,
       placeholder := "Enter publish comment here...",
-      onkeyup := (() => commentChanged())
+      onkeyup     := (() => commentChanged())
     ).render
   }
 
@@ -195,11 +195,11 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
   // Publish user name field
   private val usernameBox = {
     input(
-      cls := "form-control",
+      cls  := "form-control",
       name := "github-username",
-      id := "github-username",
+      id   := "github-username",
       required,
-      onkeyup := (() => usernameChanged()),
+      onkeyup     := (() => usernameChanged()),
       placeholder := "Enter your GitHub user name..."
     ).render
   }
@@ -224,10 +224,10 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
   // Publish password field
   private val passwordBox = {
     input(
-      cls := "form-control",
-      `type` := "password",
-      name := "github-password",
-      id := "github-password",
+      cls     := "form-control",
+      `type`  := "password",
+      name    := "github-password",
+      id      := "github-password",
       onkeyup := (() => passwordChanged()),
       required,
       placeholder := "Enter your GitHub password..."
@@ -242,7 +242,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
   // Message about incorrect password
   private val passwordIncorrect = {
     div(
-      id := "passwordIncorrect",
+      id  := "passwordIncorrect",
       cls := "has-error d-none",
       label(cls := "control-label", "Password or username is incorrect!")
     ).render
@@ -444,7 +444,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
 
   // Called when the Publish (or Unpublish) button is pressed.
   // Here we just update some labels. The actual publishing is done after confirmation.
-  //noinspection ScalaUnusedSymbol
+  // noinspection ScalaUnusedSymbol
   private def publishButtonClicked(unpublish: Boolean)(e: dom.Event): Unit = {
     val checked = document.querySelectorAll("input[name='api']:checked")
     val enabled = checked.length == 1 || checked.length == 2
@@ -468,7 +468,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
   }
 
   // Called when the confirmation modal popup's Publish (Unpublish) button is pressed
-  //noinspection ScalaUnusedSymbol
+  // noinspection ScalaUnusedSymbol
   private def publishHandler(unpublish: Boolean)(e: dom.Event): Unit = {
     setPublishStatus("")
     val checked = document.querySelectorAll("input[name='api']:checked")
@@ -494,7 +494,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
   }
 
   // Called when the PublishApi button is pressed in the table for a given subsystem
-  //noinspection ScalaUnusedSymbol
+  // noinspection ScalaUnusedSymbol
   private def readyToPublishHandler(publishInfo: PublishInfo)(e: dom.Event): Unit = {
     // Check the subsystem checkbox, if not already
     val checkbox = document.querySelector(s"#${publishInfo.subsystem}Checkbox").asInstanceOf[Input]
@@ -589,13 +589,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
           }
           else {
             setUnpublishButtonDisabled(true)
-            if (unpublishedChanges) {
-              setPublishButtonDisabled(true)
-              "Both APIs must be published and up to date before publishing an ICD."
-            }
-            else {
-              s"Click below to publish the ICD between $subsysStr:"
-            }
+            s"Click below to publish the ICD between $subsysStr:"
           }
       }
     }
@@ -609,19 +603,19 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
     div(
       cls := "form-check",
       input(
-        id := s"${publishInfo.subsystem}Checkbox",
-        cls := "form-check-input",
-        name := "api",
-        title := s"Select this API to publish",
-        tpe := "checkbox",
+        id       := s"${publishInfo.subsystem}Checkbox",
+        cls      := "form-check-input",
+        name     := "api",
+        title    := s"Select this API to publish",
+        tpe      := "checkbox",
         onchange := (() => changeListener()),
-        value := Json.toJson(publishInfo).toString()
+        value    := Json.toJson(publishInfo).toString()
       ),
       label(cls := "form-check-label", publishInfo.subsystem)
     )
   }
 
-  //noinspection ScalaUnusedSymbol
+  // noinspection ScalaUnusedSymbol
   private def checkGitHubCredentials(e: dom.Event): Unit = {
     val gitHubCredentials = GitHubCredentials(usernameBox.value, passwordBox.value)
     val f =
@@ -650,10 +644,10 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
         div(cls := "commentBox", label("GitHub Username")("*", usernameBox, usernameMissing)),
         div(cls := "commentBox", label("GitHub Password")("*", passwordBox, passwordMissing, passwordIncorrect)),
         button(
-          `type` := "submit",
-          cls := "btn btn-primary",
-          id := "applyButton",
-          title := s"Use the given GitHub credentials...",
+          `type`  := "submit",
+          cls     := "btn btn-primary",
+          id      := "applyButton",
+          title   := s"Use the given GitHub credentials...",
           onclick := checkGitHubCredentials
           //        disabled := true
         )("Apply")
@@ -674,7 +668,7 @@ case class PublishDialog(mainContent: MainContent, publishChangeListener: Publis
         div(cls := "card-body")(
           helpMsg,
           table(
-            cls := "componentTable",
+            cls                    := "componentTable",
             attr("data-bs-toggle") := "table",
             thead(
               tr(
