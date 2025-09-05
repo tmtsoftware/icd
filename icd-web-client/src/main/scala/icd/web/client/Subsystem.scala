@@ -84,8 +84,11 @@ case class Subsystem(
   // noinspection ScalaUnusedSymbol
   // called when a subsystem is selected
   private def subsystemSelected(e: dom.Event): Unit = {
-    for (_ <- updateSubsystemVersionOptions())
-      listener.subsystemSelected(getSubsystemWithVersion(subsystemOnly = true))
+    val f = for {
+      _ <- updateSubsystemVersionOptions()
+      x <- listener.subsystemSelected(getSubsystemWithVersion(subsystemOnly = true))
+    } yield x
+    showBusyCursorWhile(f)
   }
 
   // noinspection ScalaUnusedSymbol
@@ -219,7 +222,7 @@ case class Subsystem(
       if (!currentSubsystems.contains(subsystem))
         subsystemItem.add(option(value := subsystem)(subsystem).render)
     }
-    updateSubsystemVersionOptions() // Future!
+    updateSubsystemVersionOptions()
   }
 
   /**
@@ -291,7 +294,6 @@ case class Subsystem(
     while (versionItem.options.length != 0) {
       versionItem.remove(0)
     }
-    // Insert unpublished working version (*) as first item
     for (s <- versions) {
       versionItem.add(option(value := s)(s).render)
     }

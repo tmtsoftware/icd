@@ -65,7 +65,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
   private val statusDialog = StatusDialog(mainContent, StatusListener)
 
   private val fileUploadItem = NavbarItem("Upload", "Select icd model files to ingest into the icd database", showUploadDialog())
-  private val fileUploadDialog = FileUploadDialog(subsystemNames, csrfToken, inputDirSupported)
+  private val fileUploadDialog = FileUploadDialog(selectDialog.subsystem, subsystemNames, csrfToken, inputDirSupported)
 
   private val publishItem   = NavbarItem("Publish", "Shows dialog to publish APIs and ICDs", showPublishDialog())
   private val publishDialog = PublishDialog(mainContent, PublishListener)

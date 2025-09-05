@@ -1,17 +1,30 @@
 package icd.web.client
 
+import icd.web.client
 import icd.web.client.FileUtils.*
+import icd.web.client.PublishDialog.PublishDialogListener
 import org.scalajs.dom
 import org.scalajs.dom.*
 import org.scalajs.dom.HTMLDivElement
 import play.api.libs.json.*
 
 import scala.language.implicitConversions
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
- * Displays the page for uploading ICD files and directories
+ * Displays the page for uploading API model files and directories.
+ *
+ * @param subsystemMenu Used to select the uploaded version
+ * @param subsystemNames Gets subsystem names
+ * @param csrfToken needed for web app security
+ * @param inputDirSupported true if teh browser supports uploading directories
  */
-case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, inputDirSupported: Boolean) extends Displayable {
+case class FileUploadDialog(
+    subsystemMenu: Subsystem,
+    subsystemNames: SubsystemNames,
+    csrfToken: String,
+    inputDirSupported: Boolean
+) extends Displayable {
 
   implicit val problemFormat: OFormat[Problem] = Json.format[Problem]
 
@@ -38,12 +51,12 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
   private val inputItem = {
     import scalatags.JsDom.all.*
     input(
-      `type` := "file",
-      name := "files[]",
-      multiple := "multiple",
+      `type`                  := "file",
+      name                    := "files[]",
+      multiple                := "multiple",
       attr("webkitdirectory") := "webkitdirectory",
-      onclick := fileSelectReset,
-      onchange := fileSelectHandler
+      onclick                 := fileSelectReset,
+      onchange                := fileSelectHandler
     ).render
   }
 
@@ -118,7 +131,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
 
   private def busyStatusItem = document.querySelector("#busyStatus")
 
-  //noinspection ScalaUnusedSymbol
+  // noinspection ScalaUnusedSymbol
   // Called when user clicks on input item.
   // Reset the value (Otherwise you can't upload the same file twice,
   // since it won't fire the change event)
@@ -174,7 +187,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
       setProgressBar(pc)
     }
 
-    //noinspection ScalaUnusedSymbol
+    // noinspection ScalaUnusedSymbol
     // Displays status after upload complete
     def onloadListener(e: dom.Event) = {
       busyStatusItem.classList.add("d-none")
@@ -189,14 +202,16 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
       for (problem <- problems.reverse)
         displayProblem(problem)
 
-      // Update the menus of subsystem names,in case anything changed
-      subsystemNames.update()
+        // Update the menus of subsystem names,in case anything changed
+      subsystemNames.update().andThen(_ =>
+        subsystemMenu.updateSubsystemVersionOptions(Some(uploadedVersion))
+      )
     }
 
     xhr.upload.addEventListener("progress", progressListener, useCapture = false)
     xhr.onload = (e: dom.Event) => onloadListener(e)
 
-    //start upload
+    // start upload
     statusItem.classList.add("text-bg-primary")
     statusItem.textContent = "Working..."
     busyStatusItem.classList.remove("d-none")
@@ -216,10 +231,10 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
       cls := "container-fluid",
       p(dirMsg),
       form(
-        id := "upload",
-        action := "/upload",
-        attr("role") := "form",
-        attr("method") := "POST",
+        id              := "upload",
+        action          := "/upload",
+        attr("role")    := "form",
+        attr("method")  := "POST",
         attr("enctype") := "multipart/form-data"
       )(
         input(`type` := "hidden", name := "csrfToken", value := csrfToken, accept := acceptSuffix),
@@ -236,13 +251,13 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
       p(),
       div(cls := "progress")(
         div(
-          id := "progress",
-          cls := "progress-bar progress-bar-striped",
-          role := "progressbar",
+          id                    := "progress",
+          cls                   := "progress-bar progress-bar-striped",
+          role                  := "progressbar",
           attr("aria-valuenow") := "0",
           attr("aria-valuemin") := "0",
           attr("aria-valuemax") := "100",
-          style := "width: 0%",
+          style                 := "width: 0%",
           "0%"
         )
       ),
@@ -253,7 +268,7 @@ case class FileUploadDialog(subsystemNames: SubsystemNames, csrfToken: String, i
           span(cls := "visually-hidden")
         ),
         span(style := "margin-left:15px;"),
-        span(id := "status", cls := "badge", "Working...")
+        span(id    := "status", cls := "badge", "Working...")
       ),
       div(style := "position: fixed; width:90%", messagesItem)
     ).render

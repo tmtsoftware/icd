@@ -144,9 +144,9 @@ object IcdGit {
 
   // Run the application
   private def run(opts: Options): Unit = {
-    val db = IcdDb(opts.dbName, opts.host, opts.port)
+    val db            = IcdDb(opts.dbName, opts.host, opts.port)
     val icdGitManager = IcdGitManager(db.versionManager)
-    val options = if (opts.interactive) interact(icdGitManager, opts) else opts
+    val options       = if (opts.interactive) interact(icdGitManager, opts) else opts
 
     if (options.list) list(icdGitManager, options)
     if (options.unpublish) unpublish(icdGitManager, options)
@@ -383,7 +383,8 @@ object IcdGit {
         db.dropDatabase()
       else
         options.subsystems.foreach(sv => db.query.dropSubsystem(sv.subsystem))
-      val latestApiVersions = icdGitManager.allApiVersions.map(a => ApiVersions(a.subsystem, a.apis.slice(1, 2)))
+      val latestApiVersions =
+        icdGitManager.allApiVersions.map(a => ApiVersions(a.subsystem, a.apis.find(IcdGitManager.apiEntryFilter).toList))
       icdGitManager.ingest(
         db,
         options.subsystems,

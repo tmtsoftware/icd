@@ -117,6 +117,11 @@ object IcdGitManager {
   private[github] def warning(msg: String): Unit = {
     println(s"Warning: $msg")
   }
+
+  def apiEntryFilter(a: ApiEntry): Boolean = {
+    a.version != IcdVersionManager.masterVersion && a.version != IcdVersionManager.uploadedVersion
+  }
+
 }
 
 class IcdGitManager(versionManager: IcdVersionManager) {
@@ -939,9 +944,7 @@ class IcdGitManager(versionManager: IcdVersionManager) {
       val maybeApiVersions = allApiVersions.find(_.subsystem == subsystem)
       // skip uploaded and master versions
       val maybeApiVersionList = maybeApiVersions.toList
-        .flatMap(
-          _.apis.filter(a => a.version != IcdVersionManager.masterVersion && a.version != IcdVersionManager.uploadedVersion)
-        )
+        .flatMap(_.apis.filter(apiEntryFilter))
         .map { apiEntry =>
           ApiVersionInfo(subsystem, apiEntry.version, apiEntry.user, apiEntry.comment, apiEntry.date, apiEntry.commit)
         }
@@ -1043,7 +1046,8 @@ class IcdGitManager(versionManager: IcdVersionManager) {
   def ingestLatest(db: IcdDb): (List[ApiVersions], List[IcdVersions]) = {
     val (allApiVersions, allIcdVersions) = getAllVersions
     // "master" is first in the list, followed by the versions in descending order, but we don't preload it here
-    val latestApiVersions = allApiVersions.map(a => ApiVersions(a.subsystem, a.apis.slice(1, 2)))
+    val latestApiVersions = allApiVersions.map(a => ApiVersions(a.subsystem,
+      a.apis.find(apiEntryFilter).toList))
 
     // Ingest any missing subsystems (latest versions of subsystems that are not yet in the database)
     val missingSubsystems = latestApiVersions
@@ -1061,6 +1065,7 @@ class IcdGitManager(versionManager: IcdVersionManager) {
         allIcdVersions,
         updateUnpublishedVersion = true
       )
+      println(s"Done.")
     }
 
     // Ingest any missing published subsystem versions (latest versions for subsystems that were already in the database,

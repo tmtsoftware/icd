@@ -53,11 +53,10 @@ case class ApplicationImpl(db: IcdDb) {
   private val log = play.Logger.of("ApplicationImpl")
 
   val icdGitManager = IcdGitManager(db.versionManager)
-  
+
   // Cache of API and ICD versions published on GitHub (cached for better performance)
   var (allApiVersions, allIcdVersions) =
     try {
-//      icdGitManager.ingestMissing(db)
       icdGitManager.ingestLatest(db)
     }
     catch {
@@ -68,8 +67,7 @@ case class ApplicationImpl(db: IcdDb) {
     }
 
   // Update the database and cache after a new API or ICD was published (or in case one was published)
-  private def updateAfterPublish(): Unit = {
-//    val pair = icdGitManager.ingestMissing(db)
+  def updateAfterPublish(): Unit = {
     val pair = icdGitManager.ingestLatest(db)
     allApiVersions = pair._1
     allIcdVersions = pair._2

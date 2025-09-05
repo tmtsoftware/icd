@@ -28,7 +28,6 @@ import scala.util.Try
  * Use an actor to manage concurrent access to mutable cached data
  */
 object ApplicationActor extends ActorModule {
-//  type Message = Messages
   sealed trait Messages
   final case class GetSubsystemNames(replyTo: ActorRef[List[String]]) extends Messages
   final case class GetSubsystemInfo(
@@ -185,6 +184,9 @@ object ApplicationActor extends ActorModule {
       version: Option[String],
       paths: List[ServicePath],
       replyTo: ActorRef[Option[String]]
+  ) extends Messages
+  final case class UpdateAfterPublish(
+      replyTo: ActorRef[Unit]
   ) extends Messages
 
   // -------------------------------------------------------------------
@@ -454,6 +456,9 @@ object ApplicationActor extends ActorModule {
           Behaviors.same
         case GetOpenApi(subsystem, component, service, maybeVersion, paths, replyTo) =>
           replyTo ! app.db.getOpenApi(subsystem, component, service, maybeVersion, paths)
+          Behaviors.same
+        case UpdateAfterPublish(replyTo) =>
+          replyTo ! app.updateAfterPublish()
           Behaviors.same
       }
     }

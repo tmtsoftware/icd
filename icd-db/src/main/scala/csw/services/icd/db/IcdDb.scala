@@ -525,7 +525,7 @@ case class IcdDb(
       validatePostIngest(componentSubsystemList, newCollections, backupCollections)
 
     // If there were no problems, publish this version internally as the "uploaded" or "working" version
-    if (totalProblems.isEmpty) {
+    if (!totalProblems.exists(_.severity != "warning")) {
       val version = IcdVersionManager.uploadedVersion
       val user = sys.env.getOrElse("USER", "unknown")
       val date = DateTime.now()

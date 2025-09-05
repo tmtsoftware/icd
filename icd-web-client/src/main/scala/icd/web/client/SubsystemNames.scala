@@ -17,7 +17,7 @@ object SubsystemNames {
 case class SubsystemNames(mainContent: MainContent, listener: Listener) {
 
   // Initialize by requesting the list of subsystem names and then updating the menus
-  update()
+  showBusyCursorWhile(update())
 
   // Gets the list of subsystems from the server
   private def getSubsystemNames: Future[List[String]] = {

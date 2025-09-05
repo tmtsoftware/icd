@@ -19,12 +19,15 @@ import play.api.{Configuration, Environment, Mode}
 import org.apache.pekko.actor.typed.scaladsl.AskPattern.*
 import org.apache.pekko.util.Timeout
 import icd.web.shared.IcdModels.{IcdModel, ServicePath}
+import csw.services.icd.deleteDirectoryRecursively
 
 import java.net.URLDecoder
 import scala.collection.mutable
 import scala.concurrent.duration.*
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
+import java.io.File
+import java.nio.file.Files
 
 /**
  * Provides the interface between the web client and the server
@@ -76,6 +79,31 @@ class Application @Inject() (
       val debug                             = env.mode == Mode.Dev
       Ok(views.html.index(debug, assets, token, webJarsUtil))
     })
+
+  // Server side of the upload ICD feature.
+  // Supported file types: A directory containing icd model files (and supported resources)
+  def uploadFiles(): Action[MultipartFormData[play.api.libs.Files.TemporaryFile]] =
+    Action(parse.multipartFormData) { implicit request =>
+      val files = request.body.files.toList
+
+      // Save uploaded files to a temp dir
+      val tempDir = Files.createTempDirectory("icd").toFile
+      files.foreach { filePart =>
+        val newFile = new File(tempDir, filePart.filename)
+        if (!newFile.getParentFile.exists()) newFile.getParentFile.mkdirs()
+        filePart.ref.copyTo(newFile)
+      }
+      val problems = db.ingestAndCleanup(tempDir)
+      deleteDirectoryRecursively(tempDir)
+
+      if (problems.exists(_.severity == "error")) {
+        NotAcceptable(Json.toJson(problems))
+      } else {
+        // Upload publishes a new "upload" version of the API, so need to update the cached list of versions
+        Await.ready(appActor ? UpdateAfterPublish.apply, 60.seconds)
+        Ok(Json.toJson(problems))
+      }
+    }
 
   /**
    * Gets a list of top level subsystem names
