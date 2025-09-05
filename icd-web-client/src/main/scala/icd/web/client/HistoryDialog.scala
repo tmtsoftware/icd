@@ -68,11 +68,12 @@ case class HistoryDialog(mainContent: MainContent) extends Displayable {
     if (checked.size == 2) {
       val versions = checked.map(elem => elem.asInstanceOf[HTMLInputElement].value).sortWith(compareVersions)
       val route    = ClientRoutes.diff(subsystem, versions)
-      Fetch.get(route).map { text =>
+      val f = Fetch.get(route).map { text =>
         val list = Json.fromJson[Array[DiffInfo]](Json.parse(text)).map(_.toList).getOrElse(Nil)
         diffDiv.innerHTML = ""
         diffDiv.appendChild(markupDiff(subsystem, list))
       }
+      showBusyCursorWhile(f.map(_ => ()))
     }
   }
 
