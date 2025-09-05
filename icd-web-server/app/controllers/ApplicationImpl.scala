@@ -52,11 +52,13 @@ import scala.util.Try
 case class ApplicationImpl(db: IcdDb) {
   private val log = play.Logger.of("ApplicationImpl")
 
+  val icdGitManager = IcdGitManager(db.versionManager)
+  
   // Cache of API and ICD versions published on GitHub (cached for better performance)
   var (allApiVersions, allIcdVersions) =
     try {
-//      IcdGitManager.ingestMissing(db)
-      IcdGitManager.ingestLatest(db)
+//      icdGitManager.ingestMissing(db)
+      icdGitManager.ingestLatest(db)
     }
     catch {
       case ex: Exception =>
@@ -67,8 +69,8 @@ case class ApplicationImpl(db: IcdDb) {
 
   // Update the database and cache after a new API or ICD was published (or in case one was published)
   private def updateAfterPublish(): Unit = {
-//    val pair = IcdGitManager.ingestMissing(db)
-    val pair = IcdGitManager.ingestLatest(db)
+//    val pair = icdGitManager.ingestMissing(db)
+    val pair = icdGitManager.ingestLatest(db)
     allApiVersions = pair._1
     allIcdVersions = pair._2
   }
@@ -674,7 +676,7 @@ case class ApplicationImpl(db: IcdDb) {
    */
   def publishApi(publishApiInfo: PublishApiInfo): Try[ApiVersionInfo] = {
     Try {
-      val apiVersionInfo = IcdGitManager.publish(
+      val apiVersionInfo = icdGitManager.publish(
         publishApiInfo.subsystem,
         publishApiInfo.majorVersion,
         publishApiInfo.user,
@@ -694,7 +696,7 @@ case class ApplicationImpl(db: IcdDb) {
       val sv         = SubsystemAndVersion(publishIcdInfo.subsystem, Some(publishIcdInfo.subsystemVersion))
       val tv         = SubsystemAndVersion(publishIcdInfo.target, Some(publishIcdInfo.targetVersion))
       val subsystems = List(sv, tv)
-      val icdVersionInfo = IcdGitManager.publish(
+      val icdVersionInfo = icdGitManager.publish(
         subsystems,
         publishIcdInfo.majorVersion,
         publishIcdInfo.user,
@@ -702,7 +704,7 @@ case class ApplicationImpl(db: IcdDb) {
         publishIcdInfo.comment
       )
       updateAfterPublish()
-      IcdGitManager.importIcdFiles(db, subsystems, (s: String) => println(s), allIcdVersions)
+      icdGitManager.importIcdFiles(db, subsystems, (s: String) => println(s), allIcdVersions)
       icdVersionInfo
     }
   }
@@ -712,7 +714,7 @@ case class ApplicationImpl(db: IcdDb) {
    */
   def unpublishApi(unpublishApiInfo: UnpublishApiInfo): Try[Option[ApiVersionInfo]] = {
     Try {
-      val result = IcdGitManager.unpublish(
+      val result = icdGitManager.unpublish(
         SubsystemAndVersion(unpublishApiInfo.subsystem, Some(unpublishApiInfo.subsystemVersion)),
         unpublishApiInfo.user,
         unpublishApiInfo.password,
@@ -728,7 +730,7 @@ case class ApplicationImpl(db: IcdDb) {
    */
   def unpublishIcd(unpublishIcdInfo: UnpublishIcdInfo): Try[Option[IcdVersionInfo]] = {
     Try {
-      val maybeIcdEntry = IcdGitManager.unpublish(
+      val maybeIcdEntry = icdGitManager.unpublish(
         unpublishIcdInfo.icdVersion,
         unpublishIcdInfo.subsystem,
         unpublishIcdInfo.target,

@@ -23,8 +23,10 @@ object HistoryDialog {
 
   // Compare two version strings (maj.min)
   private def compareVersions(v1: String, v2: String): Boolean = {
-    if (v1 == "master") false
-    else if (v2 == "master") true
+    if (v1 == uploadedVersion) false
+    else if (v2 == uploadedVersion) true
+    else if (v1 == masterVersion) false
+    else if (v2 == masterVersion) true
     else {
       val (maj1, min1) = splitVersion(v1)
       val (maj2, min2) = splitVersion(v2)

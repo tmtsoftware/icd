@@ -117,10 +117,7 @@ case class SelectDialog(mainContent: MainContent, listener: SelectDialogListener
     )
 
   val subsystem: Subsystem = Subsystem(SourceSubsystemListener)
-  val targetSubsystem: Subsystem = Subsystem(
-    TargetSubsystemListener,
-    placeholderMsg = "Select Subsystem"
-  )
+  val targetSubsystem: Subsystem = Subsystem(TargetSubsystemListener)
   private val subsystemSwapper: SubsystemSwapper = SubsystemSwapper(swapSubsystems)
   val icdChooser: IcdChooser                     = IcdChooser(IcdChooserListener)
 

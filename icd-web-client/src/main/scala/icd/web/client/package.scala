@@ -16,6 +16,9 @@ import scalatags.JsDom
  */
 package object client {
 
+  val masterVersion = "master"
+  val uploadedVersion = "uploaded"
+  
   // Hide or show the sidebar
   def setSidebarVisible(show: Boolean): Unit = {
     val s = document.querySelector("#sidebar")

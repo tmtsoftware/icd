@@ -1,8 +1,9 @@
 package csw.services.icd
 
+import csw.services.icd.db.IcdVersionManager
+
 import java.io.{File, FileOutputStream}
 import java.nio.file.Files
-
 import icd.web.shared.{BuildInfo, PdfOptions, SubsystemWithVersion}
 
 // XXX TODO: Remove this class. It is disabled in reference.conf and so not currently used
@@ -38,7 +39,8 @@ class PdfCache(cacheDir: File) {
   ): Boolean = {
     useCache(sv, pdfOptions, searchAllSubsystems = false, clientApi = false) &&
     targetSv.maybeVersion.isDefined &&
-    targetSv.maybeVersion.get != "master" &&
+    targetSv.maybeVersion.get != IcdVersionManager.masterVersion &&
+    targetSv.maybeVersion.get != IcdVersionManager.uploadedVersion &&
     targetSv.maybeComponent.isEmpty
   }
 
@@ -51,7 +53,8 @@ class PdfCache(cacheDir: File) {
   ): Boolean = {
     softwareVersion != defaultSoftwareVersion &&
     sv.maybeVersion.isDefined &&
-    sv.maybeVersion.get != "master" &&
+    sv.maybeVersion.get != IcdVersionManager.masterVersion &&
+    sv.maybeVersion.get != IcdVersionManager.uploadedVersion &&
     sv.maybeComponent.isEmpty &&
     !clientApi &&
     !searchAllSubsystems &&

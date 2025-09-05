@@ -336,14 +336,15 @@ object IcdDb {
     // --versions option
     def listVersions(subsystem: String): Unit = {
       for (v <- db.versionManager.getVersions(subsystem)) {
-        println(s"${v.maybeVersion.getOrElse("*")}\t${v.date.withZone(DateTimeZone.getDefault)}\t${v.comment}")
+        println(s"${v.maybeVersion.getOrElse(IcdVersionManager.uploadedVersion)}\t${v.date.withZone(DateTimeZone.getDefault)}\t${v.comment}")
       }
     }
 
     // Check that the version is in the correct format
     def checkVersion(maybeVersion: Option[String]): Unit = {
       maybeVersion match {
-        case Some("master") =>
+        case Some(IcdVersionManager.`masterVersion`) =>
+        case Some(IcdVersionManager.`uploadedVersion`) =>
         case Some(version) =>
           val versionRegex = """\d+\.\d+""".r
           version match {
@@ -489,13 +490,17 @@ case class IcdDb(
    * If a subsystem-model.conf was ingested, the previous data for that subsystem is removed first
    * (to make sure renamed or removed components actually are gone).
    *
+   * This method is called by the icd web app when uploading model files directories and in the icd-db
+   * command line app for the --ingest option.
+   * A new "uploaded" version is published internally (By request in JIRA issue DEOPSICDDB-188).
+   *
    * @param dir the top level directory containing one or more of the the standard set of ICD files
    *            and any number of subdirectories containing ICD files
    * @return A list describing any problems that occurred
    */
   def ingestAndCleanup(dir: File = new File(".")): List[Problem] = {
     val (configs, ingestProblems) = ingest(dir)
-    val subsystemList             = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.config.getString("subsystem")).distinct
+    val subsystemList = configs.filter(_.stdName == StdName.subsystemFileNames).map(_.config.getString("subsystem")).distinct
     val componentSubsystemList =
       configs.filter(_.stdName == StdName.componentFileNames).map(_.config.getString("subsystem")).distinct
 
@@ -512,14 +517,25 @@ case class IcdDb(
         (a.flatten.toSet, b.flatten.toSet)
       }
 
-    if (errors) {
-      // If there were errors, return them
+    // If there were errors, return them,
+    // otherwise do the extra post-ingest validation
+    val totalProblems = if (errors)
       problems
-    }
-    else {
-      // otherwise do the extra post-ingest validation
+    else
       validatePostIngest(componentSubsystemList, newCollections, backupCollections)
+
+    // If there were no problems, publish this version internally as the "uploaded" or "working" version
+    if (totalProblems.isEmpty) {
+      val version = IcdVersionManager.uploadedVersion
+      val user = sys.env.getOrElse("USER", "unknown")
+      val date = DateTime.now()
+      val commit = ""
+      subsystemList.foreach { subsystem =>
+        versionManager.publishApi(subsystem, version, majorVersion=false, "Uploaded working version", user, date, commit)
+      }
     }
+
+    totalProblems
   }
 
   // Do some validation checks after ingesting the model files into the database.
@@ -699,7 +715,7 @@ case class IcdDb(
    * @param tmpName temp name of the collection to use during ingest
    * @param config the config to be ingested into the database
    */
-  //noinspection SameParameterValue
+  // noinspection SameParameterValue
   private def ingestConfig(name: String, tmpName: String, config: Config): Unit = {
     import play.api.libs.json.Reads.*
 

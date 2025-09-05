@@ -13,8 +13,9 @@ class IcdGitTestRenamedComponents extends AnyFunSuite with BeforeAndAfter {
 
   test("Renamed component") {
     val db = IcdDb("test")
+    val icdGitManager = IcdGitManager(db.versionManager)
     db.dropDatabase() // start with a clean db for test
-    val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
+    val (allApiVersions, allIcdVersions) = icdGitManager.getAllVersions
 
     val comps1_4 = List(
       "alarm-monitor-ui",
@@ -31,7 +32,7 @@ class IcdGitTestRenamedComponents extends AnyFunSuite with BeforeAndAfter {
       "opticalWfsOrGuiderDetLib"
     )
 
-    IcdGitManager.ingest(
+    icdGitManager.ingest(
       db,
       SubsystemAndVersion("ESW", Some("1.4")),
       (s) => println(s),
@@ -39,7 +40,7 @@ class IcdGitTestRenamedComponents extends AnyFunSuite with BeforeAndAfter {
       updateUnpublishedVersion = true
     )
     assert(db.query.getComponentNames(Some("ESW")) == comps1_4)
-    IcdGitManager.ingest(
+    icdGitManager.ingest(
       db,
       SubsystemAndVersion("ESW", Some("1.6")),
       (s) => println(s),

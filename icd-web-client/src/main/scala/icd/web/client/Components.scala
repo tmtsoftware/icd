@@ -793,7 +793,6 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
           val modes = eventModel.diagnosticModes
             .map { s =>
               val linkId = idFor(compName, "handles", "Diagnostic Mode", component.subsystem, component.component, s)
-              println(s"linkId = $linkId, s = $s")
               span(a(href := s"#$linkId", s), " ")
             }
           div(s"* Event is $onlyAlso fired in these diagnostic modes: ", modes)
@@ -1210,7 +1209,7 @@ case class Components(mainContent: MainContent, listener: ComponentListener) {
       val compName = component.component
       div(
         cls := "componentSection",
-        h4(s"Diagnostic modes handled by $compName"),
+        h4(s"Diagnostic Modes Received by $compName"),
         table(
           cls := tableClasses,
           thead(

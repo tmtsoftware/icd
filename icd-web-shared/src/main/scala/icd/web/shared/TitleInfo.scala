@@ -22,12 +22,19 @@ object TitleInfo {
    */
   val unpublished = "(unpublished)"
 
+  private def getDisplayVersion(sv: SubsystemWithVersion): String = {
+    sv.maybeVersion match {
+      case Some("uploaded") => "(uploaded working version)"
+      case Some("master") => "(master branch version)"
+      case _ => sv.maybeVersion.getOrElse(unpublished)
+    }
+  }
+
   private def getSubtitle(sv: SubsystemWithVersion, maybeTargetSv: Option[SubsystemWithVersion]): String = {
     if (maybeTargetSv.isEmpty || maybeTargetSv.get.subsystem == sv.subsystem && maybeTargetSv.get.maybeVersion == sv.maybeVersion)
-      s"Based on ${sv.subsystem} ${sv.maybeVersion.getOrElse(unpublished)}"
+      s"Based on ${sv.subsystem} ${getDisplayVersion(sv)}"
     else
-      s"Based on ${sv.subsystem} ${sv.maybeVersion.getOrElse(unpublished)} and ${maybeTargetSv.get.subsystem} ${maybeTargetSv.get.maybeVersion
-        .getOrElse(unpublished)}"
+      s"Based on ${sv.subsystem} ${getDisplayVersion(sv)} and ${maybeTargetSv.get.subsystem} ${getDisplayVersion(maybeTargetSv.get)}"
   }
 
   /**
@@ -66,7 +73,7 @@ object TitleInfo {
       if (maybeTargetSv.isDefined) {
         val icdVersion =
           if (maybeTargetSv.get.subsystem == sv.subsystem && maybeTargetSv.get.maybeVersion == sv.maybeVersion)
-            sv.maybeVersion.getOrElse(unpublished)
+            getDisplayVersion(sv)
           else unpublished
         val title    = s"ICD SDB $part ${sv.subsystem}$componentPart -> $targetName$targetComponentPart $icdVersion"
         val subtitle = getSubtitle(sv, maybeTargetSv)
@@ -74,7 +81,7 @@ object TitleInfo {
       }
       else {
         TitleInfo(
-          s"API SDB for ${sv.subsystem}$componentPart ${sv.maybeVersion.getOrElse(unpublished)}",
+          s"API SDB for ${sv.subsystem}$componentPart ${getDisplayVersion(sv)}",
           Some(subsystemInfo.title),
           Some(subsystemInfo.description),
           maybeDocumentNumber

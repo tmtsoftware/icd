@@ -396,7 +396,7 @@ object IcdToHtml {
       val compName = component.component
       div(
         cls := "componentSection",
-        nh.H4(s"Diagnostic modes handled by $compName"),
+        nh.H4(s"Diagnostic Modes Received by $compName"),
         table(
           thead(
             tr(
@@ -984,7 +984,6 @@ object IcdToHtml {
                     val modes = eventModel.diagnosticModes
                       .map { s =>
                         val linkId = idFor(compName, "handles", "Diagnostic Mode", component.subsystem, component.component, s)
-                        println(s"linkId = $linkId, s = $s")
                         span(a(href := s"#$linkId", s), " ")
                       }
                     div(s"* Event is $onlyAlso fired in these diagnostic modes: ", modes)

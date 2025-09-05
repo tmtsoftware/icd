@@ -29,7 +29,6 @@ object IcdChooser {
   }
 
   private val emptyOptionMsg     = "Select an ICD"
-  private val unpublishedVersion = "*"
 }
 
 /**
@@ -121,7 +120,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
    */
   def getSelectedIcdVersion: Option[IcdVersion] = {
     versionItem.value match {
-      case `unpublishedVersion` | null | "" => None
+      case null | "" => None
       case json =>
         Json.fromJson[IcdVersion](Json.parse(json)) match {
           case JsSuccess(icdVersion: IcdVersion, _: JsPath) => Some(icdVersion)
@@ -157,7 +156,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
       case None =>
         icdItem.value = emptyOptionMsg
         val f = updateIcdVersionOptions()
-        versionItem.value = unpublishedVersion
+        versionItem.value = ""
         if (notifyListener)
           Future.sequence(List(f, listener.icdSelected(None))).map(_ => ())
         else f
@@ -276,7 +275,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
         case Some(s) =>
           versionItem.value = Json.toJson(s).toString() // JSON
         case None =>
-          versionItem.value = unpublishedVersion
+          versionItem.value = ""
       }
       if (notifyListener) {
         listener.icdSelected(maybeSelectedVersion)
@@ -296,7 +295,7 @@ case class IcdChooser(listener: IcdListener) extends Displayable {
           }
       case None =>
         updateIcdVersionOptions(Nil).map { _ =>
-          versionItem.value = unpublishedVersion
+          versionItem.value = ""
         }
     }
   }

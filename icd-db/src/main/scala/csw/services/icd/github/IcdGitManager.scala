@@ -22,18 +22,14 @@ import org.eclipse.jgit.revwalk.RevWalk
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.Json
-import csw.services.icd.RichFuture
 import csw.services.icd.db.IcdDbDefaults.backupCollSuffix
 
 import scala.jdk.CollectionConverters.*
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 /**
  * Provides methods for managing ICD versions in Git and
  * supports importing from Git into the ICD database.
  */
-//noinspection DuplicatedCode
 object IcdGitManager {
   // Cache of PDF files for published API and ICD versions
   private def maybeCache: Option[PdfCache] =
@@ -89,6 +85,43 @@ object IcdGitManager {
     "WFOS"   -> "330391bb97a21ff5c888594517019cb65f5c34fc"
   )
 
+  /**
+   * Deletes the contents of the given temporary directory (recursively).
+   */
+  private[github] def deleteDirectoryRecursively(dir: File): Unit = {
+    // just to be safe, don't delete anything that is not in /tmp/
+    val p = dir.getPath
+    if (!p.startsWith("/tmp/") && !p.startsWith(tmpDir))
+      throw new RuntimeException(s"Refusing to delete $dir since not in /tmp/ or $tmpDir")
+
+    if (dir.isDirectory) {
+      dir.list.foreach { filePath =>
+        val file = new File(dir, filePath)
+        if (file.isDirectory) {
+          deleteDirectoryRecursively(file)
+        }
+        else {
+          file.delete()
+        }
+      }
+      dir.delete()
+    }
+  }
+
+  // Report an error
+  private[github] def error(msg: String): Unit = {
+    throw new IllegalArgumentException(msg)
+  }
+
+  // Report a warning
+  private[github] def warning(msg: String): Unit = {
+    println(s"Warning: $msg")
+  }
+}
+
+class IcdGitManager(versionManager: IcdVersionManager) {
+  import IcdGitManager.*
+
   // cache of API and ICD versions published on GitHub (to avoid cloning the same repo multiple times)
   var (allApiVersions, allIcdVersions) = getAllVersions
 
@@ -125,9 +158,20 @@ object IcdGitManager {
       val date    = DateTime.now().withZone(DateTimeZone.UTC).toString()
       val user    = ""
       val comment = ""
-      Some(ApiVersions.ApiEntry("master", info.commitId, user, comment, date))
+      Some(ApiVersions.ApiEntry(IcdVersionManager.masterVersion, info.commitId, user, comment, date))
     }
     else None
+  }
+
+  // Gets the API entry for the "uploaded" version of the given subsystem, if not empty
+  // (Want to add the manually uploaded version as pseudo version)
+  private def getUploadedApiVersion(subsystem: String): Option[ApiVersions.ApiEntry] = {
+    versionManager
+      .getVersions(subsystem)
+      .find(_.maybeVersion.contains(IcdVersionManager.uploadedVersion))
+      .map(info =>
+        ApiVersions.ApiEntry(IcdVersionManager.uploadedVersion, info.commit, info.user, info.comment, info.date.toString)
+      )
   }
 
   /**
@@ -150,8 +194,10 @@ object IcdGitManager {
       .map(path => ApiVersions.fromJson(new String(Files.readAllBytes(path))))
       .filter(_.apis.nonEmpty)
       .sorted
-      // Add master branch as pseudo version
-      .map(a => ApiVersions(a.subsystem, getMasterApiVersion(a.subsystem).toList ++ a.apis))
+      // Add uploaded and master branch as pseudo versions
+      .map(a =>
+        ApiVersions(a.subsystem, getUploadedApiVersion(a.subsystem).toList ++ getMasterApiVersion(a.subsystem).toList ++ a.apis)
+      )
 
     val icdVersions = Option(icdsDir.listFiles)
       .getOrElse(Array[File]())
@@ -163,16 +209,6 @@ object IcdGitManager {
       .sorted
 
     (apiVersions, icdVersions)
-  }
-
-  // Report an error
-  private[github] def error(msg: String): Unit = {
-    throw new IllegalArgumentException(msg)
-  }
-
-  // Report a warning
-  private[github] def warning(msg: String): Unit = {
-    println(s"Warning: $msg")
   }
 
   /**
@@ -671,29 +707,6 @@ object IcdGitManager {
   }
 
   /**
-   * Deletes the contents of the given temporary directory (recursively).
-   */
-  private[github] def deleteDirectoryRecursively(dir: File): Unit = {
-    // just to be safe, don't delete anything that is not in /tmp/
-    val p = dir.getPath
-    if (!p.startsWith("/tmp/") && !p.startsWith(tmpDir))
-      throw new RuntimeException(s"Refusing to delete $dir since not in /tmp/ or $tmpDir")
-
-    if (dir.isDirectory) {
-      dir.list.foreach { filePath =>
-        val file = new File(dir, filePath)
-        if (file.isDirectory) {
-          deleteDirectoryRecursively(file)
-        }
-        else {
-          file.delete()
-        }
-      }
-      dir.delete()
-    }
-  }
-
-  /**
    * Ingests the given subsystems and ICD (or all subsystems and ICDs) into the ICD database.
    *
    * @param db             the database to use
@@ -747,8 +760,8 @@ object IcdGitManager {
       apiVersions: List[ApiVersions],
       updateUnpublishedVersion: Boolean
   ): Unit = {
-    val defaultApiVersions = getApiVersions(sv, apiVersions)
-    val (allApiVersions, _) = IcdGitManager.getAllVersions
+    val defaultApiVersions  = getApiVersions(sv, apiVersions)
+    val (allApiVersions, _) = getAllVersions
     getApiVersions(sv, allApiVersions) match {
       case Some(versionsFound) =>
         sv.maybeVersion.foreach { v =>
@@ -776,7 +789,7 @@ object IcdGitManager {
    * @param subsystem  the subsystem to ingest into the db
    * @param apiEntries the (GitHub version) entries for the published versions to ingest
    * @param feedback   optional feedback function
-   * @param updateUnpublishedVersion if true, update the unpublished version of the subsystem API to the last one ingested
+   * @param updateUnpublishedVersion if true, update the unpublished/working version of the subsystem API to the last one ingested
    */
   def ingest(
       db: IcdDb,
@@ -899,7 +912,7 @@ object IcdGitManager {
    * @param maybeSubsystem return info only for the given subsystem (default: for all known subsystems)
    */
   def getPublishInfo(maybeSubsystem: Option[String]): List[PublishInfo] = {
-    val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
+    val (allApiVersions, allIcdVersions) = getAllVersions
     getPublishInfo(allApiVersions, allIcdVersions, maybeSubsystem)
   }
 
@@ -924,8 +937,11 @@ object IcdGitManager {
     subsystems.map { subsystem =>
       val subsystemGitInfo = getSubsystemGitInfo(subsystem)
       val maybeApiVersions = allApiVersions.find(_.subsystem == subsystem)
+      // skip uploaded and master versions
       val maybeApiVersionList = maybeApiVersions.toList
-        .flatMap(_.apis.tail) // skip master version
+        .flatMap(
+          _.apis.filter(a => a.version != IcdVersionManager.masterVersion && a.version != IcdVersionManager.uploadedVersion)
+        )
         .map { apiEntry =>
           ApiVersionInfo(subsystem, apiEntry.version, apiEntry.user, apiEntry.comment, apiEntry.date, apiEntry.commit)
         }
@@ -955,7 +971,7 @@ object IcdGitManager {
    * @return a pair containing lists of all API and ICD versions
    */
   def ingestMissing(db: IcdDb): (List[ApiVersions], List[IcdVersions]) = {
-    val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
+    val (allApiVersions, allIcdVersions) = getAllVersions
 
     // Ingest any missing subsystems (all versions of subsystems that are not yet in the database)
     val missingSubsystems = allApiVersions
@@ -965,7 +981,7 @@ object IcdGitManager {
       .map(SubsystemAndVersion(_, None))
     if (missingSubsystems.nonEmpty) {
       println(s"Updating the ICD database with changes from GitHub")
-      IcdGitManager.ingest(
+      ingest(
         db,
         missingSubsystems.toList,
         (s: String) => println(s),
@@ -988,7 +1004,7 @@ object IcdGitManager {
       }
     if (missingSubsystemVersions.nonEmpty) {
       println(s"Updating the ICD database with newly published changes from GitHub")
-      IcdGitManager.ingest(
+      ingest(
         db,
         missingSubsystemVersions,
         (s: String) => println(s),
@@ -1010,7 +1026,7 @@ object IcdGitManager {
           else None
         }
       missingIcdVersions.foreach { subsystems =>
-        IcdGitManager.importIcdFiles(db, subsystems, (s: String) => println(s), allIcdVersions)
+        importIcdFiles(db, subsystems, (s: String) => println(s), allIcdVersions)
       }
     }
 
@@ -1025,9 +1041,9 @@ object IcdGitManager {
    * @return a pair containing lists of all API and ICD versions
    */
   def ingestLatest(db: IcdDb): (List[ApiVersions], List[IcdVersions]) = {
-    val (allApiVersions, allIcdVersions) = IcdGitManager.getAllVersions
+    val (allApiVersions, allIcdVersions) = getAllVersions
     // "master" is first in the list, followed by the versions in descending order, but we don't preload it here
-    val latestApiVersions                = allApiVersions.map(a => ApiVersions(a.subsystem, a.apis.slice(1, 2)))
+    val latestApiVersions = allApiVersions.map(a => ApiVersions(a.subsystem, a.apis.slice(1, 2)))
 
     // Ingest any missing subsystems (latest versions of subsystems that are not yet in the database)
     val missingSubsystems = latestApiVersions
@@ -1037,7 +1053,7 @@ object IcdGitManager {
       .map(SubsystemAndVersion(_, None))
     if (missingSubsystems.nonEmpty) {
       println(s"Updating the ICD database with changes from GitHub")
-      IcdGitManager.ingest(
+      ingest(
         db,
         missingSubsystems.toList,
         (s: String) => println(s),
@@ -1062,7 +1078,7 @@ object IcdGitManager {
       }
     if (missingSubsystemVersions.nonEmpty) {
       println(s"Updating the ICD database with newly published changes from GitHub")
-      IcdGitManager.ingest(
+      ingest(
         db,
         missingSubsystemVersions,
         (s: String) => println(s),
@@ -1084,7 +1100,7 @@ object IcdGitManager {
           else None
         }
       missingIcdVersions.foreach { subsystems =>
-        IcdGitManager.importIcdFiles(db, subsystems, (s: String) => println(s), allIcdVersions)
+        importIcdFiles(db, subsystems, (s: String) => println(s), allIcdVersions)
       }
     }
 

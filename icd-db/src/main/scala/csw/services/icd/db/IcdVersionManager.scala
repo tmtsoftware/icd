@@ -59,6 +59,9 @@ object IcdVersionManager extends DefaultWrites {
   /** Name of collection with information about published ICDs */
   private val icdCollName = "icds"
 
+  val masterVersion = "master"
+  val uploadedVersion = "uploaded"
+
   private val subsystemKey        = "subsystem"
   private val subsystemVersionKey = "subsystemVersion"
   private val targetKey           = "target"
@@ -185,7 +188,7 @@ object IcdVersionManager extends DefaultWrites {
      * Validates the format of the given version string
      */
     def checkVersion(v: String): Unit = {
-      if (v != "master" && !v.matches("\\d+\\.\\d+")) throw new IllegalArgumentException(s"Invalid subsystem version: $v")
+      if (v != masterVersion && v != uploadedVersion && !v.matches("\\d+\\.\\d+")) throw new IllegalArgumentException(s"Invalid subsystem version: $v")
     }
   }
 
@@ -208,11 +211,12 @@ object IcdVersionManager extends DefaultWrites {
  */
 //noinspection DuplicatedCode,SpellCheckingInspection
 case class IcdVersionManager(query: IcdDbQuery) {
-
   import IcdVersionManager.*
   import IcdDbQuery.*
 
   private val db = query.db
+
+  private val icdGitManager = IcdGitManager(this)
 
   // Performance can be improved by caching these values in some cases (redefine in a subclass)
   private[db] def collectionExists(name: String): Boolean = query.collectionExists(name)
@@ -300,7 +304,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       case Some(version) => // published version
         // For master version, need to check if it has been updated and reload
         def gitUpdateNeeded(): Boolean = {
-          if (!sv.maybeVersion.contains("master")) false
+          if (!sv.maybeVersion.contains(masterVersion)) false
           else {
             val collName = versionCollectionName(sv.subsystem)
             if (collectionExists(collName)) {
@@ -308,8 +312,8 @@ case class IcdVersionManager(query: IcdDbQuery) {
               val query        = BSONDocument(versionStrKey -> version)
               val doc          = coll.find(query, Option.empty[JsObject]).one[BSONDocument].await.get
               val commit       = doc.string(commitKey).get
-              val url          = IcdGitManager.getSubsystemGitHubUrl(sv.subsystem)
-              val latestCommit = IcdGitManager.getRepoCommitId(url)
+              val url          = icdGitManager.getSubsystemGitHubUrl(sv.subsystem)
+              val latestCommit = icdGitManager.getRepoCommitId(url)
               commit != latestCommit
             }
             else true
@@ -330,11 +334,11 @@ case class IcdVersionManager(query: IcdDbQuery) {
           versionInfo
         else if (getVersionInfo(sv.subsystem).isEmpty) {
           // This version of the subsystem API hasn't been ingested yet?
-          IcdGitManager.ingest(
+          icdGitManager.ingest(
             query.icdDb,
             SubsystemAndVersion(sv.subsystem, sv.maybeVersion),
             s => println(s"auto-ingesting $s"),
-            IcdGitManager.allApiVersions,
+            icdGitManager.allApiVersions,
             updateUnpublishedVersion = false
           )
           getVersionInfo(compPath)
@@ -748,7 +752,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
       val icdPaths = collectionNames.filter(isStdSet).map(IcdPath.apply).filter(_.subsystem == subsystem)
       val paths    = icdPaths.map(_.path).toList ++ getOpenApiCollectionPaths(collectionNames, icdPaths)
       for (path <- paths) yield {
-        // coll is the mongodb collection for the working copy ("*") of an ingested model file
+        // coll is the mongodb collection for the working copy of an ingested model file
         val coll            = db.collection[BSONCollection](path)
         val obj             = coll.find(queryAny, Option.empty[JsObject]).one[BSONDocument].await.get
         val partVersion     = getNewPartVersion(path, obj)

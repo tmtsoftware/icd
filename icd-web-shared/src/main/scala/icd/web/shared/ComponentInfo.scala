@@ -259,7 +259,7 @@ case class ReceivedCommandInfo(receiveCommandModel: ReceiveCommandModel, senders
  * @param description      optional top level description of commands (in html format, after markdown processing)
  * @param commandsReceived a list of commands received be this component
  * @param commandsSent     a list of commands sent by this component
- * @param diagnosticModes  a list of diagnostic modes handled by this component
+ * @param diagnosticModes  a list of Diagnostic Modes received by this component
  */
 case class Commands(
     description: String,

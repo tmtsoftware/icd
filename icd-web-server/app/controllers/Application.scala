@@ -56,6 +56,7 @@ class Application @Inject() (
     System.exit(1)
   }
   private val db: IcdDb = tryDb.get
+  private val icdGitManager = IcdGitManager(db.versionManager)
 
   // The expected SHA of username:password from application.conf
   private val expectedSha = configuration.get[String](cookieName)
@@ -782,7 +783,7 @@ class Application @Inject() (
    */
   def getPublishInfo(maybeSubsystem: Option[String]) =
     authAction {
-      val publishInfo = IcdGitManager.getPublishInfo(maybeSubsystem)
+      val publishInfo = icdGitManager.getPublishInfo(maybeSubsystem)
       Ok(Json.toJson(publishInfo))
     }
 
@@ -798,7 +799,7 @@ class Application @Inject() (
       else {
         val gitHubCredentials = maybeGitHubCredentials.get
         try {
-          IcdGitManager.checkGitHubCredentials(gitHubCredentials)
+          icdGitManager.checkGitHubCredentials(gitHubCredentials)
           Ok.as(JSON)
         }
         catch {
@@ -875,7 +876,7 @@ class Application @Inject() (
       }
       else {
         val publishApiInfo = maybePublishApiInfo.get
-        val problems       = IcdGitManager.validate(publishApiInfo.subsystem)
+        val problems       = icdGitManager.validate(publishApiInfo.subsystem)
         if (problems.nonEmpty) {
           val msg =
             s"The version of ${publishApiInfo.subsystem} on GitHub did not pass validation: ${problems.map(_.toString).mkString(", ")}."

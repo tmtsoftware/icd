@@ -103,7 +103,7 @@ case class IcdDbPrinter(
   }
 
   /**
-   * Returns an HTML document describing the the given subsystem.
+   * Returns an HTML document describing the given subsystem.
    * If a target subsystem is given, the information is restricted to the ICD from
    * the subsystem to the target. If components are given, the output is restricted to
    * parts that related to the components.
@@ -272,7 +272,7 @@ case class IcdDbPrinter(
         val s2 = IcdVersionManager.SubsystemAndVersion(t)
         // If the ICD version is specified, we can determine the subsystem and target versions, otherwise
         // if only the subsystem or target versions were given, use those (default to latest versions)
-        val v = maybeIcdVersion.getOrElse("*")
+        val v = maybeIcdVersion.getOrElse("")
         val maybeIv =
           db.versionManager.getIcdVersions(s1.subsystem, s2.subsystem).find(_.icdVersion.icdVersion == v).map(_.icdVersion)
         val (sv, maybeTargetSv) = if (maybeIv.isDefined) {

@@ -32,11 +32,6 @@ object Subsystem {
   }
 
   private val componentPlaceholder = "All Components"
-
-  /**
-   * Value displayed for the unpublished working version of the subsystem
-   */
-  private val unpublishedVersion = "*"
 }
 
 /**
@@ -44,25 +39,20 @@ object Subsystem {
  *
  * @param listener          notified when the user makes a selection
  * @param labelStr          the text for the combobox label
- * @param placeholderMsg    the initial message to display before the first selection is made
- * @param enablePlaceholder if true, allow selecting the placeholder item
  */
 //noinspection DuplicatedCode
 case class Subsystem(
     listener: SubsystemListener,
-    labelStr: String = "Subsystem",
-    placeholderMsg: String = "Select subsystem",
-    enablePlaceholder: Boolean = true
+    labelStr: String = "Subsystem"
 ) extends Displayable {
+
+  private val placeholderMsg = "Select subsystem"
 
   // The subsystem combobox
   private val subsystemItem = {
     import scalatags.JsDom.all.*
     select(cls := "form-select", onchange := subsystemSelected)(
-      if (enablePlaceholder)
-        option(value := placeholderMsg, selected := true)(placeholderMsg)
-      else
-        option(value := placeholderMsg, disabled := true, selected := true)(placeholderMsg)
+      option(value := placeholderMsg, selected := true)(placeholderMsg)
     ).render
   }
 
@@ -157,8 +147,8 @@ case class Subsystem(
    */
   def getSelectedSubsystemVersion: Option[String] =
     versionItem.value match {
-      case `unpublishedVersion` | null | "" => None
-      case version                          => Some(version)
+      case null | "" => None
+      case version   => Some(version)
     }
 
   /**
@@ -196,7 +186,7 @@ case class Subsystem(
             case Some(version) =>
               versionItem.value = version
             case None =>
-              versionItem.value = unpublishedVersion
+              versionItem.value = ""
           }
           sv.maybeComponent match {
             case Some(component) =>
@@ -206,7 +196,7 @@ case class Subsystem(
           }
         case None =>
           subsystemItem.value = placeholderMsg
-          versionItem.value = unpublishedVersion
+          versionItem.value = ""
           componentItem.value = componentPlaceholder
       }
     }
@@ -250,20 +240,12 @@ case class Subsystem(
 //   *
 //   * @return a future indicating when any event handlers have completed
 //   */
-//  def setSelectedSubsystemVersion(
-//      maybeVersion: Option[String]
-//  ): Future[Unit] = {
-//    if (maybeVersion == getSelectedSubsystemVersion) {
+//  def setSelectedSubsystemVersion(version: String): Future[Unit] = {
+//    if (getSelectedSubsystemVersion.contains(version))
 //      Future.successful(())
-//    } else {
-//      maybeVersion match {
-//        case Some(s) =>
-//          versionItem.value = s
-//        case None    =>
-//          versionItem.value = unpublishedVersion
-//      }
-//      listener.subsystemSelected(getSubsystemWithVersion(), findMatchingIcd = false)
-//    }
+//    else
+//      versionItem.value = version
+//    listener.subsystemSelected(getSubsystemWithVersion(), findMatchingIcd = false)
 //  }
 
   /**
@@ -287,12 +269,17 @@ case class Subsystem(
       case Some(subsystem) =>
         getSubsystemVersionOptions(subsystem)
           .map { list => // Future!
+            def getDefaultVersion: String = {
+              val publishedVersions = list.filter(v => v != masterVersion && v != uploadedVersion)
+              val v                 = if (publishedVersions.isEmpty) list.headOption else publishedVersions.headOption
+              v.getOrElse(masterVersion)
+            }
             updateSubsystemVersionOptions(list)
-            val version = maybeVersion.getOrElse(unpublishedVersion)
+            val version = maybeVersion.getOrElse(getDefaultVersion)
             versionItem.value = version
           }
       case None =>
-        versionItem.value = unpublishedVersion
+        versionItem.value = ""
         updateSubsystemVersionOptions(Nil)
         Future.successful(())
     }
@@ -305,7 +292,7 @@ case class Subsystem(
       versionItem.remove(0)
     }
     // Insert unpublished working version (*) as first item
-    for (s <- unpublishedVersion :: versions) {
+    for (s <- versions) {
       versionItem.add(option(value := s)(s).render)
     }
   }
