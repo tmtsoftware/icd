@@ -77,7 +77,7 @@ object ComponentDataReporter {
     val totals = events.map { event =>
       val (maxRate, defaultMaxRateUsed) = EventModel.getMaxRate(event.maybeMaxRate)
       println(s"Item Name: ${event.name}, max rate=$maxRate, archive=${event.archive}")
-      if (event.archive) {
+      if (event.archive && !event.diagnosticModeOnly) {
         val s = if (defaultMaxRateUsed) " (by default since not specified)" else ""
         println(s"Item is archived at a rate of $maxRate Hz$s")
         println(s"Total size of event: ${event.totalSizeInBytes} bytes. Yearly accumulation: ${event.totalArchiveSpacePerYear}")

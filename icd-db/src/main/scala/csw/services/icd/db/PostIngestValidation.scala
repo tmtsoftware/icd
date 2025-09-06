@@ -2,7 +2,7 @@ package csw.services.icd.db
 
 import csw.services.icd.Problem
 import csw.services.icd.fits.IcdFits
-import icd.web.shared.IcdModels.{EventModel, ImageModel, ReceiveCommandModel}
+import icd.web.shared.IcdModels.{DiagnosticMode, EventModel, ImageModel, ReceiveCommandModel}
 import icd.web.shared.{IcdModels, SubsystemWithVersion}
 import play.api.libs.json.{JsArray, JsNumber, JsValue, Json}
 
@@ -210,6 +210,22 @@ class PostIngestValidation(db: IcdDb) {
     p1 ::: p2
   }
 
+  private def getEventDiagnosticModeProblems(
+      prefix: String,
+      events: List[EventModel],
+      diagnosticModes: List[DiagnosticMode]
+  ): List[Problem] = {
+    events
+      .filter(_.diagnosticModes.nonEmpty)
+      .flatMap(_.diagnosticModes)
+      .flatMap { eventDiagMode =>
+        if (!diagnosticModes.map(_.hint).contains(eventDiagMode))
+          List(Problem("error", s"In $prefix, diagnostic mode $eventDiagMode is not defined"))
+        else
+          Nil
+      }
+  }
+
   private def getImageProblems(prefix: String, images: List[ImageModel]): List[Problem] = {
     val p1 = getDuplicates(images.map(_.name)).map(s => Problem("error", s"Duplicate image name: '$s''"))
     val p2 = images.flatMap(image =>
@@ -310,6 +326,7 @@ class PostIngestValidation(db: IcdDb) {
         getMinMaxEventProblems(prefix, publishModel.eventList, "event") :::
         getMinMaxEventProblems(prefix, publishModel.currentStateList, "current state") :::
         getEventProblems(prefix, publishModel.eventList, "event") :::
+        getEventDiagnosticModeProblems(prefix, publishModel.eventList, icdModels.commandModel.toList.flatMap(_.diagnosticModes)) :::
         getFitsKeywordProblems(prefix, publishModel.eventList, allowedFitsKeyNames, allowedChannels) :::
         getEventProblems(prefix, publishModel.currentStateList, "current state") :::
         getImageProblems(prefix, publishModel.imageList)

@@ -522,12 +522,17 @@ object IcdModels {
 
     // Returns a string describing the total archive space for a year for all of the given event models
     def getTotalArchiveSpace(models: List[EventModel]): String = {
-      bytesToString(models.filter(_.archive).map(_.totalArchiveBytesPerYear).sum)
+      bytesToString(models.filter(m => m.archive && !m.diagnosticModeOnly).map(_.totalArchiveBytesPerYear).sum)
     }
 
     // Returns a string describing the total archive space for an hour for all of the given event models
     def getTotalArchiveSpaceHourly(models: List[EventModel]): String = {
-      bytesToString(models.filter(_.archive).map(_.totalArchiveBytesPerYear / (365 * operatingHoursPerNight)).sum)
+      bytesToString(
+        models
+          .filter(m => m.archive && !m.diagnosticModeOnly)
+          .map(_.totalArchiveBytesPerYear / (365 * operatingHoursPerNight))
+          .sum
+      )
     }
   }
 
