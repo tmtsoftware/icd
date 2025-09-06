@@ -21,7 +21,7 @@ import scala.jdk.CollectionConverters.*
 object IcdValidator {
 
   private val schemaVersionKey     = "modelVersion"
-  val currentSchemaVersion = "3.0"
+  val currentSchemaVersion = "4.0"
 
 //  /**
 //   * Returns a string with the contents of the given file, converted to JSON, if it was not already.

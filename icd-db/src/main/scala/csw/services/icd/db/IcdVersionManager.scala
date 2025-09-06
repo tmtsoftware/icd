@@ -216,7 +216,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
 
   private val db = query.db
 
-  private val icdGitManager = IcdGitManager(this)
+  private lazy val icdGitManager = IcdGitManager(this)
 
   // Performance can be improved by caching these values in some cases (redefine in a subclass)
   private[db] def collectionExists(name: String): Boolean = query.collectionExists(name)
@@ -283,14 +283,13 @@ case class IcdVersionManager(query: IcdDbQuery) {
    * @param subsystem the name of the subsystem
    */
   def getVersions(subsystem: String): List[VersionInfo] = {
-    val current  = getVersion(SubsystemWithVersion(subsystem, None, None)).toList
     val collName = versionCollectionName(subsystem)
     if (collectionExists(collName)) {
       val docs      = sortCollectionById(collName)
       val published = docs.map(doc => VersionInfo(doc))
-      current ::: published
+      published
     }
-    else current
+    else Nil
   }
 
   /**
