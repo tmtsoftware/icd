@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in the JSON Schema for API model files.
 
+## [ICD v3.3.0] - 2025-09-07
+
+- Changed the way uploaded API versions are handled. Instead of "*" (working version), now "uploaded" is the version name.
+- By default, the latest API versions are selected in the icd web app (previously the working version or last published version was shown).
+- Added optional diagnostic mode information for command-model.conf files and for events. See the documentation for details.
+
 ## [ICD v3.2.0] - 2025-08-16
 
 - Added HTTP services (defined in service-model.conf and OpenApi files) to the visualization graph
@@ -195,7 +201,7 @@ See also [JsonSchemaChanges.md](JsonSchemaChanges.md) for a list of changes in t
 
 - Added "ref" keyword for events, commands, attributes to enable reuse of all or part of another item in the model
   files.
-  See "Reusing Event, Command and Attribute Definitions" at the end of [README.md](README.md) for more details.
+  See "Reusing Event, Command and Parameter Definitions" at the end of [README.md](README.md) for more details.
 
 ### Changed
 

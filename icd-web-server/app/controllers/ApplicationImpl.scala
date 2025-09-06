@@ -615,10 +615,16 @@ case class ApplicationImpl(db: IcdDb) {
    * Returns a list of version names for the given subsystem
    */
   def getVersionNames(subsystem: String): List[String] = {
-    allApiVersions
+    // get published versions (with uploaded and master)
+    val versions = allApiVersions
       .filter(_.subsystem == subsystem)
       .flatMap(_.apis)
       .map(_.version)
+    // If there were no published versions, apiVersions will be empty, so use the locally published versions
+    if (versions.nonEmpty)
+      versions
+    else
+      db.versionManager.getVersions(subsystem).flatMap(_.maybeVersion.toList)
   }
 
   /**
