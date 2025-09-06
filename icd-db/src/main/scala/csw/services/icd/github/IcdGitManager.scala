@@ -998,7 +998,7 @@ class IcdGitManager(versionManager: IcdVersionManager) {
     // but might be missing a newly published version)
     val missingSubsystemVersions = allApiVersions
       .flatMap { apiVersions =>
-        val versions = db.versionManager.getVersions(apiVersions.subsystem).tail.toSet
+        val versions = db.versionManager.getVersions(apiVersions.subsystem).toSet
         apiVersions.apis
           .filter(apiEntry =>
             !versions.exists(info => info.maybeVersion.contains(apiEntry.version) && info.commit == apiEntry.commit)
@@ -1073,7 +1073,7 @@ class IcdGitManager(versionManager: IcdVersionManager) {
     val cachedVersionManager = new CachedIcdVersionManager(query)
     val missingSubsystemVersions = latestApiVersions
       .flatMap { apiVersions =>
-        val versions = cachedVersionManager.getVersions(apiVersions.subsystem).tail.toSet
+        val versions = cachedVersionManager.getVersions(apiVersions.subsystem).toSet
         apiVersions.apis
           .filter(apiEntry =>
             !versions.exists(info => info.maybeVersion.contains(apiEntry.version) && info.commit == apiEntry.commit)

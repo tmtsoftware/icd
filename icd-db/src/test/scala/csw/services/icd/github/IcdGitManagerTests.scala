@@ -42,7 +42,7 @@ class IcdGitManagerTests extends AnyFunSuite with BeforeAndAfter {
       case ex: Exception => throw new RuntimeException("Unable to drop the existing ICD database", ex)
     }
     val icdGitManager = IcdGitManager(db.versionManager)
-    
+
     // Note: Normally the return value from IcdGitManager.getAllVersions could be cached and reused for a while,
     // but not here, since we are modifying the test repository with new versions.
 
@@ -113,20 +113,18 @@ class IcdGitManagerTests extends AnyFunSuite with BeforeAndAfter {
     assert(icdNames.head.target == "TEST2")
 
     val versions = db.versionManager.getVersions("TEST")
-    assert(versions.size == 2) // head is unnamed version "*"
-    assert(versions.head.maybeVersion.isEmpty)
-    assert(versions.tail.head.maybeVersion.get == "1.0")
-    assert(versions.tail.head.user == user)
-    assert(versions.tail.head.comment == comment)
-    assert(versions.tail.head.date.toString() == api.date)
+    assert(versions.size == 1)
+    assert(versions.head.maybeVersion.get == "1.0")
+    assert(versions.head.user == user)
+    assert(versions.head.comment == comment)
+    assert(versions.head.date.toString() == api.date)
 
     val versions2 = db.versionManager.getVersions("TEST2")
-    assert(versions2.size == 2) // head is unnamed version "*"
-    assert(versions2.head.maybeVersion.isEmpty)
-    assert(versions2.tail.head.maybeVersion.get == "1.0")
-    assert(versions2.tail.head.user == user)
-    assert(versions2.tail.head.comment == comment + " 2")
-    assert(versions2.tail.head.date.toString() == api2.date)
+    assert(versions2.size == 1)
+    assert(versions2.head.maybeVersion.get == "1.0")
+    assert(versions2.head.user == user)
+    assert(versions2.head.comment == comment + " 2")
+    assert(versions2.head.date.toString() == api2.date)
 
     val icdVersionInfoList = db.versionManager.getIcdVersions("TEST", "TEST2")
     assert(icdVersionInfoList.size == 1)

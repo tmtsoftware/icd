@@ -369,7 +369,6 @@ object IcdGit {
     }
     if (options.subsystems.size == 1 || options.subsystems.size == 2) {
       val db = IcdDb(options.dbName, options.host, options.port)
-//      icdGitManager.ingestMissing(db)
       icdGitManager.ingestLatest(db)
     }
   }
