@@ -216,7 +216,7 @@ case class IcdVersionManager(query: IcdDbQuery) {
 
   private val db = query.db
 
-  private lazy val icdGitManager = IcdGitManager(this)
+  private[db] lazy val icdGitManager = IcdGitManager(this)
 
   // Performance can be improved by caching these values in some cases (redefine in a subclass)
   private[db] def collectionExists(name: String): Boolean = query.collectionExists(name)

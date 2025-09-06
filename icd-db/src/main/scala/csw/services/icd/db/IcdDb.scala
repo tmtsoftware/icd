@@ -335,8 +335,12 @@ object IcdDb {
 
     // --versions option
     def listVersions(subsystem: String): Unit = {
-      for (v <- db.versionManager.getVersions(subsystem)) {
-        println(s"${v.maybeVersion.getOrElse(IcdVersionManager.uploadedVersion)}\t${v.date.withZone(DateTimeZone.getDefault)}\t${v.comment}")
+//      for (v <- db.versionManager.getVersions(subsystem)) {
+//        println(s"${v.maybeVersion.getOrElse(IcdVersionManager.uploadedVersion)}\t${v.date.withZone(DateTimeZone.getDefault)}\t${v.comment}")
+//      }
+      for (apiVersion <- db.versionManager.icdGitManager.allApiVersions.filter(_.subsystem == subsystem)) {
+        for (e <- apiVersion.apis)
+          println(s"$subsystem-${e.version}\t${e.date}\t${e.comment}")
       }
     }
 
