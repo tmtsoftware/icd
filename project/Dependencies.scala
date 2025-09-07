@@ -3,10 +3,9 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport.*
 
 //noinspection TypeAnnotation
 object Dependencies {
-  val Version = "3.2.0"
+  val Version = "3.3.0"
   val ScalaVersion    = "3.7.1"
   val PekkoVersion    = "1.1.4"
-//  val PlayJsonVersion = "3.0.4"
   val PlayJsonVersion = "3.1.0-M1"
   val ScalaTagsVersion  = "0.13.1"
   val ScalaJsDomVersion = "2.8.0"
