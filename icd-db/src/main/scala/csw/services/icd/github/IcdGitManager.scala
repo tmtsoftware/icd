@@ -960,7 +960,7 @@ class IcdGitManager(versionManager: IcdVersionManager) {
             IcdVersionInfo(icdVersion, icdEntry.user, icdEntry.comment, icdEntry.date)
           }
         }
-      val publishedCommitId = maybeApiVersions.map(_.apis.tail.head.commit)
+      val publishedCommitId = maybeApiVersionList.map(_.commit).headOption
       val readyToPublish    = !(subsystemGitInfo.isEmpty || publishedCommitId.contains(subsystemGitInfo.commitId))
       PublishInfo(subsystem, maybeApiVersionList, icdVersions, readyToPublish)
     }

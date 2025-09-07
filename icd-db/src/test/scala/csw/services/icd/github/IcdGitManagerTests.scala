@@ -43,6 +43,9 @@ class IcdGitManagerTests extends AnyFunSuite with BeforeAndAfter {
     }
     val icdGitManager = IcdGitManager(db.versionManager)
 
+    val publishInfoList = icdGitManager.getPublishInfo(Some("TEST"))
+    publishInfoList.foreach(p => p.readyToPublish)
+
     // Note: Normally the return value from IcdGitManager.getAllVersions could be cached and reused for a while,
     // but not here, since we are modifying the test repository with new versions.
 
