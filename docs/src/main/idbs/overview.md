@@ -15,7 +15,7 @@ The workflow proceeds from left to right.
 
 ![](../images/overview/fig1.jpg)
 
-The TIO developer, using Common Software for his/her components, creates component model files. These files are validated and ingested into the ICD Model File Database using either the `icd-db` command or a web application called `icdwebserver`. These were developed to work with the ICD Model File Database and provide the functionality the users of the system need. The model files are stored and published in Git repositories on GitHub. The `icd-git` application can be used to sync the local database with the published versions on GitHub. The icd web app also gets its information from the published versions on GitHub, in addition to any unpublished versions that a developer is working with locally. The `icd-viz` command line application can be used to generate a graph of component or subsystem relationships. This feature requires that [graphviz](https://graphviz.org/) is installed and is also available in the icd web app. The `icd-fits` command can be used to view information about FITS keywords and their source events.
+The TIO developer, using Common Software for his/her components, creates component model files. These files are validated and ingested into the ICD Model File Database using either the `icd-db` command or a web application called `icdwebserver`. These were developed to work with the ICD Model File Database and provide the functionality the users of the system need. The model files are stored and published in Git repositories on GitHub. The `icd-git` application can be used to sync the local database with the published versions on GitHub. The icd web app also gets its information from the published versions on GitHub, in addition to any unpublished (uploaded) versions that a developer is working with locally. The `icd-viz` command line application can be used to generate a graph of component or subsystem relationships. This feature requires that [graphviz](https://graphviz.org/) is installed and is also available in the icd web app. The `icd-fits` command can be used to view information about FITS keywords and their source events.
 
 ## icd-db
 
@@ -29,7 +29,7 @@ The IDBS browser provides the ability to browse the APIs for both published and 
 
 The current version of the IDBS browser user interface includes the following features:
 
-* Allows browsing all the subsystems and their components (including previously published versions as well as unpublished working versions).
+* Allows browsing all the subsystems and their components (including previously published versions as well as uploaded, unpublished working versions).
 * View the API for a subsystem or an individual component.
 * Browse interfaces between subsystems, or components within subsystems.
 * Upload directories containing the model files for a subsystem API

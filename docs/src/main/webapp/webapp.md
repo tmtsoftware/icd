@@ -30,9 +30,8 @@ The icd web app automatically ingests the most recently released APIs and ICDs o
 Older versions of APIs are downloaded from GitHub and ingested automatically as needed. 
 You can preload the local database to include all versions of the subsystem APIs using the icd-git command line app before starting the icd web app: `icd-git --ingestAll`.
 
-You can also upload any directories containing model files that you are working on. 
-These will be the considered the “working version” or “*” in the subsystem version menu.
-The "*" version is either the last version uploaded, or the latest published API version, if there was no uploaded version, or if a more recent version was published (Note: This may change in a future release to be only the uploaded version). 
+You can also upload any top level directories containing subsystem API model files that you are working on. 
+These will be the considered the "uploaded" or working version ("uploaded" in the subsystem version menu).
 
 @@@
 
@@ -67,9 +66,9 @@ A couple of things to note: The area to the left shows a number of links. This a
 
 The content area displays all the components for the subsystem.  Clicking on one of the component links jumps to the given component’s information.
 
-The displayed API is constructed from the current versions of the models in the database, and is therefore considered an unpublished working version.  Although APIs are published by Systems Engineering, the system allows the viewing of all versions of published APIs as well as the working version as shown above (Note: the published versions of the APIs are ingested directly from the GitHub repository, whereas the unpublished models are obtained only from the local database).  To do this, select the desired version number in the dropdown menu next to the subsystem name.
+The displayed API is constructed from the current versions of the models in the database. Although APIs are published by Systems Engineering, the system allows the viewing of all versions of published APIs as well as uploaded (working versions) as shown above (Note: the published versions of the APIs are ingested directly from the GitHub repository, whereas the unpublished (uploaded) models are obtained only from the local database).  To do this, select the desired version number in the dropdown menu next to the subsystem name.
 
-Note that “master” also appears in the list of versions and is linked to the contents of the master branch of a subsystem on GitHub. The contents of the master branch are automatically uploaded to the icd database (if there was a change) whenever you refresh the web app or when running the command: `icd-git --ingest`.
+Note that “master” also appears in the list of versions and is linked to the contents of the master branch of a subsystem on GitHub. The contents of the master branch are automatically uploaded to the icd database (if there was a change) whenever you select "master" in one of the subsystem menus.
 
 ![](../images/webapp/tcsSelectVersion.png)
 
@@ -114,13 +113,13 @@ To view the API history, select a subsystem, and press the History button. The c
 
 An ICD is formed by taking the intersection of the APIs of two TMT subsystems. That means in order to create an ICD there must be at least two subsystems in the database. The TCS API is created from various subsystem to TCS ICDs that exist and the TCS CODR SDD. The definitive TCS API will be a product of the TCS work packages.
 
-It is possible to view ICDs with working/unpublished versions, with one unpublished version and one published version, or two published versions. ICDs can only be published between two published APIs.
+It is possible to view ICDs with uploaded (working/unpublished) versions, with one unpublished version and one published version, or two published versions. ICDs can only be published between two published APIs.
 
 This example will show how to view a working ICD between the published version 1.12 of the TCS API and the unpublished M1CS subsystem API.
 
 1. Upload all the working versions of the APIs needed to form an ICD.
 
-2. First select the version of the subsystem for the ICD. In the figure below the menu to the right of the subsystem shows the available versions. Version 1.12, the version published previously is selected. (To get back to the working version, select the asterisk in the menu.) Note that the content area says API for TCS 1.12 rather than the unpublished label.
+2. First select the version of the subsystem for the ICD. In the figure below the menu to the right of the subsystem shows the available versions. Version 1.12, the version published previously is selected. (To get back to the uploaded working version, select "uploaded" in the menu.) Note that the content area says API for TCS 1.12 rather than the "uploaded" label.
 
 ![](../images/webapp/select-tcs-m1cs-icd.png)
 
