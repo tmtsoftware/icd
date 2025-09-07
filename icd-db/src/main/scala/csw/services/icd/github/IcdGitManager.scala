@@ -81,7 +81,7 @@ object IcdGitManager {
     "SOSS"   -> "48684f6dc2a54d290c69edbfdd4909528a2b27a7",
     "STR"    -> "035688c16bbd991d08a22137b6804c78c24f75ba",
     "SUM"    -> "2864dbc7ec2dbdc5762405d57683c1c97a31cd12",
-    "TINS"   -> "ba5ec70cafa2d7a3704b537bc38b3156909c6ff2",
+    "TINS"   -> "7eac7166fa7c6f5996190d53d4edfc8688c28c51",
     "WFOS"   -> "330391bb97a21ff5c888594517019cb65f5c34fc"
   )
 

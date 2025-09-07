@@ -10,7 +10,7 @@ class PublishInfoTest extends AnyFunSuite {
     val db = IcdDb()
     val icdGitManager = IcdGitManager(db.versionManager)
 
-    val publishInfoList = icdGitManager.getPublishInfo(None)
+    val publishInfoList = icdGitManager.getPublishInfo(Some("TEST2"))
     publishInfoList.foreach{ p =>
       println(s"\n${p.subsystem}: readyToPublish = ${p.readyToPublish}")
       p.apiVersions.foreach(a => println(s"${a.version}: ${a.date}, ${a.commit}"))

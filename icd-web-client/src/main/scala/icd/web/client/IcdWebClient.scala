@@ -243,8 +243,7 @@ case class IcdWebClient(csrfToken: String, inputDirSupported: Boolean) {
     reloadButton.setVisible(show = false)
     expandToggler.setVisible(show = false)
     pdfButton.setVisible(show = false)
-    val f = publishDialog.update()
-    showBusyCursorWhile(f)
+    publishDialog.update()
     mainContent.setContent(publishDialog, "Publish APIs and ICDs")
     if (saveHistory) pushState(viewType = PublishView)
   }

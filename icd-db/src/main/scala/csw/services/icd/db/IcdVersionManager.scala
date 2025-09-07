@@ -364,34 +364,6 @@ case class IcdVersionManager(query: IcdDbQuery) {
     }
   }
 
-//  /**
-//   * Returns the version name of the latest, published version of the given subsystem or component, if found
-//   *
-//   * @param collectionNames list of collection names (for better performance)
-//   * @param subsystem       the name of the subsystem
-//   * @param maybeComponent  if defined, the name of the component
-//   */
-//  private def getLatestPublishedVersion(
-//      collectionNames: Set[String],
-//      subsystem: String,
-//      maybeComponent: Option[String]
-//  ): Option[String] = {
-//    val path     = maybeComponent.fold(subsystem)(compName => s"$subsystem.$compName")
-//    val collName = versionCollectionName(path)
-//    if (collectionNames.contains(collName)) {
-//      val coll = db.collection[BSONCollection](collName)
-//
-//      coll
-//        .find(queryAny, Option.empty[JsObject])
-//        .sort(BSONDocument(idKey -> -1))
-//        .one[BSONDocument]
-//        .await
-//        .map(_.string(versionStrKey))
-//        .head
-//    }
-//    else None
-//  }
-
   /**
    * Compares all of the named subsystem parts and returns a list of patches describing any differences.
    *
